@@ -213,5 +213,83 @@ namespace Valkur.Tests.EditMode.Game.UI
             Assert.IsNotNull(le, "TabStrip should have LayoutElement");
             Assert.AreEqual(26f, le.preferredHeight, "Default height should match TabStrip.Create's default (26)");
         }
+
+        // ── Wrapped (multi-row) mode ──────────────────────────────────────────────
+        // Used by the Buildings Editor, whose 256 px panel cannot render nine tabs in a
+        // single row. The invariant is that wrapping is purely a layout concern: keys,
+        // activation and events must behave exactly as in the single-row strip.
+
+        private TabStrip MakeWrapped(int columns, float rowHeight = 22f)
+            => TabStrip.CreateWrapped(_rootGo.transform, "WrappedStrip", columns, rowHeight);
+
+        [Test]
+        public void CreateWrapped_UsesVerticalLayout_AndStartsOneRowTall()
+        {
+            var strip = MakeWrapped(columns: 3);
+
+            Assert.IsNotNull(strip.GetComponent<VerticalLayoutGroup>(),
+                "Wrapped strip stacks rows, so its root needs a VerticalLayoutGroup");
+            Assert.IsNull(strip.GetComponent<HorizontalLayoutGroup>(),
+                "The root must not also carry an HLG — the rows own the horizontal layout");
+            Assert.AreEqual(22f, strip.GetComponent<LayoutElement>().preferredHeight,
+                "An empty wrapped strip reserves exactly one row");
+        }
+
+        [Test]
+        public void CreateWrapped_PacksTabsIntoRowsOfColumns()
+        {
+            var strip = MakeWrapped(columns: 3);
+            for (int i = 0; i < 7; i++) strip.AddTab("t" + i, "T" + i, null);
+
+            Assert.AreEqual(7, strip.Count, "Every tab must still be registered");
+            Assert.AreEqual(3, strip.transform.childCount,
+                "7 tabs at 3 per row occupy 3 rows");
+            Assert.AreEqual(3, strip.transform.GetChild(0).childCount, "Row 0 is full");
+            Assert.AreEqual(3, strip.transform.GetChild(1).childCount, "Row 1 is full");
+            Assert.AreEqual(1, strip.transform.GetChild(2).childCount, "Row 2 holds the remainder");
+        }
+
+        [Test]
+        public void CreateWrapped_GrowsItsLockedHeightPerRow()
+        {
+            var strip = MakeWrapped(columns: 3, rowHeight: 22f);
+            var le = strip.GetComponent<LayoutElement>();
+
+            for (int i = 0; i < 3; i++) strip.AddTab("t" + i, "T" + i, null);
+            Assert.AreEqual(22f, le.preferredHeight, "One row of tabs is one row tall");
+
+            strip.AddTab("t3", "T3", null);
+            // Two rows plus the 2 px inter-row spacing.
+            Assert.AreEqual(46f, le.preferredHeight,
+                "Opening a second row must grow the reserved height, or the parent layout clips it");
+            Assert.AreEqual(0f, le.flexibleHeight, "The strip must never stretch");
+        }
+
+        [Test]
+        public void CreateWrapped_KeepsSelectionSemantics()
+        {
+            var strip = MakeWrapped(columns: 3);
+            string lastKey = null;
+            for (int i = 0; i < 5; i++) strip.AddTab("t" + i, "T" + i, null);
+            strip.TabChanged += (_, key) => lastKey = key;
+
+            Assert.AreEqual("t0", strip.ActiveKey, "First tab added is active, as in single-row mode");
+
+            // t4 lives in the second row — activation must not care which row it is in.
+            Assert.IsTrue(strip.SetActive("t4"), "SetActive(key) must find a tab in any row");
+            Assert.AreEqual(4, strip.ActiveIndex);
+            Assert.AreEqual("t4", lastKey, "TabChanged must fire with the new key");
+        }
+
+        [Test]
+        public void CreateWrapped_WithZeroColumns_FallsBackToOnePerRow()
+        {
+            var strip = MakeWrapped(columns: 0);
+            strip.AddTab("a", "A", null);
+            strip.AddTab("b", "B", null);
+
+            Assert.AreEqual(2, strip.transform.childCount,
+                "A non-positive column count is clamped to 1, not treated as unlimited");
+        }
     }
 }

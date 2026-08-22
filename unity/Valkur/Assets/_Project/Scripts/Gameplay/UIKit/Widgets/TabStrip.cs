@@ -24,6 +24,18 @@ namespace Valkur.UIKit
         private readonly List<Tab> _tabs = new List<Tab>();
         private int _activeIndex = -1;
 
+        // ── Wrapped mode ──────────────────────────────────────────────────────────
+        // Zero means the classic single-row strip: tabs are parented straight to this
+        // transform and share its width. Above zero, tabs are packed into rows of that
+        // many, which is what lets a narrow panel carry nine readable tabs instead of
+        // nine 28 px slivers.
+        private int _columns;
+        private float _rowHeight;
+        private float _rowSpacing;
+        private Transform _currentRow;
+        private LayoutElement _rootLayout;
+        private int _rowCount;
+
         /// <summary>
         /// Point size for tab labels. Tabs share the strip's width equally, so a strip with
         /// many tabs needs smaller text or every label wraps mid-word — "Portals" rendering
@@ -38,11 +50,11 @@ namespace Valkur.UIKit
 
         public void AddTab(string key, string label, GameObject content)
         {
-            var btnGo = UIFactory.CreateUI("Tab_" + key, transform);
+            var btnGo = UIFactory.CreateUI("Tab_" + key, ResolveTabParent());
             var le = btnGo.AddComponent<LayoutElement>();
             // Lock height tightly so the parent VLG/HLG can't stretch the buttons.
-            le.minHeight       = 24f;
-            le.preferredHeight = 24f;
+            le.minHeight       = _columns > 0 ? _rowHeight : 24f;
+            le.preferredHeight = _columns > 0 ? _rowHeight : 24f;
             le.flexibleHeight  = 0f;
             le.flexibleWidth   = 1f;
             var bg = btnGo.AddComponent<Image>();
@@ -85,6 +97,44 @@ namespace Valkur.UIKit
 
         public int Count => _tabs.Count;
 
+        /// <summary>
+        /// Row that the next tab belongs in. Single-row strips always answer with this
+        /// transform; wrapped strips open a new row every <see cref="_columns"/> tabs and
+        /// grow the widget's locked height to match, so the parent layout reserves the
+        /// right space without a ContentSizeFitter fighting it.
+        /// </summary>
+        private Transform ResolveTabParent()
+        {
+            if (_columns <= 0) return transform;
+            if (_currentRow != null && _currentRow.childCount < _columns) return _currentRow;
+
+            var rowGo = UIFactory.CreateUI("Row_" + _rowCount, transform);
+            var hlg = rowGo.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing                = 2f;
+            hlg.childForceExpandWidth  = true;
+            hlg.childForceExpandHeight = false;
+            hlg.childControlWidth      = true;
+            hlg.childControlHeight     = true;
+            hlg.childAlignment         = TextAnchor.MiddleCenter;
+
+            var rowLe = rowGo.AddComponent<LayoutElement>();
+            rowLe.minHeight       = _rowHeight;
+            rowLe.preferredHeight = _rowHeight;
+            rowLe.flexibleHeight  = 0f;
+            rowLe.layoutPriority  = 2;
+
+            _currentRow = rowGo.transform;
+            _rowCount++;
+
+            if (_rootLayout != null)
+            {
+                float h = _rowCount * _rowHeight + (_rowCount - 1) * _rowSpacing;
+                _rootLayout.minHeight       = h;
+                _rootLayout.preferredHeight = h;
+            }
+            return _currentRow;
+        }
+
         public static TabStrip Create(Transform parent, string name, float height = 26f)
         {
             var go = UIFactory.CreateUI(name, parent);
@@ -105,6 +155,42 @@ namespace Valkur.UIKit
             le.flexibleHeight  = 0f;
             le.layoutPriority  = 2;
             return go.AddComponent<TabStrip>();
+        }
+
+        /// <summary>
+        /// Multi-row variant: tabs are packed <paramref name="columns"/> to a row and the
+        /// widget grows downward as they are added.
+        ///
+        /// A single-row strip divides its width evenly, so it only stays legible while the
+        /// tab count is small — nine tabs across the Buildings panel's 368 px of content
+        /// would leave 39 px each and every label would wrap mid-word. Wrapping trades
+        /// vertical space, which a docked editor panel has, for horizontal space, which it
+        /// does not.
+        /// </summary>
+        public static TabStrip CreateWrapped(Transform parent, string name,
+            int columns, float rowHeight = 24f, float rowSpacing = 2f)
+        {
+            var go = UIFactory.CreateUI(name, parent);
+            var vlg = go.AddComponent<VerticalLayoutGroup>();
+            vlg.spacing                = rowSpacing;
+            vlg.childForceExpandWidth  = true;
+            vlg.childForceExpandHeight = false;
+            vlg.childControlWidth      = true;
+            vlg.childControlHeight     = true;
+            vlg.childAlignment         = TextAnchor.UpperCenter;
+
+            var le = go.AddComponent<LayoutElement>();
+            le.minHeight       = rowHeight;
+            le.preferredHeight = rowHeight;
+            le.flexibleHeight  = 0f;
+            le.layoutPriority  = 2;
+
+            var strip = go.AddComponent<TabStrip>();
+            strip._columns    = Mathf.Max(1, columns);
+            strip._rowHeight  = rowHeight;
+            strip._rowSpacing = rowSpacing;
+            strip._rootLayout = le;
+            return strip;
         }
     }
 }
