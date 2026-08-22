@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9f5d83c654b68c40ac738eedbcc1cb4, type: 3}
+  m_Name: BuildingTemplate_504
+  m_EditorClassIdentifier: 
+  templateId: 504
+  assetPath: Buildings/signs/signpost_arrows_lantern
+  previewSprite: {fileID: 21300000, guid: 2d4418d733ffc5245a9ab4b3f4058e55, type: 3}
+  solid: 1
+  splitRatio: 0.8
+  colliderScope: CG
+  originalScale: {x: 71, y: 115}
+  sourceImagePath: assets/buildings/signs/signpost_arrows_lantern.png

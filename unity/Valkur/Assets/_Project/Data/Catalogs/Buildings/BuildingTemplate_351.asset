@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9f5d83c654b68c40ac738eedbcc1cb4, type: 3}
+  m_Name: BuildingTemplate_351
+  m_EditorClassIdentifier: 
+  templateId: 351
+  assetPath: Buildings/market/barrel_wooden_empty
+  previewSprite: {fileID: 21300000, guid: 26796410a295f764185a27824ea5c741, type: 3}
+  solid: 1
+  splitRatio: 0.45
+  colliderScope: CG
+  originalScale: {x: 41, y: 54}
+  sourceImagePath: assets/buildings/market/barrel_wooden_empty.png

@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9f5d83c654b68c40ac738eedbcc1cb4, type: 3}
+  m_Name: BuildingTemplate_495
+  m_EditorClassIdentifier: 
+  templateId: 495
+  assetPath: Buildings/signs/sign_healer_red_cross
+  previewSprite: {fileID: 21300000, guid: 7c1e5746fb0af3247977415ab3304d6f, type: 3}
+  solid: 1
+  splitRatio: 0.8
+  colliderScope: CG
+  originalScale: {x: 88, y: 109}
+  sourceImagePath: assets/buildings/signs/sign_healer_red_cross.png

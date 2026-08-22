@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9f5d83c654b68c40ac738eedbcc1cb4, type: 3}
+  m_Name: BuildingTemplate_459
+  m_EditorClassIdentifier: 
+  templateId: 459
+  assetPath: Buildings/props/pillar_stone_domed_wide
+  previewSprite: {fileID: 21300000, guid: 8d3b614d3da136946b0f4a76c88a437f, type: 3}
+  solid: 1
+  splitRatio: 0.6
+  colliderScope: CG
+  originalScale: {x: 43, y: 70}
+  sourceImagePath: assets/buildings/props/pillar_stone_domed_wide.png

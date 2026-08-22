@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9f5d83c654b68c40ac738eedbcc1cb4, type: 3}
+  m_Name: BuildingTemplate_479
+  m_EditorClassIdentifier: 
+  templateId: 479
+  assetPath: Buildings/signs/banner_sword_bow_maroon
+  previewSprite: {fileID: 21300000, guid: 4601a80e4e372724bb04f8e0903d1315, type: 3}
+  solid: 1
+  splitRatio: 0.8
+  colliderScope: CG
+  originalScale: {x: 75, y: 102}
+  sourceImagePath: assets/buildings/signs/banner_sword_bow_maroon.png
