@@ -344,6 +344,16 @@ namespace Valkur.Gameplay.VFX
             return curve;
         }
 
+        // Box depth on the camera axis (local Y after BoxRotationFor — see below). Hair-thin
+        // on purpose: the camera looks down world Z, so anything placed there is invisible.
+        // 0.01 rather than 0: either value is equally invisible along the camera axis, so
+        // this is not about visibility. It is the pre-existing depth value carried over from
+        // before this fix (the old scale's third component), kept hair-thin rather than zero
+        // so the shape stays a real (if degenerate) volume for the Scene-view gizmo — the same
+        // non-zero-axis convention every other hard-coded Box in this file follows
+        // (falling_leaf / water_flow use 0.1).
+        private const float BoxDepth = 0.01f;
+
         private void ConfigureShape(ParticleSystem ps, ParticleVfxParams p, float scale)
         {
             var shape = ps.shape;
@@ -450,15 +460,24 @@ namespace Valkur.Gameplay.VFX
             if (hasArea)
             {
                 shape.shapeType = ParticleSystemShapeType.Box;
+                // Unity's Box shape spawns from its whole volume and throws along local +Z.
+                // With the scale below that volume is a width x height rectangle in local XZ,
+                // hair-thin on local Y.
+                // AimShapeAt (FromToRotation) only pins that +Z to the heading — the other
+                // two axes are whatever the rotation happens to leave them, and for a 90°
+                // (up) heading that turned out to be a -90° turn about X, which swaps local
+                // Y and Z. That mapped the authored HEIGHT onto local Y, i.e. onto world Z —
+                // the camera axis on this orthographic top-down setup — so Area Height spent
+                // its extent as invisible depth and the box read as the width alone, a line.
+                // BoxRotationFor pins local Y to world Z explicitly instead, so the authored
+                // width/height axes always land in the visible screen plane regardless of
+                // heading, and only the intentionally hair-thin BoxDepth axis ever falls on Z.
                 shape.scale = new Vector3(
                     Mathf.Max(0.01f, p.spawnWidth) * scale,
-                    Mathf.Max(0.01f, p.spawnHeight) * scale,
-                    0.01f);
+                    BoxDepth,
+                    Mathf.Max(0.01f, p.spawnHeight) * scale);
                 shape.radiusThickness = 1f;
-                // A box emits along its local +Z. Left alone that is out of the screen —
-                // invisible motion on a 2D billboard — so aim it along the authored
-                // direction, or straight up when only the area was authored.
-                shape.rotation = AimShapeAt(hasDir ? p.directionDegrees : 90f);
+                shape.rotation = BoxRotationFor(hasDir ? p.directionDegrees : 90f);
             }
             else if (hasDir)
             {
@@ -478,12 +497,34 @@ namespace Valkur.Gameplay.VFX
         /// 0 = right, 90 = up, counter-clockwise. Derived via FromToRotation rather than
         /// hand-built angles because composing an X-flip with a Z-spin by hand is exactly
         /// how water_fountain's "aim upward (Unity Y-up)" comment came to need a comment.
+        /// Only safe for shapes that are symmetric about their emission axis — a Cone is,
+        /// so FromToRotation's under-specified roll around +Z never matters there. A Box is
+        /// NOT symmetric (it has a width axis and a height axis besides the emission axis),
+        /// which is exactly what made this rotation wrong for the box — see BoxRotationFor.
         /// </summary>
         private static Vector3 AimShapeAt(float degrees)
         {
             float rad = degrees * Mathf.Deg2Rad;
             var dir = new Vector3(Mathf.Cos(rad), Mathf.Sin(rad), 0f);
             return Quaternion.FromToRotation(Vector3.forward, dir).eulerAngles;
+        }
+
+        /// <summary>
+        /// Euler rotation for the spawn-area Box: local +Z (Unity's box emission/throw axis)
+        /// along the 2D heading (0 = right, 90 = up, counter-clockwise), with local +Y pinned
+        /// to world +Z. Unlike <see cref="AimShapeAt"/>'s FromToRotation, which leaves the
+        /// roll around the aimed axis unspecified and let it fall wherever the shortest
+        /// rotation happened to land, this fixes ALL three box axes on purpose: local X
+        /// (width) and local Z (height, along the heading) always stay in the world XY
+        /// screen plane, and only the intentionally hair-thin depth axis (local Y) is ever
+        /// placed on world Z, the camera's look axis. That is what keeps Area Width and
+        /// Area Height both visible at every heading instead of one of them landing on Z.
+        /// </summary>
+        private static Vector3 BoxRotationFor(float degrees)
+        {
+            float rad = degrees * Mathf.Deg2Rad;
+            var headingDir = new Vector3(Mathf.Cos(rad), Mathf.Sin(rad), 0f);
+            return Quaternion.LookRotation(headingDir, Vector3.forward).eulerAngles;
         }
 
     }

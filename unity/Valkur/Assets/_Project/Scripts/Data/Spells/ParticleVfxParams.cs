@@ -131,15 +131,17 @@ namespace Valkur.Data
         public float swaySpeed = 0.12f;
 
         // --------------- Spawn area & direction ---------------
-        [Tooltip("Width of the spawn area (world units). Above 0 this overrides the kind's " +
-                 "built-in emission shape with a centred box of exactly this footprint — the " +
-                 "kinds otherwise hard-code their areas (falling_leaf a 2-unit strip, " +
-                 "water_flow a 3-unit strip, smoke a circle of `dispersion`). 0 = keep the " +
-                 "kind's own shape.")]
+        [Tooltip("Width of the spawn area (world units), measured ACROSS the emission " +
+                 "heading — horizontal when the heading is up, the default. Above 0 this " +
+                 "overrides the kind's built-in emission shape with a centred box of exactly " +
+                 "this footprint — the kinds otherwise hard-code their areas (falling_leaf a " +
+                 "2-unit strip, water_flow a 3-unit strip, smoke a circle of `dispersion`). " +
+                 "0 = keep the kind's own shape.")]
         public float spawnWidth = 0f;
 
-        [Tooltip("Height of the spawn area (world units). Same override rule as spawnWidth; " +
-                 "setting either engages the box.")]
+        [Tooltip("Height of the spawn area (world units), measured ALONG the emission " +
+                 "heading — vertical when the heading is up, the default. Same override rule " +
+                 "as spawnWidth; setting either engages the box.")]
         public float spawnHeight = 0f;
 
         [Tooltip("Direction particles are emitted toward, in degrees: 0 = right, 90 = up, " +
