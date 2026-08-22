@@ -18,21 +18,22 @@ MonoBehaviour:
   vfx:
     kind: falling_leaf
     loops: 1
-    emitRate: 3
+    emitRate: 5
     count: 12
     burstIntervalSeconds: 1
     speed: 0.02
     gravity: 0
     drag: 0
     lifespan: 2
-    sizeMin: 1.4399999
-    sizeMax: 2.4
-    sizeAspect: 0.6666667
+    sizeMin: 1
+    sizeMax: 1
+    sizeAspect: 0.667
     colors:
     - {r: 0.42, g: 1, b: 0.16, a: 1}
     - {r: 0.09, g: 0.62, b: 0.1, a: 1}
     color: {r: 0.42, g: 1, b: 0.16, a: 1}
     additive: 0
+    colorIntensity: 1
     textureShape: 2
     textureSoftness: 0.14
     customSprite: {fileID: 0}
@@ -46,6 +47,10 @@ MonoBehaviour:
     thickness: 0.0625
     swayAmp: 0.021875
     swaySpeed: 0.12
+    spawnWidth: 3
+    spawnHeight: 4
+    directionDegrees: -1
+    directionSpreadDegrees: 15
     dispersion: 0
     gravityVector: {x: 0, y: -0.55}
     useGravityVector: 1
@@ -83,3 +88,4 @@ MonoBehaviour:
     turnoverCycles: 3
     turnoverMinWidth: 0.1
     outerRadius: 0
+  layers: []
