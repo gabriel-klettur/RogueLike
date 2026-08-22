@@ -60,6 +60,17 @@ namespace Valkur.Gameplay
                  "enough to kill the seam, and a lower snap PPU densifies the zoom-level ladder so " +
                  "the scroll wheel can reach the full [minZoom, maxZoom] range. MUST be a positive " +
                  "divisor of assetsPPU (16 with assetsPPU=32 gives ~12 levels in [2, 25]).")]
+        // Do NOT "fix" this to 32. With snapPPU=16 a single 32-PPU tile texel covers N/2 screen
+        // pixels, so odd ladder rungs land on a half pixel (1.5, 2.5, 3.5 px per texel) — which
+        // looks like it should seam, and doesn't. A whole tile is 32 texels, so its edges stay on
+        // whole pixels at every rung (32 x 2.5 = 80 px), and only the texel widths inside the tile
+        // alternate 2/3 px — uniform tile to tile, and stable because CameraPixelSnap pins the
+        // camera to the pixel lattice. Measured 2026-08-22 at 1600x800 over the live tilemap:
+        // zero near-black columns at ortho 8.3333 / 6.25 / 5.0 / 4.1667 (texels 1.5 / 2.0 / 2.5 /
+        // 3.0). The set of ortho values giving integer 32-PPU texels is exactly {pixelHeight/(64m)},
+        // i.e. snapPPU=32 — which halves the ladder to ~6 rungs and puts a 2x jump at the top end.
+        // Dense ladder or integer texels; there is no third option, and the seam does not depend on
+        // the choice. The seam depends on Camera.aspect being exactly 2:1 — see AspectRatioEnforcer.
         [SerializeField] private int snapPPU = 16;
         [Tooltip("Reference resolution width (logical pixels)")]
         [SerializeField] private int refResolutionX = 640;

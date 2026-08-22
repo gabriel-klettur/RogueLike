@@ -324,6 +324,18 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   to within a fifth of a screen pixel. `CameraFeelDirector` owns a `[Camera Target]` proxy and
   writes only that. Writing `Camera.main.transform` instead means racing the brain, which is
   what the old `CameraShake` did and lost.
+- **An integer pixel rect is not the same thing as an exact aspect ratio.** `SnapOrthoSize`
+  guarantees whole screen pixels per art texel on the VERTICAL axis only — it solves
+  `ortho = pixelHeight / (2 x snapPPU x N)`. The horizontal axis inherits that guarantee
+  purely through `Camera.aspect`, so the viewport must be EXACTLY 2:1 in whole pixels.
+  `AspectRatioEnforcer` used to round each axis independently: a 1366x768 window produced a
+  1366x682 viewport, aspect 2.002933 — integer pixels, wrong ratio — and tile quad edges
+  drifted mid-pixel across the screen, showing the black background as VERTICAL seam lines.
+  It now quantises to `k*p` by `k*q` from the ratio reduced to integers, so one scalar drives
+  both axes. Options > Video (`DisplaySettings`) only offers exactly-2:1 sizes for the same
+  reason. Diagnose with `Valkur > Display > Report Viewport Alignment`, and remember the two
+  are independent failures: a clean camera render plus visible lines means the Game View
+  composite or the screenshot, not the game.
 - **Never write `orthographicSize` for an effect.** `CameraPixelSnap` derives its lattice from
   the live ortho size, and `CameraSetup.SnapOrthoSize` keeps it on a ladder where one art texel
   is an integer number of screen pixels (3.000 px at ortho 5 on a 960 px viewport). A zoom
