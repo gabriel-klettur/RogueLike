@@ -54,6 +54,15 @@ Everything else in `asset-pipeline` still applies — naming, folders, atlas pol
    Reach for a new layer whenever one emitter would have to be two things at once — the
    classic being additive light and alpha-blended mass.
 
+   A `ParticlePresetDefinition` can also carry its own `layers` list — child presets
+   rendered by the SAME `ParticleEmitter`, one extra `ParticleSystem` per entry. This is
+   a different mechanism from the `…Layers` lists above: those spawn separate placed
+   presets/emitters at the spell level, this stacks sub-effects onto ONE placed instance
+   (or one spell slot) so a single F1 placement, or a single `vfxPreset`, can already be
+   a whole core+rim+sparks stack. One level deep only — a layer's own `layers` are
+   ignored — and a `lightning`-kind layer is skipped, since lightning draws with a
+   LineRenderer, not a `ParticleSystem`.
+
 ### Depth cues that sell "3D" on a 2D billboard
 
 - **Overbright core, tinted rim.** Center near-white (`a=1`), edge the element hue.
@@ -76,7 +85,14 @@ ParticlePresetDefinition          ScriptableObject
 ├── id            string          unique key, snake_case, no PP_ prefix
 ├── displayName   string          human label shown in the F1 picker
 ├── type          string          category shown in the picker ("aura", "portal", …)
-└── vfx           ParticleVfxParams
+├── vfx           ParticleVfxParams
+└── layers        List<ParticlePresetDefinition>   optional child presets, one extra
+                                  ParticleSystem per entry, rendered by the same
+                                  ParticleEmitter as the root vfx. One level deep —
+                                  a layer's own `layers` are ignored. Null entries,
+                                  self-references and `lightning`-kind layers are
+                                  skipped. Scaled by the emitter's scaleMultiplier
+                                  exactly like the root vfx.
 ```
 
 Note: `ParticlePresetDefinition` uses `[SerializeField] public` fields. That is a
@@ -228,6 +244,13 @@ Additive traps:
 - Additive never darkens. A dark-magic effect needs an alpha layer for the mass and an
   additive layer only for the rim.
 - Additive over a dark tile is dramatic; over a bright tile it is invisible. Check both.
+- **The trap scales with area, not with count.** Overlap is what saturates, and a big soft
+  particle overlaps everything near it, so the ceiling drops fast as size rises. A
+  two-world-unit volumetric haze at a *sixth* of a percent of full alpha still pinned the
+  frame to white once ~20 of them overlapped, square edges and all — the pollen stack's
+  haze layer, which had to go back to alpha. Rule of thumb: **the light is additive, the
+  volume is not.** If a layer's job is to occupy space rather than to glow, it is mass —
+  author the warmth into its gradient, not into its blend mode.
 
 ## 5. Budgets
 
@@ -273,7 +296,6 @@ Fix them in `ParticleEmitter` before spending long tuning numbers.
 | **No `textureSheetAnimation`.** | `ParticleEmitter.ParticleSystem.cs` | No animated smoke/fire sprite sheets. `PP_textured_spark_flipbook` is still misnamed — it has a texture now, but no flipbook. |
 | **No `trails` module.** | same | Sparks have no streaks. |
 | **No `lights` module.** | same | VFX do not light the URP 2D scene. |
-| **No sub-emitters.** | same | Multi-stage effects must be hand-stacked as separate placed presets. |
 | **`colors[]` middle entries dropped** in `BuildColorParameter`. | `ParticleEmitter.Colors.cs` | A 4-color preset renders as a 2-color random. |
 | **Gradient keys capped at 8.** | `BuildGradientFromCurves` | Unity's own limit — fine, but silently truncates. |
 | **`burstIntervalSeconds` dead.** | `IsBurstWithInterval()` returns `false` unconditionally | Repeating ambient bursts impossible. |
@@ -301,6 +323,23 @@ what caused presets to be authored against effects that never existed.
   turning the same way reads as a rotating texture rather than as fire.
 - Simulation space (`worldSpace`). See §2.2; this is the difference between a trail and
   a halo, and it was the reason the fireball's "wake" preset could not wake.
+
+**Already fixed (2026-08-21)** — do not re-report these as gaps:
+
+- Sub-emitters (`ParticlePresetDefinition.layers`). A preset can carry child presets
+  rendered by the same `ParticleEmitter`, one extra `ParticleSystem` per valid entry
+  (see §1 "Layering" and §2). Multi-stage effects no longer have to be hand-stacked as
+  separate placed presets — one placed instance, or one spell slot, can already be the
+  whole core+rim+sparks stack. One level deep only; `lightning`-kind layers are skipped.
+- Spawn-area axes (`spawnWidth` / `spawnHeight`). The box override aimed itself with
+  `FromToRotation`, which pins only the emission axis and leaves the roll around it
+  wherever the shortest rotation lands — for the default upward heading that put the
+  authored HEIGHT on world Z, the camera's own look axis. Area Height therefore spent its
+  extent as invisible depth and every authored box emitted as a bare horizontal LINE.
+  `BoxRotationFor` now fixes all three axes, so width and height both stay in the screen
+  plane at any heading. Only the hair-thin depth axis is ever placed on Z. Re-check any
+  preset authored against the old behaviour — its Area Height did nothing before and does
+  something now.
 
 Priority for the next step-change: `trails`, then `lights`, then
 `textureSheetAnimation`. Each is a small additive change to `ParticleVfxParams` plus
