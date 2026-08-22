@@ -114,6 +114,43 @@ Drop a new sprite into the appropriate folder and Unity handles the rest.
 | `SpriteAtlasBuilder.cs` | Generate `SpriteAtlas` for runtime packing |
 | `BulkReimportTool.cs` | Force-reimport a folder applying current postprocessor rules |
 
+## Prop-sheet pipeline (multi-object sheets → buildings)
+
+Art often arrives as one big sheet holding dozens of separate props. Four stages turn such
+a sheet into placeable buildings; every stage is re-runnable and the intermediate contracts
+are versioned in the repo.
+
+| Stage | Tool | In → Out |
+|---|---|---|
+| 1. Slice | `tools/atlas/slice_prop_sheet.py` | sheet PNG → one crop per object + `*.slices.json` + numbered previews |
+| 2. Classify | manual / agent pass | crops → `tools/atlas/generated/building_props_metadata.json` |
+| 3. Stage | `tools/atlas/build_building_props.py` | crops + metadata → `Resources/Buildings/<category>/*.png` + `building_props_manifest.json` |
+| 4. Import | `Valkur/Buildings/Import Prop Sprites (Apply)` | manifest → `BuildingTemplateData` assets + `BuildingCatalog` entries |
+
+Notes that cost time to rediscover:
+
+- **Slicing is an alpha problem, not a chroma-key problem.** These sheets ship a real alpha
+  channel; the visible "background" is soft glow at alpha 20–200. Segmentation runs on
+  `alpha >= 190` cores, then hands every soft pixel to its *nearest* core via a distance
+  transform — that is what keeps a brazier's flame with its own bowl while refusing to let
+  two neighbouring glows bridge into one blob.
+- **An object made of disconnected parts disappears silently.** A clover sprig is four
+  separate leaves, each under `min_core_area`. `slice_prop_sheet.py` therefore audits its
+  own output and reports any solid mass no box covers; fix those with an explicit entry in
+  `tools/atlas/prop_sheets.config.json` (which also holds `drop` / `merge` / `split`).
+- **Always resample in premultiplied alpha** (`Image.convert("RGBa")`). Downscaling straight
+  RGBA averages the zeroed RGB of transparent pixels into every edge and rings the sprite
+  with a dark halo.
+- **Scale is the whole point of stage 3.** Buildings render at 32 px per tile and the player
+  is 2 tiles, so a 430 px sheet lamp would stand 13 tiles tall. Metadata carries
+  `target_height_tiles`; the tool resamples to `tiles * 32`.
+- **Stage 4 is idempotent**, keyed on `assetPath`: re-running updates templates in place and
+  keeps their `templateId`, so placed world instances never break. Neither of its menu items
+  opens a dialog, because both are driven from the MCP bridge as often as from the menu bar.
+- `Tests/EditMode/Game/World/BuildingPropCatalogTests.cs` asserts the catalog still matches
+  the manifest. The source sheets are gitignored (`downloads/`), so the manifest is the only
+  versioned record of what was imported.
+
 ## Naming Convention
 
 ### Files

@@ -398,6 +398,22 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   that exercises only one half proves nothing; assert the composition, and assert the shipped
   data is in bounds. See `.github/incidents/SPAWNER_COORDINATE_SPACE_DRIFT.md`.
 - **F10 Buildings save position-collapse bug** — root cause unknown but mitigated by 3 guards in `BuildingsRuntimeEditor.Persistence.cs`. If the F10 save ever logs `ABORTING save — ...`, that's this bug firing. Read `.github/incidents/BUILDINGS_SAVE_POSITION_COLLAPSE.md` for the recovery procedure and the next-step investigation checklist.
+- **Never `Undo.RecordObject` in a bulk asset-import tool.** `BuildingPropImporter` created 193
+  `BuildingTemplateData` assets and recorded each one for undo. They landed on the *global*
+  editor undo stack, and the first thing that popped it — the EditMode suite, which exercises
+  the runtime editors' undo — reverted all 193 IN MEMORY to their empty creation state while
+  the correct data sat on disk. They then stayed dirty-and-empty, so the next `SaveAssets`
+  would have written the emptiness over the good data. Symptom: `assetPath` reads `''` from
+  `AssetDatabase.LoadAssetAtPath` while `File.ReadAllText` on the same `.asset` shows the real
+  value. Use `EditorUtility.SetDirty` alone for data an operator re-runs rather than undoes.
+  `BuildingTemplateOriginalScaleBackfill` still carries the same latent hazard.
+- **A domain reload does NOT reload assets.** Recompiling reloads managed assemblies; the
+  native `ScriptableObject`/`Texture` objects survive it with their in-memory values intact.
+  Neither `AssetDatabase.ImportAsset(..., ForceUpdate | ForceSynchronousImport)` nor
+  `EditorUtility.ClearDirty` re-reads an already-loaded asset either. When memory has diverged
+  from disk, repair the object explicitly (parse the `.asset` and write the fields back) — and
+  never reach for `AssetDatabase.ForceReserializeAssets`, which flushes the *bad* memory state
+  onto the good file.
 
 ## Incident reports
 
