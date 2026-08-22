@@ -1,0 +1,1943 @@
+{
+  "generator": "workflow name-prop-sprites (identify + adversarial audit), corrections applied",
+  "sheets": [
+    "lamps_torches_braziers_sheet",
+    "market_stalls_sheet",
+    "nature_foliage_sheet",
+    "shop_signs_sheet",
+    "signposts_banners_sheet",
+    "village_props_sheet"
+  ],
+  "items": [
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 0,
+      "name": "lamp_post_classic",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.6,
+      "description": "A tall slim iron street lamp with a hexagonal glass lantern and pointed finial on a fluted column."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 1,
+      "name": "lamp_post_curved",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.5,
+      "description": "An iron street lamp whose post curls over into a scrolled arm with a small lantern hanging from it."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 2,
+      "name": "lamp_post_wooden",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.7,
+      "description": "A wooden post with a crossbeam holding a hanging lantern, set on a mossy stone block base."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 3,
+      "name": "lamp_post_crossarm",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.8,
+      "description": "A dark metal lamp post with a straight horizontal cross-arm from which a tapered lantern hangs."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 4,
+      "name": "lamp_post_ornate",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.2,
+      "description": "A short stout lamp post with a large barrel-shaped ornate lantern over a stepped tiered base."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 5,
+      "name": "lamp_post_globe",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.0,
+      "description": "A brass lamp post crowned by a round caged globe of amber glass on a decorated octagonal base."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 6,
+      "name": "torch_pillar_wood",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "description": "A wooden torch pillar burning at the top, planted in a ring of stones and grass tufts."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 7,
+      "name": "brazier_stand_iron",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.2,
+      "description": "A wrought-iron torch stand: a shallow flaming dish on a scrollwork column with three curled legs."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 8,
+      "name": "brazier_hanging_frame",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "description": "A wooden gallows frame with a burning metal bowl slung from ropes, ivy climbing the vine-wrapped post."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 9,
+      "name": "brazier_bowl_stone",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.4,
+      "description": "A wide dark stone fire bowl on a short pedestal over a pale round stone plinth, roaring with flame."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 10,
+      "name": "brazier_iron_cage",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.2,
+      "description": "A barred iron cage brazier on four splayed legs, flames rising between the vertical bars."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 11,
+      "name": "brazier_tripod_brass",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0,
+      "description": "A brass fire bowl resting on two large golden scroll legs, with a bright flame above it."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 12,
+      "name": "brazier_goblet_bronze",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.6,
+      "description": "A goblet-shaped bronze brazier on a fluted stem and octagonal stepped base, burning at the cup."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 13,
+      "name": "candelabra_brass",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.8,
+      "description": "A brass candelabra with four lit white candles on curved arms rising from a round footed base."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 14,
+      "name": "sconce_torch_wall",
+      "category": "lights",
+      "solid": false,
+      "split_ratio": 0.9,
+      "target_height_tiles": 1.8,
+      "description": "A wall-mounted iron bracket holding an angled torch cup with a flame burning out of it."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 15,
+      "name": "sconce_lantern_ornate",
+      "category": "lights",
+      "solid": false,
+      "split_ratio": 0.9,
+      "target_height_tiles": 1.8,
+      "description": "An ornate scrolled wall bracket carrying a glowing amber lantern with a peaked roof."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 16,
+      "name": "sconce_brazier_chained",
+      "category": "lights",
+      "solid": false,
+      "split_ratio": 0.9,
+      "target_height_tiles": 2.0,
+      "description": "A wall arm from which a round metal fire bowl hangs on three chains, flames rising from it."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 17,
+      "name": "lantern_magic_blue",
+      "category": "lights",
+      "solid": false,
+      "split_ratio": 0.9,
+      "target_height_tiles": 1.9,
+      "description": "A hanging magic lantern with an ornate blue crown and a four-point star of blue light inside."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 18,
+      "name": "lamp_post_classic_lit",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.6,
+      "description": "Night version of the slim hexagonal street lamp, its lantern casting a warm halo of light."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 19,
+      "name": "lamp_post_curved_lit",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.5,
+      "description": "Night version of the curved-arm street lamp, the hanging lantern glowing with a golden bloom."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 20,
+      "name": "lamp_post_wooden_lit",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.7,
+      "description": "Night version of the wooden crossbeam post lamp, its hanging lantern lit above the mossy stone base."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 21,
+      "name": "lamp_post_ornate_lit",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.2,
+      "description": "Night version of the stout ornate lamp post, the wide lantern flaring with warm yellow light."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 22,
+      "name": "lamp_post_globe_lit",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.0,
+      "description": "Night version of the brass globe lamp post, the round caged globe burning bright amber."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 23,
+      "name": "torch_pillar_wood_lit",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "description": "Night version of the wooden torch pillar, its flame glowing over the stone-and-grass footing."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 24,
+      "name": "brazier_goblet_bronze_lit",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.6,
+      "description": "Night version of the goblet brazier pillar, a tall flame lighting the cup and the grass at its base."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 25,
+      "name": "brazier_bowl_stone_lit",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.4,
+      "description": "Night version of the wide stone fire bowl on its pedestal, blazing with a large bright fire."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 26,
+      "name": "candelabra_brass_lit",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.8,
+      "description": "Night version of the brass candelabra, its four candle flames glowing against the dark."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 27,
+      "name": "sconce_lantern_ornate_lit",
+      "category": "lights",
+      "solid": false,
+      "split_ratio": 0.9,
+      "target_height_tiles": 1.8,
+      "description": "Night version of the ornate wall lantern, its amber glass throwing a soft glow onto the bracket."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 28,
+      "name": "sconce_brazier_chained_lit",
+      "category": "lights",
+      "solid": false,
+      "split_ratio": 0.9,
+      "target_height_tiles": 2.0,
+      "description": "Night version of the chain-hung wall brazier, the suspended bowl burning with an orange flame."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 29,
+      "name": "lantern_blue_wall",
+      "category": "lights",
+      "solid": false,
+      "split_ratio": 0.9,
+      "target_height_tiles": 2.0,
+      "description": "A wall-mounted magic lantern on a scrolled bracket, glowing icy blue with drifting light motes."
+    },
+    {
+      "sheet": "lamps_torches_braziers_sheet",
+      "index": 30,
+      "name": "lantern_blue_cage",
+      "category": "lights",
+      "solid": false,
+      "split_ratio": 0.9,
+      "target_height_tiles": 2.0,
+      "description": "A tall cylindrical caged magic lantern hanging free, filled with blue starlight and floating sparks."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 0,
+      "name": "stall_awning_red_produce",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 4.6,
+      "description": "Covered market stall with a red-and-white striped awning, hanging lanterns and crates of fruit and vegetables on the counter."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 1,
+      "name": "stall_awning_blue_pottery",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 4.6,
+      "description": "Covered stall with a blue-and-white striped awning, a blue draped counter of clay jars, bottles and hanging garlic."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 2,
+      "name": "stall_awning_green_vegetables",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 4.6,
+      "description": "Covered stall with a green-and-yellow striped awning over a two-tier counter of vegetable crates."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 3,
+      "name": "stall_cart_fishmonger_canvas",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 4.4,
+      "description": "Wheeled fishmonger cart under a plain canvas canopy, with fish hanging from the frame and a chalkboard fish sign."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 4,
+      "name": "counter_produce_crates",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.4,
+      "description": "Open wooden counter table topped with crates of peppers and apples, a chalkboard sign and a green cloth."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 5,
+      "name": "counter_alchemist_bottles",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.3,
+      "description": "Small wooden table with coloured potion bottles, a spice sack with pestle and a red patterned runner."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 6,
+      "name": "counter_vegetable_chalkboards",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.3,
+      "description": "Open vegetable counter with compartments of tomatoes, cucumbers, aubergines and citrus under two chalkboard price signs."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 7,
+      "name": "counter_fishmonger_ice",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.3,
+      "description": "Open fish counter displaying whole fish and red mullets laid out on crushed ice with a chalkboard sign."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 8,
+      "name": "counter_florist_flowerpots",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.3,
+      "description": "Wooden table covered with an embroidered runner and lined with potted flowers and a vase of blooms."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 9,
+      "name": "cart_bakery_bread",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.5,
+      "description": "Single-wheeled bakery cart loaded with baguettes and round loaves, striped cloth and a chalkboard bread sign."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 10,
+      "name": "crate_tomatoes_peppers",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3,
+      "description": "Shallow wooden crate filled with red tomatoes and a few green bell peppers."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 11,
+      "name": "crate_persimmons_orange",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3,
+      "description": "Wooden crate heaped with round orange persimmon-like fruit."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 12,
+      "name": "crate_cabbages_green",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3,
+      "description": "Wooden crate packed with leafy green cabbages and peppers."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 13,
+      "name": "crate_eggplants_purple",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3,
+      "description": "Wooden crate filled with glossy purple aubergines."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 14,
+      "name": "crate_oranges_citrus",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3,
+      "description": "Wooden crate stacked with bright yellow-orange citrus fruit."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 15,
+      "name": "crate_fish_on_ice",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2,
+      "description": "Shallow wooden crate holding two silver fish resting on crushed ice."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 16,
+      "name": "crate_meat_cuts",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3,
+      "description": "Wooden crate displaying raw red meat steaks beside a pale block of cheese or fat."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 17,
+      "name": "crate_apples_mixed",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3,
+      "description": "Wooden crate of mixed red, green and yellow apples."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 18,
+      "name": "sack_open_grain_yellow",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4,
+      "description": "Open burlap sack bulging with yellow grain or corn kernels."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 19,
+      "name": "sack_flour_scoop",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4,
+      "description": "Open burlap sack of white flour with a wooden scoop stuck into it."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 20,
+      "name": "sack_beans_dark",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3,
+      "description": "Squat open sack filled with dark red-brown beans."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 21,
+      "name": "barrel_wooden_empty",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.7,
+      "description": "Empty open-topped wooden barrel with iron bands."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 22,
+      "name": "barrel_apples_red",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.7,
+      "description": "Iron-banded barrel brimming with red apples."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 23,
+      "name": "barrel_apples_golden",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.6,
+      "description": "Wooden barrel heaped with brown potatoes."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 24,
+      "name": "barrel_apples_green",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.5,
+      "description": "Narrow wooden barrel topped with green apples."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 25,
+      "name": "sack_tall_tomatoes",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.5,
+      "description": "Tall stitched burlap sack with red tomatoes piled at its open mouth."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 26,
+      "name": "basket_handle_oranges",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4,
+      "description": "Wicker basket with an arched handle full of oranges."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 27,
+      "name": "basket_handle_tomatoes",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3,
+      "description": "Wicker basket with an arched handle full of red tomatoes."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 28,
+      "name": "basket_wide_vegetables",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2,
+      "description": "Wide shallow wicker basket of mixed vegetables: carrots, aubergine, cabbage and tomatoes."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 29,
+      "name": "potted_herb_leafy",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2,
+      "description": "Terracotta pot holding a small bushy green herb plant."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 30,
+      "name": "barrel_bottles_assorted",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.5,
+      "description": "Wooden barrel used as a rack for assorted red, blue and green glass bottles."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 31,
+      "name": "basket_rolled_fabrics",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3,
+      "description": "Wicker basket holding rolls of red, blue and cream fabric standing upright."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 32,
+      "name": "basket_folded_textiles",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3,
+      "description": "Square wicker basket stacked with folded coloured cloth and wrapped bundles."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 33,
+      "name": "sacks_spices_paprika_pair",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3,
+      "description": "Two small spice sacks, one of brown seeds behind one of bright red paprika."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 34,
+      "name": "sacks_spices_herb_turmeric",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1,
+      "description": "Pair of small spice sacks holding green dried herb and golden turmeric powder."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 35,
+      "name": "sack_spice_saffron_scoop",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2,
+      "description": "Single sack of orange spice powder with a wooden scoop resting in it."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 36,
+      "name": "watering_can_metal",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1,
+      "description": "Dented galvanised metal watering can with a long spout and handle."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 37,
+      "name": "bucket_wooden_pestle",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2,
+      "description": "Iron-banded wooden bucket with a stone pestle standing inside it."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 38,
+      "name": "scales_merchant_balance",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.5,
+      "description": "Merchant's two-pan balance scale with brass pans hung from chains on a wooden base."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 39,
+      "name": "lantern_iron_glass",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3,
+      "description": "Iron-framed glass lantern with a ring handle and a warm burning candle inside."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 40,
+      "name": "brazier_iron_tripod",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.5,
+      "description": "Standing iron tripod brazier with a tall orange flame burning in its bowl."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 41,
+      "name": "crate_mushrooms_forest",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3,
+      "description": "Wooden crate of assorted mushrooms including red-capped toadstools and brown caps."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 42,
+      "name": "potted_lavender_flowers",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4,
+      "description": "Terracotta pot with tall purple lavender flower spikes."
+    },
+    {
+      "sheet": "market_stalls_sheet",
+      "index": 43,
+      "name": "potted_basil_green",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3,
+      "description": "Terracotta pot holding a broad-leafed basil plant."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 0,
+      "name": "tree_oak_broad_green",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 9.0,
+      "description": "A large broad-canopied green oak tree with a thick brown trunk on a grass base."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 1,
+      "name": "tree_cherry_blossom_pink",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 8.5,
+      "description": "A big tree covered in pink cherry blossoms with fallen petals and flowers at its base."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 2,
+      "name": "tree_autumn_orange_maple",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 8.5,
+      "description": "A large tree with bright orange autumn foliage over a bed of fallen leaves."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 3,
+      "name": "tree_pine_conifer",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 9.5,
+      "description": "A tall conical dark-green pine tree with layered branches and a grassy base."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 4,
+      "name": "tree_apple_red_fruit",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.5,
+      "description": "A small apple tree with red fruit hanging in the canopy and apples fallen on the grass."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 5,
+      "name": "hedge_block_tall_rounded",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.4,
+      "description": "A tall rectangular hedge block with a rounded lime-highlighted top."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 6,
+      "name": "hedge_block_wide_trimmed",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.2,
+      "description": "A wide trimmed hedge block with bright yellow-green leaves along the top edge."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 7,
+      "name": "tree_small_round_canopy",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.0,
+      "description": "A small tree with a rounded clover-leaf canopy and a short forked trunk."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 8,
+      "name": "rock_boulder_grey_tall",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.2,
+      "description": "A tall grey cracked boulder standing on a tuft of grass."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 9,
+      "name": "rock_formation_flower_base",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0,
+      "description": "A wide grey rock formation of three stones ringed by grass and tiny wildflowers."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 10,
+      "name": "bush_round_plain_green",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.8,
+      "description": "A plain rounded green leafy bush with no flowers."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 11,
+      "name": "bush_scattered_white_daisies",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.8,
+      "description": "A light green bush dotted with a few scattered small white daisies."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 12,
+      "name": "bush_sparse_red_berries",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.7,
+      "description": "A green bush with a sparse scattering of small red berries."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 13,
+      "name": "bush_small_lime_green",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.6,
+      "description": "A small compact bush with pale lime-green foliage."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 14,
+      "name": "hedge_topiary_narrow_column",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.2,
+      "description": "A narrow upright topiary hedge column with a flat leafy top."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 15,
+      "name": "rock_dome_pink_wildflowers",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.8,
+      "description": "A low domed grey rock surrounded by pink and purple wildflower stalks."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 16,
+      "name": "rock_pair_lupine_spikes",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0,
+      "description": "Two grey stones flanked by tall pink and purple lupine flower spikes."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 17,
+      "name": "bush_wide_dark_green",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.9,
+      "description": "A wide spreading bush with dark green layered leaves."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 18,
+      "name": "bush_dense_red_berries",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.9,
+      "description": "A round bush heavily loaded with clusters of red berries."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 19,
+      "name": "bush_yellow_blossoms",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.9,
+      "description": "A round green bush covered in small yellow flowers."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 20,
+      "name": "bush_pink_blossoms",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.9,
+      "description": "A round green bush covered in bright pink five-petal flowers."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 21,
+      "name": "bush_large_white_daisies",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.8,
+      "description": "A green bush blooming with large white yellow-centred daisies."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 22,
+      "name": "bush_hydrangea_blue_pink",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0,
+      "description": "A wide bush with blue, purple and pink hydrangea flower balls."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 23,
+      "name": "tree_stump_cut_rings",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0,
+      "description": "A cut tree stump showing growth rings on top, ringed by grass."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 24,
+      "name": "log_fallen_timber",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.8,
+      "description": "A fallen brown wooden log lying on its side with grass sprouting behind it."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 25,
+      "name": "rock_boulder_moss_covered",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0,
+      "description": "A large grey boulder draped in moss with a smaller stone beside it."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 26,
+      "name": "rock_round_pink_cosmos",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.8,
+      "description": "A low flat grey rock with tall pink cosmos flowers growing over it."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 27,
+      "name": "flowers_yellow_buttercups",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0,
+      "description": "A cluster of yellow and orange buttercup-like flowers on green stems."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 28,
+      "name": "flowers_orange_tulips",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.1,
+      "description": "Three orange tulips rising from a clump of long leaves."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 29,
+      "name": "flowers_white_daisies",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0,
+      "description": "A spray of white daisies with yellow centres on thin stems."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 30,
+      "name": "flowers_pink_tulips",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.1,
+      "description": "Three pink tulips standing in a tuft of green leaves."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 31,
+      "name": "flowers_blue_bluebells",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.2,
+      "description": "A cluster of drooping blue bluebell flowers on tall stems."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 32,
+      "name": "flowers_yellow_daffodils",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.1,
+      "description": "A bunch of yellow daffodils with orange trumpets on upright stalks."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 33,
+      "name": "flowers_pink_coneflowers",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.1,
+      "description": "Pink coneflowers with dark brown centres on tall green stems."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 34,
+      "name": "flowers_purple_lupines",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.2,
+      "description": "Three tall purple lupine flower spikes rising from grassy leaves."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 35,
+      "name": "flowers_orange_snapdragons",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.2,
+      "description": "Tall orange snapdragon-like flower spikes in a narrow clump."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 36,
+      "name": "flowers_yellow_pink_mix",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0,
+      "description": "A small mixed bouquet of yellow blooms with one pink flower among them."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 37,
+      "name": "reeds_brown_cattails",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.2,
+      "description": "A tuft of tall grassy reeds topped with brown cattail heads."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 38,
+      "name": "clover_patch_dense",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.7,
+      "description": "A dense wide patch of dark green clover leaves hugging the ground."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 39,
+      "name": "clover_clump_small",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.6,
+      "description": "A small clump of clover leaves with a couple of trailing sprigs."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 40,
+      "name": "mushrooms_red_brown_mix",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.8,
+      "description": "Two red white-spotted toadstools beside a fat brown-capped mushroom."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 41,
+      "name": "grass_sprout_tiny",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.6,
+      "description": "A tiny sprout of just a few short green grass blades."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 42,
+      "name": "grass_tuft_small_fan",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.7,
+      "description": "A small fan-shaped tuft of green grass blades spreading sideways."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 43,
+      "name": "grass_clump_medium_wide",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.9,
+      "description": "A medium clump of grass with broad blades fanning out evenly."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 44,
+      "name": "grass_tuft_yellow_flowers",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.9,
+      "description": "A grass tuft with a few small yellow flowers blooming among the blades."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 45,
+      "name": "grass_clump_tall_broad",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0,
+      "description": "A tall broad clump of grass with long upward-curving blades."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 46,
+      "name": "grass_patch_leaning_blades",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.9,
+      "description": "A wide patch of grass whose blades lean outward to both sides."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 47,
+      "name": "clover_leaves_scattered",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.6,
+      "description": "A few separated clover leaves scattered loosely on the ground."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 48,
+      "name": "mushrooms_red_toadstool_pair",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.7,
+      "description": "A pair of red toadstools with white spots, one tall and one short."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 49,
+      "name": "mushrooms_brown_cap_trio",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.7,
+      "description": "Three brown-capped mushrooms of different sizes growing together."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 50,
+      "name": "grass_tuft_compact_round",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.8,
+      "description": "A compact rounded tuft of short dense grass blades."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 51,
+      "name": "grass_patch_white_daisies",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0,
+      "description": "A wide grass patch sprinkled with tiny white and yellow daisies."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 52,
+      "name": "grass_blades_tall_narrow",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0,
+      "description": "A narrow upright stand of tall straight grass blades."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 53,
+      "name": "fence_wood_picket_low",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.6,
+      "description": "A low brown wooden picket fence section with grass growing at its base."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 54,
+      "name": "fence_wood_stone_posts",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8,
+      "description": "A wooden picket fence panel set between two grey stone posts with flowers below."
+    },
+    {
+      "sheet": "nature_foliage_sheet",
+      "index": 55,
+      "name": "fence_iron_stone_posts",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.0,
+      "description": "A dark iron railing fence between stone posts with ivy and grass at the base."
+    },
+    {
+      "sheet": "shop_signs_sheet",
+      "index": 0,
+      "name": "sign_weaponsmith_sword",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.5,
+      "description": "Hanging green banner sign on a wooden post showing a silver longsword."
+    },
+    {
+      "sheet": "shop_signs_sheet",
+      "index": 1,
+      "name": "sign_armorer_helmet",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "description": "Blue banner sign with a steel knight helmet hanging from a wooden post."
+    },
+    {
+      "sheet": "shop_signs_sheet",
+      "index": 2,
+      "name": "sign_alchemist_blue_flask",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.5,
+      "description": "Teal banner sign showing a corked flask of glowing blue liquid."
+    },
+    {
+      "sheet": "shop_signs_sheet",
+      "index": 3,
+      "name": "sign_inn_bed",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "description": "Square red board sign with a wooden bed and pillow, hung on a post."
+    },
+    {
+      "sheet": "shop_signs_sheet",
+      "index": 4,
+      "name": "sign_blacksmith_anvil",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "description": "Green banner sign with an anvil and crossed hammer on a wooden post."
+    },
+    {
+      "sheet": "shop_signs_sheet",
+      "index": 5,
+      "name": "sign_tavern_beer_mug",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "description": "Round iron-rimmed wooden sign showing a foaming mug of beer."
+    },
+    {
+      "sheet": "shop_signs_sheet",
+      "index": 6,
+      "name": "sign_fishmonger_fish",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.3,
+      "description": "Blue banner sign with a silver fish, plus a small lantern on the post arm."
+    },
+    {
+      "sheet": "shop_signs_sheet",
+      "index": 7,
+      "name": "sign_apothecary_red_flask",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.3,
+      "description": "Sign shaped as a round glass bottle filled with red potion, hung from a scrolled iron arm."
+    },
+    {
+      "sheet": "shop_signs_sheet",
+      "index": 8,
+      "name": "sign_moneylender_coin_pouch",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "description": "Golden banner sign showing a money bag with spilled gold coins."
+    },
+    {
+      "sheet": "shop_signs_sheet",
+      "index": 9,
+      "name": "sign_chapel_blue_cross",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.3,
+      "description": "Blue banner with a pale stone cross, hanging from a post topped by a gold spear finial."
+    },
+    {
+      "sheet": "shop_signs_sheet",
+      "index": 10,
+      "name": "sign_wizard_wand",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.3,
+      "description": "Purple banner sign with a sparkling magic wand or staff."
+    },
+    {
+      "sheet": "shop_signs_sheet",
+      "index": 11,
+      "name": "sign_scribe_books_quill",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.3,
+      "description": "Round wooden sign showing stacked blue books with a white quill."
+    },
+    {
+      "sheet": "shop_signs_sheet",
+      "index": 12,
+      "name": "sign_cartographer_compass",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.5,
+      "description": "Blue banner sign with a golden compass rose framed by a laurel wreath."
+    },
+    {
+      "sheet": "shop_signs_sheet",
+      "index": 13,
+      "name": "sign_beekeeper_honeycomb",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "description": "Octagonal wooden sign showing a golden honeycomb with a bee."
+    },
+    {
+      "sheet": "shop_signs_sheet",
+      "index": 14,
+      "name": "sign_bakery_bread",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "description": "Rust-red banner sign with a loaf of bread and wheat stalks."
+    },
+    {
+      "sheet": "shop_signs_sheet",
+      "index": 15,
+      "name": "sign_herbalist_potted_plant",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "description": "Green sign board with a potted seedling, ivy climbing the wooden post."
+    },
+    {
+      "sheet": "shop_signs_sheet",
+      "index": 16,
+      "name": "sign_hunter_stag_head",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "description": "Grey shield-shaped sign showing a white antlered stag head."
+    },
+    {
+      "sheet": "shop_signs_sheet",
+      "index": 17,
+      "name": "sign_healer_red_cross",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "description": "Deep red banner sign bearing a pale cross, hung on a plain wooden post."
+    },
+    {
+      "sheet": "signposts_banners_sheet",
+      "index": 0,
+      "name": "signpost_single_arrow",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.2,
+      "description": "A wooden post with one arrow-shaped directional board pointing right, standing on a grass-and-stone base."
+    },
+    {
+      "sheet": "signposts_banners_sheet",
+      "index": 1,
+      "name": "signpost_triple_arrow",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.3,
+      "description": "A wooden signpost carrying three arrow boards, one pointing left and two pointing right."
+    },
+    {
+      "sheet": "signposts_banners_sheet",
+      "index": 2,
+      "name": "banner_winged_sword_gantry",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.5,
+      "description": "A blue pennant with a gold trident emblem hanging by rings from the crossbeam of a braced wooden gantry post."
+    },
+    {
+      "sheet": "signposts_banners_sheet",
+      "index": 3,
+      "name": "sign_arrow_blank_ivy",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "description": "A large blank wooden sign board hanging on chains from an ivy-covered post."
+    },
+    {
+      "sheet": "signposts_banners_sheet",
+      "index": 4,
+      "name": "signpost_arrows_lantern",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.6,
+      "description": "A tall post stacked with four small directional arrow boards and a lit lantern hanging from a side arm."
+    },
+    {
+      "sheet": "signposts_banners_sheet",
+      "index": 5,
+      "name": "banner_winged_sword_pole",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.2,
+      "description": "A slim wooden pole with a blue pennant bearing a gold trident emblem strapped across its top."
+    },
+    {
+      "sheet": "signposts_banners_sheet",
+      "index": 6,
+      "name": "banner_dragon_green",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "description": "A green pennant with a coiled orange dragon hanging from a rope-lashed wooden post."
+    },
+    {
+      "sheet": "signposts_banners_sheet",
+      "index": 7,
+      "name": "banner_crossed_swords_red",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.5,
+      "description": "A red pennant showing two crossed white swords, hung with tassels from a wooden crossbeam post."
+    },
+    {
+      "sheet": "signposts_banners_sheet",
+      "index": 8,
+      "name": "banner_sword_bow_maroon",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.2,
+      "description": "A dark red pennant with a white sword crossed over a bow, hanging from a plain wooden post."
+    },
+    {
+      "sheet": "signposts_banners_sheet",
+      "index": 9,
+      "name": "banner_gold_cross_blue",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.3,
+      "description": "A blue pennant bearing a gold cross, hung from the arm of a wooden post."
+    },
+    {
+      "sheet": "signposts_banners_sheet",
+      "index": 10,
+      "name": "banner_white_tree_green",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "description": "A green pennant with a white tree emblem hanging beside a small pole flag on a wooden post."
+    },
+    {
+      "sheet": "signposts_banners_sheet",
+      "index": 11,
+      "name": "banner_rampant_lion_red",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "description": "A red pennant with a gold rampant lion hanging from a capped wooden post."
+    },
+    {
+      "sheet": "signposts_banners_sheet",
+      "index": 12,
+      "name": "banner_pair_star_castle",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.6,
+      "description": "A tall post carrying two stacked blue banners, an upper gold compass star and a lower white castle keep."
+    },
+    {
+      "sheet": "signposts_banners_sheet",
+      "index": 13,
+      "name": "notice_board_wide_parchments",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.9,
+      "description": "A wide wooden notice board on two stone-footed legs, pinned with several parchment notices and trailing ivy."
+    },
+    {
+      "sheet": "signposts_banners_sheet",
+      "index": 14,
+      "name": "notice_board_lantern",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.0,
+      "description": "A roofed wooden notice board pinned with a map and papers, with a lit lantern on a side arm."
+    },
+    {
+      "sheet": "signposts_banners_sheet",
+      "index": 15,
+      "name": "banner_rail_three_crests",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.0,
+      "description": "A long rail between two lashed posts hung with three pennants: a red cross, a green gold eagle, and a red knot."
+    },
+    {
+      "sheet": "signposts_banners_sheet",
+      "index": 16,
+      "name": "banner_beam_fleur_mountain",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.2,
+      "description": "A wooden crossbeam post hung with two blue pennants, one gold fleur-de-lis and one snowy mountain range."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 0,
+      "name": "bench_wood_iron_feet",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.6,
+      "description": "A wooden park bench with a slatted backrest resting on dark iron feet."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 1,
+      "name": "table_low_short_planks",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.4,
+      "description": "A short backless wooden table with a plank top and four stubby legs."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 2,
+      "name": "table_square_small",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.4,
+      "description": "A small square wooden side table with thick braced legs."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 3,
+      "name": "table_long_planks",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.6,
+      "description": "A long low wooden table built from wide planks on chunky legs."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 4,
+      "name": "sacks_grain_pair",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2,
+      "description": "Two burlap grain sacks tied with cord, a big one beside a small one."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 5,
+      "name": "bench_wood_stone_feet",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.7,
+      "description": "A wooden bench with a backrest mounted on stone block feet with grass tufts."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 6,
+      "name": "crate_open_timber_posts",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.5,
+      "description": "An open wooden crate holding upright timber posts and beams."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 7,
+      "name": "barrel_oak_straight",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8,
+      "description": "A tall oak barrel with riveted iron bands and a flat wooden lid."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 8,
+      "name": "barrel_oak_rounded",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8,
+      "description": "A bulging oak barrel with iron hoops, wider at the belly than the lid."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 9,
+      "name": "stool_round_wooden",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3,
+      "description": "A round-topped wooden stool standing on four splayed legs."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 10,
+      "name": "rail_panel_ivy_vines",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.7,
+      "description": "A low wooden rail panel overgrown with ivy and small red berries."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 11,
+      "name": "bin_metal_lidded",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4,
+      "description": "A dented grey metal rubbish bin with a domed lid and carry handle."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 12,
+      "name": "rail_panel_stone_footings",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8,
+      "description": "A wooden rail panel with two crossbars resting on stone block footings with grass."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 13,
+      "name": "cart_hand_solid_planks",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.4,
+      "description": "A wooden hand cart with solid plank sides, a spoked wheel and a pull shaft."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 14,
+      "name": "cart_hand_slatted_shafts",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.3,
+      "description": "A wooden cart with slatted open sides and two long pull shafts."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 15,
+      "name": "well_stone_tiled_roof",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 3.5,
+      "description": "A round stone well with a red tiled roof and a bucket on the winch rope."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 16,
+      "name": "fountain_stone_statue",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 4.5,
+      "description": "A round stone fountain with a central statue spilling water into the basin."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 17,
+      "name": "table_wood_braced_legs",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.5,
+      "description": "A wooden plank table with angled corner braces on its legs."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 18,
+      "name": "barrel_wood_domed_lid",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.7,
+      "description": "A wooden water tub with iron bands, a rounded plank cover and a side handle."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 19,
+      "name": "pillar_stone_carved_capital",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.2,
+      "description": "A short stone column with a carved square capital, wrapped in vines and grass."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 20,
+      "name": "pillar_stone_domed_wide",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.2,
+      "description": "A wide stone pillar with a domed top and creeping vines around its base."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 21,
+      "name": "pillar_stone_narrow_round",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.3,
+      "description": "A narrow rounded stone bollard with ivy climbing it and flowers at its foot."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 22,
+      "name": "garden_bed_tomatoes",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.0,
+      "description": "A raised wooden garden bed planted with leafy rows of ripe tomatoes."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 23,
+      "name": "bucket_water_tap_pail",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.0,
+      "description": "A wooden water bucket filled to the brim under a metal tap, with a small pail beside it."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 24,
+      "name": "trough_stone_water",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8,
+      "description": "A long stone trough full of water with a spout at one end and grass around the base."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 25,
+      "name": "fence_rail_stone_posts",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8,
+      "description": "A two-rail wooden fence section between stone posts with flowers at the bottom."
+    },
+    {
+      "sheet": "village_props_sheet",
+      "index": 26,
+      "name": "fence_picket_wood",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8,
+      "description": "A wooden picket fence with pointed slats and grass and flowers along its base."
+    }
+  ]
+}
