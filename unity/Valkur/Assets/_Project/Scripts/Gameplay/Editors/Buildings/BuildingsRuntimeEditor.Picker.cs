@@ -32,6 +32,7 @@ namespace Valkur.Gameplay.Buildings
             foreach (var tmpl in _catalog.Templates)
             {
                 if (tmpl == null) continue;
+                if (!MatchesCategoryFilter(tmpl)) continue;
                 int id = tmpl.templateId;
                 if (filter.Length > 0)
                 {
@@ -56,8 +57,36 @@ namespace Valkur.Gameplay.Buildings
                 et.triggers.Add(pde);
             }
             if (_statusTmp != null)
-                _statusTmp.text = filter.Length == 0 ? $"{shown} templates" : $"{shown} match '{_searchFilter}'";
+            {
+                string scope = IsCategoryFilterActive
+                    ? $" in {BuildingCategory.Label(ActiveCategory)}"
+                    : "";
+                _statusTmp.text = filter.Length == 0
+                    ? $"{shown} templates{scope}"
+                    : $"{shown} match '{_searchFilter}'{scope}";
+            }
         }
+
+        /// <summary>
+        /// Active category tab, meaningful only when <see cref="IsCategoryFilterActive"/>.
+        /// </summary>
+        private BuildingCategory.Category ActiveCategory
+            => System.Enum.TryParse(_categoryFilter, out BuildingCategory.Category c)
+                ? c
+                : BuildingCategory.Category.Structures;
+
+        /// <summary>False on the "All" tab and before any tab has been chosen.</summary>
+        private bool IsCategoryFilterActive
+            => !string.IsNullOrEmpty(_categoryFilter)
+               && _categoryFilter != BuildingsEditorUIBuilder.CATEGORY_ALL_KEY
+               && System.Enum.TryParse(_categoryFilter, out BuildingCategory.Category _);
+
+        /// <summary>
+        /// Category gate for the picker grid. Kept separate from the search gate so the two
+        /// compose: a query narrows whatever the active tab already shows.
+        /// </summary>
+        private bool MatchesCategoryFilter(BuildingTemplateData template)
+            => !IsCategoryFilterActive || BuildingCategory.Of(template) == ActiveCategory;
 
         private void SelectTemplate(int id)
         {

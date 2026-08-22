@@ -61,6 +61,7 @@ namespace Valkur.Gameplay.Buildings
 
             // Buildings panel refs
             public TMP_InputField  SearchBox;
+            public TabStrip        CategoryTabStrip;
             public RectTransform   PickerContent;
             public TextMeshProUGUI StatusText;
 
@@ -148,7 +149,8 @@ namespace Valkur.Gameplay.Buildings
             Action         onFill       = null,
             Action         onErase           = null,
             Action         onEraseTilesArea  = null,
-            Action         onEraseZone       = null)
+            Action         onEraseZone       = null,
+            Action<string> onCategoryChanged = null)
         {
             // Reserve space below the menu bar so draggable panels cannot occlude it
             DraggablePanel.TopReservedPx = MENUBAR_HEIGHT;
@@ -163,7 +165,7 @@ namespace Valkur.Gameplay.Buildings
                 onAddBuilding, onRemoveBuilding, onAddOnSystem,
                 onUndo, onRedo, onSave, onReload, onFill, onErase);
             BuildEraseSubPanel(canvasT, ref refs, onEraseTilesArea, onEraseZone);
-            BuildBuildingsPanel(canvasT, ref refs, onSearchChanged);
+            BuildBuildingsPanel(canvasT, ref refs, onSearchChanged, onCategoryChanged);
             BuildCollidersPanel(canvasT, ref refs,
                 onToggleCollidersVisible,
                 onCollScopeToggle,

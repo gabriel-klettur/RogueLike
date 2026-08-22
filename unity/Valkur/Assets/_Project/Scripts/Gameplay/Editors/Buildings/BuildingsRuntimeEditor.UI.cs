@@ -46,6 +46,7 @@ namespace Valkur.Gameplay.Buildings
                 onAddOnSystem:     () => OnAddOnSystemClicked(),
                 onToggleTutorial:  () => ToggleTutorial(),
                 onSearchChanged:   v  => { _searchFilter = v ?? ""; RefreshPicker(); },
+                onCategoryChanged: k  => { _categoryFilter = k ?? ""; RefreshPicker(); },
                 onSplitChanged:    f  => OnSplitSliderChanged(f),
                 onZBottomMinus:    () => AdjustZ(_activeBuilding, bottom: true,  delta: -1),
                 onZBottomPlus:     () => AdjustZ(_activeBuilding, bottom: true,  delta: +1),

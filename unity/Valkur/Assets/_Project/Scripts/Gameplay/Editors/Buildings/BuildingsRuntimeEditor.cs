@@ -188,6 +188,10 @@ namespace Valkur.Gameplay.Buildings
         private bool _buildingsVisible = true;
         private TMP_InputField _searchBox;
         private string _searchFilter = "";
+        // Active category tab key: either BuildingsEditorUIBuilder.CATEGORY_ALL_KEY or a
+        // BuildingCategory.Category name. Search and category compose — the grid shows the
+        // templates that satisfy both.
+        private string _categoryFilter = "";
 
         // Inspector controls (Properties panel) — built once, refreshed per active building
         private GameObject _inspectorRoot;

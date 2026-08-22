@@ -13,8 +13,19 @@ namespace Valkur.Gameplay.Buildings
     public static partial class BuildingsEditorUIBuilder
     {
 
+        /// <summary>Tab key that means "do not filter". Kept out of the enum on purpose.</summary>
+        internal const string CATEGORY_ALL_KEY = "__all";
+
+        /// <summary>
+        /// Tabs per row in the category block. Three matches the picker grid below it, so the
+        /// tab edges line up with the template slots and each label gets ~121 px of the
+        /// panel's 368 px content width.
+        /// </summary>
+        private const int CATEGORY_TAB_COLUMNS = 3;
+
         private static void BuildBuildingsPanel(Transform canvasT, ref UIRefs refs,
-            Action<string> onSearchChanged)
+            Action<string> onSearchChanged,
+            Action<string> onCategoryChanged)
         {
             float buildX = PANEL_GAP + MODES_W + PANEL_GAP;
             refs.BuildingsDropdown = MakeDrop("BuildingsPanel", canvasT,
@@ -23,6 +34,19 @@ namespace Valkur.Gameplay.Buildings
 
             refs.SearchBox = SearchBox.Create(t, "Search buildings\u2026",
                 v => onSearchChanged?.Invoke(v ?? ""));
+
+            // Category tabs. 506 templates in one flat grid is unusable: 137 of them are
+            // tree variants and another 106 are ground flora, so everything else is a long
+            // scroll away. Search still runs across whatever the active tab shows, so
+            // "All" plus a query behaves exactly as the picker did before the tabs existed.
+            var catStrip = TabStrip.CreateWrapped(t, "BuildingCategoryTabStrip",
+                CATEGORY_TAB_COLUMNS, rowHeight: 22f);
+            catStrip.LabelFontSize = 10f;
+            refs.CategoryTabStrip = catStrip;
+            catStrip.AddTab(CATEGORY_ALL_KEY, "All", null);
+            foreach (var cat in BuildingCategory.TabOrder)
+                catStrip.AddTab(cat.ToString(), BuildingCategory.Label(cat), null);
+            catStrip.TabChanged += (_, key) => onCategoryChanged?.Invoke(key);
 
             // Grid picker — needs an explicit LayoutElement so it fills the
             // remaining panel height inside the parent VerticalLayoutGroup
