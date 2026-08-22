@@ -24,11 +24,17 @@ namespace Valkur.Core
         private int _lastScreenWidth;
         private int _lastScreenHeight;
 
+        // Target aspect reduced to an exact integer ratio (2:1 by default).
+        // See CacheIntegerRatio for why the float form isn't enough.
+        private int _ratioW = 2;
+        private int _ratioH = 1;
+
         private float TargetAspect => targetAspectWidth / targetAspectHeight;
 
         private void Awake()
         {
             _cam = GetComponent<Camera>();
+            CacheIntegerRatio();
             SetupBarCamera();
             UpdateViewport();
         }
@@ -54,56 +60,103 @@ namespace Valkur.Core
             _barCam.orthographic = true;
         }
 
+        /// <summary>
+        /// Reduce the authored float aspect to an exact integer ratio p:q.
+        ///
+        /// The viewport is then quantised to (k·p) × (k·q), which is the only
+        /// construction where <c>pixelWidth / pixelHeight</c> comes out
+        /// bit-exactly equal to the target. Rounding the two axes
+        /// independently — the pre-2026-08-22 form — drifts: a 1366×768 window
+        /// produced a 1366×682 viewport whose aspect is 2.002933. That fraction
+        /// of a percent breaks the HORIZONTAL half of
+        /// <c>CameraSetup.SnapOrthoSize</c>'s whole-pixel-per-texel guarantee
+        /// (the snap solves ortho size from pixelHeight only; X inherits it
+        /// solely through <c>Camera.aspect</c>), so tile quad edges land
+        /// mid-pixel and the black camera background shows through as vertical
+        /// seam lines across the tilemap.
+        /// </summary>
+        private void CacheIntegerRatio()
+        {
+            ReduceRatio(targetAspectWidth, targetAspectHeight, out _ratioW, out _ratioH);
+        }
+
+        /// <summary>
+        /// Exact integer form of a float aspect. Internal-static so the EditMode
+        /// suite can exercise the math without a Camera — same pattern as
+        /// <c>CameraSetup.SnapOrthoSize</c>.
+        /// </summary>
+        internal static void ReduceRatio(float aspectW, float aspectH, out int p, out int q)
+        {
+            p = Mathf.Max(1, Mathf.RoundToInt(aspectW * 1000f));
+            q = Mathf.Max(1, Mathf.RoundToInt(aspectH * 1000f));
+            int g = Gcd(p, q);
+            p /= g;
+            q /= g;
+        }
+
+        private static int Gcd(int a, int b)
+        {
+            while (b != 0) { int t = a % b; a = b; b = t; }
+            return a < 1 ? 1 : a;
+        }
+
+        /// <summary>
+        /// Largest exact-ratio box, measured in WHOLE pixels, that fits a window
+        /// of <paramref name="screenW"/> × <paramref name="screenH"/>, centred.
+        ///
+        /// Both dimensions come from one integer scalar k, so the ratio is exact
+        /// and the pixel rect is integer on every axis — the two properties the
+        /// seam depends on. (Integer pixel rect alone was the 2026-05-16 fix for
+        /// the horizontal composite line; exact ratio is the missing half that
+        /// killed the vertical ones.)
+        ///
+        /// Waste is at most (p-1) px of width and (q-1) px of height — one pixel
+        /// at the default 2:1. The leftover becomes letterbox / pillarbox bars,
+        /// which the bar camera paints black.
+        ///
+        /// PURE FUNCTION ON PURPOSE. The 2026-08-22 aspect-drift bug survived a
+        /// test suite because <c>UpdateViewport</c> read <c>Screen.*</c> directly,
+        /// so EditMode could only ever assert against whatever size the Game View
+        /// happened to be at. Everything that decides the viewport now lives here,
+        /// where the suite can sweep every resolution Valkur ships on.
+        /// </summary>
+        internal static RectInt ComputeViewport(int screenW, int screenH, int ratioW, int ratioH)
+        {
+            int sw = Mathf.Max(1, screenW);
+            int sh = Mathf.Max(1, screenH);
+            int p  = Mathf.Max(1, ratioW);
+            int q  = Mathf.Max(1, ratioH);
+
+            int k = Mathf.Max(1, Mathf.Min(sw / p, sh / q));
+            int innerW = k * p;
+            int innerH = k * q;
+
+            // NO Min(sw, ...) clamp here. For any window at least one ratio
+            // unit wide and tall, k*p <= sw and k*q <= sh already hold, so the
+            // clamp would be dead code — except on a window SMALLER than p x q,
+            // where it silently returned an off-ratio box (a 1x1 window gave a
+            // 1x1 viewport, aspect 1:1). That is the exact class of "integer but
+            // wrong ratio" bug this method exists to prevent, so the ratio is
+            // kept unconditionally and the degenerate window gets the minimum
+            // exact box instead. Nothing renders meaningfully at that size.
+            int x = Mathf.Max(0, (sw - innerW) / 2);
+            int y = Mathf.Max(0, (sh - innerH) / 2);
+
+            return new RectInt(x, y, innerW, innerH);
+        }
+
         private void UpdateViewport()
         {
             _lastScreenWidth = Screen.width;
             _lastScreenHeight = Screen.height;
 
-            float windowAspect = (float)Screen.width / Screen.height;
-            float scaleHeight = windowAspect / TargetAspect;
+            int sw = Mathf.Max(1, Screen.width);
+            int sh = Mathf.Max(1, Screen.height);
+            var box = ComputeViewport(sw, sh, _ratioW, _ratioH);
 
-            var rect = new Rect();
-
-            // Critical: round the viewport rect so the resulting pixelRect
-            // has INTEGER dimensions. With the naive fractional rect (e.g.
-            // 0.972), Unity ends up with pixelRect.height = 819.5 — a half-
-            // pixel that Game View composites with a sub-pixel offset,
-            // producing visible horizontal seam lines across the tilemap
-            // ("the blue/black lines" reported on 2026-05-16). Anchoring the
-            // rect to integer pixels eliminates the composite drift; the
-            // letterbox/pillarbox bars stay perfectly black either way.
-
-            if (scaleHeight < 1.0f)
-            {
-                // Pillarbox — window is taller than target. Round the inner
-                // height to an integer pixel count, recompute the rect from
-                // the rounded value. Forcing even avoids the rare half-row
-                // off-by-one at odd screen heights.
-                int innerPxH = Mathf.RoundToInt(scaleHeight * Screen.height);
-                if ((innerPxH & 1) == 1) innerPxH--;
-                if (innerPxH < 2) innerPxH = 2;
-                int innerY = (Screen.height - innerPxH) / 2;
-                rect.width  = 1f;
-                rect.height = (float)innerPxH / Screen.height;
-                rect.x      = 0f;
-                rect.y      = (float)innerY / Screen.height;
-            }
-            else
-            {
-                // Letterbox — window is wider than target. Round the inner
-                // width to an integer pixel count.
-                float scaleWidth = 1.0f / scaleHeight;
-                int innerPxW = Mathf.RoundToInt(scaleWidth * Screen.width);
-                if ((innerPxW & 1) == 1) innerPxW--;
-                if (innerPxW < 2) innerPxW = 2;
-                int innerX = (Screen.width - innerPxW) / 2;
-                rect.width  = (float)innerPxW / Screen.width;
-                rect.height = 1f;
-                rect.x      = (float)innerX / Screen.width;
-                rect.y      = 0f;
-            }
-
-            _cam.rect = rect;
+            _cam.rect = new Rect(
+                (float)box.x / sw, (float)box.y / sh,
+                (float)box.width / sw, (float)box.height / sh);
         }
 
         private void OnDestroy()
@@ -119,6 +172,7 @@ namespace Valkur.Core
         {
             if (targetAspectWidth <= 0f) targetAspectWidth = 1f;
             if (targetAspectHeight <= 0f) targetAspectHeight = 1f;
+            CacheIntegerRatio();
         }
 #endif
     }
