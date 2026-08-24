@@ -134,6 +134,83 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
             Assert.IsNull(FindButton(drag), "ShowCloseButton=false must suppress the button.");
         }
 
+        // ── Surviving a laid-out header ─────────────────────────────────────
+
+        /// <summary>
+        /// Every editor's MakeDrop puts a HorizontalLayoutGroup on the panel header. A layout
+        /// group with childControlWidth sizes a child from its ILayoutElement preferred width,
+        /// which for a sprite-less Image is ZERO, and rewrites the child's anchors on the way.
+        /// Measured live in the Particles editor, all five panels reported a close button rect
+        /// of (0.00, 24.00): invisible, and with no area to receive a click.
+        /// </summary>
+        private DraggablePanel BuildPanelWithLaidOutHeader()
+        {
+            var drag = BuildPanel();
+            var hdrRt = drag.DragHeader;
+            hdrRt.sizeDelta = new Vector2(200f, 24f);
+
+            var hlg = hdrRt.gameObject.AddComponent<HorizontalLayoutGroup>();
+            hlg.childControlWidth      = true;
+            hlg.childControlHeight     = true;
+            hlg.childForceExpandWidth  = false;
+            hlg.childForceExpandHeight = true;
+            hlg.padding = new RectOffset(8, 8, 0, 0);
+            return drag;
+        }
+
+        [Test]
+        public void CloseButton_OptsOutOfALaidOutHeader()
+        {
+            var drag = BuildPanelWithLaidOutHeader();
+            drag.EnsureChrome();
+
+            var le = FindButton(drag).GetComponent<LayoutElement>();
+            Assert.IsNotNull(le, "The button needs a LayoutElement to opt out of the group.");
+            Assert.IsTrue(le.ignoreLayout,
+                "Without ignoreLayout the group sizes the button from a sprite-less Image: zero wide.");
+        }
+
+        [Test]
+        public void CloseButton_KeepsAClickableWidth_UnderALayoutGroup()
+        {
+            var drag = BuildPanelWithLaidOutHeader();
+            drag.EnsureChrome();
+
+            var rt = (RectTransform)FindButton(drag);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(drag.DragHeader);
+
+            Assert.Greater(rt.rect.width, 1f,
+                "A zero-width button is invisible and cannot be clicked — the shipped bug.");
+            Assert.AreEqual(1f, rt.anchorMin.x, 0.001f,
+                "The group must not have rewritten the top-right anchoring.");
+        }
+
+        [Test]
+        public void EnsureChrome_ReservesHeaderPadding_SoTitleDoesNotRunUnderTheButton()
+        {
+            var drag = BuildPanelWithLaidOutHeader();
+            var hlg  = drag.DragHeader.GetComponent<HorizontalLayoutGroup>();
+            Assert.AreEqual(8, hlg.padding.right, "Precondition: the builder's own padding.");
+
+            drag.EnsureChrome();
+
+            Assert.GreaterOrEqual(hlg.padding.right, 16,
+                "The button no longer takes part in layout, so the group must reserve its width.");
+        }
+
+        [Test]
+        public void EnsureChrome_NeverNarrowsAnExistingHeaderPadding()
+        {
+            var drag = BuildPanelWithLaidOutHeader();
+            var hlg  = drag.DragHeader.GetComponent<HorizontalLayoutGroup>();
+            hlg.padding = new RectOffset(8, 64, 0, 0);
+
+            drag.EnsureChrome();
+
+            Assert.AreEqual(64, hlg.padding.right,
+                "A header that already reserves more room keeps its own value.");
+        }
+
         // ── Closing actually closes ─────────────────────────────────────────
 
         /// <summary>

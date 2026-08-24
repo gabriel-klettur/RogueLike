@@ -20,8 +20,9 @@ namespace Valkur.UIKit
     /// </summary>
     public partial class DraggablePanel
     {
-        private const string CLOSE_BUTTON_NAME = "PanelCloseButton";
-        private const float  CLOSE_BUTTON_SIZE = 16f;
+        private const string CLOSE_BUTTON_NAME   = "PanelCloseButton";
+        private const float  CLOSE_BUTTON_SIZE   = 16f;
+        private const float  CLOSE_BUTTON_MARGIN = 4f;
         private const string PREFS_PREFIX      = "Valkur.Panel.Closed.";
 
         /// <summary>
@@ -106,7 +107,16 @@ namespace Valkur.UIKit
             rt.anchorMax = new Vector2(1f, 0.5f);
             rt.pivot     = new Vector2(1f, 0.5f);
             rt.sizeDelta = new Vector2(CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE);
-            rt.anchoredPosition = new Vector2(-4f, 0f);
+            rt.anchoredPosition = new Vector2(-CLOSE_BUTTON_MARGIN, 0f);
+
+            // Opting out of layout is what makes the anchoring above survive. Every editor's
+            // MakeDrop puts a HorizontalLayoutGroup on the header with childControlWidth =
+            // true, and a layout group sizes a child from its ILayoutElement preferred width
+            // — which for a sprite-less Image is ZERO. It also rewrites the child's anchors.
+            // The result was a 0x24 rect: invisible, and with no area to click. Measured live
+            // in the Particles editor, all five panels reported rect (0.00, 24.00).
+            go.AddComponent<LayoutElement>().ignoreLayout = true;
+            ReserveHeaderPaddingForButton();
 
             var img = go.GetComponent<Image>();
             img.color = new Color(0.30f, 0.10f, 0.12f, 0.85f);
@@ -129,6 +139,26 @@ namespace Valkur.UIKit
             _closeButton = go.GetComponent<Button>();
             _closeButton.targetGraphic = img;
             _closeButton.onClick.AddListener(CloseFromHeaderButton);
+        }
+
+        /// <summary>
+        /// Widens the header layout group's right padding so its content — the title, or a
+        /// narrow panel's header button — does not run underneath the close button, which no
+        /// longer takes part in that layout. Never narrows an existing padding.
+        /// </summary>
+        private void ReserveHeaderPaddingForButton()
+        {
+            var group = DragHeader.GetComponent<HorizontalOrVerticalLayoutGroup>();
+            if (group == null) return;
+
+            int needed = Mathf.CeilToInt(CLOSE_BUTTON_SIZE + CLOSE_BUTTON_MARGIN * 2f);
+            if (group.padding.right >= needed) return;
+
+            // Assigned as a new RectOffset rather than mutated in place: writing the field of
+            // the existing one does not dirty the group, so the layout would keep the old value.
+            group.padding = new RectOffset(
+                group.padding.left, needed, group.padding.top, group.padding.bottom);
+            LayoutRebuilder.MarkLayoutForRebuild(DragHeader);
         }
 
         /// <summary>
