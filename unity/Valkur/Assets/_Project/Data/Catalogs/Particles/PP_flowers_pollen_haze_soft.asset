@@ -11,9 +11,9 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 27d602a19fa51234eb9802e4cee9caaa, type: 3}
   m_Name: PP_flowers_pollen_haze_soft
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   id: flowers_pollen_haze_soft
-  displayName: Flowers Pollen Haze (Soft)
+  displayName: Pollen Haze
   type: vegetation
   vfx:
     kind: smoke_emitter
@@ -25,9 +25,9 @@ MonoBehaviour:
     gravity: 0
     drag: 0
     lifespan: 7
-    sizeMin: 1
-    sizeMax: 1.9
-    sizeAspect: 1.7
+    sizeMin: 0.8
+    sizeMax: 1.35
+    sizeAspect: 1.5
     colors:
     - {r: 1, g: 1, b: 1, a: 1}
     color: {r: 1, g: 1, b: 1, a: 1}
@@ -39,6 +39,10 @@ MonoBehaviour:
     startRotationJitterDegrees: 180
     rotationSpeedDegrees: 8
     worldSpace: 0
+    sortingLayer: FloorDecals
+    sortingOrder: 0
+    sortingFudge: 0
+    respondsToAmbientLight: 1
     radius: 0.5
     arcRangeDegrees: 45
     segments: 10
@@ -64,9 +68,9 @@ MonoBehaviour:
     - time: 0
       value: 0
     - time: 0.25
-      value: 0.075
+      value: 0.095
     - time: 0.7
-      value: 0.05
+      value: 0.062
     - time: 1
       value: 0
     colorOverLife:
@@ -87,4 +91,5 @@ MonoBehaviour:
     turnoverCycles: 0
     turnoverMinWidth: 0.12
     outerRadius: 0
+  layerOnly: 1
   layers: []

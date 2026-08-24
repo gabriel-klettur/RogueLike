@@ -10,40 +10,40 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 27d602a19fa51234eb9802e4cee9caaa, type: 3}
-  m_Name: PP_flowers_pollen_drift_add
+  m_Name: PP_flowers_pollen_pink_glints_add
   m_EditorClassIdentifier: 
-  id: flowers_pollen_drift_add
-  displayName: Pollen Motes
+  id: flowers_pollen_pink_glints_add
+  displayName: Pink Glint
   type: vegetation
   vfx:
     kind: aura
     loops: 1
-    emitRate: 1.6
+    emitRate: 1.8
     count: 12
     burstIntervalSeconds: 1
-    speed: 0.1
+    speed: 0.05
     gravity: 0
     drag: 0
     orbitalSpeedDegrees: 0
     radialSpeed: 0
-    lifespan: 3.5
-    sizeMin: 0.05
-    sizeMax: 0.13
+    lifespan: 3
+    sizeMin: 0.09
+    sizeMax: 0.22
     sizeAspect: 1
     colors:
     - {r: 1, g: 1, b: 1, a: 1}
     color: {r: 1, g: 1, b: 1, a: 1}
     additive: 1
-    colorIntensity: 1.5
-    textureShape: 4
+    colorIntensity: 1.6
+    textureShape: 7
     textureSoftness: 0.35
     customSprite: {fileID: 0}
     startRotationJitterDegrees: 180
-    rotationSpeedDegrees: 30
+    rotationSpeedDegrees: 65
     rotationOneWay: 0
     worldSpace: 0
     sortingLayer: ObjectsLow
-    sortingOrder: 2
+    sortingOrder: 3
     sortingFudge: 0
     respondsToAmbientLight: 1
     radius: 0.5
@@ -54,44 +54,52 @@ MonoBehaviour:
     thickness: 0.0625
     swayAmp: 0.021875
     swaySpeed: 0.12
-    spawnWidth: 1.6
-    spawnHeight: 1.2
+    spawnWidth: 2
+    spawnHeight: 1.3
     directionDegrees: -1
     directionSpreadDegrees: 15
     dispersion: 0
-    gravityVector: {x: 0.06, y: 0.34}
+    gravityVector: {x: 0.03, y: 0.16}
     useGravityVector: 1
     sizeOverLife:
     - time: 0
-      value: 0.3
-    - time: 0.2
+      value: 0.6
+    - time: 0.15
       value: 1
     - time: 1
-      value: 0.2
+      value: 0.7
     alphaOverLife:
     - time: 0
       value: 0
-    - time: 0.1
-      value: 0.75
-    - time: 0.5
-      value: 0.4
+    - time: 0.08
+      value: 0.85
+    - time: 0.22
+      value: 0.12
+    - time: 0.38
+      value: 0.85
+    - time: 0.55
+      value: 0.08
+    - time: 0.72
+      value: 0.8
+    - time: 0.88
+      value: 0.15
     - time: 1
       value: 0
     colorOverLife:
     - time: 0
-      color: {r: 1, g: 1, b: 0.95, a: 1}
+      color: {r: 1, g: 1, b: 1, a: 1}
     - time: 0.5
-      color: {r: 1, g: 0.88, b: 0.5, a: 1}
+      color: {r: 1, g: 0.8, b: 0.9, a: 1}
     - time: 1
-      color: {r: 1, g: 0.75, b: 0.3, a: 1}
+      color: {r: 1, g: 0.6, b: 0.8, a: 1}
     flipbookFrames: []
     flipbookCycles: 1
     flipbookRandomStartFrame: 0
     noiseEnabled: 1
-    noiseStrength: 0.15
-    noiseFrequency: 0.35
-    noiseScrollSpeed: 0.18
-    noiseVerticalScale: 0.45
+    noiseStrength: 0.06
+    noiseFrequency: 0.3
+    noiseScrollSpeed: 0.2
+    noiseVerticalScale: 0.5
     turnoverCycles: 0
     turnoverMinWidth: 0.12
     outerRadius: 0

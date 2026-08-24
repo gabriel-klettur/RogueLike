@@ -11,9 +11,9 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 27d602a19fa51234eb9802e4cee9caaa, type: 3}
   m_Name: PP_flowers_pollen_glints_add
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   id: flowers_pollen_glints_add
-  displayName: Flowers Pollen Glints (Add)
+  displayName: Pollen Glint
   type: vegetation
   vfx:
     kind: aura
@@ -39,6 +39,10 @@ MonoBehaviour:
     startRotationJitterDegrees: 180
     rotationSpeedDegrees: 65
     worldSpace: 0
+    sortingLayer: ObjectsLow
+    sortingOrder: 3
+    sortingFudge: 0
+    respondsToAmbientLight: 1
     radius: 0.5
     arcRangeDegrees: 45
     segments: 10
@@ -87,12 +91,13 @@ MonoBehaviour:
     flipbookFrames: []
     flipbookCycles: 1
     flipbookRandomStartFrame: 0
-    noiseEnabled: 0
-    noiseStrength: 0
-    noiseFrequency: 0.5
+    noiseEnabled: 1
+    noiseStrength: 0.06
+    noiseFrequency: 0.3
     noiseScrollSpeed: 0.2
-    noiseVerticalScale: 1
+    noiseVerticalScale: 0.5
     turnoverCycles: 0
     turnoverMinWidth: 0.12
     outerRadius: 0
+  layerOnly: 1
   layers: []

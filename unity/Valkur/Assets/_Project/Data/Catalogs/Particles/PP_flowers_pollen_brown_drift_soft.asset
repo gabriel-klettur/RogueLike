@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 27d602a19fa51234eb9802e4cee9caaa, type: 3}
-  m_Name: PP_flowers_pollen_drift_add
+  m_Name: PP_flowers_pollen_brown_drift_soft
   m_EditorClassIdentifier: 
-  id: flowers_pollen_drift_add
-  displayName: Pollen Motes
+  id: flowers_pollen_brown_drift_soft
+  displayName: Brown Motes
   type: vegetation
   vfx:
     kind: aura
@@ -33,8 +33,8 @@ MonoBehaviour:
     colors:
     - {r: 1, g: 1, b: 1, a: 1}
     color: {r: 1, g: 1, b: 1, a: 1}
-    additive: 1
-    colorIntensity: 1.5
+    additive: 0
+    colorIntensity: 1
     textureShape: 4
     textureSoftness: 0.35
     customSprite: {fileID: 0}
@@ -79,11 +79,11 @@ MonoBehaviour:
       value: 0
     colorOverLife:
     - time: 0
-      color: {r: 1, g: 1, b: 0.95, a: 1}
+      color: {r: 0.9, g: 0.8, b: 0.62, a: 1}
     - time: 0.5
-      color: {r: 1, g: 0.88, b: 0.5, a: 1}
+      color: {r: 0.66, g: 0.48, b: 0.3, a: 1}
     - time: 1
-      color: {r: 1, g: 0.75, b: 0.3, a: 1}
+      color: {r: 0.44, g: 0.3, b: 0.17, a: 1}
     flipbookFrames: []
     flipbookCycles: 1
     flipbookRandomStartFrame: 0
