@@ -29,6 +29,10 @@ namespace Valkur.Gameplay.VFX
 
             if (overUi) return;
 
+            // Resize handles come first: a click that lands on one must not also re-select an
+            // emitter under it or place a new one, and a drag in progress owns the mouse.
+            if (HandleBoundsEditing(worldPos)) return;
+
             // RMB drag to move an existing instance.
             if (_dragging && _dragTarget != null)
             {
@@ -102,31 +106,72 @@ namespace Valkur.Gameplay.VFX
             }
         }
 
+        /// <summary>
+        /// Grab radius for an emitter the cursor is NOT inside. A footprint is the honest
+        /// target, but a pollen haze is 2.2 units wide and a dash puff a fifth of a unit —
+        /// without a floor the small ones would be unclickable, which is the behaviour this
+        /// hit test replaced.
+        /// </summary>
+        private const float EMITTER_GRAB_RADIUS = 0.6f;
+
         // Hit-test a ParticleEmitter under the cursor. Walks up parents because
         // the emitter is on the same GO that holds a ParticleSystem child.
+        //
+        // Picking follows the OUTLINE: whatever area the marker draws is the area that
+        // selects it. It used to be a fixed 0.5-unit circle for every preset, so a placed
+        // pollen field could only be grabbed near its centre while its outline claimed a
+        // 2.2 x 1.8 box, and two emitters a unit apart were both "under" a click between
+        // them with no rule saying which won.
         private GameObject HitTestEmitter(Vector3 worldPos)
         {
             var col = Physics2D.OverlapCircle(worldPos, 0.5f);
             if (col != null)
             {
-                var emitter = col.GetComponentInParent<ParticleEmitter>();
-                if (emitter != null) return emitter.gameObject;
+                var collided = col.GetComponentInParent<ParticleEmitter>();
+                if (collided != null) return collided.gameObject;
             }
-            // Fallback: nearest ParticleEmitter within radius.
+
             var all = FindObjectsOfType<ParticleEmitter>();
-            float bestSqr = 0.6f * 0.6f;
-            GameObject best = null;
+
+            // Inside a footprint beats near one, and the SMALLEST footprint containing the
+            // cursor wins: a haze layer two units across otherwise swallows every precise
+            // emitter an author places inside it, and the big one stays reachable anywhere
+            // the small one is not.
+            GameObject inside = null;
+            float insideArea = float.MaxValue;
+            GameObject nearest = null;
+            float nearestSqr = EMITTER_GRAB_RADIUS * EMITTER_GRAB_RADIUS;
+
             foreach (var em in all)
             {
                 if (em == null) continue;
-                float sqr = (em.transform.position - worldPos).sqrMagnitude;
-                if (sqr <= bestSqr)
+
+                Vector2 offset = (Vector2)(em.transform.position - worldPos);
+
+                // Inflated for the click, drawn at its true size: a resized-down emitter can
+                // be a couple of pixels across, and a marker that grew itself to stay
+                // clickable would be lying about the area it describes.
+                var footprint = ParticleFootprint.OfLive(em).Inflated(ParticleFootprint.MinHalfExtent);
+
+                if (footprint.Contains(-offset))
                 {
-                    bestSqr = sqr;
-                    best = em.gameObject;
+                    if (footprint.Area < insideArea)
+                    {
+                        insideArea = footprint.Area;
+                        inside = em.gameObject;
+                    }
+                    continue;
+                }
+
+                float sqr = offset.sqrMagnitude;
+                if (sqr <= nearestSqr)
+                {
+                    nearestSqr = sqr;
+                    nearest = em.gameObject;
                 }
             }
-            return best;
+
+            return inside != null ? inside : nearest;
         }
 
         // â”€â”€ Place â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -138,6 +183,20 @@ namespace Valkur.Gameplay.VFX
             if (preset == null)
             {
                 SetStatus($"Spawn failed: preset '{presetId}' not in catalog.");
+                return;
+            }
+            // Reject layer-only presets. RefreshPicker already denies them a placement
+            // tile, but that is a hint, not a gate: the Table view still selects them —
+            // deliberately, since that is where they are edited — so Place mode can reach
+            // one, and the click would write a real instance into particles_instances.json.
+            // What lands on the map is then the composite PLUS a second copy of one of its
+            // own layers, at whatever opacity that layer carries, with nothing in the UI
+            // saying so. The refusal is the enforcement; the hidden tile is only the hint.
+            if (preset.layerOnly)
+            {
+                SetStatus($"Refused: '{presetId}' is layer-only — it belongs inside another " +
+                          "preset's layers, not on the map as its own instance. Placing it " +
+                          "beside its composite would silently double that layer.");
                 return;
             }
             // Reject finite (one-shot) presets — they cannot be placed as persistent decorations.
