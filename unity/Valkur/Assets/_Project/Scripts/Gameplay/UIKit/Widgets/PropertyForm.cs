@@ -11,8 +11,13 @@ namespace Valkur.UIKit
     /// Mirrors Python's properties panels (entities, spawner, items). Rows
     /// of [label | editor] where editor can be text/int/float/bool/dropdown.
     /// Values are pushed live via onChange; the form does not own the data.
+    ///
+    /// Rows land as direct children of this transform, in the order they were added.
+    /// A form that calls <see cref="BeginTab"/> routes them into per-tab pages instead;
+    /// that is entirely opt-in and lives in PropertyForm.Tabs.cs, which is also where
+    /// <see cref="RowParent"/> — the single branch the whole feature hangs off — is defined.
     /// </summary>
-    public sealed class PropertyForm : MonoBehaviour
+    public sealed partial class PropertyForm : MonoBehaviour
     {
         private readonly Dictionary<string, Component> _fields = new Dictionary<string, Component>();
 
@@ -37,7 +42,7 @@ namespace Valkur.UIKit
         /// </summary>
         public void AddHeader(string label)
         {
-            var go = UIFactory.CreateUI("Header_" + label, transform);
+            var go = UIFactory.CreateUI("Header_" + label, RowParent);
             go.AddComponent<LayoutElement>().preferredHeight = 20f;
             var tmp = go.AddComponent<TextMeshProUGUI>();
             tmp.text          = label;
@@ -141,6 +146,13 @@ namespace Valkur.UIKit
             _fields[key] = dd;
         }
 
+        /// <summary>
+        /// Pushes a value into a row without firing <see cref="ValueChanged"/>.
+        /// Works just as well for a row sitting on a hidden tab: hidden pages are
+        /// deactivated, never destroyed, so the component is still in _fields and still
+        /// valid. uGUI and TMP resync from their stored state on enable, so the value
+        /// shows up correctly the first time that tab is revealed.
+        /// </summary>
         public void SetValue(string key, object value)
         {
             if (!_fields.TryGetValue(key, out var c) || c == null) return;
@@ -152,16 +164,41 @@ namespace Valkur.UIKit
             }
         }
 
+        /// <summary>
+        /// Destroys every row and forgets the key map. A tab strip and its pages are
+        /// children like any other row, so they go with them — but WHICH tab was on screen
+        /// deliberately survives, because editors rebuild this form on every selection
+        /// change and the Particles panel rebuilds it on every accepted edit. See
+        /// PropertyForm.Tabs.cs.
+        /// </summary>
         public void Clear()
         {
             for (int i = transform.childCount - 1; i >= 0; i--)
-                Destroy(transform.GetChild(i).gameObject);
+                DestroyRow(transform.GetChild(i).gameObject);
             _fields.Clear();
+            ClearTabs();
+        }
+
+        /// <summary>
+        /// Object.Destroy is deferred to end-of-frame and, outside Play Mode, is not allowed
+        /// at all — Unity refuses it with "Destroy may not be called from edit mode!". This
+        /// form is built by runtime editors, so Play Mode is the normal case, but it is also
+        /// exercised by EditMode tests and can be driven from an editor tool, and there the
+        /// deferred call both logs an error and leaves the old rows in the hierarchy for the
+        /// rest of the frame — so a Clear() followed by a rebuild would silently double every
+        /// row. Immediate destruction is also what the rebuild needs: Clear() is always
+        /// followed by re-adding rows in the same call, and a deferred delete would have the
+        /// old and new sets overlapping in the layout until the frame ended.
+        /// </summary>
+        private static void DestroyRow(GameObject go)
+        {
+            if (Application.isPlaying) Destroy(go);
+            else DestroyImmediate(go);
         }
 
         private GameObject BuildRow(string label)
         {
-            var row = UIFactory.CreateUI("Row_" + label, transform);
+            var row = UIFactory.CreateUI("Row_" + label, RowParent);
             row.AddComponent<LayoutElement>().preferredHeight = 24f;
             var hlg = row.AddComponent<HorizontalLayoutGroup>();
             hlg.spacing = 6f;
