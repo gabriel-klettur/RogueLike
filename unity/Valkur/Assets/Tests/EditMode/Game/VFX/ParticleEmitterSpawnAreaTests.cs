@@ -227,10 +227,24 @@ namespace Valkur.Tests.EditMode.Game.VFX
             var shape = GetPs(emitter).shape;
 
             Assert.AreEqual(ParticleSystemShapeType.Box, shape.shapeType);
-            Assert.AreEqual(new Vector3(2f, 0.1f, 0.1f), shape.scale,
-                "With no authored area, falling_leaf's own hard-coded strip must survive untouched.");
-            Assert.AreEqual(Vector3.zero, shape.rotation,
-                "falling_leaf's own shape is never rotated — only the override path rotates the box.");
+
+            // The strip is now written in the SAME terms as the authored box: width on local X,
+            // hair-thin depth on local Y, height on local Z, aimed upward. It used to be
+            // (2, 0.1, 0.1) unrotated, and the difference mattered the moment a per-instance
+            // resize materialised the strip into an authored box — the shape jumped from one
+            // convention to the other on the first pixel of the drag, taking the direction of
+            // `speed` with it. Same footprint on screen, one description of it.
+            Assert.AreEqual(2f, shape.scale.x, 1e-4f, "The strip is still two units wide.");
+            Assert.AreEqual(0.1f, shape.scale.z, 1e-4f, "And a tenth of a unit tall.");
+            Assert.Less(shape.scale.y, 0.05f,
+                "Its depth lies on the camera axis and stays hair-thin.");
+            Assert.AreEqual(BoxRotationForUp(), shape.rotation,
+                "Aimed the way the authored-box path aims it, so materialising the strip " +
+                "reproduces it exactly.");
         }
+
+        /// <summary>The emitter's own BoxRotationFor(90) — local +Z up, local +Y on world Z.</summary>
+        private static Vector3 BoxRotationForUp()
+            => Quaternion.LookRotation(Vector3.up, Vector3.forward).eulerAngles;
     }
 }

@@ -177,6 +177,68 @@ namespace Valkur.Tests.EditMode.Game.VFX
         }
 
         [Test]
+        public void EvaluateAlpha_Vortex_IsTwoArmsAndTwoGaps()
+        {
+            // A spiral is only a spiral if there is something between the arms. Sampled all
+            // the way round one radius, the samples above the midpoint must form exactly two
+            // runs — two arms — and the gaps have to be visibly darker, or the shape reads
+            // as a plain disc however fast it is spun.
+            const float R = 0.6f;
+            const int STEPS = 360;
+            var ring = new float[STEPS];
+            float min = float.MaxValue, max = float.MinValue;
+
+            for (int i = 0; i < STEPS; i++)
+            {
+                float th = i * Mathf.Deg2Rad;
+                ring[i] = ParticleTextureLibrary.EvaluateAlpha(ParticleTextureShape.Vortex,
+                    Mathf.Cos(th) * R, Mathf.Sin(th) * R, 0.4f);
+                min = Mathf.Min(min, ring[i]);
+                max = Mathf.Max(max, ring[i]);
+            }
+
+            float threshold = (min + max) * 0.5f;
+            int runs = 0;
+            for (int i = 0; i < STEPS; i++)
+            {
+                bool here = ring[i] > threshold;
+                bool before = ring[(i + STEPS - 1) % STEPS] > threshold;
+                if (here && !before) runs++;   // counts each contiguous bright band once
+            }
+
+            Assert.AreEqual(2, runs, "the Vortex texture must show exactly two arms at a given radius");
+            Assert.Less(min, max * 0.5f, "the gaps between the arms must be clearly darker than the arms");
+        }
+
+        [Test]
+        public void EvaluateAlpha_Vortex_ArmsAreASpiralNotASpoke()
+        {
+            // The arm's angular position must MOVE with radius — that is the whole difference
+            // between a logarithmic spiral and a two-blade propeller, and a propeller spun by
+            // rotationOverLifetime reads as a fan rather than as matter turning inward.
+            float inner = PeakAngleAt(0.40f);
+            float outer = PeakAngleAt(0.85f);
+            float apart = Mathf.Abs(Mathf.DeltaAngle(inner, outer));
+
+            Assert.Greater(apart, 8f,
+                $"the arm sits at {inner}° at r=0.40 and {outer}° at r=0.85 — that is a spoke, not a spiral");
+        }
+
+        /// <summary>Angle in degrees of the brightest sample around one radius of the Vortex.</summary>
+        private static float PeakAngleAt(float radius)
+        {
+            float best = -1f, bestAngle = 0f;
+            for (int i = 0; i < 360; i++)
+            {
+                float th = i * Mathf.Deg2Rad;
+                float a = ParticleTextureLibrary.EvaluateAlpha(ParticleTextureShape.Vortex,
+                    Mathf.Cos(th) * radius, Mathf.Sin(th) * radius, 0.4f);
+                if (a > best) { best = a; bestAngle = i; }
+            }
+            return bestAngle;
+        }
+
+        [Test]
         public void EvaluateAlpha_Star_HasBrighterArmsThanDiagonals()
         {
             float arm = ParticleTextureLibrary.EvaluateAlpha(ParticleTextureShape.Star, 0.5f, 0f, 0.5f);

@@ -69,7 +69,10 @@ namespace Valkur.Gameplay.VFX
                 // several main-module writes are rejected while a system is still playing.
                 if (!ps.gameObject.activeSelf) ps.gameObject.SetActive(true);
                 ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-                ConfigureParticleSystem(ps, layer.vfx, scale);
+                // Layers take the instance's overrides too: the marker the editor draws is the
+                // union over the whole stack, so resizing a composite has to resize what it
+                // is made of or the box stops describing it.
+                ConfigureParticleSystem(ps, ParticleOverrideApplier.Apply(layer.vfx, _overrides), scale);
                 ps.Play();
 
                 writeIndex++;
@@ -77,6 +80,49 @@ namespace Valkur.Gameplay.VFX
 
             // Extras left over from a preset with more (valid) layers than this one.
             for (int i = _layerSystems.Count - 1; i >= writeIndex; i--)
+            {
+                var extra = _layerSystems[i];
+                if (extra != null) SafeDestroy.Of(extra.gameObject);
+                _layerSystems.RemoveAt(i);
+            }
+        }
+
+        /// <summary>
+        /// The same as <see cref="SyncLayers"/>, driven by an instance's OWN layer blocks
+        /// instead of by the preset's layer list.
+        ///
+        /// A placed emitter runs a configuration it copied from its preset when it was placed
+        /// and has owned ever since (see <see cref="ParticleInstanceConfig"/>), so the blocks
+        /// arrive already resolved — no validity filter, no override application, no reference
+        /// back to an asset that may have been retuned since. Index i of the list is index i of
+        /// <see cref="_layerSystems"/>, which is the same correspondence the snapshot was taken
+        /// under.
+        /// </summary>
+        private void SyncLayerBlocks(List<ParticleVfxParams> blocks, float scale,
+                                     ParticleInstanceOverrides overrides)
+        {
+            int count = blocks?.Count ?? 0;
+
+            for (int i = 0; i < count; i++)
+            {
+                var block = blocks[i];
+                if (block == null) continue;
+
+                ParticleSystem ps = i < _layerSystems.Count ? _layerSystems[i] : null;
+                if (ps == null)
+                {
+                    ps = CreateLayerSystem(i);
+                    if (i < _layerSystems.Count) _layerSystems[i] = ps;
+                    else _layerSystems.Add(ps);
+                }
+
+                if (!ps.gameObject.activeSelf) ps.gameObject.SetActive(true);
+                ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                ConfigureParticleSystem(ps, ParticleOverrideApplier.Apply(block, overrides), scale);
+                ps.Play();
+            }
+
+            for (int i = _layerSystems.Count - 1; i >= count; i--)
             {
                 var extra = _layerSystems[i];
                 if (extra != null) SafeDestroy.Of(extra.gameObject);

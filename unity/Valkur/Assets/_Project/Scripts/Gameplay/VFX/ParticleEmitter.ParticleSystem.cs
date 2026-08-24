@@ -86,23 +86,15 @@ namespace Valkur.Gameplay.VFX
                 main.startSize = new ParticleSystem.MinMaxCurve(p.sizeMin * scale, p.sizeMax * scale);
             }
             main.startColor = BuildColorParameter(p);
-            // Gravity: scalar gravity means falling down; vector gravity is pre-converted
-            if (p.useGravityVector)
-            {
-                // Use velocity-over-lifetime for arbitrary gravity direction
-                main.gravityModifier = 0f;
-                var vel = ps.velocityOverLifetime;
-                vel.enabled = true;
-                vel.space = ParticleSystemSimulationSpace.Local;
-                vel.x = new ParticleSystem.MinMaxCurve(p.gravityVector.x);
-                vel.y = new ParticleSystem.MinMaxCurve(p.gravityVector.y);
-            }
-            else
-            {
-                main.gravityModifier = p.gravity > 0f ? p.gravity / UNITY_GRAVITY : 0f;
-                var vel = ps.velocityOverLifetime;
-                vel.enabled = false;
-            }
+            // Gravity: scalar gravity means falling down; vector gravity is pre-converted.
+            // The vector form and the orbit fields share ONE module — velocityOverLifetime
+            // holds the linear drift, the orbital spin and the radial pull as separate
+            // properties of the same block, so writing it in two places would mean the
+            // second write silently disabling the first one's contribution.
+            main.gravityModifier = p.useGravityVector
+                ? 0f
+                : (p.gravity > 0f ? p.gravity / UNITY_GRAVITY : 0f);
+            ConfigureVelocity(ps, p, scale);
             // World space is what makes a trail a trail. In local space every particle is
             // carried along by the emitter, so a projectile moving at 16 u/s drags its
             // whole "wake" with it and leaves nothing behind — the effect reads as a rigid
@@ -121,7 +113,12 @@ namespace Valkur.Gameplay.VFX
             }
             else
             {
-                emission.rateOverTime = Mathf.Max(1f, p.emitRate);
+                // Floored just above zero rather than at 1/s. One per second is a fast
+                // ambient rate, not a minimum: a preset whose whole effect is a couple of
+                // long-lived quads has to emit SLOWER than that, and the old floor silently
+                // multiplied its population instead. No shipped preset authors below 1, so
+                // nothing existing changes; a preset that means "off" sets loops = false.
+                emission.rateOverTime = Mathf.Max(0.02f, p.emitRate);
                 // A previously applied burst preset leaves its Burst in the list, and the
                 // list is independent of rateOverTime — the old burst would keep firing on
                 // top of the new continuous emitter at every duration boundary.
@@ -144,7 +141,12 @@ namespace Valkur.Gameplay.VFX
                 rot.enabled = true;
                 // Symmetric range so each particle picks its own spin direction — a whole
                 // system turning the same way reads as a rotating texture, not as fire.
-                rot.z = new ParticleSystem.MinMaxCurve(-rad, rad);
+                // Unless the texture IS the effect: a Vortex gate is two or three overlapping
+                // long-lived quads, and giving those independent signs cancels the spin into
+                // a flicker. rotationOneWay hands the direction back to the author.
+                rot.z = p.rotationOneWay
+                    ? new ParticleSystem.MinMaxCurve(rad)
+                    : new ParticleSystem.MinMaxCurve(-rad, rad);
             }
             else
             {
@@ -196,66 +198,9 @@ namespace Valkur.Gameplay.VFX
                 sol.enabled = false;
             }
 
-            // ---- Velocity Damping (drag) ----
-            // Fetched unconditionally: emitters are reused across presets (the editor's
-            // preview emitter is), so a module one preset turns on has to be turned off
-            // by the next one or its drag silently clamps every effect chosen afterwards.
-            var vlim = ps.limitVelocityOverLifetime;
-            if (p.drag > 0f)
-            {
-                vlim.enabled = true;
-                vlim.separateAxes = false;
-                vlim.dampen = Mathf.Clamp01(p.drag);
-                vlim.limit = new ParticleSystem.MinMaxCurve(p.speed * scale);
-            }
-            else
-            {
-                vlim.enabled = false;
-            }
+            ConfigureDrag(ps, p, scale);
 
-            // ---- Noise (turbulence) ----
-            // Authored noise wins; falling_leaf keeps its legacy sway so the 100-odd presets
-            // that predate these fields render exactly as before.
-            var noise = ps.noise;
-            if (p.noiseEnabled && p.noiseStrength > 0f)
-            {
-                noise.enabled = true;
-                noise.frequency = Mathf.Max(0.0001f, p.noiseFrequency);
-                noise.damping = true;
-                noise.scrollSpeed = new ParticleSystem.MinMaxCurve(p.noiseScrollSpeed);
-
-                float nStrength = p.noiseStrength * scale;
-                float vScale = Mathf.Clamp01(p.noiseVerticalScale);
-                if (vScale < 1f)
-                {
-                    // Noise displaces on every axis. When its magnitude approaches the fall
-                    // speed the vertical component wins as often as it loses, and particles
-                    // that must always descend — leaves — visibly drift back upward.
-                    // separateAxes keeps the horizontal flutter at full width while damping
-                    // only Y.
-                    noise.separateAxes = true;
-                    noise.strengthX = new ParticleSystem.MinMaxCurve(nStrength);
-                    noise.strengthY = new ParticleSystem.MinMaxCurve(nStrength * vScale);
-                    noise.strengthZ = new ParticleSystem.MinMaxCurve(nStrength);
-                }
-                else
-                {
-                    noise.separateAxes = false;
-                    noise.strength = new ParticleSystem.MinMaxCurve(nStrength);
-                }
-            }
-            else if (kind == "falling_leaf")
-            {
-                noise.enabled = true;
-                noise.strength = new ParticleSystem.MinMaxCurve(p.swayAmp * scale);
-                noise.frequency = p.swaySpeed;
-                noise.damping = true;
-                noise.scrollSpeed = new ParticleSystem.MinMaxCurve(0.2f);
-            }
-            else
-            {
-                noise.enabled = false;
-            }
+            ConfigureNoise(ps, p, scale);
 
             // ---- Colour Over Lifetime ----
             var col = ps.colorOverLifetime;
@@ -270,6 +215,13 @@ namespace Valkur.Gameplay.VFX
 
             // ---- Renderer ----
             ConfigureRenderer(ps, p);
+
+            // ---- Ambient light ----
+            // Enrols this system (root or layer — one call site serves both, same as every
+            // module above) with the day/night tracker, which re-runs BuildColorParameter
+            // against this same params block as the cycle advances. No-op, and no allocation,
+            // for a preset that leaves respondsToAmbientLight at its default false.
+            RegisterAmbientTarget(ps, p);
         }
 
         /// <summary>
@@ -354,6 +306,88 @@ namespace Valkur.Gameplay.VFX
         // (falling_leaf / water_flow use 0.1).
         private const float BoxDepth = 0.01f;
 
+        /// <summary>
+        /// Velocity damping. Lifted out of ConfigureParticleSystem for the same reason as
+        /// ConfigureNoise: its LIMIT is derived from `speed`, which a reach override scales,
+        /// so the live-resize path has to rewrite it or a resized emitter ends up damping
+        /// against the speed it had BEFORE the resize. Measured across the catalog that was
+        /// 81 systems whose live configuration did not match the one a reload would rebuild —
+        /// rain_mist_soft at reach 0.05 kept a 1.69 limit where the rebuild computes 0.08, so
+        /// the same instance behaved one way while being dragged and another after a restart.
+        ///
+        /// Fetched unconditionally: emitters are reused across presets (the editor's preview
+        /// emitter is), so a module one preset turns on has to be turned off by the next one
+        /// or its drag silently clamps every effect chosen afterwards.
+        /// </summary>
+        private void ConfigureDrag(ParticleSystem ps, ParticleVfxParams p, float scale)
+        {
+            var vlim = ps.limitVelocityOverLifetime;
+            if (p.drag > 0f)
+            {
+                vlim.enabled = true;
+                vlim.separateAxes = false;
+                vlim.dampen = Mathf.Clamp01(p.drag);
+                vlim.limit = new ParticleSystem.MinMaxCurve(p.speed * scale);
+            }
+            else
+            {
+                vlim.enabled = false;
+            }
+        }
+
+        /// <summary>
+        /// Turbulence, and the legacy falling_leaf sway that predates it. Lifted out of
+        /// ConfigureParticleSystem so the LIVE RESIZE path can rewrite it without rebuilding
+        /// the system: noise strength is one of the terms a reach override scales.
+        /// </summary>
+        private void ConfigureNoise(ParticleSystem ps, ParticleVfxParams p, float scale)
+        {
+            // Authored noise wins; falling_leaf keeps its legacy sway so the 100-odd presets
+            // that predate these fields render exactly as before.
+            var noise = ps.noise;
+            if (p.noiseEnabled && p.noiseStrength > 0f)
+            {
+                noise.enabled = true;
+                noise.frequency = Mathf.Max(0.0001f, p.noiseFrequency);
+                noise.damping = true;
+                noise.scrollSpeed = new ParticleSystem.MinMaxCurve(p.noiseScrollSpeed);
+
+                float nStrength = p.noiseStrength * scale;
+                float vScale = Mathf.Clamp01(p.noiseVerticalScale);
+                if (vScale < 1f)
+                {
+                    // Noise displaces on every axis. When its magnitude approaches the fall
+                    // speed the vertical component wins as often as it loses, and particles
+                    // that must always descend — leaves — visibly drift back upward.
+                    // separateAxes keeps the horizontal flutter at full width while damping
+                    // only Y.
+                    noise.separateAxes = true;
+                    noise.strengthX = new ParticleSystem.MinMaxCurve(nStrength);
+                    noise.strengthY = new ParticleSystem.MinMaxCurve(nStrength * vScale);
+                    noise.strengthZ = new ParticleSystem.MinMaxCurve(nStrength);
+                }
+                else
+                {
+                    noise.separateAxes = false;
+                    noise.strength = new ParticleSystem.MinMaxCurve(nStrength);
+                }
+            }
+            else if (string.Equals(p.kind, "falling_leaf", System.StringComparison.Ordinal))
+            {
+                // `kind` was a local in ConfigureParticleSystem; read from the block instead,
+                // so the live-resize path gets the same branch.
+                noise.enabled = true;
+                noise.strength = new ParticleSystem.MinMaxCurve(p.swayAmp * scale);
+                noise.frequency = p.swaySpeed;
+                noise.damping = true;
+                noise.scrollSpeed = new ParticleSystem.MinMaxCurve(0.2f);
+            }
+            else
+            {
+                noise.enabled = false;
+            }
+        }
+
         private void ConfigureShape(ParticleSystem ps, ParticleVfxParams p, float scale)
         {
             var shape = ps.shape;
@@ -424,14 +458,31 @@ namespace Valkur.Gameplay.VFX
                     shape.rotation = new Vector3(-90f, 0f, 0f); // aim upward (Unity Y-up)
                     break;
 
+                // The two strip kinds, written in the SAME terms as the authored-box override
+                // below — width on local X, hair-thin depth on local Y, height on local Z, and
+                // the box aimed upward — so that materialising a strip into an authored box
+                // reproduces it exactly.
+                //
+                // It did not, and a per-instance resize is what exposed it. The moment an
+                // override is non-default, ParticleOverrideApplier writes the strip's own
+                // dimensions into spawnWidth/spawnHeight and the branch below takes over,
+                // which (a) aimed the box upward where this one left it aimed along world Z,
+                // the camera axis, moving `speed` from an invisible throw to a vertical one,
+                // and (b) multiplied the strip's height by `scale`, where this one did not.
+                // The first pixel of a drag therefore changed things the drag had not asked to
+                // change. Measured, both are tiny — the placed water_flow instances throw
+                // 0.36 px over a lifetime and all sit at scale 1 — but a handle that alters an
+                // effect the instant it is touched is exactly what makes a resize untrustworthy.
                 case "falling_leaf":
                     shape.shapeType = ParticleSystemShapeType.Box;
-                    shape.scale = new Vector3(2f * scale, 0.1f, 0.1f);
+                    shape.scale = new Vector3(2f * scale, BoxDepth, 0.1f * scale);
+                    shape.rotation = BoxRotationFor(90f);
                     break;
 
                 case "water_flow":
                     shape.shapeType = ParticleSystemShapeType.Box;
-                    shape.scale = new Vector3(3f * scale, 0.1f, 0.1f);
+                    shape.scale = new Vector3(3f * scale, BoxDepth, 0.1f * scale);
+                    shape.rotation = BoxRotationFor(90f);
                     break;
 
                 case "portal":
@@ -490,6 +541,102 @@ namespace Valkur.Gameplay.VFX
                 shape.radiusThickness = 1f;
                 shape.rotation = AimShapeAt(p.directionDegrees);
             }
+
+            // Authored fill beats every branch above, including the two overrides: it is the
+            // only field that says whether the shape is a rim or an area, and each kind has
+            // been making that call for it (aura and portal emit from the rim, everything
+            // else from the whole volume). -1 leaves the kind's choice alone.
+            if (p.shapeFill >= 0f) shape.radiusThickness = Mathf.Clamp01(p.shapeFill);
+        }
+
+        /// <summary>
+        /// Rewrites ONLY the modules a per-instance size override can move — emission shape,
+        /// initial throw, gravity, the velocity block and turbulence — on a system that keeps
+        /// running.
+        ///
+        /// This exists because the full rebuild cannot be used for a drag. ApplyPreset opens
+        /// with <c>Stop(StopEmittingAndClear)</c>, which is correct when the effect is being
+        /// replaced and catastrophic sixty times a second: every particle alive is destroyed
+        /// on every frame of the gesture, so the leaves stop falling while the author resizes
+        /// the box they fall out of, and take a full lifespan to come back afterwards.
+        ///
+        /// Everything written here is legal on a playing system. (<c>main.duration</c> is not,
+        /// which is why it stays in the rebuild path — see the emitter-builder gotcha in
+        /// CLAUDE.md.) Living particles pick up the velocity and noise changes on their next
+        /// frame because those modules are evaluated per frame; shape and startSpeed apply to
+        /// the ones born from here on, which is what "resize the emitter" means.
+        /// </summary>
+        private void ApplyGeometry(ParticleSystem ps, ParticleVfxParams p, float scale)
+        {
+            if (ps == null || p == null) return;
+
+            var main = ps.main;
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0f, p.speed * scale);
+            main.gravityModifier = p.useGravityVector
+                ? 0f
+                : (p.gravity > 0f ? p.gravity / UNITY_GRAVITY : 0f);
+
+            ConfigureVelocity(ps, p, scale);
+            ConfigureShape(ps, p, scale);
+            ConfigureNoise(ps, p, scale);
+            ConfigureDrag(ps, p, scale);
+        }
+
+        /// <summary>
+        /// Writes the one velocity-over-lifetime module from the three authored sources that
+        /// share it: constant drift (<c>gravityVector</c>), orbit about the emitter centre
+        /// and radial pull toward or away from it.
+        ///
+        /// The module is written unconditionally — disabled when nothing asks for it — for
+        /// the same reason as shape, drag and rotation: the F1 preview emitter serves every
+        /// preset the author clicks, and a module one preset turned on has to be turned off
+        /// by the next or it keeps applying to an effect that never asked for it.
+        ///
+        /// Unity's orbital velocity is ANGULAR and in radians per second (measured: an
+        /// orbitalZ of 1 turns a particle 57.296° in one second, at any radius), while
+        /// radial is linear world units per second. Only the linear terms take the emitter's
+        /// scale — an angular rate is already size-independent, so scaling it would make a
+        /// placed preset spin faster the bigger it is dragged.
+        /// </summary>
+        private static void ConfigureVelocity(ParticleSystem ps, ParticleVfxParams p, float scale)
+        {
+            var vel = ps.velocityOverLifetime;
+
+            bool hasDrift  = p.useGravityVector;
+            bool hasOrbit  = Mathf.Abs(p.orbitalSpeedDegrees) > 0.01f;
+            bool hasRadial = Mathf.Abs(p.radialSpeed) > 0.0001f;
+
+            if (!hasDrift && !hasOrbit && !hasRadial)
+            {
+                vel.enabled = false;
+                return;
+            }
+
+            vel.enabled = true;
+            vel.space = ParticleSystemSimulationSpace.Local;
+
+            // Unity requires x/y/z to share one MinMaxCurveMode, so all three are written as
+            // constants even when only one of them carries a value.
+            // gravityVector is deliberately NOT scaled: it has never been, and 58 placed
+            // pollen emitters plus every other drifting preset were authored against the
+            // unscaled value at their own scale multipliers.
+            vel.x = new ParticleSystem.MinMaxCurve(hasDrift ? p.gravityVector.x : 0f);
+            vel.y = new ParticleSystem.MinMaxCurve(hasDrift ? p.gravityVector.y : 0f);
+            vel.z = new ParticleSystem.MinMaxCurve(0f);
+
+            vel.orbitalX = new ParticleSystem.MinMaxCurve(0f);
+            vel.orbitalY = new ParticleSystem.MinMaxCurve(0f);
+            vel.orbitalZ = new ParticleSystem.MinMaxCurve(
+                hasOrbit ? p.orbitalSpeedDegrees * Mathf.Deg2Rad : 0f);
+
+            // Orbit and pull both reckon from the system's own origin. Left at Unity's
+            // default that is already the emitter centre; set explicitly so a reused emitter
+            // cannot inherit an offset from a preset that one day sets one.
+            vel.orbitalOffsetX = new ParticleSystem.MinMaxCurve(0f);
+            vel.orbitalOffsetY = new ParticleSystem.MinMaxCurve(0f);
+            vel.orbitalOffsetZ = new ParticleSystem.MinMaxCurve(0f);
+
+            vel.radial = new ParticleSystem.MinMaxCurve(hasRadial ? p.radialSpeed * scale : 0f);
         }
 
         /// <summary>

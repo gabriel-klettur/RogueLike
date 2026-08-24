@@ -44,6 +44,25 @@ namespace Valkur.Data
         [Range(0f, 0.98f)]
         public float drag = 0f;
 
+        // --------------- Orbit ---------------
+        [Tooltip("Degrees per second every particle turns AROUND the emitter's centre. " +
+                 "This is angular, so the whole field rotates as one body no matter where " +
+                 "each particle sits — the one motion `speed` cannot express, since speed " +
+                 "throws each particle straight out along its own spawn direction and a " +
+                 "swarm of straight lines never reads as a swirl. Positive is " +
+                 "counter-clockwise. Pair with a negative radialSpeed for a vortex that " +
+                 "actually spirals inward instead of orbiting forever at spawn radius.")]
+        public float orbitalSpeedDegrees = 0f;
+
+        [Tooltip("World units per second every particle moves along the line from the " +
+                 "emitter's centre through itself. NEGATIVE draws inward (a portal " +
+                 "swallowing motes), positive pushes outward (a shockwave that keeps " +
+                 "expanding). Scaled by the emitter's scale, so a preset spirals into its " +
+                 "centre at the same fraction of its radius whatever size it is placed at. " +
+                 "Reaching the centre takes radius / |radialSpeed| seconds — author the " +
+                 "lifespan to match, or the motes pile up at the middle and sit there.")]
+        public float radialSpeed = 0f;
+
         // --------------- Lifetime ---------------
         [Tooltip("Particle lifetime (seconds). Python: lifespan / 60  OR  life_ms / 1000.")]
         public float lifespan = 1f;
@@ -96,9 +115,19 @@ namespace Valkur.Data
                  "0 = all axis-aligned, which makes identical billboards read as a repeated stamp.")]
         public float startRotationJitterDegrees = 0f;
 
-        [Tooltip("Degrees per second each particle spins over its life. The sign is randomised " +
-                 "per particle, so a positive value means 'spin this fast, either way'.")]
+        [Tooltip("Degrees per second each particle spins over its life. By default the sign " +
+                 "is randomised per particle, so a positive value means 'spin this fast, " +
+                 "either way' — see rotationOneWay to fix the direction.")]
         public float rotationSpeedDegrees = 0f;
+
+        [Tooltip("Spin every particle the SAME way, in the direction rotationSpeedDegrees " +
+                 "signs (positive = counter-clockwise), instead of randomising the sign per " +
+                 "particle. The random default is right for fire and debris, where a system " +
+                 "all turning together reads as one rotating texture. It is wrong for any " +
+                 "shape that IS the effect — a Vortex gate is drawn by a couple of " +
+                 "long-lived overlapping quads, and two of them turning opposite ways " +
+                 "cancel into a flicker instead of a spin.")]
+        public bool rotationOneWay = false;
 
         // --------------- Simulation space ---------------
         [Tooltip("Emit into world space instead of the emitter's local space. Required for any " +
@@ -106,9 +135,61 @@ namespace Valkur.Data
                  "is ever left behind. Default false so existing presets are unchanged.")]
         public bool worldSpace = false;
 
+        // --------------- Sorting & depth ---------------
+        [Tooltip("Sorting layer this emitter draws in. Empty = 'VFX', which is what " +
+                 "ParticleEmitter has always hard-coded for every system it builds, " +
+                 "composite layers included. VFX sits ABOVE Entities, Decorations, " +
+                 "WallsTop, ObjectsHigh and Projectiles, so every falling leaf and every " +
+                 "mote of pollen draws in front of the player, every NPC, every wall top " +
+                 "and every tree canopy — a falling_leaf_canopy preset cannot pass behind " +
+                 "the trunk it falls from until this is set. Authored as the layer NAME, " +
+                 "never the int ID: sorting-layer IDs are not stable across edits to " +
+                 "ProjectSettings > Tags and Layers, and these presets are hand-authored " +
+                 "data that has to survive one.")]
+        public string sortingLayer = "";
+
+        [Tooltip("Order within sortingLayer. 0 is the value ParticleEmitter hard-coded for " +
+                 "every emitter it built, so leaving it alone reproduces today's draw " +
+                 "order exactly.")]
+        public int sortingOrder = 0;
+
+        [Tooltip("Tie-break bias between transparent renderers that share a layer AND an " +
+                 "order. Unity adds it to the system's distance from the camera before the " +
+                 "transparency sort, so LOWER values draw in front. It is the only tool " +
+                 "that can order the co-located systems of a composite preset against each " +
+                 "other: they all land on the same layer at the same order and the " +
+                 "instance loader pins every emitter to z = 0, so without it their draw " +
+                 "order is Unity's internal tie-break instead of the author's choice. " +
+                 "Hand-written C# VFX always had this — AuraController sets sortingLayerID " +
+                 "+ sortingOrder + sortingFudge deliberately so an aura stays behind every " +
+                 "Entities sprite; the capability was simply denied to authored presets.")]
+        public float sortingFudge = 0f;
+
+        // --------------- Ambient light ---------------
+        [Tooltip("Tint this emitter by the world's ambient light instead of rendering at " +
+                 "the authored daylight brightness forever. Every particle material is " +
+                 "built on 'Universal Render Pipeline/Particles/Unlit', so Light2D never " +
+                 "touches these quads: DayNightCycle drives the global light down to " +
+                 "(0.20, 0.25, 0.45) at intensity 0.15, the tilemap goes near-black, and " +
+                 "the leaves and pollen on top of it keep rendering at noon values. " +
+                 "DayNightCycle's own doc comment on CurrentColor has claimed since it was " +
+                 "written that 'other systems (vignette, particles) read this' — no " +
+                 "particle code ever has. Default false, so existing presets are " +
+                 "unchanged.")]
+        public bool respondsToAmbientLight = false;
+
         // --------------- Shape & Radius ---------------
         [Tooltip("Emission radius for aura/circle shapes (world units). Python: radius / 16.")]
         public float radius = 1.5f;
+
+        [Tooltip("How much of the emission shape is used, 0 = its rim only, 1 = its whole " +
+                 "area. -1 (default) keeps whatever the kind hard-codes — `aura` and " +
+                 "`portal` emit from the rim, every other circle from the full disc — so " +
+                 "existing presets are unchanged. Author it when the kind's choice is the " +
+                 "wrong one: an aura that should fill its circle instead of ringing it has " +
+                 "had no way to say so.")]
+        [Range(-1f, 1f)]
+        public float shapeFill = -1f;
 
         [Tooltip("Arc range in degrees for slash emitters. Python: arc_range_degrees.")]
         public float arcRangeDegrees = 45f;
