@@ -10,86 +10,91 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 27d602a19fa51234eb9802e4cee9caaa, type: 3}
-  m_Name: PP_portal_oval_sparks_add
+  m_Name: PP_portal_oval_gate_spiral
   m_EditorClassIdentifier: 
-  id: portal_oval_sparks_add
-  displayName: Portal Oval Sparks (Add)
+  id: portal_oval_gate_spiral
+  displayName: Portal Oval Gate (Spiral)
   type: aura
   vfx:
     kind: aura
     loops: 1
-    emitRate: 14
+    emitRate: 0.25
     count: 12
-    burstIntervalSeconds: 0
-    speed: 0.9
+    burstIntervalSeconds: 1
+    speed: 0
     gravity: 0
-    drag: 0.45
-    lifespan: 1.6
-    sizeMin: 0.03
-    sizeMax: 0.085
-    sizeAspect: 1
+    drag: 0
+    orbitalSpeedDegrees: 0
+    radialSpeed: 0
+    lifespan: 12
+    sizeMin: 0.62
+    sizeMax: 0.62
+    sizeAspect: 0.72
     colors:
     - {r: 1, g: 1, b: 1, a: 1}
-    - {r: 0.8, g: 1, b: 1, a: 1}
+    - {r: 0.9, g: 1, b: 1, a: 1}
     color: {r: 1, g: 1, b: 1, a: 1}
     additive: 1
-    colorIntensity: 1.6
-    textureShape: 4
-    textureSoftness: 0.35
+    colorIntensity: 1.1
+    textureShape: 10
+    textureSoftness: 0.4
     customSprite: {fileID: 0}
-    startRotationJitterDegrees: 180
-    rotationSpeedDegrees: 90
+    startRotationJitterDegrees: 0
+    rotationSpeedDegrees: -45
+    rotationOneWay: 1
     worldSpace: 0
     sortingLayer: 
     sortingOrder: 0
-    sortingFudge: 0
+    sortingFudge: 0.05
     respondsToAmbientLight: 0
-    radius: 0.72
+    radius: 0.02
+    shapeFill: 1
     arcRangeDegrees: 45
     segments: 10
-    lightningOffset: 0.3125
-    thickness: 0.0625
-    swayAmp: 0.021875
+    lightningOffset: 0.625
+    thickness: 0.1
+    swayAmp: 0.04
     swaySpeed: 0.12
     spawnWidth: 0
     spawnHeight: 0
     directionDegrees: -1
     directionSpreadDegrees: 15
     dispersion: 0
-    gravityVector: {x: 0, y: 0.25}
-    useGravityVector: 1
+    gravityVector: {x: 0, y: 0}
+    useGravityVector: 0
     sizeOverLife:
     - time: 0
-      value: 0.3
-    - time: 0.2
-      value: 1
+      value: 0.97
+    - time: 0.5
+      value: 1.03
     - time: 1
-      value: 0.1
+      value: 0.97
     alphaOverLife:
     - time: 0
       value: 0
-    - time: 0.08
-      value: 1
-    - time: 0.45
-      value: 0.8
+    - time: 0.3333
+      value: 0.42
+    - time: 0.6667
+      value: 0.42
     - time: 1
       value: 0
     colorOverLife:
     - time: 0
-      color: {r: 1, g: 1, b: 1, a: 1}
+      color: {r: 0.55, g: 0.95, b: 1, a: 1}
     - time: 0.5
-      color: {r: 0.55, g: 0.98, b: 1, a: 1}
+      color: {r: 0.44, g: 0.9, b: 1, a: 1}
     - time: 1
-      color: {r: 0.2, g: 0.75, b: 0.95, a: 1}
+      color: {r: 0.38, g: 0.86, b: 1, a: 1}
     flipbookFrames: []
     flipbookCycles: 1
     flipbookRandomStartFrame: 0
-    noiseEnabled: 1
-    noiseStrength: 0.35
-    noiseFrequency: 0.6
-    noiseScrollSpeed: 0.4
+    noiseEnabled: 0
+    noiseStrength: 0
+    noiseFrequency: 0.5
+    noiseScrollSpeed: 0.2
     noiseVerticalScale: 1
     turnoverCycles: 0
     turnoverMinWidth: 0.12
     outerRadius: 0
+  layerOnly: 0
   layers: []

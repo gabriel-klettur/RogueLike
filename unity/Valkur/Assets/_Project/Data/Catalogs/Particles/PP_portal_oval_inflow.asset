@@ -10,97 +10,91 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 27d602a19fa51234eb9802e4cee9caaa, type: 3}
-  m_Name: PP_portal_oval_core_soft
+  m_Name: PP_portal_oval_inflow
   m_EditorClassIdentifier: 
-  id: portal_oval_core_soft
-  displayName: Portal Oval Core (Soft)
+  id: portal_oval_inflow
+  displayName: Portal Oval Inflow (Add)
   type: aura
   vfx:
     kind: aura
     loops: 1
-    emitRate: 18
+    emitRate: 20
     count: 12
-    burstIntervalSeconds: 0
-    speed: 0.35
+    burstIntervalSeconds: 1
+    speed: 0
     gravity: 0
-    drag: 0.25
-    orbitalSpeedDegrees: 0
-    radialSpeed: 0
-    lifespan: 2.2
-    sizeMin: 0.16
-    sizeMax: 0.42
+    drag: 0
+    orbitalSpeedDegrees: 150
+    radialSpeed: -0.26
+    lifespan: 1.15
+    sizeMin: 0.035
+    sizeMax: 0.075
     sizeAspect: 1
     colors:
     - {r: 1, g: 1, b: 1, a: 1}
-    - {r: 0.82, g: 0.97, b: 1, a: 1}
+    - {r: 0.8, g: 1, b: 1, a: 1}
     color: {r: 1, g: 1, b: 1, a: 1}
-    additive: 0
-    colorIntensity: 1
-    textureShape: 5
-    textureSoftness: 0.75
+    additive: 1
+    colorIntensity: 1.5
+    textureShape: 4
+    textureSoftness: 0.4
     customSprite: {fileID: 0}
     startRotationJitterDegrees: 180
-    rotationSpeedDegrees: 26
+    rotationSpeedDegrees: 0
     rotationOneWay: 0
     worldSpace: 0
     sortingLayer: 
     sortingOrder: 0
     sortingFudge: 0
     respondsToAmbientLight: 0
-    radius: 0.62
-    shapeFill: -1
+    radius: 0.27
+    shapeFill: 0
     arcRangeDegrees: 45
     segments: 10
-    lightningOffset: 0.3125
-    thickness: 0.0625
-    swayAmp: 0.021875
+    lightningOffset: 0.625
+    thickness: 0.1
+    swayAmp: 0.04
     swaySpeed: 0.12
     spawnWidth: 0
     spawnHeight: 0
     directionDegrees: -1
     directionSpreadDegrees: 15
     dispersion: 0
-    gravityVector: {x: 0, y: 0.15}
-    useGravityVector: 1
+    gravityVector: {x: 0, y: 0}
+    useGravityVector: 0
     sizeOverLife:
     - time: 0
-      value: 0.45
+      value: 0.5
     - time: 0.3
       value: 1
     - time: 1
-      value: 1.35
+      value: 0.12
     alphaOverLife:
     - time: 0
       value: 0
     - time: 0.15
-      value: 0.42
-    - time: 0.55
-      value: 0.3
+      value: 1
+    - time: 0.8
+      value: 0.85
     - time: 1
       value: 0
     colorOverLife:
     - time: 0
-      color: {r: 0.72, g: 0.96, b: 1, a: 1}
-    - time: 0.35
-      color: {r: 0.29, g: 0.82, b: 0.92, a: 1}
-    - time: 0.7
-      color: {r: 0.11, g: 0.52, b: 0.7, a: 1}
+      color: {r: 1, g: 1, b: 1, a: 1}
+    - time: 0.5
+      color: {r: 0.5, g: 0.95, b: 1, a: 1}
     - time: 1
-      color: {r: 0.05, g: 0.24, b: 0.42, a: 1}
+      color: {r: 0.18, g: 0.72, b: 0.95, a: 1}
     flipbookFrames: []
     flipbookCycles: 1
     flipbookRandomStartFrame: 0
-    noiseEnabled: 1
-    noiseStrength: 0.18
-    noiseFrequency: 0.35
-    noiseScrollSpeed: 0.25
+    noiseEnabled: 0
+    noiseStrength: 0
+    noiseFrequency: 0.5
+    noiseScrollSpeed: 0.2
     noiseVerticalScale: 1
     turnoverCycles: 0
     turnoverMinWidth: 0.12
     outerRadius: 0
   layerOnly: 0
-  layers:
-  - {fileID: 11400000, guid: 92e2c9a0f4500c844bbdcf44b0f8bc35, type: 2}
-  - {fileID: 11400000, guid: 70018241df2098444992b0988dc17cf5, type: 2}
-  - {fileID: 11400000, guid: d56d713d3fdd776408cc38fb5f7600b9, type: 2}
-  - {fileID: 11400000, guid: 09ac7f0220b295d4eba50e10f367586c, type: 2}
+  layers: []
