@@ -148,6 +148,11 @@ namespace Valkur.Tests.EditMode.Editors.Particles
         [TestCase("falling_leaf_30s")]
         [TestCase("falling_petal_30s")]
         [TestCase("autumn_leaves_gradient")]
+        // The one falling_leaf preset this list used to omit. It is placed in the world, so
+        // it was the only Plants preset that shipped with no invariant guarding it at all —
+        // and it duly broke the moment the family moved to a constant gravityVector, because
+        // its inherited birth speed (0.5625) outran the new descent while nothing watched.
+        [TestCase("flowers_petal_pink_60s")]
         public void FallingFoliage_AlwaysDescends(string presetId)
         {
             var preset = LoadCatalog().GetById(presetId);

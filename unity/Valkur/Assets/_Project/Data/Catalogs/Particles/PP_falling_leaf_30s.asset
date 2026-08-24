@@ -13,34 +13,42 @@ MonoBehaviour:
   m_Name: PP_falling_leaf_30s
   m_EditorClassIdentifier: 
   id: falling_leaf_30s
-  displayName: Falling Leaf (30s)
+  displayName: Leaf Fall
   type: leaf
   vfx:
     kind: falling_leaf
     loops: 1
-    emitRate: 5
+    emitRate: 1.25
     count: 12
     burstIntervalSeconds: 1
     speed: 0.02
     gravity: 0
     drag: 0
+    orbitalSpeedDegrees: 0
+    radialSpeed: 0
     lifespan: 2
-    sizeMin: 1
-    sizeMax: 1
-    sizeAspect: 0.667
+    sizeMin: 0.34
+    sizeMax: 0.55
+    sizeAspect: 1
     colors:
     - {r: 0.42, g: 1, b: 0.16, a: 1}
     - {r: 0.09, g: 0.62, b: 0.1, a: 1}
     color: {r: 0.42, g: 1, b: 0.16, a: 1}
     additive: 0
     colorIntensity: 1
-    textureShape: 2
-    textureSoftness: 0.14
+    textureShape: 8
+    textureSoftness: 0.34
     customSprite: {fileID: 0}
     startRotationJitterDegrees: 180
     rotationSpeedDegrees: 55
+    rotationOneWay: 0
     worldSpace: 0
+    sortingLayer: Overlay
+    sortingOrder: 0
+    sortingFudge: 0
+    respondsToAmbientLight: 1
     radius: 0.75
+    shapeFill: -1
     arcRangeDegrees: 45
     segments: 10
     lightningOffset: 0.3125
@@ -52,7 +60,7 @@ MonoBehaviour:
     directionDegrees: -1
     directionSpreadDegrees: 15
     dispersion: 0
-    gravityVector: {x: 0, y: -0.55}
+    gravityVector: {x: 0.08, y: -0.55}
     useGravityVector: 1
     sizeOverLife:
     - time: 0
@@ -76,7 +84,7 @@ MonoBehaviour:
     - time: 0.5
       color: {r: 0.96, g: 1, b: 0.94, a: 1}
     - time: 1
-      color: {r: 0.86, g: 1, b: 0.84, a: 1}
+      color: {r: 1, g: 0.85, b: 0.55, a: 1}
     flipbookFrames: []
     flipbookCycles: 1
     flipbookRandomStartFrame: 0
@@ -86,6 +94,7 @@ MonoBehaviour:
     noiseScrollSpeed: 0.1
     noiseVerticalScale: 0.18
     turnoverCycles: 3
-    turnoverMinWidth: 0.1
+    turnoverMinWidth: 0.3
     outerRadius: 0
+  layerOnly: 0
   layers: []

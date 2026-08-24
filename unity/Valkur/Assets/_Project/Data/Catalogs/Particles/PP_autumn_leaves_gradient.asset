@@ -13,37 +13,88 @@ MonoBehaviour:
   m_Name: PP_autumn_leaves_gradient
   m_EditorClassIdentifier: 
   id: autumn_leaves_gradient
-  displayName: Autumn Leaves (Gradient)
+  displayName: Autumn Leaf
   type: leaf
   vfx:
     kind: falling_leaf
-    emitRate: 10
+    loops: 1
+    emitRate: 1.25
     count: 12
-    burstIntervalSeconds: 1.2
-    speed: 0.7125
-    gravity: 6.75
+    burstIntervalSeconds: 1
+    speed: 0.02
+    gravity: 0
     drag: 0
-    direction: {x: 0, y: -1}
-    lifespan: 8
-    sizeMin: 0.09375
-    sizeMax: 0.140625
+    orbitalSpeedDegrees: 0
+    radialSpeed: 0
+    lifespan: 2
+    sizeMin: 0.32
+    sizeMax: 0.52
+    sizeAspect: 1
     colors:
-    - {r: 0.8235294, g: 0.627451, b: 0.3137255, a: 1}
+    - {r: 0.82, g: 0.63, b: 0.31, a: 1}
+    - {r: 0.66, g: 0.29, b: 0.11, a: 1}
     color: {r: 0.8235294, g: 0.627451, b: 0.3137255, a: 1}
     additive: 0
+    colorIntensity: 1
+    textureShape: 8
+    textureSoftness: 0.34
+    customSprite: {fileID: 0}
+    startRotationJitterDegrees: 180
+    rotationSpeedDegrees: 55
+    rotationOneWay: 0
+    worldSpace: 0
+    sortingLayer: Overlay
+    sortingOrder: 0
+    sortingFudge: 0
+    respondsToAmbientLight: 1
     radius: 0.75
+    shapeFill: -1
     arcRangeDegrees: 45
     segments: 10
     lightningOffset: 0.3125
     thickness: 0.0625
-    spouts:
-    - 0.5
-    splashCount: 2
-    dropletSize: 0.0625
-    swayAmp: 0.028125
+    swayAmp: 0.021875
     swaySpeed: 0.12
-    stripeGap: 0.25
-    rippleAmp: 0.6
-    alphaBase: 110
-    alphaWave: 70
-    highlightColor: {r: 0.23, g: 0.43, b: 0.63, a: 1}
+    spawnWidth: 4
+    spawnHeight: 4
+    directionDegrees: -1
+    directionSpreadDegrees: 15
+    dispersion: 0
+    gravityVector: {x: 0.08, y: -0.55}
+    useGravityVector: 1
+    sizeOverLife:
+    - time: 0
+      value: 0.9
+    - time: 0.15
+      value: 1
+    - time: 1
+      value: 0.95
+    alphaOverLife:
+    - time: 0
+      value: 0
+    - time: 0.05
+      value: 1
+    - time: 0.85
+      value: 1
+    - time: 1
+      value: 0
+    colorOverLife:
+    - time: 0
+      color: {r: 1, g: 0.97, b: 0.86, a: 1}
+    - time: 0.55
+      color: {r: 1, g: 0.86, b: 0.55, a: 1}
+    - time: 1
+      color: {r: 0.85, g: 0.45, b: 0.18, a: 1}
+    flipbookFrames: []
+    flipbookCycles: 1
+    flipbookRandomStartFrame: 0
+    noiseEnabled: 1
+    noiseStrength: 0.05
+    noiseFrequency: 0.25
+    noiseScrollSpeed: 0.1
+    noiseVerticalScale: 0.18
+    turnoverCycles: 3
+    turnoverMinWidth: 0.3
+    outerRadius: 0
+  layerOnly: 0
+  layers: []

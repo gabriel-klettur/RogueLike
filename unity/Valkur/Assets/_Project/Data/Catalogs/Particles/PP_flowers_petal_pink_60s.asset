@@ -13,37 +13,88 @@ MonoBehaviour:
   m_Name: PP_flowers_petal_pink_60s
   m_EditorClassIdentifier: 
   id: flowers_petal_pink_60s
-  displayName: Flower Petal Pink (60s)
+  displayName: Magnolia Fall
   type: leaf
   vfx:
     kind: falling_leaf
-    emitRate: 10
+    loops: 1
+    emitRate: 1.25
     count: 12
-    burstIntervalSeconds: 60
-    speed: 0.5625
-    gravity: 5.625
+    burstIntervalSeconds: 1
+    speed: 0.02
+    gravity: 0
     drag: 0
-    direction: {x: 0, y: -1}
-    lifespan: 7
-    sizeMin: 0.0625
-    sizeMax: 0.09375
+    orbitalSpeedDegrees: 0
+    radialSpeed: 0
+    lifespan: 2
+    sizeMin: 0.34
+    sizeMax: 0.55
+    sizeAspect: 1
     colors:
-    - {r: 1, g: 0.627451, b: 0.78431374, a: 1}
-    color: {r: 1, g: 0.627451, b: 0.78431374, a: 1}
+    - {r: 1, g: 0.79, b: 0.66, a: 1}
+    - {r: 1, g: 0.93, b: 0.88, a: 1}
+    color: {r: 1, g: 0.79, b: 0.66, a: 1}
     additive: 0
+    colorIntensity: 1
+    textureShape: 9
+    textureSoftness: 0.55
+    customSprite: {fileID: 0}
+    startRotationJitterDegrees: 180
+    rotationSpeedDegrees: 55
+    rotationOneWay: 0
+    worldSpace: 0
+    sortingLayer: Overlay
+    sortingOrder: 5
+    sortingFudge: 0
+    respondsToAmbientLight: 1
     radius: 0.75
+    shapeFill: -1
     arcRangeDegrees: 45
     segments: 10
     lightningOffset: 0.3125
     thickness: 0.0625
-    spouts:
-    - 0.5
-    splashCount: 2
-    dropletSize: 0.0625
-    swayAmp: 0.028125
+    swayAmp: 0.021875
     swaySpeed: 0.12
-    stripeGap: 0.25
-    rippleAmp: 0.6
-    alphaBase: 110
-    alphaWave: 70
-    highlightColor: {r: 0.23, g: 0.43, b: 0.63, a: 1}
+    spawnWidth: 3
+    spawnHeight: 4
+    directionDegrees: -1
+    directionSpreadDegrees: 15
+    dispersion: 0
+    gravityVector: {x: 0.08, y: -0.55}
+    useGravityVector: 1
+    sizeOverLife:
+    - time: 0
+      value: 0.9
+    - time: 0.15
+      value: 1
+    - time: 1
+      value: 0.95
+    alphaOverLife:
+    - time: 0
+      value: 0
+    - time: 0.05
+      value: 1
+    - time: 0.85
+      value: 1
+    - time: 1
+      value: 0
+    colorOverLife:
+    - time: 0
+      color: {r: 1, g: 0.98, b: 0.95, a: 1}
+    - time: 0.5
+      color: {r: 1, g: 0.82, b: 0.7, a: 1}
+    - time: 1
+      color: {r: 0.95, g: 0.66, b: 0.6, a: 1}
+    flipbookFrames: []
+    flipbookCycles: 1
+    flipbookRandomStartFrame: 0
+    noiseEnabled: 1
+    noiseStrength: 0.05
+    noiseFrequency: 0.25
+    noiseScrollSpeed: 0.1
+    noiseVerticalScale: 0.18
+    turnoverCycles: 3
+    turnoverMinWidth: 0.3
+    outerRadius: 0
+  layerOnly: 0
+  layers: []
