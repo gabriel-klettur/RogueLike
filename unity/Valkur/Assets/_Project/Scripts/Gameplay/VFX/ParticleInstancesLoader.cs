@@ -181,8 +181,10 @@ namespace Valkur.Gameplay.VFX
             }
 
             int spawned = 0;
+            int migrated = 0;
             foreach (var record in instances)
             {
+                bool needsSnapshot = record.Config == null;
                 if (string.IsNullOrEmpty(record.PresetId)) continue;
 
                 var preset = _catalog != null ? _catalog.GetById(record.PresetId) : null;
@@ -201,9 +203,51 @@ namespace Valkur.Gameplay.VFX
 
                 SpawnEmitter(preset, record.WorldPos, record);
                 spawned++;
+                if (needsSnapshot && record.Config != null) migrated++;
             }
 
             Debug.Log($"[ParticleInstancesLoader] Spawned {spawned} particle emitters.");
+
+            if (migrated > 0) PersistMigratedConfigs(instances, migrated);
+        }
+
+        /// <summary>
+        /// Writes the copy-on-place migration back to the file, once, the first time a pre-v4
+        /// file is loaded.
+        ///
+        /// WHY IT HAS TO REACH DISK. Freezing a placement onto a copy of its preset is only a
+        /// promise while it lives in RAM: an author who retunes the asset and restarts would
+        /// find every un-migrated placement wearing the new values, because the loader would
+        /// snapshot them again from the edited preset. One write closes it permanently.
+        ///
+        /// It is safe in a way the editor's save is not, and does not need the anti-wipe guard
+        /// that one carries: it writes the records it just READ — every one of them, including
+        /// those it could not spawn — with no scene scan and no coordinate maths. The output
+        /// differs from the input by the added <c>config</c> objects and nothing else.
+        ///
+        /// Editor only. A player build has no author to protect, cannot write StreamingAssets,
+        /// and would attempt this on every single boot. Whether an EDITOR write is allowed right
+        /// now is the store's decision, not this method's: FileParticleInstanceStore already
+        /// refuses EditMode writes to the real path, and a test's in-memory store accepts them,
+        /// which is what lets this path be tested at all.
+        /// </summary>
+        private void PersistMigratedConfigs(List<ParticleInstanceRecord> records, int migrated)
+        {
+            if (!Application.isEditor) return;
+
+            try
+            {
+                _instanceStore.Save(ParticleInstanceSerializer.SerializeRecords(records));
+                Debug.Log($"[ParticleInstancesLoader] Froze {migrated} placement(s) onto their " +
+                          "own configuration (copy-on-place migration, written once).");
+            }
+            catch (System.Exception ex)
+            {
+                // A failed migration is not a failed load: the instances are already spawned
+                // and correct, and the next run simply tries again.
+                Debug.LogWarning($"[ParticleInstancesLoader] Could not persist the copy-on-place " +
+                                 $"migration: {ex.Message}");
+            }
         }
 
     }

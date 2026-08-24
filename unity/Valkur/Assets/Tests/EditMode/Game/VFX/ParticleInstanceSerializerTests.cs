@@ -40,7 +40,7 @@ namespace Valkur.Tests.EditMode.Game.VFX
         // ── V2 round-trip ─────────────────────────────────────────────────────────
 
         [Test]
-        public void Serialize_ProducesVersion2Json()
+        public void Serialize_ProducesCurrentVersionJson()
         {
             var instances = new List<PersistedParticleInstance>
             {
@@ -49,8 +49,10 @@ namespace Valkur.Tests.EditMode.Game.VFX
 
             string json = ParticleInstanceSerializer.Serialize(instances, null);
 
-            Assert.IsTrue(json.Contains("\"version\":2"),
-                "Serialize must include version:2 field.");
+            // v3 added the optional per-instance size overrides; v4 added each record's own
+            // configuration, the copy of the preset a placement is born with.
+            Assert.IsTrue(json.Contains("\"version\":4"),
+                "Serialize must stamp the current schema version.");
             Assert.IsTrue(json.Contains("\"instances\":"),
                 "Serialize must include instances array.");
         }
@@ -145,7 +147,7 @@ namespace Valkur.Tests.EditMode.Game.VFX
         }
 
         [Test]
-        public void Deserialize_V1_ThenSerialize_ProducesV2()
+        public void Deserialize_V1_ThenSerialize_ProducesCurrentVersion()
         {
             // Full migration cycle: parse v1, convert records to PersistedParticleInstance,
             // serialize back — result must be v2.
@@ -162,8 +164,8 @@ namespace Valkur.Tests.EditMode.Game.VFX
             string v2Json = ParticleInstanceSerializer.Serialize(
                 new List<PersistedParticleInstance> { inst }, null);
 
-            Assert.IsTrue(v2Json.Contains("\"version\":2"),
-                "After v1→v2 migration, Serialize must produce version:2 JSON.");
+            Assert.IsTrue(v2Json.Contains("\"version\":4"),
+                "A migrated v1 record is written in the current schema.");
             Assert.IsTrue(v2Json.Contains(records[0].Guid),
                 "Migrated GUID must survive round-trip through v2 serialize.");
         }

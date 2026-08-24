@@ -79,7 +79,7 @@ namespace Valkur.Tests.EditMode.Game.VFX
         // ── V1 → V2 migration on next save ────────────────────────────────────────
 
         [Test]
-        public void V1Input_OnSerialize_ProducesV2Output()
+        public void V1Input_OnSerialize_ProducesCurrentSchemaOutput()
         {
             string v1Json = "[{\"id\":1,\"preset_id\":\"arcane\",\"zone\":\"\",\"rel_x\":0,\"rel_y\":0}]";
             var records = ParticleInstanceSerializer.Deserialize(v1Json, null);
@@ -94,8 +94,14 @@ namespace Valkur.Tests.EditMode.Game.VFX
             string v2Json = ParticleInstanceSerializer.Serialize(
                 new List<PersistedParticleInstance> { inst }, null);
 
-            Assert.IsTrue(v2Json.Contains("\"version\":2"),
-                "Serialize after v1 migration must produce v2 JSON.");
+            // v3 added optional per-instance size overrides and v4 each record's own copy of
+            // its preset. Both are omitted for a record that has neither — a migrated v1
+            // instance reconstructed here without one — so the field set is still v2's and
+            // only the version number moves.
+            Assert.IsTrue(v2Json.Contains("\"version\":4"),
+                "Serialize after v1 migration must produce the current schema.");
+            Assert.IsFalse(v2Json.Contains("spawn_scale_x"),
+                "An instance nobody resized must not carry override keys.");
             Assert.IsFalse(v2Json.TrimStart().StartsWith("["),
                 "V2 JSON must NOT be a bare array.");
         }

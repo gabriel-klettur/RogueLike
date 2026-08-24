@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using UnityEngine;
+using Valkur.Data;
 using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.VFX
@@ -17,6 +18,22 @@ namespace Valkur.Gameplay.VFX
     ///   v2 — wrapped object: <c>{"version":2,"instances":[...]}</c>. Each instance
     ///        carries a stable string <c>id</c> (GUID), <c>preset_id</c>, <c>zone</c>,
     ///        <c>rel_x</c>, <c>rel_y</c>, <c>scale_multiplier</c>.
+    ///   v3 — adds optional per-instance size overrides: <c>spawn_scale_x</c>,
+    ///        <c>spawn_scale_y</c>, <c>reach</c>. All three are ratios against the preset's
+    ///        own values and are WRITTEN ONLY when they differ from 1, so a world nobody has
+    ///        resized serializes byte-for-byte as it did under v2. A v2 file read by this
+    ///        version simply has no overrides, which is the same thing as all three at 1.
+    ///   v4 — COPY ON PLACE. Each record carries its own <c>config</c>: the whole vfx block for
+    ///        its root system plus one per composite layer, written by
+    ///        <see cref="ParticleVfxParamsJson"/> (defaults omitted, so a block is around 460
+    ///        characters rather than 2.5 kB). The preset id stays, as the label for where the
+    ///        configuration came from, but no longer decides how the emitter behaves — editing
+    ///        a preset reaches the NEXT placement and none of the existing ones.
+    ///
+    ///        Migration is a freeze: a record read from v1-v3 has no config, the loader
+    ///        snapshots the preset it names — size ratios folded in — and the world looks
+    ///        exactly as it did, permanently detached from later preset edits. The next save
+    ///        writes those snapshots out as v4.
     ///
     /// Migration strategy: v1 is detected on <see cref="Deserialize"/> by the absence of
     /// a top-level <c>version</c> key. It is migrated in-memory to v2 (new GUIDs generated
@@ -29,7 +46,7 @@ namespace Valkur.Gameplay.VFX
     /// </summary>
     public static class ParticleInstanceSerializer
     {
-        private const int CURRENT_VERSION = 2;
+        private const int CURRENT_VERSION = 4;
         private const float PPU = 32f;
 
         // ── Public API ───────────────────────────────────────────────────────────
@@ -49,7 +66,9 @@ namespace Valkur.Gameplay.VFX
             float tileSize = 1f)
         {
             var sb = new StringBuilder();
-            sb.Append("{\"version\":2,\"instances\":[");
+            sb.Append("{\"version\":");
+            sb.Append(CURRENT_VERSION);
+            sb.Append(",\"instances\":[");
 
             bool first = true;
             foreach (var inst in instances)
@@ -79,19 +98,98 @@ namespace Valkur.Gameplay.VFX
                 if (!first) sb.Append(",");
                 first = false;
 
-                sb.Append("{");
-                sb.Append($"\"id\":\"{EscapeJson(inst.StableGuid)}\",");
-                sb.Append($"\"preset_id\":\"{EscapeJson(inst.PresetId ?? "")}\",");
-                sb.Append($"\"zone\":\"{EscapeJson(zone)}\",");
-                sb.Append($"\"rel_x\":{relX},");
-                sb.Append($"\"rel_y\":{relY},");
-                sb.Append(string.Format(CultureInfo.InvariantCulture,
-                    "\"scale_multiplier\":{0:F4}", inst.ScaleMultiplier));
-                sb.Append("}");
+                AppendRecord(sb, inst.StableGuid, inst.PresetId, zone, relX, relY,
+                             inst.ScaleMultiplier, inst.Overrides,
+                             inst.HasOwnConfig ? inst.Config : null);
             }
 
             sb.Append("]}");
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Serializes records straight back out, with no scene and no coordinate maths.
+        ///
+        /// This is the MIGRATION writer, and the absence of the maths is the point: the
+        /// component path above recomputes <c>zone</c>/<c>rel_x</c>/<c>rel_y</c> from a live
+        /// transform, which is correct for an emitter the author moved and needless risk for a
+        /// record nobody touched. Writing the record verbatim cannot move anything — the exact
+        /// failure that cost the spawners 150 tiles per restart
+        /// (.github/incidents/SPAWNER_COORDINATE_SPACE_DRIFT.md).
+        ///
+        /// Records the loader could not spawn — unknown preset, finite preset — pass through
+        /// unchanged rather than being dropped, so a catalog that is temporarily missing an
+        /// entry cannot delete the placements that use it.
+        /// </summary>
+        public static string SerializeRecords(IReadOnlyList<ParticleInstanceRecord> records)
+        {
+            var sb = new StringBuilder();
+            sb.Append("{\"version\":");
+            sb.Append(CURRENT_VERSION);
+            sb.Append(",\"instances\":[");
+
+            bool first = true;
+            foreach (var r in records)
+            {
+                if (r == null) continue;
+                if (!first) sb.Append(",");
+                first = false;
+
+                AppendRecord(sb, r.Guid, r.PresetId, r.Zone, r.RelX, r.RelY,
+                             r.ScaleMultiplier, r.Overrides, r.Config);
+            }
+
+            sb.Append("]}");
+            return sb.ToString();
+        }
+
+        /// <summary>One record's JSON object. The single writer both paths share.</summary>
+        private static void AppendRecord(StringBuilder sb, string guid, string presetId,
+                                         string zone, int relX, int relY, float scaleMultiplier,
+                                         ParticleInstanceOverrides overrides,
+                                         ParticleInstanceConfig config)
+        {
+            sb.Append("{");
+            sb.Append($"\"id\":\"{EscapeJson(guid)}\",");
+            sb.Append($"\"preset_id\":\"{EscapeJson(presetId ?? "")}\",");
+            sb.Append($"\"zone\":\"{EscapeJson(zone ?? "")}\",");
+            sb.Append($"\"rel_x\":{relX},");
+            sb.Append($"\"rel_y\":{relY},");
+            sb.Append(string.Format(CultureInfo.InvariantCulture,
+                "\"scale_multiplier\":{0:F4}", scaleMultiplier));
+
+            // Omitted entirely at their defaults. Most instances have never been resized,
+            // and three redundant keys on each of 185 records is noise in every diff of a
+            // file that is reviewed by reading it. An instance that owns its configuration
+            // has no ratios at all — they were folded into the snapshot when it was taken.
+            var ov = overrides.Sanitized();
+            if (!ov.IsDefault && config == null)
+            {
+                sb.Append(string.Format(CultureInfo.InvariantCulture,
+                    ",\"spawn_scale_x\":{0:F4},\"spawn_scale_y\":{1:F4},\"reach\":{2:F4}",
+                    ov.spawnScaleX, ov.spawnScaleY, ov.reachScale));
+            }
+
+            if (config != null && !config.IsEmpty)
+            {
+                sb.Append(",\"config\":{\"vfx\":");
+                sb.Append(ParticleVfxParamsJson.Write(config.vfx));
+
+                if (config.LayerCount > 0)
+                {
+                    sb.Append(",\"layers\":[");
+                    for (int i = 0; i < config.LayerCount; i++)
+                    {
+                        if (i > 0) sb.Append(',');
+                        sb.Append(ParticleVfxParamsJson.Write(config.layers[i]));
+                    }
+                    sb.Append(']');
+                }
+
+                sb.Append('}');
+            }
+
+            sb.Append("}");
         }
 
         /// <summary>
@@ -154,6 +252,21 @@ namespace Valkur.Gameplay.VFX
                     int relY = GetInt(d, "rel_y");
                     float scale = GetFloat(d, "scale_multiplier", 1f);
 
+                    // Absent in v1 and v2, and in every v3 record that was never resized.
+                    var overrides = new ParticleInstanceOverrides(
+                        GetFloat(d, "spawn_scale_x", 1f),
+                        GetFloat(d, "spawn_scale_y", 1f),
+                        GetFloat(d, "reach", 1f)).Sanitized();
+
+                    // v4 and later. Absent for every record written before copy-on-place, which
+                    // the loader then snapshots from the preset.
+                    ParticleInstanceConfig config = null;
+                    if (d.TryGetValue("config", out object rawConfig) &&
+                        rawConfig is Dictionary<string, object> cfgObj)
+                    {
+                        config = ReadConfig(cfgObj);
+                    }
+
                     Vector2 worldPos = ComputeWorldPos(zone, relX, relY,
                         zoneOffsets, zoneHeightTiles, tileSize, flipY);
 
@@ -165,6 +278,8 @@ namespace Valkur.Gameplay.VFX
                         RelX = relX,
                         RelY = relY,
                         ScaleMultiplier = scale,
+                        Overrides = overrides,
+                        Config = config,
                         WorldPos = worldPos
                     });
                 }
@@ -176,6 +291,30 @@ namespace Valkur.Gameplay.VFX
                 Debug.LogError($"[ParticleInstanceSerializer] Parse error: {ex.Message}");
                 return new List<ParticleInstanceRecord>();
             }
+        }
+
+        /// <summary>
+        /// One record's owned configuration. A malformed or empty block returns null rather
+        /// than a half-built one, which sends the loader down the snapshot path — an instance
+        /// that renders its preset is recoverable, an instance running half a config is not.
+        /// </summary>
+        private static ParticleInstanceConfig ReadConfig(Dictionary<string, object> obj)
+        {
+            if (obj == null) return null;
+            if (!obj.TryGetValue("vfx", out object rawVfx) ||
+                !(rawVfx is Dictionary<string, object> vfxObj)) return null;
+
+            var config = new ParticleInstanceConfig(ParticleVfxParamsJson.Read(vfxObj),
+                                                    new List<ParticleVfxParams>());
+
+            if (obj.TryGetValue("layers", out object rawLayers) && rawLayers is List<object> layerList)
+            {
+                foreach (var item in layerList)
+                    if (item is Dictionary<string, object> layerObj)
+                        config.layers.Add(ParticleVfxParamsJson.Read(layerObj));
+            }
+
+            return config.IsEmpty ? null : config;
         }
 
         // ── Coordinate helpers ───────────────────────────────────────────────────
@@ -312,6 +451,18 @@ namespace Valkur.Gameplay.VFX
 
         /// <summary>Y pixel offset from zone origin (Python space).</summary>
         public int RelY;
+
+        /// <summary>
+        /// This placement's size overrides, as ratios of the preset's own values. All 1 for
+        /// records written before v3, which is exactly "inherit the preset".
+        /// </summary>
+        public ParticleInstanceOverrides Overrides = ParticleInstanceOverrides.None;
+
+        /// <summary>
+        /// This placement's own configuration. Null for a record written before v4 — the loader
+        /// snapshots the preset in that case, which is the migration.
+        /// </summary>
+        public ParticleInstanceConfig Config;
 
         /// <summary>Visual scale multiplier. 1 = default.</summary>
         public float ScaleMultiplier;
