@@ -172,7 +172,7 @@ The full convention lives in `.github/skills/asset-pipeline/SKILL.md` (sections 
 | Chat Personas / Assignments | `Data/ChatPersonas/*.asset` + `ChatAssignmentCatalog.asset` |
 | Vendors | `Data/Vendor/{EconomyGroups,Configs}/*.asset` |
 | Players | `Data/Catalogs/Players/*.asset` |
-| World state (placed buildings, lights, spawners, particles, tile overlays) | `StreamingAssets/{Buildings,Lights,Spawners,Particles,Maps}/*.json` (written by F1/F3/F8/F10/F11/Ctrl+F3) |
+| World state (placed buildings, lights, spawners, particles, tile overlays) | `StreamingAssets/{Buildings,Lights,Spawners,Particles,Maps}/*.json` (written by F1/F3/F8/F10/F11/Ctrl+F3). `Particles/particles_instances.json` is schema v4: each record carries its own `config` (the copy of the preset it was placed with, defaults omitted), and may carry the legacy `spawn_scale_x` / `spawn_scale_y` / `reach` size ratios from v3 |
 | FSM (states, assignments, animation map) | `StreamingAssets/FSM/*.json` (written by F12) |
 | Player saves + run history | `Application.persistentDataPath/{Saves,profile.json}` (atomic-write + checksum + 5 rotating backups) |
 
@@ -426,6 +426,63 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   from disk, repair the object explicitly (parse the `.asset` and write the fields back) — and
   never reach for `AssetDatabase.ForceReserializeAssets`, which flushes the *bad* memory state
   onto the good file.
+- **A placed particle emitter owns its configuration (copy-on-place).** A preset is a starting
+  point, not a live link: an instance takes a copy of it when it is placed
+  (`ParticleInstanceConfig`) and is independent from then on, so editing a preset reaches the
+  NEXT placement and none of the existing ones. Before this, every row of the F1 properties
+  panel edited the shared asset and an author tuning the emitter they had just clicked changed
+  all eighty-four of them at once. The panel now edits whichever is in scope — a selected
+  placement, or the preset when nothing is placed — and says which in its first header. The old
+  coupling is available on purpose through "Reapply Preset → This / → All Placements".
+  `particles_instances.json` is schema v4; a record from v1-v3 has no config and the loader
+  freezes it against its preset as it loads, folding any v3 size ratios in, and WRITES THAT
+  BACK once (`ParticleInstanceSerializer.SerializeRecords`, Editor only). The write is the
+  half that makes the freeze real: in memory alone it lasts one session, so retuning the asset
+  and restarting would re-snapshot every un-migrated placement from the new values — the
+  coupling copy-on-place removes, coming back through the file. That writer emits the records
+  it just read, verbatim and complete (including ones it could not spawn), with no scene scan
+  and no coordinate maths, which is why it needs no anti-wipe guard.
+- **Resizing a live emitter must not go through `ApplyPreset`.** It opens with
+  `Stop(StopEmittingAndClear)` — correct when the effect is being replaced, catastrophic when a
+  drag handle calls it every frame: every particle alive is destroyed sixty times a second, so
+  a leaf field stops raining for as long as the author is resizing the box it falls out of, and
+  takes a full lifespan to refill afterwards. `ParticleEmitter.SetOverrides` takes a live path
+  (`ApplyGeometry`) that rewrites only what a size override can move — shape, `startSpeed`,
+  gravity, velocity, noise, drag — on systems that keep playing. Anything the live path forgets
+  is a module the emitter configures one way while being dragged and another way after a
+  reload: `limitVelocityOverLifetime` was forgotten and diverged on 81 of 519 systems, because
+  its LIMIT is derived from `speed`, which the reach override scales.
+- **A per-instance size override can freeze an effect.** The reach ratio multiplies every
+  motion term at once, so at its 0.05 minimum a leaf field's drift falls from 0.55 u/s to
+  0.0275 — nine tenths of a pixel over a two-second life. The particles go on spawning and
+  dying exactly as before, which reads as a broken emitter rather than a small one. The reach
+  is not the only culprit: an orbit sweeps ground in proportion to the radius it turns around,
+  so collapsing the EMISSION box freezes an orbital preset just as surely.
+  `ParticleBoundsHandles.ClampToVisibleMotion` holds either drag back from that point and the
+  status line says which knob does what the author meant.
+- **Unity's particle bounds are not the particles.** `ParticleSystemRenderer.bounds` is built
+  from position and size with per-particle ROTATION left out, and it trails the simulation by a
+  step or two — measured, a spinning leaf pokes 20% of its size past the reported box and a
+  fountain droplet at 4 u/s sits 3.5 cm outside it. `ParticleFootprint.OfLive` pads for both.
+  Its analytic sibling has the opposite job (bound the worst case before any particle exists)
+  and therefore over-reserves on purpose; the two are separate functions for that reason.
+- **The noise module displaces far more than its authored strength.** `strength` behaves like a
+  velocity against a scrolling field, so displacement grows with lifetime: measured across the
+  44 noisy presets in the catalog, with drift and throw disabled, particles ended up as far as
+  **3.67 x strength x lifetime** from where they started — the pollen haze wandering 4.4 units
+  on an authored 0.22. Any bound over noise has to be shaped as `strength x life`, not as a
+  constant, or it under-reserves by a unit and more on the long-lived hazes.
+- **`ParticleSystem.Simulate` PAUSES the system it advances, and a system that has never played
+  swallows `Emit`.** Both bite in EditMode tests: without a `Play()` before each `Simulate` the
+  second step of a test measures a frozen emitter and passes for the wrong reason, and a probe
+  that emits before ever playing measures nothing at all. `Emit(count)` goes through the shape
+  and applies `startSpeed`; `Emit(EmitParams)` with an explicit zero velocity does not, which
+  once made half the catalog look motionless.
+- **A clean console is not a successful compile.** Unity defers compilation while in Play Mode,
+  so a broken script can sit in the working tree with `read_console` returning zero errors and
+  every subsequent `execute_code` running against the STALE assembly. After any C# change,
+  confirm the new code is actually loaded — `typeof(X).GetMethod("NewThing") != null` through
+  `execute_code` — before trusting a measurement or a green console.
 
 ## Incident reports
 

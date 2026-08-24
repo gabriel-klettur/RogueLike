@@ -54,6 +54,15 @@ Everything else in `asset-pipeline` still applies — naming, folders, atlas pol
    Reach for a new layer whenever one emitter would have to be two things at once — the
    classic being additive light and alpha-blended mass.
 
+   One layer in a stack may be a **single quad**, not a crowd. A `Vortex` gate is 2–3
+   long-lived overlapping quads at `emitRate` well under 1/s: set `rotationOneWay` so they
+   all spin the same way, `startRotationJitterDegrees = 0` so they coincide exactly, and
+   pick the spin so that `360 / arms` degrees fall in exactly one emission interval —
+   45°/s at one quad every 4 s puts each copy 180° from its neighbour, which for a 2-arm
+   spiral is the same picture. Miss that and the copies read as offset ghosts. Give the
+   alpha curve ramps as long as the interval and the population fades in and out with a
+   constant sum, so the gate never pulses while its quads recycle.
+
    A `ParticlePresetDefinition` can also carry its own `layers` list — child presets
    rendered by the SAME `ParticleEmitter`, one extra `ParticleSystem` per entry. This is
    a different mechanism from the `…Layers` lists above: those spawn separate placed
@@ -99,6 +108,84 @@ Note: `ParticlePresetDefinition` uses `[SerializeField] public` fields. That is 
 deliberate exception to the "never public fields" rule — it is a serialization DTO
 mirrored 1:1 by `ParticleInstanceSerializer`. Do not "fix" it.
 
+### Copy on place — a placement owns its configuration
+
+Editing a preset changes what the NEXT placement is born with. It does not reach the emitters
+already standing in the world: each took a copy of the preset when it was placed
+(`ParticleInstanceConfig`, stored per record in `particles_instances.json` v4) and has owned it
+since. So:
+
+| You are editing | It reaches |
+|---|---|
+| a preset, nothing placed selected (F1 picker) | every FUTURE placement, the preview, the asset on disk |
+| a placement selected on the map | that one emitter, and nothing else |
+| "Reapply Preset → This / → All Placements" | one placement, or every placement of that preset — the deliberate version of the old coupling |
+
+Consequence for authoring: **tune a preset before you place a hundred of it.** A mass retune
+afterwards is one button, but it is a button someone has to press, and it overwrites whatever
+those placements had drifted to.
+
+Everything a placement owns is persisted: the config (root block + snapshotable layers) is
+written per record, and so are its position, zone, guid and `scale_multiplier`. A pre-v4 file
+is migrated on its first load in the Editor and written back once — a placement frozen only in
+RAM would thaw at the next restart. The file pays for it: the world's 190 records go from
+~25 KB to ~300 KB, because a frozen copy is a full block, deliberately not a diff against the
+preset (a diff would re-link them to it).
+
+Not persisted, on purpose: the F1 undo stack, the selected box / hovered edge / open tab, and
+the outline's smoothing — all session state.
+
+### The leaf-fall family shares one behaviour
+
+`falling_leaf_30s` ("Leaf Fall") is the reference. `falling_leaf_canopy`,
+`autumn_leaves_gradient`, `falling_petal_30s` and `flowers_petal_pink_60s` are the same fall in
+another colour: every motion, timing and turbulence field is copied from it verbatim, verified
+by comparing the COMPOSED ParticleSystem modules and not the YAML — 42 module values, zero
+mismatches.
+
+What each one still owns is exactly what makes it itself:
+
+| Kept per preset | Why |
+|---|---|
+| `colors`, `color`, `colorOverLife`, `colorIntensity`, `additive` | the colour is the whole point of the variant |
+| `textureShape`, `textureSoftness` | Leaf (8) and Petal (9) are different silhouettes |
+| `sizeMin` / `sizeMax` / `sizeAspect` | quad size is a look — no motion term reads it |
+| `spawnWidth` | how wide the effect covers the world, and the axis the F1 drag handle owns |
+| `sortingLayer` / `sortingOrder` | the deliberate stacking of co-located fields (canopy 10 over petals 5 over leaves 0) |
+
+`spawnHeight` is NOT in that list even though it is a size: the visible band is
+`spawnHeight + |gravityVector.y| x lifespan`, so a 1.2-tall box under the reference's 2-second
+clock collapses the curtain to less than half of what the same preset drew at lifespan 8. It
+travels with the timing fields.
+
+Adding a new colour: duplicate `PP_falling_leaf_30s.asset`, change only the rows in that table.
+
+### Per-instance size overrides
+
+A preset is shared by every placement of it, so editing `spawnWidth` resizes all 84 leaf fields
+at once. A single placement is resized instead through `ParticleInstanceOverrides` — three
+RATIOS against the preset, stored on the instance and folded over the preset by
+`ParticleOverrideApplier` when the emitter builds its systems:
+
+| Ratio | Multiplies | Authored by |
+|---|---|---|
+| `spawnScaleX` / `spawnScaleY` | the emission area per axis (`spawnWidth`/`spawnHeight`; the emission radius by their geometric mean for the circular kinds, which have no ellipse to stretch) | dragging the EMISSION box's edges in F1 |
+| `reachScale` | every motion term at once — `speed`, `gravity`, `gravityVector`, `radialSpeed`, `noiseStrength`, `swayAmp` | dragging the REACH box's edges in F1 |
+
+Ratios rather than absolute sizes, so retuning a preset carries its instances with it, and so
+they compose with `scale_multiplier` (also a ratio) instead of one silently overriding the
+other. Persisted in `particles_instances.json` (schema v3) only when they differ from 1.
+
+Two rules the applier is built on, and neither is optional:
+
+- **The preset object is never mutated.** It belongs to a ScriptableObject every placement
+  shares; writing to it resizes all of them.
+- **One implementation, used by the emitter AND the marker.** A second copy of these rules is a
+  box that stops matching the effect the first time either is touched.
+
+`lifespan` is deliberately outside the reach ratio: stretching it changes how many particles are
+alive at once — the density and the frame cost — which is a different edit from "reaches further".
+
 ### `ParticleVfxParams` field reference
 
 Source: `Scripts/Data/Spells/ParticleVfxParams.cs`. Consumed by
@@ -108,12 +195,14 @@ Source: `Scripts/Data/Spells/ParticleVfxParams.cs`. Consumed by
 |---|---|---|---|
 | `kind` | string | `ConfigureShape()` switch + a few special cases | See §3 for the full list. Unknown kind → Sphere r=0.15. |
 | `loops` | bool | `main.loop` + `stopAction` | **Single source of truth** for burst vs continuous. `false` → `StopAction.Disable`. |
-| `emitRate` | float | `emission.rateOverTime` | Continuous only. Floored at 1. |
+| `emitRate` | float | `emission.rateOverTime` | Continuous only. Floored at 0.02 — sub-1 rates are legal, and are how a preset made of two or three long-lived quads holds its population. |
 | `count` | int | one `Burst(0f, count)` | Burst only (`loops=false`). Cast to `short`. |
 | `burstIntervalSeconds` | float | `BurstLoop()` coroutine | **Dead** — gated by `IsBurstWithInterval()` which always returns false. |
 | `speed` | float | `main.startSpeed` as `MinMaxCurve(0, speed*scale)` | Randomized 0→speed, so mean is half. |
 | `gravity` | float | `main.gravityModifier = gravity / 9.81` | Ignored when `useGravityVector`. |
-| `gravityVector` + `useGravityVector` | Vector2, bool | `velocityOverLifetime` in Local space | For sideways drift (rain, wind). |
+| `gravityVector` + `useGravityVector` | Vector2, bool | `velocityOverLifetime` in Local space | For sideways drift (rain, wind). NOT scaled by the emitter scale. |
+| `orbitalSpeedDegrees` | float | `velocityOverLifetime.orbitalZ` | Angular rate about the emitter centre — the only field that makes a swirl. Unity's own unit is **radians/s**; the emitter converts. Not scaled (an angular rate is already size-independent). |
+| `radialSpeed` | float | `velocityOverLifetime.radial` | World u/s along the centre→particle line; **negative draws inward**. Scaled by the emitter scale, so `radius / abs(radialSpeed)` is the time to the centre at any placed size — author `lifespan` to match. |
 | `drag` | float | `limitVelocityOverLifetime.dampen` (clamped 0–1) | Only enabled when `> 0`. |
 | `direction` | Vector2 | — | **NOT IMPLEMENTED — dead field.** No caller and no emitter path reads it. Authoring it does nothing. |
 | `lifespan` | float | `main.startLifetime` | Floored at 0.05. |
@@ -126,15 +215,17 @@ Source: `Scripts/Data/Spells/ParticleVfxParams.cs`. Consumed by
 | `customSprite` | Sprite | overrides `textureShape` entirely | For hand-authored art. Uses `sprite.texture`, so the sprite should be its own texture, not an atlas sub-rect. |
 | `startRotationJitterDegrees` | float | `main.startRotation` as ±jitter | 0 leaves every quad axis-aligned, which reads as a repeated stamp. Written unconditionally. |
 | `rotationSpeedDegrees` | float | `rotationOverLifetime.z` as ±speed | Sign is per-particle. Written unconditionally. |
+| `rotationOneWay` | bool | drops the ± and spins at the signed value | For a shape that IS the effect (a `Vortex` gate). Two overlapping quads with independent signs cancel into a flicker. |
 | `worldSpace` | bool | `main.simulationSpace` | **The trail switch.** See §2.2. `kind == "dash"` forces world space regardless. |
 | `radius` | float | shape radius for aura / portal | |
+| `shapeFill` | float | `shape.radiusThickness`, applied after every kind and override | `-1` (default) keeps the kind's own choice — `aura` and `portal` emit from the RIM, every other circle from the whole area. `0` rim, `1` filled. |
 | `outerRadius` | float | overrides `radius` for `portal` | |
 | `ellipseRatio` | float | — | **NOT IMPLEMENTED — dead field.** No code squashes any shape; it only exists in `ParticleVfxParams.cs` and is serialized as `1` in every `.asset`. |
 | `arcRangeDegrees` | float | `shape.angle * 0.5` for `slash` cone | |
 | `dispersion` | float | shape radius for `smoke_emitter` | |
 | `segments`, `lightningOffset`, `thickness` | int, float, float | `ParticleEmitter.Lightning.cs` LineRenderer | `kind="lightning"` only — no ParticleSystem is created. |
 | `spouts[]`, `splashCount`, `dropletSize` | float[], int, float | — | **NOT IMPLEMENTED — dead fields.** Water-preset importer debt, no consumer. See §7. |
-| `swayAmp` / `swaySpeed` | float | `noise.strength` / `noise.frequency` | **`kind == "falling_leaf"` only.** Noise is force-disabled for every other kind. |
+| `swayAmp` / `swaySpeed` | float | `noise.strength` / `noise.frequency` | **`kind == "falling_leaf"` only, AND only when the authored noise is off.** `ConfigureNoise` takes the authored branch whenever `noiseEnabled && noiseStrength > 0`; the legacy sway is its `else if`. Every shipped leaf preset authors noise, so on all of them these two rows are read by nothing — tune `noiseStrength` / `noiseFrequency` instead. |
 | `stripeGap`, `rippleAmp`, `alphaBase`, `alphaWave`, `highlightColor` | — | — | **NOT IMPLEMENTED — dead fields.** `water_flow` legacy, no consumer. See §7. |
 | `sizeOverLife[]` | Keyframe2D[] | `sizeOverLifetime.size` | If empty and `loops=false`, engine injects 0.3→1.0→0. If empty and looping, module is **off**. |
 | `alphaOverLife[]` | Keyframe2D[] | gradient alpha keys (max 8) | Presence switches to `BuildGradientFromCurves`. |
@@ -157,6 +248,7 @@ the alpha channel, so the preset's own colours do all the tinting. They are cach
 | `Smoke` | cloudy value-noise puff | Smoke, dust, haze. |
 | `Ring` | hollow annulus | Shockwaves, portal rims, ripples. |
 | `Star` | four-point anamorphic flare | Sparkle, holy accents. |
+| `Vortex` | two-arm logarithmic spiral with a hub | Portal mouths. Meant to be used ALONE — one long-lived quad plus `rotationOneWay` IS the effect; a crowd of them is mush. Circular texture: an oval gate comes from `sizeAspect`. |
 
 `Auto` mapping: smoke kinds → `Smoke`; `slash` / `dash` / `firework` → `Spark`;
 `aura` / `healing_aura` / `arcane_flame` → `Glow`; `portal` → `Glow` if additive else
@@ -217,14 +309,14 @@ color in both fields double-darkens. Keep one of them near white.
 | `kind` | Shape | Beauty recipe |
 |---|---|---|
 | `aura`, `healing_aura` | Circle, `radiusThickness=0` (edge emit) | Slow rise, `additive`, long life, low `emitRate`. It emits as a true circle — `ellipseRatio` is dead (§7), so a floor-lying disc needs the emitter transform scaled on Y. |
-| `portal` | Circle edge, `outerRadius` | Never one preset — stack `_core_soft` (alpha) + `_rim_add` (additive) + `_sparks_add` (additive, tiny, fast). |
+| `portal` | Circle edge, `outerRadius` | Never one preset — stack `_core_soft` (alpha) + `_rim_add` (additive) + `_sparks_add` (additive, tiny, fast). The MOUTH is two more layers: a `Vortex` quad spun by `rotationOneWay` and an inflow of motes on `orbitalSpeedDegrees` + negative `radialSpeed`. See `PP_portal_oval_*` for the shipped five-layer version. |
 | `dash` | Circle r=0.1, **World simulation space** | The only kind in world space; particles stay behind the mover. Short life, fast shrink. |
 | `slash` | Cone, `angle = arcRangeDegrees/2` | Very short life (< 0.2 s), high count, additive. |
 | `explosion`, `smoke_burst`, `firework` | Sphere r=0.1 | Set `loops=false` so the auto expand-shrink curve applies. Two layers: additive flash (life 0.15) + alpha smoke (life 1.2). |
 | `smoke_emitter`, `smoke` | Circle, radius = `dispersion` | Alpha, never additive. Large `sizeMax`, low alpha, slow. |
 | `arcane_flame` | Circle r=0.2 | Additive, upward `gravityVector`, hot-white → hue gradient. |
 | `water_fountain` | Cone 15°, aimed +Y | `gravity > 0` for the arc. |
-| `falling_leaf` | Box 2×0.1 | **Only kind with noise enabled.** Tune `swayAmp` / `swaySpeed`. |
+| `falling_leaf` | Box 2×0.1, replaced by `spawnWidth`×`spawnHeight` the moment either is authored | The flutter is `noiseStrength` / `noiseFrequency`; `swayAmp` / `swaySpeed` are the pre-noise fallback and are dead on every shipped leaf preset. |
 | `water_flow` | Box 3×0.1 | |
 | `lightning` | *No ParticleSystem* — LineRenderer | `segments`, `lightningOffset`, `thickness` only. Nothing else in the params applies. |
 
@@ -251,6 +343,19 @@ Additive traps:
   haze layer, which had to go back to alpha. Rule of thumb: **the light is additive, the
   volume is not.** If a layer's job is to occupy space rather than to glow, it is mass —
   author the warmth into its gradient, not into its blend mode.
+
+### 4.1 Two things that bite when a preset is resized in F1
+
+- **A small reach is a frozen effect, not a small one.** At the 0.05 minimum a leaf's drift is
+  0.0275 u/s — nine tenths of a pixel over its whole life — while spawning and dying carry on
+  unchanged. The F1 handles refuse to author past a measured floor (four art texels of lifetime
+  travel, or a fifth of what the preset was authored to travel, whichever is larger) and say so
+  in the status line. An orbital preset hits the same wall through the EMISSION box, because an
+  orbit's arc is proportional to the radius it turns around.
+- **Noise carries much further than its strength suggests.** Measured over the catalog's 44
+  noisy presets, displacement reaches `3.67 x strength x lifetime` — a 0.22-strength haze with a
+  seven-second life wanders 4.4 units. Budget the area accordingly, and expect a noisy preset's
+  marker to be much larger than its spawn box.
 
 ## 5. Budgets
 
@@ -323,6 +428,19 @@ what caused presets to be authored against effects that never existed.
   turning the same way reads as a rotating texture rather than as fire.
 - Simulation space (`worldSpace`). See §2.2; this is the difference between a trail and
   a halo, and it was the reason the fireball's "wake" preset could not wake.
+
+**Already fixed (2026-08-24)** — do not re-report these as gaps:
+
+- Orbital and radial velocity (`orbitalSpeedDegrees`, `radialSpeed`), one-way spin
+  (`rotationOneWay`) and authored emission fill (`shapeFill`). Unity's orbital velocity is
+  ANGULAR and in RADIANS per second — measured, an `orbitalZ` of 1 turns a particle 57.296 deg
+  in one second at any radius — while `radial` is linear world units per second; the emitter
+  converts and scales only the linear term.
+- The `Vortex` texture shape: a two-armed logarithmic spiral meant to be used ALONE, spun by
+  `rotationOneWay`, with `sizeAspect` for an oval gate.
+- Sub-1 emission rates. `emitRate` floors at 0.02/s, which is what lets a preset be two or three
+  long-lived quads instead of a crowd.
+- Per-instance size overrides and the F1 resize handles — see "Per-instance size overrides".
 
 **Already fixed (2026-08-21)** — do not re-report these as gaps:
 
