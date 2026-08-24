@@ -33,6 +33,7 @@ namespace Valkur.Gameplay.VFX
             string filter = _searchFilter?.Trim().ToLowerInvariant() ?? "";
 
             var visible = new List<ParticlePresetDefinition>();
+            int hiddenLayerOnly = 0;
             foreach (var preset in _catalog.Presets)
             {
                 if (preset == null) continue;
@@ -43,14 +44,37 @@ namespace Valkur.Gameplay.VFX
                     string nm  = (preset.displayName ?? "").ToLowerInvariant();
                     if (!pid.Contains(filter) && !nm.Contains(filter)) continue;
                 }
+                // Layer-only presets are sub-layers of a composite — the three pollen
+                // layers under flowers_pollen_soft are the case that motivated the flag.
+                // Placing the composite and then one of its own layers beside it doubles
+                // that layer, and nothing in the UI says so. They get no PLACEMENT tile;
+                // they keep their Table row, which is where they stay selectable and
+                // editable, and they keep working as layers and inside spells.
+                if (preset.layerOnly) { hiddenLayerOnly++; continue; }
                 visible.Add(preset);
             }
 
             // Feed the visible list to the preview service so it configures emitters.
             _previewService.SetVisiblePresets(visible);
 
+            // One GridLayoutGroup lookup per rebuild, not one per tile. The budget is a
+            // property of the grid's live cell width, so it is identical for all ~133 tiles,
+            // while the GetComponent behind it is not free — and this rebuild runs on every
+            // keystroke in the search box.
+            int labelBudget = PickerLabelBudget();
             foreach (var preset in visible)
-                AddPickerSlot(preset);
+                AddPickerSlot(preset, labelBudget);
+
+            // A tab can legitimately end up with nothing placeable in it (every preset in
+            // it is a layer). A blank grid reads as a broken editor, so say what happened
+            // and where the presets went.
+            if (visible.Count == 0)
+            {
+                AddPickerEmptyNote(hiddenLayerOnly > 0
+                    ? $"Nothing placeable here.\n{hiddenLayerOnly} layer-only preset(s) hidden — " +
+                      "switch to the Table view to select and edit them."
+                    : "No preset matches.");
+            }
 
             // Sync the View panel RawImage with the currently selected preset.
             if (_ui.ViewRawImage != null)
@@ -64,9 +88,46 @@ namespace Valkur.Gameplay.VFX
             string scope = IsCategoryFilterActive
                 ? $" in {ParticlePresetCategory.Label(ActiveCategory)}"
                 : "";
-            SetStatus(filter.Length == 0
+            // The hidden count is deliberately reported: a grid that silently shows fewer
+            // presets than the catalog holds is the same class of lie as the truncated
+            // labels below.
+            string hidden = hiddenLayerOnly > 0 ? $" · {hiddenLayerOnly} layer-only hidden" : "";
+            SetStatus((filter.Length == 0
                 ? $"{visible.Count} presets{scope}"
-                : $"{visible.Count} match '{_searchFilter}'{scope}");
+                : $"{visible.Count} match '{_searchFilter}'{scope}") + hidden);
+        }
+
+        /// <summary>
+        /// Full-width note drawn where the tiles would be when the grid has nothing to show.
+        ///
+        /// <c>ignoreLayout</c> is the load-bearing part: PickerContent is a GridLayoutGroup,
+        /// which would otherwise squeeze this into one 64 px cell. LayoutGroup.rectChildren
+        /// skips ILayoutIgnorer children, so the note can stretch across the panel while the
+        /// grid's own cell maths (GridAutoSize) stays untouched — it derives columns from
+        /// the container width, never from the child count.
+        /// </summary>
+        private void AddPickerEmptyNote(string message)
+        {
+            if (_ui.PickerContent == null) return;
+
+            var go = new GameObject("EmptyNote", typeof(RectTransform));
+            go.transform.SetParent(_ui.PickerContent, false);
+            go.AddComponent<LayoutElement>().ignoreLayout = true;
+
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin        = new Vector2(0f, 1f);
+            rt.anchorMax        = new Vector2(1f, 1f);
+            rt.pivot            = new Vector2(0.5f, 1f);
+            rt.anchoredPosition = new Vector2(0f, -10f);
+            rt.sizeDelta        = new Vector2(-16f, 56f);
+
+            // TMP alone on the GameObject — an Image on the same object would NRE.
+            var tmp = go.AddComponent<TextMeshProUGUI>();
+            tmp.text          = message;
+            tmp.fontSize      = 11f;
+            tmp.alignment     = TextAlignmentOptions.Top;
+            tmp.color         = UITheme.TEXT_SECONDARY;
+            tmp.raycastTarget = false;
         }
 
         /// <summary>
@@ -95,14 +156,26 @@ namespace Valkur.Gameplay.VFX
         private bool MatchesCategoryFilter(ParticlePresetDefinition preset)
             => !IsCategoryFilterActive || ParticlePresetCategory.Of(preset) == ActiveCategory;
 
-        private void AddPickerSlot(ParticlePresetDefinition preset)
+        /// <summary>
+        /// Builds one tile. <paramref name="labelBudget"/> comes from the caller rather than
+        /// from <see cref="PickerLabelBudget"/> here: it is the same number for every tile in
+        /// a rebuild, and computing it per tile meant one GetComponent per tile.
+        /// </summary>
+        private void AddPickerSlot(ParticlePresetDefinition preset, int labelBudget)
         {
             string pid = preset.id ?? "";
 
             var (btn, _, label) = EditorUIHelpers.MakeSlotButton(
                 _ui.PickerContent, preset.displayName ?? pid, 64f,
                 () => SelectPreset(pid));
-            label.text = TruncateName(preset.displayName ?? pid, 8);
+            label.text = TruncateName(preset.displayName ?? pid, labelBudget);
+
+            // The budget above is arithmetic on an average glyph width; TMP knows the real
+            // advances, so it makes the final cut. Word wrap must go with it — the label
+            // strip is a single 16 px line, and a wrapped second line spills out of the
+            // tile (TMP's default overflow draws outside the rect rather than clipping).
+            label.enableWordWrapping = false;
+            label.overflowMode       = TextOverflowModes.Ellipsis;
 
             // Slot background: dark neutral so the RenderTexture particles are readable.
             var slotImg = btn.GetComponent<Image>();
@@ -171,7 +244,14 @@ namespace Valkur.Gameplay.VFX
             RefreshSpellsPanel();
             RebuildSamePresetFx();
             if (_mode == EditorMode.Place && !string.IsNullOrEmpty(pid))
-                SetStatus($"Place: click on the map to spawn '{pid}'.");
+            {
+                // A layer-only preset is still reachable from the Table, so Place mode has
+                // to admit what it is rather than invite the author to double a layer.
+                SetStatus(def != null && def.layerOnly
+                    ? $"'{pid}' is layer-only — it belongs inside another preset's layers, " +
+                      "not on the map as its own instance."
+                    : $"Place: click on the map to spawn '{pid}'.");
+            }
         }
 
         private void ShowPresetProperties(string pid)
@@ -191,10 +271,42 @@ namespace Valkur.Gameplay.VFX
                 }
                 else
                 {
-                    _ui.PresetPropsText.text =
-                        $"<b>ID:</b> {preset.id}   <b>Type:</b> {preset.type}\n" +
-                        "Sprites and gravity vector are " +
-                        "Inspector-only until their widgets exist.";
+                    var sb = new StringBuilder();
+                    sb.Append($"<b>ID:</b> {preset.id}   <b>Type:</b> {preset.type}");
+                    if (preset.layerOnly)
+                        sb.Append("   <b>Layer-only</b> (no placement tile)");
+                    sb.Append('\n');
+
+                    // A gradient richer than the three rows must announce itself, or the
+                    // author reads "Birth / Middle / Death" as the whole gradient and
+                    // wonders why the stops between them never move.
+                    var grad = preset.vfx?.colorOverLife;
+                    if (grad != null && grad.Length > 3)
+                    {
+                        int mid = ParticlePresetFieldWriter.MidStopIndex(grad);
+                        sb.Append($"Gradient has {grad.Length} keys — Birth/Middle/Death edit " +
+                                  $"keys 1/{mid + 1}/{grad.Length}; the rest keep their times " +
+                                  "and colours.\n");
+                    }
+
+                    // ParticlePresetFieldWriter refuses arrays and UnityEngine.Object
+                    // references outright, so flipbookFrames, customSprite, the layers list
+                    // and the size/alpha curves cannot have a row until a real widget backs
+                    // them; gravityVector is refused one step later, in TryConvert, for want
+                    // of a two-field row. Stated here, because a field that is silently
+                    // absent reads as a bug.
+                    sb.Append("Inspector-only for now: sprites (customSprite, flipbookFrames), " +
+                              "the layers list, the size/alpha curves and the gravity vector — " +
+                              "each needs a widget the form does not have.\n");
+
+                    // The one question this panel gets asked: why did editing one emitter
+                    // change all of them.
+                    sb.Append("<b>Every field here belongs to the preset</b>, so an edit reaches " +
+                              "every placement of it, the preview and everything placed from it " +
+                              "afterwards. What belongs to ONE placement: its position, its " +
+                              "scale, and the two size boxes you drag on the map.");
+
+                    _ui.PresetPropsText.text = sb.ToString();
                     _ui.PresetPropsText.richText = true;
                 }
             }
@@ -232,6 +344,8 @@ namespace Valkur.Gameplay.VFX
             // Show/hide the Delete Instance button depending on selection.
             if (_ui.DeleteInstanceBtnGo != null)
                 _ui.DeleteInstanceBtnGo.SetActive(instance != null);
+                if (_ui.ReapplyInstanceBtnGo != null)
+                    _ui.ReapplyInstanceBtnGo.SetActive(instance != null);
 
             if (instance == null)
             {
@@ -265,6 +379,51 @@ namespace Valkur.Gameplay.VFX
         {
             if (string.IsNullOrEmpty(name)) return "";
             return name.Length <= max ? name : name.Substring(0, max - 1) + "…";
+        }
+
+        /// <summary>Project-wide picker convention — Entities and Spells both cut at 9.</summary>
+        private const int PICKER_LABEL_MIN_CHARS = 9;
+
+        /// <summary>Label point size baked into UIButton.MakeSlot.</summary>
+        private const float PICKER_LABEL_FONT_PT = 9f;
+
+        /// <summary>
+        /// Mean glyph advance as a fraction of the em, for title-case Latin in the default
+        /// TMP face. Lowercase runs ~0.5 em and uppercase ~0.68 em; 0.55 is the mixed-case
+        /// average, deliberately pessimistic so the arithmetic under-counts rather than
+        /// over-counts. TMP applies the exact cut afterwards.
+        /// </summary>
+        private const float PICKER_LABEL_AVG_ADVANCE_EM = 0.55f;
+
+        /// <summary>
+        /// How many characters of a display name fit on one picker tile.
+        ///
+        /// The old fixed 8 was measured against nothing. The grid is responsive
+        /// (GridAutoSize, 64–96 px cells — see ParticlesEditorUIBuilder.PresetsPanel.cs),
+        /// the label spans the full cell width (MakeSlot anchors it 0→1 on x) and renders at
+        /// 9 pt, so a tile affords roughly 64 / (9 × 0.55) ≈ 12 characters at the narrow end
+        /// and ≈ 19 at the wide end. Eight collapsed the whole Plants tab into "Falling ",
+        /// "Falling ", "Falling ", "Autumn L", "Flower P", "Flowers " ×4 — nine tiles, four
+        /// of them character-for-character identical, and the "Falling Leaf (30s)" /
+        /// "Falling Leaf (Canopy)" pair stays ambiguous even at the project's 9.
+        ///
+        /// So 9 is the FLOOR, not the value: below it we would be narrower than every other
+        /// picker in the project, above it we simply spend the width the live cell has.
+        ///
+        /// Call this ONCE per rebuild and pass the result down: the GetComponent is the whole
+        /// cost of the function, and the answer cannot differ between two tiles of one grid.
+        /// </summary>
+        private int PickerLabelBudget()
+        {
+            float cell = 64f;
+            var grid = _ui.PickerContent != null
+                ? _ui.PickerContent.GetComponent<GridLayoutGroup>()
+                : null;
+            // cellSize is a placeholder until GridAutoSize sees a real container width.
+            if (grid != null && grid.cellSize.x > 1f) cell = grid.cellSize.x;
+
+            int fits = Mathf.FloorToInt(cell / (PICKER_LABEL_FONT_PT * PICKER_LABEL_AVG_ADVANCE_EM));
+            return Mathf.Max(PICKER_LABEL_MIN_CHARS, fits);
         }
     }
 }

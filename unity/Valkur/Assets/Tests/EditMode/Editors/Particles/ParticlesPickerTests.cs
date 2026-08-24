@@ -171,8 +171,20 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             var ui = GetVal(_editor, "_ui");
             var content = ui.GetType().GetField("PickerContent").GetValue(ui) as RectTransform;
 
-            Assert.AreEqual(0, content.childCount,
-                "Non-matching filter must produce an empty picker grid.");
+            // Counted as PLACEABLE TILES, not raw children: the grid now also draws a
+            // one-off note when it has nothing to show, because a blank panel reads as a
+            // broken editor and gives the author nowhere to learn that layer-only presets
+            // were hidden. The invariant being protected is that no stale tile survives a
+            // non-matching filter, so assert on the things that can actually be clicked
+            // to place a preset.
+            int placeable = 0;
+            foreach (Transform child in content)
+                if (child.GetComponent<UnityEngine.UI.Button>() != null) placeable++;
+
+            Assert.AreEqual(0, placeable,
+                "Non-matching filter must leave no placeable tile in the picker grid.");
+            Assert.AreEqual(1, content.childCount,
+                "The empty grid must still say why it is empty — exactly one note, no tiles.");
         }
 
     }

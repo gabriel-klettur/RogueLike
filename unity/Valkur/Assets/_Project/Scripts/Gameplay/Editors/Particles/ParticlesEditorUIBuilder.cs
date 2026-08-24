@@ -73,6 +73,15 @@ namespace Valkur.Gameplay.VFX
             public GameObject       DeleteInstanceBtnGo;  // shown only when an instance is selected
             public Image            DeleteInstanceBtnImg;
 
+            /// <summary>Overwrites the selected placement with a fresh copy of its preset.
+            /// Shown only when an instance is selected — there is nothing to reapply to
+            /// otherwise.</summary>
+            public GameObject       ReapplyInstanceBtnGo;
+
+            /// <summary>Overwrites EVERY placement of the selected preset. Always available:
+            /// it is how a mass retune happens now that each placement owns its copy.</summary>
+            public GameObject       ReapplyAllBtnGo;
+
             // Tools panel — danger zone
             public Image            DeleteInZoneBtnImg;
 
@@ -141,7 +150,9 @@ namespace Valkur.Gameplay.VFX
             Action         onDeleteInZone    = null,
             Action         onDeleteInstance  = null,
             UnityEngine.Events.UnityAction<bool> onLoopsToggled = null,
-            Action<string> onCategoryChanged = null)
+            Action<string> onCategoryChanged = null,
+            Action         onReapplyInstance = null,
+            Action         onReapplyAll      = null)
         {
             // Reserve space below the menu bar so draggable panels cannot occlude it.
             DraggablePanel.TopReservedPx = MENUBAR_HEIGHT;
@@ -155,7 +166,8 @@ namespace Valkur.Gameplay.VFX
                 onUndo, onRedo, onSave, onReload,
                 onDeleteInZone);
             BuildPresetsPanel(canvasT, ref refs, onSearchChanged, onCategoryChanged);
-            BuildPropertiesPanel(canvasT, ref refs, onDeleteInstance, onLoopsToggled);
+            BuildPropertiesPanel(canvasT, ref refs, onDeleteInstance, onLoopsToggled,
+                                 onReapplyInstance, onReapplyAll);
             BuildViewPanel(canvasT, ref refs);
             BuildSpellsPanel(canvasT, ref refs, onToggleSpells);
 

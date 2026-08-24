@@ -38,7 +38,9 @@ namespace Valkur.Gameplay.VFX
                 onDeleteInZone:    RequestDeleteAllInZoneWithConfirm,
                 onDeleteInstance:  RequestDeleteSelectedInstanceWithConfirm,
                 onLoopsToggled:    OnLoopsToggled,
-                onCategoryChanged: k => { _categoryFilter = k ?? ""; RefreshPicker(); RefreshTable(); });
+                onCategoryChanged: k => { _categoryFilter = k ?? ""; RefreshPicker(); RefreshTable(); },
+                onReapplyInstance: ReapplyPresetToActiveInstance,
+                onReapplyAll:      () => ReapplyPresetToAllInstances(_selectedPresetId));
 
             // Wire panel close callbacks to keep dropdown state in sync (Buildings parity).
             if (_ui.ToolsPanelDrag    != null) _ui.ToolsPanelDrag.OnClose    = () => { _openDropdowns.Remove("tools");    RefreshMenuBtnHighlights(); };

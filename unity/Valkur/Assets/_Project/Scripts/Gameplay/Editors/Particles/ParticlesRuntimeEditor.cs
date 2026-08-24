@@ -91,8 +91,10 @@ namespace Valkur.Gameplay.VFX
             ("3. Place an instance",  "Drag a preset from the Presets panel onto the map to spawn an emitter, or click \"Add System\" then click on the map."),
             ("4. Move an instance",   "Right-click + drag a particle instance on the map to move it. Release to commit."),
             ("5. Delete an instance", "Click \"Remove\" or press the Delete tool, then click an instance. A confirmation modal will ask before destroying."),
-            ("6. Undo / Redo",        "Use the Tools panel Undo / Redo buttons (or Ctrl+Z / Ctrl+Y). Capacity is 64."),
-            ("7. Save",               "Instances and preset edits autosave — instances to StreamingAssets/Particles/particles_instances.json, presets to their PP_*.asset (Unity Editor only). Save forces an immediate write. Press F1 again to close."),
+            ("6. Resize an instance", "A selected emitter shows two boxes: GREEN is where its particles are born, RED how far they travel. Click a box to take it, then drag one of its sides. Shift resizes from the centre, Alt drops the texel snap, Escape puts the size back. The size belongs to that one placement — the preset, and every other emitter using it, is untouched."),
+            ("7. Undo / Redo",        "Use the Tools panel Undo / Redo buttons (or Ctrl+Z / Ctrl+Y). Capacity is 64. A whole resize drag is one entry, not one per frame."),
+            ("8. Preset vs placement", "Every emitter you place takes its OWN copy of the preset. Editing a preset in the picker changes what the NEXT placement is born with — the ones already on the map keep their copy. Select an emitter and the properties panel edits THAT placement alone; the header always says which. Use \"Reapply Preset\" to push a preset onto one placement or all of them."),
+            ("9. Save",               "Instances and preset edits autosave — instances to StreamingAssets/Particles/particles_instances.json, presets to their PP_*.asset (Unity Editor only). Save forces an immediate write. Press F1 again to close."),
         };
 
         // Confirm-delete modal.

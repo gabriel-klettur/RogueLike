@@ -61,9 +61,28 @@ namespace Valkur.Tests.EditMode.Editors.Particles
         }
 
         [Test]
-        public void NullPreset_FailsGracefully()
+        public void NullTarget_FailsGracefully()
         {
-            Assert.IsFalse(ParticlePresetFieldWriter.TrySetField(null, "vfx.emitRate", 1f, out _));
+            // Both overloads: the writer now also targets a bare block, which is what a placed
+            // instance's own configuration is.
+            Assert.IsFalse(ParticlePresetFieldWriter.TrySetField(
+                (ParticlePresetDefinition)null, "vfx.emitRate", 1f, out _));
+            Assert.IsFalse(ParticlePresetFieldWriter.TrySetField(
+                (ParticleVfxParams)null, "vfx.emitRate", 1f, out _));
+        }
+
+        [Test]
+        public void BlockOverload_WritesTheInstancesOwnConfiguration_AndRefusesAssetFields()
+        {
+            var block = new ParticleVfxParams { emitRate = 5f };
+
+            Assert.IsTrue(ParticlePresetFieldWriter.TrySetField(block, "vfx.emitRate", 12f, out _));
+            Assert.AreEqual(12f, block.emitRate, 1e-4f);
+
+            // displayName names the ASSET. One placement renaming it would rename it for every
+            // other placement, which is the coupling copy-on-place exists to remove.
+            Assert.IsFalse(ParticlePresetFieldWriter.TrySetField(block, "displayName", "x", out string err));
+            StringAssert.Contains("preset asset", err);
         }
 
         // ── Type conversion (what the form's rows actually emit) ────────────
