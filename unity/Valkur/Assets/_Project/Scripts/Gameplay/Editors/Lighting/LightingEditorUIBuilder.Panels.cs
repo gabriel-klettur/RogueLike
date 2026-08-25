@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -325,15 +325,21 @@ namespace Valkur.Gameplay.World
             var (scroll, listContent) = EditorUIHelpers.MakeScrollView(listHost.transform, "PresetScroll");
             EnsureFlexibleHeight(scroll.gameObject, 1f);
             EditorUIHelpers.AddVerticalScrollbar(scroll);
-            // Add a VLG to the scroll content so dynamically-added preset buttons stack.
-            var contentVlg = listContent.gameObject.AddComponent<VerticalLayoutGroup>();
+            // Configure the layout MakeScrollView already put on the content — do NOT add another.
+            // LayoutGroup and ContentSizeFitter are [DisallowMultipleComponent], so a second
+            // AddComponent returns NULL rather than throwing, and the very next line dereferences
+            // it. That is what made this panel unopenable: clicking "Lighting" in the ESC menu
+            // threw a NullReferenceException out of BuildUI before a single preset was drawn.
+            var contentVlg = listContent.gameObject.GetComponent<VerticalLayoutGroup>()
+                          ?? listContent.gameObject.AddComponent<VerticalLayoutGroup>();
             contentVlg.spacing                = 2f;
             contentVlg.childForceExpandWidth  = true;
             contentVlg.childForceExpandHeight = false;
             contentVlg.childControlWidth      = true;
             contentVlg.childControlHeight     = true;
             contentVlg.padding                = new RectOffset(4, 4, 4, 4);
-            var contentFitter = listContent.gameObject.AddComponent<ContentSizeFitter>();
+            var contentFitter = listContent.gameObject.GetComponent<ContentSizeFitter>()
+                             ?? listContent.gameObject.AddComponent<ContentSizeFitter>();
             contentFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             refs.PresetGrid = listContent;
 
@@ -394,16 +400,18 @@ namespace Valkur.Gameplay.World
             var (scroll, content) = EditorUIHelpers.MakeScrollView(t, "InstancesScroll");
             EnsureFlexibleHeight(scroll.gameObject, 1f);
             EditorUIHelpers.AddVerticalScrollbar(scroll);
-            // Add VLG + ContentSizeFitter so dynamically added rows stack and the
-            // scroll content grows with them.
-            var contentVlg = content.gameObject.AddComponent<VerticalLayoutGroup>();
+            // Configure the layout MakeScrollView already added; a second one cannot be added.
+            // Same [DisallowMultipleComponent] trap as the presets panel above.
+            var contentVlg = content.gameObject.GetComponent<VerticalLayoutGroup>()
+                          ?? content.gameObject.AddComponent<VerticalLayoutGroup>();
             contentVlg.spacing                = 2f;
             contentVlg.childForceExpandWidth  = true;
             contentVlg.childForceExpandHeight = false;
             contentVlg.childControlWidth      = true;
             contentVlg.childControlHeight     = true;
             contentVlg.padding                = new RectOffset(4, 4, 4, 4);
-            var contentFitter = content.gameObject.AddComponent<ContentSizeFitter>();
+            var contentFitter = content.gameObject.GetComponent<ContentSizeFitter>()
+                             ?? content.gameObject.AddComponent<ContentSizeFitter>();
             contentFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             refs.InstancesListContent = content;
 
