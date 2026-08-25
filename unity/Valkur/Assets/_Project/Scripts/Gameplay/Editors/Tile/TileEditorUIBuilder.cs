@@ -259,6 +259,11 @@ namespace Valkur.Gameplay.TileEditor
             // painted tile lives on; viewport-bounded for cost-stability).
             System.Action onShowTileLayer = null)
         {
+            // Reserve space below the menu bar so draggable panels cannot occlude it
+            // (matches the other 12 runtime editors — see ItemsEditorUIBuilder.cs:118,
+            // BuildingsEditorUIBuilder.cs:156, etc.).
+            DraggablePanel.TopReservedPx = MENUBAR_HEIGHT;
+
             var refs = new UIRefs
             {
                 ToolButtonImages = new Dictionary<TileEditorState.Tool, Image>(),

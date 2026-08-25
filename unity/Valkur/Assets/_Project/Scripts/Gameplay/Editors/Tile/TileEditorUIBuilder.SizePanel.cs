@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.Gameplay.Editors;
 using Valkur.UIKit;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
 
@@ -35,7 +36,7 @@ namespace Valkur.Gameplay.TileEditor
         private static void BuildSizeDropdown(Transform canvasT, TileEditorState state, ref UIRefs refs,
             System.Action<int> onBrushSizeChanged)
         {
-            refs.SizeDropdown = MakeDropdownPanel("SizeDropdown", canvasT,
+            refs.SizeDropdown = EditorUIHelpers.MakeDropPanel("SizeDropdown", canvasT,
                 PanelDock.TopRight, SizeX, SizeY, SIZE_DROP_W, SIZE_DROP_H,
                 "Brush Size", out var sizeContent, out refs.SizePanelDrag);
 

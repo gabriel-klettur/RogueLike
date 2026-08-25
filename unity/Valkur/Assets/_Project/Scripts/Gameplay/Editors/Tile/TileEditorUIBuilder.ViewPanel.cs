@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.Gameplay.Editors;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
 
 namespace Valkur.Gameplay.TileEditor
@@ -27,7 +28,7 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onShowLayerJumpsClicked,
             System.Action onShowTileLayerClicked)
         {
-            refs.ViewDropdown = MakeDropdownPanel("ViewDropdown", canvasT,
+            refs.ViewDropdown = EditorUIHelpers.MakeDropPanel("ViewDropdown", canvasT,
                 PanelDock.TopRight, ViewX, ViewY, VIEW_DROP_W, VIEW_DROP_H,
                 "View", out var viewContent, out refs.ViewPanelDrag);
 

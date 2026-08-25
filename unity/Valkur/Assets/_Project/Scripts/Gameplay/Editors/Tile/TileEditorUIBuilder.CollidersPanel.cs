@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.Gameplay.Editors;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
 
 namespace Valkur.Gameplay.TileEditor
@@ -27,7 +28,7 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onEraseCollidersClicked,
             System.Action<string> onCollisionTagChanged)
         {
-            refs.CollidersDropdown = MakeDropdownPanel("CollidersDropdown", canvasT,
+            refs.CollidersDropdown = EditorUIHelpers.MakeDropPanel("CollidersDropdown", canvasT,
                 PanelDock.TopRight, CollidersX, CollidersY, COLLIDERS_DROP_W, COLLIDERS_DROP_H,
                 "Colliders", out var collidersContent, out refs.CollidersPanelDrag);
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -68,17 +68,79 @@ namespace Valkur.Infrastructure.Persistence.Repositories
             if (string.IsNullOrEmpty(zoneName))
                 throw new ArgumentException("zoneName must be set", nameof(zoneName));
             string path = PathFor(worldId, zoneName);
-            string tmp  = path + ".tmp";
-            File.WriteAllText(tmp, overlayJson ?? string.Empty);
-            if (File.Exists(path))
+
+            // Per-CALL unique temp name (GUID suffix), not per-path. A fixed
+            // "<path>.tmp" is shared by every writer of this zone — two
+            // overlapping writes (e.g. the debounced background autosave and
+            // an explicit SaveZone racing it) open the same handle and the
+            // loser throws "Access to the path is denied". See the
+            // documented trap in CLAUDE.md: this is NOT hypothetical, it was
+            // measured happening on this exact pattern elsewhere in the repo.
+            string tmp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
             {
-                // Atomic-ish: on NTFS File.Replace is one-step and produces
-                // the .bak alongside as a free side-effect.
-                File.Replace(tmp, path, path + ".bak");
+                File.WriteAllText(tmp, overlayJson ?? string.Empty);
+                SwapIntoPlace(tmp, path);
             }
-            else
+            finally
             {
+                // Best-effort cleanup: if something above threw before the
+                // temp file was consumed (moved/replaced away), don't leave
+                // an orphaned GUID-named .tmp file behind — it will never be
+                // reused since the name is unique per call.
+                if (File.Exists(tmp))
+                {
+                    try { File.Delete(tmp); } catch { /* best-effort only */ }
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Move <paramref name="tmp"/> onto <paramref name="path"/>, tolerating a
+        /// concurrent writer swapping the same target underneath us.
+        /// <para>
+        /// Both directions of the existence check race: if the target is absent we
+        /// <see cref="File.Move(string,string)"/>, but another writer may create it
+        /// first and Move then throws "Cannot create a file when that file already
+        /// exists"; if the target is present we <see cref="File.Replace(string,string,string)"/>,
+        /// but another writer may delete it first and Replace then throws. So neither
+        /// branch is safe on its own — the loop re-reads the state and retries the
+        /// OTHER branch instead of failing. Every writer owns a GUID-named temp, so a
+        /// retry only ever re-attempts our own swap.
+        /// </para>
+        /// Note Mono's File.Replace is not Win32 ReplaceFile and is not truly atomic;
+        /// what carries data across a crash in that window is the rotating backups and
+        /// the checksum, not this method. What this does buy is that a reader never
+        /// observes a half-written file.
+        /// </summary>
+        private static void SwapIntoPlace(string tmp, string path)
+        {
+            const int maxAttempts = 5;
+            Exception lastError = null;
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                try
+                {
+                    if (File.Exists(path)) File.Replace(tmp, path, null);
+                    else                   File.Move(tmp, path);
+                    return;
+                }
+                catch (IOException ex) { lastError = ex; }
+                catch (UnauthorizedAccessException ex) { lastError = ex; }
+            }
+
+            // Last resort: drop the target and move ours in. Wider crash window than
+            // the swap above, which is why it only runs after the retries are spent.
+            try
+            {
+                if (File.Exists(path)) File.Delete(path);
                 File.Move(tmp, path);
+            }
+            catch (Exception ex)
+            {
+                throw new IOException(
+                    $"Could not swap '{tmp}' onto '{path}' after {maxAttempts} attempts: {ex.Message}", lastError ?? ex);
             }
         }
 

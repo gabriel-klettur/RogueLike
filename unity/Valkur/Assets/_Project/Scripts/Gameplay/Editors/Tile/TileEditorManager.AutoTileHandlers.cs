@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using Valkur.Core.Input;
@@ -60,7 +60,11 @@ namespace Valkur.Gameplay.TileEditor
                 _state.RegionDragStart   = null;
                 _state.RegionDragCurrent = null;
                 ApplyRegionDragOverlay();
-                if (Application.isPlaying) _persistence?.SaveAllDirty();
+                // Autosave is DEBOUNCED (TileOverlayPersistence.Autosave): the edits above already
+                // armed it through MarkBatchDirty, and it flushes off-thread after a quiet
+                // period. Forcing a synchronous SaveAllDirty() here measured 6.48 ms on the
+                // main thread for a single painted cell. Explicit saves (F8 close, slot
+                // switch, Save button) still flush synchronously and wait for this one.
             }
         }
 
@@ -84,9 +88,10 @@ namespace Valkur.Gameplay.TileEditor
             var rect = new BoundsInt(xMin, yMin, 0, w, h, 1);
 
             _undo.StartStroke(tilemap);
-            var edits = TerrainPainter.PaintRegion(
+            var (edits, metadataEdits) = TerrainPainter.PaintRegion(
                 tilemap, rect, _state.SelectedTerrain, catalog, TerrainMap, CanEditCell);
             _undo.RecordEdits(edits);
+            _undo.RecordMetadataEdits(metadataEdits);
             _undo.EndStroke();
             _persistence?.MarkBatchDirty(edits);
 

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.Gameplay.Editors;
 using Valkur.Gameplay.World;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
 
@@ -16,7 +17,7 @@ namespace Valkur.Gameplay.TileEditor
         private static void BuildLayersDropdown(Transform canvasT, TileEditorState state, ref UIRefs refs,
             System.Action<TilemapLayerSetup.TilemapLayer> onLayerChanged)
         {
-            refs.LayersDropdown = MakeDropdownPanel("LayersDropdown", canvasT,
+            refs.LayersDropdown = EditorUIHelpers.MakeDropPanel("LayersDropdown", canvasT,
                 PanelDock.BottomRight, LayersX, LayersY, LAYERS_DROP_W, LAYERS_DROP_H,
                 "Layers", out var layersContent, out refs.LayersPanelDrag);
 
@@ -89,7 +90,7 @@ namespace Valkur.Gameplay.TileEditor
 
         private static void BuildInspectorDropdown(Transform canvasT, TileEditorState state, ref UIRefs refs)
         {
-            refs.InspectorDropdown = MakeDropdownPanel("InspectorDropdown", canvasT,
+            refs.InspectorDropdown = EditorUIHelpers.MakeDropPanel("InspectorDropdown", canvasT,
                 PanelDock.TopRight, InspectorX, InspectorY, TILE_INSPECTOR_DROP_W, INSPECTOR_DROP_H,
                 "Inspector", out var inspectorContent, out refs.InspectorPanelDrag);
 

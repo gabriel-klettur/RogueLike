@@ -66,6 +66,21 @@ namespace Valkur.Gameplay.TileEditor
         public bool IsDragging;
 
         /// <summary>
+        /// AUTO modifier for the Brush tool ("AUTO" checkbox in the Tiles panel).
+        /// When true, <c>HandleBrushInput</c> stops stamping <see cref="SelectedTile"/>
+        /// directly and instead paints the TERRAIN of the selected tile's pack (its
+        /// <see cref="SelectedCategory"/>) into the editor's <c>TerrainMap</c>, letting
+        /// <see cref="Valkur.Data.TilesetRuleset.Model"/>'s solver (Blob16 or Corner16)
+        /// pick the correct sprite variant for every painted cell plus its neighbour
+        /// ring — the freehand equivalent of <see cref="Tool.AutoTileRegion"/>'s
+        /// click-drag rectangle, sharing the same solver and the same one-batch-per-
+        /// stroke undo contract. Independent of <see cref="CurrentTool"/> (only takes
+        /// effect while Brush is active) and, like <see cref="SelectedTile"/> and
+        /// <see cref="BrushSize"/>, not reset when the editor is toggled off/on.
+        /// </summary>
+        public bool AutoBrushMode;
+
+        /// <summary>
         /// When true, the Tile Editor draws an opaque red fill + red border for every cell
         /// painted on the Collision tilemap layer, so the otherwise-invisible collider
         /// shapes can be authored visually. Toggled from the Colliders panel.

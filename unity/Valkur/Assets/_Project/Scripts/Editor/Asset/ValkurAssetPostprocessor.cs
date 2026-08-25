@@ -313,6 +313,49 @@ namespace Valkur.Editor
             }
         }
 
+        /// <summary>
+        /// Keeps Resources/Tiles/_categories.json (the baked category
+        /// discovery TileCatalog and OverlayLoader both read at runtime) in
+        /// sync with disk automatically. Any import/delete/move touching
+        /// Resources/Tiles/ regenerates it — a new PNG dropped into a
+        /// category folder tomorrow needs no C# change to become selectable
+        /// from the F6 picker. Self-excludes _categories.json's own write
+        /// (TileCategoryManifestBuilder.Generate already no-ops when the
+        /// content hasn't changed, but skip the callback entirely so the
+        /// common case — editing an unrelated asset elsewhere — costs nothing).
+        /// </summary>
+        private static void OnPostprocessAllAssets(
+            string[] importedAssets,
+            string[] deletedAssets,
+            string[] movedAssets,
+            string[] movedFromAssetPaths)
+        {
+            if (TouchesTilesFolder(importedAssets) ||
+                TouchesTilesFolder(deletedAssets) ||
+                TouchesTilesFolder(movedAssets) ||
+                TouchesTilesFolder(movedFromAssetPaths))
+            {
+                TileCategoryManifestBuilder.Generate();
+            }
+        }
+
+        private const string TILES_ROOT_FOR_MANIFEST = "Assets/_Project/Resources/Tiles/";
+        private const string CATEGORY_MANIFEST_PATH = "Assets/_Project/Resources/Tiles/_categories.json";
+
+        private static bool TouchesTilesFolder(string[] paths)
+        {
+            if (paths == null) return false;
+            for (int i = 0; i < paths.Length; i++)
+            {
+                string p = paths[i];
+                if (string.IsNullOrEmpty(p)) continue;
+                if (!p.StartsWith(TILES_ROOT_FOR_MANIFEST)) continue;
+                if (p == CATEGORY_MANIFEST_PATH) continue; // don't self-trigger
+                return true;
+            }
+            return false;
+        }
+
         private void OnPreprocessAudio()
         {
             if (!assetPath.StartsWith("Assets/_Project/Audio/"))

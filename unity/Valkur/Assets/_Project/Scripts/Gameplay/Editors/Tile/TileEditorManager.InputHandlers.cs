@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
+using Valkur.Data;
 using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.TileEditor
@@ -20,11 +21,13 @@ namespace Valkur.Gameplay.TileEditor
                 _state.BrushStrokeCells.Clear();
                 _state.CurrentLayer = TilemapLayerSetup.TilemapLayer.Ground;
                 _state.CurrentColliderMode = TileEditorState.ColliderMode.None;
+                _state.CurrentLayerJumpMode = TileEditorState.LayerJumpMode.None;
                 _ui.RefreshToolHighlights();
                 _ui.RefreshLayerLabel();
                 _ui.RefreshBrushSizeLabel();
                 _ui.RefreshTilePicker();
                 _ui.RefreshColliderToggles();
+                _ui.RefreshLayerJumpsToggles();
                 _ui.SetStatus("Tile Editor active. F8 to close. Player movement enabled.");
                 if (_borderOverlayGo != null) _borderOverlayGo.SetActive(true);
                 if (_gridCursor != null) _gridCursor.gameObject.SetActive(true);
@@ -96,22 +99,21 @@ namespace Valkur.Gameplay.TileEditor
             if (tool.HasValue) OnToolChanged(tool.Value);
         }
 
+        // Shared with Buildings/Map Editor: EditorCameraZoomController.Tick() does
+        // the pointer-over-UI gate + wheel poll itself, then feeds
+        // CameraSetup.ComputeEditorZoomNext (hybrid PPU-aligned N-step inside the
+        // snap range, pure multiplicative above it) into CameraSetup.SetEditorZoom
+        // — which is the only path that runs SnapOrthoSize, so the ortho stays on
+        // the integer-texel-per-screen-pixel ladder. A bespoke multiplicative-only
+        // zoomFactor (the old implementation here) cannot cross the N=2→N=1
+        // boundary and gets stuck; see CameraSetup.ComputeEditorZoomNext's doc
+        // comment for the regression this replaces.
+        private readonly Valkur.Gameplay.Editors.EditorCameraZoomController _cameraZoom
+            = new Valkur.Gameplay.Editors.EditorCameraZoomController();
+
         private partial void HandleCameraZoom()
         {
-            float scrollDelta = _input.PollZoom();
-            if (Mathf.Abs(scrollDelta) < 0.1f) return;
-
-            var camSetup = Valkur.Gameplay.CameraSetup.Instance;
-            if (camSetup == null) return;
-
-            // Multiplicative zoom — same model as gameplay (CameraSetup.Update).
-            // No clamp by design: zoom is intentionally unbounded so we can find
-            // the rendering pipeline's breaking point.
-            float currentSize = camSetup.GetCurrentOrthographicSize();
-            float zoomFactor = 1f - Mathf.Sign(scrollDelta) * 0.25f;
-            float newSize = currentSize * zoomFactor;
-
-            camSetup.SetTileEditorZoom(newSize);
+            _cameraZoom.Tick();
         }
 
         private partial void HandleUndoRedo()
@@ -135,8 +137,10 @@ namespace Valkur.Gameplay.TileEditor
                 if (batch != null) { _persistence?.MarkBatchDirty(batch.Edits); _ui?.SetStatus("Redo"); RegenerateColliderIfNeeded(batch); }
             }
 
-            // (Ctrl+S removed — every edit path auto-flushes on mouse-up via
-            // _persistence.SaveAllDirty(). Manual save was redundant.)
+            // (Ctrl+S removed — every edit path marks its zones dirty, and the debounced
+            // autosave flushes them off-thread shortly after the last edit. Closing the
+            // editor, switching map slot and leaving Play mode all force that flush to
+            // complete first, so a manual save key would be redundant.)
 
             // ── Select tool: clipboard hotkeys (Ctrl+C/X/V) and Esc to clear ──
             // Gated on CurrentTool so they don't shadow other editors' shortcuts.
@@ -183,7 +187,11 @@ namespace Valkur.Gameplay.TileEditor
                     _state.RectDragCurrent = null;
                     // Close any brush/eraser stroke that was released over UI too.
                     _undo?.EndStroke();
-                    if (Application.isPlaying) _persistence?.SaveAllDirty();
+                    // Autosave is DEBOUNCED (TileOverlayPersistence.Autosave): the edits above already
+                // armed it through MarkBatchDirty, and it flushes off-thread after a quiet
+                // period. Forcing a synchronous SaveAllDirty() here measured 6.48 ms on the
+                // main thread for a single painted cell. Explicit saves (F8 close, slot
+                // switch, Save button) still flush synchronously and wait for this one.
                 }
                 return;
             }
@@ -225,7 +233,24 @@ namespace Valkur.Gameplay.TileEditor
 
         private void HandleBrushInput(Tilemap tilemap, Vector3Int cellPos)
         {
-            if (_state.SelectedTile == null) return;
+            // A tool that silently does nothing reads as a broken editor. Say why —
+            // but only on an actual click, since this guard runs every frame the
+            // Brush is selected and a per-frame message would spam the status line.
+            if (_state.SelectedTile == null)
+            {
+                if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame())
+                    _ui?.SetStatus(TileEditorConstants.NoTileSelectedHint);
+                return;
+            }
+
+            // AUTO modifier: paint the selected tile's pack TERRAIN instead of its
+            // sprite and let the solver pick every cell's variant. Fully separate
+            // branch — see HandleAutoBrushInput for the stroke lifecycle.
+            if (_state.AutoBrushMode)
+            {
+                HandleAutoBrushInput(tilemap, cellPos);
+                return;
+            }
 
             // Use MouseInputManager so the legacy backend kicks in if the new
             // InputSystem package is dropping OS events.
@@ -259,9 +284,11 @@ namespace Valkur.Gameplay.TileEditor
                 _undo.EndStroke();
                 _state.IsDragging = false;
                 _state.BrushStrokeCells.Clear();
-                // Auto-persist: flush dirty zones immediately so painted tiles
-                // survive a scene reload without requiring an explicit Save click.
-                if (Application.isPlaying) _persistence?.SaveAllDirty();
+                // Autosave is DEBOUNCED (TileOverlayPersistence.Autosave): the edits above already
+                // armed it through MarkBatchDirty, and it flushes off-thread after a quiet
+                // period. Forcing a synchronous SaveAllDirty() here measured 6.48 ms on the
+                // main thread for a single painted cell. Explicit saves (F8 close, slot
+                // switch, Save button) still flush synchronously and wait for this one.
             }
         }
 
@@ -271,6 +298,137 @@ namespace Valkur.Gameplay.TileEditor
             for (int dy = 0; dy < _state.BrushSize; dy++)
                 for (int dx = 0; dx < _state.BrushSize; dx++)
                     _state.BrushStrokeCells.Add(new Vector3Int(anchor.x + dx, anchor.y - dy, 0));
+        }
+
+        // ── AUTO brush modifier ─────────────────────────────────────────────
+        // Freehand sibling of TileEditorManager.AutoTileHandlers.cs's
+        // AutoTileRegion tool: same TerrainPainter/TerrainMap/TerrainCatalog
+        // wiring, driven by a brush drag instead of a click-drag rectangle.
+
+        /// <summary>
+        /// Stroke lifecycle for the AUTO-modified Brush: mirrors
+        /// <see cref="HandleBrushInput"/>'s press/drag/release shape, but every
+        /// paint call goes through <see cref="PaintAutoBrushFootprint"/> (terrain +
+        /// solver) instead of <see cref="TileBrush.Paint"/> (raw sprite stamp).
+        /// The terrain is re-resolved from <see cref="TileEditorState.SelectedCategory"/>
+        /// on every call rather than cached at press time, matching how the plain
+        /// brush re-reads <see cref="TileEditorState.SelectedTile"/> every frame —
+        /// if resolution fails mid-drag the frame is skipped silently (the initial
+        /// press already explained why, and re-spamming the same reason every
+        /// frame would flood the status line for no new information).
+        /// </summary>
+        private void HandleAutoBrushInput(Tilemap tilemap, Vector3Int cellPos)
+        {
+            if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame())
+            {
+                var (terrain, reason) = ResolveAutoBrushTerrain();
+                if (string.IsNullOrEmpty(terrain))
+                {
+                    _ui?.SetStatus(reason);
+                    return;
+                }
+
+                _state.BrushStrokeCells.Clear();
+                _state.SelectedCellPos = cellPos;
+                _undo.StartStroke(tilemap);
+                PaintAutoBrushFootprint(tilemap, cellPos, terrain);
+                AddCellsToBrushStroke(cellPos);
+                _state.IsDragging = true;
+            }
+            else if (Valkur.Core.Input.MouseInputManager.IsLeftMouseButtonPressed() && _state.IsDragging)
+            {
+                var (terrain, _) = ResolveAutoBrushTerrain();
+                if (!string.IsNullOrEmpty(terrain))
+                {
+                    _state.SelectedCellPos = cellPos;
+                    PaintAutoBrushFootprint(tilemap, cellPos, terrain);
+                    AddCellsToBrushStroke(cellPos);
+                }
+            }
+            else if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonReleasedThisFrame())
+            {
+                _undo.EndStroke();
+                _state.IsDragging = false;
+                _state.BrushStrokeCells.Clear();
+                // Autosave is DEBOUNCED — see the identical comment on HandleBrushInput's
+                // release branch. MarkCellDirty/MarkBatchDirty below already armed it.
+            }
+        }
+
+        /// <summary>
+        /// Stamps <paramref name="terrain"/> onto the brush-size×brush-size
+        /// footprint anchored at <paramref name="cursorCell"/> (top-left corner,
+        /// extends right + down — identical convention to <see cref="TileBrush.Paint"/>)
+        /// via <see cref="TerrainPainter.PaintRegion"/>, which also re-resolves the
+        /// auto-tile variant for the one-cell ring around the footprint so neighbours
+        /// whose corner/cardinal reading just changed get repainted too. Both the
+        /// visual <see cref="TileEdit"/>s and the parallel terrain <see cref="MetadataEdit"/>s
+        /// are folded into the SAME open undo batch and marked dirty for autosave —
+        /// a stroke that recorded tiles without terrain (or vice versa) would leave
+        /// <c>TerrainMap</c> and the visual tilemap disagreeing the moment Ctrl+Z fires,
+        /// and that mismatch is exactly what gets written to the .overlay.json next.
+        /// </summary>
+        private void PaintAutoBrushFootprint(Tilemap tilemap, Vector3Int cursorCell, string terrain)
+        {
+            var catalog = TerrainCatalogLoader.Load();
+            if (catalog == null) return; // already explained on press; nothing to do mid-drag
+
+            int size = _state.BrushSize;
+            var rect = new BoundsInt(cursorCell.x, cursorCell.y - (size - 1), 0, size, size, 1);
+            var (edits, metadataEdits) = TerrainPainter.PaintRegion(
+                tilemap, rect, terrain, catalog, TerrainMap, CanEditCell);
+
+            _undo.RecordEdits(edits);
+            _undo.RecordMetadataEdits(metadataEdits);
+            _persistence?.MarkBatchDirty(edits);
+            // A cell whose terrain changed but whose resolved sprite didn't (or
+            // couldn't be resolved at all) produces a MetadataEdit with no matching
+            // TileEdit — MarkBatchDirty alone would miss it, so mark those cells
+            // dirty individually too (mirrors TileEditorManager.LayerJumps.cs's
+            // StampLayerJumpsFootprint, which has the same metadata-only shape).
+            if (_persistence != null)
+                for (int i = 0; i < metadataEdits.Count; i++)
+                    _persistence.MarkCellDirty(metadataEdits[i].Position);
+        }
+
+        /// <summary>
+        /// Resolves the terrain to paint when AUTO is active, from the pack of the
+        /// currently selected tile (<see cref="TileEditorState.SelectedCategory"/>).
+        /// Returns the terrain on success, or a null terrain + an explanatory
+        /// <see cref="TileEditorConstants"/> hint on failure — no tile selected, no
+        /// <c>TerrainCatalog</c> in Resources/, or the pack's ruleset can't actually
+        /// be resolved by <see cref="TerrainCatalog.FindBaseRuleset"/> (the same gate
+        /// <see cref="TerrainPainter.PaintRegion"/> uses internally — checked here too
+        /// so a "success" toast at toggle-time can never be followed by a silent
+        /// no-op stroke: a Corner16 pack is BY DEFINITION a transition ruleset, so a
+        /// pack whose primary terrain has no separate base ruleset registered would
+        /// otherwise look fine here and then paint nothing on every single stroke).
+        /// </summary>
+        private (string Terrain, string Reason) ResolveAutoBrushTerrain()
+        {
+            if (string.IsNullOrEmpty(_state.SelectedCategory))
+                return (null, TileEditorConstants.NoTileSelectedHint);
+
+            var catalog = TerrainCatalogLoader.Load();
+            if (catalog == null)
+                return (null, "No TerrainCatalog found in Resources/. Configure tilesets first.");
+
+            string primary = null;
+            var rulesets = catalog.Rulesets;
+            for (int i = 0; i < rulesets.Count; i++)
+            {
+                var r = rulesets[i];
+                if (r != null && r.FolderName == _state.SelectedCategory)
+                {
+                    primary = r.TerrainPrimary;
+                    break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(primary) || catalog.FindPaintRuleset(primary) == null)
+                return (null, TileEditorConstants.NoRulesetForCategoryHint);
+
+            return (primary, null);
         }
 
     }

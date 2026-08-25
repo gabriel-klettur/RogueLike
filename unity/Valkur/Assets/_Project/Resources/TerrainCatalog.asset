@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 938206543e5924a4e98b9015ac03074f, type: 3}
   m_Name: TerrainCatalog
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   rulesets:
   - {fileID: 11400000, guid: a1c51dfa83361a141a85f362fdd1641a, type: 2}
   - {fileID: 11400000, guid: c8019770e65f9744f9b7c4180ac1cbe0, type: 2}

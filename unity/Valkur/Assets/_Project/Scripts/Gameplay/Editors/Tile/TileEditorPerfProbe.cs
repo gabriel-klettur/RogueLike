@@ -133,6 +133,22 @@ namespace Valkur.Gameplay.TileEditor
             // Volume (post-processing) type
             _volumeType = System.Type.GetType("UnityEngine.Rendering.Volume, Unity.RenderPipelines.Core.Runtime");
 
+            EnsureRecorders();
+        }
+
+        /// <summary>
+        /// Builds the Profiler recorder table once, on whichever callback runs first.
+        /// <para>
+        /// Awake alone is not enough: the probe is now created on an INACTIVE GameObject
+        /// (so a player who never presses Shift+F8 pays nothing), and Unity does not run
+        /// Awake on an inactive object — nor in Edit Mode at all. OnEnable would then find
+        /// a null table and silently skip enabling every recorder.
+        /// </para>
+        /// </summary>
+        private void EnsureRecorders()
+        {
+            if (_recorders != null) return;
+
             // Wire Profiler recorders. These are Unity built-in markers that work in any build.
             string[] markers = {
                 "BehaviourUpdate",         // total cost of all MonoBehaviour.Update()
@@ -161,7 +177,8 @@ namespace Valkur.Gameplay.TileEditor
             for (int i = 0; i < markers.Length; i++)
             {
                 var rec = Recorder.Get(markers[i]);
-                if (rec != null) rec.enabled = true;
+                // Left disabled here — OnEnable()/OnDisable() own the enabled state so
+                // it always tracks whether the probe's GameObject is actually active.
                 _recorders[i] = new RecorderRow { Label = markers[i], Recorder = rec };
             }
         }
@@ -169,6 +186,26 @@ namespace Valkur.Gameplay.TileEditor
         private void OnEnable()
         {
             Debug.Log($"[PerfProbe] OnEnable. Visible={Visible}");
+            EnsureRecorders();
+            // A Recorder left enabled keeps the runtime Profiler tracking that marker
+            // even while nobody reads _recorderMs — re-enable only while the probe
+            // GameObject is actually active.
+            SetRecordersEnabled(true);
+        }
+
+        private void OnDisable()
+        {
+            SetRecordersEnabled(false);
+        }
+
+        private void SetRecordersEnabled(bool value)
+        {
+            if (_recorders == null) return;
+            for (int i = 0; i < _recorders.Length; i++)
+            {
+                var rec = _recorders[i].Recorder;
+                if (rec != null) rec.enabled = value;
+            }
         }
 
         private void Update()

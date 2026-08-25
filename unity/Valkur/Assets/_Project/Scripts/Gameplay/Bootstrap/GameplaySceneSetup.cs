@@ -167,9 +167,6 @@ namespace Valkur.Gameplay
             EnsureParticleInstancesLoader();
             Report("Loading particles"); yield return null;
 
-            EnsureTileEditor();
-            Report("Initializing tile editor"); yield return null;
-
             EnsureMapEditor();
             Report("Initializing map editor"); yield return null;
 

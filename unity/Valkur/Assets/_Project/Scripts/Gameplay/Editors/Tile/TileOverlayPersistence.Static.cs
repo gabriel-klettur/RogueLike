@@ -210,7 +210,32 @@ namespace Valkur.Gameplay.TileEditor
         /// <see cref="TilemapLayerSetup.TilemapLayer"/> names. Each layer is an
         /// h×w matrix where row 0 is the top row of the zone (Python convention).
         /// </summary>
+        /// <remarks>
+        /// Split into <see cref="CaptureZoneSnapshot"/> (main-thread only —
+        /// touches the Tilemap API, which is not thread-safe) followed by
+        /// <see cref="SerializeOverlay"/> (pure string building, already
+        /// thread-safe). The deferred autosave path in
+        /// <c>TileOverlayPersistence.Autosave.cs</c> calls the two halves
+        /// separately so only the snapshot capture stays on the main thread.
+        /// This method keeps the original synchronous, single-call contract
+        /// for every existing caller (<see cref="SaveZoneInternal"/>).
+        /// </remarks>
         private string BuildOverlayJson(ZoneManager.ZoneDefinition zone)
+        {
+            ZoneSnapshot snapshot = CaptureZoneSnapshot(zone);
+            return SerializeOverlay(snapshot.PerLayer, snapshot.TerrainMatrix,
+                snapshot.CollisionTagMatrix, snapshot.LayerJumpsMatrix, snapshot.Width, snapshot.Height);
+        }
+
+        /// <summary>
+        /// Read the live Tilemap / terrain / collision-tag / layer-jump state for
+        /// one zone into plain arrays. MUST run on the main thread — every read
+        /// here goes through the Unity Tilemap API (<c>Tilemap.GetTile</c>) or
+        /// the parallel map ScriptableObjects, neither of which is thread-safe.
+        /// The returned <see cref="ZoneSnapshot"/> is plain data (arrays +
+        /// strings) and is safe to hand off to a background thread from there.
+        /// </summary>
+        private ZoneSnapshot CaptureZoneSnapshot(ZoneManager.ZoneDefinition zone)
         {
             int w = _zones.ZoneWidthTiles;
             int h = _zones.ZoneHeightTiles;
@@ -268,7 +293,35 @@ namespace Valkur.Gameplay.TileEditor
             if (LayerJumpMap != null && LayerJumpMap.HasAnyInRect(zone.gridOffset.x, zone.gridOffset.y, w, h))
                 layerJumpsMatrix = LayerJumpMap.BuildMatrix(zone.gridOffset.x, zone.gridOffset.y, w, h);
 
-            return SerializeOverlay(perLayer, terrainMatrix, collisionTagMatrix, layerJumpsMatrix, w, h);
+            return new ZoneSnapshot(perLayer, terrainMatrix, collisionTagMatrix, layerJumpsMatrix, w, h);
+        }
+
+        /// <summary>
+        /// Plain-data capture of one zone's overlay content — no Unity API
+        /// references, safe to read from any thread once constructed. Produced
+        /// by <see cref="CaptureZoneSnapshot"/> on the main thread; consumed by
+        /// <see cref="SerializeOverlay"/> (main thread or background, both safe).
+        /// </summary>
+        private readonly struct ZoneSnapshot
+        {
+            public readonly List<KeyValuePair<string, string[,]>> PerLayer;
+            public readonly string[,] TerrainMatrix;
+            public readonly string[,] CollisionTagMatrix;
+            public readonly string[,] LayerJumpsMatrix;
+            public readonly int Width;
+            public readonly int Height;
+
+            public ZoneSnapshot(List<KeyValuePair<string, string[,]>> perLayer,
+                                 string[,] terrainMatrix, string[,] collisionTagMatrix,
+                                 string[,] layerJumpsMatrix, int width, int height)
+            {
+                PerLayer = perLayer;
+                TerrainMatrix = terrainMatrix;
+                CollisionTagMatrix = collisionTagMatrix;
+                LayerJumpsMatrix = layerJumpsMatrix;
+                Width = width;
+                Height = height;
+            }
         }
 
         private static string SerializeOverlay(List<KeyValuePair<string, string[,]>> perLayer,

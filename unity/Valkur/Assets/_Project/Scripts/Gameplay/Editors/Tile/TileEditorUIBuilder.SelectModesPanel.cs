@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.Gameplay.Editors;
 using Valkur.Gameplay.World;
 using Valkur.UIKit;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
@@ -32,7 +33,7 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onClearSelectionClicked,
             System.Action<int> onMoveToLayerClicked)
         {
-            refs.SelectModesDropdown = MakeDropdownPanel("SelectModesDropdown", canvasT,
+            refs.SelectModesDropdown = EditorUIHelpers.MakeDropPanel("SelectModesDropdown", canvasT,
                 PanelDock.TopLeft, SelectModesX, SelectModesY,
                 SELECT_MODES_DROP_W, SELECT_MODES_DROP_H,
                 "Select Modes", out var content, out refs.SelectModesPanelDrag);

@@ -37,6 +37,9 @@ namespace Valkur.Data
         [Tooltip("Mapping from each Blob16 slot to its sprite variants. Solver picks one variant deterministically by cell hash.")]
         [SerializeField] private List<SlotMapping> slots = new List<SlotMapping>();
 
+        [Tooltip("Mapping from each Corner16 slot to its sprite variants. Only used when Model == Corner16. Solver picks one variant deterministically by cell hash.")]
+        [SerializeField] private List<CornerSlotMapping> cornerSlots = new List<CornerSlotMapping>();
+
         [Tooltip("Sprites in this folder that are NOT used by the auto-tile system (legacy / duplicate variants).")]
         [SerializeField] private List<Sprite> hiddenLegacy = new List<Sprite>();
 
@@ -49,6 +52,7 @@ namespace Valkur.Data
         public string TerrainSecondary => terrainSecondary;
         public int Priority => priority;
         public IReadOnlyList<SlotMapping> Slots => slots;
+        public IReadOnlyList<CornerSlotMapping> CornerSlots => cornerSlots;
         public IReadOnlyList<Sprite> HiddenLegacy => hiddenLegacy;
         public Sprite PreviewIcon => previewIcon;
 
@@ -68,15 +72,42 @@ namespace Valkur.Data
         }
 
         /// <summary>
+        /// Returns the sprite array assigned to a Corner16 slot, or null if unassigned.
+        /// Mirrors <see cref="GetVariants(Blob16Slot)"/> for the corner model.
+        /// </summary>
+        public Sprite[] GetVariants(Corner16Slot slot)
+        {
+            for (int i = 0; i < cornerSlots.Count; i++)
+            {
+                if (cornerSlots[i].slot == slot)
+                    return cornerSlots[i].variants;
+            }
+            return null;
+        }
+
+        /// <summary>
         /// True if every required slot for the declared model has at least one variant.
-        /// Blob47 is reserved for v2 and always returns false.
+        /// Blob47 is reserved for v2 and always returns false. Corner16 additionally
+        /// requires <see cref="TerrainSecondary"/> to be set — a corner ruleset is by
+        /// definition a two-material transition, and without a secondary terrain the
+        /// corner-mask calculator (Gameplay assembly) has nothing to test corners against.
         /// </summary>
         public bool IsComplete()
         {
-            if (model != AutoTileModel.Blob16) return false;
+            if (model == AutoTileModel.Blob16)
+                return AllSixteenSlotsAssigned(i => GetVariants((Blob16Slot)i));
+
+            if (model == AutoTileModel.Corner16)
+                return !string.IsNullOrEmpty(terrainSecondary) && AllSixteenSlotsAssigned(i => GetVariants((Corner16Slot)i));
+
+            return false; // Blob47 reserved for v2
+        }
+
+        private static bool AllSixteenSlotsAssigned(Func<int, Sprite[]> getVariants)
+        {
             for (int i = 0; i < 16; i++)
             {
-                var variants = GetVariants((Blob16Slot)i);
+                var variants = getVariants(i);
                 if (variants == null || variants.Length == 0) return false;
                 for (int j = 0; j < variants.Length; j++)
                     if (variants[j] == null) return false;
@@ -99,6 +130,24 @@ namespace Valkur.Data
                 }
             }
             slots.Add(new SlotMapping { slot = slot, variants = variants });
+            UnityEditor.EditorUtility.SetDirty(this);
+        }
+
+        /// <summary>Corner16 counterpart of the <c>EditorSetSlot(Blob16Slot, Sprite[])</c> overload above.</summary>
+        public void EditorSetSlot(Corner16Slot slot, Sprite[] variants)
+        {
+            for (int i = 0; i < cornerSlots.Count; i++)
+            {
+                if (cornerSlots[i].slot == slot)
+                {
+                    var entry = cornerSlots[i];
+                    entry.variants = variants;
+                    cornerSlots[i] = entry;
+                    UnityEditor.EditorUtility.SetDirty(this);
+                    return;
+                }
+            }
+            cornerSlots.Add(new CornerSlotMapping { slot = slot, variants = variants });
             UnityEditor.EditorUtility.SetDirty(this);
         }
 
@@ -130,6 +179,13 @@ namespace Valkur.Data
     public struct SlotMapping
     {
         public Blob16Slot slot;
+        public Sprite[] variants;
+    }
+
+    [Serializable]
+    public struct CornerSlotMapping
+    {
+        public Corner16Slot slot;
         public Sprite[] variants;
     }
 }

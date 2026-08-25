@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace Valkur.Data
@@ -28,6 +28,37 @@ namespace Valkur.Data
                 var r = rulesets[i];
                 if (r == null) continue;
                 if (r.IsTransition) continue;
+                if (r.TerrainPrimary != terrain) continue;
+                if (best == null || r.Priority > best.Priority) best = r;
+            }
+            return best;
+        }
+
+        /// <summary>
+        /// The ruleset to paint <paramref name="terrain"/> with.
+        /// <para>
+        /// Not the same question as <see cref="FindBaseRuleset"/>. In the cardinal
+        /// Blob16 model a "transition" sheet draws the A-to-B border and a separate
+        /// base sheet draws solid A, so base-only was the right filter. A Corner16
+        /// sheet is different: it always declares a secondary terrain (its corners
+        /// are exactly what distinguishes A from B), so it is a transition by that
+        /// definition while being the ONLY sheet that can paint its terrain. Filtering
+        /// it out left every Corner16 pack unreachable — the auto-brush would report
+        /// "no ruleset" for the five packs that had just been generated for it.
+        /// </para>
+        /// Base rulesets still win when one exists, so cardinal packs are unaffected.
+        /// </summary>
+        public TilesetRuleset FindPaintRuleset(string terrain)
+        {
+            var baseRuleset = FindBaseRuleset(terrain);
+            if (baseRuleset != null) return baseRuleset;
+
+            TilesetRuleset best = null;
+            for (int i = 0; i < rulesets.Count; i++)
+            {
+                var r = rulesets[i];
+                if (r == null) continue;
+                if (r.Model != AutoTileModel.Corner16) continue;
                 if (r.TerrainPrimary != terrain) continue;
                 if (best == null || r.Priority > best.Priority) best = r;
             }

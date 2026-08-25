@@ -144,7 +144,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Picker
         [Test]
         public void ResizePolicy_DisablesChildForceExpandWidth_OnContentVlg()
         {
-            // The shared MakeDropdownPanel sets childForceExpandWidth=true
+            // The shared EditorUIHelpers.MakeDropPanel sets childForceExpandWidth=true
             // (so most editors get full-width rows). For the Tiles panel we
             // explicitly OVERRIDE this so per-row preferredWidth + flexibleWidth
             // actually decide each row's width — that's the only way the

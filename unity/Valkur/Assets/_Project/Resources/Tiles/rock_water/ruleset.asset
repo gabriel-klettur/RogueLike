@@ -11,12 +11,70 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 48079e4d271a435419c1acc1fe6bc71d, type: 3}
   m_Name: ruleset
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   folderName: rock_water
-  model: 0
+  model: 2
   terrainPrimary: rock
   terrainSecondary: water
   priority: 0
   slots: []
+  cornerSlots:
+  - slot: 0
+    variants:
+    - {fileID: 21300000, guid: 56797dd3a56d64f4190d4fc79cd10dc2, type: 3}
+    - {fileID: 21300000, guid: 510c3adb9e3c9fb49a37db385f5828bc, type: 3}
+  - slot: 1
+    variants:
+    - {fileID: 21300000, guid: 0992764c90b918c468eb8d0fa49e0646, type: 3}
+  - slot: 2
+    variants:
+    - {fileID: 21300000, guid: 055ce23c675c1d344a04ba616f1e5590, type: 3}
+  - slot: 3
+    variants:
+    - {fileID: 21300000, guid: 9e06cfd496cc80e4ab9c1524fd3f96dd, type: 3}
+  - slot: 4
+    variants:
+    - {fileID: 21300000, guid: f0b4c56f936db214dbdecf6d2706b99a, type: 3}
+    - {fileID: 21300000, guid: 55f5a3c9a6342b241a03c223716d700e, type: 3}
+  - slot: 5
+    variants:
+    - {fileID: 21300000, guid: 83daa35fbdc77004d9eca08af9e82ad7, type: 3}
+  - slot: 6
+    variants:
+    - {fileID: 21300000, guid: 30de0a38cc3a8804681005c7bb85c69a, type: 3}
+    - {fileID: 21300000, guid: 0bc30e4eac89d9945b43475ab9a5f828, type: 3}
+  - slot: 7
+    variants:
+    - {fileID: 21300000, guid: 99b4532803baae44c87837b3333839c6, type: 3}
+  - slot: 8
+    variants:
+    - {fileID: 21300000, guid: 30370ce62736722498d852590b7c1c42, type: 3}
+    - {fileID: 21300000, guid: 2aeef22ad72b0244f839fd39bf3fe637, type: 3}
+  - slot: 9
+    variants:
+    - {fileID: 21300000, guid: 184a80f7251f71645aece685841214c7, type: 3}
+    - {fileID: 21300000, guid: 402cfc93717ac09409efb536ae640337, type: 3}
+  - slot: 10
+    variants:
+    - {fileID: 21300000, guid: 6ffe53be186094241bf53eed52252c05, type: 3}
+  - slot: 11
+    variants:
+    - {fileID: 21300000, guid: 7938244c9dd9e864ca9d6bbe43428bf1, type: 3}
+  - slot: 12
+    variants:
+    - {fileID: 21300000, guid: dd051e96f489db34fa49ac7926f23c02, type: 3}
+    - {fileID: 21300000, guid: c45b0e7da9383ad48a8e9cfe904b204c, type: 3}
+  - slot: 13
+    variants:
+    - {fileID: 21300000, guid: 8a48410c5cc674c47b7081b65b9a63c1, type: 3}
+    - {fileID: 21300000, guid: dd851c5f4524736459a179c3d43b4708, type: 3}
+  - slot: 14
+    variants:
+    - {fileID: 21300000, guid: 1d1e99f76a85f2140ba6326e35229105, type: 3}
+    - {fileID: 21300000, guid: 75ff701ac1b0d62468d1e1cdced61467, type: 3}
+  - slot: 15
+    variants:
+    - {fileID: 21300000, guid: 38965f3988d2eb4448fae29c06b3661b, type: 3}
+    - {fileID: 21300000, guid: 96c0adb814ac3b843b1237ed0361c730, type: 3}
   hiddenLegacy: []
   previewIcon: {fileID: 0}

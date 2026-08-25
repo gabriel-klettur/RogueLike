@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Gameplay.World.Layering;
 
@@ -56,7 +56,12 @@ namespace Valkur.Gameplay.TileEditor
             // out of any active edit mode (and vice versa). Same code path the
             // Colliders Draw/Erase pair already uses against each other.
             if (!wasDraw && _state.CurrentColliderMode != TileEditorState.ColliderMode.None)
+            {
                 _state.CurrentColliderMode = TileEditorState.ColliderMode.None;
+                // Colliders may have been mid-drag when the mutex forced it off —
+                // flush any pending composite rebake so it isn't lost.
+                FlushPendingColliderRebake();
+            }
 
             _state.CurrentLayerJumpMode = wasDraw
                 ? TileEditorState.LayerJumpMode.None
@@ -85,7 +90,10 @@ namespace Valkur.Gameplay.TileEditor
             _state.BrushStrokeCells.Clear();
 
             if (!wasErase && _state.CurrentColliderMode != TileEditorState.ColliderMode.None)
+            {
                 _state.CurrentColliderMode = TileEditorState.ColliderMode.None;
+                FlushPendingColliderRebake();
+            }
 
             _state.CurrentLayerJumpMode = wasErase
                 ? TileEditorState.LayerJumpMode.None
@@ -143,8 +151,10 @@ namespace Valkur.Gameplay.TileEditor
         /// Apply the current layer-jumps edit mode (Draw or Erase) to the brush-sized
         /// footprint at the cell under the mouse. Mirrors <c>HandleColliderInput</c>
         /// but writes directly to the in-memory <see cref="LayerJumpMap"/> rather than
-        /// a tilemap — no <see cref="TileEditBatch"/> / undo here in M1.8 (parallel
-        /// limitation with <see cref="CollisionTagMap"/>; see plan §1.8.13).
+        /// a tilemap. Each stroke opens/closes a <see cref="TileEditBatch"/> via
+        /// <see cref="TileEditorUndoSystem"/> with <c>tilemap = null</c> — the batch
+        /// carries only <see cref="MetadataEdit"/>s (no tilemap involved at all), which
+        /// is exactly what the batch's optional-tilemap contract was built to allow.
         /// </summary>
         internal void HandleLayerJumpsInput()
         {
@@ -161,22 +171,26 @@ namespace Valkur.Gameplay.TileEditor
                 _state.BrushStrokeCells.Clear();
                 _state.SelectedCellPos = cursorCell;
                 _state.IsDragging = true;
-                StampLayerJumpsFootprint(cursorCell, target, drawing);
+                _undo.StartStroke(null);
+                _undo.RecordMetadataEdits(StampLayerJumpsFootprint(cursorCell, target, drawing));
                 AddCellsToBrushStroke(cursorCell);
             }
             else if (Valkur.Core.Input.MouseInputManager.IsLeftMouseButtonPressed() && _state.IsDragging)
             {
                 _state.SelectedCellPos = cursorCell;
-                StampLayerJumpsFootprint(cursorCell, target, drawing);
+                _undo.RecordMetadataEdits(StampLayerJumpsFootprint(cursorCell, target, drawing));
                 AddCellsToBrushStroke(cursorCell);
             }
             else if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonReleasedThisFrame())
             {
+                _undo.EndStroke();
                 _state.IsDragging = false;
                 _state.BrushStrokeCells.Clear();
-                // Auto-persist: flush dirty zones immediately so jump edits survive
-                // a scene reload without an explicit Save click. Mirrors Colliders.
-                if (Application.isPlaying) _persistence?.SaveAllDirty();
+                // Autosave is DEBOUNCED (TileOverlayPersistence.Autosave): the edits above already
+                // armed it through MarkBatchDirty, and it flushes off-thread after a quiet
+                // period. Forcing a synchronous SaveAllDirty() here measured 6.48 ms on the
+                // main thread for a single painted cell. Explicit saves (F8 close, slot
+                // switch, Save button) still flush synchronously and wait for this one.
             }
         }
 
@@ -184,16 +198,25 @@ namespace Valkur.Gameplay.TileEditor
         /// Paint or clear the <see cref="TileEditorState.BrushSize"/> × BrushSize
         /// footprint anchored at <paramref name="cursorCell"/> (top-left corner,
         /// matching every other tool). Marks each touched cell dirty so the zone
-        /// flushes on mouse-up.
+        /// flushes on mouse-up, and returns the before/after of every cell that
+        /// actually changed so the caller can record it into the open undo batch.
         /// </summary>
-        private void StampLayerJumpsFootprint(Vector3Int cursorCell, string target, bool drawing)
+        private List<MetadataEdit> StampLayerJumpsFootprint(Vector3Int cursorCell, string target, bool drawing)
         {
             var dirty = new List<Vector3Int>(_state.BrushSize * _state.BrushSize);
+            var metaEdits = new List<MetadataEdit>(_state.BrushSize * _state.BrushSize);
             for (int dy = 0; dy < _state.BrushSize; dy++)
             for (int dx = 0; dx < _state.BrushSize; dx++)
             {
                 var cell = new Vector3Int(cursorCell.x + dx, cursorCell.y - dy, cursorCell.z);
                 if (!CanEditCell(cell)) continue;
+
+                string oldTarget = LayerJumps.Get(cell);
+                if (string.IsNullOrEmpty(oldTarget)) oldTarget = null;
+                string newTarget = drawing ? target : null;
+                if (oldTarget != newTarget)
+                    metaEdits.Add(new MetadataEdit(cell, oldTarget, newTarget, LayerJumps));
+
                 if (drawing) LayerJumps.Set(cell, target);
                 else         LayerJumps.Clear(cell);
                 dirty.Add(cell);
@@ -202,6 +225,7 @@ namespace Valkur.Gameplay.TileEditor
             // ops — fall back to per-cell MarkCellDirty which only needs Position.
             if (_persistence != null)
                 for (int i = 0; i < dirty.Count; i++) _persistence.MarkCellDirty(dirty[i]);
+            return metaEdits;
         }
     }
 }

@@ -1,0 +1,520 @@
+{
+  "schemaVersion": 1,
+  "model": "corner16",
+  "packs": {
+    "grass_dirt": {
+      "materialA": "0",
+      "materialB": "1",
+      "primaryMaterial": 1,
+      "palette": {
+        "0": "#54543c",
+        "1": "#549c3c"
+      },
+      "cornerOrder": "NW,NE,SE,SW",
+      "keyMeaning": "1 = corner is the SECONDARY terrain (matches TerrainTileResolver)",
+      "slots": {
+        "0010": [
+          "tileset3_r0_c0",
+          "tileset3_0_0"
+        ],
+        "0011": [
+          "tileset3_r0_c1",
+          "tileset3_32_0"
+        ],
+        "0001": [
+          "tileset3_r0_c2",
+          "tileset3_64_0"
+        ],
+        "1101": [
+          "tileset3_r0_c3",
+          "tileset3_96_0"
+        ],
+        "1110": [
+          "tileset3_r0_c4",
+          "tileset3_128_0"
+        ],
+        "0110": [
+          "tileset3_r1_c0",
+          "tileset3_0_32"
+        ],
+        "1111": [
+          "tileset3_r1_c1",
+          "tileset3_0_96",
+          "tileset3_32_32"
+        ],
+        "1001": [
+          "tileset3_r1_c2",
+          "tileset3_64_32"
+        ],
+        "1011": [
+          "tileset3_r1_c3",
+          "tileset3_96_32"
+        ],
+        "0111": [
+          "tileset3_r1_c4",
+          "tileset3_128_32"
+        ],
+        "0100": [
+          "tileset3_r2_c0",
+          "tileset3_0_64"
+        ],
+        "1100": [
+          "tileset3_r2_c1",
+          "tileset3_32_64"
+        ],
+        "1000": [
+          "tileset3_r2_c2",
+          "tileset3_64_64"
+        ],
+        "1010": [
+          "tileset3_r2_c3",
+          "tileset3_96_64"
+        ],
+        "0101": [
+          "tileset3_r2_c4",
+          "tileset3_128_64"
+        ],
+        "0000": [
+          "tileset3_r3_c1",
+          "tileset3_32_96"
+        ]
+      },
+      "extraSignatures": {}
+    },
+    "grass_rock": {
+      "materialA": "0",
+      "materialB": "1",
+      "primaryMaterial": 0,
+      "palette": {
+        "0": "#54843c",
+        "1": "#84846c",
+        "2": "#3c3c3c"
+      },
+      "cornerOrder": "NW,NE,SE,SW",
+      "keyMeaning": "1 = corner is the SECONDARY terrain (matches TerrainTileResolver)",
+      "slots": {
+        "0010": [
+          "tileset4_r0_c0",
+          "tileset5_r0_c0",
+          "tileset4_0_0",
+          "tileset5_0_0"
+        ],
+        "0011": [
+          "tileset4_r0_c1",
+          "tileset5_r0_c1",
+          "tileset4_32_0",
+          "tileset5_32_0"
+        ],
+        "0001": [
+          "tileset4_r0_c2",
+          "tileset5_r0_c2",
+          "tileset4_64_0",
+          "tileset5_64_0"
+        ],
+        "1101": [
+          "tileset4_r0_c3",
+          "tileset5_r0_c3",
+          "tileset4_96_0",
+          "tileset5_96_0"
+        ],
+        "1110": [
+          "tileset4_r0_c4",
+          "tileset5_r0_c4",
+          "tileset4_128_0",
+          "tileset5_128_0"
+        ],
+        "0110": [
+          "tileset4_r1_c0",
+          "tileset5_r1_c0",
+          "tileset4_0_32",
+          "tileset5_0_32"
+        ],
+        "1111": [
+          "tileset4_r1_c1",
+          "tileset4_0_96",
+          "tileset4_32_32",
+          "tileset5_0_96"
+        ],
+        "1001": [
+          "tileset4_r1_c2",
+          "tileset5_r1_c2",
+          "tileset4_64_32",
+          "tileset5_64_32"
+        ],
+        "1011": [
+          "tileset4_r1_c3",
+          "tileset5_r1_c3",
+          "tileset4_96_32",
+          "tileset5_96_32"
+        ],
+        "0111": [
+          "tileset4_r1_c4",
+          "tileset5_r1_c4",
+          "tileset4_128_32",
+          "tileset5_128_32"
+        ],
+        "0100": [
+          "tileset4_r2_c0",
+          "tileset5_r2_c0",
+          "tileset4_0_64",
+          "tileset5_0_64"
+        ],
+        "1100": [
+          "tileset4_r2_c1",
+          "tileset5_r2_c1",
+          "tileset4_32_64",
+          "tileset5_32_64"
+        ],
+        "1000": [
+          "tileset4_r2_c2",
+          "tileset5_r2_c2",
+          "tileset4_64_64",
+          "tileset5_64_64"
+        ],
+        "1010": [
+          "tileset4_r2_c3",
+          "tileset5_r2_c3",
+          "tileset4_96_64",
+          "tileset5_96_64"
+        ],
+        "0101": [
+          "tileset4_r2_c4",
+          "tileset5_r2_c4",
+          "tileset4_128_64",
+          "tileset5_128_64"
+        ],
+        "0000": [
+          "tileset4_r3_c1",
+          "tileset5_r3_c1",
+          "tileset4_32_96",
+          "tileset5_32_96",
+          "tileset6_32_96"
+        ]
+      },
+      "extraSignatures": {
+        "0020": [
+          "tileset6_r0_c0",
+          "tileset6_0_0"
+        ],
+        "0022": [
+          "tileset6_r0_c1",
+          "tileset6_32_0"
+        ],
+        "0002": [
+          "tileset6_r0_c2",
+          "tileset6_64_0"
+        ],
+        "2202": [
+          "tileset6_r0_c3",
+          "tileset6_96_0"
+        ],
+        "2220": [
+          "tileset6_r0_c4",
+          "tileset6_128_0"
+        ],
+        "0220": [
+          "tileset6_r1_c0",
+          "tileset6_0_32"
+        ],
+        "2222": [
+          "tileset6_r1_c1",
+          "tileset6_0_96"
+        ],
+        "2002": [
+          "tileset6_r1_c2",
+          "tileset6_64_32"
+        ],
+        "2022": [
+          "tileset6_r1_c3",
+          "tileset6_96_32"
+        ],
+        "0222": [
+          "tileset6_r1_c4",
+          "tileset6_128_32"
+        ],
+        "0200": [
+          "tileset6_r2_c0",
+          "tileset6_0_64"
+        ],
+        "2200": [
+          "tileset6_r2_c1",
+          "tileset6_32_64"
+        ],
+        "2000": [
+          "tileset6_r2_c2",
+          "tileset6_64_64"
+        ],
+        "2020": [
+          "tileset6_r2_c3",
+          "tileset6_96_64"
+        ],
+        "0202": [
+          "tileset6_r2_c4",
+          "tileset6_128_64"
+        ]
+      }
+    },
+    "rock_water": {
+      "materialA": "0",
+      "materialB": "1",
+      "primaryMaterial": 0,
+      "palette": {
+        "0": "#3c3c3c",
+        "1": "#246cb4",
+        "2": "#6c9ce4",
+        "3": "#84546c"
+      },
+      "cornerOrder": "NW,NE,SE,SW",
+      "keyMeaning": "1 = corner is the SECONDARY terrain (matches TerrainTileResolver)",
+      "slots": {
+        "1101": [
+          "tileset8_r0_c3",
+          "tileset9_r0_c3"
+        ],
+        "1110": [
+          "tileset8_r0_c4",
+          "tileset9_r0_c4"
+        ],
+        "0110": [
+          "tileset8_r1_c0",
+          "tileset9_r1_c0"
+        ],
+        "1111": [
+          "tileset8_r1_c1",
+          "tileset9_r1_c1"
+        ],
+        "1001": [
+          "tileset8_r1_c2",
+          "tileset9_r1_c2"
+        ],
+        "0100": [
+          "tileset8_r2_c0",
+          "tileset9_r2_c0"
+        ],
+        "1100": [
+          "tileset8_r2_c1",
+          "tileset9_r2_c1"
+        ],
+        "1000": [
+          "tileset8_r2_c2",
+          "tileset9_r2_c2"
+        ],
+        "0000": [
+          "tileset8_r3_c1",
+          "tileset9_r3_c1"
+        ],
+        "0010": [
+          "tileset9_r0_c0"
+        ],
+        "0011": [
+          "tileset9_r0_c1"
+        ],
+        "0001": [
+          "tileset9_r0_c2"
+        ],
+        "1011": [
+          "tileset9_r1_c3"
+        ],
+        "0111": [
+          "tileset9_r1_c4"
+        ],
+        "1010": [
+          "tileset9_r2_c3"
+        ],
+        "0101": [
+          "tileset9_r2_c4"
+        ]
+      },
+      "extraSignatures": {}
+    },
+    "sand_grass": {
+      "materialA": "0",
+      "materialB": "1",
+      "primaryMaterial": 0,
+      "palette": {
+        "0": "#e4cc9c",
+        "1": "#24840c",
+        "2": "#e49c6c",
+        "3": "#843c3c"
+      },
+      "cornerOrder": "NW,NE,SE,SW",
+      "keyMeaning": "1 = corner is the SECONDARY terrain (matches TerrainTileResolver)",
+      "slots": {
+        "0010": [
+          "tileset1_r0_c0",
+          "tileset2_r0_c0",
+          "tileset1_0_0",
+          "tileset2_0_0"
+        ],
+        "0011": [
+          "tileset1_r0_c1",
+          "tileset2_r0_c1",
+          "tileset1_32_0",
+          "tileset2_32_0"
+        ],
+        "0001": [
+          "tileset1_r0_c2",
+          "tileset2_r0_c2",
+          "tileset1_64_0",
+          "tileset2_64_0"
+        ],
+        "1101": [
+          "tileset1_r0_c3",
+          "tileset2_r0_c3",
+          "tileset1_96_0",
+          "tileset2_96_0"
+        ],
+        "1110": [
+          "tileset1_r0_c4",
+          "tileset2_r0_c4",
+          "tileset1_128_0",
+          "tileset2_128_0"
+        ],
+        "0110": [
+          "tileset1_r1_c0",
+          "tileset2_r1_c0",
+          "tileset1_0_32",
+          "tileset2_0_32"
+        ],
+        "1111": [
+          "tileset1_r1_c1",
+          "tileset2_r1_c1",
+          "tileset1_0_96",
+          "tileset2_0_96"
+        ],
+        "1001": [
+          "tileset1_r1_c2",
+          "tileset2_r1_c2",
+          "tileset1_64_32",
+          "tileset2_64_32"
+        ],
+        "1011": [
+          "tileset1_r1_c3",
+          "tileset2_r1_c3",
+          "tileset1_96_32",
+          "tileset2_96_32"
+        ],
+        "0111": [
+          "tileset1_r1_c4",
+          "tileset2_r1_c4",
+          "tileset1_128_32",
+          "tileset2_128_32"
+        ],
+        "0100": [
+          "tileset1_r2_c0",
+          "tileset2_r2_c0",
+          "tileset1_0_64",
+          "tileset2_0_64"
+        ],
+        "1100": [
+          "tileset1_r2_c1",
+          "tileset2_r2_c1",
+          "tileset1_32_64",
+          "tileset2_32_64"
+        ],
+        "1000": [
+          "tileset1_r2_c2",
+          "tileset2_r2_c2",
+          "tileset1_64_64",
+          "tileset2_64_64"
+        ],
+        "1010": [
+          "tileset1_r2_c3",
+          "tileset2_r2_c3",
+          "tileset1_96_64",
+          "tileset2_96_64"
+        ],
+        "0101": [
+          "tileset1_r2_c4",
+          "tileset2_r2_c4",
+          "tileset1_128_64",
+          "tileset2_128_64"
+        ],
+        "0000": [
+          "tileset1_r3_c1",
+          "tileset2_r3_c1",
+          "tileset1_32_96",
+          "tileset2_32_96"
+        ]
+      },
+      "extraSignatures": {}
+    },
+    "sand_rock": {
+      "materialA": "0",
+      "materialB": "1",
+      "primaryMaterial": 0,
+      "palette": {
+        "0": "#cc9c54",
+        "1": "#3c3c3c"
+      },
+      "cornerOrder": "NW,NE,SE,SW",
+      "keyMeaning": "1 = corner is the SECONDARY terrain (matches TerrainTileResolver)",
+      "slots": {
+        "0010": [
+          "tileset7_r0_c0",
+          "tileset7_0_0"
+        ],
+        "0011": [
+          "tileset7_r0_c1",
+          "tileset7_32_0"
+        ],
+        "0001": [
+          "tileset7_r0_c2",
+          "tileset7_64_0"
+        ],
+        "1101": [
+          "tileset7_r0_c3",
+          "tileset7_96_0"
+        ],
+        "1110": [
+          "tileset7_r0_c4",
+          "tileset7_128_0"
+        ],
+        "0110": [
+          "tileset7_r1_c0",
+          "tileset7_0_32"
+        ],
+        "1111": [
+          "tileset7_r1_c1",
+          "tileset7_0_96"
+        ],
+        "1001": [
+          "tileset7_r1_c2",
+          "tileset7_64_32"
+        ],
+        "1011": [
+          "tileset7_r1_c3",
+          "tileset7_96_32"
+        ],
+        "0111": [
+          "tileset7_r1_c4",
+          "tileset7_128_32"
+        ],
+        "0100": [
+          "tileset7_r2_c0",
+          "tileset7_0_64"
+        ],
+        "1100": [
+          "tileset7_r2_c1",
+          "tileset7_32_64"
+        ],
+        "1000": [
+          "tileset7_r2_c2",
+          "tileset7_64_64"
+        ],
+        "1010": [
+          "tileset7_r2_c3",
+          "tileset7_96_64"
+        ],
+        "0101": [
+          "tileset7_r2_c4",
+          "tileset7_128_64"
+        ],
+        "0000": [
+          "tileset7_32_96"
+        ]
+      },
+      "extraSignatures": {}
+    }
+  }
+}

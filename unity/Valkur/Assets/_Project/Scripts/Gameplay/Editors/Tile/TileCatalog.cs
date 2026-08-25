@@ -89,15 +89,21 @@ namespace Valkur.Gameplay.TileEditor
         {
             var catalog = CreateInstance<TileCatalog>();
 
-            // Known category folders under Resources/Tiles/.
-            // Tilesheet-style categories (with a _manifest.json) live alongside
-            // the legacy single-tile categories — the loader auto-detects which
-            // is which by probing for _manifest.json.
-            string[] categories = {
-                "grass_dirt", "grass_rock", "ocean_grass", "rock_water",
-                "sand_grass", "sand_ocean", "sand_ocean_2", "sand_rock",
-                "castle_pandora"
-            };
+            // Category folders under Resources/Tiles/ are discovered at editor
+            // time (Resources/ ships flat in a build — no runtime directory
+            // listing API exists) and baked into _categories.json by
+            // TileCategoryManifestBuilder, same convention as the per-tilesheet
+            // _manifest.json files below. Tilesheet-style categories (with a
+            // _manifest.json) live alongside legacy single-tile categories —
+            // the loader auto-detects which is which by probing for _manifest.json.
+            var categoryManifestAsset = Resources.Load<TextAsset>("Tiles/_categories");
+            TileCategoryManifest categoryManifest = categoryManifestAsset != null
+                ? JsonUtility.FromJson<TileCategoryManifest>(categoryManifestAsset.text)
+                : null;
+
+            string[] categories = (categoryManifest != null && categoryManifest.folderCategories != null)
+                ? categoryManifest.folderCategories
+                : System.Array.Empty<string>();
 
             var seen = new HashSet<string>();
             int total = 0;
@@ -159,9 +165,51 @@ namespace Valkur.Gameplay.TileEditor
                 }
             }
 
+            // Loose sprites directly under Resources/Tiles/ (no owning
+            // subfolder) — e.g. floor, wall, dungeon_floor. Loaded individually
+            // (not LoadAll, which would re-pull every category sprite too) and
+            // grouped under the manifest's synthetic category so they become
+            // selectable from the picker without moving a single PNG —
+            // WorldLoader.cs loads several of them by the literal path
+            // "Tiles/wall" / "Tiles/floor", which must not change.
+            if (categoryManifest != null && categoryManifest.rootFiles != null)
+            {
+                string rootCategory = string.IsNullOrEmpty(categoryManifest.syntheticRootCategory)
+                    ? "basics"
+                    : categoryManifest.syntheticRootCategory;
+
+                foreach (string fileName in categoryManifest.rootFiles)
+                {
+                    var sprite = Resources.Load<Sprite>("Tiles/" + fileName);
+                    if (sprite == null) continue;
+                    if (!seen.Add(sprite.name)) continue;
+
+                    var tile = CreateInstance<Tile>();
+                    tile.sprite = sprite;
+                    tile.color = Color.white;
+                    tile.colliderType = Tile.ColliderType.None;
+                    tile.name = sprite.name;
+
+                    catalog.entries.Add(new TileEntry
+                    {
+                        category = rootCategory,
+                        tileName = sprite.name,
+                        tile = tile,
+                        preview = sprite,
+                        gridR = -1,
+                        gridC = -1,
+                        uniqueId = -1,
+                        transparent = false
+                    });
+                    total++;
+                }
+            }
+
             if (total == 0)
             {
-                // Fallback: try loading everything from Tiles/ root
+                // Emergency fallback only: reached when _categories.json is
+                // missing/unparseable AND no folder or root file loaded
+                // anything (broken checkout). Normal operation never gets here.
                 var allSprites = Resources.LoadAll<Sprite>("Tiles");
                 if (allSprites != null)
                 {

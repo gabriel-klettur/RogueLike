@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Valkur.Gameplay.TileEditor
 {
@@ -10,6 +10,27 @@ namespace Valkur.Gameplay.TileEditor
         // Brush size range
         public const int MinBrushSize = 1;
         public const int MaxBrushSize = 25;
+
+        /// <summary>
+        /// Shown when Brush or Fill is clicked with no tile picked. Both tools
+        /// used to return silently in that state, which reads as "the editor is
+        /// broken" rather than "you have not chosen what to paint yet".
+        /// </summary>
+        public const string NoTileSelectedHint =
+            "No tile selected - pick one from the TILES panel before painting.";
+
+        /// <summary>
+        /// Shown when the AUTO brush modifier can't paint because the pack of the
+        /// currently selected tile has no usable ruleset — either no
+        /// <c>TilesetRuleset</c> asset exists for that folder, or the folder's
+        /// ruleset is a transition (Corner16, always two-material) with no matching
+        /// base (single-material) ruleset registered for its primary terrain.
+        /// Without this, AUTO would silently paint nothing on every stroke — the
+        /// exact "broken editor" failure mode <see cref="NoTileSelectedHint"/>
+        /// already exists to avoid.
+        /// </summary>
+        public const string NoRulesetForCategoryHint =
+            "AUTO needs a base ruleset for this tile's terrain - configure one before painting.";
 
         // ── Clipboard (copied-cells) highlight ────────────────────────────────
 
@@ -44,5 +65,19 @@ namespace Valkur.Gameplay.TileEditor
         /// preview underneath.
         /// </summary>
         public const float PickerCopyHighlightBorderPx = 3f;
+
+        // ── Overlay persistence (auto-save debounce) ───────────────────────────
+
+        /// <summary>
+        /// Quiet period (seconds, real time) after the last tile/terrain/
+        /// collision-tag/layer-jump edit before <see cref="TileOverlayPersistence"/>'s
+        /// deferred autosave pump flushes the affected zones to disk. Coalesces a
+        /// burst of separate strokes (each of which still calls the synchronous,
+        /// immediate <c>SaveAllDirty()</c> on its own mouse-up today) into a single
+        /// background write whenever a caller marks cells dirty without also
+        /// forcing an immediate flush right after. Only armed while
+        /// <c>Application.isPlaying</c> — never during EditMode tests.
+        /// </summary>
+        public const float AutosaveDebounceSeconds = 0.4f;
     }
 }

@@ -151,6 +151,35 @@ Notes that cost time to rediscover:
   the manifest. The source sheets are gitignored (`downloads/`), so the manifest is the only
   versioned record of what was imported.
 
+## Player character sheets (retouch round trip)
+
+`Art/Characters/<class>/<class>_{idle,walking,casting}.png` are single-row strips of 128x128
+frames (40 or 41 of them, so 5120 or 5248 px wide) at PPU 64, pivot (0.5, 0). Retouching a
+pose inside a 5000 px strip is unpleasant, so `tools/atlas/player_sheet_frames.py` round-trips
+one:
+
+```bash
+python tools/atlas/player_sheet_frames.py extract  --class valkyrie --out unity/downloads/edit
+python tools/atlas/player_sheet_frames.py restitch --dir unity/downloads/edit/valkyrie_idle
+```
+
+`extract` writes one PNG per frame plus a `sheet.json` recording the target path and the
+original geometry; `restitch` rebuilds the strip from those frames and writes it back over the
+source. A frame nobody edits comes back bit-identical (plain crop, no resample, no mode
+change) — verified across all 5 classes x 3 states.
+
+- **The geometry is load-bearing.** `PlayerCharacterAssetBinder` re-slices on a fixed 128 px
+  grid and derives each sprite GUID from `<texturePath>#<spriteName>`, which is what lets the
+  ~284 sprite references inside `Data/Catalogs/Players/<class>.asset` survive a retouch. Keep
+  the file name, the frame size and the frame count and they all rebind; widen the strip and
+  the trailing frames vanish from the catalog silently. `restitch` refuses any frame that is
+  not 128x128, any missing frame, and always writes the recorded width.
+- **Edit in RGBA.** Flattening onto a background and re-keying leaves black under the
+  transparent pixels, which the premultiplied resample then rings around every edge.
+- Finish with `Valkur/Setup/Rebuild Player Character Assets` to re-slice and rebind.
+- Extraction output belongs under `unity/downloads/` (gitignored) — the strips in
+  `Art/Characters/` stay the only versioned copy.
+
 ## Naming Convention
 
 ### Files

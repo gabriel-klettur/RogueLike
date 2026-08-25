@@ -40,12 +40,16 @@ namespace Valkur.Gameplay.TileEditor
 
         /// <summary>Raised after any field is mutated, so dependent UI sliders can refresh.</summary>
         /// <summary>
-        /// Editor UI from the previous Play session would otherwise still be listening.
+        /// Editor UI from the previous Play session would otherwise still be listening, and
+        /// the 8 color/size fields above would otherwise still carry whatever an author
+        /// dragged them to via the F8 UX panel — surviving Stop/Play (Domain Reload is OFF)
+        /// and bleeding into every editor's floating panels on the next session.
         /// </summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticEventOnPlayModeEnter()
+        private static void ResetStaticStateOnPlayModeEnter()
         {
             OnChanged = null;
+            ResetToDefaults();
         }
 
         public static event Action OnChanged;

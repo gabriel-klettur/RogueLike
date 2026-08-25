@@ -37,15 +37,23 @@ namespace Valkur.Gameplay.TileEditor
             {
                 _undo.EndStroke();
                 _state.IsDragging = false;
-                // Auto-persist: flush dirty zones immediately so erased tiles
-                // survive a scene reload without requiring an explicit Save click.
-                if (Application.isPlaying) _persistence?.SaveAllDirty();
+                // Autosave is DEBOUNCED (TileOverlayPersistence.Autosave): the edits above already
+                // armed it through MarkBatchDirty, and it flushes off-thread after a quiet
+                // period. Forcing a synchronous SaveAllDirty() here measured 6.48 ms on the
+                // main thread for a single painted cell. Explicit saves (F8 close, slot
+                // switch, Save button) still flush synchronously and wait for this one.
             }
         }
 
         private void HandleFillInput(Tilemap tilemap, Vector3Int cellPos)
         {
-            if (_state.SelectedTile == null) return;
+            // Same contract as HandleBrushInput: never fail silently on a click.
+            if (_state.SelectedTile == null)
+            {
+                if (MouseInputManager.WasLeftMouseButtonPressedThisFrame())
+                    _ui?.SetStatus(TileEditorConstants.NoTileSelectedHint);
+                return;
+            }
 
             if (MouseInputManager.WasLeftMouseButtonPressedThisFrame())
             {
@@ -55,8 +63,11 @@ namespace Valkur.Gameplay.TileEditor
                 _undo.RecordEdits(edits);
                 _persistence?.MarkBatchDirty(edits);
                 _undo.EndStroke();
-                // Auto-persist: fill is atomic so we save immediately after the operation.
-                if (Application.isPlaying) _persistence?.SaveAllDirty();
+                // Autosave is DEBOUNCED (TileOverlayPersistence.Autosave): the edits above already
+                // armed it through MarkBatchDirty, and it flushes off-thread after a quiet
+                // period. Forcing a synchronous SaveAllDirty() here measured 6.48 ms on the
+                // main thread for a single painted cell. Explicit saves (F8 close, slot
+                // switch, Save button) still flush synchronously and wait for this one.
                 // The flood we just painted invalidates the cached BFS preview
                 // — every cell in the old set now matches the new tile, so the
                 // hover-cell key alone isn't enough to detect the change.

@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.Gameplay.Editors;
 using Valkur.Gameplay.World;
 using Valkur.UIKit;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
@@ -21,7 +22,7 @@ namespace Valkur.Gameplay.TileEditor
         // half-screen but small enough to avoid runaway drag overshoot.
         private static readonly Vector2 TILES_PANEL_MAX_SIZE = new Vector2(1600f, 1400f);
         // Inner content row width at the panel's initial size (panel width minus
-        // the 8px lateral padding applied by the shared MakeDropdownPanel VLG).
+        // the 8px lateral padding applied by the shared EditorUIHelpers.MakeDropPanel VLG).
         // Chrome rows (selected preview, categories, zoom controls, footer) stay
         // pinned to this width even after the panel is resized — only the
         // TILES picker absorbs the delta. See ApplyTilesPanelResizePolicy.
@@ -60,7 +61,7 @@ namespace Valkur.Gameplay.TileEditor
 
         private static void BuildTilesDropdown(Transform canvasT, ref UIRefs refs)
         {
-            refs.TilesDropdown = MakeDropdownPanel("TilesDropdown", canvasT,
+            refs.TilesDropdown = EditorUIHelpers.MakeDropPanel("TilesDropdown", canvasT,
                 PanelDock.TopLeft, TilesX, TilesY, TILES_DROP_W, TILES_DROP_H,
                 "Tiles", out var tilesContent, out refs.TilesPanelDrag);
 
@@ -155,6 +156,7 @@ namespace Valkur.Gameplay.TileEditor
 
             BuildSelectedTilePreview(col.transform, ref refs);
             BuildConfigureRow(col.transform, ref refs);
+            BuildAutoToggleRow(col.transform);
         }
 
         private static void BuildTopRowRightColumn(Transform parent, ref UIRefs refs)
@@ -230,7 +232,7 @@ namespace Valkur.Gameplay.TileEditor
         /// <summary>
         /// Adds a small triangular drag handle to the bottom-right corner of the
         /// Tiles panel that lets the user resize it. The panel itself uses a
-        /// top-left pivot (set in <see cref="MakeDropdownPanel"/>) which is
+        /// top-left pivot (set in <see cref="Valkur.Gameplay.Editors.EditorUIHelpers.MakeDropPanel"/>) which is
         /// what <see cref="PanelResizeHandle"/> expects.
         /// </summary>
         private static void BuildTilesResizeHandle(GameObject panelRoot)
@@ -399,6 +401,94 @@ namespace Valkur.Gameplay.TileEditor
             // preferredWidth and the button would oscillate.
             refs.ConfigureTilesetBtnLabel.enableWordWrapping = false;
             refs.ConfigureTilesetBtnLabel.overflowMode       = TextOverflowModes.Overflow;
+        }
+
+        // Compact row height for the AUTO checkbox — it's a brush modifier flag,
+        // not a primary action, so it shouldn't compete for visual weight with the
+        // SELECTED preview / RULESET button stacked above it.
+        private const float AUTO_TOGGLE_ROW_H = 20f;
+        // Square footprint of the checkbox glyph itself (border + fill).
+        private const float AUTO_TOGGLE_BOX_PX = 14f;
+
+        /// <summary>
+        /// "AUTO" checkbox — modifier for the Brush tool, not a separate tool (see
+        /// <c>TileEditorState.AutoBrushMode</c>'s doc comment for why). Placed right
+        /// under the RULESET button since that's exactly the state it depends on:
+        /// AUTO paints the TERRAIN of the selected tile's pack, which needs that
+        /// pack's ruleset to resolve a variant.
+        ///
+        /// Self-contained on purpose — the box/label refs are captured directly by
+        /// the click closure below instead of being threaded through
+        /// <see cref="UIRefs"/>, because nothing outside this row ever needs to read
+        /// or repaint it. <see cref="TileEditorManager.OnAutoBrushToggleClicked"/>
+        /// (Instance, singleton — same pattern as <c>BuildTerrainChip</c>'s
+        /// <c>SelectTerrain</c> call below) flips the state and returns the new
+        /// value so the repaint happens right here, synchronously with the click.
+        /// </summary>
+        private static void BuildAutoToggleRow(Transform parent)
+        {
+            var row = CreateUI("AutoToggleRow", parent);
+            var rowLe = row.AddComponent<LayoutElement>();
+            rowLe.preferredHeight = AUTO_TOGGLE_ROW_H;
+            rowLe.minHeight       = AUTO_TOGGLE_ROW_H;
+            rowLe.flexibleHeight  = 0f;
+
+            var rowImg = row.AddComponent<Image>();
+            rowImg.color = BTN_NORMAL;
+            var btn = row.AddComponent<Button>();
+            var bc = btn.colors;
+            bc.normalColor = BTN_NORMAL;
+            bc.highlightedColor = BTN_HOVER;
+            bc.pressedColor = BTN_ACTIVE;
+            btn.colors = bc;
+            btn.targetGraphic = rowImg;
+
+            var h = row.AddComponent<HorizontalLayoutGroup>();
+            h.spacing = 6f;
+            h.childForceExpandWidth  = false;
+            h.childForceExpandHeight = true;
+            h.childControlWidth      = true;
+            h.childControlHeight     = true;
+            h.childAlignment         = TextAnchor.MiddleLeft;
+            h.padding = new RectOffset(4, 4, 1, 1);
+
+            var boxGo = CreateUI("Box", row.transform);
+            var boxLe = boxGo.AddComponent<LayoutElement>();
+            boxLe.preferredWidth  = AUTO_TOGGLE_BOX_PX;
+            boxLe.preferredHeight = AUTO_TOGGLE_BOX_PX;
+            boxLe.minWidth        = AUTO_TOGGLE_BOX_PX;
+            boxLe.minHeight       = AUTO_TOGGLE_BOX_PX;
+            boxLe.flexibleWidth   = 0f;
+            boxLe.flexibleHeight  = 0f;
+            var boxImg = boxGo.AddComponent<Image>();
+            boxImg.color = SLOT_BG;
+            var boxOutline = boxGo.AddComponent<Outline>();
+            boxOutline.effectColor = TEXT_MUTED;
+            boxOutline.effectDistance = new Vector2(1f, 1f);
+
+            var lblGo = CreateUI("Lbl", row.transform);
+            lblGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            var labelTmp = lblGo.AddComponent<TextMeshProUGUI>();
+            labelTmp.text = "AUTO";
+            labelTmp.fontSize = 11f;
+            labelTmp.fontStyle = FontStyles.Bold;
+            labelTmp.color = TEXT_SECONDARY;
+            labelTmp.alignment = TextAlignmentOptions.Left;
+            labelTmp.raycastTarget = false;
+
+            btn.onClick.AddListener(() =>
+            {
+                if (!TileEditorManager.HasInstance) return;
+                bool isOn = TileEditorManager.Instance.OnAutoBrushToggleClicked();
+                ApplyAutoToggleVisual(boxImg, labelTmp, isOn);
+            });
+        }
+
+        /// <summary>Repaints the AUTO checkbox's box fill + label colour to reflect ON/OFF.</summary>
+        private static void ApplyAutoToggleVisual(Image box, TextMeshProUGUI label, bool on)
+        {
+            if (box != null)   box.color   = on ? ACCENT : SLOT_BG;
+            if (label != null) label.color = on ? ACCENT : TEXT_SECONDARY;
         }
 
         // Hard ceiling on the auto-resized CATEGORIES scroll height. Beyond this

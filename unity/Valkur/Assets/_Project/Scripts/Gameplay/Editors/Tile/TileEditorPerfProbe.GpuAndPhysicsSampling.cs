@@ -1,14 +1,108 @@
-﻿using System.Collections.Generic;
-using System.Reflection;
+﻿using System.Reflection;
 using UnityEngine;
-using UnityEngine.Profiling;
 using UnityEngine.Tilemaps;
-using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.TileEditor
 {
     public partial class TileEditorPerfProbe : MonoBehaviour
     {
+        private void SampleGpuDiagnostics()
+        {
+#if UNITY_EDITOR
+            _drawCalls    = UnityEditor.UnityStats.drawCalls;
+            _setPassCalls = UnityEditor.UnityStats.setPassCalls;
+            _batches      = UnityEditor.UnityStats.batches;
+            _triangles    = UnityEditor.UnityStats.triangles;
+            _vertices     = UnityEditor.UnityStats.vertices;
+            _renderTextureMemBytes = UnityEditor.UnityStats.renderTextureBytes;
+            _textureMemBytes       = UnityEngine.Profiling.Profiler.GetAllocatedMemoryForGraphicsDriver();
+#endif
+
+            // ── GPU diagnostics ──
+            _camerasActive = 0;
+            var allCams = Camera.allCameras;
+            for (int i = 0; i < allCams.Length; i++) if (allCams[i].isActiveAndEnabled) _camerasActive++;
+            _screenW = Screen.width;
+            _screenH = Screen.height;
+            _orthoSize = _cam.orthographicSize;
+            _viewWidthW = _orthoSize * 2f * _cam.aspect;
+
+            // ── Identify cameras (up to 3 names) ──
+            _cam0Name = _cam1Name = _cam2Name = "-";
+            _cam0Info = _cam1Info = _cam2Info = "";
+            int active = 0;
+            for (int i = 0; i < allCams.Length && active < 3; i++)
+            {
+                var c = allCams[i];
+                if (c == null || !c.isActiveAndEnabled) continue;
+                string tname = c.targetTexture != null ? "RT" : "screen";
+                bool postFx = false;
+                if (_urpCamDataType != null && _urpRenderPostProp != null)
+                {
+                    var data = c.GetComponent(_urpCamDataType);
+                    if (data != null)
+                    {
+                        try { postFx = (bool)_urpRenderPostProp.GetValue(data); }
+                        catch { /* ignore */ }
+                    }
+                }
+                string info = $"{tname} pfx={(postFx ? "Y" : "N")} d={c.depth:F0}";
+                switch (active)
+                {
+                    case 0: _cam0Name = c.name; _cam0Info = info; break;
+                    case 1: _cam1Name = c.name; _cam1Info = info; break;
+                    case 2: _cam2Name = c.name; _cam2Info = info; break;
+                }
+                active++;
+            }
+
+#if UNITY_EDITOR
+            // Detect Scene View visible (it renders the scene every frame too in Editor)
+            _sceneViewVisible = UnityEditor.SceneView.lastActiveSceneView != null
+                              && UnityEditor.SceneView.lastActiveSceneView.hasFocus
+                              || UnityEditor.SceneView.sceneViews.Count > 0;
+            _gameViewWidth  = (int)UnityEditor.Handles.GetMainGameViewSize().x;
+            _gameViewHeight = (int)UnityEditor.Handles.GetMainGameViewSize().y;
+#endif
+
+            // ── Tile count in view ──
+            _tilesInView = 0;
+            _tilemapColliders = 0;
+            float halfH = _cam.orthographicSize;
+            float halfW = halfH * _cam.aspect;
+            Vector3 cp = _cam.transform.position;
+            var tilemaps = Object.FindObjectsOfType<Tilemap>();
+            for (int i = 0; i < tilemaps.Length; i++)
+            {
+                var tm = tilemaps[i];
+                if (tm == null || !tm.gameObject.activeInHierarchy) continue;
+                var renderer = tm.GetComponent<TilemapRenderer>();
+                if (renderer == null || !renderer.enabled) continue;
+
+                // Compute the tilemap-local cell range that overlaps the camera window.
+                Vector3 minWorld = new Vector3(cp.x - halfW, cp.y - halfH, 0f);
+                Vector3 maxWorld = new Vector3(cp.x + halfW, cp.y + halfH, 0f);
+                Vector3Int minCell = tm.WorldToCell(minWorld);
+                Vector3Int maxCell = tm.WorldToCell(maxWorld);
+                int minX = Mathf.Min(minCell.x, maxCell.x);
+                int maxX = Mathf.Max(minCell.x, maxCell.x);
+                int minY = Mathf.Min(minCell.y, maxCell.y);
+                int maxY = Mathf.Max(minCell.y, maxCell.y);
+                int z = minCell.z;
+
+                // Cap iteration to a sane window to avoid pathological tilemaps.
+                int xCells = Mathf.Min(maxX - minX + 1, 256);
+                int yCells = Mathf.Min(maxY - minY + 1, 256);
+                for (int xi = 0; xi < xCells; xi++)
+                for (int yi = 0; yi < yCells; yi++)
+                {
+                    if (tm.HasTile(new Vector3Int(minX + xi, minY + yi, z))) _tilesInView++;
+                }
+
+                if (tm.GetComponent<TilemapCollider2D>() != null) _tilemapColliders++;
+            }
+        }
+
         private void SampleObjectCounts()
         {
             float halfH = _cam.orthographicSize;

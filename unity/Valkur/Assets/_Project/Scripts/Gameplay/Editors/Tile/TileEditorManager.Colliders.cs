@@ -52,10 +52,24 @@ namespace Valkur.Gameplay.TileEditor
             _undo?.EndStroke();
             _state.IsDragging = false;
             _state.BrushStrokeCells.Clear();
+            // A stroke can be force-ended here mid-drag (e.g. the user clicks this
+            // very toggle to turn Draw back off) — flush any pending composite
+            // rebake so it isn't lost.
+            FlushPendingColliderRebake();
 
             _state.CurrentColliderMode = wasDraw
                 ? TileEditorState.ColliderMode.None
                 : TileEditorState.ColliderMode.Draw;
+
+            // Mutex with the Layer-Jumps panel: mirrors OnDrawLayerJumpsClicked /
+            // OnEraseLayerJumpsClicked forcing Colliders off. Without this, enabling
+            // Draw Colliders while Draw/Erase Jumps was already on left BOTH modes
+            // active — IsColliderEditModeActive() is checked first in
+            // HandleMouseInput, so clicks silently went to Colliders while the
+            // Layer-Jumps toggle kept showing "on".
+            if (_state.CurrentColliderMode != TileEditorState.ColliderMode.None
+                && _state.CurrentLayerJumpMode != TileEditorState.LayerJumpMode.None)
+                _state.CurrentLayerJumpMode = TileEditorState.LayerJumpMode.None;
 
             // Auto-enable overlay when entering an editing mode so the user sees their work.
             if (_state.CurrentColliderMode != TileEditorState.ColliderMode.None)
@@ -69,6 +83,7 @@ namespace Valkur.Gameplay.TileEditor
 
             ApplyColliderOverlayVisibility();
             _ui?.RefreshColliderToggles();
+            _ui?.RefreshLayerJumpsToggles(); // Layer-Jumps may have been turned OFF by the mutex
             _ui?.RefreshToolHighlights();
             _ui?.SetStatus(_state.CurrentColliderMode == TileEditorState.ColliderMode.Draw
                 ? "Collider draw mode (LMB to paint)"
@@ -81,10 +96,16 @@ namespace Valkur.Gameplay.TileEditor
             _undo?.EndStroke();
             _state.IsDragging = false;
             _state.BrushStrokeCells.Clear();
+            FlushPendingColliderRebake();
 
             _state.CurrentColliderMode = wasErase
                 ? TileEditorState.ColliderMode.None
                 : TileEditorState.ColliderMode.Erase;
+
+            // Mutex with the Layer-Jumps panel — see OnDrawCollidersClicked.
+            if (_state.CurrentColliderMode != TileEditorState.ColliderMode.None
+                && _state.CurrentLayerJumpMode != TileEditorState.LayerJumpMode.None)
+                _state.CurrentLayerJumpMode = TileEditorState.LayerJumpMode.None;
 
             if (_state.CurrentColliderMode != TileEditorState.ColliderMode.None)
                 _state.ShowColliderOverlay = true;
@@ -94,6 +115,7 @@ namespace Valkur.Gameplay.TileEditor
 
             ApplyColliderOverlayVisibility();
             _ui?.RefreshColliderToggles();
+            _ui?.RefreshLayerJumpsToggles();
             _ui?.RefreshToolHighlights();
             _ui?.SetStatus(_state.CurrentColliderMode == TileEditorState.ColliderMode.Erase
                 ? "Collider erase mode (LMB to remove)"
@@ -150,11 +172,12 @@ namespace Valkur.Gameplay.TileEditor
                 var edits = TileBrush.Paint(collision, cellPos, tileToPaint, _state.BrushSize, canEditCell: null);
                 _undo.RecordEdits(edits);
                 _persistence?.MarkBatchDirty(edits);
-                ApplyTagToEdits(edits, drawing);
+                var tagEdits = ApplyTagToEdits(edits, drawing);
+                _undo.RecordMetadataEdits(tagEdits);
                 AddCellsToBrushStroke(cellPos);
                 _state.IsDragging = true;
                 if (edits.Count > 0)
-                    RegenerateCompositeCollider(collision);
+                    _colliderStrokeDirty = true;
             }
             else if (Valkur.Core.Input.MouseInputManager.IsLeftMouseButtonPressed() && _state.IsDragging)
             {
@@ -162,20 +185,25 @@ namespace Valkur.Gameplay.TileEditor
                 var edits = TileBrush.Paint(collision, cellPos, tileToPaint, _state.BrushSize, canEditCell: null);
                 _undo.RecordEdits(edits);
                 _persistence?.MarkBatchDirty(edits);
-                ApplyTagToEdits(edits, drawing);
+                var tagEdits = ApplyTagToEdits(edits, drawing);
+                _undo.RecordMetadataEdits(tagEdits);
                 AddCellsToBrushStroke(cellPos);
                 if (edits.Count > 0)
-                    RegenerateCompositeCollider(collision);
+                    _colliderStrokeDirty = true;
             }
             else if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonReleasedThisFrame())
             {
                 _undo.EndStroke();
                 _state.IsDragging = false;
                 _state.BrushStrokeCells.Clear();
-                // Auto-persist: flush dirty zones immediately so collider edits
-                // survive a scene reload without requiring an explicit Save click.
-                // Mirrors the behaviour of HandleBrushInput / HandleEraserInput.
-                if (Application.isPlaying) _persistence?.SaveAllDirty();
+                // Physics geometry only needs to be correct once the stroke commits,
+                // not every drag frame — see the perf note on RegenerateCompositeCollider.
+                FlushPendingColliderRebake();
+                // Autosave is DEBOUNCED (TileOverlayPersistence.Autosave): the edits above already
+                // armed it through MarkBatchDirty, and it flushes off-thread after a quiet
+                // period. Forcing a synchronous SaveAllDirty() here measured 6.48 ms on the
+                // main thread for a single painted cell. Explicit saves (F8 close, slot
+                // switch, Save button) still flush synchronously and wait for this one.
             }
         }
 
@@ -258,23 +286,30 @@ namespace Valkur.Gameplay.TileEditor
         ///   • Erasing → clear the cell so a future re-paint starts back at the user's
         ///     current active tag (no stale tag rides on top of a fresh paint).
         ///
-        /// Lives outside the undo-recorded batch in M1 — see
-        /// "Open questions: Undo del tag map" in the plan. The fallback when an Undo
-        /// reinstates a collider without a tag is the map's wildcard default, which is
-        /// the safe ("applies to all") choice.
+        /// Now recorded into the same <see cref="TileEditBatch"/> as the visual tile
+        /// edits via <see cref="MetadataEdit"/> so a single Ctrl+Z reverts both. The
+        /// fallback when an Undo reinstates a collider without a tag is still the map's
+        /// wildcard default (no explicit entry), which is the safe ("applies to all")
+        /// choice.
         /// </summary>
-        private void ApplyTagToEdits(System.Collections.Generic.List<TileEdit> edits, bool drawing)
+        private List<MetadataEdit> ApplyTagToEdits(List<TileEdit> edits, bool drawing)
         {
-            if (edits == null || edits.Count == 0) return;
+            var metadataEdits = new List<MetadataEdit>();
+            if (edits == null || edits.Count == 0) return metadataEdits;
             string tag = drawing ? _state.ActiveCollisionTag : null;
             if (drawing && !CollisionTagMap.IsValidTag(tag))
                 tag = CollisionTagMap.Wildcard;
 
             for (int i = 0; i < edits.Count; i++)
             {
-                if (drawing) CollisionTags.Set(edits[i].Position, tag);
-                else         CollisionTags.Clear(edits[i].Position);
+                var pos = edits[i].Position;
+                string oldRaw = CollisionTags.GetRaw(pos);
+                string newRaw = drawing ? tag : null;
+                if (oldRaw == newRaw) continue; // no-op: nothing to undo
+                metadataEdits.Add(new MetadataEdit(pos, oldRaw, newRaw, CollisionTags));
+                CollisionTags.Set(pos, newRaw); // Set(x, null) already clears — replaces the old Set/Clear branch
             }
+            return metadataEdits;
         }
     }
 }

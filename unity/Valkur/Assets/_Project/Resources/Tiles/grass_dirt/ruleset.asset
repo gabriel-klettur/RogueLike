@@ -11,12 +11,78 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 48079e4d271a435419c1acc1fe6bc71d, type: 3}
   m_Name: ruleset
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   folderName: grass_dirt
-  model: 0
+  model: 2
   terrainPrimary: grass
   terrainSecondary: dirt
   priority: 0
   slots: []
+  cornerSlots:
+  - slot: 0
+    variants:
+    - {fileID: 21300000, guid: 01dcc83c6f0fc5645a3696bedb2ea03a, type: 3}
+    - {fileID: 21300000, guid: 84b41936409c2544e8d5f55d9d88343b, type: 3}
+  - slot: 1
+    variants:
+    - {fileID: 21300000, guid: 3855fa0f0c82f8949ae438cf5905162e, type: 3}
+    - {fileID: 21300000, guid: 960de8aaa94235a4dbd51d075b763120, type: 3}
+  - slot: 2
+    variants:
+    - {fileID: 21300000, guid: 0c1c32442e4096e419d4025c6fd622df, type: 3}
+    - {fileID: 21300000, guid: d7ebed79d58f91c4990dfa521895aa0e, type: 3}
+  - slot: 3
+    variants:
+    - {fileID: 21300000, guid: 241b43ba946bd4243850481f387e60ff, type: 3}
+    - {fileID: 21300000, guid: 4d6652fe4bf389b4488b8e6e52c45b39, type: 3}
+  - slot: 4
+    variants:
+    - {fileID: 21300000, guid: 90312ed3403aea345bbda6ff1e4d8acb, type: 3}
+    - {fileID: 21300000, guid: 1305e7dc2425c5e44862447c7a44a375, type: 3}
+  - slot: 5
+    variants:
+    - {fileID: 21300000, guid: c06f9db23d99f3b41badc341ca60a2e7, type: 3}
+    - {fileID: 21300000, guid: 976469e8bcbf7b8419c4f44b9893bb55, type: 3}
+  - slot: 6
+    variants:
+    - {fileID: 21300000, guid: 12b3d6765a30e98479c243a4bf9217d9, type: 3}
+    - {fileID: 21300000, guid: 794d6198cc3a08945b3e823f791b61ef, type: 3}
+  - slot: 7
+    variants:
+    - {fileID: 21300000, guid: f0842b105bad8db4680ee719b938fc61, type: 3}
+    - {fileID: 21300000, guid: 681f88656fdeacd4c98214c72928f41a, type: 3}
+  - slot: 8
+    variants:
+    - {fileID: 21300000, guid: 8c7817645897c5140bf62e0e65ac2626, type: 3}
+    - {fileID: 21300000, guid: ece68caba9796c74399e68718148a334, type: 3}
+  - slot: 9
+    variants:
+    - {fileID: 21300000, guid: 4df65c0e717a6a9499482c11a4ad7774, type: 3}
+    - {fileID: 21300000, guid: 713ebb8a6636f8c4b81c4152ef0e2cd8, type: 3}
+  - slot: 10
+    variants:
+    - {fileID: 21300000, guid: 7e0d7f0a6a27fac46a7094b5c31f4c4a, type: 3}
+    - {fileID: 21300000, guid: e7596395f3a8b934c97840e28bd34d99, type: 3}
+  - slot: 11
+    variants:
+    - {fileID: 21300000, guid: 7169363cc47b28040abb470609d268b3, type: 3}
+    - {fileID: 21300000, guid: f09b278f7883bca43955527af41e6fba, type: 3}
+  - slot: 12
+    variants:
+    - {fileID: 21300000, guid: 311c9772079d115469a7c81ac2cb89f4, type: 3}
+    - {fileID: 21300000, guid: 74779c53a83521c40a3d6f4c928e00cb, type: 3}
+  - slot: 13
+    variants:
+    - {fileID: 21300000, guid: 6024d3c81dc2dcc4c9204e4c0f3ae9d8, type: 3}
+    - {fileID: 21300000, guid: 4418f40198c361042baeb4bb1a612ca9, type: 3}
+  - slot: 14
+    variants:
+    - {fileID: 21300000, guid: b509169446231a44fbeaf8e355b62051, type: 3}
+    - {fileID: 21300000, guid: 159f772770761a3418d4bae49d82c044, type: 3}
+  - slot: 15
+    variants:
+    - {fileID: 21300000, guid: 2a6e95c0ca632c348a779ac8d105cc57, type: 3}
+    - {fileID: 21300000, guid: 5ea40d53a1bdec9408ba32858269330e, type: 3}
+    - {fileID: 21300000, guid: b3b300003232000000000000dda80fc9, type: 3}
   hiddenLegacy: []
   previewIcon: {fileID: 0}

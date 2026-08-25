@@ -13,13 +13,18 @@ namespace Valkur.Gameplay.TileEditor
         private readonly List<TileEditBatch> _redoStack = new List<TileEditBatch>();
         private TileEditBatch _currentBatch;
 
+        /// <summary>True when the batch has anything to undo/redo — either visual tile
+        /// edits or parallel-metadata edits (e.g. a Layer-Jumps-only stroke, which never
+        /// populates <see cref="TileEditBatch.Edits"/> because no tilemap is involved).</summary>
+        private static bool HasContent(TileEditBatch batch) => batch.Edits.Count > 0 || batch.MetadataEdits.Count > 0;
+
         public void StartStroke(Tilemap tilemap)
         {
             // Defensive: if a previous stroke was never explicitly ended (caller bug
             // — e.g. ESC pressed mid-drag, scene reload, layer change without EndStroke),
             // commit it first instead of silently overwriting the reference and losing
             // every edit it contained. The new batch then starts with a clean slate.
-            if (_currentBatch != null && _currentBatch.Edits.Count > 0)
+            if (_currentBatch != null && HasContent(_currentBatch))
                 EndStroke();
             _currentBatch = new TileEditBatch { TargetTilemap = tilemap };
         }
@@ -29,10 +34,17 @@ namespace Valkur.Gameplay.TileEditor
             _currentBatch?.Edits.AddRange(edits);
         }
 
+        /// <summary>Record parallel-metadata edits (terrain / collision tag / layer-jump)
+        /// into the batch currently open via <see cref="StartStroke"/>.</summary>
+        public void RecordMetadataEdits(List<MetadataEdit> edits)
+        {
+            _currentBatch?.MetadataEdits.AddRange(edits);
+        }
+
         public void EndStroke()
         {
             if (_currentBatch == null) return;
-            if (_currentBatch.Edits.Count > 0)
+            if (HasContent(_currentBatch))
             {
                 _undoStack.Add(_currentBatch);
                 if (_undoStack.Count > TileEditorState.MAX_UNDO)

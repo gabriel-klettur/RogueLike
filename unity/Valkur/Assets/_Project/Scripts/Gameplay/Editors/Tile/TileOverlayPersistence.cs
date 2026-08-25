@@ -105,6 +105,12 @@ namespace Valkur.Gameplay.TileEditor
             _grid = grid;
             _repository = repository ?? new JsonFileTileOverrideRepository();
             _worldId = worldId;
+
+            // Registers this instance so a hard quit / Play-mode exit can force
+            // any pending deferred autosave to complete even though nothing
+            // else holds a reference to it long enough to call Dispose — see
+            // TileOverlayPersistence.Autosave.cs.
+            RegisterForAutosaveLifecycleTracking();
         }
 
         // ─────────────────────────────────────────────────────────────────
@@ -119,6 +125,10 @@ namespace Valkur.Gameplay.TileEditor
             {
                 if (_dirtyZones.Add(zone.zoneName))
                     OnDirtyChanged?.Invoke();
+                // Arm/refresh the deferred autosave debounce — see
+                // TileOverlayPersistence.Autosave.cs. No-op outside Play mode
+                // (EditMode tests never touch it).
+                ArmAutosaveTimer();
             }
         }
 
@@ -133,6 +143,7 @@ namespace Valkur.Gameplay.TileEditor
             }
             if (_dirtyZones.Count != before)
                 OnDirtyChanged?.Invoke();
+            ArmAutosaveTimer();
         }
 
         public void ClearDirtyState()
@@ -146,9 +157,23 @@ namespace Valkur.Gameplay.TileEditor
         //  Save
         // ─────────────────────────────────────────────────────────────────
 
-        /// <summary>Write a snapshot of every dirty zone to disk. Returns the number of zones saved.</summary>
+        /// <summary>
+        /// Write a snapshot of every dirty zone to disk. Returns the number of
+        /// zones saved. Synchronous and complete on return, unconditionally —
+        /// this is the "guaranteed immediate flush" half of the split described
+        /// in TileOverlayPersistence.Autosave.cs, used by both the Save button /
+        /// slot-switch / editor-close call sites AND every EditMode test that
+        /// asserts the file exists right after this returns. Never made
+        /// asynchronous; see the class-level remarks in Autosave.cs for why.
+        /// </summary>
         public int SaveAllDirty()
         {
+            // If a debounced background autosave is currently mid-flight, force
+            // it to finish FIRST — otherwise its write could land after ours and
+            // clobber it with stale data, or we could report zones already
+            // claimed (and cleared from _dirtyZones) by that flush as unsaved.
+            WaitForInFlightAutosave();
+
             if (_dirtyZones.Count == 0) return 0;
 
             EnsureDirectory();
@@ -170,6 +195,8 @@ namespace Valkur.Gameplay.TileEditor
 
         public bool SaveZone(string zoneName)
         {
+            WaitForInFlightAutosave();
+
             EnsureDirectory();
             bool ok = SaveZoneInternal(zoneName);
             if (ok && _dirtyZones.Remove(zoneName))

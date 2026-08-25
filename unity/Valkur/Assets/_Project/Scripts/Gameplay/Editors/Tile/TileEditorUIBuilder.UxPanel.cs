@@ -2,6 +2,7 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Valkur.Gameplay.Editors;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
 
 namespace Valkur.Gameplay.TileEditor
@@ -20,7 +21,7 @@ namespace Valkur.Gameplay.TileEditor
 
         private static void BuildUxDropdown(Transform canvasT, ref UIRefs refs)
         {
-            refs.UxDropdown = MakeDropdownPanel("UxDropdown", canvasT,
+            refs.UxDropdown = EditorUIHelpers.MakeDropPanel("UxDropdown", canvasT,
                 PanelDock.TopRight, UxX, UxY, UX_DROP_W, UX_DROP_H,
                 "UI / UX", out var uxContent, out refs.UxPanelDrag);
 

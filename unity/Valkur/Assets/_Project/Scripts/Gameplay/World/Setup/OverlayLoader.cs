@@ -25,6 +25,7 @@ namespace Valkur.Gameplay.World
             _spriteByName.Clear();
             _spriteIndexBuilt = false;
             _missingCount = 0;
+            _categoryFolders = null;
         }
 
         /// <summary>
@@ -403,17 +404,44 @@ namespace Valkur.Gameplay.World
             return tile;
         }
 
+        // Lazily populated from the same Resources/Tiles/_categories.json baked
+        // by TileCategoryManifestBuilder that TileCatalog.BuildFromResources()
+        // reads — one editor-time discovery, two runtime readers, so the tile
+        // picker and the world-paint resolver can never diverge from each
+        // other again. Reset in ResetStaticsOnPlayModeEnter (domain reload is
+        // OFF, so a stale cached array would survive across Play sessions).
+        private static string[] _categoryFolders;
+
         /// <summary>
         /// Subfolders of <c>Resources/Tiles/</c>, largest first so the common miss is
         /// found soonest. Ordering matters only for speed; correctness does not depend
         /// on this list being complete — see <see cref="ResolveSprite"/>.
         /// </summary>
-        private static readonly string[] CATEGORY_FOLDERS =
+        private static string[] CategoryFolders
         {
-            "castle_pandora", "grass_rock", "sand_grass", "grass_dirt", "tileset_1",
-            "rock_water", "sand_rock", "sand_ocean", "rock_grass", "ocean_grass",
-            "sand_ocean_2", "multi_tiles", "ready",
-        };
+            get
+            {
+                if (_categoryFolders != null) return _categoryFolders;
+
+                var manifestAsset = Resources.Load<TextAsset>("Tiles/_categories");
+                if (manifestAsset != null)
+                {
+                    var manifest = JsonUtility.FromJson<Valkur.Gameplay.TileEditor.TileCategoryManifest>(manifestAsset.text);
+                    if (manifest != null && manifest.folderCategories != null && manifest.folderCategories.Length > 0)
+                    {
+                        _categoryFolders = manifest.folderCategories;
+                        return _categoryFolders;
+                    }
+                }
+
+                // Emergency fallback: manifest missing/unparseable (broken
+                // checkout). Resolution still works via the brute-force
+                // EnsureSpriteIndex path in ResolveSprite — this only degrades
+                // the "check likely folders first" speed shortcut.
+                _categoryFolders = System.Array.Empty<string>();
+                return _categoryFolders;
+            }
+        }
 
         private static Sprite ResolveSprite(string tileName)
         {
@@ -447,9 +475,10 @@ namespace Valkur.Gameplay.World
             // path, so it degrades rather than breaks.
             if (!tileName.Contains("/"))
             {
-                for (int i = 0; i < CATEGORY_FOLDERS.Length; i++)
+                var categoryFolders = CategoryFolders;
+                for (int i = 0; i < categoryFolders.Length; i++)
                 {
-                    sprite = Resources.Load<Sprite>($"Tiles/{CATEGORY_FOLDERS[i]}/{tileName}");
+                    sprite = Resources.Load<Sprite>($"Tiles/{categoryFolders[i]}/{tileName}");
                     if (sprite != null) return sprite;
                 }
             }

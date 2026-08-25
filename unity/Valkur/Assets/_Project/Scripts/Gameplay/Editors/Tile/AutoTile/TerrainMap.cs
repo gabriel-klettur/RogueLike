@@ -12,7 +12,7 @@ namespace Valkur.Gameplay.TileEditor
     /// Cells without a terrain entry are returned as <c>null</c> — that means "no
     /// known terrain", which the bitmask calculator treats as a non-connection.
     /// </summary>
-    public class TerrainMap
+    public class TerrainMap : ITileMetadataMap
     {
         private readonly Dictionary<Vector2Int, string> _terrains = new Dictionary<Vector2Int, string>();
 
@@ -20,6 +20,9 @@ namespace Valkur.Gameplay.TileEditor
         public IReadOnlyDictionary<Vector2Int, string> Cells => _terrains;
 
         public int Count => _terrains.Count;
+
+        /// <summary>Adapter for <see cref="ITileMetadataMap"/> — delegates to <see cref="SetTerrain(Vector3Int,string)"/>.</summary>
+        public void Set(Vector3Int cell, string terrain) => SetTerrain(cell, terrain);
 
         public string GetTerrain(Vector2Int cell)
         {

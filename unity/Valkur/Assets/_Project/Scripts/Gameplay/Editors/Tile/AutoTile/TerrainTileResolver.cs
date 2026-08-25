@@ -1,3 +1,4 @@
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using Valkur.Data;
@@ -59,16 +60,71 @@ namespace Valkur.Gameplay.TileEditor
         }
 
         /// <summary>
-        /// Resolve the auto-tile variant for a given terrain at the given cell mask.
-        /// Returns null if the terrain has no base ruleset, or the slot has no sprite assigned.
+        /// Resolve the auto-tile variant for <paramref name="terrain"/> at
+        /// <paramref name="cell"/>. Looks up the base ruleset for that terrain, then
+        /// dispatches to <see cref="ResolveVariantForCell"/> so Corner16 rulesets
+        /// resolve on the corner mask and Blob16 rulesets resolve on the cardinal
+        /// mask. Returns null if the terrain has no base ruleset, or the resolved
+        /// slot has no sprite assigned.
         /// </summary>
-        public static TileBase ResolveTerrainVariant(TerrainCatalog catalog, string terrain, byte cardinalMask, int hashSeed)
+        public static TileBase ResolveTerrainVariant(
+            TerrainCatalog catalog,
+            string terrain,
+            IReadOnlyDictionary<Vector2Int, string> grid,
+            Vector2Int cell,
+            int hashSeed)
         {
             if (catalog == null || string.IsNullOrEmpty(terrain)) return null;
-            var ruleset = catalog.FindBaseRuleset(terrain);
+            var ruleset = catalog.FindPaintRuleset(terrain);
             if (ruleset == null) return null;
-            var sprite = RulesetSolver.Resolve(ruleset, cardinalMask, hashSeed);
+            var sprite = ResolveVariantForCell(ruleset, grid, cell, terrain, hashSeed);
             return ResolveTile(sprite);
+        }
+
+        /// <summary>
+        /// Computes the model-appropriate auto-tile mask for <paramref name="cell"/>
+        /// against <paramref name="ruleset"/> and resolves it to a sprite. The model
+        /// choice always comes from <see cref="TilesetRuleset.Model"/> — never a
+        /// global flag — so base (Blob16) and transition (Corner16) rulesets coexist
+        /// in the same catalog:
+        ///
+        /// <list type="bullet">
+        /// <item>
+        /// <see cref="AutoTileModel.Corner16"/> tests each corner's 2x2 block majority
+        /// against <see cref="TilesetRuleset.TerrainSecondary"/> via
+        /// <see cref="BitmaskCalculator.CornerMask"/>. Returns null if the ruleset has
+        /// no secondary terrain configured (a Corner16 ruleset is always a
+        /// two-material transition — without a secondary there is nothing to test
+        /// corners against).
+        /// </item>
+        /// <item>
+        /// Every other model (Blob16 today) falls back to the cardinal same-terrain
+        /// mask against <paramref name="terrain"/> via <see cref="BitmaskCalculator.CardinalMask"/>.
+        /// </item>
+        /// </list>
+        ///
+        /// Returns null if the resolved slot has no sprite variant assigned — the
+        /// caller (<see cref="TerrainPainter"/>) treats that as "leave the cell as-is",
+        /// same as an unassigned Blob16 slot does today.
+        /// </summary>
+        public static Sprite ResolveVariantForCell(
+            TilesetRuleset ruleset,
+            IReadOnlyDictionary<Vector2Int, string> grid,
+            Vector2Int cell,
+            string terrain,
+            int hashSeed)
+        {
+            if (ruleset == null) return null;
+
+            if (ruleset.Model == AutoTileModel.Corner16)
+            {
+                if (string.IsNullOrEmpty(ruleset.TerrainSecondary)) return null;
+                byte cornerMask = BitmaskCalculator.CornerMask(grid, cell, ruleset.TerrainSecondary);
+                return RulesetSolver.ResolveCorner(ruleset, cornerMask, hashSeed);
+            }
+
+            byte cardinalMask = BitmaskCalculator.CardinalMask(grid, cell, terrain);
+            return RulesetSolver.Resolve(ruleset, cardinalMask, hashSeed);
         }
     }
 }

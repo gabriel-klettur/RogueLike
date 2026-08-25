@@ -9,6 +9,10 @@ namespace Valkur.Gameplay.TileEditor
 {
     public static partial class TileEditorUIBuilder
     {
+        // "?" hotkey-overlay button width — matches the value used by every
+        // other runtime editor's menu bar (Items/Buildings/Lighting/FSM/...).
+        private const float TUTORIAL_BTN_W = 40f;
+
         /// <summary>
         /// Builds the slim menu bar across the top of the screen.
         /// Contains: brand title, dropdown menu buttons, layer navigation, brush size, status text.
@@ -87,9 +91,18 @@ namespace Valkur.Gameplay.TileEditor
             refs.JumpsMenuBtnImg = BuildMenuButton(t, "Jumps v", JUMPS_BTN_W,
                 () => onDropdownToggle?.Invoke("layerjumps"), out refs.JumpsMenuBtnTmp);
 
-            // ── Flexible spacer ──
-            var spacer = CreateUI("Spacer", t);
-            spacer.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            // ── Status text — fills the flexible gap between the dropdown
+            // buttons and the right-aligned PANELS/UX/PERF cluster. Mirrors
+            // the other runtime editors' menu-bar status label (see
+            // ItemsEditorUIBuilder / EditorUIHelpers.MakeStatusText), kept
+            // local here so it can flex inside this HorizontalLayoutGroup. ──
+            var statusGo = CreateUI("StatusText", t);
+            statusGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            refs.StatusText = statusGo.AddComponent<TextMeshProUGUI>();
+            refs.StatusText.text = "";
+            refs.StatusText.fontSize = 11f;
+            refs.StatusText.alignment = TextAlignmentOptions.Center;
+            refs.StatusText.color = TEXT_MUTED;
 
             BuildMenuDivider(t);
 
@@ -100,6 +113,16 @@ namespace Valkur.Gameplay.TileEditor
             // ── UX/Theme editor (just left of PERF) ──
             refs.UxMenuBtnImg = BuildMenuButton(t, "UX", UX_BTN_W,
                 () => onDropdownToggle?.Invoke("ux"), out refs.UxMenuBtnTmp);
+
+            // ── Tutorial overlay ("?", just left of PERF) ──
+            // Built + wired entirely within this method (no UIRefs field, no
+            // callback threaded through BuildAll/TileEditorUI) because this
+            // pass only owns the menu bar partial — the grouped hotkey content
+            // lives in TileEditorUIBuilder.Tutorial.cs. The click closes over
+            // the GameObject BuildTileEditorTutorial just returned.
+            var tutorialGo = BuildTileEditorTutorial(canvasT);
+            BuildMenuButton(t, "?", TUTORIAL_BTN_W,
+                () => tutorialGo.SetActive(!tutorialGo.activeSelf), out _);
 
             // ── Perf Probe toggle (far-right) ──
             refs.PerfProbeMenuBtnImg = BuildMenuButton(t, "PERF", PERF_BTN_W,

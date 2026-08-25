@@ -116,14 +116,23 @@ namespace Valkur.Gameplay.TileEditor
 
         /// <summary>
         /// Check undo/redo keys. Returns: 1 = undo, 2 = redo, 0 = nothing.
+        /// Redo accepts both Ctrl+Shift+Z (published on the Tools panel button
+        /// since before this alias existed) and Ctrl+Y — the other five runtime
+        /// editors (Items, Buildings, Lighting, Boss, Map) all bind Ctrl+Y for
+        /// redo, so muscle memory from any of them must work here too.
         /// </summary>
         public int PollUndoRedo()
         {
             bool ctrl = (_ctrlModifier != null && _ctrlModifier.IsPressed())
                      || EditorHotkeyBindings.IsPressed(EditorHotkeyBindings.Hotkey.CtrlModifier);
+            if (!ctrl) return 0;
+
+            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Y, KeyCode.Y))
+                return 2;
+
             bool zPressed = (_undoAction != null && _undoAction.WasPerformedThisFrame())
                          || UnityEngine.Input.GetKeyDown(KeyCode.Z);
-            if (!ctrl || !zPressed) return 0;
+            if (!zPressed) return 0;
 
             // KeyboardInputManager folds the new+legacy OR for shift internally.
             return Valkur.Core.Input.KeyboardInputManager.IsShiftHeld() ? 2 : 1;

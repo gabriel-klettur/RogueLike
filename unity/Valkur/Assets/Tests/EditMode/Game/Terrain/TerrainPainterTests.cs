@@ -102,8 +102,9 @@ namespace Valkur.Tests.EditMode.Game.Terrain
             var catalog = NewCatalog(rs);
             var map = new TerrainMap();
             var rect = new BoundsInt(0, 0, 0, 2, 2, 1);
-            var edits = TerrainPainter.PaintRegion(null, rect, "grass", catalog, map);
+            var (edits, metadataEdits) = TerrainPainter.PaintRegion(null, rect, "grass", catalog, map);
             Assert.IsEmpty(edits);
+            Assert.IsEmpty(metadataEdits);
         }
 
         [Test]
@@ -132,9 +133,10 @@ namespace Valkur.Tests.EditMode.Game.Terrain
             var tilemap = NewTilemap();
 
             var rect = new BoundsInt(0, 0, 0, 3, 3, 1);
-            var edits = TerrainPainter.PaintRegion(tilemap, rect, "grass", catalog, map);
+            var (edits, metadataEdits) = TerrainPainter.PaintRegion(tilemap, rect, "grass", catalog, map);
 
             Assert.AreEqual(9, edits.Count, "3×3 rect should produce 9 tile edits when starting empty.");
+            Assert.AreEqual(9, metadataEdits.Count, "3×3 rect should produce 9 terrain metadata edits when starting empty.");
             foreach (var e in edits)
                 Assert.IsNull(e.OldTile, "starting tilemap is empty");
         }
@@ -218,11 +220,13 @@ namespace Valkur.Tests.EditMode.Game.Terrain
             var tilemap = NewTilemap();
 
             var rect = new BoundsInt(0, 0, 0, 2, 2, 1);
-            var edits = TerrainPainter.PaintRegion(tilemap, rect, "grass", catalog, map);
+            var (edits, metadataEdits) = TerrainPainter.PaintRegion(tilemap, rect, "grass", catalog, map);
 
             Assert.IsEmpty(edits, "no ruleset → no visual edits.");
             Assert.AreEqual("grass", map.GetTerrain(new Vector2Int(0, 0)),
                 "terrain stamping happens before ruleset lookup, so the map still records intent.");
+            Assert.AreEqual(4, metadataEdits.Count,
+                "2×2 rect still records terrain MetadataEdits for undo even though no TileEdit was produced.");
         }
 
         // ---------------- Resolve (single cell) ----------------

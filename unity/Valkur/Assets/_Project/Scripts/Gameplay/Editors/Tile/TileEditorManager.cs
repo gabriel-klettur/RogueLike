@@ -192,7 +192,12 @@ namespace Valkur.Gameplay.TileEditor
             probeGo.transform.SetParent(transform);
             _perfProbe = probeGo.AddComponent<TileEditorPerfProbe>();
             _perfProbe.Visible = false; // hidden by default; Shift+F8 to show
-            Debug.Log("[TileEditor] Perf probe created (visible by default; Shift+F8 to toggle).");
+            // Mirrors the pattern used for _gridOverlayGo / _gridCursor: the GameObject
+            // itself is deactivated so Update()/OnGUI() don't run — and don't sample
+            // the 20 Profiler.Recorder markers — for the 100% of players who never
+            // press Shift+F8.
+            probeGo.SetActive(false);
+            Debug.Log("[TileEditor] Perf probe created (hidden by default; Shift+F8 to toggle).");
         }
 
         private void InitializePersistence()
@@ -315,6 +320,10 @@ namespace Valkur.Gameplay.TileEditor
                 Valkur.Core.Input.KeyboardInputManager.IsShiftHeld() && _perfProbe != null)
             {
                 _perfProbe.Visible = !_perfProbe.Visible;
+                // GameObject active state is the single thing that actually stops the
+                // probe's Update()/OnGUI() from running — Visible alone (the old code)
+                // left the component ticking forever after the first Shift+F8.
+                _perfProbe.gameObject.SetActive(_perfProbe.Visible);
                 Debug.Log($"[TileEditor] Perf probe -> {(_perfProbe.Visible ? "ON" : "OFF")}");
             }
 

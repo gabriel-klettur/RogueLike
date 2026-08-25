@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.Gameplay.Editors;
 using Valkur.Gameplay.World.Layering;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
 
@@ -37,7 +38,7 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onEraseJumpsClicked,
             System.Action<string> onTargetChanged)
         {
-            refs.LayerJumpsDropdown = MakeDropdownPanel("LayerJumpsDropdown", canvasT,
+            refs.LayerJumpsDropdown = EditorUIHelpers.MakeDropPanel("LayerJumpsDropdown", canvasT,
                 PanelDock.TopLeft, LayerJumpsX, LayerJumpsY,
                 LAYER_JUMPS_DROP_W, LAYER_JUMPS_DROP_H,
                 "Layer Jumps", out var content, out refs.LayerJumpsPanelDrag);

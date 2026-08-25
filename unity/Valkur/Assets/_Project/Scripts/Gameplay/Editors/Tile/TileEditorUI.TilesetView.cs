@@ -62,6 +62,39 @@ namespace Valkur.Gameplay.TileEditor
         private readonly Dictionary<GameObject, GameObject> _tilesetSlotCopyHighlight
             = new Dictionary<GameObject, GameObject>();
 
+        // Reverse lookup: picker (col,row) -> slot GameObject. Lets the drag/
+        // selection hot path (OnTilesetSlotEnter / OnTilesetSlotDrag, fired on
+        // every mouse-move tick while the author marquee-selects in the
+        // picker) resolve individual cells directly instead of walking every
+        // registered slot to find them. Populated in RegisterPickerSlot,
+        // cleared in ResetPickerSelectionState.
+        private readonly Dictionary<Vector2Int, GameObject> _tilesetSlotByPos
+            = new Dictionary<Vector2Int, GameObject>();
+
+        // Snapshot of "(position -> was it painted as inDrag) for every slot
+        // that was highlighted (inDrag OR isSelected) as of the previous
+        // RefreshTilesetSelectionVisuals call" -- NOT a copy of the full slot
+        // dictionary. Reused across calls (Clear + refill, never reallocated)
+        // so the hot path can diff "what changed since last call" without an
+        // allocation and without touching slots whose highlight state didn't
+        // change. Cleared in ResetPickerSelectionState -- a repopulated
+        // picker has all-new GameObjects, so a stale entry here would either
+        // no-op (harmless) or, worse, suppress the repaint of a same-position
+        // slot in the new category that legitimately needs to be lit for the
+        // first time.
+        private readonly Dictionary<Vector2Int, bool> _tilesetPrevHighlighted
+            = new Dictionary<Vector2Int, bool>();
+
+        // Scratch buffer for "what should be highlighted this call" (position
+        // -> inDrag). Cleared and refilled every RefreshTilesetSelectionVisuals
+        // call, never reallocated. Bounded by the drag-rect area plus the
+        // persistent selection size -- NOT by the catalog size (3,045 entries
+        // total / 2,688 for castle_pandora alone), which is the point of this
+        // rewrite: the old version iterated _tilesetSlotInfo (every registered
+        // slot) on every drag tick regardless of how small the drag was.
+        private readonly Dictionary<Vector2Int, bool> _tilesetHighlightScratch
+            = new Dictionary<Vector2Int, bool>();
+
         private struct TilesetSlotInfo
         {
             public int R;
@@ -196,6 +229,13 @@ namespace Valkur.Gameplay.TileEditor
             _tilesetSlotInfo.Clear();
             _tilesetSlotHighlight.Clear();
             _tilesetSlotCopyHighlight.Clear();
+            // The picker is about to be rebuilt with all-new GameObjects (or
+            // emptied outright) -- the position lookup and the "highlighted
+            // last call" snapshot both reference the OLD slots and must not
+            // survive into the new grid.
+            _tilesetSlotByPos.Clear();
+            _tilesetPrevHighlighted.Clear();
+            _tilesetHighlightScratch.Clear();
         }
 
         /// <summary>
@@ -221,6 +261,10 @@ namespace Valkur.Gameplay.TileEditor
                 HighlightImg = hImg,
             };
             _tilesetSlotHighlight[slot] = highlightOverlay;
+            // Keyed the other way round too, so the drag/selection hot path
+            // can resolve "the slot at (col,row)" in O(1) instead of walking
+            // every registered slot looking for a coordinate match.
+            _tilesetSlotByPos[new Vector2Int(c, r)] = slot;
         }
 
         /// <summary>
@@ -576,15 +620,37 @@ namespace Valkur.Gameplay.TileEditor
         }
 
         /// <summary>
-        /// Repaints every tilesheet slot's overlay based on the current state:
+        /// Repaints ONLY the picker slots whose highlight state actually
+        /// changed since the previous call — not the whole picker.
+        ///
+        /// Colour rule (unchanged from the original sweep):
         ///   • drag-preview rect (Rect mode, mid-drag) → gold
         ///   • persistent selected (any mode)         → green
         ///   • neither                                → hidden
         ///
-        /// The DragHL Image is BUILT LAZILY here on the first activation —
-        /// PopulateTilesheetSlots no longer pre-builds it for every slot to
-        /// avoid the 1 GameObject × 2,688-slot allocation spike when the user
-        /// clicks a heavy CATEGORIES button (e.g. castle_pandora).
+        /// This is called from <see cref="OnTilesetSlotEnter"/> and
+        /// <see cref="OnTilesetSlotDrag"/> — i.e. on every mouse-move tick
+        /// while the author drags a marquee selection in the picker — so it
+        /// used to walk the ENTIRE <c>_tilesetSlotInfo</c> dictionary (3,045
+        /// catalog entries total, 2,688 for castle_pandora alone) on every
+        /// tick regardless of how small the drag was. It now computes only
+        /// "what should be highlighted this call" (the drag-rect area plus
+        /// the persistent selection — <see cref="_tilesetHighlightScratch"/>,
+        /// bounded by the selection size, not the catalog size), diffs that
+        /// against <see cref="_tilesetPrevHighlighted"/> (the same shape,
+        /// snapshotted from the previous call), and only touches the
+        /// GameObjects for positions whose (active, colour) actually flipped.
+        ///
+        /// The "turn off" pass below is the orphan guard: every position that
+        /// drops out of <c>_tilesetHighlightScratch</c> between calls — because
+        /// the drag rect moved past it, or a Rect release replaced the
+        /// persistent selection — gets an explicit deactivate. Skipping that
+        /// pass (or missing a position out of the diff) is what would leave a
+        /// slot lit forever after the selection moves on.
+        ///
+        /// The DragHL Image is still built lazily (see
+        /// <see cref="EnsureSlotDragHighlight"/>) — unchanged from before this
+        /// rewrite, and orthogonal to it.
         /// </summary>
         private void RefreshTilesetSelectionVisuals()
         {
@@ -598,41 +664,98 @@ namespace Valkur.Gameplay.TileEditor
                 rMin = Mathf.Min(s.y, e.y); rMax = Mathf.Max(s.y, e.y);
             }
 
-            // Snapshot keys before any mutation so we can update _tilesetSlotInfo
-            // entries (struct-by-value) inside the loop without dictionary churn.
-            // For non-(selected|inDrag) slots we never touch the dictionary.
-            foreach (var kv in _tilesetSlotInfo)
+            // What SHOULD be highlighted this call: every cell in the live
+            // drag rect (gold, inDrag=true) plus every persistently selected
+            // cell not already covered by the rect (green, inDrag=false).
+            // inDrag always wins the colour when a selected cell also sits
+            // inside the rect — matches the pre-existing `inDrag ? gold : green`
+            // rule exactly.
+            _tilesetHighlightScratch.Clear();
+            if (dragging)
             {
-                var info = kv.Value;
-                var pos  = new Vector2Int(info.C, info.R);
-                bool inDrag     = dragging && info.C >= cMin && info.C <= cMax
-                                           && info.R >= rMin && info.R <= rMax;
-                bool isSelected = _tilesetSelectedSlots.Contains(pos);
+                for (int rr = rMin; rr <= rMax; rr++)
+                for (int cc = cMin; cc <= cMax; cc++)
+                    _tilesetHighlightScratch[new Vector2Int(cc, rr)] = true;
+            }
+            foreach (var pos in _tilesetSelectedSlots)
+            {
+                if (!_tilesetHighlightScratch.ContainsKey(pos))
+                    _tilesetHighlightScratch[pos] = false;
+            }
 
-                _tilesetSlotHighlight.TryGetValue(kv.Key, out var hgo);
+            // Paint every position that is newly highlighted, or that stayed
+            // highlighted but flipped between gold (inDrag) and green
+            // (selected-only) — e.g. a selected cell the drag rect just grew
+            // over, or just receded from. Positions whose (active, colour)
+            // didn't change are skipped entirely.
+            foreach (var kv in _tilesetHighlightScratch)
+            {
+                var pos = kv.Key;
+                bool inDrag = kv.Value;
+                if (_tilesetPrevHighlighted.TryGetValue(pos, out var wasInDrag) && wasInDrag == inDrag)
+                    continue; // unchanged since last call — already painted correctly
 
-                if (inDrag || isSelected)
+                if (_tilesetSlotByPos.TryGetValue(pos, out var slotGo))
+                    SetSlotHighlightActive(slotGo, active: true, inDrag: inDrag);
+            }
+
+            // Orphan guard: anything highlighted last call that is NOT in this
+            // call's set any more gets an explicit deactivate. Without this a
+            // slot the rect (or the replaced selection) moved past would stay
+            // lit forever — worse than the sweep this rewrite removes.
+            foreach (var kv in _tilesetPrevHighlighted)
+            {
+                if (_tilesetHighlightScratch.ContainsKey(kv.Key)) continue;
+                if (_tilesetSlotByPos.TryGetValue(kv.Key, out var slotGo))
+                    SetSlotHighlightActive(slotGo, active: false, inDrag: false);
+            }
+
+            // Snapshot this call's state as "previous" for the next call.
+            // Reused dictionary — Clear + refill, never reallocated.
+            _tilesetPrevHighlighted.Clear();
+            foreach (var kv in _tilesetHighlightScratch)
+                _tilesetPrevHighlighted[kv.Key] = kv.Value;
+        }
+
+        /// <summary>
+        /// Activates/recolours or deactivates the DragHL overlay for a single
+        /// picker slot. Extracted from the old whole-dictionary sweep so
+        /// <see cref="RefreshTilesetSelectionVisuals"/> can call it only for
+        /// the handful of slots whose state actually changed, instead of
+        /// visiting every registered slot every call.
+        /// </summary>
+        private void SetSlotHighlightActive(GameObject slotGo, bool active, bool inDrag)
+        {
+            if (slotGo == null) return;
+
+            if (!active)
+            {
+                if (_tilesetSlotHighlight.TryGetValue(slotGo, out var offGo) && offGo != null)
+                    offGo.SetActive(false);
+                return;
+            }
+
+            _tilesetSlotHighlight.TryGetValue(slotGo, out var hgo);
+            if (hgo == null)
+            {
+                hgo = EnsureSlotDragHighlight(slotGo);
+                if (hgo == null) return;
+                // Cache the lazily-created Image back into the slot info so
+                // subsequent recolours don't pay another GetComponent.
+                if (_tilesetSlotInfo.TryGetValue(slotGo, out var freshInfo))
                 {
-                    if (hgo == null)
-                    {
-                        hgo = EnsureSlotDragHighlight(kv.Key);
-                        if (hgo == null) continue;
-                        // Cache the lazily-created Image back into the slot info
-                        // so subsequent recolours don't pay another GetComponent.
-                        info.HighlightImg = hgo.GetComponent<Image>();
-                        _tilesetSlotInfo[kv.Key] = info;
-                    }
-                    hgo.SetActive(true);
-                    if (info.HighlightImg != null)
-                        info.HighlightImg.color = inDrag
-                            ? TILESET_RECT_PREVIEW_COLOR
-                            : TILESET_SELECTED_COLOR;
-                }
-                else if (hgo != null)
-                {
-                    hgo.SetActive(false);
+                    freshInfo.HighlightImg = hgo.GetComponent<Image>();
+                    _tilesetSlotInfo[slotGo] = freshInfo;
                 }
             }
+            hgo.SetActive(true);
+
+            Image img = null;
+            if (_tilesetSlotInfo.TryGetValue(slotGo, out var info))
+                img = info.HighlightImg;
+            if (img == null) img = hgo.GetComponent<Image>();
+            if (img != null)
+                img.color = inDrag ? TILESET_RECT_PREVIEW_COLOR : TILESET_SELECTED_COLOR;
         }
 
         /// <summary>

@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.Gameplay.Editors;
 using Valkur.Gameplay.World;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
 
@@ -35,7 +36,7 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onUndo = null,
             System.Action onRedo = null)
         {
-            refs.ToolsDropdown = MakeDropdownPanel("ToolsDropdown", canvasT,
+            refs.ToolsDropdown = EditorUIHelpers.MakeDropPanel("ToolsDropdown", canvasT,
                 PanelDock.TopLeft, ToolsX, ToolsY, TOOLS_DROP_W, TOOLS_DROP_H,
                 "Tools", out var toolsContent, out refs.ToolsPanelDrag);
 
@@ -56,8 +57,9 @@ namespace Valkur.Gameplay.TileEditor
             CreateActionBtn(t, "Redo", "Ctrl+Shift+Z", BTN_H, onRedo);
 
             // No Save button: every edit path (brush/eraser/fill/colliders/cut/paste/
-            // auto-gen/clear-all) auto-flushes via _persistence.SaveAllDirty() on
-            // mouse-up. Manual save was redundant.
+            // auto-gen/clear-all) marks its zones dirty on mouse-up, and the debounced
+            // autosave writes them off-thread once editing goes quiet. Closing the editor
+            // or switching slot forces that flush, so a manual save was redundant.
 
             refs.ToolsDropdown.SetActive(false);
         }

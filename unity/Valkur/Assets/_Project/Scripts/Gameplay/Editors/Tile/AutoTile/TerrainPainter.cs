@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -21,7 +21,7 @@ namespace Valkur.Gameplay.TileEditor
         /// for every cell in the rect <i>plus a one-cell ring around it</i> so cells
         /// at the rect's edge see their (possibly newly set) neighbours.
         /// </summary>
-        public static List<TileEdit> PaintRegion(
+        public static (List<TileEdit> TileEdits, List<MetadataEdit> MetadataEdits) PaintRegion(
             Tilemap tilemap,
             BoundsInt rect,
             string terrain,
@@ -30,15 +30,21 @@ namespace Valkur.Gameplay.TileEditor
             Func<Vector3Int, bool> canEditCell = null)
         {
             var edits = new List<TileEdit>();
-            if (tilemap == null || catalog == null || terrainMap == null) return edits;
-            if (string.IsNullOrEmpty(terrain)) return edits;
+            var metadataEdits = new List<MetadataEdit>();
+            if (tilemap == null || catalog == null || terrainMap == null) return (edits, metadataEdits);
+            if (string.IsNullOrEmpty(terrain)) return (edits, metadataEdits);
 
-            // 1. Stamp terrain onto every editable cell in the rect.
+            // 1. Stamp terrain onto every editable cell in the rect. Only cells whose
+            //    terrain actually changes get a MetadataEdit — undo would otherwise
+            //    have to reapply a no-op "same terrain" write.
             for (int y = rect.yMin; y < rect.yMax; y++)
             for (int x = rect.xMin; x < rect.xMax; x++)
             {
                 var cell = new Vector3Int(x, y, 0);
                 if (canEditCell != null && !canEditCell(cell)) continue;
+                string oldTerrain = terrainMap.GetTerrain(cell);
+                if (oldTerrain == terrain) continue; // no-op: nothing to undo
+                metadataEdits.Add(new MetadataEdit(cell, oldTerrain, terrain, terrainMap));
                 terrainMap.SetTerrain(cell, terrain);
             }
 
@@ -60,12 +66,12 @@ namespace Valkur.Gameplay.TileEditor
                 string cellTerrain = inRect ? terrain : terrainMap.GetTerrain(cell);
                 if (string.IsNullOrEmpty(cellTerrain)) continue;
 
-                var ruleset = catalog.FindBaseRuleset(cellTerrain);
+                var ruleset = catalog.FindPaintRuleset(cellTerrain);
                 if (ruleset == null) continue;
 
-                byte mask = BitmaskCalculator.CardinalMask(terrainMap.Cells, new Vector2Int(x, y), cellTerrain);
                 int seed = HashCell(cell);
-                var sprite = RulesetSolver.Resolve(ruleset, mask, seed);
+                var sprite = TerrainTileResolver.ResolveVariantForCell(
+                    ruleset, terrainMap.Cells, new Vector2Int(x, y), cellTerrain, seed);
                 if (sprite == null) continue;
 
                 var newTile = TerrainTileResolver.ResolveTile(sprite);
@@ -75,7 +81,7 @@ namespace Valkur.Gameplay.TileEditor
                 tilemap.SetTile(cell, newTile);
             }
 
-            return edits;
+            return (edits, metadataEdits);
         }
 
         /// <summary>
@@ -91,12 +97,12 @@ namespace Valkur.Gameplay.TileEditor
             if (tilemap == null || catalog == null || terrainMap == null) return null;
             string terrain = terrainMap.GetTerrain(cell);
             if (string.IsNullOrEmpty(terrain)) return null;
-            var ruleset = catalog.FindBaseRuleset(terrain);
+            var ruleset = catalog.FindPaintRuleset(terrain);
             if (ruleset == null) return null;
 
-            byte mask = BitmaskCalculator.CardinalMask(terrainMap.Cells, new Vector2Int(cell.x, cell.y), terrain);
             int seed = HashCell(cell);
-            var sprite = RulesetSolver.Resolve(ruleset, mask, seed);
+            var sprite = TerrainTileResolver.ResolveVariantForCell(
+                ruleset, terrainMap.Cells, new Vector2Int(cell.x, cell.y), terrain, seed);
             if (sprite == null) return null;
 
             var newTile = TerrainTileResolver.ResolveTile(sprite);
@@ -104,6 +110,27 @@ namespace Valkur.Gameplay.TileEditor
             if (newTile == oldTile) return null;
             tilemap.SetTile(cell, newTile);
             return new TileEdit(cell, oldTile, newTile);
+        }
+
+        /// <summary>
+        /// Convenience wrapper around <see cref="PaintRegion"/> for a single cell —
+        /// stamps <paramref name="terrain"/> onto <paramref name="cell"/> and
+        /// re-resolves the cell plus its full 8-neighbour ring. The ring must include
+        /// the 4 diagonal neighbours (not just N/E/S/W): a Corner16 tile's signature
+        /// reads the 2x2 corner block shared with each of its 8 neighbours, so
+        /// painting one cell can change a diagonal neighbour's corner reading even
+        /// though it never changes that neighbour's own cardinal mask.
+        /// </summary>
+        public static (List<TileEdit> TileEdits, List<MetadataEdit> MetadataEdits) PaintCell(
+            Tilemap tilemap,
+            Vector3Int cell,
+            string terrain,
+            TerrainCatalog catalog,
+            TerrainMap terrainMap,
+            Func<Vector3Int, bool> canEditCell = null)
+        {
+            var rect = new BoundsInt(cell.x, cell.y, 0, 1, 1, 1);
+            return PaintRegion(tilemap, rect, terrain, catalog, terrainMap, canEditCell);
         }
 
         /// <summary>Stable per-cell hash so the same cell always picks the same variant

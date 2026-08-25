@@ -332,7 +332,10 @@ namespace Valkur.Gameplay.TileEditor
 
         public void SetStatus(string text)
         {
-            if (_refs.StatusText != null) _refs.StatusText.text = text;
+            if (_refs.StatusText != null)
+                _refs.StatusText.text = text;
+            else
+                Debug.Log($"[TileEditor] {text}");
         }
 
         /// <summary>Updates the PERF button highlight to reflect probe visibility.</summary>

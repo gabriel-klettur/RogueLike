@@ -1,0 +1,32 @@
+{
+    "schemaVersion": 1,
+    "folderCategories": [
+        "castle_pandora",
+        "grass_rock",
+        "sand_grass",
+        "grass_dirt",
+        "tileset_1",
+        "rock_water",
+        "sand_rock",
+        "sand_ocean",
+        "rock_grass",
+        "ocean_grass",
+        "sand_ocean_2",
+        "multi_tiles",
+        "ready"
+    ],
+    "syntheticRootCategory": "basics",
+    "rootFiles": [
+        "dungeon_floor",
+        "dungeon_tunnel",
+        "floor",
+        "floor_1",
+        "floor_2",
+        "floor_3",
+        "floor_4",
+        "floor_5",
+        "floor_6",
+        "floor_7",
+        "wall"
+    ]
+}

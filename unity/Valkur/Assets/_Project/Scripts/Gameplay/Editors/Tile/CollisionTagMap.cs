@@ -22,7 +22,7 @@ namespace Valkur.Gameplay.TileEditor
     /// the pre-feature behaviour where every collider applied to everything. Legacy
     /// overlay JSONs that don't carry the `collisionTags` matrix migrate transparently.
     /// </summary>
-    public class CollisionTagMap
+    public class CollisionTagMap : ITileMetadataMap
     {
         /// <summary>Tag value that means "this collider applies to entities on every visual layer".</summary>
         public const string Wildcard = "*";
@@ -61,6 +61,17 @@ namespace Valkur.Gameplay.TileEditor
         }
 
         public string Get(Vector3Int cell) => Get(new Vector2Int(cell.x, cell.y));
+
+        /// <summary>
+        /// Raw accessor for undo/redo. Unlike <see cref="Get(Vector2Int)"/> (which resolves
+        /// an absent cell to <see cref="Wildcard"/>), this returns null when there is no
+        /// explicit entry — so the capture-old/Set(old) round trip in Undo does NOT
+        /// materialize a spurious "*" row where nothing existed before (which would also
+        /// dirty <see cref="HasAnyInRect"/> and the overlay JSON of zones never touched).
+        /// </summary>
+        public string GetRaw(Vector2Int cell) => _tags.TryGetValue(cell, out var t) ? t : null;
+
+        public string GetRaw(Vector3Int cell) => GetRaw(new Vector2Int(cell.x, cell.y));
 
         /// <summary>
         /// Store <paramref name="tag"/> for <paramref name="cell"/>. The tag is

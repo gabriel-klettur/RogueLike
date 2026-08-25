@@ -198,9 +198,25 @@ namespace Valkur.Gameplay.TileEditor
     {
         public Tilemap TargetTilemap;
         public List<TileEdit> Edits = new List<TileEdit>();
+        public List<MetadataEdit> MetadataEdits = new List<MetadataEdit>();
 
         public void Undo()
         {
+            // Order: metadata first (reverse), tiles second (reverse) — exact reverse of
+            // Redo(). The order between the two lists has no observable effect: neither
+            // the metadata map nor the Tilemap is read from the other during Undo/Redo
+            // (both are only cross-read while PAINTING, to resolve the auto-tile sprite),
+            // and nothing outside this method observes a half-applied state
+            // (RegenerateColliderIfNeeded runs AFTER Undo()/Redo() return, never inside).
+            // A single order is picked for all three features even though their original
+            // apply order differs (TerrainPainter stamps terrain BEFORE the tile;
+            // ApplyTagToEdits paints the tile BEFORE the tag) precisely because there is
+            // no read dependency to break.
+            for (int i = MetadataEdits.Count - 1; i >= 0; i--)
+            {
+                var m = MetadataEdits[i];
+                m.Target?.Set(m.Position, m.OldValue);
+            }
             for (int i = Edits.Count - 1; i >= 0; i--)
             {
                 var map = Edits[i].TargetTilemap != null ? Edits[i].TargetTilemap : TargetTilemap;
@@ -217,6 +233,8 @@ namespace Valkur.Gameplay.TileEditor
                 if (map == null) continue;
                 map.SetTile(edit.Position, edit.NewTile);
             }
+            foreach (var m in MetadataEdits)
+                m.Target?.Set(m.Position, m.NewValue);
         }
     }
 }

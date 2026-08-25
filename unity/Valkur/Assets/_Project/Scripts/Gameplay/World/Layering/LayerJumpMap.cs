@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Gameplay.TileEditor;
 
 namespace Valkur.Gameplay.World.Layering
 {
@@ -20,7 +21,7 @@ namespace Valkur.Gameplay.World.Layering
     ///   • No wildcard concept — unlike <see cref="TileEditor.CollisionTagMap"/>,
     ///     a "jump to all layers" doesn't have a meaningful gameplay semantic.
     /// </summary>
-    public class LayerJumpMap
+    public class LayerJumpMap : ITileMetadataMap
     {
         public const int MinTarget = 0;
         public const int MaxTarget = 8;
