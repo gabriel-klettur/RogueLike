@@ -92,7 +92,7 @@ The Gameplay assembly is subdivided by feature so any single folder stays under 
 | `Editors/Map/` | Map runtime editor (F11) |
 | `Editors/Particles/` | Particles runtime editor — partials + UIBuilder |
 | `Editors/Spells/` | Spells runtime editor — partials + UIBuilder + SpellPreviewGraphic |
-| `Editors/Tile/` | Tile runtime editor (F6) |
+| `Editors/Tile/` | Tile runtime editor (F8) |
 | `Enemies/` | NPC AI, FSM behaviors, NPCAutoCast, NPCCastState, BossPhaseController, BossConfigurator |
 | `HUD/` | In-world HUD overlays + modal panels: SpellBarHUD, BossHealthBarHUD, QuestLogHUD, SkillTreeHUD, StatisticsHUD |
 | `Inventory/` | Inventory model + UI runtime |
@@ -214,7 +214,7 @@ Use the right agent for the right job. Each agent has a constrained scope and pr
 | `unity-tester` | Create/fix/run tests; enforce namespaces; audit coverage |
 | `asset-pipeline` | Sprite/audio/atlas migration; PPU/pivot policies |
 | `buildings-editor` | Anything involving the Buildings Editor (window or runtime F10) |
-| `tile-editor` | Anything involving the Tile Editor (F6) |
+| `tile-editor` | Anything involving the Tile Editor (F8) |
 | `particles-editor` | Particle presets, `ParticleEmitter`, VFX beauty work, Particles Editor (F1) |
 | `spell-vfx-director` | Spell look & game-feel — slash/projectile/area silhouettes, timing, impact, hit-stop, camera shake |
 | `editor-ux-parity` | Audit / enforce UI/UX parity across in-game runtime editors |
@@ -357,6 +357,22 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   The stack lives on the ENTITY ROOT — attaching one to a child renderer creates a second
   base colour and reopens the bug. `PlayerSpiritVisuals` is deliberately NOT migrated: it
   tints every child renderer, not just the body.
+- **An auto-tile slot key has a polarity, and it is not guessable.** The Corner16 model keys
+  slots by the SECONDARY terrain — `TerrainTileResolver.ResolveVariantForCell` calls
+  `CornerMask(grid, cell, ruleset.TerrainSecondary)` — while the pixel analysis that generates
+  the mapping (`tools/atlas/analyze_tile_edges.py`) orders materials by how much of the sheet
+  they cover. Those two orders agree only by luck: measured across the five generated packs,
+  four had the primary terrain as material 0 and `grass_dirt` had it as material 1, so no fixed
+  rule works and the mapping is declared per pack in `PACK_PRIMARY_MATERIAL`. Both halves are
+  internally consistent while disagreeing, so nothing fails loudly — a fully-grass field just
+  resolves to the all-sand tile. It surfaces only end-to-end: resolve a synthetic island and
+  assert the chosen sprite belongs to the slot the mask dictates.
+- **`FindBaseRuleset` is not "the ruleset to paint with".** It excludes anything with a
+  secondary terrain, which was right for the cardinal model (a transition sheet drew the A-to-B
+  border, a separate base sheet drew solid A). A Corner16 sheet ALWAYS declares a secondary —
+  its corners are what separate A from B — so that filter made every generated pack unreachable
+  and the auto-brush reported "no ruleset" for the five packs built for it. Paint paths call
+  `FindPaintRuleset`, which prefers a base ruleset and falls back to a Corner16 one.
 - **Sprite-Lit-Default with no Light2D** → black tiles. Use `Sprite-Unlit-Default` fallback (already wired in `WorldGridBuilder.ApplyUnlitFallbackIfNeeded()`).
 - **Two SpriteAtlas assets over the same folder** → Unity logs `Sprite X matches more than one built-in atlases` once *per sprite* (3077 warnings once) and ships the atlas twice. `SpriteAtlasBuilder` now refuses to build a group whose source folder is already packed by another atlas anywhere in the project.
 - **Deleting a MonoBehaviour leaves prefabs with null component slots** — `m_Script: {fileID: 0}`, no guid, one console entry per slot on every import (2345 of them from the DungeonGunner removal). Strip with `GameObjectUtility.RemoveMonoBehavioursWithMissingScript` via `PrefabUtility.LoadPrefabContents`/`SaveAsPrefabAsset`; check for unresolved guids first, since those *are* recoverable information.
@@ -499,6 +515,7 @@ related symptom reappears.
 
 - **Multi-map Phase B/C** — Phase A (per-slot persistence routing) shipped 2026-08-18: buildings, spawners, lights, particles and authored item drops each own their file per map slot. Still open: built-in parallel worlds (Sky / Hell) and cross-world portals at runtime. See `.github/MAP_EDITOR_MULTIMAP_ROADMAP.md`.
 - **Asset pipeline Phase 2** — finalised `asset_map.csv` schema + the formal naming convention. Bulk reimport already executed; `ValkurAssetPostprocessor` writes Uncompressed platform overrides. Atlas consolidation is **done** (2026-08-18): exactly 9 atlases, all under `_Project/SpriteAtlases/`, one owner (`SpriteAtlasBuilder`).
+- **Day/night overhaul** — audited 2026-08-25 at **2.0/10**; Phases 0-3 shipped the same day, now **6.4/10**. The cycle used to reach no rendered pixel: three wrong URP enum literals (URP 14: `Freeform=1, Sprite=2, Point=3, Global=4`) left the scene light a `Point` of radius 1 and every placed torch a cookie-less `Sprite` light, while `WorldGridBuilder` forced the whole world to `Sprite-Unlit-Default` unconditionally. Now: typed URP API in all three light paths; world and entities lit (`Valkur/SpriteHDRTintLit`); placed lights on blend style **1 (Additive)**; colour from an 8-key Gradient in `Resources/DayNightProfile.asset`; the `Buildings/lights/` prop family emits its own light via `BuildingTemplateData.lightPresetKey` + `WorldLightLoader.RegisterDerivedLight` (derived lights are `persistent = false`, so `SaveAll` never writes them to `light_instances.json`); and a **`ScreenGradeFeature`** renderer feature on `Renderer2D.asset` does per-phase saturation/contrast/vignette/dither in one blit at a measured **0.215 ms/frame** — it does NOT need `renderPostProcessing`, so the ~18 ms UberPost stack stays off. Single owners: `AmbientLitSortingLayers` (light mask), `Core/Rendering/WorldSpriteMaterials` (lit vs unlit), `ScreenGradeSettings` (the live grade; static because Core cannot reference Gameplay). **URP 2D shadows render correctly but are disabled**: measured 11 % of pixels changed with a valid probe, yet URP derives the caster shape from the `Renderer` bounds, so every building throws a hard rectangular wedge. Accurate silhouettes would need the painted collision grid as caster geometry. NOTE `ShadowCaster2D.IsLit` reads `light.boundingSphere.radius`, written only by `Light2D.LateUpdate` — a light created and rendered in the same call has radius 0 and measures a false zero. Still open: atmosphere (3.0) and gameplay coupling (0.0), plus persisting the time of day and the F2 editor's authoring. **The phases are pinned by 40 tests** across `DayNightPhaseLookTests` (reads the shipped `Resources/DayNightProfile.asset`, asserts characteristics not literals), `DayNightPipelineWiringTests` (the URP enum constants, exactly one Global light, the sorting-layer mask vs the layers that go lit, blend style 1 still Additive, the ScreenGrade feature still installed) and `TimeWeatherPhaseShortcutTests` (each F2 phase button's hour, label and the phase the cycle actually reports there). Full findings and the roadmap: `.github/DAY_NIGHT_AUDIT_AND_ROADMAP.md`.
 - **Boss music tracks** — the wiring is done (`BossDefinition.Phase.musicTrackId` → `BossConfigurator.ApplyPhaseMusic` → `IAudioService.PlayMusicByTrackId`, with `BossPhaseAudio` as the inspector-authored alternative). What remains is **data**: no boss-specific track exists in `AudioCatalog.asset` yet, so `SampleBoss.asset` leaves `musicTrackId` empty.
 
 The **`Valkur.Infrastructure.Persistence.Profile`** layer (run history, kill stats, achievements, profile counters, statistics HUD) lives behind `IProfileDb` (`JsonProfileDb` today; SQLite ready as a drop-in once row counts justify it) — see `.github/SQLITE_MIGRATION_AUDIT.md`.
