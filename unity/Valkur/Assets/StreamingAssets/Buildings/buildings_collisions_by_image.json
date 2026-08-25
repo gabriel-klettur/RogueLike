@@ -62,6 +62,17 @@
       ],
       "grid_ref_size": [528, 528]
     },
+  "assets/buildings/lights/lamp_post_ornate_lit.png": {
+      "width": 2,
+      "height": 4,
+      "collision": [
+        [".", "."],
+        [".", "."],
+        [".", "."],
+        [".", "."]
+      ],
+      "grid_ref_size": [50, 102]
+    },
   "assets/buildings/market/stall_awning_blue_pottery.png": {
       "width": 5,
       "height": 5,
@@ -73,6 +84,35 @@
         ["#", "#", "#", "#", "#"]
       ],
       "grid_ref_size": [141, 147]
+    },
+  "assets/buildings/nature/hedge_block_wide_trimmed.png": {
+      "width": 3,
+      "height": 3,
+      "collision": [
+        [".", ".", "."],
+        [".", ".", "."],
+        ["#", "#", "#"]
+      ],
+      "grid_ref_size": [72, 70]
+    },
+  "assets/buildings/nature/hedge_topiary_narrow_column.png": {
+      "width": 2,
+      "height": 3,
+      "collision": [
+        [".", "."],
+        [".", "."],
+        ["#", "#"]
+      ],
+      "grid_ref_size": [62, 70]
+    },
+  "assets/buildings/nature/potted_herb_leafy.png": {
+      "width": 1,
+      "height": 2,
+      "collision": [
+        ["."],
+        ["#"]
+      ],
+      "grid_ref_size": [23, 38]
     },
   "assets/buildings/nature/rock_boulder_grey_tall.png": {
       "width": 3,
@@ -89,27 +129,9 @@
       "height": 2,
       "collision": [
         [".", ".", "."],
-        [".", ".", "."]
+        ["#", "#", "#"]
       ],
       "grid_ref_size": [89, 64]
-    },
-  "assets/buildings/nature/rock_formation_flower_base.png": {
-      "width": 3,
-      "height": 2,
-      "collision": [
-        [".", ".", "."],
-        [".", ".", "."]
-      ],
-      "grid_ref_size": [94, 64]
-    },
-  "assets/buildings/nature/rock_round_pink_cosmos.png": {
-      "width": 2,
-      "height": 2,
-      "collision": [
-        [".", "."],
-        [".", "."]
-      ],
-      "grid_ref_size": [60, 58]
     },
   "assets/buildings/nature/tree_autumn_orange_maple.png": {
       "width": 7,
@@ -127,12 +149,100 @@
       ],
       "grid_ref_size": [210, 272]
     },
+  "assets/buildings/props/bench_wood_stone_feet.png": {
+      "width": 3,
+      "height": 2,
+      "collision": [
+        [".", ".", "."],
+        ["#", "#", "#"]
+      ],
+      "grid_ref_size": [88, 54]
+    },
+  "assets/buildings/props/cart_hand_slatted_shafts.png": {
+      "width": 4,
+      "height": 3,
+      "collision": [
+        [".", ".", ".", "."],
+        [".", ".", ".", "."],
+        ["#", "#", "#", "#"]
+      ],
+      "grid_ref_size": [120, 74]
+    },
+  "assets/buildings/props/fountain_stone_statue.png": {
+      "width": 4,
+      "height": 5,
+      "collision": [
+        [".", ".", ".", "."],
+        [".", ".", ".", "."],
+        [".", ".", ".", "."],
+        ["#", "#", "#", "#"],
+        ["#", "#", "#", "#"]
+      ],
+      "grid_ref_size": [119, 144]
+    },
+  "assets/buildings/props/garden_bed_tomatoes.png": {
+      "width": 3,
+      "height": 2,
+      "collision": [
+        [".", ".", "."],
+        ["#", "#", "#"]
+      ],
+      "grid_ref_size": [89, 64]
+    },
+  "assets/buildings/props/pillar_stone_carved_capital.png": {
+      "width": 2,
+      "height": 3,
+      "collision": [
+        [".", "."],
+        [".", "."],
+        ["#", "#"]
+      ],
+      "grid_ref_size": [49, 70]
+    },
+  "assets/buildings/props/pillar_stone_domed_wide.png": {
+      "width": 2,
+      "height": 3,
+      "collision": [
+        [".", "."],
+        [".", "."],
+        ["#", "#"]
+      ],
+      "grid_ref_size": [43, 70]
+    },
+  "assets/buildings/props/pillar_stone_narrow_round.png": {
+      "width": 2,
+      "height": 3,
+      "collision": [
+        [".", "."],
+        [".", "."],
+        ["#", "#"]
+      ],
+      "grid_ref_size": [44, 74]
+    },
+  "assets/buildings/props/rail_panel_ivy_vines.png": {
+      "width": 4,
+      "height": 2,
+      "collision": [
+        [".", ".", ".", "."],
+        ["#", "#", "#", "#"]
+      ],
+      "grid_ref_size": [105, 54]
+    },
+  "assets/buildings/props/sacks_grain_pair.png": {
+      "width": 2,
+      "height": 2,
+      "collision": [
+        [".", "."],
+        ["#", "#"]
+      ],
+      "grid_ref_size": [51, 38]
+    },
   "assets/buildings/props/stool_round_wooden.png": {
       "width": 2,
       "height": 2,
       "collision": [
         [".", "."],
-        [".", "."]
+        ["#", "#"]
       ],
       "grid_ref_size": [34, 42]
     },
@@ -145,6 +255,15 @@
       ],
       "grid_ref_size": [81, 45]
     },
+  "assets/buildings/props/trough_stone_water.png": {
+      "width": 4,
+      "height": 2,
+      "collision": [
+        [".", ".", ".", "."],
+        ["#", "#", "#", "#"]
+      ],
+      "grid_ref_size": [125, 58]
+    },
   "assets/buildings/props/well_stone_tiled_roof.png": {
       "width": 3,
       "height": 4,
@@ -155,16 +274,6 @@
         ["#", "#", "#"]
       ],
       "grid_ref_size": [87, 112]
-    },
-  "assets/buildings/signs/banner_rail_three_crests.png": {
-      "width": 6,
-      "height": 3,
-      "collision": [
-        [".", ".", ".", ".", ".", "."],
-        [".", ".", ".", ".", ".", "."],
-        [".", ".", ".", ".", ".", "."]
-      ],
-      "grid_ref_size": [161, 96]
     },
   "assets/buildings/statues/statue_olim_01.png": {
       "width": 32,

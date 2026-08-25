@@ -42,7 +42,7 @@ MonoBehaviour:
     rotationSpeedDegrees: 0
     rotationOneWay: 0
     worldSpace: 0
-    sortingLayer: FloorDecals
+    sortingLayer: Entities
     sortingOrder: 2
     sortingFudge: 0
     respondsToAmbientLight: 1
