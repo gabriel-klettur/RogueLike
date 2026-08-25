@@ -19,4 +19,7 @@ MonoBehaviour:
   splitRatio: 0.6
   colliderScope: CG
   originalScale: {x: 38, y: 70}
+  lightPresetKey: Torch
+  lightOffsetNormalized: {x: 0.5, y: 0.78}
+  litAssetPath: 
   sourceImagePath: assets/buildings/lights/brazier_iron_cage.png

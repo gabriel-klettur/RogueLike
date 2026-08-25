@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Valkur.Data
 {
@@ -41,6 +41,25 @@ namespace Valkur.Data
 
         [Tooltip("Source image dimensions in pixels. Used to compute world size and split in Unity units.")]
         public Vector2Int originalScale;
+
+        // ── Light emission ──────────────────────────────────────────────────
+        // A fixture that carries its own light: the lamp posts, braziers, sconces and
+        // lanterns under Buildings/lights/. Filling lightPresetKey in makes every placement
+        // of that template light the world by itself, instead of the author having to
+        // remember to drop a matching light next to each prop in the Ctrl+F3 editor.
+
+        [Tooltip("LightPresetCatalog key this fixture emits (Torch / Lamp / Magic). Empty = no light.")]
+        public string lightPresetKey = "";
+
+        [Tooltip("Where the flame sits, as a fraction of the building's own bounds: " +
+                  "x across the width (0.5 = centred), y up the height (0.75 = near the top of a lamp post). " +
+                  "A light at the base of a lamp post lights the ground and not the lamp.")]
+        public Vector2 lightOffsetNormalized = new Vector2(0.5f, 0.75f);
+
+        [Tooltip("Optional sprite to swap in while the lights are on, e.g. " +
+                  "'Buildings/lights/lamp_post_ornate_lit'. Empty = the fixture looks the same " +
+                  "day and night. The art already ships in lit/unlit pairs.")]
+        public string litAssetPath = "";
 
         [Tooltip("Source image path (e.g. 'buildings/vegetation/tree_7.png'). " +
                  "Used to key into buildings_collisions_by_image.json.")]

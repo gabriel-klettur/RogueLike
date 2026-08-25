@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -44,6 +44,8 @@ namespace Valkur.Tests.EditMode.Game.Data
         {
             "AudioCatalog.asset",
             "CameraFeelProfile.asset",
+            "DayNightProfile.asset",    // day/night ramp; the cycle is AddComponent-ed at
+                                        // runtime, so it has no inspector slot to be wired from
             "TileCatalog.asset",
             "TerrainCatalog.asset", // autotile pipeline (rulesets + Blob16 lookup)
         };

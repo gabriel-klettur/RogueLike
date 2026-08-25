@@ -19,4 +19,7 @@ MonoBehaviour:
   splitRatio: 0.8
   colliderScope: CG
   originalScale: {x: 33, y: 109}
+  lightPresetKey: Torch
+  lightOffsetNormalized: {x: 0.5, y: 0.86}
+  litAssetPath: 
   sourceImagePath: assets/buildings/lights/torch_pillar_wood_lit.png

@@ -75,6 +75,10 @@ PATH_PREFIX_WHITELIST_RELATIVE: tuple[str, ...] = (
 RESOURCES_ROOT_ALLOWED: set[str] = {
     "AudioCatalog.asset",
     "AudioCatalog.asset.meta",
+    "CameraFeelProfile.asset",         # was missing here while present in the C# mirror
+    "CameraFeelProfile.asset.meta",
+    "DayNightProfile.asset",           # day/night ramp (see DayNightCycle.ActiveProfile)
+    "DayNightProfile.asset.meta",
     "SlashVfxCatalog.asset",
     "SlashVfxCatalog.asset.meta",
     "TileCatalog.asset",

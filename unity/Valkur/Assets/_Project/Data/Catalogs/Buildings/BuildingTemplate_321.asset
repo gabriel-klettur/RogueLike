@@ -19,4 +19,7 @@ MonoBehaviour:
   splitRatio: 0.8
   colliderScope: CG
   originalScale: {x: 32, y: 102}
+  lightPresetKey: Torch
+  lightOffsetNormalized: {x: 0.5, y: 0.8}
+  litAssetPath: 
   sourceImagePath: assets/buildings/lights/brazier_stand_iron.png

@@ -19,4 +19,7 @@ MonoBehaviour:
   splitRatio: 0.8
   colliderScope: CG
   originalScale: {x: 54, y: 109}
+  lightPresetKey: Lamp
+  lightOffsetNormalized: {x: 0.5, y: 0.55}
+  litAssetPath: 
   sourceImagePath: assets/buildings/lights/brazier_hanging_frame.png

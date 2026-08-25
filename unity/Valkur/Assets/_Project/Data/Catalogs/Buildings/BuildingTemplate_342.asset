@@ -19,4 +19,7 @@ MonoBehaviour:
   splitRatio: 0.9
   colliderScope: CG
   originalScale: {x: 38, y: 58}
+  lightPresetKey: Lamp
+  lightOffsetNormalized: {x: 0.5, y: 0.62}
+  litAssetPath: Buildings/lights/sconce_lantern_ornate_lit
   sourceImagePath: assets/buildings/lights/sconce_lantern_ornate.png

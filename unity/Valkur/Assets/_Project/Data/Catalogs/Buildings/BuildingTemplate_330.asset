@@ -19,4 +19,7 @@ MonoBehaviour:
   splitRatio: 0.8
   colliderScope: CG
   originalScale: {x: 32, y: 96}
+  lightPresetKey: Lamp
+  lightOffsetNormalized: {x: 0.5, y: 0.86}
+  litAssetPath: Buildings/lights/lamp_post_globe_lit
   sourceImagePath: assets/buildings/lights/lamp_post_globe.png

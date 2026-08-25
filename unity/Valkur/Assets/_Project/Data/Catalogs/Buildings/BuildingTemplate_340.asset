@@ -19,4 +19,7 @@ MonoBehaviour:
   splitRatio: 0.9
   colliderScope: CG
   originalScale: {x: 44, y: 64}
+  lightPresetKey: Torch
+  lightOffsetNormalized: {x: 0.5, y: 0.62}
+  litAssetPath: Buildings/lights/sconce_brazier_chained_lit
   sourceImagePath: assets/buildings/lights/sconce_brazier_chained.png

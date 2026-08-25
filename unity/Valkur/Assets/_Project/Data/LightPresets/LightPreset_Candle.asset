@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 840936428f335d140a64058e7883f197, type: 3}
-  m_Name: LightPreset_Magic
+  m_Name: LightPreset_Candle
   m_EditorClassIdentifier: 
-  presetKey: Magic
-  radius: 102
-  intensity: 0.4
-  falloff: 0.6
-  color: {r: 0.47058824, g: 0.78431374, b: 1, a: 1}
-  flickerAmplitude: 0.2
-  flickerSpeed: 3.2
-  flickerStyle: 1
+  presetKey: Candle
+  radius: 56
+  intensity: 0.22
+  falloff: 0.9
+  color: {r: 1, g: 0.87, b: 0.62, a: 1}
+  flickerAmplitude: 0.1
+  flickerSpeed: 1.6
+  flickerStyle: 0
   castsShadows: 0
   shadowStrength: 0.65
   centerScale: 0.05

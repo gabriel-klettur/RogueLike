@@ -19,4 +19,7 @@ MonoBehaviour:
   splitRatio: 0.9
   colliderScope: CG
   originalScale: {x: 22, y: 58}
+  lightPresetKey: Torch
+  lightOffsetNormalized: {x: 0.5, y: 0.7}
+  litAssetPath: 
   sourceImagePath: assets/buildings/lights/sconce_torch_wall.png

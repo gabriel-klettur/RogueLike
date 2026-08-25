@@ -19,4 +19,7 @@ MonoBehaviour:
   splitRatio: 0.8
   colliderScope: CG
   originalScale: {x: 58, y: 122}
+  lightPresetKey: Lamp
+  lightOffsetNormalized: {x: 0.5, y: 0.8}
+  litAssetPath: 
   sourceImagePath: assets/buildings/lights/lamp_post_crossarm.png

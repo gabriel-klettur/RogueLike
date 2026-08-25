@@ -19,4 +19,7 @@ MonoBehaviour:
   splitRatio: 0.6
   colliderScope: CG
   originalScale: {x: 47, y: 77}
+  lightPresetKey: Torch
+  lightOffsetNormalized: {x: 0.5, y: 0.78}
+  litAssetPath: Buildings/lights/brazier_bowl_stone_lit
   sourceImagePath: assets/buildings/lights/brazier_bowl_stone.png

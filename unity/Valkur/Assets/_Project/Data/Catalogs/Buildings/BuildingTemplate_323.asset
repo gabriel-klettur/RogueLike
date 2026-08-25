@@ -19,4 +19,7 @@ MonoBehaviour:
   splitRatio: 0.6
   colliderScope: CG
   originalScale: {x: 35, y: 58}
+  lightPresetKey: Candle
+  lightOffsetNormalized: {x: 0.5, y: 0.8}
+  litAssetPath: Buildings/lights/candelabra_brass_lit
   sourceImagePath: assets/buildings/lights/candelabra_brass.png

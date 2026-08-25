@@ -13,10 +13,13 @@ MonoBehaviour:
   m_Name: LightPreset_Torch
   m_EditorClassIdentifier: 
   presetKey: Torch
-  radius: 500
-  intensity: 1
-  falloff: 2
+  radius: 128
+  intensity: 0.35
+  falloff: 0.8
   color: {r: 1, g: 0.78431374, b: 0.54901963, a: 1}
   flickerAmplitude: 0.15
   flickerSpeed: 0.75
-  centerScale: 0.25
+  flickerStyle: 0
+  castsShadows: 0
+  shadowStrength: 0.65
+  centerScale: 0.05
