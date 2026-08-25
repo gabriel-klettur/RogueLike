@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using UnityEditor;
@@ -77,6 +77,7 @@ namespace Valkur.Tests.EditMode.Editors.Particles
 
             var emitter = go.AddComponent<ParticleEmitter>();
             emitter.ApplyPreset(preset, scale);
+            ParticleTestDeterminism.PinRandomness(go);
             Step(emitter, seconds);
             return emitter;
         }
@@ -181,6 +182,7 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             _created.Add(go);
             var emitter = go.AddComponent<ParticleEmitter>();
             emitter.ApplyPreset(Shipped("falling_leaf_30s"), 1f);
+            ParticleTestDeterminism.PinRandomness(go);
 
             var ps = RootSystem(emitter);
             Assert.IsTrue(ps.isPlaying, "ApplyPreset leaves the system playing.");
@@ -271,6 +273,7 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             // The F1 editor re-applies the preset to every live emitter on each property edit,
             // and the culling loader re-applies on re-enable.
             emitter.ApplyPreset(preset, 1f);
+            ParticleTestDeterminism.PinRandomness(emitter.gameObject);
 
             Assert.AreEqual(resized.x, RootSystem(emitter).shape.scale.x, 1e-3f);
         }
@@ -292,6 +295,7 @@ namespace Valkur.Tests.EditMode.Editors.Particles
                 var go = new GameObject("ResizeSweep");
                 var emitter = go.AddComponent<ParticleEmitter>();
                 emitter.ApplyPreset(preset, 1f);
+                ParticleTestDeterminism.PinRandomness(go);
                 Step(emitter, 4f);
 
                 if (LiveCount(emitter) == 0) { Object.DestroyImmediate(go); continue; }

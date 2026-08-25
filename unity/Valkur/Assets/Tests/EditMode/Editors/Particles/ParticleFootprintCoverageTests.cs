@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using UnityEditor;
@@ -130,6 +130,7 @@ namespace Valkur.Tests.EditMode.Editors.Particles
 
             var emitter = go.AddComponent<ParticleEmitter>();
             emitter.ApplyPreset(preset, scale);
+            ParticleTestDeterminism.PinRandomness(go);
 
             foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true))
             {

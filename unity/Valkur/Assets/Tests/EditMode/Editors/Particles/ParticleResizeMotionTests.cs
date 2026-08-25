@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using UnityEditor;
@@ -104,6 +104,7 @@ namespace Valkur.Tests.EditMode.Editors.Particles
                 // The editor's path: build at the preset's own size, then resize a running
                 // system the way a drag does.
                 emitter.ApplyPreset(preset, 1f);
+                ParticleTestDeterminism.PinRandomness(go);
                 foreach (var warm in go.GetComponentsInChildren<ParticleSystem>(true))
                 {
                     warm.Play();
@@ -114,6 +115,7 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             else
             {
                 emitter.ApplyPreset(preset, 1f, overrides);
+                ParticleTestDeterminism.PinRandomness(go);
             }
 
             var ps = go.GetComponentInChildren<ParticleSystem>(true);
@@ -426,6 +428,7 @@ namespace Valkur.Tests.EditMode.Editors.Particles
 
             var emitter = go.AddComponent<ParticleEmitter>();
             emitter.ApplyPreset(preset, scale, overrides);
+            ParticleTestDeterminism.PinRandomness(go);
 
             var ps = go.GetComponentInChildren<ParticleSystem>(true);
             var result = ps == null
@@ -491,11 +494,13 @@ namespace Valkur.Tests.EditMode.Editors.Particles
                     var liveGo = new GameObject("Live");
                     var live = liveGo.AddComponent<ParticleEmitter>();
                     live.ApplyPreset(preset, 1f);
+                    ParticleTestDeterminism.PinRandomness(liveGo);
                     live.SetOverrides(overrides);
 
                     var builtGo = new GameObject("Rebuilt");
                     var built = builtGo.AddComponent<ParticleEmitter>();
                     built.ApplyPreset(preset, 1f, overrides);
+                    ParticleTestDeterminism.PinRandomness(builtGo);
 
                     var a = liveGo.GetComponentsInChildren<ParticleSystem>(true);
                     var b = builtGo.GetComponentsInChildren<ParticleSystem>(true);

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -515,6 +515,7 @@ namespace Valkur.Tests.EditMode.Editors.Particles
 
             var emitter = go.AddComponent<ParticleEmitter>();
             emitter.ApplyPreset(Shipped(presetId), scale);
+            ParticleTestDeterminism.PinRandomness(go);
 
             foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true))
             {
@@ -576,6 +577,7 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             _created.Add(go);
             var emitter = go.AddComponent<ParticleEmitter>();
             emitter.ApplyPreset(Shipped("falling_leaf_30s"), 1f);
+            ParticleTestDeterminism.PinRandomness(go);
 
             Bounds unused;
             Assert.IsFalse(emitter.TryGetLiveBounds(out unused),
