@@ -1,8 +1,9 @@
-using System;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Text;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using Valkur.Core.Coordinates;
 using Valkur.Data;
 using Valkur.Infrastructure.Persistence.Repositories;
@@ -16,8 +17,10 @@ namespace Valkur.Gameplay.World
     /// Maps to Python's <c>light_instances_service.load_light_instances()</c> +
     /// <c>roguelike_engine.rendering.lighting</c> point-light creation.
     ///
-    /// Uses reflection for Light2D so the Gameplay assembly does not need a hard
-    /// dependency on URP (mirrors <c>GameplaySceneSetup.EnsureGlobalLight2D</c>).
+    /// Uses the typed URP API. The reflection this class used to carry was not free:
+    /// it wrote the wrong <c>lightType</c> constant, so every placed light was a Sprite
+    /// light with no cookie and drew nothing for months. See
+    /// <c>.github/DAY_NIGHT_AUDIT_AND_ROADMAP.md</c>.
     ///
     /// Runtime API (<see cref="RegisterRuntimeLight"/> / <see cref="RemoveLight"/> /
     /// <see cref="MoveLight"/> / <see cref="SaveAll"/>) lets the in-game Lighting Editor
@@ -28,6 +31,14 @@ namespace Valkur.Gameplay.World
         // Subdir + filename now owned by JsonFileLightInstanceRepository; constants
         // kept here as reference / search anchor only.
         private const float PX_TO_WORLD = 1f / 32f; // Buildings PPU=32; lights coords share the buildings grid.
+
+        /// <summary>
+        /// Blend style placed lights render into. Index 1 of the 2D Renderer's four styles
+        /// is authored as Additive (see Assets/Settings/Renderer2D.asset); index 0 is the
+        /// Multiply style the ambient day/night light owns. A torch belongs on the additive
+        /// layer — it adds light to a dark world, it does not filter it.
+        /// </summary>
+        private const int PointLightBlendStyleIndex = 1;
 
         public static WorldLightLoader Instance { get; private set; }
 
@@ -93,15 +104,6 @@ namespace Valkur.Gameplay.World
             }
         }
 
-        // Reflection cache for URP Light2D
-        private Type _light2DType;
-        private PropertyInfo _intensityProp;
-        private PropertyInfo _colorProp;
-        private PropertyInfo _outerRadiusProp;
-        private PropertyInfo _innerRadiusProp;
-        private PropertyInfo _falloffProp;
-        private PropertyInfo _lightTypeProp;
-        private bool _reflectionResolved;
 
         // Active light instances — backing store for flicker, save, runtime edits.
         private readonly List<LightInstance> _activeLights = new List<LightInstance>();
@@ -124,14 +126,24 @@ namespace Valkur.Gameplay.World
             public float?    overrideFlickerAmp;
             public float?    overrideFlickerSpeed;
 
-            public Component light2D;     // Spawned Light2D (URP).
+            public Light2D   light2D;     // Spawned Light2D (URP).
             public GameObject go;         // Owning GameObject.
+
+            /// <summary>
+            /// False for lights DERIVED from other world content — a lamp-post building that
+            /// carries its own light, for instance. They take part in the day/night gate, the
+            /// flicker and the viewport culling like any other, but they are rebuilt from their
+            /// source on every load, so writing them into light_instances.json would duplicate
+            /// them a little more on every save.
+            /// </summary>
+            public bool      persistent = true;
 
             // Effective per-frame flicker animation values.
             public float     baseIntensity;
             public float     flickerAmp;
             public float     flickerSpeed;
             public float     flickerOffset;
+            public LightPresetDefinition.FlickerStyle flickerStyle;
         }
 
         public IReadOnlyList<GameObject> ActiveLightObjects
@@ -176,7 +188,6 @@ namespace Valkur.Gameplay.World
 
         private void Start()
         {
-            ResolveLightReflection();
             LoadInstances();
             // Subscribe AFTER initial load so the very first cycle pulse already
             // sees a populated _activeLights list.
@@ -186,13 +197,46 @@ namespace Valkur.Gameplay.World
             if (DayNightCycle.HasInstance && !DayNightCycle.Instance.LightsEnabledNow)
                 _pointLightsEnabled = false;
             ApplyPointLightsVisibility();
+
+            if (ShadowsInUse) StartCoroutine(AttachShadowCastersOnce());
+        }
+
+        /// <summary>
+        /// Give every solid building a shadow caster, once, after the world has finished
+        /// spawning. Deferred because BuildingLoader populates the world across several frames
+        /// and a caster attached before the sprite exists would size itself from nothing.
+        ///
+        /// Only runs when a preset actually casts — see <see cref="ShadowsInUse"/>.
+        /// </summary>
+        private IEnumerator AttachShadowCastersOnce()
+        {
+            // Wait for the world to stop growing rather than for a fixed number of frames:
+            // BuildingLoader spawns across several, and a two-frame wait caught 0 of 170
+            // buildings. Poll rather than count frames so a slower load still lands.
+            const float pollSeconds = 0.25f;
+            const int   maxPolls    = 40;      // 10 s ceiling
+            int previous = -1, stableFor = 0;
+            for (int i = 0; i < maxPolls && stableFor < 2; i++)
+            {
+                yield return new WaitForSeconds(pollSeconds);
+                int count = FindObjectsOfType<BuildingObject>().Length;
+                if (count > 0 && count == previous) stableFor++;
+                else { stableFor = 0; previous = count; }
+            }
+
+            int attached = 0;
+            foreach (var building in FindObjectsOfType<BuildingObject>())
+            {
+                building.EnsureShadowCaster();
+                attached++;
+            }
+            Debug.Log($"[WorldLightLoader] Shadow casters evaluated on {attached} building(s).");
         }
 
         private void Update()
         {
             if (_enableViewportCulling) CullLightsByViewport();
 
-            if (!_reflectionResolved || _intensityProp == null) return;
             if (!_pointLightsEnabled) return;
 
             float time = Time.time;
@@ -202,9 +246,37 @@ namespace Valkur.Gameplay.World
                 if (inst.light2D == null || inst.flickerAmp <= 0f) continue;
                 if (!inst.light2D.gameObject.activeInHierarchy) continue;
 
-                float flicker = 1f + Mathf.Sin((time + inst.flickerOffset) * inst.flickerSpeed * Mathf.PI * 2f) * inst.flickerAmp;
-                try { _intensityProp.SetValue(inst.light2D, inst.baseIntensity * flicker); }
-                catch { /* ignore reflection failures */ }
+                inst.light2D.intensity = inst.baseIntensity * FlickerFactor(inst, time);
+            }
+        }
+
+        /// <summary>
+        /// The wobble applied to a light's authored intensity this frame.
+        ///
+        /// Flame uses two octaves of Perlin noise rather than a sine. A sine is periodic, and the eye
+        /// finds the period within a second or two — a torch driven by one reads as a pulsing bulb.
+        /// Fire is aperiodic: a slow body with a faster flutter riding on it, which is what the two
+        /// octaves are. The per-instance offset keeps neighbouring torches from breathing in unison.
+        /// </summary>
+        private static float FlickerFactor(LightInstance inst, float time)
+        {
+            switch (inst.flickerStyle)
+            {
+                case LightPresetDefinition.FlickerStyle.Steady:
+                    return 1f;
+
+                case LightPresetDefinition.FlickerStyle.Pulse:
+                    return 1f + Mathf.Sin((time + inst.flickerOffset) * inst.flickerSpeed * Mathf.PI * 2f) * inst.flickerAmp;
+
+                default:
+                {
+                    float t = (time + inst.flickerOffset) * inst.flickerSpeed;
+                    // Perlin returns [0,1] centred near 0.5; remap to [-1,1] so the mean intensity
+                    // stays the authored one instead of drifting brighter.
+                    float body    = Mathf.PerlinNoise(t,          inst.flickerOffset)        * 2f - 1f;
+                    float flutter = Mathf.PerlinNoise(t * 3.7f,   inst.flickerOffset + 17f)  * 2f - 1f;
+                    return 1f + (body * 0.7f + flutter * 0.3f) * inst.flickerAmp;
+                }
             }
         }
 
@@ -243,30 +315,6 @@ namespace Valkur.Gameplay.World
             }
         }
 
-        private void ResolveLightReflection()
-        {
-            _light2DType = Type.GetType(
-                "UnityEngine.Rendering.Universal.Light2D, Unity.RenderPipelines.Universal.Runtime");
-
-            if (_light2DType == null)
-            {
-                Debug.LogWarning("[WorldLightLoader] Light2D type not found — URP 2D may not be installed.");
-                return;
-            }
-
-            var flags = BindingFlags.Public | BindingFlags.Instance;
-            _intensityProp = _light2DType.GetProperty("intensity", flags);
-            _colorProp = _light2DType.GetProperty("color", flags);
-            _lightTypeProp = _light2DType.GetProperty("lightType", flags);
-
-            // URP 2D Light2D uses pointLightOuterRadius / pointLightInnerRadius
-            _outerRadiusProp = _light2DType.GetProperty("pointLightOuterRadius", flags);
-            _innerRadiusProp = _light2DType.GetProperty("pointLightInnerRadius", flags);
-            _falloffProp = _light2DType.GetProperty("falloffIntensity", flags);
-
-            _reflectionResolved = true;
-        }
-
         // Repository handle. Tests inject an InMemoryLightInstanceRepository
         // through SetRepository(); production paths fall back to the JSON
         // file backend on first use so no scene wiring is required to
@@ -280,7 +328,7 @@ namespace Valkur.Gameplay.World
 
         private void LoadInstances()
         {
-            if (_light2DType == null || _catalog == null) return;
+            if (_catalog == null) return;
 
             var repo = ResolveRepository();
             string json = repo.ReadRawJson(WorldId.Base);
@@ -341,7 +389,6 @@ namespace Valkur.Gameplay.World
         /// </summary>
         public GameObject RegisterRuntimeLight(string presetKey, Vector3 worldPos)
         {
-            if (_light2DType == null) return null;
             if (_catalog == null || _catalog.GetByKey(presetKey) == null)
             {
                 Debug.LogWarning($"[WorldLightLoader] Cannot register runtime light — preset '{presetKey}' missing.");
@@ -358,6 +405,57 @@ namespace Valkur.Gameplay.World
                 overrides = null,
             };
             return SpawnFromData(data, overridePosition: worldPos);
+        }
+
+        /// <summary>
+        /// Spawn a light that belongs to another piece of world content — a lamp-post building,
+        /// say — rather than to <c>light_instances.json</c>.
+        ///
+        /// It joins the same list as authored lights, so it inherits the day/night gate, the
+        /// flicker and the viewport culling for free, but it is never saved because its source
+        /// already describes it.
+        ///
+        /// The GameObject is parented to <paramref name="owner"/> so it follows the building
+        /// when the F10 editor drags it, and counter-scaled so the owner's non-uniform sprite
+        /// scale cannot stretch the light's radius into an ellipse.
+        /// </summary>
+        public GameObject RegisterDerivedLight(string presetKey, Vector3 worldPos, Transform owner)
+        {
+            var preset = _catalog?.GetByKey(presetKey);
+            if (preset == null)
+            {
+                Debug.LogWarning($"[WorldLightLoader] Cannot derive light — preset '{presetKey}' missing from the catalog.");
+                return null;
+            }
+
+            var go = new GameObject($"DerivedLight_{presetKey}");
+            go.transform.SetParent(owner != null ? owner : (_lightsRoot != null ? _lightsRoot : transform));
+            go.transform.position = worldPos;
+            if (owner != null)
+            {
+                var owned = owner.lossyScale;
+                go.transform.localScale = new Vector3(
+                    Mathf.Approximately(owned.x, 0f) ? 1f : 1f / owned.x,
+                    Mathf.Approximately(owned.y, 0f) ? 1f : 1f / owned.y,
+                    1f);
+            }
+
+            var inst = new LightInstance
+            {
+                id            = 0,
+                presetId      = presetKey,
+                zone          = "",
+                light2D       = go.AddComponent<Light2D>(),
+                go            = go,
+                persistent    = false,
+                flickerOffset = UnityEngine.Random.Range(0f, 10f),
+            };
+
+            ApplyPresetToLight(inst, preset);
+            if (!_pointLightsEnabled) go.SetActive(false);
+
+            _activeLights.Add(inst);
+            return go;
         }
 
         /// <summary>Move a previously-spawned light to <paramref name="worldPos"/>; updates the persisted record's zone + rel coords.</summary>
@@ -423,6 +521,7 @@ namespace Valkur.Gameplay.World
             foreach (var inst in _activeLights)
             {
                 if (inst.go == null) continue;
+                if (!inst.persistent) continue;   // derived from a building — see LightInstance.persistent
                 if (!first) sb.Append(",\n");
                 first = false;
                 AppendInstance(sb, inst);
@@ -461,7 +560,7 @@ namespace Valkur.Gameplay.World
             var go = new GameObject($"Light_{data.id}_{data.preset_id}");
             go.transform.SetParent(root);
             go.transform.position = worldPos;
-            var light2D = go.AddComponent(_light2DType);
+            var light2D = go.AddComponent<Light2D>();
 
             var inst = new LightInstance
             {
@@ -557,28 +656,67 @@ namespace Valkur.Gameplay.World
             inst.baseIntensity = inst.overrideIntensity ?? preset.intensity;
             inst.flickerAmp    = inst.overrideFlickerAmp ?? preset.flickerAmplitude;
             inst.flickerSpeed  = inst.overrideFlickerSpeed ?? preset.flickerSpeed;
+            inst.flickerStyle  = preset.flickerStyle;
 
-            if (_lightTypeProp != null)
-            {
-                try
-                {
-                    var enumType = _lightTypeProp.PropertyType;
-                    _lightTypeProp.SetValue(inst.light2D, Enum.ToObject(enumType, 2));
-                }
-                catch { }
-            }
+            if (inst.light2D == null) return;
 
-            if (_intensityProp != null) try { _intensityProp.SetValue(inst.light2D, inst.baseIntensity); } catch { }
+            // Point, not Sprite. The reflection this replaced wrote Enum.ToObject(type, 2),
+            // and 2 is Sprite in URP 14 — a Sprite light with no cookie clears its mesh, so
+            // every torch in the world rasterised nothing at all. See
+            // .github/DAY_NIGHT_AUDIT_AND_ROADMAP.md.
+            inst.light2D.lightType = Light2D.LightType.Point;
 
-            Color color = inst.overrideColor ?? preset.color;
-            if (_colorProp != null) try { _colorProp.SetValue(inst.light2D, color); } catch { }
+            // Additive: the ambient Multiply light darkens the world, and placed lights add
+            // photons back on top of it. On Multiply (the old default, inherited by never
+            // setting the index) a torch could only ever darken what it touched, which is
+            // the opposite of a torch.
+            inst.light2D.blendStyleIndex = PointLightBlendStyleIndex;
+
+            inst.light2D.intensity = inst.baseIntensity;
+            inst.light2D.color     = inst.overrideColor ?? preset.color;
 
             float radiusPx    = inst.overrideRadius ?? preset.radius;
             float worldRadius = radiusPx * PX_TO_WORLD;
-            if (_outerRadiusProp != null) try { _outerRadiusProp.SetValue(inst.light2D, worldRadius); } catch { }
-            if (_innerRadiusProp != null) try { _innerRadiusProp.SetValue(inst.light2D, worldRadius * preset.centerScale); } catch { }
-            if (_falloffProp     != null) try { _falloffProp.SetValue(inst.light2D, preset.falloff); } catch { }
+            inst.light2D.pointLightOuterRadius = worldRadius;
+            inst.light2D.pointLightInnerRadius = worldRadius * Mathf.Clamp01(preset.centerScale);
+
+            // URP clamps falloffIntensity to [0,1]; LightPresetDefinition used to allow
+            // 1.6-2.2, so all three shipped presets collapsed to an identical hard falloff.
+            inst.light2D.falloffIntensity = Mathf.Clamp01(preset.falloff);
+
+            inst.light2D.shadowsEnabled  = preset.castsShadows;
+            inst.light2D.shadowIntensity = Mathf.Clamp01(preset.shadowStrength);
         }
+
+        /// <summary>
+        /// True when any preset in the catalog casts shadows.
+        ///
+        /// Buildings consult this before attaching a <c>ShadowCaster2D</c>: URP's caster runs a
+        /// public <c>Update()</c> every frame per instance, so 141 of them would be a standing
+        /// cost even in a world where nothing casts. With every preset's shadows off, no caster
+        /// is created and the feature is genuinely free.
+        /// </summary>
+        public bool ShadowsInUse
+        {
+            get
+            {
+                if (_shadowsInUse.HasValue) return _shadowsInUse.Value;
+                bool any = false;
+                if (_catalog != null)
+                {
+                    foreach (var preset in _catalog.presets)
+                    {
+                        if (preset == null || !preset.castsShadows) continue;
+                        any = true;
+                        break;
+                    }
+                }
+                _shadowsInUse = any;
+                return any;
+            }
+        }
+
+        private bool? _shadowsInUse;
 
         private int NextLightId()
         {

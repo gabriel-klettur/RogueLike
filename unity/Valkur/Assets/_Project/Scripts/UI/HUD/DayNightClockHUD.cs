@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
@@ -239,7 +239,14 @@ namespace Valkur.UI.HUD
 
         // Daytime icon window: sun shown when sun would actually be in the sky.
         // Matches the cycle's normalized boundaries (0.20 dawn → 0.80 dusk).
-        private static bool IsDaytime(float t) => t >= 0.20f && t < 0.80f;
+        /// <summary>
+        /// Sun or moon. Derived from the cycle's own band constants rather than the 0.20/0.80
+        /// literals this used to carry: those disagreed with DAWN_START 0.18 and NIGHT_START 0.84,
+        /// so the icon flipped up to 58 in-game minutes before the world did.
+        /// </summary>
+        private static bool IsDaytime(float t)
+            => t >= Valkur.Gameplay.World.DayNightCycle.DAWN_START
+            && t <  Valkur.Gameplay.World.DayNightCycle.NIGHT_START;
 
         private static Color RingColorFor(DayNightCycle.DayPhase phase) => phase switch
         {

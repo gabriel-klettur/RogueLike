@@ -23,9 +23,20 @@
 #
 # Generated 2026-08-18 from Valkur.Core, Valkur.Data, Valkur.Infrastructure,
 # Valkur.Gameplay, Valkur.UI, Valkur.UIKit.
+#
+# 2026-08-25: DomainReloadStaticResetTests sharpened from a per-TYPE exemption (any
+# hooked type's entire static surface was skipped) to a per-FIELD one (only the fields
+# a hook demonstrably resets are exempt; see IsResetByAnyHook in that file). The 6
+# entries dated 2026-08-25 below are genuinely new backlog this surfaced -- they were
+# never scanned before because their declaring type happened to carry a hook for some
+# OTHER field.
 
 COLLECTION	Valkur.Core.GameSettingsBindings._table
 COLLECTION	Valkur.Data.PlayerClassCatalog.Presets
+# 2026-08-25 field-level ratchet sharpening: fixed lookup array, never mutated at
+# runtime -- same "immutable lookup table" class as the other COLLECTION entries in
+# this file (Cardinals, DigitMasks, etc.). Only read via DefaultPlayerOrder / [0].
+COLLECTION	Valkur.Data.PlayerSelectionState.DefaultOrder
 COLLECTION	Valkur.Gameplay.Buildings.BuildingsRuntimeEditor.TUTORIAL_STEPS
 COLLECTION	Valkur.Gameplay.Editors.Boss.BossEditorManager.TUTORIAL_STEPS
 COLLECTION	Valkur.Gameplay.Editors.Boss.BossEditorTimelineRenderer.CUE_COLORS
@@ -70,6 +81,14 @@ COLLECTION	Valkur.Gameplay.World.Layering.VisualLayerSortingSync.SortingLayerByV
 COLLECTION	Valkur.Gameplay.World.Layering.WorldCollisionLayers._worldLayerIndices
 COLLECTION	Valkur.Gameplay.World.PathFinder.Cardinals
 COLLECTION	Valkur.UI.EditorSubTabData.All
+# 2026-08-25 field-level ratchet sharpening: `CountLabelCache[count] ??= ...` really
+# does mutate this readonly array as a lazy string-format cache; the type's hook only
+# resets the 4 sprite fields (_solidSprite etc.), not this one. Stale entries are just
+# recomputed display strings with no destroyed-object risk, so it's backlog, not urgent.
+COLLECTION	Valkur.UI.HUD.ComboHUD.CountLabelCache
+# 2026-08-25 field-level ratchet sharpening: fixed 3-entry lookup array ("1"/"2"/"3"),
+# never mutated -- same "immutable lookup table" class as PlayerSelectionState.DefaultOrder.
+COLLECTION	Valkur.UI.HUD.HUDManager.AbilityRowKeyLabels
 COLLECTION	Valkur.UI.HUD.HUDVisibilityController.RootHUDCanvasNames
 COLLECTION	Valkur.UI.Loading.LoadingScreenController.LoadingTips
 COLLECTION	Valkur.UI.MainMenu.MainMenuUI.BgPaths
@@ -90,9 +109,6 @@ UNITYOBJ	Valkur.Gameplay.Editors.BuildingOutlineRenderer.s_whiteSprite
 UNITYOBJ	Valkur.Gameplay.Editors.BuildingOutlineRenderer.s_whiteTex
 UNITYOBJ	Valkur.Gameplay.Editors.EntityOutlineRenderer.s_lineMat
 UNITYOBJ	Valkur.Gameplay.EntitySetup._spellCatalog
-UNITYOBJ	Valkur.Gameplay.EntitySpriteHelper._monsterSprite
-UNITYOBJ	Valkur.Gameplay.EntitySpriteHelper._playerSprite
-UNITYOBJ	Valkur.Gameplay.EntitySpriteHelper._unlitSpriteMaterial
 UNITYOBJ	Valkur.Gameplay.MapEditor.Backups.MapBackupBrowserUI.<Instance>k__BackingField
 UNITYOBJ	Valkur.Gameplay.MapEditor.MapEditorUI._whiteSprite
 UNITYOBJ	Valkur.Gameplay.ProjectilePrefabFactory._fireballPrefab
@@ -125,7 +141,6 @@ UNITYOBJ	Valkur.Gameplay.VFX.ParticleEmitterOutlineRenderer.s_whiteTex
 UNITYOBJ	Valkur.Gameplay.World.BuildingColliderDebugOverlay.s_fillMaterial
 UNITYOBJ	Valkur.Gameplay.World.BuildingColliderDebugOverlay.s_lineMaterial
 UNITYOBJ	Valkur.Gameplay.World.BuildingColliderDebugOverlay.s_whiteSprite
-UNITYOBJ	Valkur.Gameplay.World.BuildingObject.s_urpSpriteMat
 UNITYOBJ	Valkur.Gameplay.World.TilemapColliderDebugOverlay.s_mat
 UNITYOBJ	Valkur.Infrastructure.MusicBeatClock.<Instance>k__BackingField
 UNITYOBJ	Valkur.UI.HUD.MusicPlayerHUD._circleCache
@@ -146,6 +161,12 @@ UNITYOBJ	Valkur.UIKit.LoadingBarWidget._whiteSprite
 UNITYOBJ	Valkur.UIKit.MenuBarChrome._instance
 VALUE	Valkur.Core.GameBootstrap.<GameplaySceneName>k__BackingField
 VALUE	Valkur.Core.GameSettings._instance
+# 2026-08-25 field-level ratchet sharpening: the hook resets `_applied`/`_settingsCaptured`
+# but not these two captured-InputSettings snapshot fields. Logically inert on their own --
+# every restore path is gated by `_settingsCaptured`, which IS reset -- but the raw values
+# themselves linger, so it's real backlog rather than a false positive.
+VALUE	Valkur.Core.Input.InputSystemConfigurator._origBackgroundBehavior
+VALUE	Valkur.Core.Input.InputSystemConfigurator._origEditorInputBehavior
 VALUE	Valkur.Core.Input.MouseInputManager._testOverridePosition
 VALUE	Valkur.Gameplay.Combat.FloatingDamageSpawner._pool
 VALUE	Valkur.Gameplay.EntitySetup._configureMarkerMethod
@@ -156,6 +177,10 @@ VALUE	Valkur.Gameplay.EntitySetup._minimapMarkerReflectionFailed
 VALUE	Valkur.Gameplay.EntitySetup._minimapMarkerShapeType
 VALUE	Valkur.Gameplay.EntitySetup._minimapMarkerType
 VALUE	Valkur.Gameplay.EntitySetup._minimapReflectionFailed
+# 2026-08-25 field-level ratchet sharpening: monotonic counter for auto-generated biome
+# instance IDs, never reset by any hook on the type (only `_sharedBackupStore` is).
+# Keeps climbing across Play sessions instead of restarting fresh each run.
+VALUE	Valkur.Gameplay.MapEditor.MapEditorManager.s_biomeInstanceCounter
 VALUE	Valkur.Gameplay.Spells.AuraController._light2DColor
 VALUE	Valkur.Gameplay.Spells.AuraController._light2DInnerRadius
 VALUE	Valkur.Gameplay.Spells.AuraController._light2DIntensity

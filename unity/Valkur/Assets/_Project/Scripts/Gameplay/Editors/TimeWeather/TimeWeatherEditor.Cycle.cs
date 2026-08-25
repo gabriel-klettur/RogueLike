@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using Valkur.Gameplay.World;
 
@@ -64,8 +64,8 @@ namespace Valkur.Gameplay.TimeWeather
             SetStatus("No filter — cycle paused.");
         }
 
-        // Tracks the live cycle (supports edits coming from the Lighting Editor
-        // scrubber, savegame load, etc.) and keeps the row highlight in sync.
+        // Follows the live cycle so the highlighted row is whichever phase the clock is
+        // actually in — including while it advances on its own, or after a save is loaded.
         private void SyncCycleHighlightFromLive()
         {
             if (_ui.CycleRowBgs == null) return;

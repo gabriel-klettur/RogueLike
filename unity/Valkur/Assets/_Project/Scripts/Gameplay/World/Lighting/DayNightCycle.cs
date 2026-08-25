@@ -1,6 +1,7 @@
-using System.Reflection;
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using Valkur.Core;
+using Valkur.Data;
 
 namespace Valkur.Gameplay.World
 {
@@ -14,9 +15,11 @@ namespace Valkur.Gameplay.World
     ///                                     (Python window: 08:45 → 20:45, normalized 0.365 → 0.865).
     ///   • Smoothstep interpolation between phase keyframes (Python uses t²·(3−2t)).
     ///
-    /// Uses reflection to write Light2D.color and Light2D.intensity so that
-    /// Valkur.Gameplay.asmdef does NOT need a direct reference to the URP runtime assembly
-    /// (consistent with GameplaySceneSetup.EnsureGlobalLight2D approach).
+    /// Writes Light2D.color and Light2D.intensity through the typed URP API.
+    /// Valkur.Gameplay.asmdef already references Unity.RenderPipelines.Universal.Runtime,
+    /// so the reflection this class used to carry bought nothing and cost correctness
+    /// (it bound to the wrong lightType constant). See
+    /// .github/DAY_NIGHT_AUDIT_AND_ROADMAP.md.
     ///
     /// Phases (normalized day time 0..1):
     ///   Dawn:  0.20 - 0.30  (warm pinkish light, intensity rising)
@@ -32,9 +35,18 @@ namespace Valkur.Gameplay.World
     {
         // 1440 = minutes per 24h day. Used to map normalized time ↔ minute-of-day.
         public const float MinutesPerDay                    = 1440f;
-        // Python parity: lights-disable window at 08:45 → 20:45 (525 / 1245 minutes).
-        public const float DefaultLightsOffStartNormalized  = 525f  / MinutesPerDay;
-        public const float DefaultLightsOffEndNormalized    = 1245f / MinutesPerDay;
+        /// <summary>
+        /// Window during which placed point lights (torches, lamps) stay OFF.
+        ///
+        /// Derived from the phase bands rather than from Python's 08:45 → 20:45 literals.
+        /// Those literals did not line up with the bands: night started at NIGHT_START
+        /// (20:10) while the lights only came on at 20:45, so for ~35 in-game minutes —
+        /// 88 real seconds at the default day length — the world sat at full night ambient
+        /// with every torch deactivated. Tying the window to DAY_START / DUSK_START also
+        /// means torches light up as dusk begins, which is when a torch is for.
+        /// </summary>
+        public const float DefaultLightsOffStartNormalized  = DAY_START;
+        public const float DefaultLightsOffEndNormalized    = DUSK_START;
 
         // ── Inspector ─────────────────────────────────────────────────
 
@@ -52,7 +64,13 @@ namespace Valkur.Gameplay.World
                   "Default 0.08 keeps deep night nearly black so manually-placed point lights / torches are the dominant light source, matching how the Python original played.")]
         [SerializeField, Range(0f, 1f)] private float minIntensity = 0.08f;
 
-        [Header("Day / Night keyframes (only two, like Python)")]
+        [Header("Look")]
+        [Tooltip("Authored 24-hour ramp. When assigned (or found at Resources/DayNightProfile), " +
+                  "it is the source of truth for colour, intensity and vignette; the two keyframes " +
+                  "below are only the fallback for a scene that has no profile.")]
+        [SerializeField] private DayNightProfile profile;
+
+        [Header("Fallback keyframes (used only when no profile is available)")]
         // Two real keyframes — Day and Night — that the cycle smoothly lerps
         // between during the Dawn and Dusk windows. There are no separate
         // keyframes for Dawn / Dusk: those windows are pure transitions.
@@ -80,8 +98,10 @@ namespace Valkur.Gameplay.World
         [SerializeField] private Color nightColor   = new Color(0.20f, 0.25f, 0.45f, 1f);
         [Tooltip("Night keyframe — Light2D intensity. Low (≈0.15) so the world is genuinely dim.")]
         [SerializeField, Range(0f, 1.5f)] private float nightIntensity = 0.15f;
-        [Tooltip("Night keyframe — color-temperature shift. Slightly cooler.")]
-        [SerializeField, Range(-1f, 1f)] private float nightWarmth     = -0.10f;
+        [Tooltip("Night keyframe — color-temperature shift. Neutral by default: with a profile " +
+                  "assigned the gradient already carries the colour, and a non-zero warmth here " +
+                  "would tint it a second time.")]
+        [SerializeField, Range(-1f, 1f)] private float nightWarmth     = 0f;
         [Tooltip("Night keyframe — vignette opacity. Stronger so the screen edges feel enclosed.")]
         [SerializeField, Range(0f, 1f)] private float nightVignetteAlpha = 0.30f;
 
@@ -170,7 +190,25 @@ namespace Valkur.Gameplay.World
         /// rather than reading a third keyframe). Legacy GoldenMorning /
         /// GoldenEvening / BlueHour map to their nearest neighbour for
         /// back-compat with old call sites.</summary>
-        public PhaseLook GetPhaseLook(DayPhase phase) => phase switch
+        public PhaseLook GetPhaseLook(DayPhase phase)
+        {
+            var look = ActiveProfile;
+            if (look != null)
+            {
+                bool night = phase is DayPhase.Night or DayPhase.Dusk or DayPhase.GoldenEvening or DayPhase.BlueHour;
+                look.ReadPlateau(night, out var c, out var i, out var v);
+                return new PhaseLook
+                {
+                    color         = c,
+                    intensity     = i,
+                    warmth        = night ? nightWarmth : dayWarmth,
+                    vignetteAlpha = v,
+                };
+            }
+            return GetFallbackPhaseLook(phase);
+        }
+
+        private PhaseLook GetFallbackPhaseLook(DayPhase phase) => phase switch
         {
             DayPhase.Night         => new PhaseLook { color = nightColor, intensity = nightIntensity, warmth = nightWarmth, vignetteAlpha = nightVignetteAlpha },
             DayPhase.Dawn          => AverageLook(),
@@ -199,6 +237,25 @@ namespace Valkur.Gameplay.World
         /// GoldenMorning / GoldenEvening / BlueHour map similarly.</summary>
         public void SetPhaseLook(DayPhase phase, PhaseLook look)
         {
+            var profileLook = ActiveProfile;
+            if (profileLook != null)
+            {
+                // The profile is the source of truth, so the sliders edit IT — otherwise they
+                // would write to fields nothing reads any more, which is exactly the kind of
+                // control that silently does nothing. Note this mutates the asset in memory:
+                // in the Editor that survives a domain reload but is not written to disk until
+                // the asset is saved (persisting authoring is Phase 6 of the roadmap).
+                bool night = phase is DayPhase.Night or DayPhase.Dusk or DayPhase.GoldenEvening or DayPhase.BlueHour;
+                profileLook.WritePlateau(night,
+                                          look.color,
+                                          Mathf.Clamp(look.intensity, 0f, 1.5f),
+                                          Mathf.Clamp01(look.vignetteAlpha));
+                if (night) nightWarmth = Mathf.Clamp(look.warmth, -1f, 1f);
+                else       dayWarmth   = Mathf.Clamp(look.warmth, -1f, 1f);
+                UpdateLighting();
+                return;
+            }
+
             switch (phase)
             {
                 case DayPhase.Day:
@@ -226,6 +283,9 @@ namespace Valkur.Gameplay.World
         public static System.Action<DayPhase> OnPhaseChanged;
         public static System.Action<bool>     OnLightsEnabledChanged;
         public static System.Action<bool>     OnLightingEnabledChanged;
+
+        /// <summary>Fires when the clock rolls past midnight, carrying the new <see cref="DayCount"/>.</summary>
+        public static System.Action<int>      OnDayChanged;
 
         // ── Master "tinting on/off" switch ────────────────────────────
         // When OFF the cycle keeps ticking but the Light2D is forced to
@@ -259,22 +319,74 @@ namespace Valkur.Gameplay.World
             OnPhaseChanged           = null;
             OnLightsEnabledChanged   = null;
             OnLightingEnabledChanged = null;
+            OnDayChanged             = null;
         }
 
         protected override bool Persist => false;
 
-        // ── Reflection cache ──────────────────────────────────────────
+        // ── Light binding ─────────────────────────────────────────────
 
-        private Component    _globalLight;
-        private PropertyInfo _colorProp;
-        private PropertyInfo _intensityProp;
-        private bool         _lightResolved;
+        private Light2D _globalLight;
+        private bool    _lightResolved;
+
+        private DayNightProfile _resolvedProfile;
+        private bool            _profileResolved;
+
+        /// <summary>
+        /// The authored ramp, or null when none is available and the two fallback keyframes
+        /// should drive the cycle instead. Resolved once: an inspector reference wins, then
+        /// <c>Resources/DayNightProfile</c>.
+        /// </summary>
+        private DayNightProfile ActiveProfile
+        {
+            get
+            {
+                if (_profileResolved) return _resolvedProfile;
+                _profileResolved = true;
+
+                var candidate = profile != null ? profile : Resources.Load<DayNightProfile>("DayNightProfile");
+                if (candidate == null)
+                {
+                    Debug.LogWarning("[DayNightCycle] No DayNightProfile found — falling back to the two " +
+                                      "built-in keyframes, which cannot produce a warm dawn or dusk.");
+                }
+                else if (!candidate.IsUsable)
+                {
+                    Debug.LogWarning($"[DayNightCycle] DayNightProfile '{candidate.name}' has no usable ramp " +
+                                      "(needs at least 2 gradient keys and 2 intensity keys) — using the fallback keyframes.");
+                    candidate = null;
+                }
+                _resolvedProfile = candidate;
+                return _resolvedProfile;
+            }
+        }
+
+        // Last values pushed to the Light2D. Day and Night are flat bands — together 74 %
+        // of the cycle — so most frames write a value identical to the previous one. The
+        // guard skips those; without it the cycle wrote a Color and a float every frame
+        // forever, including while paused.
+        private Color _lastAppliedColor     = Color.clear;
+        private float _lastAppliedIntensity = float.NaN;
+
+        /// <summary>
+        /// Elapsed days since the run started, fractional. THE clock — <see cref="TimeNormalized"/>
+        /// and <see cref="DayCount"/> are both projections of it.
+        ///
+        /// A double, and accumulated in NORMALIZED units rather than seconds, for two separate
+        /// reasons. Double because a float nudged by ~0.0000046 per frame loses its low bits within
+        /// an hour of play, so the clock slowly stops being the same clock. Normalized because
+        /// accumulating raw seconds and dividing by realSecondsPerDay at read time would make the
+        /// speed slider TELEPORT the sun: changing the divisor would rewrite the whole history.
+        /// Accumulating the rate instead means a speed change only affects what comes after it.
+        /// </summary>
+        private double _elapsedDays;
 
         // ── Lifecycle ─────────────────────────────────────────────────
 
         protected override void OnSingletonAwake()
         {
-            TimeNormalized = startTimeNormalized;
+            _elapsedDays = Mathf.Repeat(startTimeNormalized, 1f);
+            SyncClockFromElapsed();
             // NOTE: Do NOT call ResolveGlobalLight() here — the Global Light 2D may not
             // exist yet at Awake time (GameplaySceneSetup creates it in Start).
             // Resolved lazily on first Update frame instead.
@@ -291,7 +403,8 @@ namespace Valkur.Gameplay.World
 
             if (!paused && realSecondsPerDay > 0f)
             {
-                TimeNormalized = (TimeNormalized + Time.deltaTime / realSecondsPerDay) % 1f;
+                _elapsedDays += (double)Time.deltaTime / realSecondsPerDay;
+                SyncClockFromElapsed();
             }
 
             // UpdateLighting is cheap enough to call every frame — keeps pause-then-scrub
@@ -304,7 +417,10 @@ namespace Valkur.Gameplay.World
         /// <summary>Set the time of day directly. 0=midnight, 0.5=noon.</summary>
         public void SetTimeNormalized(float t)
         {
-            TimeNormalized = Mathf.Repeat(t, 1f);
+            // Rewrite the accumulator, not just its projection: setting only TimeNormalized would
+            // be undone by the very next frame, which re-derives it from _elapsedDays.
+            _elapsedDays = System.Math.Floor(_elapsedDays) + Mathf.Repeat(t, 1f);
+            SyncClockFromElapsed();
             UpdateLighting();
         }
 
@@ -312,8 +428,18 @@ namespace Valkur.Gameplay.World
         public void SetMinuteOfDay(int minute)
             => SetTimeNormalized(Mathf.Repeat(minute, MinutesPerDay) / MinutesPerDay);
 
-        /// <summary>Advance / rewind the clock by a delta in normalized units.</summary>
-        public void AdvanceNormalized(float delta) => SetTimeNormalized(TimeNormalized + delta);
+        /// <summary>
+        /// Advance / rewind the clock by a delta in normalized units. Unlike
+        /// <see cref="SetTimeNormalized"/> this crosses midnight properly, so advancing past the end
+        /// of a day increments <see cref="DayCount"/>.
+        /// </summary>
+        public void AdvanceNormalized(float delta)
+        {
+            _elapsedDays += delta;
+            if (_elapsedDays < 0d) _elapsedDays = 0d;
+            SyncClockFromElapsed();
+            UpdateLighting();
+        }
 
         /// <summary>Advance / rewind the clock by a number of in-game minutes.</summary>
         public void AdvanceMinutes(float minutes) => AdvanceNormalized(minutes / MinutesPerDay);
@@ -321,45 +447,59 @@ namespace Valkur.Gameplay.World
         public void Pause()  => paused = true;
         public void Resume() => paused = false;
 
+        /// <summary>Whole in-game days elapsed since the run began. Day 0 is the first.</summary>
+        public int DayCount { get; private set; }
+
+        /// <summary>
+        /// Fractional days elapsed — the raw clock. Persisted by the save system so a reloaded run
+        /// resumes at the hour AND the day it left off instead of restarting at 08:24.
+        /// </summary>
+        public double ElapsedDays => _elapsedDays;
+
+        /// <summary>Restore the clock wholesale, e.g. from a save.</summary>
+        public void SetElapsedDays(double elapsedDays)
+        {
+            _elapsedDays = elapsedDays < 0d ? 0d : elapsedDays;
+            SyncClockFromElapsed();
+            UpdateLighting();
+        }
+
+        /// <summary>Project <see cref="_elapsedDays"/> onto the time of day and the day counter.</summary>
+        private void SyncClockFromElapsed()
+        {
+            double whole = System.Math.Floor(_elapsedDays);
+            TimeNormalized = (float)(_elapsedDays - whole);
+
+            int day = (int)whole;
+            if (day == DayCount) return;
+            DayCount = day;
+            OnDayChanged?.Invoke(day);
+        }
+
         // ── Internal ──────────────────────────────────────────────────
 
+        /// <summary>
+        /// Binds to the scene's Global Light2D — and ONLY to a Global one.
+        ///
+        /// The previous version matched <c>lightType == 1</c> commented as "1 = Global".
+        /// URP 14's enum is <c>Parametric=0, Freeform=1, Sprite=2, Point=3, Global=4</c>,
+        /// so it never matched and fell through to <c>all[0]</c> — an arbitrary light, in
+        /// practice a torch. There is no fallback here on purpose: binding to a point light
+        /// makes the cycle silently drive the wrong object, which is exactly the failure
+        /// that hid this bug for months. A missing Global light is a loud warning instead.
+        /// </summary>
         private void ResolveGlobalLight()
         {
-            var light2DType = System.Type.GetType(
-                "UnityEngine.Rendering.Universal.Light2D, Unity.RenderPipelines.Universal.Runtime");
-            if (light2DType == null)
+            foreach (var l in FindObjectsOfType<Light2D>())
             {
-                Debug.LogWarning("[DayNightCycle] Light2D type not found — URP 2D Renderer missing.");
+                if (l.lightType != Light2D.LightType.Global) continue;
+                _globalLight = l;
                 return;
             }
 
-            // Find all Light2D components; pick the first with lightType == Global (1)
-            var all = FindObjectsOfType(light2DType);
-            var ltProp = light2DType.GetProperty("lightType",
-                BindingFlags.Public | BindingFlags.Instance);
-
-            foreach (Component c in all)
-            {
-                if (ltProp == null) { _globalLight = c; break; }
-                try
-                {
-                    int val = System.Convert.ToInt32(ltProp.GetValue(c));
-                    if (val == 1) { _globalLight = c; break; } // 1 = Global
-                }
-                catch { }
-            }
-
-            if (_globalLight == null && all.Length > 0)
-                _globalLight = all[0] as Component;
-
-            if (_globalLight == null)
-            {
-                Debug.LogWarning("[DayNightCycle] No Light2D found in scene.");
-                return;
-            }
-
-            _colorProp     = light2DType.GetProperty("color",     BindingFlags.Public | BindingFlags.Instance);
-            _intensityProp = light2DType.GetProperty("intensity", BindingFlags.Public | BindingFlags.Instance);
+            Debug.LogWarning(
+                "[DayNightCycle] No Global Light2D in the scene — the day/night tint will not " +
+                "reach any pixel. GameplaySceneSetup.EnsureGlobalLight2D should have created one.");
         }
 
         private void UpdateLighting()
@@ -384,23 +524,21 @@ namespace Valkur.Gameplay.World
                 targetVignetteAlpha  = 0f;
             }
 
+            PublishScreenGrade(targetVignetteAlpha);
+
             // Publish the live values so the vignette / ambient particles can
             // read them without recomputing the same blend.
             CurrentColor         = targetColor;
             CurrentVignetteAlpha = targetVignetteAlpha;
 
             // Apply the visual side-effect only when a Light2D is reachable.
-            if (_globalLight != null)
+            if (_globalLight != null &&
+                (targetColor != _lastAppliedColor || !Mathf.Approximately(targetIntensity, _lastAppliedIntensity)))
             {
-                try
-                {
-                    _colorProp?.SetValue(_globalLight, targetColor);
-                    _intensityProp?.SetValue(_globalLight, targetIntensity);
-                }
-                catch (System.Exception ex)
-                {
-                    Debug.LogWarning($"[DayNightCycle] Failed to set Light2D properties: {ex.Message}");
-                }
+                _globalLight.color     = targetColor;
+                _globalLight.intensity = targetIntensity;
+                _lastAppliedColor      = targetColor;
+                _lastAppliedIntensity  = targetIntensity;
             }
 
             if (newPhase != CurrentPhase)
@@ -423,10 +561,14 @@ namespace Valkur.Gameplay.World
         // Long stable Night and Day bands keep the world's tint *constant*
         // for most of the cycle, so the player isn't constantly perceiving
         // color drift — that was the "cinematic 6-phase" model's main flaw.
-        private const float DAWN_START  = 0.18f;
-        private const float DAY_START   = 0.30f;
-        private const float DUSK_START  = 0.70f;
-        private const float NIGHT_START = 0.84f;
+        /// <summary>Start of the dawn ramp — night begins turning into day (~04:19).</summary>
+        public const float DAWN_START  = 0.18f;
+        /// <summary>Start of the flat day band (~07:12).</summary>
+        public const float DAY_START   = 0.30f;
+        /// <summary>Start of the dusk ramp — day begins turning into night (~16:48).</summary>
+        public const float DUSK_START  = 0.70f;
+        /// <summary>Start of the flat night band (~20:10), wraps midnight.</summary>
+        public const float NIGHT_START = 0.84f;
 
         // Pure function: classify the normalized time t into a DayPhase and
         // pick the matching color + intensity + warmth + vignetteAlpha. No
@@ -451,7 +593,18 @@ namespace Valkur.Gameplay.World
                                           out float warmth,
                                           out float vignetteAlpha)
         {
-            if (t >= DAWN_START && t < DAY_START)
+            var look = ActiveProfile;
+            if (look != null)
+            {
+                // Profile path: the gradient IS the colour. Every beat the two-keyframe model
+                // could not express — the warm dawn, the golden hour, the mauve sunset — lives
+                // in its 8 keys. Bands come from the profile too, so an author who moves dusk
+                // moves the label and the ramp together.
+                phase = ClassifyPhase(t, look.DawnStart, look.DayStart, look.DuskStart, look.NightStart);
+                look.Sample(t, out color, out intensity, out vignetteAlpha);
+                warmth = phase == DayPhase.Night ? nightWarmth : dayWarmth;
+            }
+            else if (t >= DAWN_START && t < DAY_START)
             {
                 float k       = Mathf.SmoothStep(0f, 1f, (t - DAWN_START) / (DAY_START - DAWN_START));
                 color         = Color.Lerp(nightColor, dayColor, k);
@@ -495,6 +648,67 @@ namespace Valkur.Gameplay.World
 
             // Apply the floor so we never go fully black even at deep night.
             intensity = Mathf.Max(intensity, minIntensity);
+        }
+
+        /// <summary>
+        /// Hand the full-screen grade its live values.
+        ///
+        /// This is the half of the day/night look a Multiply Light2D structurally cannot do:
+        /// draining saturation, recontrasting what the darkening flattened, and dithering a dim
+        /// frame that has few code values left to land on. The light gets the colour; the grade
+        /// gets everything the colour cannot express.
+        ///
+        /// Writes to a static in Valkur.Core because the renderer feature must live there —
+        /// Gameplay may reference Core, never the other way round.
+        /// </summary>
+        private void PublishScreenGrade(float vignetteAlpha)
+        {
+            var look = ActiveProfile;
+            if (look == null)
+            {
+                // No profile: no grade. The fallback keyframes describe a light, not a look.
+                Valkur.Core.Rendering.ScreenGradeSettings.Enabled = false;
+                return;
+            }
+
+            if (!_lightingEnabled)
+            {
+                // The F2 "no filter" switch has to silence the grade too, or turning the tint off
+                // would leave the world desaturated with no visible cause.
+                Valkur.Core.Rendering.ScreenGradeSettings.Enabled = false;
+                return;
+            }
+
+            look.SampleGrade(TimeNormalized, out float saturation, out float contrast);
+
+            Valkur.Core.Rendering.ScreenGradeSettings.Enabled            = true;
+            Valkur.Core.Rendering.ScreenGradeSettings.Saturation         = saturation;
+            Valkur.Core.Rendering.ScreenGradeSettings.Contrast           = contrast;
+            Valkur.Core.Rendering.ScreenGradeSettings.VignetteIntensity  = vignetteAlpha * VignetteIntensityScale;
+            Valkur.Core.Rendering.ScreenGradeSettings.VignetteSmoothness = VignetteSmoothness;
+            Valkur.Core.Rendering.ScreenGradeSettings.VignetteColor      = look.VignetteTint;
+        }
+
+        /// <summary>
+        /// Maps the authored 0..1 vignette alpha onto the shader's falloff term. The overlay it
+        /// replaces was an alpha over a fixed sprite; the shader's intensity is a radius scale, so
+        /// the two are not the same number.
+        /// </summary>
+        private const float VignetteIntensityScale = 2.2f;
+
+        /// <summary>Falloff exponent of the screen vignette. Higher is a tighter edge.</summary>
+        private const float VignetteSmoothness = 1.6f;
+
+        /// <summary>
+        /// Pure band classification. Night wraps midnight, so it is the "everything else" case
+        /// rather than a range test.
+        /// </summary>
+        private static DayPhase ClassifyPhase(float t, float dawn, float day, float dusk, float night)
+        {
+            if (t >= dawn && t < day)   return DayPhase.Dawn;
+            if (t >= day  && t < dusk)  return DayPhase.Day;
+            if (t >= dusk && t < night) return DayPhase.Dusk;
+            return DayPhase.Night;
         }
 
         private static Color ApplyWarmth(Color c, float warmth)

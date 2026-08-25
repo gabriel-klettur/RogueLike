@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Valkur.UI.HUD
 {
@@ -22,7 +22,6 @@ namespace Valkur.UI.HUD
         private static Sprite _sunSprite;
         private static Sprite _moonSprite;
         private static Sprite _solidSprite;
-        private static Sprite _trianglePointerSprite;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetSpriteCacheOnPlayModeEnter()
@@ -30,7 +29,6 @@ namespace Valkur.UI.HUD
             // With Domain Reload OFF the cache otherwise survives across runs and
             // points at destroyed Texture2D handles when the editor re-enters Play.
             _circleSprite = _ringSprite = _sunSprite = _moonSprite = _solidSprite = null;
-            _trianglePointerSprite = null;
         }
 
         // 4×4 white quad — universal flat fill for backgrounds and bars.
@@ -122,65 +120,6 @@ namespace Valkur.UI.HUD
             tex.SetPixels32(px); tex.Apply();
             _sunSprite = Sprite.Create(tex, new Rect(0, 0, IconSize, IconSize), new Vector2(0.5f, 0.5f));
             return _sunSprite;
-        }
-
-        // Down-pointing triangle used as a slider handle. Wide base on top,
-        // apex at bottom-center pointing at the track. The pivot stays at
-        // (0.5, 0.5) so Unity's Slider can place the handle by the same rules
-        // it uses for any rectangular handle.
-        private static Sprite TrianglePointerSprite()
-        {
-            if (_trianglePointerSprite != null) return _trianglePointerSprite;
-            const int W = 16;
-            const int H = 16;
-            var tex = new Texture2D(W, H, TextureFormat.RGBA32, false)
-            { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
-            var px  = new Color32[W * H];
-            // Triangle vertices (texture-space, y up): base is the top row,
-            // apex is the bottom-center pixel. A 1-pixel margin around all
-            // sides keeps the antialiased edge crisp inside the texture.
-            Vector2 a = new Vector2(1f,        H - 1f);   // top-left
-            Vector2 b = new Vector2(W - 1f,    H - 1f);   // top-right
-            Vector2 c = new Vector2(W * 0.5f,  1f);       // apex (bottom)
-
-            for (int y = 0; y < H; y++)
-            for (int x = 0; x < W; x++)
-            {
-                var p = new Vector2(x + 0.5f, y + 0.5f);
-                bool inside = PointInTri(p, a, b, c);
-                if (!inside)
-                {
-                    px[y * W + x] = new Color32(0, 0, 0, 0);
-                    continue;
-                }
-                // Soft-edge: distance to each edge → minimum gives the AA.
-                float d1 = DistToSeg(p, a, b);
-                float d2 = DistToSeg(p, b, c);
-                float d3 = DistToSeg(p, c, a);
-                float dMin = Mathf.Min(d1, Mathf.Min(d2, d3));
-                float aA = Mathf.Clamp01(dMin);
-                px[y * W + x] = new Color32(255, 255, 255, (byte)(aA * 255));
-            }
-            tex.SetPixels32(px); tex.Apply();
-            _trianglePointerSprite = Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f));
-            return _trianglePointerSprite;
-        }
-
-        private static bool PointInTri(Vector2 p, Vector2 a, Vector2 b, Vector2 c)
-        {
-            float s1 = (p.x - b.x) * (a.y - b.y) - (a.x - b.x) * (p.y - b.y);
-            float s2 = (p.x - c.x) * (b.y - c.y) - (b.x - c.x) * (p.y - c.y);
-            float s3 = (p.x - a.x) * (c.y - a.y) - (c.x - a.x) * (p.y - a.y);
-            bool hasNeg = (s1 < 0f) || (s2 < 0f) || (s3 < 0f);
-            bool hasPos = (s1 > 0f) || (s2 > 0f) || (s3 > 0f);
-            return !(hasNeg && hasPos);
-        }
-
-        private static float DistToSeg(Vector2 p, Vector2 a, Vector2 b)
-        {
-            Vector2 ab = b - a;
-            float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / Mathf.Max(0.0001f, ab.sqrMagnitude));
-            return Vector2.Distance(p, a + ab * t);
         }
 
         // Crescent moon: filled disc minus a smaller disc offset to the upper-right.

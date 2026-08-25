@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Core;
@@ -99,9 +99,12 @@ namespace Valkur.Gameplay.TimeWeather
             if (!_active) return;
 
             HandleKeyboardShortcuts();
-            // Sync settings sliders + cycle/weather highlights every frame so
-            // changes from elsewhere (Lighting Editor scrubber, OFF buttons)
-            // reflect immediately in the panels.
+            // Re-read the live cycle every frame so the panels follow the clock as it runs,
+            // and so an OFF button or a phase jump lands on every widget at once.
+            //
+            // NOT, despite what this used to say, to track the Ctrl+F3 Lighting Editor:
+            // GameEditorManager.ToggleExclusive guarantees only one runtime editor is open,
+            // so that editor cannot be moving anything while this one is drawing.
             SyncSpeedFromCycle();
             SyncCycleHighlightFromLive();
             SyncWeatherHighlightsFromLive();

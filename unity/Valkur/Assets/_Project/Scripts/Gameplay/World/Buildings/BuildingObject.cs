@@ -39,9 +39,6 @@ namespace Valkur.Gameplay.World
         // ── Pixels per Unity world unit. Must match TILE_PPU in ValkurAssetPostprocessor. ──
         private const float PPU = 32f;
 
-        // Cached URP-compatible material (shared across all buildings).
-        private static Material s_urpSpriteMat;
-
         [Header("Template")]
         [Tooltip("BuildingTemplateData defining this building type. Set by BuildingLoader or by inspector.")]
         [SerializeField] private BuildingTemplateData _template;

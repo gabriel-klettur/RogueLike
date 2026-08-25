@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using Valkur.Gameplay.World;
 
@@ -9,9 +9,15 @@ namespace Valkur.UI.HUD
     /// current day phase. Sits behind the gameplay HUD (sortingOrder = 95) so
     /// HP bars, spell bar and chat overlay it cleanly.
     ///
-    /// The vignette is at its strongest during dawn / dusk (warm, painterly
-    /// edges) and softer during day / night, giving the player a peripheral cue
-    /// that "the world is changing" without modifying the global Light2D.
+    /// Strength comes from the DayNightProfile's vignette curve — weakest at midday
+    /// (0.02), climbing through dusk and holding at 0.28 through the night, so the
+    /// screen edges close in as the light goes. The tint follows the live ambient
+    /// colour, giving a peripheral cue without touching the global Light2D.
+    ///
+    /// (This used to claim the vignette peaked at dawn and dusk and softened at night.
+    /// It never did: the value was a monotone lerp from the Day keyframe to the Night
+    /// one, so it was weakest by day and strongest by night — the exact opposite at one
+    /// end. The curve makes the authored shape visible instead of implied.)
     /// </summary>
     public sealed class DayNightVignetteOverlay : MonoBehaviour
     {
@@ -42,10 +48,15 @@ namespace Valkur.UI.HUD
             var cycle = DayNightCycle.Instance;
             if (cycle == null || _vignette == null) return;
 
-            // The "no filters" master switch — when the cycle's lighting is
-            // disabled the vignette fades to fully transparent so the world
-            // reads at native colors.
-            Color target = cycle.LightingEnabled ? TargetFromCycle(cycle) : Color.clear;
+            // Two reasons to fade out:
+            //  • the "no filters" master switch, so the world reads at native colours;
+            //  • the ScreenGrade renderer feature being installed, because it draws a real
+            //    vignette in the frame buffer and two of them darken the edges twice. This
+            //    sprite is 64x64 stretched to full screen, so it is the one that should yield.
+            bool shaderDrawsIt = Valkur.Core.Rendering.ScreenGradeSettings.FeaturePresent;
+            Color target = (cycle.LightingEnabled && !shaderDrawsIt)
+                ? TargetFromCycle(cycle)
+                : Color.clear;
             _currentColor = Color.Lerp(_currentColor, target,
                                        1f - Mathf.Exp(-TINT_LERP_SPEED * Time.deltaTime));
             _vignette.color = _currentColor;

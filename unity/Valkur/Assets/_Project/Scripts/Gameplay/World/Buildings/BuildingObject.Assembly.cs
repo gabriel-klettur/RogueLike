@@ -7,7 +7,17 @@ namespace Valkur.Gameplay.World
     public partial class BuildingObject : MonoBehaviour
     {
 
-        public void Apply(BuildingTemplateData template, Vector2Int scaleOverride, float splitRatioOverride)
+        /// <summary>
+        /// Build (or rebuild) the building's two sprite halves from its template.
+        ///
+        /// <paramref name="assetPathOverride"/> renders a different sprite than the template's
+        /// own — used by the light fixtures to swap between their dark and burning artwork at
+        /// dusk and dawn. It deliberately does NOT touch <c>template.assetPath</c>, so the swap
+        /// is presentation only and nothing downstream (save, collision, the F10 palette) sees
+        /// a different building.
+        /// </summary>
+        public void Apply(BuildingTemplateData template, Vector2Int scaleOverride, float splitRatioOverride,
+                          string assetPathOverride = null)
         {
             _template           = template;
             _scaleOverride      = scaleOverride;
@@ -30,11 +40,20 @@ namespace Valkur.Gameplay.World
             EnsureCollider();
 
             // ── 2. Load texture ─────────────────────────────────────────────────────
-            Sprite sourceSprite = Resources.Load<Sprite>(template.assetPath);
+            string spritePath = string.IsNullOrEmpty(assetPathOverride) ? template.assetPath : assetPathOverride;
+            Sprite sourceSprite = Resources.Load<Sprite>(spritePath);
+            if (sourceSprite == null && spritePath != template.assetPath)
+            {
+                // A missing lit variant must not blank the fixture — fall back to its base art.
+                Debug.LogWarning($"[BuildingObject] Lit sprite not found at Resources/{spritePath}; " +
+                                  "falling back to the template's own sprite.", this);
+                spritePath   = template.assetPath;
+                sourceSprite = Resources.Load<Sprite>(spritePath);
+            }
             if (sourceSprite == null)
             {
                 Debug.LogWarning(
-                    $"[BuildingObject] Sprite not found at Resources/{template.assetPath} " +
+                    $"[BuildingObject] Sprite not found at Resources/{spritePath} " +
                     $"(template id={template.templateId}).", this);
                 return;
             }
@@ -170,6 +189,10 @@ namespace Valkur.Gameplay.World
             // means every collider in the world is one the designer authored on
             // purpose.
             _collider.enabled = false;
+
+            // Light fixtures carry their own Light2D. Done last so the renderers and the final
+            // localScale exist — the light is positioned from the rendered bounds.
+            RefreshLightFromTemplate();
         }
 
         // ── Helpers ────────────────────────────────────────────────────────────────
@@ -201,14 +224,11 @@ namespace Valkur.Gameplay.World
 
             // URP 2D: without an explicit URP material, SpriteRenderers get the
             // built-in Sprites-Default shader which renders BLACK in the URP pipeline.
-            if (s_urpSpriteMat == null)
-            {
-                var shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
-                if (shader != null)
-                    s_urpSpriteMat = new Material(shader);
-            }
-            if (s_urpSpriteMat != null)
-                sr.sharedMaterial = s_urpSpriteMat;
+            // WorldSpriteMaterials picks lit or unlit once for the whole world, so a
+            // building darkens with the tiles it stands on instead of staying noon-bright.
+            var mat = Valkur.Core.Rendering.WorldSpriteMaterials.World;
+            if (mat != null)
+                sr.sharedMaterial = mat;
         }
 
         private void EnsureCollider()

@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Chat;
@@ -24,7 +26,7 @@ namespace Valkur.Gameplay
             var manager = editorGo.AddComponent<TileEditorManager>();
             editorGo.transform.SetParent(GetSceneContainer("[Editors]"), false);
             manager.SetGridBuilder(_gridBuilder);
-            Debug.Log("[GameplaySceneSetup] TileEditorManager created. Press F6 to toggle.");
+            Debug.Log("[GameplaySceneSetup] TileEditorManager created. Press F8 to toggle.");
         }
 
         private void EnsureMapEditor()
@@ -37,89 +39,121 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>
-        /// URP uses Sprite-Lit-Default material on TilemapRenderers.
-        /// Without a 2D light source, all tilemaps render as solid black.
-        /// This creates a Global Light 2D to illuminate the entire scene.
-        /// Uses reflection to avoid hard dependency on URP assembly.
+        /// Sorting layers the ambient (day/night) light is allowed to darken.
         ///
-        /// Defense in depth: tries multiple reflection strategies for lightType,
-        /// logs every step, and WorldGridBuilder applies Unlit fallback if this fails.
+        /// In: every layer that carries world surface or its inhabitants.
+        /// Out, on purpose:
+        ///   • Projectiles / VFX — emissive by art direction; particles answer to the
+        ///     cycle through <c>ParticleEmitter.AmbientLight</c>, which keeps its own floor.
+        ///   • UI_World / Overlay — health bars, facing arrows and editor rulers must stay
+        ///     readable at midnight.
+        ///
+        /// Overhead IS in: it carries the OverheadDetails tilemap (canopies and the like),
+        /// and a tree crown that stays noon-bright over a night-blue floor is the exact
+        /// artefact this mask exists to avoid.
+        ///
+        /// A LIT renderer on a layer that is NOT in this mask renders BLACK, so this list
+        /// and the set of layers converted to Sprite-Lit-Default must move together.
+        /// </summary>
+        [Valkur.Core.SelfHealingStatic("Immutable table of sorting-layer names, built once from string literals. Holds no Unity objects and is never mutated after init, so it cannot go stale across a Play session.")]
+        private static readonly string[] AmbientLitSortingLayers =
+        {
+            "Default", "Background", "Ground", "FloorDecals", "ObjectsLow",
+            "WallsBottom", "Entities", "Decorations", "WallsTop", "ObjectsHigh",
+            "Overhead", "EntitiesOverhead"
+        };
+
+        /// <summary>
+        /// Ensures the scene owns exactly one URP 2D <b>Global</b> Light2D, repairing the
+        /// authored one when it has drifted.
+        ///
+        /// Typed against URP deliberately. <c>Valkur.Gameplay.asmdef</c> already references
+        /// <c>Unity.RenderPipelines.Universal.Runtime</c>, so the old reflection path bought
+        /// nothing and cost correctness: it wrote <c>Enum.ToObject(enumType, 1)</c> with the
+        /// comment "1 = Global", but URP 14's enum is
+        /// <c>Parametric=0, Freeform=1, Sprite=2, Point=3, Global=4</c> — the light came out
+        /// Freeform, and the scene's authored one was left a Point light of radius 1. For
+        /// months the day/night tint reached no pixel at all. Compile-time typing makes that
+        /// class of bug impossible; see <c>.github/DAY_NIGHT_AUDIT_AND_ROADMAP.md</c>.
         /// </summary>
         private void EnsureGlobalLight2D()
         {
-            var light2DType = System.Type.GetType(
-                "UnityEngine.Rendering.Universal.Light2D, Unity.RenderPipelines.Universal.Runtime");
-            if (light2DType == null)
+            var existing = FindObjectsOfType<Light2D>();
+
+            Light2D global = null;
+            foreach (var l in existing)
             {
-                Debug.LogWarning("[GameplaySceneSetup] Light2D type not found — URP 2D Renderer may not be installed.");
+                if (l.lightType == Light2D.LightType.Global) { global = l; break; }
+            }
+
+            // No Global light — but the scene may still carry the authored one in a broken
+            // state. Adopt and repair it rather than adding a second light beside it, which
+            // is what the old early-return effectively did (it saw *a* Light2D and gave up).
+            if (global == null)
+            {
+                foreach (var l in existing)
+                {
+                    if (l.name.IndexOf("Global", System.StringComparison.OrdinalIgnoreCase) < 0) continue;
+                    global = l;
+                    Debug.LogWarning(
+                        $"[GameplaySceneSetup] '{l.name}' was authored as {l.lightType}; repairing it to Global.");
+                    break;
+                }
+            }
+
+            if (global == null)
+            {
+                var lightGo = new GameObject("Global Light 2D");
+                lightGo.transform.SetParent(GetSceneContainer("[Camera]"), false);
+                global = lightGo.AddComponent<Light2D>();
+                Debug.Log("[GameplaySceneSetup] No Global Light 2D in scene — created one.");
+            }
+
+            global.lightType       = Light2D.LightType.Global;
+            global.blendStyleIndex = 0;   // Multiply — this is the ambient darkening layer.
+            global.color           = Color.white;
+            global.intensity       = 1f;  // Neutral until DayNightCycle takes over in Update.
+            ApplyAmbientSortingLayerMask(global);
+
+            // Prime the shared material chooser before any world renderer asks, so nothing
+            // races the probe and falls back to unlit for the rest of the session.
+            Valkur.Core.Rendering.WorldSpriteMaterials.NotifyAmbientLightReady();
+        }
+
+        /// <summary>
+        /// Writes <see cref="AmbientLitSortingLayers"/> onto the light's layer mask.
+        ///
+        /// URP exposes no public setter — <c>Light2D.m_ApplyToSortingLayers</c> is a private
+        /// SerializeField — so this is the one reflection write left in the lighting path.
+        /// It is safe to do at runtime: <c>Light2DManager.GetGlobalColor</c> re-reads the
+        /// array through <c>IsLitLayer</c> on every frame, with no cache in between.
+        ///
+        /// Doing nothing is not an option: URP's <c>Awake</c> fills a null mask with EVERY
+        /// sorting layer, which would darken the HUD-ish layers too, and the mask the scene
+        /// shipped was frozen when only 8 of today's 16 layers existed.
+        /// </summary>
+        private static void ApplyAmbientSortingLayerMask(Light2D light)
+        {
+            var ids = new List<int>(AmbientLitSortingLayers.Length);
+            foreach (var layerName in AmbientLitSortingLayers)
+            {
+                int id = SortingLayer.NameToID(layerName);
+                if (SortingLayer.IsValid(id)) ids.Add(id);
+                else Debug.LogWarning(
+                    $"[GameplaySceneSetup] Sorting layer '{layerName}' does not exist — ambient light will skip it.");
+            }
+
+            var field = typeof(Light2D).GetField("m_ApplyToSortingLayers",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (field == null)
+            {
+                Debug.LogWarning(
+                    "[GameplaySceneSetup] Light2D.m_ApplyToSortingLayers not found — ambient light keeps its authored mask.");
                 return;
             }
 
-            if (FindObjectOfType(light2DType) != null) return;
-
-            var lightGo = new GameObject("GlobalLight2D");
-            var light = lightGo.AddComponent(light2DType);
-
-            if (light == null)
-            {
-                Debug.LogError("[GameplaySceneSetup] Failed to AddComponent Light2D.");
-                Destroy(lightGo);
-                return;
-            }
-
-            lightGo.transform.SetParent(GetSceneContainer("[Camera]"), false);
-
-            bool lightTypeSet = false;
-            var lightTypeProp = light2DType.GetProperty("lightType",
-                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-            if (lightTypeProp != null)
-            {
-                try
-                {
-                    var enumType = lightTypeProp.PropertyType;
-                    var globalValue = System.Enum.ToObject(enumType, 1);
-                    lightTypeProp.SetValue(light, globalValue);
-                    lightTypeSet = true;
-                    Debug.Log($"[GameplaySceneSetup] Light2D.lightType set to Global via property.");
-                }
-                catch (System.Exception ex)
-                {
-                    Debug.LogWarning($"[GameplaySceneSetup] Failed to set lightType via property: {ex.Message}");
-                }
-            }
-
-            if (!lightTypeSet)
-            {
-                var lightTypeField = light2DType.GetField("m_LightType",
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (lightTypeField != null)
-                {
-                    try
-                    {
-                        var enumType = lightTypeField.FieldType;
-                        var globalValue = System.Enum.ToObject(enumType, 1);
-                        lightTypeField.SetValue(light, globalValue);
-                        lightTypeSet = true;
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Debug.LogWarning($"[GameplaySceneSetup] Failed to set m_LightType via field: {ex.Message}");
-                    }
-                }
-            }
-
-            if (!lightTypeSet)
-                Debug.LogWarning("[GameplaySceneSetup] Could not set Light2D to Global type.");
-
-            var intensityProp = light2DType.GetProperty("intensity",
-                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-            if (intensityProp != null)
-            {
-                try { intensityProp.SetValue(light, 1f); }
-                catch (System.Exception ex) { Debug.LogWarning($"[GameplaySceneSetup] Failed to set intensity: {ex.Message}"); }
-            }
-
-            Debug.Log($"[GameplaySceneSetup] Global Light 2D created. lightTypeSet={lightTypeSet}");
+            field.SetValue(light, ids.ToArray());
+            Debug.Log($"[GameplaySceneSetup] Ambient light applies to {ids.Count} sorting layers.");
         }
 
         private void EnsureSaveService()
