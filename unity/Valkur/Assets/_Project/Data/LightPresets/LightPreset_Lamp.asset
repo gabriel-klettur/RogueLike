@@ -16,9 +16,12 @@ MonoBehaviour:
   radius: 154
   intensity: 0.3
   falloff: 0.7
-  color: {r: 1, g: 0.9411765, b: 0.78431374, a: 1}
-  flickerAmplitude: 0.05
-  flickerSpeed: 1.2
+  surfaceMix: 0.75
+  coreScale: 0.35
+  surfaceGain: 5
+  color: {r: 1, g: 0.88, b: 0.6, a: 1}
+  flickerAmplitude: 0.14
+  flickerSpeed: 0.55
   flickerStyle: 0
   castsShadows: 0
   shadowStrength: 0.65
