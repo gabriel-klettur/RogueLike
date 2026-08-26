@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using UnityEngine;
 using Valkur.Core;
 
@@ -242,7 +242,7 @@ namespace Valkur.Gameplay.Spells
                 if (_l2dLightType != null)
                 {
                     var enumType = _l2dLightType.PropertyType;
-                    _l2dLightType.SetValue(_light2DComponent, System.Enum.ToObject(enumType, 2)); // Point
+                    _l2dLightType.SetValue(_light2DComponent, System.Enum.ToObject(enumType, 3)); // 3 = Point (URP 14: Sprite=2)
                 }
                 if (_l2dColor != null)     _l2dColor.SetValue(_light2DComponent, _palette.lightColor);
                 if (_l2dIntensity != null) _l2dIntensity.SetValue(_light2DComponent, _palette.lightIntensity);

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
@@ -163,7 +163,7 @@ namespace Valkur.Gameplay.Spells
                 _light = _lightGo.AddComponent(lightType);
                 var typeProp = ElementalProjectileVisual.GetLight2DLightTypeProp();
                 if (typeProp != null)
-                    typeProp.SetValue(_light, System.Enum.ToObject(typeProp.PropertyType, 2));
+                    typeProp.SetValue(_light, System.Enum.ToObject(typeProp.PropertyType, 3));
                 ElementalProjectileVisual.GetLight2DColorProp()?.SetValue(_light, _baseColor);
                 ElementalProjectileVisual.GetLight2DOuterProp()?.SetValue(_light, _radius * 1.08f);
                 ElementalProjectileVisual.GetLight2DInnerProp()?.SetValue(_light, 0.12f);
@@ -571,7 +571,7 @@ namespace Valkur.Gameplay.Spells
                 _light = gameObject.AddComponent(lightType);
                 var typeProp = ElementalProjectileVisual.GetLight2DLightTypeProp();
                 if (typeProp != null)
-                    typeProp.SetValue(_light, System.Enum.ToObject(typeProp.PropertyType, 2));
+                    typeProp.SetValue(_light, System.Enum.ToObject(typeProp.PropertyType, 3));
                 ElementalProjectileVisual.GetLight2DColorProp()?.SetValue(_light, _color);
                 ElementalProjectileVisual.GetLight2DOuterProp()?.SetValue(_light, 1.5f);
                 ElementalProjectileVisual.GetLight2DInnerProp()?.SetValue(_light, 0.08f);

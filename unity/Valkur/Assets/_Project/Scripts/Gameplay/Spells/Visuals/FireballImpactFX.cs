@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using UnityEngine;
 using Valkur.Core;
 
@@ -82,7 +82,7 @@ namespace Valkur.Gameplay.Spells
                 {
                     _light2DComponent = _light2DGo.AddComponent(l2dType);
                     var lt = FireballVisual.GetLight2DLightTypeProp();
-                    if (lt != null) lt.SetValue(_light2DComponent, System.Enum.ToObject(lt.PropertyType, 2));
+                    if (lt != null) lt.SetValue(_light2DComponent, System.Enum.ToObject(lt.PropertyType, 3));
                     var col = FireballVisual.GetLight2DColorProp();
                     if (col != null) col.SetValue(_light2DComponent, new Color(1f, 0.6f, 0.2f, 1f));
                     var inten = FireballVisual.GetLight2DIntensityProp();

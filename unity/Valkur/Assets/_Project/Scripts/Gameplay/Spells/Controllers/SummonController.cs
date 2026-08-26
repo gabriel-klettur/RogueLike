@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using Valkur.Core;
 using Valkur.Gameplay.Combat;
 
@@ -60,7 +60,7 @@ namespace Valkur.Gameplay.Spells
                 {
                     _light = _lightGo.AddComponent(l2dType);
                     var lt = ElementalProjectileVisual.GetLight2DLightTypeProp();
-                    if (lt != null) lt.SetValue(_light, System.Enum.ToObject(lt.PropertyType, 2));
+                    if (lt != null) lt.SetValue(_light, System.Enum.ToObject(lt.PropertyType, 3));
                     ElementalProjectileVisual.GetLight2DColorProp()?.SetValue(_light, new Color(0.85f, 0.55f, 1f, 1f));
                     ElementalProjectileVisual.GetLight2DIntensityProp()?.SetValue(_light, 1.0f);
                     ElementalProjectileVisual.GetLight2DOuterProp()?.SetValue(_light, 1.6f);
