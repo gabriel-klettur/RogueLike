@@ -47,7 +47,7 @@ namespace Valkur.Gameplay.World
 
             return SpawnAtCore(inst.Id, inst.Zone, template, new Vector3(worldX, worldY, 0f),
                 inst.ScaleOverride, inst.SplitRatioOverride, inst.ColliderScopeOverride,
-                inst.ZBottomOffset, inst.ZTopOffset) != null;
+                inst.ZBottomOffset, inst.ZTopOffset, inst.DoorSpec) != null;
         }
 
         /// <summary>
@@ -71,13 +71,14 @@ namespace Valkur.Gameplay.World
                 return null;
             }
             return SpawnAtCore(instanceId, zoneName, template, worldPosition,
-                Vector2Int.zero, -1f, string.Empty, 0, 0);
+                Vector2Int.zero, -1f, string.Empty, 0, 0, doorSpec: null);
         }
 
         private BuildingObject SpawnAtCore(int instanceId, string zoneName,
             BuildingTemplateData template, Vector3 worldPos,
             Vector2Int scaleOverride, float splitRatioOverride,
-            string colliderScopeOverride, int zBottomOffset, int zTopOffset)
+            string colliderScopeOverride, int zBottomOffset, int zTopOffset,
+            BuildingDoorSpec doorSpec)
         {
             Transform root = _buildingsRoot != null ? _buildingsRoot : transform;
 
@@ -93,6 +94,11 @@ namespace Valkur.Gameplay.World
             bObj.ColliderScopeOverride = colliderScopeOverride;
             if (zBottomOffset != 0) bObj.ZBottomOffset = zBottomOffset;
             if (zTopOffset    != 0) bObj.ZTopOffset    = zTopOffset;
+
+            // After Apply(): the doorway rect is derived from the building's world bounds,
+            // which only exist once the renderers have been built. The factory refuses (and
+            // reports) any combination that cannot produce a working door.
+            BuildingDoorFactory.TryAttach(bObj, doorSpec);
 
             _spawnedBuildings.Add(bObj);
             return bObj;
@@ -149,12 +155,47 @@ namespace Valkur.Gameplay.World
 
                     if (overrides.TryGetValue("z_top", out var zTopRaw) && zTopRaw != null)
                         inst.ZTopOffset = Convert.ToInt32(zTopRaw);
+
+                    if (overrides.TryGetValue("door", out var doorRaw) &&
+                        doorRaw is Dictionary<string, object> doorDict)
+                        inst.DoorSpec = ParseDoorSpec(doorDict);
                 }
 
                 result.Add(inst);
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Read one <c>overrides.door</c> block. Returns null for a record with no usable
+        /// destination rather than an inert spec: the factory treats null as "this placement
+        /// leads nowhere", which is the correct reading of a door entry someone emptied.
+        ///
+        /// The keys are the exact ones BuildingsRuntimeEditor.SaveInstancesToJson writes.
+        /// Read and write are a PAIR — a change to either side without the other is the
+        /// failure mode that shipped the spawner coordinate drift
+        /// (.github/incidents/SPAWNER_COORDINATE_SPACE_DRIFT.md), and
+        /// BuildingDoorPersistenceRoundTripTests exists to make the pair fail loudly.
+        /// </summary>
+        private static BuildingDoorSpec ParseDoorSpec(Dictionary<string, object> door)
+        {
+            string target = GetString(door, "target");
+            if (string.IsNullOrWhiteSpace(target)) return null;
+
+            var spec = new BuildingDoorSpec { target = target };
+
+            if (door.TryGetValue("use_default_spawn", out var defRaw) && defRaw != null)
+                spec.useDefaultSpawn = Convert.ToBoolean(defRaw);
+
+            if (door.TryGetValue("spawn_x", out var sxRaw) && sxRaw != null)
+                spec.spawnX = Convert.ToSingle(sxRaw);
+
+            if (door.TryGetValue("spawn_y", out var syRaw) && syRaw != null)
+                spec.spawnY = Convert.ToSingle(syRaw);
+
+            spec.prompt = GetString(door, "prompt");
+            return spec;
         }
 
         // ── JSON helpers ────────────────────────────────────────────────────────────
@@ -193,6 +234,8 @@ namespace Valkur.Gameplay.World
             public int        ZBottomOffset;
             /// <summary>Sorting order delta for the top (WallsTop) renderer. 0 = no override.</summary>
             public int        ZTopOffset;
+            /// <summary>Per-instance doorway destination, or null when this placement has none.</summary>
+            public BuildingDoorSpec DoorSpec;
         }
     }
 }

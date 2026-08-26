@@ -61,6 +61,31 @@ namespace Valkur.Data
                   "day and night. The art already ships in lit/unlit pairs.")]
         public string litAssetPath = "";
 
+        // ── Door ─────────────────────────────────────────────────────────────
+        // WHERE the doorway sits is a property of the ART, so it belongs to the template:
+        // every placement of house_a has its door on the same pixels. WHERE it LEADS is a
+        // property of the placement and lives per instance in BuildingDoorSpec.
+        //
+        // Stored NORMALIZED, never as collision-grid cells. BuildingCollisionLoader.ResampleGrid
+        // collapses each destination cell to a single bool by OR-ing its sources, so a door
+        // glyph in that matrix is erased the moment the instance carries a scale override —
+        // silently, on exactly the buildings a designer resized. A fraction of the bounds
+        // survives resampling, scale overrides and splitRatio changes by construction.
+
+        [Tooltip("If true, this building has a doorway. Placements can then carry a " +
+                 "per-instance destination (overrides.door in buildings_instances.json).")]
+        public bool hasDoor;
+
+        [Tooltip("Doorway CENTRE as a fraction of the building's own bounds: " +
+                 "x across the width (0.5 = centred), y up the height (0 = the ground line). " +
+                 "The rect is clamped to stay inside the bounds.")]
+        public Vector2 doorOffsetNormalized = new Vector2(0.5f, 0.06f);
+
+        [Tooltip("Doorway SIZE as a fraction of the building's own bounds. " +
+                 "Small: the trigger only has to be touched, not walked through — the " +
+                 "footprint around it is solid.")]
+        public Vector2 doorSizeNormalized = new Vector2(0.18f, 0.12f);
+
         [Tooltip("Source image path (e.g. 'buildings/vegetation/tree_7.png'). " +
                  "Used to key into buildings_collisions_by_image.json.")]
         public string sourceImagePath;

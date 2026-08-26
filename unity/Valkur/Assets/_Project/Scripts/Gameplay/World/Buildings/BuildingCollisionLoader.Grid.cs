@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 namespace Valkur.Gameplay.World
@@ -46,6 +46,39 @@ namespace Valkur.Gameplay.World
             var mainCollider = bObj.GetComponent<BoxCollider2D>();
             if (mainCollider != null && count > 0)
                 mainCollider.enabled = false;
+
+            WarnIfDoorwayIsBlocked(bObj, effectiveGrid, gridRows, gridCols);
+        }
+
+        /// <summary>
+        /// A doorway anchored over a cell the author painted solid produces a door the player
+        /// can see and walks straight into. That reads as a physics bug rather than as
+        /// authoring left undone, so it is reported here — this is the one place that holds
+        /// both the resolved grid and the building at the same time.
+        ///
+        /// Reported, never repaired: silently clearing the cell would edit authored collision
+        /// data behind the author's back, and the fix (paint the doorway open in F10, or move
+        /// the anchor) is a decision only they can make.
+        /// </summary>
+        private static void WarnIfDoorwayIsBlocked(BuildingObject bObj, CollisionGrid grid,
+                                                   int rows, int cols)
+        {
+            if (bObj == null || !bObj.TemplateDeclaresDoor) return;
+            if (grid?.collision == null || rows <= 0 || cols <= 0) return;
+            if (!bObj.TryGetWorldRect(out var buildingRect)) return;
+            if (!bObj.TryGetDoorWorldRect(out var doorRect)) return;
+            if (!BuildingDoorGeometry.TryGetDoorCell(buildingRect, doorRect, rows, cols,
+                                                     out int row, out int col)) return;
+
+            if (grid.collision[row] == null || col >= grid.collision[row].Length) return;
+            if (grid.collision[row][col] != "#") return;
+
+            Debug.LogWarning(
+                $"[BuildingCollisionLoader] Building {bObj.name} (instance {bObj.InstanceId}) has a " +
+                $"doorway anchored on collision cell ({row},{col}), which is painted SOLID. The " +
+                "player cannot reach the trigger. Paint that cell open in the F10 collider mode, " +
+                "or move doorOffsetNormalized on the template.",
+                bObj);
         }
 
         private void EnsureCollisionTile(BuildingObject bObj, int row, int col, int rows, int cols)
