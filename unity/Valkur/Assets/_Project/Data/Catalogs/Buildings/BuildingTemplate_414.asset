@@ -19,4 +19,10 @@ MonoBehaviour:
   splitRatio: 0
   colliderScope: CG
   originalScale: {x: 31, y: 22}
+  lightPresetKey: 
+  lightOffsetNormalized: {x: 0.5, y: 0.75}
+  litAssetPath: 
+  hasDoor: 0
+  doorOffsetNormalized: {x: 0.5, y: 0.06}
+  doorSizeNormalized: {x: 0.18, y: 0.12}
   sourceImagePath: assets/buildings/nature/grass_tuft_small_fan.png
