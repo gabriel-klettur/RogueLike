@@ -164,7 +164,7 @@ The full convention lives in `.github/skills/asset-pipeline/SKILL.md` (sections 
 | Items | `Data/Catalogs/Items/ItemCatalog.asset` |
 | Monsters | `Data/Catalogs/Monsters/*.asset` (catalog at `MonsterCatalog.asset`) |
 | Spells | `Data/Catalogs/SpellCatalog.asset` — note it sits beside `Catalogs/`, not inside `Catalogs/Spells/`, which holds the individual `*.asset` definitions (edit via Inspector or F4 in-game) |
-| Buildings | `Data/Catalogs/Buildings/BuildingCatalog.asset` (edit via F10 in-game) |
+| Buildings | `Data/Catalogs/Buildings/BuildingCatalog.asset` (edit via F10 in-game) — 969 templates; every prop imported through the sheet pipeline is described by a `tools/atlas/generated/building_props_manifest*.json`, one per wave |
 | Particles | `Data/Catalogs/Particles/ParticlePresetCatalog.asset` (edit via F1) |
 | Spawners | `Data/Catalogs/Spawners/SpawnerTemplateCatalog.asset` (edit via F3) |
 | Camera feel (shake, kick, lead, smooth follow) | `Resources/CameraFeelProfile.asset` |
@@ -534,6 +534,98 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   rest goes to sleep (`Player.prefab`: Sleeping Mode = Start Awake, Time To Sleep = 0.5 s). A
   SLEEPING BODY STARTS NO NEW CONTACTS. `ResurrectionZone` already polls for the same reason.
   Every teleport also zeroes `velocity` and calls `WakeUp()`.
+- **A pack whose art defeats `analyze_tile_edges.py` is not a broken pack.** That tool
+  labels a probe by clustering the sheet's palette into materials and demanding one own
+  >=65% of it, which works on flat-shaded art. `rock_lava` is not flat-shaded — the rock
+  carries two greys and the lava four oranges — so the clustering splits ONE terrain across
+  several materials, no probe reaches the purity floor, and the verdict is
+  `UNRELIABLE - 81% of edges too blended`. The art was fine: rock and lava separate cleanly
+  on red-minus-blue alone (a pure-lava cell scores 10.2% rock, a pure-rock cell 100.0%, with
+  nothing between). `tools/atlas/wave2/rock_lava_ruleset.py` uses that two-class classifier,
+  cross-checks four probe geometries against each other, and merges the pack into
+  `tile_rulesets.json`; the general analyser is left alone. Run it AFTER the analyser, which
+  rewrites that file wholesale.
+- **A 256x256 island render can be a complete Corner16 pack.** `rock_lava.png` looks like a
+  preview, not a sheet — but cut on the 32 px grid it yields exactly 16 distinct cells out
+  of 64, and those 16 map one-to-one onto the 16 corner signatures. Check for that before
+  assuming a render has to be hand-cut: the 32 px column self-difference was the lowest of
+  every candidate period, which is the tell that the island was drawn on the grid.
+- **Two Corner16 packs cannot share a primary terrain name.** `FindPaintRuleset` resolves a
+  terrain NAME to exactly ONE ruleset — highest `Priority`, ties by list order — so a second
+  pack claiming `rock` is simply unreachable from the F8 auto-brush, silently. `rock_lava`
+  therefore paints as **`stone`** (pale loose rubble, #848484) while `rock_water` keeps
+  `rock` (smooth dark, #3c3c3c). Check `FindPaintRuleset(primary)` actually returns the new
+  pack before calling an import done.
+- **`TilesetRulesetImporter` leaves a NEW ruleset unnamed unless the JSON names it.**
+  `TerrainTileResolver.ResolveVariantForCell` keys corner slots by `TerrainSecondary`, so a
+  ruleset with empty terrain names imports 16 clean slots and auto-tiles nothing. A pack
+  entry may carry `terrainPrimary`/`terrainSecondary`; names already on an asset always win,
+  so a re-import never overwrites a hand-checked pair.
+- **An entity gets more than one attack through a variant LIST, never a new `AnimState`.**
+  The seven states are enumerated positionally in four independent places — `EntityAssetConfig`'s
+  own fields, `DirectionalAnimator`'s seven serialized sets plus seven accessors plus its
+  seven-argument `SetSpriteSets`, the `GetSpriteSet` switch, and `EntityAnimationBinder`'s
+  build-and-fallback chain — so an eighth state pays that tax four times and again for the
+  ninth. `EntityAssetConfig.attackVariants` pays it once. It also keeps `AnimState` untouched,
+  which matters because `PlayerController.Movement` gates locomotion on an Idle/Walk/Chase
+  whitelist and reverts on a Cast/Attack one: a new enum value missing from the second list is
+  entered and never left, and nothing else rescues it. A variant INDEX under the existing
+  `Attack` state inherits both whitelists by construction, and `FSMMonsterBrain`'s state-type
+  switch (with its silent `_ => Idle` default) needs no edit at all.
+- **A variant change that is not also a state change is swallowed.** `SetState` early-returns
+  when neither state nor direction changed, so swinging twice in the same direction with a
+  different animation silently keeps playing the first one's frames. The three-argument
+  overload counts a changed variant as a change; `RestartCurrentState()` covers the
+  same-variant re-swing, which `AttackState` reaches without ever leaving the state.
+- **`AttackState` used to cut its own animation off.** `_attackDuration = windup + 0.3 s`
+  against a global `frameInterval` of 0.15 s means an eight-frame swing (1.2 s) was dropped at
+  frame four, mid-arc. `BeginSwing` now takes the LARGER of that historical floor and
+  `GetStateLength`, so the 18 monsters with a one-frame attack pose are paced exactly as
+  before.
+- **Retiming an attack animation retimes its DAMAGE.** The melee cooldown bounds the hit rate,
+  it does not hold it steady: exactly one `TryAttack` is attempted per swing, at the windup, so
+  the realised interval is the swing period rounded up to the next multiple that clears
+  `meleeCooldown`. Measured on `knight_red` (windup 0.45, cooldown 1.1): a 0.75 s swing attempts
+  at 0.45 / 1.20 / 1.95 and lands at 0.45 / 1.95 — one hit every 1.5 s, every other attempt
+  refused. A 1.2 s swing attempts at 0.45 / 1.65 / 2.85 and lands all three — one every 1.2 s.
+  Lengthening the animation to stop it being cut raised that monster's melee DPS ~25 %. Re-check
+  `meleeCooldown` whenever an attack's frame count changes.
+- **Measure a swing AFTER turning to face the target.** `GetStateLength` reports the frame
+  count of the animator's CURRENT direction, so calling it before `FacePlayer` sizes the swing
+  against whichever way the entity happened to already be facing. Invisible on a uniform 8x8
+  sheet and obvious on one whose direction buckets differ: measured, the first swing came out
+  0.5 s instead of 1.2 s, and only the first.
+- **A direction-only change re-renders through `RefreshCurrentFrame`, which must be handed the
+  active attack variant.** It resolves the set itself rather than reusing the cursor, so calling
+  the parameterless `GetSpriteSet(state)` there falls back to variant -1 and flashes one frame
+  of the DEFAULT attack into the middle of a variant — every time a strafing player crosses a
+  facing sector, hidden again by the next tick.
+- **`castSheets` is dead weight on a monster with no spells.** `NPCCastState` is entered ONLY
+  by `NPCAutoCast`, and `EntitySetup.ConfigureMonsterAutoCast` returns immediately when
+  `autoCast` is false — it does not even add the component. A cast animation authored on a
+  melee-only monster never renders a single frame. `knight_red`'s shield bash sat there until
+  it was moved into the attack rotation.
+- **`animation_map.json` reaches no runtime code.** The F12 Animations panel and
+  `FSMSeedGenerator` write it; `FSMMonsterBrain.OnFSMStateChanged` hardcodes the same mapping
+  in a C# type switch, and each state class re-asserts its own `AnimState` every frame on top
+  of that. Editing the file changes nothing in game. The two writers also disagree on the key:
+  the seed generator emits `per_set`, the runtime editor reads and writes `by_set`.
+- **`DirectionalAnimator` never flips a sprite, so a side-view character needs its mirrors
+  baked.** `ChaseState` says so in as many words ("flipX would corrupt directional
+  sprites"), and `PlayerController` only sets `flipX` when there is no animator at all.
+  `CreateSetFromLinearFrames` slices a linear list into eight CONTIGUOUS per-direction
+  buckets (S,SE,E,NE,N,NW,W,SW) — it is not an animation, it is eight animations end to end.
+  Feeding it a single 8-frame side cycle therefore gives one static frame per direction. The
+  knight ships 8 frames plus 8 pre-mirrored copies per state, referenced 64 times to fill the
+  eight buckets.
+- **Trimming an animation frame tight to its own alpha breaks it.** `slice_prop_sheet.py`
+  does exactly that, which is right for a prop and wrong for a cycle: the cape and sword move
+  the bounding box every frame, so the walk jitters and the feet leave the ground.
+  `tools/atlas/wave2/build_knight_frames.py` reuses that tool's segmentation but pastes each
+  frame onto one shared canvas, anchored on the CELL centre (anchoring on the body would
+  cancel the hip sway and the lunge) and on the row's lowest BODY pixel — taken from the
+  largest connected component, because a torn-off cape tip sits below the boots and would
+  drag the ground line down with it.
 - **Everything directly under `StreamingAssets/Maps/` is a 50x50 zone tile** — `WorldLoader`
   composes them by offset and `RealShippedOverlayBoundsAndNamesTests` asserts that size for
   every file it finds there. Interiors are rooms of arbitrary size and live in
@@ -542,6 +634,39 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   and `SpellSlash` — and nothing reads `InputService.Gameplay.Interact`.
   `NPCInteractable.Interact()` has no caller either, so vendors' `OnInteract` never fires. Any
   feature that wants a key-press interaction has to resolve that binding first.
+
+## Prop / building sheet pipeline
+
+A multi-object sheet becomes placeable buildings through four stages. Each wave of sheets
+writes its OWN manifest; the importer and `BuildingPropCatalogTests` read every
+`building_props_manifest*.json` in the folder, so a new wave never clobbers the record of
+the last (the source sheets are deleted once imported, and the manifest is what remains).
+
+```text
+slice_prop_sheet.py     sheet PNG        -> crops + <sheet>.slices.json + numbered preview
+make_contact_sheet.py   crops            -> one numbered image to name the crops from
+<classification>        crops            -> building_props_metadata*.json
+build_building_props.py crops + metadata -> Resources/Buildings/<category>/*.png + manifest
+BuildingPropImporter    manifest(s)      -> BuildingTemplateData assets + BuildingCatalog
+```
+
+- The classification is a hand-written table, not a guess: `tools/atlas/wave2/classify.py`
+  holds one row per crop (`index name category split_ratio target_height_tiles [flags]`)
+  and refuses to run if a name would overwrite a sprite an earlier wave shipped.
+- `split_ratio` is the fraction of the sprite drawn as CANOPY, over the player —
+  `BuildingObject.Assembly` computes the footprint as `spriteH * (1 - splitRatio)`. The
+  ladder in use is 0.0 flat / 0.3 knee / 0.45 waist / 0.6 shoulder / 0.8 tall / 0.85 building.
+- A prop that carries its own light declares `@Preset[:offsetY]` (Lamp / Torch / Magic /
+  Candle — the keys `Data/LightPresetCatalog.asset` defines). The manifest carries it as
+  `lightPresetKey` + `lightOffsetY`, and the importer only WRITES those fields when the key
+  is non-empty — a manifest predating the field must not unlight the fixtures that were
+  authored by hand.
+- Sprites are resampled in PREMULTIPLIED alpha (`RGBa`); resampling straight RGBA blends the
+  zeroed RGB of transparent pixels into the edges and rings every prop with a dark halo.
+- `Resources/Buildings` is packed whole by `SpriteAtlases/buildings.spriteatlas`, so a new
+  category folder needs no atlas wiring — but it DOES need a rule in `BuildingCategory`, or
+  every template in it silently drains into the Structures tab. `BuildingCategoryTests`
+  fails on exactly that.
 
 ## Incident reports
 
