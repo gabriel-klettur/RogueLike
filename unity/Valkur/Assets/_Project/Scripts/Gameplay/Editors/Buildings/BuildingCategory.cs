@@ -5,10 +5,12 @@ namespace Valkur.Gameplay.Buildings
     /// <summary>
     /// Editorial grouping for the Buildings Editor (F10) template picker.
     ///
-    /// The catalog holds 506 templates in one flat grid, and roughly 340 of them are one of
-    /// three things nobody is browsing for at the same time: 137 tree variants, 106 pieces of
-    /// ground flora, and 105 street dressing (lights, signs, market). Scrolling past all of
-    /// them to reach a temple is the problem these tabs solve.
+    /// The catalog holds 969 templates in one flat grid, and no author is browsing more than
+    /// one family of them at a time: 137 tree variants, 106 pieces of ground flora, and — since
+    /// the second prop wave landed 463 more — whole themed sets of 33 to 69 (graveyard, arcane,
+    /// military, bandit, forge, water, quest, monuments). Scrolling past all of them to reach a
+    /// temple is the problem these tabs solve, which is why a themed sheet earns its own tab
+    /// instead of being poured into Props.
     ///
     /// Classification keys off the template's <c>assetPath</c> — the Resources folder the
     /// sprite lives in — rather than a field on the ScriptableObject, so importing a new
@@ -39,8 +41,22 @@ namespace Valkur.Gameplay.Buildings
             Lights,
             /// <summary>Signposts, shop signs, heraldic banners, notice boards.</summary>
             Signs,
-            /// <summary>Portals, totems, statues — the ritual set dressing.</summary>
+            /// <summary>Portals, totems, crystals, runes, summoning circles — the ritual set dressing.</summary>
             Arcane,
+            /// <summary>Civic monuments: statues, obelisks, memorial columns, fountains, sundials.</summary>
+            Monuments,
+            /// <summary>Camp and fortification: banners, palisades, tents, training grounds, supply.</summary>
+            Military,
+            /// <summary>Headstones, crypts, iron fencing, mourning statues, funeral flowers.</summary>
+            Graveyard,
+            /// <summary>Hideout dressing: wreckage, campfires, cages, loot stashes, gang graffiti.</summary>
+            Bandit,
+            /// <summary>Smithy fittings: forges, anvils, workbenches, racks, ore and fuel.</summary>
+            Forge,
+            /// <summary>Wells, pumps, fountains, troughs, pipes, aqueducts, drains, puddles.</summary>
+            Water,
+            /// <summary>Quest and guild fixtures: notice boards, bounty posts, chests, lecterns.</summary>
+            Quest,
         }
 
         /// <summary>Tab order in the picker. Explicit so it never depends on enum order.</summary>
@@ -50,6 +66,8 @@ namespace Valkur.Gameplay.Buildings
         {
             Category.Trees, Category.Flora, Category.Structures, Category.Props,
             Category.Market, Category.Lights, Category.Signs, Category.Arcane,
+            Category.Monuments, Category.Military, Category.Graveyard, Category.Bandit,
+            Category.Forge, Category.Water, Category.Quest,
         };
 
         /// <summary>
@@ -69,6 +87,13 @@ namespace Valkur.Gameplay.Buildings
                 case Category.Lights:     return "Lights";
                 case Category.Signs:      return "Signs";
                 case Category.Arcane:     return "Arcane";
+                case Category.Monuments:  return "Monuments";
+                case Category.Military:   return "Military";
+                case Category.Graveyard:  return "Graveyard";
+                case Category.Bandit:     return "Bandit";
+                case Category.Forge:      return "Forge";
+                case Category.Water:      return "Water";
+                case Category.Quest:      return "Quest";
                 default:                  return c.ToString();
             }
         }
@@ -94,9 +119,26 @@ namespace Valkur.Gameplay.Buildings
             ("buildings/gardens/",           Category.Flora),
             ("buildings/forest_decoration/", Category.Flora),
 
+            // ── Themed sheets imported in 2026-08 (second wave, 463 sprites) ──────
+            // Each of these folders is one authored sheet, and each is big enough to be
+            // the only thing an author is browsing at the time — the same argument the
+            // first six tabs were added on. domestic/ is the exception: it is household
+            // clutter, which is what Props already means.
+            ("buildings/military/",   Category.Military),
+            ("buildings/graveyard/",  Category.Graveyard),
+            ("buildings/arcane/",     Category.Arcane),
+            ("buildings/blacksmith/", Category.Forge),
+            ("buildings/domestic/",   Category.Props),
+            ("buildings/bandit/",     Category.Bandit),
+            ("buildings/water/",      Category.Water),
+            ("buildings/quest/",      Category.Quest),
+
             ("buildings/portals/", Category.Arcane),
             ("buildings/totems/",  Category.Arcane),
-            ("buildings/statues/", Category.Arcane),
+            // Monuments, not Arcane: a crowned king on a plinth and a summoning circle
+            // are never wanted in the same breath. This moves the three legacy statues
+            // out of Arcane along with the 32 new ones.
+            ("buildings/statues/", Category.Monuments),
 
             // The three assets dumped straight into others/ have nothing in common.
             ("buildings/others/portal", Category.Arcane),

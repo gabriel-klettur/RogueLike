@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9f5d83c654b68c40ac738eedbcc1cb4, type: 3}
+  m_Name: BuildingTemplate_607
+  m_EditorClassIdentifier: 
+  templateId: 607
+  assetPath: Buildings/bandit/graffiti_skull_runes
+  previewSprite: {fileID: 21300000, guid: 4c37c5f5a66534b46a3f8d24a4b5d2f8, type: 3}
+  solid: 1
+  splitRatio: 0.6
+  colliderScope: CG
+  originalScale: {x: 61, y: 58}
+  lightPresetKey: 
+  lightOffsetNormalized: {x: 0.5, y: 0.75}
+  litAssetPath: 
+  hasDoor: 0
+  doorOffsetNormalized: {x: 0.5, y: 0.06}
+  doorSizeNormalized: {x: 0.18, y: 0.12}
+  sourceImagePath: assets/buildings/bandit/graffiti_skull_runes.png

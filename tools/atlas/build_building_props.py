@@ -42,7 +42,12 @@ DEFAULT_MANIFEST = os.path.join(REPO_ROOT, "tools", "atlas", "generated",
 BUILDING_PPU = 32
 # Categories this pipeline is allowed to write into. Keeping the list closed stops a
 # typo in the metadata from creating a stray Resources folder that ships in the build.
-CATEGORIES = ("lights", "signs", "market", "props", "nature")
+CATEGORIES = ("lights", "signs", "market", "props", "nature",
+              "military", "graveyard", "arcane", "blacksmith", "domestic",
+              "bandit", "water", "statues", "quest", "houses", "shops")
+# Keys LightPresetCatalog.asset actually defines. A fixture naming anything else
+# would import silently and then light nothing at runtime.
+LIGHT_PRESETS = ("Lamp", "Torch", "Magic", "Candle")
 # Never let a resample produce something too small to read or big enough to blow up
 # the buildings atlas.
 MIN_EDGE_PX = 8
@@ -90,6 +95,14 @@ def validate(items: list[dict]) -> list[str]:
 
         if not isinstance(it.get("solid"), bool):
             errors.append(f"{tag}: solid must be a boolean")
+
+        preset = it.get("light_preset")
+        if preset is not None:
+            if preset not in LIGHT_PRESETS:
+                errors.append(f"{tag}: light_preset {preset!r} is not one of {LIGHT_PRESETS}")
+            offset = it.get("light_offset_y", 0.75)
+            if not isinstance(offset, (int, float)) or not 0.0 <= offset <= 1.0:
+                errors.append(f"{tag}: light_offset_y {offset!r} outside [0,1]")
 
     for category, counts in per_category.items():
         for name, n in counts.items():
@@ -161,6 +174,10 @@ def build(crops_root: str, metadata_path: str, manifest_path: str, dry_run: bool
             "height": out.height,
             "sheet": it["sheet"],
             "sheetIndex": int(it["index"]),
+            # Empty key = the template keeps whatever it had; the importer only
+            # writes the light fields when a key is actually present.
+            "lightPresetKey": it.get("light_preset", ""),
+            "lightOffsetY": round(float(it.get("light_offset_y", 0.75)), 3),
         })
 
         print(f"{'(dry) ' if dry_run else ''}{rel_dir}/{it['name']}.png  "

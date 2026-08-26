@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9f5d83c654b68c40ac738eedbcc1cb4, type: 3}
+  m_Name: BuildingTemplate_672
+  m_EditorClassIdentifier: 
+  templateId: 672
+  assetPath: Buildings/domestic/bucket_wooden_water
+  previewSprite: {fileID: 21300000, guid: 76320f4223e6a224299a0939d092aa51, type: 3}
+  solid: 1
+  splitRatio: 0.3
+  colliderScope: CG
+  originalScale: {x: 26, y: 38}
+  lightPresetKey: 
+  lightOffsetNormalized: {x: 0.5, y: 0.75}
+  litAssetPath: 
+  hasDoor: 0
+  doorOffsetNormalized: {x: 0.5, y: 0.06}
+  doorSizeNormalized: {x: 0.18, y: 0.12}
+  sourceImagePath: assets/buildings/domestic/bucket_wooden_water.png

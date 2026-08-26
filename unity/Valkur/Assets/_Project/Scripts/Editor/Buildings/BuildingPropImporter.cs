@@ -17,8 +17,9 @@ namespace Valkur.Editor.Buildings
     /// <c>tools/atlas/build_building_props.py</c>.
     ///
     /// The Python side owns the pixels and the per-sprite metadata; this side owns the
-    /// ScriptableObjects. The contract between them is the generated manifest at
-    /// <see cref="MANIFEST_RELATIVE_PATH"/> (repo-relative, versioned in git).
+    /// ScriptableObjects. The contract between them is every generated manifest matching
+    /// <see cref="MANIFEST_SEARCH_PATTERN"/> under <see cref="MANIFEST_DIR_RELATIVE"/>
+    /// (repo-relative, versioned in git) — one per wave of sheets, all read together.
     ///
     /// The import is IDEMPOTENT and keyed on <see cref="BuildingTemplateData.assetPath"/>:
     ///   * an entry whose assetPath already has a template updates that template in place
@@ -34,10 +35,17 @@ namespace Valkur.Editor.Buildings
         private const string MENU_DRY_RUN = "Valkur/Buildings/Import Prop Sprites (Dry Run)";
         private const string MENU_APPLY   = "Valkur/Buildings/Import Prop Sprites (Apply)";
 
-        private const string MANIFEST_RELATIVE_PATH = "../../../tools/atlas/generated/building_props_manifest.json";
+        private const string MANIFEST_DIR_RELATIVE = "../../../tools/atlas/generated";
+        private const string MANIFEST_SEARCH_PATTERN = "building_props_manifest*.json";
         private const string CATALOG_PATH  = "Assets/_Project/Data/Catalogs/Buildings/BuildingCatalog.asset";
         private const string TEMPLATE_DIR  = "Assets/_Project/Data/Catalogs/Buildings";
         private const string LOG_PREFIX    = "[BuildingPropImporter]";
+
+        /// <summary>Keys <c>Data/LightPresetCatalog.asset</c> defines.</summary>
+        private static readonly string[] LIGHT_PRESET_KEYS = { "Lamp", "Torch", "Magic", "Candle" };
+
+        /// <summary>Flame height used when an entry names a preset but no offset.</summary>
+        private const float DEFAULT_LIGHT_OFFSET_Y = 0.75f;
 
         // ── Manifest schema (JsonUtility needs concrete serializable types) ────────────
 
@@ -63,6 +71,8 @@ namespace Valkur.Editor.Buildings
             public int height;
             public string sheet;
             public int sheetIndex;
+            public string lightPresetKey;   // "" = this prop emits no light
+            public float lightOffsetY;      // flame height as a fraction of the bounds
         }
 
         // ── Menu entry points ─────────────────────────────────────────────────────────
@@ -77,30 +87,12 @@ namespace Valkur.Editor.Buildings
 
         private static void Run(bool apply)
         {
-            string manifestPath = Path.GetFullPath(Path.Combine(Application.dataPath, MANIFEST_RELATIVE_PATH));
-            if (!File.Exists(manifestPath))
-            {
-                Debug.LogError($"{LOG_PREFIX} Manifest not found at {manifestPath}. " +
-                               "Run tools/atlas/build_building_props.py first.");
+            // Every manifest in the folder, not one fixed file: each wave of sheets
+            // writes its own, and the sheets an older wave was cut from are deleted
+            // once imported. Reading them all keeps every wave reproducible instead
+            // of making the newest one clobber the record of the last.
+            if (!TryLoadManifests(out Manifest manifest, out List<string> sources))
                 return;
-            }
-
-            Manifest manifest;
-            try
-            {
-                manifest = JsonUtility.FromJson<Manifest>(File.ReadAllText(manifestPath));
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"{LOG_PREFIX} Manifest at {manifestPath} is not readable: {ex.Message}");
-                return;
-            }
-
-            if (manifest?.entries == null || manifest.entries.Count == 0)
-            {
-                Debug.LogError($"{LOG_PREFIX} Manifest at {manifestPath} has no entries.");
-                return;
-            }
 
             var catalog = AssetDatabase.LoadAssetAtPath<BuildingCatalog>(CATALOG_PATH);
             if (catalog == null)
@@ -173,6 +165,18 @@ namespace Valkur.Editor.Buildings
                 tpl.colliderScope   = string.IsNullOrEmpty(entry.colliderScope) ? "CG" : entry.colliderScope;
                 tpl.originalScale   = new Vector2Int(entry.width, entry.height);
                 tpl.sourceImagePath = entry.sourceImagePath;
+
+                // Only written when the manifest actually names a preset. A manifest
+                // predating this field deserializes lightPresetKey as null, and
+                // clearing the key on every re-import would silently unlight the 33
+                // fixtures the first wave authored by hand.
+                if (!string.IsNullOrEmpty(entry.lightPresetKey))
+                {
+                    tpl.lightPresetKey = entry.lightPresetKey;
+                    float offsetY = entry.lightOffsetY > 0f ? entry.lightOffsetY : DEFAULT_LIGHT_OFFSET_Y;
+                    tpl.lightOffsetNormalized = new Vector2(0.5f, Mathf.Clamp01(offsetY));
+                }
+
                 EditorUtility.SetDirty(tpl);
 
                 catalog.UpsertTemplate(tpl);
@@ -185,7 +189,61 @@ namespace Valkur.Editor.Buildings
                 AssetDatabase.Refresh();
             }
 
-            Report(apply, manifest, created, updated, missingSprite);
+            Report(apply, manifest, sources, created, updated, missingSprite);
+        }
+
+        /// <summary>
+        /// Reads every <c>building_props_manifest*.json</c> in the generated folder and
+        /// concatenates their entries. Returns false (having logged why) when the folder
+        /// is missing, holds no manifest, or one of them will not parse — a half-read set
+        /// would look like "these templates were dropped" to the caller.
+        /// </summary>
+        private static bool TryLoadManifests(out Manifest merged, out List<string> sources)
+        {
+            merged = new Manifest { generator = LOG_PREFIX, generatedFrom = MANIFEST_SEARCH_PATTERN };
+            sources = new List<string>();
+
+            string dir = Path.GetFullPath(Path.Combine(Application.dataPath, MANIFEST_DIR_RELATIVE));
+            if (!Directory.Exists(dir))
+            {
+                Debug.LogError($"{LOG_PREFIX} Manifest folder not found at {dir}. " +
+                               "Run tools/atlas/build_building_props.py first.");
+                return false;
+            }
+
+            string[] files = Directory.GetFiles(dir, MANIFEST_SEARCH_PATTERN);
+            Array.Sort(files, StringComparer.Ordinal);
+            if (files.Length == 0)
+            {
+                Debug.LogError($"{LOG_PREFIX} No {MANIFEST_SEARCH_PATTERN} under {dir}. " +
+                               "Run tools/atlas/build_building_props.py first.");
+                return false;
+            }
+
+            foreach (string file in files)
+            {
+                Manifest m;
+                try
+                {
+                    m = JsonUtility.FromJson<Manifest>(File.ReadAllText(file));
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"{LOG_PREFIX} Manifest at {file} is not readable: {ex.Message}");
+                    return false;
+                }
+
+                if (m?.entries == null || m.entries.Count == 0)
+                {
+                    Debug.LogError($"{LOG_PREFIX} Manifest at {file} has no entries.");
+                    return false;
+                }
+
+                merged.entries.AddRange(m.entries);
+                sources.Add($"{Path.GetFileName(file)} ({m.entries.Count})");
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -219,6 +277,13 @@ namespace Valkur.Editor.Buildings
 
                 if (e.colliderScope != "CG" && e.colliderScope != "CU" && !string.IsNullOrEmpty(e.colliderScope))
                     problems.Add($"colliderScope '{e.colliderScope}' is neither CG nor CU");
+
+                // A key the catalog does not define imports cleanly and then lights
+                // nothing at runtime, which reads as "the brazier is broken".
+                if (!string.IsNullOrEmpty(e.lightPresetKey) &&
+                    Array.IndexOf(LIGHT_PRESET_KEYS, e.lightPresetKey) < 0)
+                    problems.Add($"lightPresetKey '{e.lightPresetKey}' is not one of " +
+                                 string.Join("/", LIGHT_PRESET_KEYS));
 
                 if (problems.Count > 0)
                 {
@@ -267,11 +332,13 @@ namespace Valkur.Editor.Buildings
             return byAssetPath;
         }
 
-        private static void Report(bool apply, Manifest manifest, List<string> created,
-                                   List<string> updated, List<string> missingSprite)
+        private static void Report(bool apply, Manifest manifest, List<string> sources,
+                                   List<string> created, List<string> updated,
+                                   List<string> missingSprite)
         {
             var sb = new StringBuilder();
-            sb.AppendLine($"{LOG_PREFIX} {(apply ? "APPLIED" : "DRY RUN")} — manifest: {manifest.entries.Count} entries");
+            sb.AppendLine($"{LOG_PREFIX} {(apply ? "APPLIED" : "DRY RUN")} — " +
+                          $"{manifest.entries.Count} entries from {string.Join(", ", sources)}");
             sb.AppendLine($"  created : {created.Count}");
             sb.AppendLine($"  updated : {updated.Count}");
             sb.AppendLine($"  missing sprite : {missingSprite.Count}");

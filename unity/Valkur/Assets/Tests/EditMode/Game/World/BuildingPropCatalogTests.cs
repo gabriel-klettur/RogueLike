@@ -14,12 +14,16 @@ namespace Valkur.Tests.EditMode.Game.World
     /// (<c>tools/atlas/slice_prop_sheet.py</c> → <c>build_building_props.py</c> →
     /// <c>BuildingPropImporter</c>).
     ///
-    /// The manifest is the contract: it is versioned in the repo, the source sheets are
+    /// The manifests are the contract: they are versioned in the repo, the source sheets are
     /// not. So the invariant these tests defend is "the catalog still says exactly what
-    /// the manifest says", which is what breaks when a PNG is renamed by hand, a template
+    /// the manifests say", which is what breaks when a PNG is renamed by hand, a template
     /// asset is deleted, or the importer is re-run against stale data.
     ///
-    /// Scope is deliberately limited to the five prop categories. The ~313 legacy
+    /// EVERY <c>building_props_manifest*.json</c> is read, one per wave of sheets, exactly
+    /// as <c>BuildingPropImporter</c> reads them. Reading only the first file would report
+    /// every later wave's template as "in catalog but not in the manifest".
+    ///
+    /// Scope is deliberately limited to the imported prop categories. The ~313 legacy
     /// templates carry known drift from the Python port (three without a preview sprite,
     /// one with a zero originalScale, several sharing one image on purpose) and are not
     /// this suite's business.
@@ -27,14 +31,24 @@ namespace Valkur.Tests.EditMode.Game.World
     [TestFixture]
     public class BuildingPropCatalogTests
     {
-        private const string MANIFEST_RELATIVE_PATH = "../../../tools/atlas/generated/building_props_manifest.json";
+        private const string MANIFEST_DIR_RELATIVE = "../../../tools/atlas/generated";
+        private const string MANIFEST_SEARCH_PATTERN = "building_props_manifest*.json";
         private const string CATALOG_PATH = "Assets/_Project/Data/Catalogs/Buildings/BuildingCatalog.asset";
         private const float BUILDING_PPU = 32f;
 
         /// <summary>Tallest a prop may stand, in tiles. The player is two tiles.</summary>
         private const float MAX_PROP_TILES = 12f;
 
-        private static readonly string[] PropCategories = { "lights", "signs", "market", "props", "nature" };
+        // Only folders whose every sprite came through the pipeline. houses/, shops/ and
+        // statues/ received second-wave sprites too, but they also still hold the legacy
+        // templates the Python port left there, which no manifest describes — including
+        // them would report that pre-existing drift as a failure of this import.
+        private static readonly string[] PropCategories =
+        {
+            "lights", "signs", "market", "props", "nature",
+            "military", "graveyard", "arcane", "blacksmith", "domestic",
+            "bandit", "water", "quest",
+        };
 
         [Serializable] private class Manifest { public List<Entry> entries = new List<Entry>(); }
 
@@ -53,22 +67,45 @@ namespace Valkur.Tests.EditMode.Game.World
         }
 
         private Manifest _manifest;
+        private List<Entry> _propEntries;
         private BuildingCatalog _catalog;
         private List<BuildingTemplateData> _propTemplates;
 
         [OneTimeSetUp]
         public void LoadFixtures()
         {
-            string manifestPath = Path.GetFullPath(Path.Combine(Application.dataPath, MANIFEST_RELATIVE_PATH));
-            Assert.That(File.Exists(manifestPath), Is.True,
-                $"Prop manifest missing at {manifestPath}. Run tools/atlas/build_building_props.py.");
-            _manifest = JsonUtility.FromJson<Manifest>(File.ReadAllText(manifestPath));
+            string manifestDir = Path.GetFullPath(Path.Combine(Application.dataPath, MANIFEST_DIR_RELATIVE));
+            Assert.That(Directory.Exists(manifestDir), Is.True,
+                $"Manifest folder missing at {manifestDir}. Run tools/atlas/build_building_props.py.");
+
+            string[] manifestFiles = Directory.GetFiles(manifestDir, MANIFEST_SEARCH_PATTERN);
+            Array.Sort(manifestFiles, StringComparer.Ordinal);
+            Assert.That(manifestFiles, Is.Not.Empty,
+                $"No {MANIFEST_SEARCH_PATTERN} under {manifestDir}. Run tools/atlas/build_building_props.py.");
+
+            _manifest = new Manifest();
+            foreach (string file in manifestFiles)
+            {
+                var wave = JsonUtility.FromJson<Manifest>(File.ReadAllText(file));
+                Assert.That(wave, Is.Not.Null, $"Manifest {Path.GetFileName(file)} did not deserialize");
+                Assert.That(wave.entries, Is.Not.Empty, $"Manifest {Path.GetFileName(file)} lists no sprites");
+                _manifest.entries.AddRange(wave.entries);
+            }
 
             _catalog = AssetDatabase.LoadAssetAtPath<BuildingCatalog>(CATALOG_PATH);
             Assert.That(_catalog, Is.Not.Null, $"BuildingCatalog missing at {CATALOG_PATH}");
 
             _propTemplates = _catalog.Templates
                 .Where(t => t != null && IsPropTemplate(t.assetPath))
+                .ToList();
+
+            // Both drift checks have to speak about the same set. The manifests also carry
+            // houses/ and shops/ sprites from the village and town sheets, and those two
+            // folders are excluded above because they still hold legacy templates no
+            // manifest describes — so the entries for them are filtered out here too.
+            // Filtering only one side reports the whole village sheet as missing.
+            _propEntries = _manifest.entries
+                .Where(e => IsPropTemplate(e.resourcePath))
                 .ToList();
         }
 
@@ -89,7 +126,7 @@ namespace Valkur.Tests.EditMode.Game.World
         public void EveryManifestEntry_HasACatalogTemplate()
         {
             var byPath = _propTemplates.ToLookup(t => t.assetPath, StringComparer.Ordinal);
-            var missing = _manifest.entries
+            var missing = _propEntries
                 .Where(e => !byPath.Contains(e.resourcePath))
                 .Select(e => e.resourcePath)
                 .ToList();
@@ -102,7 +139,7 @@ namespace Valkur.Tests.EditMode.Game.World
         [Test]
         public void EveryPropTemplate_MatchesItsManifestEntry()
         {
-            var byPath = _manifest.entries.ToDictionary(e => e.resourcePath, StringComparer.Ordinal);
+            var byPath = _propEntries.ToDictionary(e => e.resourcePath, StringComparer.Ordinal);
             var drift = new List<string>();
 
             foreach (BuildingTemplateData tpl in _propTemplates)

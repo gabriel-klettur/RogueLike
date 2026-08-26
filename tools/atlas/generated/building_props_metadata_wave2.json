@@ -1,0 +1,4391 @@
+{
+  "generator": "tools/atlas/wave2/classify.py",
+  "sheets": [
+    "buildings_houses_set",
+    "buildings_town_large_set_a",
+    "buildings_town_large_set_b",
+    "buildings_village_shops_and_props_sheet",
+    "props_arcane_sheet",
+    "props_bandit_hideout_sheet",
+    "props_blacksmith_sheet",
+    "props_graveyard_sheet",
+    "props_military_camp_sheet",
+    "props_quest_and_portals_sheet",
+    "props_statues_and_monuments_sheet",
+    "props_village_domestic_sheet",
+    "props_water_and_plumbing_sheet"
+  ],
+  "items": [
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 0,
+      "name": "banner_standard_tall",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.6
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 1,
+      "name": "banner_standard_short",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 2,
+      "name": "flag_pole_pennant",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.3
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 3,
+      "name": "banner_gold_trim",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.9
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 4,
+      "name": "watchtower_wooden",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 6.2
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 5,
+      "name": "gatehouse_guard",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.8
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 6,
+      "name": "sentry_box",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 4.4
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 7,
+      "name": "checkpoint_barrier",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 8,
+      "name": "palisade_stake_wall",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.2
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 9,
+      "name": "barricade_spiked_beam",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 10,
+      "name": "barricade_caltrop_cross",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 11,
+      "name": "barricade_sandbag_stakes",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 12,
+      "name": "barricade_banner_wall",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.2
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 13,
+      "name": "spear_rack_ground",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.6
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 14,
+      "name": "bell_gantry",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 15,
+      "name": "training_dummy_target",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 3.2
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 16,
+      "name": "training_dummy_armored",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 3.2
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 17,
+      "name": "archery_target_round",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.8
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 18,
+      "name": "archery_target_board",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.8
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 19,
+      "name": "weapon_rack_swords",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.8
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 20,
+      "name": "spear_rack_standing",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 3.0
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 21,
+      "name": "bow_rack",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.8
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 22,
+      "name": "brazier_tripod_lit",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.2,
+      "light_preset": "Torch",
+      "light_offset_y": 0.72
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 23,
+      "name": "brazier_bowl_lit",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.8,
+      "light_preset": "Torch",
+      "light_offset_y": 0.72
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 24,
+      "name": "signal_horn_stand",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.6
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 25,
+      "name": "command_tent_large",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 4.0
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 26,
+      "name": "supply_tent_small",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.2
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 27,
+      "name": "war_table",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.4
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 28,
+      "name": "crate_stack_military",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 29,
+      "name": "barrel_pair_camp",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 30,
+      "name": "barrel_trio_camp",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.5
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 31,
+      "name": "grain_sack_single",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 32,
+      "name": "grain_sack_pair",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 33,
+      "name": "supply_pile_sacks_logs",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 34,
+      "name": "supply_cart_loaded",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.2
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 35,
+      "name": "supply_cart_empty",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.6
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 36,
+      "name": "ammo_crates_open",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 37,
+      "name": "shield_heater_red",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.6
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 38,
+      "name": "shield_kite_blue",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.5
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 39,
+      "name": "spear_pennant_single",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.4
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 40,
+      "name": "spear_plain",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.4
+    },
+    {
+      "sheet": "props_military_camp_sheet",
+      "index": 41,
+      "name": "spear_pennant_pair",
+      "category": "military",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.8
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 0,
+      "name": "headstone_round_mossy",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.7
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 1,
+      "name": "headstone_cracked",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.9
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 2,
+      "name": "grave_cross_celtic_tall",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.3
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 3,
+      "name": "headstone_arched_cross",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.1
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 4,
+      "name": "grave_cross_stone",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.1
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 5,
+      "name": "headstone_skull_candles",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.2,
+      "light_preset": "Candle",
+      "light_offset_y": 0.35
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 6,
+      "name": "headstone_leaning_mossy",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 7,
+      "name": "headstone_gothic_arch",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.5
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 8,
+      "name": "grave_cross_wooden",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.9
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 9,
+      "name": "grave_cross_celtic_small",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 10,
+      "name": "sarcophagus_flowers",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8,
+      "light_preset": "Candle",
+      "light_offset_y": 0.45
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 11,
+      "name": "sarcophagus_skull",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 12,
+      "name": "sarcophagus_plain",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.6
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 13,
+      "name": "mausoleum_small",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.4,
+      "light_preset": "Candle",
+      "light_offset_y": 0.25
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 14,
+      "name": "graveyard_arch_gate",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.4,
+      "light_preset": "Lamp",
+      "light_offset_y": 0.55
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 15,
+      "name": "iron_gate_double",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.4
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 16,
+      "name": "iron_fence_section",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.1
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 17,
+      "name": "gate_pillar_lantern",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.6,
+      "light_preset": "Lamp",
+      "light_offset_y": 0.78
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 18,
+      "name": "iron_fence_short",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.6
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 19,
+      "name": "grave_marker_lantern",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.6,
+      "light_preset": "Candle",
+      "light_offset_y": 0.62
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 20,
+      "name": "statue_mourner_hooded",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "light_preset": "Candle",
+      "light_offset_y": 0.2
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 21,
+      "name": "statue_angel_praying",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.2,
+      "light_preset": "Candle",
+      "light_offset_y": 0.2
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 22,
+      "name": "statue_knight_kneeling",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.2,
+      "light_preset": "Candle",
+      "light_offset_y": 0.2
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 23,
+      "name": "statue_mourner_kneeling",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.0,
+      "light_preset": "Candle",
+      "light_offset_y": 0.2
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 24,
+      "name": "grave_altar_candles",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.5,
+      "light_preset": "Candle",
+      "light_offset_y": 0.6
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 25,
+      "name": "shrine_saint_niche",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.1,
+      "light_preset": "Candle",
+      "light_offset_y": 0.3
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 26,
+      "name": "grave_candles_melted",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 2.1,
+      "light_preset": "Candle",
+      "light_offset_y": 0.75
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 27,
+      "name": "candelabra_grave_tall",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.8,
+      "light_preset": "Candle",
+      "light_offset_y": 0.85
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 28,
+      "name": "memorial_bell",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.4
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 29,
+      "name": "brazier_grave_lit",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.7,
+      "light_preset": "Torch",
+      "light_offset_y": 0.78
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 30,
+      "name": "funeral_wreath",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 31,
+      "name": "flower_arrangement_lilies",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 32,
+      "name": "grave_candle_flowers",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1,
+      "light_preset": "Candle",
+      "light_offset_y": 0.7
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 33,
+      "name": "urn_flowers_white",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.5
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 34,
+      "name": "urn_flowers_red",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.5
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 35,
+      "name": "grave_flowers_violets",
+      "category": "graveyard",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.9
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 36,
+      "name": "grave_flowers_lilies",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 37,
+      "name": "flower_pot_roses",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 38,
+      "name": "bench_stone_graveyard",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 39,
+      "name": "stone_slab_broken",
+      "category": "graveyard",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 40,
+      "name": "stone_rubble_pile",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 41,
+      "name": "dead_tree_bare",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.4
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 42,
+      "name": "tree_stump_mossy",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 43,
+      "name": "mossy_rocks_cluster",
+      "category": "graveyard",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.9
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 44,
+      "name": "grave_lantern_stone",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.4,
+      "light_preset": "Lamp",
+      "light_offset_y": 0.72
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 45,
+      "name": "lamp_post_graveyard",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.9,
+      "light_preset": "Lamp",
+      "light_offset_y": 0.8
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 46,
+      "name": "fresh_grave_shovel",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 47,
+      "name": "grave_open_skeleton",
+      "category": "graveyard",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 48,
+      "name": "headstone_rubble",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 49,
+      "name": "headstone_broken_rocks",
+      "category": "graveyard",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.6
+    },
+    {
+      "sheet": "props_graveyard_sheet",
+      "index": 50,
+      "name": "skull_stone_ground",
+      "category": "graveyard",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.9
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 0,
+      "name": "crystal_cluster_blue",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0,
+      "light_preset": "Magic",
+      "light_offset_y": 0.5
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 1,
+      "name": "crystal_cluster_purple",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0,
+      "light_preset": "Magic",
+      "light_offset_y": 0.5
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 2,
+      "name": "crystal_cluster_red",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.9,
+      "light_preset": "Magic",
+      "light_offset_y": 0.5
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 3,
+      "name": "crystal_cluster_green",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.9,
+      "light_preset": "Magic",
+      "light_offset_y": 0.5
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 4,
+      "name": "crystal_shards_blue",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.6
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 5,
+      "name": "crystal_shards_purple",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.6
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 6,
+      "name": "crystal_shards_red",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.5
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 7,
+      "name": "crystal_shards_green",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.5
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 8,
+      "name": "rune_shard_floating",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.8,
+      "light_preset": "Magic",
+      "light_offset_y": 0.5
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 9,
+      "name": "rune_stone_levitating",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.6,
+      "light_preset": "Magic",
+      "light_offset_y": 0.5
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 10,
+      "name": "rune_rubble_glowing",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 12,
+      "name": "obelisk_rune_tall",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.6,
+      "light_preset": "Magic",
+      "light_offset_y": 0.6
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 13,
+      "name": "obelisk_rune_blue",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.4,
+      "light_preset": "Magic",
+      "light_offset_y": 0.6
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 14,
+      "name": "obelisk_rune_purple",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.8,
+      "light_preset": "Magic",
+      "light_offset_y": 0.6
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 15,
+      "name": "pedestal_crystal_blue",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "light_preset": "Magic",
+      "light_offset_y": 0.82
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 16,
+      "name": "pedestal_gem_purple",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "light_preset": "Magic",
+      "light_offset_y": 0.82
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 17,
+      "name": "pedestal_gem_red",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "light_preset": "Magic",
+      "light_offset_y": 0.82
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 18,
+      "name": "pedestal_gem_green",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.1,
+      "light_preset": "Magic",
+      "light_offset_y": 0.82
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 19,
+      "name": "orb_stand_blue",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.8,
+      "light_preset": "Magic",
+      "light_offset_y": 0.8
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 20,
+      "name": "orb_stand_purple",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.8,
+      "light_preset": "Magic",
+      "light_offset_y": 0.8
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 21,
+      "name": "orb_stand_red",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.6,
+      "light_preset": "Magic",
+      "light_offset_y": 0.8
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 22,
+      "name": "orb_stand_green",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.8,
+      "light_preset": "Magic",
+      "light_offset_y": 0.8
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 23,
+      "name": "armillary_sphere",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.1,
+      "light_preset": "Magic",
+      "light_offset_y": 0.5
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 24,
+      "name": "rune_stone_spiral_glow",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 3.2,
+      "light_preset": "Magic",
+      "light_offset_y": 0.55
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 25,
+      "name": "spellbook_closed_red",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 26,
+      "name": "spellbook_open_blue",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0,
+      "light_preset": "Magic",
+      "light_offset_y": 0.6
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 27,
+      "name": "spellbook_open_purple",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2,
+      "light_preset": "Magic",
+      "light_offset_y": 0.6
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 28,
+      "name": "spellbook_closed_green",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 29,
+      "name": "mana_shard_purple",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.6,
+      "light_preset": "Magic",
+      "light_offset_y": 0.5
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 30,
+      "name": "scroll_map_open",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 31,
+      "name": "scroll_sealed",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 32,
+      "name": "scroll_rune_open",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 33,
+      "name": "candle_single_lit",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4,
+      "light_preset": "Candle",
+      "light_offset_y": 0.85
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 34,
+      "name": "candle_cluster_lit",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.6,
+      "light_preset": "Candle",
+      "light_offset_y": 0.8
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 35,
+      "name": "candle_cluster_blue",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.6,
+      "light_preset": "Magic",
+      "light_offset_y": 0.8
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 36,
+      "name": "candelabra_arcane",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.8,
+      "light_preset": "Candle",
+      "light_offset_y": 0.85
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 37,
+      "name": "lantern_arcane_blue",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.8,
+      "light_preset": "Magic",
+      "light_offset_y": 0.62
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 38,
+      "name": "lantern_arcane_purple",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.8,
+      "light_preset": "Magic",
+      "light_offset_y": 0.62
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 39,
+      "name": "lantern_hook_arcane",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.8,
+      "light_preset": "Magic",
+      "light_offset_y": 0.5
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 40,
+      "name": "brazier_soulflame_blue",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.2,
+      "light_preset": "Magic",
+      "light_offset_y": 0.78
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 41,
+      "name": "brazier_soulflame_purple",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.6,
+      "light_preset": "Magic",
+      "light_offset_y": 0.78
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 42,
+      "name": "brazier_soulflame_red",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.1,
+      "light_preset": "Torch",
+      "light_offset_y": 0.78
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 43,
+      "name": "brazier_soulflame_green",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.0,
+      "light_preset": "Magic",
+      "light_offset_y": 0.78
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 44,
+      "name": "mana_lantern_cage_blue",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.2,
+      "light_preset": "Magic",
+      "light_offset_y": 0.55
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 45,
+      "name": "mana_lantern_cage_purple",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.1,
+      "light_preset": "Magic",
+      "light_offset_y": 0.55
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 46,
+      "name": "mana_lantern_cage_red",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.1,
+      "light_preset": "Magic",
+      "light_offset_y": 0.55
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 47,
+      "name": "scribe_desk_arcane",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.4,
+      "light_preset": "Candle",
+      "light_offset_y": 0.7
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 48,
+      "name": "alchemy_table_potions",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 49,
+      "name": "enchanting_desk",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.2,
+      "light_preset": "Magic",
+      "light_offset_y": 0.55
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 50,
+      "name": "summoning_circle_purple",
+      "category": "arcane",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.2,
+      "light_preset": "Magic",
+      "light_offset_y": 0.4
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 51,
+      "name": "summoning_circle_blood",
+      "category": "arcane",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.4,
+      "light_preset": "Torch",
+      "light_offset_y": 0.4
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 52,
+      "name": "teleport_pad_blue",
+      "category": "arcane",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0,
+      "light_preset": "Magic",
+      "light_offset_y": 0.4
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 53,
+      "name": "mana_shards_small",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 54,
+      "name": "mana_crystal_glowing",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.2,
+      "light_preset": "Magic",
+      "light_offset_y": 0.5
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 55,
+      "name": "rune_stone_spiral_blue",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0,
+      "light_preset": "Magic",
+      "light_offset_y": 0.55
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 56,
+      "name": "rune_stone_spiral_purple",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0,
+      "light_preset": "Magic",
+      "light_offset_y": 0.55
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 57,
+      "name": "rune_stone_spiral_green",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0,
+      "light_preset": "Magic",
+      "light_offset_y": 0.55
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 58,
+      "name": "portal_arch_arcane",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.0,
+      "light_preset": "Magic",
+      "light_offset_y": 0.55
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 59,
+      "name": "mana_pylon_pair",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.6,
+      "light_preset": "Magic",
+      "light_offset_y": 0.7
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 60,
+      "name": "shrine_idol_arcane",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.4,
+      "light_preset": "Magic",
+      "light_offset_y": 0.45
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 61,
+      "name": "mana_font_crystal",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.4,
+      "light_preset": "Magic",
+      "light_offset_y": 0.6
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 62,
+      "name": "crystal_ruin_arch",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.2,
+      "light_preset": "Magic",
+      "light_offset_y": 0.45
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 63,
+      "name": "crystal_crate_blue",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.5,
+      "light_preset": "Magic",
+      "light_offset_y": 0.6
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 64,
+      "name": "crystal_crates_barrel",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 65,
+      "name": "crystal_shelf_rack",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.2,
+      "light_preset": "Magic",
+      "light_offset_y": 0.55
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 66,
+      "name": "chest_arcane_open",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.5,
+      "light_preset": "Magic",
+      "light_offset_y": 0.6
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 67,
+      "name": "ruin_pillar_crystal",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.2
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 68,
+      "name": "ruin_books_scattered",
+      "category": "arcane",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_arcane_sheet",
+      "index": 69,
+      "name": "rune_disc_stone",
+      "category": "arcane",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.2,
+      "light_preset": "Magic",
+      "light_offset_y": 0.55
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 0,
+      "name": "forge_full_workshop",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.2,
+      "light_preset": "Torch",
+      "light_offset_y": 0.4
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 1,
+      "name": "forge_stone_stool",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.2,
+      "light_preset": "Torch",
+      "light_offset_y": 0.4
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 2,
+      "name": "forge_domed_bucket",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.0,
+      "light_preset": "Torch",
+      "light_offset_y": 0.35
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 3,
+      "name": "bellows_large",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.2
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 4,
+      "name": "anvil_stump_hammer",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.4
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 5,
+      "name": "anvil_stump",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.2
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 6,
+      "name": "workbench_tools",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 7,
+      "name": "workbench_plans",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.1
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 8,
+      "name": "grindstone_wheel",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.2
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 9,
+      "name": "spear_rack_forge",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.6
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 10,
+      "name": "armor_stand_plate",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.0
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 11,
+      "name": "helmet_stand_plumed",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.8
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 12,
+      "name": "tool_rack_wall",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.2
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 13,
+      "name": "tong_rack",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.4
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 14,
+      "name": "polearm_rack_banner",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 3.0
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 15,
+      "name": "sword_crate_upright",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.4
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 16,
+      "name": "ore_crate_raw",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.6
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 17,
+      "name": "ingot_stack_steel",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 18,
+      "name": "ingot_bundle_strapped",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 19,
+      "name": "coal_crate",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.6
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 20,
+      "name": "coal_pile",
+      "category": "blacksmith",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 21,
+      "name": "coal_bucket_wooden",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 22,
+      "name": "firewood_bundle_strapped",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 23,
+      "name": "quench_barrel_water",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.6
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 24,
+      "name": "water_bucket_metal",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 25,
+      "name": "ore_cart_loaded",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 26,
+      "name": "scrap_metal_pile",
+      "category": "blacksmith",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 27,
+      "name": "chain_pile",
+      "category": "blacksmith",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 28,
+      "name": "blacksmith_apron",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 29,
+      "name": "chest_tools_open",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 30,
+      "name": "hammer_sledge",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.6
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 31,
+      "name": "hammer_set",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.6
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 32,
+      "name": "hammer_and_chisel",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.6
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 33,
+      "name": "hammer_small",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 34,
+      "name": "tongs_long",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 35,
+      "name": "tongs_flat",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 36,
+      "name": "tongs_curved",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.7
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 37,
+      "name": "pincers_small",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3
+    },
+    {
+      "sheet": "props_blacksmith_sheet",
+      "index": 38,
+      "name": "pliers_small",
+      "category": "blacksmith",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 0,
+      "name": "clothesline_colored",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.4
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 1,
+      "name": "clothesline_sheets",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.4
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 2,
+      "name": "clothesline_shirts",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.4
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 3,
+      "name": "laundry_basket_folded",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 4,
+      "name": "laundry_basket_linen",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 5,
+      "name": "bucket_wooden_water",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 6,
+      "name": "bucket_metal_pail",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 7,
+      "name": "broom_straw",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.4
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 8,
+      "name": "mop_cloth",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.4
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 9,
+      "name": "firewood_stack_round",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 10,
+      "name": "firewood_basket",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 11,
+      "name": "flower_barrel_red",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 12,
+      "name": "flower_box_window",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 13,
+      "name": "potted_lavender_tall",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.5
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 14,
+      "name": "potted_basil_pot",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 15,
+      "name": "potted_herbs_pair",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 16,
+      "name": "table_cloth_flowers",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.9
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 17,
+      "name": "chair_wooden_back",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.7
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 18,
+      "name": "stool_round_three_leg",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 19,
+      "name": "bench_wooden_long",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.3
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 20,
+      "name": "bench_stone_footed",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 21,
+      "name": "basket_wicker_square",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 22,
+      "name": "basket_wicker_handle",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 23,
+      "name": "amphora_terracotta",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.5
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 24,
+      "name": "jug_painted_blue",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 25,
+      "name": "vase_ceramic_blue",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 26,
+      "name": "jug_red_clay",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 27,
+      "name": "bottle_green_glass",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 28,
+      "name": "bottle_amber_glass",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 29,
+      "name": "bottle_blue_glass",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 30,
+      "name": "flask_corked",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 0.9
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 31,
+      "name": "crate_wooden_open",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 32,
+      "name": "chest_wooden_banded",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 33,
+      "name": "crate_tomatoes_red",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 34,
+      "name": "grain_sack_open",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.5
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 35,
+      "name": "grain_sack_stack",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 36,
+      "name": "food_basket_bread",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 37,
+      "name": "linen_stack_folded",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 38,
+      "name": "rug_rolls_colored",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 39,
+      "name": "rug_stack_folded",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 40,
+      "name": "toy_sword_and_cart",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 41,
+      "name": "toy_cart_wooden",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 43,
+      "name": "rocking_horse",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.9
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 44,
+      "name": "dog_house",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 45,
+      "name": "birdcage_stand",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.6
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 46,
+      "name": "washtub_board",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.7
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 47,
+      "name": "drying_rack_linens",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.9
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 48,
+      "name": "cushion_stack",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 49,
+      "name": "yarn_basket",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 50,
+      "name": "toy_blocks",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 0.7
+    },
+    {
+      "sheet": "props_village_domestic_sheet",
+      "index": 51,
+      "name": "toy_ball",
+      "category": "domestic",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 0.6
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 0,
+      "name": "crate_broken_planks",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 1,
+      "name": "barrel_smashed",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 2,
+      "name": "bottles_green_spilled",
+      "category": "bandit",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.8
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 3,
+      "name": "bottles_broken_pile",
+      "category": "bandit",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 4,
+      "name": "bottle_green_fallen",
+      "category": "bandit",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.6
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 5,
+      "name": "bottles_green_pair",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 6,
+      "name": "bottles_spilled_cups",
+      "category": "bandit",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.7
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 7,
+      "name": "bottle_amber_cups",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 8,
+      "name": "barrel_spilled_loot",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 9,
+      "name": "papers_scattered",
+      "category": "bandit",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 10,
+      "name": "coin_sack_spilled",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 11,
+      "name": "chair_broken",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.7
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 12,
+      "name": "bench_broken",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 13,
+      "name": "table_broken",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.3
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 14,
+      "name": "plank_debris_small",
+      "category": "bandit",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.5
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 15,
+      "name": "plank_debris_crossed",
+      "category": "bandit",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.6
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 16,
+      "name": "campfire_lit",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4,
+      "light_preset": "Torch",
+      "light_offset_y": 0.5
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 17,
+      "name": "campfire_cold",
+      "category": "bandit",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 18,
+      "name": "bedroll_rags",
+      "category": "bandit",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.3
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 19,
+      "name": "bedroll_blanket",
+      "category": "bandit",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.3
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 20,
+      "name": "pallet_wooden",
+      "category": "bandit",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 21,
+      "name": "chain_coil",
+      "category": "bandit",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 22,
+      "name": "shackles_chained",
+      "category": "bandit",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.3
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 23,
+      "name": "cage_small_wooden",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 24,
+      "name": "cage_tall_iron",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.9
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 25,
+      "name": "wanted_poster_board",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.6
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 27,
+      "name": "treasure_map_torn",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.6
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 28,
+      "name": "chest_iron_banded",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 29,
+      "name": "chest_loot_open",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.5
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 30,
+      "name": "cart_wrecked",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 32,
+      "name": "cart_wheel_upright",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.5
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 33,
+      "name": "cart_wheel_broken",
+      "category": "bandit",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 34,
+      "name": "barricade_planks_nailed",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 35,
+      "name": "palisade_broken",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.9
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 36,
+      "name": "barricade_camp_banner",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 37,
+      "name": "graffiti_eye_red",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 38,
+      "name": "graffiti_skull_runes",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 39,
+      "name": "graffiti_cross_red",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 40,
+      "name": "rat_and_bones",
+      "category": "bandit",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 41,
+      "name": "sewer_grate_round",
+      "category": "bandit",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 42,
+      "name": "bucket_slop_green",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 43,
+      "name": "potato_sack_spilled",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 44,
+      "name": "crate_food_stolen",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.5
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 45,
+      "name": "rags_pile_colored",
+      "category": "bandit",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 46,
+      "name": "loot_stash_crates",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_bandit_hideout_sheet",
+      "index": 47,
+      "name": "backpack_bedroll",
+      "category": "bandit",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 0,
+      "name": "well_roofed_red",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.6
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 1,
+      "name": "well_windlass",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.0
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 2,
+      "name": "water_pump_hand",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.0
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 3,
+      "name": "water_pump_fountain",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.8
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 4,
+      "name": "fountain_tiered_stone",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.4
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 5,
+      "name": "fountain_lion_wall",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.2
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 6,
+      "name": "trough_stone_spout",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 7,
+      "name": "trough_wooden_frame",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 8,
+      "name": "water_barrel_pipe",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.6
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 9,
+      "name": "rain_catcher_barrel",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.0
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 10,
+      "name": "roof_gutter_pipe",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.6
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 11,
+      "name": "gutter_downspout",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.4
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 12,
+      "name": "pipe_wall_vertical",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.8
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 13,
+      "name": "aqueduct_channel_stone",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 14,
+      "name": "aqueduct_channel_wood",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 15,
+      "name": "aqueduct_channel_mossy",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 16,
+      "name": "footbridge_wooden",
+      "category": "water",
+      "solid": false,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 17,
+      "name": "bridge_stone_arch",
+      "category": "water",
+      "solid": false,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 18,
+      "name": "grate_drain_rect",
+      "category": "water",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 19,
+      "name": "grate_drain_round",
+      "category": "water",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 20,
+      "name": "grate_sewer_square",
+      "category": "water",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 21,
+      "name": "manhole_cover_stone",
+      "category": "water",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 22,
+      "name": "sewer_outlet_round",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 23,
+      "name": "sewer_outlet_arch",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.2
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 24,
+      "name": "culvert_outlet_stone",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.4
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 25,
+      "name": "well_pulley_bucket",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.0
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 26,
+      "name": "well_pulley_double",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.0
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 27,
+      "name": "cistern_hatch_wooden",
+      "category": "water",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 28,
+      "name": "waterfall_stone_steps",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.2
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 29,
+      "name": "puddle_water",
+      "category": "water",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.7
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 30,
+      "name": "pipe_valve_leaking",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.5
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 31,
+      "name": "puddle_water_small",
+      "category": "water",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.5
+    },
+    {
+      "sheet": "props_water_and_plumbing_sheet",
+      "index": 32,
+      "name": "standpipe_water",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.8
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 0,
+      "name": "statue_king_crowned",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.4
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 1,
+      "name": "statue_queen_orb",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.2
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 2,
+      "name": "statue_knight_shield",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.6
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 3,
+      "name": "statue_knight_sword_aloft",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.8
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 4,
+      "name": "statue_wizard_staff",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.4
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 5,
+      "name": "statue_priest_reliquary",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.7
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 6,
+      "name": "statue_knight_equestrian",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.2
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 7,
+      "name": "statue_lion_couchant",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 8,
+      "name": "statue_griffin",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 4.2
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 9,
+      "name": "statue_eagle_wings",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.8
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 10,
+      "name": "memorial_cross_wreath",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.8,
+      "light_preset": "Candle",
+      "light_offset_y": 0.35
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 11,
+      "name": "memorial_obelisk_ivy",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.8
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 12,
+      "name": "monument_obelisk_banners",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.8
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 13,
+      "name": "column_winged_victory",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.8
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 14,
+      "name": "column_ruined_ivy",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.8
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 15,
+      "name": "fountain_grand_tiered",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.8
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 16,
+      "name": "fountain_cherub",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.0
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 17,
+      "name": "fountain_round_jet",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.7
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 18,
+      "name": "sundial_stone_round",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 2.1
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 19,
+      "name": "sundial_gnomon_gold",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 2.1
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 20,
+      "name": "clock_post_ornate",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.6,
+      "light_preset": "Lamp",
+      "light_offset_y": 0.82
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 21,
+      "name": "monument_bell_arch",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.0
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 22,
+      "name": "eternal_flame_pedestal",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.6,
+      "light_preset": "Torch",
+      "light_offset_y": 0.8
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 23,
+      "name": "banner_pair_pedestal",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.6
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 24,
+      "name": "heraldry_monument_shield",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 25,
+      "name": "pedestal_crest_stone",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.8
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 26,
+      "name": "pedestal_laurel_round",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.6
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 27,
+      "name": "pedestal_stone_broken",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.6
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 28,
+      "name": "ruin_column_fallen",
+      "category": "statues",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 29,
+      "name": "planter_stone_flowers",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.2
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 30,
+      "name": "bench_stone_carved",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.9
+    },
+    {
+      "sheet": "props_statues_and_monuments_sheet",
+      "index": 31,
+      "name": "stanchion_chain_gold",
+      "category": "statues",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.6
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 0,
+      "name": "quest_board_blue_roof",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.2
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 1,
+      "name": "notice_board_red_roof",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.0
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 2,
+      "name": "bounty_board_wanted",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.2
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 3,
+      "name": "quest_board_sealed",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.3
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 4,
+      "name": "quest_board_dagger",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 5,
+      "name": "lectern_scroll_candle",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "light_preset": "Candle",
+      "light_offset_y": 0.85
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 6,
+      "name": "banner_guild_lion",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 4.2
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 7,
+      "name": "signpost_guild_crest",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.2
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 8,
+      "name": "signpost_duel_medallion",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.5
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 9,
+      "name": "chest_guild_closed",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 10,
+      "name": "chest_guild_open_gold",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.1
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 11,
+      "name": "chest_iron_locked",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.7
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 12,
+      "name": "chest_offering_draped",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 13,
+      "name": "donation_box_pedestal",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.1,
+      "light_preset": "Candle",
+      "light_offset_y": 0.72
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 14,
+      "name": "pedestal_relic_banner",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.0
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 15,
+      "name": "lectern_quill_book",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.2
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 16,
+      "name": "shrine_reaper_sword",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.3,
+      "light_preset": "Torch",
+      "light_offset_y": 0.4
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 17,
+      "name": "statue_angel_crystal",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.4,
+      "light_preset": "Magic",
+      "light_offset_y": 0.55
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 18,
+      "name": "portal_arch_stone_blue",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.4,
+      "light_preset": "Magic",
+      "light_offset_y": 0.55
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 19,
+      "name": "portal_ring_crystals",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.8,
+      "light_preset": "Magic",
+      "light_offset_y": 0.5
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 20,
+      "name": "crystal_altar_gold",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.2,
+      "light_preset": "Magic",
+      "light_offset_y": 0.7
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 21,
+      "name": "mana_pylon_ringed",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.2,
+      "light_preset": "Magic",
+      "light_offset_y": 0.78
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 22,
+      "name": "mana_pylon_tall",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.6,
+      "light_preset": "Magic",
+      "light_offset_y": 0.82
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 23,
+      "name": "orb_pillar_blue",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "light_preset": "Magic",
+      "light_offset_y": 0.85
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 24,
+      "name": "rune_stone_purple",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 3.0,
+      "light_preset": "Magic",
+      "light_offset_y": 0.6
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 25,
+      "name": "teleport_pad_ringed",
+      "category": "quest",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.4,
+      "light_preset": "Magic",
+      "light_offset_y": 0.4
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 26,
+      "name": "mana_crystal_floating",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.2,
+      "light_preset": "Magic",
+      "light_offset_y": 0.5
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 27,
+      "name": "orb_pillar_chained",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.1,
+      "light_preset": "Magic",
+      "light_offset_y": 0.85
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 28,
+      "name": "guild_bell_roofed",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.0
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 29,
+      "name": "signpost_bell_banner",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 30,
+      "name": "signpost_lantern_cross",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4,
+      "light_preset": "Lamp",
+      "light_offset_y": 0.6
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 31,
+      "name": "scribe_desk_guild",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 3.0
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 32,
+      "name": "map_table_candle",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 3.0,
+      "light_preset": "Candle",
+      "light_offset_y": 0.75
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 33,
+      "name": "mailbox_stone",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 3.0
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 34,
+      "name": "pedestal_guild_medallion",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.4
+    },
+    {
+      "sheet": "props_quest_and_portals_sheet",
+      "index": 35,
+      "name": "reliquary_chained_stone",
+      "category": "quest",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.3,
+      "light_preset": "Magic",
+      "light_offset_y": 0.5
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 0,
+      "name": "house_inn_stone_large",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 6.2
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 1,
+      "name": "building_bank_tall",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 6.6
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 2,
+      "name": "shop_gem_two_storey",
+      "category": "shops",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.4
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 3,
+      "name": "shop_market_awning",
+      "category": "shops",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.8
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 4,
+      "name": "tower_mage_round",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.6
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 5,
+      "name": "house_timber_blue_shutters",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.8
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 6,
+      "name": "shop_grocer_produce",
+      "category": "shops",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.8
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 7,
+      "name": "shop_smithy_dark_roof",
+      "category": "shops",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.1
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 8,
+      "name": "house_timber_blue_roof",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.4
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 9,
+      "name": "house_timber_red_large",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.0
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 10,
+      "name": "shop_butcher_awning",
+      "category": "shops",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.2
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 11,
+      "name": "house_cottage_slate",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.8
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 12,
+      "name": "house_cottage_red_roof",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.8
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 13,
+      "name": "house_cottage_thatched",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.4
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 14,
+      "name": "house_cottage_green_roof",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.7
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 15,
+      "name": "house_cottage_chimney",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.7
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 16,
+      "name": "chapel_stone_small",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.6
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 17,
+      "name": "house_guard_post_blue",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.2
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 18,
+      "name": "house_workshop_red",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.0
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 19,
+      "name": "stall_produce_blue_awning",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.4
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 20,
+      "name": "stall_meat_red_awning",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.2
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 21,
+      "name": "cart_bread_vendor",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.5
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 22,
+      "name": "well_village_stone",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 23,
+      "name": "signpost_inn_lantern",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.4,
+      "light_preset": "Lamp",
+      "light_offset_y": 0.68
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 24,
+      "name": "notice_board_village",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 25,
+      "name": "bench_wooden_plain",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 26,
+      "name": "flower_planter_wooden",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 27,
+      "name": "tree_cherry_blossom_small",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.2
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 28,
+      "name": "tree_apple_small",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.2
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 29,
+      "name": "tree_pine_slim",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 3.5
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 30,
+      "name": "lamp_post_village",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.9,
+      "light_preset": "Lamp",
+      "light_offset_y": 0.85
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 31,
+      "name": "hedge_tall_green",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.8
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 32,
+      "name": "crate_wooden_small",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 34,
+      "name": "barrel_pair_small",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 35,
+      "name": "crate_wooden_wide",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 36,
+      "name": "fence_picket_white",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 37,
+      "name": "clothesline_short",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.6
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 38,
+      "name": "barrel_wooden_single",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 40,
+      "name": "fence_picket_low_white",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 0.9
+    },
+    {
+      "sheet": "buildings_village_shops_and_props_sheet",
+      "index": 41,
+      "name": "cart_flower_vendor",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.5
+    },
+    {
+      "sheet": "buildings_houses_set",
+      "index": 0,
+      "name": "house_cottage_woodpile",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.6
+    },
+    {
+      "sheet": "buildings_houses_set",
+      "index": 1,
+      "name": "house_narrow_tall",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.6
+    },
+    {
+      "sheet": "buildings_houses_set",
+      "index": 2,
+      "name": "house_manor_timber",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.6
+    },
+    {
+      "sheet": "buildings_houses_set",
+      "index": 3,
+      "name": "house_semi_detached",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.8
+    },
+    {
+      "sheet": "buildings_houses_set",
+      "index": 4,
+      "name": "house_tenement_narrow",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 6.2
+    },
+    {
+      "sheet": "buildings_houses_set",
+      "index": 5,
+      "name": "house_manor_crest",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.8
+    },
+    {
+      "sheet": "buildings_houses_set",
+      "index": 6,
+      "name": "house_workshop_slate",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.0
+    },
+    {
+      "sheet": "buildings_houses_set",
+      "index": 7,
+      "name": "house_farmhouse_woodpile",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.4
+    },
+    {
+      "sheet": "buildings_town_large_set_a",
+      "index": 0,
+      "name": "shop_blacksmith_forge_a",
+      "category": "shops",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 6.0,
+      "light_preset": "Torch",
+      "light_offset_y": 0.28
+    },
+    {
+      "sheet": "buildings_town_large_set_a",
+      "index": 1,
+      "name": "tavern_three_storey_a",
+      "category": "shops",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 6.2
+    },
+    {
+      "sheet": "buildings_town_large_set_a",
+      "index": 2,
+      "name": "shop_bakery_awning_a",
+      "category": "shops",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.2
+    },
+    {
+      "sheet": "buildings_town_large_set_a",
+      "index": 3,
+      "name": "shop_alchemist_tower_a",
+      "category": "shops",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.8
+    },
+    {
+      "sheet": "buildings_town_large_set_a",
+      "index": 4,
+      "name": "guildhall_banners_a",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 6.2
+    },
+    {
+      "sheet": "buildings_town_large_set_a",
+      "index": 5,
+      "name": "shop_carpenter_mill_a",
+      "category": "shops",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.6
+    },
+    {
+      "sheet": "buildings_town_large_set_a",
+      "index": 6,
+      "name": "house_townhouse_grand_a",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 6.2
+    },
+    {
+      "sheet": "buildings_town_large_set_a",
+      "index": 7,
+      "name": "house_tenement_laundry_a",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.6
+    },
+    {
+      "sheet": "buildings_town_large_set_b",
+      "index": 0,
+      "name": "shop_blacksmith_forge_b",
+      "category": "shops",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 6.0,
+      "light_preset": "Torch",
+      "light_offset_y": 0.28
+    },
+    {
+      "sheet": "buildings_town_large_set_b",
+      "index": 1,
+      "name": "tavern_three_storey_b",
+      "category": "shops",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 6.2
+    },
+    {
+      "sheet": "buildings_town_large_set_b",
+      "index": 2,
+      "name": "shop_bakery_awning_b",
+      "category": "shops",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.2
+    },
+    {
+      "sheet": "buildings_town_large_set_b",
+      "index": 3,
+      "name": "shop_alchemist_tower_b",
+      "category": "shops",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.8
+    },
+    {
+      "sheet": "buildings_town_large_set_b",
+      "index": 4,
+      "name": "guildhall_banners_b",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 6.2
+    },
+    {
+      "sheet": "buildings_town_large_set_b",
+      "index": 5,
+      "name": "shop_carpenter_mill_b",
+      "category": "shops",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.6
+    },
+    {
+      "sheet": "buildings_town_large_set_b",
+      "index": 6,
+      "name": "house_townhouse_grand_b",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 6.2
+    },
+    {
+      "sheet": "buildings_town_large_set_b",
+      "index": 7,
+      "name": "house_tenement_laundry_b",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.6
+    }
+  ]
+}

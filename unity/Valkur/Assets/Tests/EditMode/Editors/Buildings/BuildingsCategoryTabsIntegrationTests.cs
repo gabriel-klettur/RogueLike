@@ -147,8 +147,20 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
             UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(content);
         }
 
+        /// <summary>
+        /// Tabs per row, read off the builder so this test cannot drift from it.
+        /// </summary>
+        private static int TabsPerRow()
+        {
+            var field = typeof(BuildingsEditorUIBuilder).GetField(
+                "CATEGORY_TAB_COLUMNS", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.That(field, Is.Not.Null,
+                "BuildingsEditorUIBuilder.CATEGORY_TAB_COLUMNS was renamed — update this test.");
+            return (int)field.GetRawConstantValue();
+        }
+
         [Test]
-        public void CategoryStrip_LaysOutThreeRowsOfReadableTabs()
+        public void CategoryStrip_LaysOutFullRowsOfReadableTabs()
         {
             var ui = BuildUI();
             var strip = ui.CategoryTabStrip;
@@ -156,12 +168,21 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
 
             ShowPanelAndLayout(ui);
 
-            Assert.AreEqual(3, strip.transform.childCount,
-                "Nine tabs at three per row must occupy exactly three rows.");
+            // Derived, not pinned: the taxonomy grows (8 categories became 15 when the
+            // second prop wave landed), and a hard-coded row count only ever records how
+            // many tabs there were the day it was written. What must stay true is that the
+            // strip reserves exactly the height its own rows need — the failure this
+            // guards is a strip that lays out more rows than it reserved space for, which
+            // overlaps the picker grid underneath it.
+            int tabCount = 1 + BuildingCategory.TabOrder.Length;   // + the "All" tab
+            int expectedRows = Mathf.CeilToInt(tabCount / (float)TabsPerRow());
+
+            Assert.AreEqual(expectedRows, strip.transform.childCount,
+                $"{tabCount} tabs at {TabsPerRow()} per row must occupy {expectedRows} rows.");
 
             var le = strip.GetComponent<UnityEngine.UI.LayoutElement>();
-            Assert.AreEqual(3 * 22f + 2 * 2f, le.preferredHeight,
-                "Reserved height must cover three rows plus the inter-row spacing.");
+            Assert.AreEqual(expectedRows * 22f + (expectedRows - 1) * 2f, le.preferredHeight,
+                "Reserved height must cover every row plus the inter-row spacing.");
 
             Assert.Greater(stripRt.rect.width, 300f,
                 "The strip must span the panel content (368 px); a collapsed width means the " +

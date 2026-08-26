@@ -17,11 +17,14 @@ namespace Valkur.Gameplay.Buildings
         internal const string CATEGORY_ALL_KEY = "__all";
 
         /// <summary>
-        /// Tabs per row in the category block. Three matches the picker grid below it, so the
-        /// tab edges line up with the template slots and each label gets ~121 px of the
-        /// panel's 368 px content width.
+        /// Tabs per row in the category block. Three used to match the picker grid below it,
+        /// but the taxonomy now declares 15 categories plus "All", and three per row stacks
+        /// them 6 rows deep — 142 px of tab strip taken out of a 564 px panel, straight off
+        /// the picker's own height. Four per row brings that back to 4 rows / 94 px and
+        /// still leaves ~92 px per label of the panel's 368 px content width, above the
+        /// 80 px floor BuildingsCategoryTabsIntegrationTests holds labels to.
         /// </summary>
-        private const int CATEGORY_TAB_COLUMNS = 3;
+        private const int CATEGORY_TAB_COLUMNS = 4;
 
         private static void BuildBuildingsPanel(Transform canvasT, ref UIRefs refs,
             Action<string> onSearchChanged,
@@ -35,8 +38,8 @@ namespace Valkur.Gameplay.Buildings
             refs.SearchBox = SearchBox.Create(t, "Search buildings\u2026",
                 v => onSearchChanged?.Invoke(v ?? ""));
 
-            // Category tabs. 506 templates in one flat grid is unusable: 137 of them are
-            // tree variants and another 106 are ground flora, so everything else is a long
+            // Category tabs. 969 templates in one flat grid is unusable: 147 of them are
+            // tree variants and another 101 are ground flora, so everything else is a long
             // scroll away. Search still runs across whatever the active tab shows, so
             // "All" plus a query behaves exactly as the picker did before the tabs existed.
             var catStrip = TabStrip.CreateWrapped(t, "BuildingCategoryTabStrip",

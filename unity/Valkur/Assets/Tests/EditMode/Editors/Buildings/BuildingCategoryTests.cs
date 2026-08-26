@@ -83,7 +83,35 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
         [TestCase("Buildings/dummy",                         Cat.Structures)]
         [TestCase("Buildings/portals/portal_stone_arch",     Cat.Arcane)]
         [TestCase("Buildings/totems/totem_forest",           Cat.Arcane)]
-        [TestCase("Buildings/statues/statue_dwarf_warrior",  Cat.Arcane)]
+        // statues/ moved out of Arcane when the second prop wave added 32 civic monuments:
+        // a crowned king on a plinth and a summoning circle are never browsed together.
+        [TestCase("Buildings/statues/statue_dwarf_warrior",  Cat.Monuments)]
+        // ── Second prop wave (2026-08), one tab per themed sheet ──────────────
+        [TestCase("Buildings/military/watchtower_wooden",    Cat.Military)]
+        [TestCase("Buildings/military/training_dummy_target", Cat.Military)]
+        [TestCase("Buildings/graveyard/headstone_gothic_arch", Cat.Graveyard)]
+        [TestCase("Buildings/graveyard/mausoleum_small",     Cat.Graveyard)]
+        [TestCase("Buildings/arcane/portal_arch_arcane",     Cat.Arcane)]
+        [TestCase("Buildings/arcane/summoning_circle_blood", Cat.Arcane)]
+        [TestCase("Buildings/blacksmith/anvil_stump",        Cat.Forge)]
+        [TestCase("Buildings/blacksmith/forge_full_workshop", Cat.Forge)]
+        [TestCase("Buildings/bandit/wanted_poster_board",    Cat.Bandit)]
+        [TestCase("Buildings/bandit/campfire_lit",           Cat.Bandit)]
+        [TestCase("Buildings/water/well_roofed_red",         Cat.Water)]
+        [TestCase("Buildings/water/manhole_cover_stone",     Cat.Water)]
+        [TestCase("Buildings/quest/quest_board_blue_roof",   Cat.Quest)]
+        [TestCase("Buildings/quest/chest_guild_open_gold",   Cat.Quest)]
+        [TestCase("Buildings/statues/statue_king_crowned",   Cat.Monuments)]
+        [TestCase("Buildings/statues/sundial_stone_round",   Cat.Monuments)]
+        // Household clutter is what Props already means, so domestic/ joins it
+        // rather than earning a sixteenth tab.
+        [TestCase("Buildings/domestic/rocking_horse",        Cat.Props)]
+        [TestCase("Buildings/domestic/clothesline_sheets",   Cat.Props)]
+        // The village sheet's own rows land in the first wave's categories.
+        [TestCase("Buildings/houses/house_cottage_thatched", Cat.Structures)]
+        [TestCase("Buildings/shops/tavern_three_storey_a",   Cat.Structures)]
+        [TestCase("Buildings/nature/tree_pine_slim",         Cat.Trees)]
+        [TestCase("Buildings/nature/hedge_tall_green",       Cat.Flora)]
         // others/ holds three unrelated assets; the file rules must beat the folder rule.
         [TestCase("Buildings/others/Portal_wow",             Cat.Arcane)]
         [TestCase("Buildings/others/fuente",                 Cat.Props)]
