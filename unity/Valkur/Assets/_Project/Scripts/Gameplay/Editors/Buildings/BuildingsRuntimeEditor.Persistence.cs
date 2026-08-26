@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
@@ -20,6 +20,30 @@ namespace Valkur.Gameplay.Buildings
 {
     public partial class BuildingsRuntimeEditor : SingletonMonoBehaviour<BuildingsRuntimeEditor>, GameEditorManager.IGameEditor
     {
+        /// <summary>
+        /// Serialize one <c>overrides.door</c> block. The keys here and the ones
+        /// <c>BuildingLoader.ParseDoorSpec</c> reads are a PAIR: changing either side alone
+        /// is the exact shape of the spawner coordinate-space drift incident, where a save
+        /// and its load disagreed silently for months. BuildingDoorPersistenceRoundTripTests
+        /// asserts the composition, not either half.
+        ///
+        /// Floats go through InvariantCulture for the same reason split_ratio does — a
+        /// machine with a comma decimal separator would otherwise emit
+        /// <c>"spawn_x": 25,5</c> and break the file for everyone else.
+        /// </summary>
+        private static void AppendDoorJson(StringBuilder sb, Valkur.Data.BuildingDoorSpec spec)
+        {
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            sb.Append("\"door\": {");
+            sb.Append($"\"target\": \"{EscapeJson(spec.target)}\"");
+            if (spec.useDefaultSpawn) sb.Append(", \"use_default_spawn\": true");
+            sb.Append(string.Format(inv, ", \"spawn_x\": {0:F3}", spec.spawnX));
+            sb.Append(string.Format(inv, ", \"spawn_y\": {0:F3}", spec.spawnY));
+            if (!string.IsNullOrEmpty(spec.prompt))
+                sb.Append($", \"prompt\": \"{EscapeJson(spec.prompt)}\"");
+            sb.Append("}");
+        }
+
         private void MarkInstanceDataDirty()
         {
             _hasUnsavedInstanceChanges = true;
@@ -53,6 +77,17 @@ namespace Valkur.Gameplay.Buildings
         private void SaveInstancesToJson()
         {
             if (_isPersistingInstanceChanges) return;
+
+            // While the player is inside an interior the base world is torn down on purpose,
+            // so FindObjectsOfType<BuildingObject>() returns nothing. Ctrl+S in that state
+            // would write an empty array over 170 placed buildings, and neither position guard
+            // below would object - they compare shapes, and "everything is gone" is a
+            // perfectly consistent shape.
+            if (Valkur.Gameplay.World.WorldTransitionService.RefuseWorldContentWrite("buildings"))
+            {
+                if (_statusTmp != null) _statusTmp.text = "Save skipped - inside an interior.";
+                return;
+            }
 
             // Map-slot aware path resolution. The default slot keeps the legacy
             // StreamingAssets/Buildings/ location so existing builds + the
@@ -147,7 +182,12 @@ namespace Valkur.Gameplay.Buildings
                     bool hasColliderScope = !string.IsNullOrEmpty(b.ColliderScopeOverride);
                     bool hasZBottomOverride = b.ZBottomOffset != 0;
                     bool hasZTopOverride = b.ZTopOffset != 0;
-                    bool hasOv = b.SplitRatioOverride >= 0f || sov.x > 0 || sov.y > 0 || hasColliderScope || hasZBottomOverride || hasZTopOverride || writeCollisionOverride;
+                    // A doorway is written only when it actually leads somewhere. An empty
+                    // target is the resting state of every un-assigned house; persisting it
+                    // would add a dead block to hundreds of records.
+                    var doorSpec = b.DoorSpec;
+                    bool hasDoorOverride = doorSpec != null && doorSpec.IsValid;
+                    bool hasOv = b.SplitRatioOverride >= 0f || sov.x > 0 || sov.y > 0 || hasColliderScope || hasZBottomOverride || hasZTopOverride || hasDoorOverride || writeCollisionOverride;
                     if (hasOv)
                     {
                         sb.Append(", \"overrides\": {");
@@ -176,6 +216,12 @@ namespace Valkur.Gameplay.Buildings
                         {
                             if (!first) sb.Append(", ");
                             sb.Append($"\"z_top\": {b.ZTopOffset}");
+                            first = false;
+                        }
+                        if (hasDoorOverride)
+                        {
+                            if (!first) sb.Append(", ");
+                            AppendDoorJson(sb, doorSpec);
                             first = false;
                         }
                         if (writeCollisionOverride && instanceGrid != null)

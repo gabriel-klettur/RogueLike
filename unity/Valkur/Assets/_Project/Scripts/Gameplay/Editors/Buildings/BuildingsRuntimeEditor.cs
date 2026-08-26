@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
@@ -70,7 +70,7 @@ namespace Valkur.Gameplay.Buildings
         private InputAction _toggleAction;
         private bool _ownsToggleAction;
 
-        private enum EditorMode { Select, Place, Delete, Resize, Fill, Erase }
+        private enum EditorMode { Select, Place, Delete, Resize, Fill, Erase, Door }
         private EditorMode  _mode = EditorMode.Select;
         private int         _selectedTemplateId = -1;
 
@@ -182,6 +182,7 @@ namespace Valkur.Gameplay.Buildings
         private Image _addBtnImg, _removeBtnImg;
         private Image _fillBtnImg;   // Fill button in the Tools panel
         private Image _eraseBtnImg;  // Erase button in the Tools panel
+        private Image _doorBtnImg;   // Door button in the Tools panel
 
         // Perf probe (PERF button in menu bar, Shift+PERF to toggle)
         private BuildingsPerfProbe _perfProbe;
@@ -377,6 +378,7 @@ namespace Valkur.Gameplay.Buildings
             UpdateIdLabel();
             UpdateZBadges();
             UpdateSplitLine();
+            UpdateDoorOverlay();
             // Per-frame overlay refresh: only the ACTIVE building's geometry
             // can change live (drag, resize, split-ratio). All other buildings
             // are static while the editor is open, so a full RefreshCollidersOverlay()

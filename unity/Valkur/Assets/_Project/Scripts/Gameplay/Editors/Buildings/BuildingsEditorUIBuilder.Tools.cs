@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -54,7 +54,7 @@ namespace Valkur.Gameplay.Buildings
             Action onAdd,    Action onRemove, Action onAddSystem,
             Action onUndo,   Action onRedo,
             Action onSave,   Action onReload,
-            Action onFill = null, Action onErase = null)
+            Action onFill = null, Action onErase = null, Action onDoor = null)
         {
             refs.ModesDropdown = MakeDrop("ToolsPanel", canvasT,
                 PanelDock.TopLeft, PANEL_GAP, PANEL_TOP_OFFSET,
@@ -64,6 +64,7 @@ namespace Valkur.Gameplay.Buildings
             AddActionBtn(t, "Redo", BTN_H, onRedo);
             refs.FillBtnImg  = AddActionBtnWithRef(t, "Fill",  BTN_H, onFill);
             refs.EraseBtnImg = AddActionBtnWithRef(t, "Erase", BTN_H, onErase);
+            refs.DoorBtnImg  = AddActionBtnWithRef(t, "Door",  BTN_H, onDoor);
 
             refs.ModesDropdown.SetActive(false);
         }

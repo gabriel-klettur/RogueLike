@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
@@ -32,6 +32,10 @@ namespace Valkur.Gameplay.Buildings
             // Same guard for Erase: any external mode switch must tear down Erase state.
             if (_mode != EditorMode.Erase && _eraseStep != EraseStep.Idle)
                 ExitEraseMode(setSelectMode: false);
+            // Same guard for Door: leaving it by any route must close its flyout and drop the
+            // world-space doorway overlay, or an external SetMode leaves both on screen.
+            if (_mode != EditorMode.Door) ExitDoorMode(setSelectMode: false);
+            else                          EnterDoorModeUi();
             RefreshModeButtons();
             if (_statusTmp == null) return;
             _statusTmp.text = _mode switch
@@ -42,6 +46,7 @@ namespace Valkur.Gameplay.Buildings
                 EditorMode.Resize => "LMB-drag the R handle (top-right) to resize proportionally.",
                 EditorMode.Fill   => "Fill: enter spacing, pick a template, then hover and click to flood-fill.",
                 EditorMode.Erase  => "Erase: pick scope (Tiles Area / Zone), then click a building to delete all of its type in that scope.",
+                EditorMode.Door   => "Door: click a building, then set where its doorway leads. Anchor rows change the TEMPLATE (every placement of that art).",
                 _ => ""
             };
         }
@@ -56,6 +61,7 @@ namespace Valkur.Gameplay.Buildings
             if (_removeBtnImg) _removeBtnImg.color = _removeMode                ? EditorUIHelpers.DANGER     : new Color(0.55f, 0.15f, 0.15f, 1f);
             if (_fillBtnImg)   _fillBtnImg.color   = _mode == EditorMode.Fill   ? EditorUIHelpers.BTN_ACTIVE : EditorUIHelpers.BTN_NORMAL;
             if (_eraseBtnImg)  _eraseBtnImg.color  = _mode == EditorMode.Erase  ? EditorUIHelpers.BTN_ACTIVE : EditorUIHelpers.BTN_NORMAL;
+            if (_doorBtnImg)   _doorBtnImg.color   = _mode == EditorMode.Door   ? EditorUIHelpers.BTN_ACTIVE : EditorUIHelpers.BTN_NORMAL;
         }
 
         // ──────────────────────────────────────────────────────────────────────────
@@ -143,6 +149,7 @@ namespace Valkur.Gameplay.Buildings
                 else if (_mode == EditorMode.Fill) ExitFillMode();
                 else if (_eraseConfirmModal != null && _eraseConfirmModal.activeSelf) ExitEraseMode();
                 else if (_mode == EditorMode.Erase) ExitEraseMode();
+                else if (_mode == EditorMode.Door) ExitDoorMode();
                 else if (_tutorialRoot != null && _tutorialRoot.activeSelf) _tutorialRoot.SetActive(false);
                 else { SaveInstancesToJson(); Deactivate(); }
             }

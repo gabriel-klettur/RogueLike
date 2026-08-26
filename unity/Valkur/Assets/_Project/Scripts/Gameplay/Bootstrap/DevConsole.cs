@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
@@ -616,6 +616,12 @@ namespace Valkur.Gameplay
 
             // Re-read authored data into the live scene — see DevConsole.Commands.Reload.cs.
             RegisterReloadCommands();
+
+            // Doorway authoring — see DevConsole.Commands.Doors.cs. Registered LAST and in a
+            // category of its own on purpose: CmdHelp only emits a category header when the
+            // category changes while walking declaration order, so a new command dropped into
+            // an existing category anywhere but its original block prints a duplicate header.
+            RegisterDoorCommands();
         }
 
         // ------------------------------------------------------------------

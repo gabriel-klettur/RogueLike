@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -53,11 +53,24 @@ namespace Valkur.Gameplay.Buildings
             public Image AddBtnImg, RemoveBtnImg;
             public Image FillBtnImg;   // Fill tool button
             public Image EraseBtnImg;  // Erase tool button
+            public Image DoorBtnImg;   // Door tool button
 
             // Erase scope sub-panel (flyout below TOOLS)
             public GameObject EraseSubPanel;
             public Image      EraseTilesAreaBtnImg;
             public Image      EraseZoneBtnImg;
+
+            // Door authoring sub-panel (flyout below TOOLS). Template-scope controls are
+            // deliberately in their own panel rather than in the per-instance Properties
+            // inspector, because they change every placement of the art.
+            public GameObject      DoorSubPanel;
+            public TextMeshProUGUI DoorStatusText;
+            public Image           DoorHasDoorBtnImg;  public TextMeshProUGUI DoorHasDoorBtnLabel;
+            public TMP_InputField  DoorTargetField;
+            public TMP_InputField  DoorSpawnXField;
+            public TMP_InputField  DoorSpawnYField;
+            public TextMeshProUGUI DoorAnchorXVal, DoorAnchorYVal, DoorSizeVal;
+            public Image           DoorApplyBtnImg;
 
             // Buildings panel refs
             public TMP_InputField  SearchBox;
@@ -92,7 +105,10 @@ namespace Valkur.Gameplay.Buildings
         // ── Panel sizes (mirrors TileEditor constants) ────────────────────────────
 
         private const float MODES_W     = TOOLS_DROP_W;          // 60 px
-        private const float MODES_H     = 88f + BTN_H * 2 + PANEL_HDR_H;  // 200 px (Tools: Undo+Redo+Fill+Erase)
+        // Tools: Undo + Redo + Fill + Erase + Door. The multiplier is the count of BTN_H-tall
+        // buttons BEYOND the two the 88f base already covers - a 6th button needs a 4 here, or
+        // it is clipped off the bottom of the panel with no other symptom.
+        private const float MODES_H     = 88f + BTN_H * 3 + PANEL_HDR_H;
         private const float ERASE_SUB_W = 130f;
         private const float ERASE_SUB_H = PANEL_HDR_H + BTN_H * 2 + 12f;
         private const float BUILDINGS_W = TILES_DROP_W;          // 256 px
@@ -150,7 +166,17 @@ namespace Valkur.Gameplay.Buildings
             Action         onErase           = null,
             Action         onEraseTilesArea  = null,
             Action         onEraseZone       = null,
-            Action<string> onCategoryChanged = null)
+            Action<string> onCategoryChanged = null,
+            // Door authoring callbacks
+            Action         onDoor            = null,
+            Action         onDoorToggleHasDoor = null,
+            Action<string> onDoorTargetCommit  = null,
+            Action<string> onDoorSpawnXCommit  = null,
+            Action<string> onDoorSpawnYCommit  = null,
+            Action         onDoorAnchorXMinus  = null, Action onDoorAnchorXPlus = null,
+            Action         onDoorAnchorYMinus  = null, Action onDoorAnchorYPlus = null,
+            Action         onDoorSizeMinus     = null, Action onDoorSizePlus    = null,
+            Action         onDoorApply         = null, Action onDoorClear       = null)
         {
             // Reserve space below the menu bar so draggable panels cannot occlude it
             DraggablePanel.TopReservedPx = MENUBAR_HEIGHT;
@@ -163,8 +189,15 @@ namespace Valkur.Gameplay.Buildings
             BuildModesPanel(canvasT, ref refs,
                 onModeSelect, onModePlace, onModeResize, onModeDelete,
                 onAddBuilding, onRemoveBuilding, onAddOnSystem,
-                onUndo, onRedo, onSave, onReload, onFill, onErase);
+                onUndo, onRedo, onSave, onReload, onFill, onErase, onDoor);
             BuildEraseSubPanel(canvasT, ref refs, onEraseTilesArea, onEraseZone);
+            BuildDoorSubPanel(canvasT, ref refs,
+                onDoorToggleHasDoor,
+                onDoorTargetCommit, onDoorSpawnXCommit, onDoorSpawnYCommit,
+                onDoorAnchorXMinus, onDoorAnchorXPlus,
+                onDoorAnchorYMinus, onDoorAnchorYPlus,
+                onDoorSizeMinus,    onDoorSizePlus,
+                onDoorApply,        onDoorClear);
             BuildBuildingsPanel(canvasT, ref refs, onSearchChanged, onCategoryChanged);
             BuildCollidersPanel(canvasT, ref refs,
                 onToggleCollidersVisible,

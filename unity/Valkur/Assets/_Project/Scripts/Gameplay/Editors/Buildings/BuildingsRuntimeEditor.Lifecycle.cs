@@ -150,6 +150,11 @@ namespace Valkur.Gameplay.Buildings
             _eraseStep = EraseStep.Idle;
             _eraseMatchFxPool.Clear();
             _fillSpacingModal = null; _fillSpacingInput = null;
+            _doorBtnImg = null; _doorSubPanel = null; _doorStatusTmp = null;
+            _doorHasDoorBtnImg = null; _doorHasDoorBtnLabel = null;
+            _doorTargetField = null; _doorSpawnXField = null; _doorSpawnYField = null;
+            _doorAnchorXVal = null; _doorAnchorYVal = null; _doorSizeVal = null;
+            DestroyDoorOverlay();
             _buildingsPanelHeaderImg = null; _fillBtnImg = null;
             _uiBuilt = false;
         }

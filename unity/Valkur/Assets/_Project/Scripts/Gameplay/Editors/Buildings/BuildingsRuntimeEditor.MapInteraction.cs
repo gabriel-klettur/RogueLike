@@ -197,6 +197,16 @@ namespace Valkur.Gameplay.Buildings
 
             if (overUi) return;
 
+            // Door authoring - click picks the building whose doorway the flyout edits.
+            // Placed BEFORE the collider brush because that branch returns early whenever a
+            // brush is left switched on, which would otherwise swallow every Door-mode click.
+            if (_mode == EditorMode.Door)
+            {
+                if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame())
+                    HandleDoorModeClick(worldPos);
+                return;
+            }
+
             // Collider painting â€” when a brush mode is active, LMB hold paints/erases
             // collider tiles on the active building. Returns early so it doesn't
             // interfere with selection/placement.
@@ -277,6 +287,10 @@ namespace Valkur.Gameplay.Buildings
                     if (building == null) return;
                     building.transform.position = finalPos;
                     building.RefreshSorting();
+                    // The doorway is a child, so it moved with the building - but its rect is
+                    // derived from the building's world bounds, so the object has to be
+                    // re-placed on it. Same contract RefreshSorting carries for the Y-sort.
+                    BuildingDoorFactory.RefreshGeometry(building);
                     RefreshInspector();
                     if (_statusTmp != null) _statusTmp.text = $"Move saved â†’ ({finalPos.x:F2}, {finalPos.y:F2})";
                 },
@@ -285,6 +299,7 @@ namespace Valkur.Gameplay.Buildings
                     if (building == null) return;
                     building.transform.position = startPos;
                     building.RefreshSorting();
+                    BuildingDoorFactory.RefreshGeometry(building);
                     RefreshInspector();
                     if (_statusTmp != null) _statusTmp.text = $"Move reverted â†’ ({startPos.x:F2}, {startPos.y:F2})";
                 });
@@ -331,6 +346,9 @@ namespace Valkur.Gameplay.Buildings
                     if (building == null) return;
                     building.Apply(building.Template, finalScale, building.SplitRatioOverride);
                     RefreshCollisionFor(building);
+                    // A resize changes the bounds the doorway is a fraction OF, so its world
+                    // rect moves even though nothing about the anchor did.
+                    BuildingDoorFactory.RefreshGeometry(building);
                     RefreshInspector();
                     if (_statusTmp != null) _statusTmp.text = "Resize saved.";
                 },
@@ -339,6 +357,7 @@ namespace Valkur.Gameplay.Buildings
                     if (building == null) return;
                     building.Apply(building.Template, startScale, building.SplitRatioOverride);
                     RefreshCollisionFor(building);
+                    BuildingDoorFactory.RefreshGeometry(building);
                     RefreshInspector();
                     if (_statusTmp != null) _statusTmp.text = "Resize reverted.";
                 });

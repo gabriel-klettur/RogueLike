@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
@@ -75,7 +75,20 @@ namespace Valkur.Gameplay.Buildings
                 onFill:                      () => OnFillButtonClicked(),
                 onErase:                     () => OnEraseButtonClicked(),
                 onEraseTilesArea:            () => OnEraseScopeSelected(EraseScope.TilesArea),
-                onEraseZone:                 () => OnEraseScopeSelected(EraseScope.Zone));
+                onEraseZone:                 () => OnEraseScopeSelected(EraseScope.Zone),
+                onDoor:                      () => OnDoorButtonClicked(),
+                onDoorToggleHasDoor:         () => ToggleTemplateHasDoor(),
+                onDoorTargetCommit:          v  => OnDoorTargetCommitted(v),
+                onDoorSpawnXCommit:          v  => OnDoorSpawnCommitted(v, isX: true),
+                onDoorSpawnYCommit:          v  => OnDoorSpawnCommitted(v, isX: false),
+                onDoorAnchorXMinus:          () => NudgeDoorAnchor(-1,  0),
+                onDoorAnchorXPlus:           () => NudgeDoorAnchor(+1,  0),
+                onDoorAnchorYMinus:          () => NudgeDoorAnchor( 0, -1),
+                onDoorAnchorYPlus:           () => NudgeDoorAnchor( 0, +1),
+                onDoorSizeMinus:             () => NudgeDoorSize(-1),
+                onDoorSizePlus:              () => NudgeDoorSize(+1),
+                onDoorApply:                 () => ApplyDoorFromPanel(),
+                onDoorClear:                 () => ClearDoorOnActive());
 
             // Wire panel close callbacks to keep dropdown state in sync
             if (_uiRefs.ModesPanelDrag     != null)
@@ -109,6 +122,17 @@ namespace Valkur.Gameplay.Buildings
             _fillBtnImg    = _uiRefs.FillBtnImg;
             _eraseBtnImg          = _uiRefs.EraseBtnImg;
             _eraseSubPanel        = _uiRefs.EraseSubPanel;
+            _doorBtnImg           = _uiRefs.DoorBtnImg;
+            _doorSubPanel         = _uiRefs.DoorSubPanel;
+            _doorStatusTmp        = _uiRefs.DoorStatusText;
+            _doorHasDoorBtnImg    = _uiRefs.DoorHasDoorBtnImg;
+            _doorHasDoorBtnLabel  = _uiRefs.DoorHasDoorBtnLabel;
+            _doorTargetField      = _uiRefs.DoorTargetField;
+            _doorSpawnXField      = _uiRefs.DoorSpawnXField;
+            _doorSpawnYField      = _uiRefs.DoorSpawnYField;
+            _doorAnchorXVal       = _uiRefs.DoorAnchorXVal;
+            _doorAnchorYVal       = _uiRefs.DoorAnchorYVal;
+            _doorSizeVal          = _uiRefs.DoorSizeVal;
             _eraseTilesAreaBtnImg = _uiRefs.EraseTilesAreaBtnImg;
             _eraseZoneBtnImg      = _uiRefs.EraseZoneBtnImg;
             // Capture the Buildings panel's header Image for the picker blink coroutine.
