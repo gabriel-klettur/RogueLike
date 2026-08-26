@@ -515,6 +515,70 @@
         ]
       },
       "extraSignatures": {}
+    },
+    "rock_lava": {
+      "materialA": "stone",
+      "materialB": "lava",
+      "primaryMaterial": 0,
+      "palette": {
+        "stone": "#848484",
+        "lava": "#e4540c"
+      },
+      "cornerOrder": "NW,NE,SE,SW",
+      "keyMeaning": "1 = corner is the SECONDARY terrain (matches TerrainTileResolver)",
+      "terrainPrimary": "stone",
+      "terrainSecondary": "lava",
+      "generator": "tools/atlas/wave2/rock_lava_ruleset.py",
+      "slots": {
+        "0000": [
+          "rock_lava_r02_c02"
+        ],
+        "0001": [
+          "rock_lava_r04_c02"
+        ],
+        "0010": [
+          "rock_lava_r03_c04"
+        ],
+        "0011": [
+          "rock_lava_r03_c05"
+        ],
+        "0100": [
+          "rock_lava_r02_c03"
+        ],
+        "0101": [
+          "rock_lava_r04_c04"
+        ],
+        "0110": [
+          "rock_lava_r02_c06"
+        ],
+        "0111": [
+          "rock_lava_r03_c06"
+        ],
+        "1000": [
+          "rock_lava_r02_c04"
+        ],
+        "1001": [
+          "rock_lava_r02_c01"
+        ],
+        "1010": [
+          "rock_lava_r05_c02"
+        ],
+        "1011": [
+          "rock_lava_r04_c01"
+        ],
+        "1100": [
+          "rock_lava_r01_c02"
+        ],
+        "1101": [
+          "rock_lava_r01_c01"
+        ],
+        "1110": [
+          "rock_lava_r01_c03"
+        ],
+        "1111": [
+          "rock_lava_r00_c00"
+        ]
+      }
     }
   }
 }

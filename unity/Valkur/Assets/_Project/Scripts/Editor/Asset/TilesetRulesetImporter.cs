@@ -43,9 +43,12 @@ namespace Valkur.Editor
     /// already registered in <c>TerrainCatalog.asset</c> with the right
     /// TerrainPrimary/TerrainSecondary; this importer looks the asset up by folder name
     /// and preserves those fields, only writing FolderName, Model and the 16 slots. The
-    /// "create a brand-new ruleset" path exists for a future pack that isn't cataloged
-    /// yet, but the JSON gives no terrain names, so a freshly created ruleset is left
-    /// with empty TerrainPrimary/TerrainSecondary and a loud warning to fill them in.
+    /// "create a brand-new ruleset" path exists for a pack that isn't cataloged yet: it
+    /// takes TerrainPrimary/TerrainSecondary from the pack's optional
+    /// <c>terrainPrimary</c>/<c>terrainSecondary</c> keys, and warns loudly when neither
+    /// the asset nor the JSON names them — an unnamed ruleset auto-tiles nothing, since
+    /// TerrainTileResolver keys corner slots by TerrainSecondary. Names already on an
+    /// asset always win, so a re-import never overwrites a hand-checked pair.
     /// </para>
     ///
     /// <para>
@@ -93,15 +96,20 @@ namespace Valkur.Editor
             public readonly TilesetRuleset ExistingRuleset; // null => a new asset will be created on Apply
             public readonly Dictionary<byte, Sprite[]> SlotVariants; // exactly 16 entries, keyed by Corner16Slot value
             public readonly int ExtraSignatureCount;
+            public readonly string TerrainPrimary;    // "" when the JSON names no terrains
+            public readonly string TerrainSecondary;
 
             public ResolvedPack(string packName, string packFolder, TilesetRuleset existingRuleset,
-                                 Dictionary<byte, Sprite[]> slotVariants, int extraSignatureCount)
+                                 Dictionary<byte, Sprite[]> slotVariants, int extraSignatureCount,
+                                 string terrainPrimary, string terrainSecondary)
             {
                 PackName = packName;
                 PackFolder = packFolder;
                 ExistingRuleset = existingRuleset;
                 SlotVariants = slotVariants;
                 ExtraSignatureCount = extraSignatureCount;
+                TerrainPrimary = terrainPrimary;
+                TerrainSecondary = terrainSecondary;
             }
         }
 
@@ -293,7 +301,15 @@ namespace Valkur.Editor
                 : 0;
 
             TilesetRuleset existing = FindExistingRuleset(packName, packFolder, catalog);
-            resolved = new ResolvedPack(packName, packFolder, existing, slotVariants, extraSignatureCount);
+            // Optional, and only ever consulted for a pack that has no ruleset yet: the
+            // five original packs are already cataloged with hand-checked terrain names
+            // and those must survive a re-import untouched.
+            packData.TryGetValue("terrainPrimary", out object primaryObj);
+            packData.TryGetValue("terrainSecondary", out object secondaryObj);
+
+            resolved = new ResolvedPack(packName, packFolder, existing, slotVariants, extraSignatureCount,
+                                        primaryObj as string ?? string.Empty,
+                                        secondaryObj as string ?? string.Empty);
             return true;
         }
 
@@ -356,12 +372,17 @@ namespace Valkur.Editor
                 AssetDatabase.CreateAsset(ruleset, $"{resolved.PackFolder}/{RULESET_FILE}");
             }
 
-            // Preserve whatever terrains/priority the ruleset already declares (or leave
-            // them empty for a brand-new one — the JSON has no terrain names to draw from).
+            // Preserve whatever terrains/priority the ruleset already declares, and fall
+            // back to the names the JSON carries. A pack that declares neither still
+            // imports its slots and warns — an unnamed ruleset resolves nothing, because
+            // TerrainTileResolver keys corner slots by TerrainSecondary.
+            string primary   = FirstNonEmpty(ruleset.TerrainPrimary, resolved.TerrainPrimary);
+            string secondary = FirstNonEmpty(ruleset.TerrainSecondary, resolved.TerrainSecondary);
+
             ruleset.EditorSetMetadata(
                 resolved.PackName,
-                ruleset.TerrainPrimary,
-                ruleset.TerrainSecondary,
+                primary,
+                secondary,
                 ruleset.Priority,
                 AutoTileModel.Corner16);
 
@@ -371,13 +392,23 @@ namespace Valkur.Editor
             EditorUtility.SetDirty(ruleset);
 
             if (isNew)
-            {
                 catalog.EditorAdd(ruleset);
-                Debug.LogWarning($"{LOG_PREFIX} [{resolved.PackName}] created new ruleset at " +
-                                 $"'{resolved.PackFolder}/{RULESET_FILE}' with EMPTY TerrainPrimary/TerrainSecondary " +
-                                 "— the JSON does not name terrains, set them in the Inspector.");
+
+            if (string.IsNullOrEmpty(primary) || string.IsNullOrEmpty(secondary))
+            {
+                Debug.LogWarning($"{LOG_PREFIX} [{resolved.PackName}] ruleset at " +
+                                 $"'{resolved.PackFolder}/{RULESET_FILE}' has EMPTY " +
+                                 "TerrainPrimary/TerrainSecondary — neither the asset nor the JSON " +
+                                 "names them, so nothing will auto-tile with it. Add " +
+                                 "'terrainPrimary'/'terrainSecondary' to the pack in tile_rulesets.json, " +
+                                 "or set them in the Inspector.");
             }
         }
+
+        /// <summary>First of the two that carries text, or empty when neither does.</summary>
+        private static string FirstNonEmpty(string preferred, string fallback) =>
+            !string.IsNullOrEmpty(preferred) ? preferred
+            : (fallback ?? string.Empty);
 
         private static void AppendPackSummary(StringBuilder sb, ResolvedPack resolved, bool apply)
         {

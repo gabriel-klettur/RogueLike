@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48079e4d271a435419c1acc1fe6bc71d, type: 3}
+  m_Name: ruleset
+  m_EditorClassIdentifier: 
+  folderName: rock_lava
+  model: 2
+  terrainPrimary: stone
+  terrainSecondary: lava
+  priority: 0
+  slots: []
+  cornerSlots:
+  - slot: 0
+    variants:
+    - {fileID: 21300000, guid: 3e8ff834437fab048ad0afb10dd7d69e, type: 3}
+  - slot: 1
+    variants:
+    - {fileID: 21300000, guid: 3787e2c83942de847962e5c4b6da2268, type: 3}
+  - slot: 2
+    variants:
+    - {fileID: 21300000, guid: bdf1e172c1d1e8d48af3bdda474f1423, type: 3}
+  - slot: 3
+    variants:
+    - {fileID: 21300000, guid: d09481c1570fff74aa66864b0b26bbd1, type: 3}
+  - slot: 4
+    variants:
+    - {fileID: 21300000, guid: f936e3823d89b4747bb60a17ee98a742, type: 3}
+  - slot: 5
+    variants:
+    - {fileID: 21300000, guid: 7562d3c5a977bf349a498bea002dbb18, type: 3}
+  - slot: 6
+    variants:
+    - {fileID: 21300000, guid: 2ebe1c4c11f127340a5c9f6d800e7ee3, type: 3}
+  - slot: 7
+    variants:
+    - {fileID: 21300000, guid: dc38692ced4c3fc41a6e4448dd2cdcd6, type: 3}
+  - slot: 8
+    variants:
+    - {fileID: 21300000, guid: 46aa98bcc7b748f479406e8d7b90717b, type: 3}
+  - slot: 9
+    variants:
+    - {fileID: 21300000, guid: 4c61ba1767e859f4c81d08278d6c2c8e, type: 3}
+  - slot: 10
+    variants:
+    - {fileID: 21300000, guid: 53f8e3995d01a8e408c14a693cd16ccd, type: 3}
+  - slot: 11
+    variants:
+    - {fileID: 21300000, guid: 7315a416a9b0fa8498ac8797a13b72ca, type: 3}
+  - slot: 12
+    variants:
+    - {fileID: 21300000, guid: 617951cb7d57ea84baf2ba1e190da269, type: 3}
+  - slot: 13
+    variants:
+    - {fileID: 21300000, guid: ffe9d8b13cd069949b18aa12f8028b6b, type: 3}
+  - slot: 14
+    variants:
+    - {fileID: 21300000, guid: 5a192ee03704ab54c90894e88273e4d8, type: 3}
+  - slot: 15
+    variants:
+    - {fileID: 21300000, guid: ddeb7a3c901560b48855247eb0fc6612, type: 3}
+  hiddenLegacy: []
+  previewIcon: {fileID: 0}

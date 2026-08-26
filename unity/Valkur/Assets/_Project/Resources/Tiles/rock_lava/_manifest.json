@@ -1,0 +1,539 @@
+{
+  "schemaVersion": 1,
+  "source": "rock_lava.png",
+  "cellPx": 32,
+  "cols": 8,
+  "rows": 8,
+  "cells": [
+    {
+      "r": 0,
+      "c": 0,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 1,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 2,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 3,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 4,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 5,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 6,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 7,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 0,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 1,
+      "file": "rock_lava_r01_c01",
+      "uniqueId": 1,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 2,
+      "file": "rock_lava_r01_c02",
+      "uniqueId": 2,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 3,
+      "file": "rock_lava_r01_c03",
+      "uniqueId": 3,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 4,
+      "file": "rock_lava_r01_c01",
+      "uniqueId": 1,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 5,
+      "file": "rock_lava_r01_c02",
+      "uniqueId": 2,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 6,
+      "file": "rock_lava_r01_c03",
+      "uniqueId": 3,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 7,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 0,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 1,
+      "file": "rock_lava_r02_c01",
+      "uniqueId": 4,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 2,
+      "file": "rock_lava_r02_c02",
+      "uniqueId": 5,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 3,
+      "file": "rock_lava_r02_c03",
+      "uniqueId": 6,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 4,
+      "file": "rock_lava_r02_c04",
+      "uniqueId": 7,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 5,
+      "file": "rock_lava_r02_c02",
+      "uniqueId": 5,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 6,
+      "file": "rock_lava_r02_c06",
+      "uniqueId": 8,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 7,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 0,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 1,
+      "file": "rock_lava_r02_c01",
+      "uniqueId": 4,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 2,
+      "file": "rock_lava_r02_c02",
+      "uniqueId": 5,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 3,
+      "file": "rock_lava_r02_c02",
+      "uniqueId": 5,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 4,
+      "file": "rock_lava_r03_c04",
+      "uniqueId": 9,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 5,
+      "file": "rock_lava_r03_c05",
+      "uniqueId": 10,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 6,
+      "file": "rock_lava_r03_c06",
+      "uniqueId": 11,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 7,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 0,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 1,
+      "file": "rock_lava_r04_c01",
+      "uniqueId": 12,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 2,
+      "file": "rock_lava_r04_c02",
+      "uniqueId": 13,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 3,
+      "file": "rock_lava_r03_c04",
+      "uniqueId": 9,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 4,
+      "file": "rock_lava_r04_c04",
+      "uniqueId": 14,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 5,
+      "file": "rock_lava_r01_c02",
+      "uniqueId": 2,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 6,
+      "file": "rock_lava_r01_c03",
+      "uniqueId": 3,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 7,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 0,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 1,
+      "file": "rock_lava_r01_c01",
+      "uniqueId": 1,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 2,
+      "file": "rock_lava_r05_c02",
+      "uniqueId": 15,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 3,
+      "file": "rock_lava_r03_c06",
+      "uniqueId": 11,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 4,
+      "file": "rock_lava_r02_c01",
+      "uniqueId": 4,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 5,
+      "file": "rock_lava_r02_c02",
+      "uniqueId": 5,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 6,
+      "file": "rock_lava_r02_c06",
+      "uniqueId": 8,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 7,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 0,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 1,
+      "file": "rock_lava_r04_c01",
+      "uniqueId": 12,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 2,
+      "file": "rock_lava_r03_c06",
+      "uniqueId": 11,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 3,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 4,
+      "file": "rock_lava_r04_c01",
+      "uniqueId": 12,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 5,
+      "file": "rock_lava_r03_c05",
+      "uniqueId": 10,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 6,
+      "file": "rock_lava_r03_c06",
+      "uniqueId": 11,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 7,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 0,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 1,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 2,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 3,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 4,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 5,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 6,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 7,
+      "file": "rock_lava_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    }
+  ],
+  "uniques": [
+    {
+      "uniqueId": 0,
+      "file": "rock_lava_r00_c00",
+      "sha256": "dd5180bce9cb9d3079de59324c5c9ffd66d272507d0ec9166eff141f0421ff00"
+    },
+    {
+      "uniqueId": 1,
+      "file": "rock_lava_r01_c01",
+      "sha256": "08ea8e82553aef5e23c837ddc171280e3f4c091f7a6a181a0dcd7cddd23e2e68"
+    },
+    {
+      "uniqueId": 2,
+      "file": "rock_lava_r01_c02",
+      "sha256": "0bda7f1d6dcaa7b27a3c737dcf94272eb28386536a8e6dc94ea6e5251d11da28"
+    },
+    {
+      "uniqueId": 3,
+      "file": "rock_lava_r01_c03",
+      "sha256": "4e8389d0ed2f62d737fe6ba9c6532c427b20700f1c429999d5eb8eecd681b00e"
+    },
+    {
+      "uniqueId": 4,
+      "file": "rock_lava_r02_c01",
+      "sha256": "f4406187a90a57a73d1fdee46add99191ed9d41803b6de2a59a4161278d43ada"
+    },
+    {
+      "uniqueId": 5,
+      "file": "rock_lava_r02_c02",
+      "sha256": "b8cf7f38b950500ecaea1dcfde536e787b8f4de0751198adb20efb5c72b573b3"
+    },
+    {
+      "uniqueId": 6,
+      "file": "rock_lava_r02_c03",
+      "sha256": "83b3e9a23d567da9ca720abbc29646b9dcfb3a8e081c0912c4656331923c8ed9"
+    },
+    {
+      "uniqueId": 7,
+      "file": "rock_lava_r02_c04",
+      "sha256": "d7f5151fc46a4a84d7b97eb0fc2d86553153db85bec92f6ae1bd35b67fd9ac18"
+    },
+    {
+      "uniqueId": 8,
+      "file": "rock_lava_r02_c06",
+      "sha256": "df4ec2e554dbc23abeed8c6c035dc5b92d03407e60a083d9b64f23f9ddfa0f2e"
+    },
+    {
+      "uniqueId": 9,
+      "file": "rock_lava_r03_c04",
+      "sha256": "f97d92ae9ca84f634c4da11b25a5365d77366588ec0c2c3236fbacbef6afb69f"
+    },
+    {
+      "uniqueId": 10,
+      "file": "rock_lava_r03_c05",
+      "sha256": "e2c4e8461e440ec3112ac5cbf282be3bf13010d0d9a603d1701e5b29eb2f7b54"
+    },
+    {
+      "uniqueId": 11,
+      "file": "rock_lava_r03_c06",
+      "sha256": "cc146804818c083890817be54b0be2d7cb618d51b3ba4a8c4eb8ff7ebb6aa0c2"
+    },
+    {
+      "uniqueId": 12,
+      "file": "rock_lava_r04_c01",
+      "sha256": "f1020d4158ab21014f8df8291ea07ba7c51a14b2aabb306f173d5e0f25e0f895"
+    },
+    {
+      "uniqueId": 13,
+      "file": "rock_lava_r04_c02",
+      "sha256": "d8f47d1480ac570b36844dd3a444bd046c60b8adcd13fa333263f0c18ebdb82b"
+    },
+    {
+      "uniqueId": 14,
+      "file": "rock_lava_r04_c04",
+      "sha256": "278109fac0b6c2c379afbd60fa2222b6b7cdfdced40dc16cacacc1489cd9b7ea"
+    },
+    {
+      "uniqueId": 15,
+      "file": "rock_lava_r05_c02",
+      "sha256": "fea4baa6d209e81d7d833971de309f835ed5ea2e726b2010bf4e4fa6f2a36329"
+    }
+  ]
+}
