@@ -529,7 +529,7 @@
   "grid_ref_size": [256, 256]
 }}},
   {"id": 63, "template_id": 249, "zone": "lobby", "rel_x": 693, "rel_y": 815, "overrides": {"scale": [220, 220], "collider_scope": "CU"}},
-  {"id": 64, "template_id": 307, "zone": "zone_100_50", "rel_x": 989, "rel_y": 915, "overrides": {"scale": [426, 426], "collider_scope": "CU", "collision_override": {
+  {"id": 64, "template_id": 307, "zone": "zone_100_50", "rel_x": 989, "rel_y": 915, "overrides": {"scale": [426, 426], "collider_scope": "CU", "door": {"target": "Interiors/house_interior_small.overlay.json", "spawn_x": 7.500, "spawn_y": 5.500}, "collision_override": {
   "width": 8,
   "height": 8,
   "collision": [

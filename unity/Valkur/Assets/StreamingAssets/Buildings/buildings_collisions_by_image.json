@@ -62,17 +62,6 @@
       ],
       "grid_ref_size": [528, 528]
     },
-  "assets/buildings/lights/lamp_post_ornate_lit.png": {
-      "width": 2,
-      "height": 4,
-      "collision": [
-        [".", "."],
-        [".", "."],
-        [".", "."],
-        [".", "."]
-      ],
-      "grid_ref_size": [50, 102]
-    },
   "assets/buildings/market/stall_awning_blue_pottery.png": {
       "width": 5,
       "height": 5,
