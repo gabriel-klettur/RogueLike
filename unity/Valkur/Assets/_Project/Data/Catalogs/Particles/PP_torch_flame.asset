@@ -24,27 +24,41 @@ MonoBehaviour:
     speed: 0.35
     gravity: 0
     drag: 0
+    orbitalSpeedDegrees: 0
+    radialSpeed: 0
     lifespan: 0.55
     sizeMin: 0.22
     sizeMax: 0.38
+    sizeAspect: 1
     colors:
     - {r: 1, g: 0.92, b: 0.66, a: 1}
     - {r: 1, g: 0.55, b: 0.14, a: 1}
     color: {r: 1, g: 0.92, b: 0.66, a: 1}
     additive: 1
+    colorIntensity: 1
     textureShape: 3
     textureSoftness: 0.55
     customSprite: {fileID: 0}
     startRotationJitterDegrees: 0
     rotationSpeedDegrees: 0
+    rotationOneWay: 0
     worldSpace: 0
+    sortingLayer: 
+    sortingOrder: 0
+    sortingFudge: 0
+    respondsToAmbientLight: 0
     radius: 1.5
+    shapeFill: -1
     arcRangeDegrees: 45
     segments: 10
     lightningOffset: 0.625
     thickness: 0.1
     swayAmp: 0.04
     swaySpeed: 0.12
+    spawnWidth: 0
+    spawnHeight: 0
+    directionDegrees: -1
+    directionSpreadDegrees: 15
     dispersion: 0.06
     gravityVector: {x: 0, y: 1.6}
     useGravityVector: 1
@@ -80,4 +94,11 @@ MonoBehaviour:
     noiseStrength: 0.13
     noiseFrequency: 1.6
     noiseScrollSpeed: 0.9
+    noiseVerticalScale: 1
+    turnoverCycles: 0
+    turnoverMinWidth: 0.12
     outerRadius: 0
+  lightPresetKey: Torch
+  lightHeightOffset: 0.35
+  layerOnly: 0
+  layers: []

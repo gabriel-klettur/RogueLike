@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace Valkur.Data
@@ -26,6 +26,21 @@ namespace Valkur.Data
         [Header("VFX Parameters")]
         [Tooltip("Visual effect configuration. Mirrors Python vfx.particles block.")]
         [SerializeField] public ParticleVfxParams vfx = new ParticleVfxParams();
+
+        [Header("Emitted light")]
+        [Tooltip("Optional light preset key. When set, every placed instance of this preset also " +
+                  "carries its own Light2D, exactly the way a lamp-post building does through " +
+                  "BuildingTemplateData.lightPresetKey. Leave empty for an effect that emits no light. " +
+                  "This exists because the fire and the light were two independent placements: the " +
+                  "world shipped 11 torch_flame emitters and 9 Torch lights, and not one flame had a " +
+                  "light within a torch's actual reach. What burned did not illuminate, and what " +
+                  "illuminated had nothing burning in it.")]
+        [SerializeField] public string lightPresetKey;
+
+        [Tooltip("How far above the placed position the light sits, in WORLD UNITS. A brazier's " +
+                  "flame burns above its anchor, so its light belongs above it too. 0 puts the light " +
+                  "exactly where the emitter was placed.")]
+        [SerializeField] public float lightHeightOffset = 0f;
 
         [Header("Layers")]
         [Tooltip("Marks this preset as a SUB-LAYER of some composite rather than something " +

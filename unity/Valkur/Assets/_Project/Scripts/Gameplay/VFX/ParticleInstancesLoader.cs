@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay.World;
@@ -207,6 +207,9 @@ namespace Valkur.Gameplay.VFX
             }
 
             Debug.Log($"[ParticleInstancesLoader] Spawned {spawned} particle emitters.");
+
+            // Emitters whose preset names a light get one as soon as the light loader exists.
+            if (isActiveAndEnabled) StartCoroutine(AttachEmittedLights());
 
             if (migrated > 0) PersistMigratedConfigs(instances, migrated);
         }
