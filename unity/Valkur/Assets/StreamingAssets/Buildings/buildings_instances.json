@@ -529,114 +529,21 @@
   "grid_ref_size": [256, 256]
 }}},
   {"id": 63, "template_id": 249, "zone": "lobby", "rel_x": 693, "rel_y": 815, "overrides": {"scale": [220, 220], "collider_scope": "CU"}},
-  {"id": 64, "template_id": 307, "zone": "zone_100_50", "rel_x": 989, "rel_y": 915, "overrides": {"scale": [426, 426], "collider_scope": "CU", "door": {"target": "Interiors/house_interior_small.overlay.json", "spawn_x": 7.500, "spawn_y": 5.500}, "collision_override": {
-  "width": 8,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [256, 256]
-}}},
-  {"id": 65, "template_id": 237, "zone": "zone_100_50", "rel_x": 301, "rel_y": 631, "overrides": {"scale": [447, 447], "collider_scope": "CU"}},
-  {"id": 66, "template_id": 231, "zone": "zone_100_50", "rel_x": -2819, "rel_y": -1016, "overrides": {"scale": [160, 239], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    ["#", "#", "#", "#", "#", "#", "#", "#"],
-    ["#", "#", "#", "#", "#", "#", "#", "#"],
-    ["#", "#", "#", "#", "#", "#", "#", "#"]
-  ],
-  "grid_ref_size": [256, 256]
-}}},
-  {"id": 67, "template_id": 232, "zone": "zone_100_50", "rel_x": 775, "rel_y": 343, "overrides": {"scale": [157, 235], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 12,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    ["#", "#", "#", "#", "#", "#", "#", "#"],
-    ["#", "#", "#", "#", "#", "#", "#", "#"],
-    ["#", "#", "#", "#", "#", "#", "#", "#"],
-    ["#", "#", "#", "#", "#", "#", "#", "#"],
-    ["#", "#", "#", "#", "#", "#", "#", "#"],
-    ["#", "#", "#", "#", "#", "#", "#", "#"],
-    ["#", "#", "#", "#", "#", "#", "#", "#"],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [256, 384]
-}}},
+  {"id": 64, "template_id": 237, "zone": "zone_100_50", "rel_x": 301, "rel_y": 631, "overrides": {"scale": [447, 447], "collider_scope": "CU"}},
+  {"id": 65, "template_id": 307, "zone": "zone_100_50", "rel_x": 989, "rel_y": 915, "overrides": {"scale": [426, 426], "split_ratio": 0.5237, "collider_scope": "CU", "door": {"target": "Interiors/house_interior_small.overlay.json", "spawn_x": 7.500, "spawn_y": 5.500}}},
+  {"id": 66, "template_id": 231, "zone": "zone_100_50", "rel_x": -2819, "rel_y": -1016, "overrides": {"scale": [160, 239], "collider_scope": "CU"}},
+  {"id": 67, "template_id": 232, "zone": "zone_100_50", "rel_x": 775, "rel_y": 343, "overrides": {"scale": [157, 235], "collider_scope": "CU"}},
   {"id": 68, "template_id": 244, "zone": "zone_100_50", "rel_x": -2572, "rel_y": -1125, "overrides": {"scale": [256, 256], "collider_scope": "CU"}},
-  {"id": 69, "template_id": 234, "zone": "zone_100_50", "rel_x": 627, "rel_y": -184, "overrides": {"scale": [277, 277], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [256, 256]
-}}},
-  {"id": 70, "template_id": 262, "zone": "zone_100_50", "rel_x": -713, "rel_y": 191, "overrides": {"scale": [210, 268], "collider_scope": "CU", "collision_override": {
-  "width": 4,
-  "height": 5,
-  "collision": [
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    ["#", "#", "#", "#"]
-  ],
-  "grid_ref_size": [122, 156]
-}}},
+  {"id": 69, "template_id": 234, "zone": "zone_100_50", "rel_x": 627, "rel_y": -184, "overrides": {"scale": [277, 277], "collider_scope": "CU"}},
+  {"id": 70, "template_id": 262, "zone": "zone_100_50", "rel_x": -713, "rel_y": 191, "overrides": {"scale": [210, 268], "collider_scope": "CU"}},
   {"id": 71, "template_id": 241, "zone": "zone_100_50", "rel_x": -67, "rel_y": 222, "overrides": {"scale": [198, 255], "collider_scope": "CU"}},
   {"id": 72, "template_id": 275, "zone": "zone_100_50", "rel_x": -36, "rel_y": 385, "overrides": {"scale": [194, 248], "collider_scope": "CU"}},
   {"id": 73, "template_id": 242, "zone": "zone_100_50", "rel_x": 286, "rel_y": 761, "overrides": {"scale": [183, 250], "collider_scope": "CU"}},
   {"id": 74, "template_id": 306, "zone": "zone_100_50", "rel_x": 574, "rel_y": 736, "overrides": {"scale": [187, 255], "collider_scope": "CU"}},
   {"id": 75, "template_id": 48, "zone": "zone_100_50", "rel_x": 401, "rel_y": 606, "overrides": {"scale": [210, 271], "collider_scope": "CU"}},
-  {"id": 76, "template_id": 286, "zone": "zone_100_50", "rel_x": -173, "rel_y": 1072, "overrides": {"scale": [221, 282], "collider_scope": "CU", "collision_override": {
-  "width": 4,
-  "height": 5,
-  "collision": [
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    ["#", "#", "#", "#"]
-  ],
-  "grid_ref_size": [122, 156]
-}}},
-  {"id": 77, "template_id": 285, "zone": "lobby", "rel_x": 1477, "rel_y": 1046, "overrides": {"scale": [175, 238], "collider_scope": "CU", "collision_override": {
-  "width": 4,
-  "height": 5,
-  "collision": [
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    ["#", "#", "#", "#"]
-  ],
-  "grid_ref_size": [114, 156]
-}}},
-  {"id": 78, "template_id": 243, "zone": "zone_100_100", "rel_x": 1001, "rel_y": -1837, "overrides": {"scale": [364, 546], "collider_scope": "CU", "collision_override": {
+  {"id": 76, "template_id": 286, "zone": "zone_100_50", "rel_x": -173, "rel_y": 1072, "overrides": {"scale": [221, 282], "collider_scope": "CU"}},
+  {"id": 77, "template_id": 285, "zone": "lobby", "rel_x": 1477, "rel_y": 1046, "overrides": {"scale": [175, 238], "collider_scope": "CU"}},
+  {"id": 78, "template_id": 243, "zone": "zone_100_100", "rel_x": 1072, "rel_y": -1869, "overrides": {"scale": [364, 546], "collider_scope": "CU", "collision_override": {
   "width": 8,
   "height": 12,
   "collision": [
@@ -647,88 +554,22 @@
     [".", ".", ".", ".", ".", ".", ".", "."],
     [".", ".", ".", ".", ".", ".", ".", "."],
     [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
+    ["#", "#", "#", "#", "#", "#", "#", "#"],
+    ["#", "#", "#", "#", "#", "#", "#", "#"],
+    ["#", "#", "#", "#", "#", "#", "#", "#"],
+    ["#", "#", "#", "#", "#", "#", "#", "#"],
+    ["#", "#", "#", "#", "#", "#", "#", "#"]
   ],
   "grid_ref_size": [256, 384]
 }}},
   {"id": 79, "template_id": 48, "zone": "lobby", "rel_x": 1084, "rel_y": 247, "overrides": {"scale": [213, 274], "collider_scope": "CU"}},
-  {"id": 80, "template_id": 175, "zone": "lobby", "rel_x": -680, "rel_y": -146, "overrides": {"scale": [191, 260], "collider_scope": "CU", "collision_override": {
-  "width": 4,
-  "height": 5,
-  "collision": [
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    ["#", "#", "#", "#"],
-    ["#", "#", "#", "#"]
-  ],
-  "grid_ref_size": [114, 156]
-}}},
+  {"id": 80, "template_id": 175, "zone": "lobby", "rel_x": -680, "rel_y": -146, "overrides": {"scale": [191, 260], "collider_scope": "CU"}},
   {"id": 81, "template_id": 308, "zone": "lobby", "rel_x": 939, "rel_y": 253, "overrides": {"scale": [405, 607], "split_ratio": 0.8142, "collider_scope": "CU"}},
-  {"id": 82, "template_id": 311, "zone": "lobby", "rel_x": 821, "rel_y": -158, "overrides": {"scale": [201, 201], "collider_scope": "CU", "collision_override": {
-  "width": 5,
-  "height": 5,
-  "collision": [
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    ["#", "#", "#", "#", "#"],
-    ["#", "#", "#", "#", "#"]
-  ],
-  "grid_ref_size": [135, 135]
-}}},
-  {"id": 83, "template_id": 311, "zone": "lobby", "rel_x": 1263, "rel_y": -152, "overrides": {"scale": [191, 191], "collider_scope": "CU", "collision_override": {
-  "width": 5,
-  "height": 5,
-  "collision": [
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    ["#", "#", "#", "#", "#"],
-    ["#", "#", "#", "#", "#"]
-  ],
-  "grid_ref_size": [135, 135]
-}}},
-  {"id": 84, "template_id": 311, "zone": "lobby", "rel_x": 1482, "rel_y": -162, "overrides": {"scale": [181, 181], "split_ratio": 0.6243, "collider_scope": "CU", "collision_override": {
-  "width": 5,
-  "height": 5,
-  "collision": [
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    ["#", "#", "#", "#", "#"],
-    ["#", "#", "#", "#", "#"]
-  ],
-  "grid_ref_size": [135, 135]
-}}},
-  {"id": 85, "template_id": 311, "zone": "lobby", "rel_x": 570, "rel_y": -161, "overrides": {"scale": [196, 196], "collider_scope": "CU", "collision_override": {
-  "width": 5,
-  "height": 5,
-  "collision": [
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    ["#", "#", "#", "#", "#"],
-    ["#", "#", "#", "#", "#"]
-  ],
-  "grid_ref_size": [135, 135]
-}}},
-  {"id": 86, "template_id": 176, "zone": "lobby", "rel_x": 2126, "rel_y": -245, "overrides": {"scale": [184, 235], "split_ratio": 0.6846, "collider_scope": "CU", "collision_override": {
-  "width": 4,
-  "height": 5,
-  "collision": [
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    ["#", "#", "#", "#"],
-    ["#", "#", "#", "#"]
-  ],
-  "grid_ref_size": [122, 156]
-}}},
+  {"id": 82, "template_id": 311, "zone": "lobby", "rel_x": 821, "rel_y": -158, "overrides": {"scale": [201, 201], "collider_scope": "CU"}},
+  {"id": 83, "template_id": 311, "zone": "lobby", "rel_x": 1263, "rel_y": -152, "overrides": {"scale": [191, 191], "collider_scope": "CU"}},
+  {"id": 84, "template_id": 311, "zone": "lobby", "rel_x": 1482, "rel_y": -162, "overrides": {"scale": [181, 181], "split_ratio": 0.6243, "collider_scope": "CU"}},
+  {"id": 85, "template_id": 311, "zone": "lobby", "rel_x": 570, "rel_y": -161, "overrides": {"scale": [196, 196], "collider_scope": "CU"}},
+  {"id": 86, "template_id": 176, "zone": "lobby", "rel_x": 2126, "rel_y": -245, "overrides": {"scale": [184, 235], "split_ratio": 0.6846, "collider_scope": "CU"}},
   {"id": 87, "template_id": 176, "zone": "zone_100_50", "rel_x": -37, "rel_y": 538, "overrides": {"scale": [191, 244], "collider_scope": "CU"}},
   {"id": 88, "template_id": 157, "zone": "Forest", "rel_x": 688, "rel_y": 397, "overrides": {"scale": [256, 384], "collider_scope": "CU"}},
   {"id": 89, "template_id": 155, "zone": "Forest", "rel_x": 688, "rel_y": 398, "overrides": {"scale": [256, 384], "collider_scope": "CU"}},
@@ -791,26 +632,46 @@
   {"id": 146, "template_id": 424, "zone": "zone_100_50", "rel_x": 466, "rel_y": 1040, "overrides": {"split_ratio": 0.9900}},
   {"id": 147, "template_id": 424, "zone": "zone_100_50", "rel_x": 569, "rel_y": 1040, "overrides": {"split_ratio": 0.9900}},
   {"id": 148, "template_id": 419, "zone": "zone_100_50", "rel_x": -28, "rel_y": 1241, "overrides": {"split_ratio": 0.9900}},
-  {"id": 149, "template_id": 418, "zone": "zone_100_50", "rel_x": 274, "rel_y": 1171, "overrides": {"split_ratio": 0.9900}},
-  {"id": 150, "template_id": 397, "zone": "zone_100_50", "rel_x": 230, "rel_y": 999},
-  {"id": 151, "template_id": 397, "zone": "zone_100_50", "rel_x": 267, "rel_y": 890},
-  {"id": 152, "template_id": 391, "zone": "zone_100_50", "rel_x": 802, "rel_y": 1016},
-  {"id": 153, "template_id": 391, "zone": "zone_100_50", "rel_x": 814, "rel_y": 1048},
-  {"id": 154, "template_id": 391, "zone": "zone_100_50", "rel_x": 815, "rel_y": 1078},
-  {"id": 155, "template_id": 391, "zone": "zone_100_50", "rel_x": 816, "rel_y": 1109},
-  {"id": 156, "template_id": 391, "zone": "zone_100_50", "rel_x": 834, "rel_y": 1138},
-  {"id": 157, "template_id": 391, "zone": "zone_100_50", "rel_x": 823, "rel_y": 1174},
-  {"id": 158, "template_id": 391, "zone": "zone_100_50", "rel_x": 787, "rel_y": 1190},
-  {"id": 159, "template_id": 391, "zone": "zone_100_50", "rel_x": 732, "rel_y": 1178},
-  {"id": 160, "template_id": 444, "zone": "Lobby", "rel_x": 1282, "rel_y": 154, "overrides": {"split_ratio": 0.9900}},
-  {"id": 161, "template_id": 448, "zone": "zone_100_50", "rel_x": 654, "rel_y": 298},
-  {"id": 162, "template_id": 456, "zone": "Lobby", "rel_x": 1270, "rel_y": 1120},
-  {"id": 163, "template_id": 459, "zone": "Lobby", "rel_x": 986, "rel_y": 1043},
-  {"id": 164, "template_id": 459, "zone": "Lobby", "rel_x": 1370, "rel_y": 1042},
-  {"id": 165, "template_id": 460, "zone": "Lobby", "rel_x": 1366, "rel_y": 1301},
-  {"id": 166, "template_id": 458, "zone": "Lobby", "rel_x": 996, "rel_y": 1304},
-  {"id": 167, "template_id": 461, "zone": "Lobby", "rel_x": 1147, "rel_y": 1052},
-  {"id": 168, "template_id": 457, "zone": "zone_100_50", "rel_x": 538, "rel_y": 351, "overrides": {"split_ratio": 0.0100}},
-  {"id": 169, "template_id": 463, "zone": "zone_100_50", "rel_x": 469, "rel_y": 324},
-  {"id": 170, "template_id": 469, "zone": "zone_100_50", "rel_x": 623, "rel_y": 62}
+  {"id": 149, "template_id": 397, "zone": "zone_100_50", "rel_x": 230, "rel_y": 999},
+  {"id": 150, "template_id": 397, "zone": "zone_100_50", "rel_x": 267, "rel_y": 890},
+  {"id": 151, "template_id": 391, "zone": "zone_100_50", "rel_x": 802, "rel_y": 1016},
+  {"id": 152, "template_id": 391, "zone": "zone_100_50", "rel_x": 819, "rel_y": 1062},
+  {"id": 153, "template_id": 391, "zone": "zone_100_50", "rel_x": 816, "rel_y": 1109},
+  {"id": 154, "template_id": 391, "zone": "zone_100_50", "rel_x": 834, "rel_y": 1138},
+  {"id": 155, "template_id": 391, "zone": "zone_100_50", "rel_x": 823, "rel_y": 1174},
+  {"id": 156, "template_id": 391, "zone": "zone_100_50", "rel_x": 781, "rel_y": 1190},
+  {"id": 157, "template_id": 391, "zone": "zone_100_50", "rel_x": 729, "rel_y": 1168},
+  {"id": 158, "template_id": 444, "zone": "Lobby", "rel_x": 1282, "rel_y": 154, "overrides": {"split_ratio": 0.9900}},
+  {"id": 159, "template_id": 448, "zone": "zone_100_50", "rel_x": 654, "rel_y": 298},
+  {"id": 160, "template_id": 456, "zone": "Lobby", "rel_x": 1270, "rel_y": 1120},
+  {"id": 161, "template_id": 459, "zone": "Lobby", "rel_x": 986, "rel_y": 1043},
+  {"id": 162, "template_id": 459, "zone": "Lobby", "rel_x": 1370, "rel_y": 1042},
+  {"id": 163, "template_id": 460, "zone": "Lobby", "rel_x": 1366, "rel_y": 1301},
+  {"id": 164, "template_id": 458, "zone": "Lobby", "rel_x": 996, "rel_y": 1304},
+  {"id": 165, "template_id": 461, "zone": "Lobby", "rel_x": 1147, "rel_y": 1052},
+  {"id": 166, "template_id": 457, "zone": "zone_100_50", "rel_x": 538, "rel_y": 351, "overrides": {"split_ratio": 0.0100}},
+  {"id": 167, "template_id": 463, "zone": "zone_100_50", "rel_x": 469, "rel_y": 324},
+  {"id": 168, "template_id": 469, "zone": "zone_100_50", "rel_x": 623, "rel_y": 62},
+  {"id": 169, "template_id": 712, "zone": "Lobby", "rel_x": 1199, "rel_y": 1255},
+  {"id": 170, "template_id": 712, "zone": "Lobby", "rel_x": 1200, "rel_y": 1150},
+  {"id": 171, "template_id": 716, "zone": "Lobby", "rel_x": 1294, "rel_y": 1054},
+  {"id": 172, "template_id": 717, "zone": "Lobby", "rel_x": 1068, "rel_y": 1055},
+  {"id": 173, "template_id": 622, "zone": "Lobby", "rel_x": 253, "rel_y": 136, "overrides": {"scale": [45, 59], "split_ratio": 0.9900}},
+  {"id": 174, "template_id": 624, "zone": "Lobby", "rel_x": 195, "rel_y": 85, "overrides": {"scale": [36, 60], "split_ratio": 0.9900}},
+  {"id": 175, "template_id": 632, "zone": "Lobby", "rel_x": 376, "rel_y": 142, "overrides": {"scale": [41, 33], "split_ratio": 0.9900}},
+  {"id": 176, "template_id": 908, "zone": "zone_100_50", "rel_x": 1317, "rel_y": 1204},
+  {"id": 177, "template_id": 932, "zone": "zone_100_50", "rel_x": 239, "rel_y": 273, "overrides": {"scale": [121, 239], "split_ratio": 0.5839, "z_bottom": 1, "z_top": 1}},
+  {"id": 178, "template_id": 935, "zone": "zone_100_50", "rel_x": 223, "rel_y": 405, "overrides": {"scale": [155, 144]}},
+  {"id": 179, "template_id": 930, "zone": "zone_100_50", "rel_x": 475, "rel_y": 1058, "overrides": {"scale": [103, 187]}},
+  {"id": 180, "template_id": 927, "zone": "Lobby", "rel_x": 1059, "rel_y": 1058, "overrides": {"scale": [106, 194]}},
+  {"id": 181, "template_id": 934, "zone": "Lobby", "rel_x": 204, "rel_y": 471, "overrides": {"split_ratio": 0.9900, "z_bottom": 2, "z_top": 7}},
+  {"id": 182, "template_id": 391, "zone": "zone_100_50", "rel_x": 679, "rel_y": 1189},
+  {"id": 183, "template_id": 391, "zone": "zone_100_50", "rel_x": 630, "rel_y": 1167},
+  {"id": 184, "template_id": 391, "zone": "zone_100_50", "rel_x": 590, "rel_y": 1191},
+  {"id": 185, "template_id": 391, "zone": "zone_100_50", "rel_x": 396, "rel_y": 1174},
+  {"id": 186, "template_id": 391, "zone": "zone_100_50", "rel_x": 355, "rel_y": 1192},
+  {"id": 187, "template_id": 391, "zone": "zone_100_50", "rel_x": 302, "rel_y": 1174},
+  {"id": 188, "template_id": 391, "zone": "zone_100_50", "rel_x": 257, "rel_y": 1196},
+  {"id": 189, "template_id": 909, "zone": "zone_100_50", "rel_x": 378, "rel_y": 534},
+  {"id": 190, "template_id": 909, "zone": "zone_100_50", "rel_x": 202, "rel_y": 251}
 ]

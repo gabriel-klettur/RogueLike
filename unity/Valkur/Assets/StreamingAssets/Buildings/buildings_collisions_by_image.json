@@ -1,4 +1,49 @@
 {
+  "assets/buildings/bandit/bottle_amber_cups.png": {
+      "width": 1,
+      "height": 1,
+      "collision": [
+        ["."]
+      ],
+      "grid_ref_size": [25, 32]
+    },
+  "assets/buildings/bandit/bottle_green_fallen.png": {
+      "width": 1,
+      "height": 1,
+      "collision": [
+        ["."]
+      ],
+      "grid_ref_size": [29, 19]
+    },
+  "assets/buildings/blacksmith/anvil_stump.png": {
+      "width": 2,
+      "height": 3,
+      "collision": [
+        [".", "."],
+        [".", "."],
+        ["#", "#"]
+      ],
+      "grid_ref_size": [53, 70]
+    },
+  "assets/buildings/blacksmith/armor_stand_plate.png": {
+      "width": 2,
+      "height": 3,
+      "collision": [
+        [".", "."],
+        [".", "."],
+        [".", "."]
+      ],
+      "grid_ref_size": [58, 96]
+    },
+  "assets/buildings/blacksmith/firewood_bundle_strapped.png": {
+      "width": 2,
+      "height": 2,
+      "collision": [
+        [".", "."],
+        ["#", "#"]
+      ],
+      "grid_ref_size": [56, 45]
+    },
   "assets/buildings/combat/combat_training_yard.png": {
       "width": 48,
       "height": 32,
@@ -62,6 +107,52 @@
       ],
       "grid_ref_size": [528, 528]
     },
+  "assets/buildings/graveyard/bench_stone_graveyard.png": {
+      "width": 2,
+      "height": 2,
+      "collision": [
+        [".", "."],
+        ["#", "#"]
+      ],
+      "grid_ref_size": [62, 38]
+    },
+  "assets/buildings/graveyard/flower_arrangement_lilies.png": {
+      "width": 2,
+      "height": 2,
+      "collision": [
+        [".", "."],
+        ["#", "#"]
+      ],
+      "grid_ref_size": [47, 42]
+    },
+  "assets/buildings/graveyard/flower_pot_roses.png": {
+      "width": 1,
+      "height": 2,
+      "collision": [
+        ["."],
+        ["#"]
+      ],
+      "grid_ref_size": [31, 38]
+    },
+  "assets/buildings/graveyard/gate_pillar_lantern.png": {
+      "width": 2,
+      "height": 3,
+      "collision": [
+        [".", "."],
+        [".", "."],
+        [".", "."]
+      ],
+      "grid_ref_size": [33, 83]
+    },
+  "assets/buildings/lights/brazier_tripod_brass.png": {
+      "width": 2,
+      "height": 2,
+      "collision": [
+        [".", "."],
+        [".", "."]
+      ],
+      "grid_ref_size": [33, 64]
+    },
   "assets/buildings/market/stall_awning_blue_pottery.png": {
       "width": 5,
       "height": 5,
@@ -73,6 +164,15 @@
         ["#", "#", "#", "#", "#"]
       ],
       "grid_ref_size": [141, 147]
+    },
+  "assets/buildings/nature/bush_sparse_red_berries.png": {
+      "width": 2,
+      "height": 2,
+      "collision": [
+        [".", "."],
+        [".", "."]
+      ],
+      "grid_ref_size": [60, 54]
     },
   "assets/buildings/nature/hedge_block_wide_trimmed.png": {
       "width": 3,
@@ -264,6 +364,73 @@
       ],
       "grid_ref_size": [87, 112]
     },
+  "assets/buildings/shops/shop_smithy_dark_roof.png": {
+      "width": 6,
+      "height": 6,
+      "collision": [
+        [".", ".", ".", ".", ".", "."],
+        [".", ".", ".", ".", ".", "."],
+        [".", ".", ".", ".", ".", "."],
+        [".", ".", ".", ".", ".", "."],
+        [".", ".", ".", ".", ".", "."],
+        [".", ".", ".", ".", ".", "."]
+      ],
+      "grid_ref_size": [162, 163]
+    },
+  "assets/buildings/statues/bench_stone_carved.png": {
+      "width": 3,
+      "height": 2,
+      "collision": [
+        [".", ".", "."],
+        ["#", "#", "#"]
+      ],
+      "grid_ref_size": [77, 61]
+    },
+  "assets/buildings/statues/column_ruined_ivy.png": {
+      "width": 3,
+      "height": 3,
+      "collision": [
+        [".", ".", "."],
+        [".", ".", "."],
+        ["#", "#", "#"]
+      ],
+      "grid_ref_size": [81, 90]
+    },
+  "assets/buildings/statues/column_winged_victory.png": {
+      "width": 2,
+      "height": 4,
+      "collision": [
+        [".", "."],
+        [".", "."],
+        [".", "."],
+        [".", "."]
+      ],
+      "grid_ref_size": [49, 122]
+    },
+  "assets/buildings/statues/statue_king_crowned.png": {
+      "width": 3,
+      "height": 5,
+      "collision": [
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."]
+      ],
+      "grid_ref_size": [77, 141]
+    },
+  "assets/buildings/statues/statue_knight_sword_aloft.png": {
+      "width": 3,
+      "height": 5,
+      "collision": [
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."]
+      ],
+      "grid_ref_size": [85, 154]
+    },
   "assets/buildings/statues/statue_olim_01.png": {
       "width": 32,
       "height": 32,
@@ -302,6 +469,40 @@
         ["#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#", "#"]
       ],
       "grid_ref_size": [1024, 1024]
+    },
+  "assets/buildings/statues/statue_priest_reliquary.png": {
+      "width": 3,
+      "height": 5,
+      "collision": [
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."]
+      ],
+      "grid_ref_size": [76, 150]
+    },
+  "assets/buildings/statues/statue_wizard_staff.png": {
+      "width": 3,
+      "height": 5,
+      "collision": [
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."]
+      ],
+      "grid_ref_size": [73, 141]
+    },
+  "assets/buildings/statues/sundial_gnomon_gold.png": {
+      "width": 3,
+      "height": 3,
+      "collision": [
+        [".", ".", "."],
+        ["#", "#", "#"],
+        ["#", "#", "#"]
+      ],
+      "grid_ref_size": [72, 67]
     },
   "assets/buildings/vegetation/tree_10.png": {
       "width": 8,
