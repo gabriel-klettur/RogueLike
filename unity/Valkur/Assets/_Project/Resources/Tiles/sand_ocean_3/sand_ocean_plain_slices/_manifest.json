@@ -1,0 +1,539 @@
+{
+  "schemaVersion": 1,
+  "source": "sand_ocean_plain",
+  "cellPx": 32,
+  "cols": 8,
+  "rows": 8,
+  "cells": [
+    {
+      "r": 0,
+      "c": 0,
+      "file": "sand_ocean_plain_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 1,
+      "file": "sand_ocean_plain_r00_c01",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 2,
+      "file": "sand_ocean_plain_r00_c02",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 3,
+      "file": "sand_ocean_plain_r00_c03",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 4,
+      "file": "sand_ocean_plain_r00_c04",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 5,
+      "file": "sand_ocean_plain_r00_c05",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 6,
+      "file": "sand_ocean_plain_r00_c06",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 7,
+      "file": "sand_ocean_plain_r00_c07",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 0,
+      "file": "sand_ocean_plain_r01_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 1,
+      "file": "sand_ocean_plain_r01_c01",
+      "uniqueId": 1,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 2,
+      "file": "sand_ocean_plain_r01_c02",
+      "uniqueId": 2,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 3,
+      "file": "sand_ocean_plain_r01_c03",
+      "uniqueId": 3,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 4,
+      "file": "sand_ocean_plain_r01_c04",
+      "uniqueId": 1,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 5,
+      "file": "sand_ocean_plain_r01_c05",
+      "uniqueId": 2,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 6,
+      "file": "sand_ocean_plain_r01_c06",
+      "uniqueId": 3,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 7,
+      "file": "sand_ocean_plain_r01_c07",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 0,
+      "file": "sand_ocean_plain_r02_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 1,
+      "file": "sand_ocean_plain_r02_c01",
+      "uniqueId": 4,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 2,
+      "file": "sand_ocean_plain_r02_c02",
+      "uniqueId": 5,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 3,
+      "file": "sand_ocean_plain_r02_c03",
+      "uniqueId": 6,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 4,
+      "file": "sand_ocean_plain_r02_c04",
+      "uniqueId": 7,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 5,
+      "file": "sand_ocean_plain_r02_c05",
+      "uniqueId": 5,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 6,
+      "file": "sand_ocean_plain_r02_c06",
+      "uniqueId": 8,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 7,
+      "file": "sand_ocean_plain_r02_c07",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 0,
+      "file": "sand_ocean_plain_r03_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 1,
+      "file": "sand_ocean_plain_r03_c01",
+      "uniqueId": 4,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 2,
+      "file": "sand_ocean_plain_r03_c02",
+      "uniqueId": 5,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 3,
+      "file": "sand_ocean_plain_r03_c03",
+      "uniqueId": 5,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 4,
+      "file": "sand_ocean_plain_r03_c04",
+      "uniqueId": 9,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 5,
+      "file": "sand_ocean_plain_r03_c05",
+      "uniqueId": 10,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 6,
+      "file": "sand_ocean_plain_r03_c06",
+      "uniqueId": 11,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 7,
+      "file": "sand_ocean_plain_r03_c07",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 0,
+      "file": "sand_ocean_plain_r04_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 1,
+      "file": "sand_ocean_plain_r04_c01",
+      "uniqueId": 12,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 2,
+      "file": "sand_ocean_plain_r04_c02",
+      "uniqueId": 13,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 3,
+      "file": "sand_ocean_plain_r04_c03",
+      "uniqueId": 9,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 4,
+      "file": "sand_ocean_plain_r04_c04",
+      "uniqueId": 14,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 5,
+      "file": "sand_ocean_plain_r04_c05",
+      "uniqueId": 2,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 6,
+      "file": "sand_ocean_plain_r04_c06",
+      "uniqueId": 3,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 7,
+      "file": "sand_ocean_plain_r04_c07",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 0,
+      "file": "sand_ocean_plain_r05_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 1,
+      "file": "sand_ocean_plain_r05_c01",
+      "uniqueId": 1,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 2,
+      "file": "sand_ocean_plain_r05_c02",
+      "uniqueId": 15,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 3,
+      "file": "sand_ocean_plain_r05_c03",
+      "uniqueId": 11,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 4,
+      "file": "sand_ocean_plain_r05_c04",
+      "uniqueId": 4,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 5,
+      "file": "sand_ocean_plain_r05_c05",
+      "uniqueId": 5,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 6,
+      "file": "sand_ocean_plain_r05_c06",
+      "uniqueId": 8,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 7,
+      "file": "sand_ocean_plain_r05_c07",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 0,
+      "file": "sand_ocean_plain_r06_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 1,
+      "file": "sand_ocean_plain_r06_c01",
+      "uniqueId": 12,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 2,
+      "file": "sand_ocean_plain_r06_c02",
+      "uniqueId": 11,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 3,
+      "file": "sand_ocean_plain_r06_c03",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 4,
+      "file": "sand_ocean_plain_r06_c04",
+      "uniqueId": 12,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 5,
+      "file": "sand_ocean_plain_r06_c05",
+      "uniqueId": 10,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 6,
+      "file": "sand_ocean_plain_r06_c06",
+      "uniqueId": 11,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 7,
+      "file": "sand_ocean_plain_r06_c07",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 0,
+      "file": "sand_ocean_plain_r07_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 1,
+      "file": "sand_ocean_plain_r07_c01",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 2,
+      "file": "sand_ocean_plain_r07_c02",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 3,
+      "file": "sand_ocean_plain_r07_c03",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 4,
+      "file": "sand_ocean_plain_r07_c04",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 5,
+      "file": "sand_ocean_plain_r07_c05",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 6,
+      "file": "sand_ocean_plain_r07_c06",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 7,
+      "file": "sand_ocean_plain_r07_c07",
+      "uniqueId": 0,
+      "transparent": false
+    }
+  ],
+  "uniques": [
+    {
+      "id": 0,
+      "file": "sand_ocean_plain_r00_c00",
+      "hash": "278ae6aa668cf8f0c77dd1e0aa09ddafb66bceda083e883c302bda849d7b99f5"
+    },
+    {
+      "id": 1,
+      "file": "sand_ocean_plain_r01_c01",
+      "hash": "007e10f95d8b6883343069288e65bd20376c3eec4414d375d1824949471586bf"
+    },
+    {
+      "id": 2,
+      "file": "sand_ocean_plain_r01_c02",
+      "hash": "078f471bc50d2aecf0f1f8edfb63c74ab86a29250152a448e4dad9156f39c586"
+    },
+    {
+      "id": 3,
+      "file": "sand_ocean_plain_r01_c03",
+      "hash": "2bad70bc664a361fb4494fcd9a7eb725c09571b8b566f732846a57177585b309"
+    },
+    {
+      "id": 4,
+      "file": "sand_ocean_plain_r02_c01",
+      "hash": "05b665f32ad9d49e9dd3cbfbdab9d85deecd82a56cbca1affbdd9ac97f97a720"
+    },
+    {
+      "id": 5,
+      "file": "sand_ocean_plain_r02_c02",
+      "hash": "c5ba21bfecaad88ec6c2697fbefdf1f71259c4115cbc30ec633a7d9ce90dff28"
+    },
+    {
+      "id": 6,
+      "file": "sand_ocean_plain_r02_c03",
+      "hash": "e15961bb1508dcc77fa6cb95a900b2ef5a8220414c6f78240bce2e22b897b118"
+    },
+    {
+      "id": 7,
+      "file": "sand_ocean_plain_r02_c04",
+      "hash": "de1c41e4ccc0f6c716fa906fc45c9a53c17b1609b21e33041a3e09f7b9f16787"
+    },
+    {
+      "id": 8,
+      "file": "sand_ocean_plain_r02_c06",
+      "hash": "1659c5bcaca759d5e7079b45faa0b15a43ce5887b2f281900a6371d93018dbab"
+    },
+    {
+      "id": 9,
+      "file": "sand_ocean_plain_r03_c04",
+      "hash": "0069448c2b5cf9561739351a70dfe7037b3d4350b146022e8429261c9f6dbf11"
+    },
+    {
+      "id": 10,
+      "file": "sand_ocean_plain_r03_c05",
+      "hash": "fbfd87a4cefca9757f775ef3980ff290aedfdc0d8ba3e3049c851da49dbedf45"
+    },
+    {
+      "id": 11,
+      "file": "sand_ocean_plain_r03_c06",
+      "hash": "235b4b468c859214f06ff30a44fac65d5aa1bd83bf10ce8d2dd1ba520914bfab"
+    },
+    {
+      "id": 12,
+      "file": "sand_ocean_plain_r04_c01",
+      "hash": "a2edec66479b5bfc9c8b9ec01a049732955744d030d6bd2932a4ee75cd96b8c7"
+    },
+    {
+      "id": 13,
+      "file": "sand_ocean_plain_r04_c02",
+      "hash": "a73f1e2c3bea23f58c40b8f6f34cdbb2a136550d6ac0a974eae8237f1333bcb7"
+    },
+    {
+      "id": 14,
+      "file": "sand_ocean_plain_r04_c04",
+      "hash": "5c70b4c9e5c092874ca61249102be6cea3a5e9a101b99b787ab040b56b6404a2"
+    },
+    {
+      "id": 15,
+      "file": "sand_ocean_plain_r05_c02",
+      "hash": "13431eb5ad0a400ef2c8ed9243324569552fb03685385db6e40f2f8aa16a93f8"
+    }
+  ]
+}

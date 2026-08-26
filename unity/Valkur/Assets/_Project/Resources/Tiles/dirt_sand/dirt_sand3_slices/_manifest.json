@@ -1,0 +1,539 @@
+{
+  "schemaVersion": 1,
+  "source": "dirt_sand3",
+  "cellPx": 32,
+  "cols": 8,
+  "rows": 8,
+  "cells": [
+    {
+      "r": 0,
+      "c": 0,
+      "file": "dirt_sand3_r00_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 1,
+      "file": "dirt_sand3_r00_c01",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 2,
+      "file": "dirt_sand3_r00_c02",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 3,
+      "file": "dirt_sand3_r00_c03",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 4,
+      "file": "dirt_sand3_r00_c04",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 5,
+      "file": "dirt_sand3_r00_c05",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 6,
+      "file": "dirt_sand3_r00_c06",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 0,
+      "c": 7,
+      "file": "dirt_sand3_r00_c07",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 0,
+      "file": "dirt_sand3_r01_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 1,
+      "file": "dirt_sand3_r01_c01",
+      "uniqueId": 1,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 2,
+      "file": "dirt_sand3_r01_c02",
+      "uniqueId": 2,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 3,
+      "file": "dirt_sand3_r01_c03",
+      "uniqueId": 3,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 4,
+      "file": "dirt_sand3_r01_c04",
+      "uniqueId": 1,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 5,
+      "file": "dirt_sand3_r01_c05",
+      "uniqueId": 2,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 6,
+      "file": "dirt_sand3_r01_c06",
+      "uniqueId": 3,
+      "transparent": false
+    },
+    {
+      "r": 1,
+      "c": 7,
+      "file": "dirt_sand3_r01_c07",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 0,
+      "file": "dirt_sand3_r02_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 1,
+      "file": "dirt_sand3_r02_c01",
+      "uniqueId": 4,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 2,
+      "file": "dirt_sand3_r02_c02",
+      "uniqueId": 5,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 3,
+      "file": "dirt_sand3_r02_c03",
+      "uniqueId": 6,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 4,
+      "file": "dirt_sand3_r02_c04",
+      "uniqueId": 7,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 5,
+      "file": "dirt_sand3_r02_c05",
+      "uniqueId": 5,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 6,
+      "file": "dirt_sand3_r02_c06",
+      "uniqueId": 8,
+      "transparent": false
+    },
+    {
+      "r": 2,
+      "c": 7,
+      "file": "dirt_sand3_r02_c07",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 0,
+      "file": "dirt_sand3_r03_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 1,
+      "file": "dirt_sand3_r03_c01",
+      "uniqueId": 4,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 2,
+      "file": "dirt_sand3_r03_c02",
+      "uniqueId": 5,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 3,
+      "file": "dirt_sand3_r03_c03",
+      "uniqueId": 5,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 4,
+      "file": "dirt_sand3_r03_c04",
+      "uniqueId": 9,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 5,
+      "file": "dirt_sand3_r03_c05",
+      "uniqueId": 10,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 6,
+      "file": "dirt_sand3_r03_c06",
+      "uniqueId": 11,
+      "transparent": false
+    },
+    {
+      "r": 3,
+      "c": 7,
+      "file": "dirt_sand3_r03_c07",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 0,
+      "file": "dirt_sand3_r04_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 1,
+      "file": "dirt_sand3_r04_c01",
+      "uniqueId": 12,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 2,
+      "file": "dirt_sand3_r04_c02",
+      "uniqueId": 13,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 3,
+      "file": "dirt_sand3_r04_c03",
+      "uniqueId": 9,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 4,
+      "file": "dirt_sand3_r04_c04",
+      "uniqueId": 14,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 5,
+      "file": "dirt_sand3_r04_c05",
+      "uniqueId": 2,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 6,
+      "file": "dirt_sand3_r04_c06",
+      "uniqueId": 3,
+      "transparent": false
+    },
+    {
+      "r": 4,
+      "c": 7,
+      "file": "dirt_sand3_r04_c07",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 0,
+      "file": "dirt_sand3_r05_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 1,
+      "file": "dirt_sand3_r05_c01",
+      "uniqueId": 1,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 2,
+      "file": "dirt_sand3_r05_c02",
+      "uniqueId": 15,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 3,
+      "file": "dirt_sand3_r05_c03",
+      "uniqueId": 11,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 4,
+      "file": "dirt_sand3_r05_c04",
+      "uniqueId": 4,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 5,
+      "file": "dirt_sand3_r05_c05",
+      "uniqueId": 5,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 6,
+      "file": "dirt_sand3_r05_c06",
+      "uniqueId": 8,
+      "transparent": false
+    },
+    {
+      "r": 5,
+      "c": 7,
+      "file": "dirt_sand3_r05_c07",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 0,
+      "file": "dirt_sand3_r06_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 1,
+      "file": "dirt_sand3_r06_c01",
+      "uniqueId": 12,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 2,
+      "file": "dirt_sand3_r06_c02",
+      "uniqueId": 11,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 3,
+      "file": "dirt_sand3_r06_c03",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 4,
+      "file": "dirt_sand3_r06_c04",
+      "uniqueId": 12,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 5,
+      "file": "dirt_sand3_r06_c05",
+      "uniqueId": 10,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 6,
+      "file": "dirt_sand3_r06_c06",
+      "uniqueId": 11,
+      "transparent": false
+    },
+    {
+      "r": 6,
+      "c": 7,
+      "file": "dirt_sand3_r06_c07",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 0,
+      "file": "dirt_sand3_r07_c00",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 1,
+      "file": "dirt_sand3_r07_c01",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 2,
+      "file": "dirt_sand3_r07_c02",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 3,
+      "file": "dirt_sand3_r07_c03",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 4,
+      "file": "dirt_sand3_r07_c04",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 5,
+      "file": "dirt_sand3_r07_c05",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 6,
+      "file": "dirt_sand3_r07_c06",
+      "uniqueId": 0,
+      "transparent": false
+    },
+    {
+      "r": 7,
+      "c": 7,
+      "file": "dirt_sand3_r07_c07",
+      "uniqueId": 0,
+      "transparent": false
+    }
+  ],
+  "uniques": [
+    {
+      "id": 0,
+      "file": "dirt_sand3_r00_c00",
+      "hash": "39e32eac90cbacf542fb926e6a9d38fe95cd2b8577dc83b9bf6282903c9d8460"
+    },
+    {
+      "id": 1,
+      "file": "dirt_sand3_r01_c01",
+      "hash": "730885a6d3ac3958bea58945e15cfcbd5734497778db264ad5cc2be145ea3a2e"
+    },
+    {
+      "id": 2,
+      "file": "dirt_sand3_r01_c02",
+      "hash": "8dede527e5bba8c303142bcba43dcd5894b36a611b9219227a4401b3511bf5c1"
+    },
+    {
+      "id": 3,
+      "file": "dirt_sand3_r01_c03",
+      "hash": "bd3b9fd76de969db507cfa5f50af2fdee326c404355bb885aa7cb25c83154708"
+    },
+    {
+      "id": 4,
+      "file": "dirt_sand3_r02_c01",
+      "hash": "1cd14df3183550c08b51118f186fc757d49b9248900c933eb7cfbaa007110431"
+    },
+    {
+      "id": 5,
+      "file": "dirt_sand3_r02_c02",
+      "hash": "122079c5937bafb306807acefe6ae6953cc5e5a871f12ab27dae559f150f29d0"
+    },
+    {
+      "id": 6,
+      "file": "dirt_sand3_r02_c03",
+      "hash": "8e53adc7ef08867a42d305274634d78af1ef83ce7e618f616c046299a9ffea50"
+    },
+    {
+      "id": 7,
+      "file": "dirt_sand3_r02_c04",
+      "hash": "8ab981f2fe71f9dd90ef1933e41bfbc326fc07f967bc02cbfcd14c6698397d54"
+    },
+    {
+      "id": 8,
+      "file": "dirt_sand3_r02_c06",
+      "hash": "83443cf57c45c24bd68dba84446c3100cab3b3c0b97a6c45fa5c07574c0c10df"
+    },
+    {
+      "id": 9,
+      "file": "dirt_sand3_r03_c04",
+      "hash": "f83c824d98c10bb780dcd93a6f90b0419950e4cfaf3e09c9e91fb5afd91cb668"
+    },
+    {
+      "id": 10,
+      "file": "dirt_sand3_r03_c05",
+      "hash": "bfbb7d296b7e427d00ca390281604cc8e3b9cba53c9efec9a28185bcffcf707f"
+    },
+    {
+      "id": 11,
+      "file": "dirt_sand3_r03_c06",
+      "hash": "a07b5d544f63a5969116efbaf42344a68d0cde45a011ef16ce14f777139ed16a"
+    },
+    {
+      "id": 12,
+      "file": "dirt_sand3_r04_c01",
+      "hash": "de3d6d89d950b288e3c63b29060ece2922a7fdb439899c5bf50da8c5a2b5e4a8"
+    },
+    {
+      "id": 13,
+      "file": "dirt_sand3_r04_c02",
+      "hash": "1758bbe6e186c5490d5d1197540b42375aaec4a6e144b7581d74ff3bd588efd5"
+    },
+    {
+      "id": 14,
+      "file": "dirt_sand3_r04_c04",
+      "hash": "0479aaca8a8aa04787fb819034461353107455d4190dc5a188d2e4415a36d7c6"
+    },
+    {
+      "id": 15,
+      "file": "dirt_sand3_r05_c02",
+      "hash": "c22d192fc155f80b633a976fdf4e64a7bc3852b199600ec12edaabd5f211561d"
+    }
+  ]
+}
