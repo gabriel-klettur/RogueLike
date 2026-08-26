@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Core;
@@ -79,6 +79,13 @@ namespace Valkur.Gameplay.World
 
         // ── Undo (50 ops, mirrors Tile / Items) ──────────────────────────────
         private readonly UndoStack _undo = new UndoStack(50);
+
+        /// <summary>
+        /// The <see cref="WorldLightLoader.WorldGeneration"/> the undo history was recorded
+        /// against. When they diverge the history names lights that no longer exist under those
+        /// ids — see DiscardHistoryIfWorldChanged.
+        /// </summary>
+        private int _undoWorldGeneration = -1;
 
         // ── Camera helpers ───────────────────────────────────────────────────
         private Camera _mainCamera;
@@ -163,6 +170,8 @@ namespace Valkur.Gameplay.World
 
             _mainCamera = Camera.main;
             CameraSetup.Instance?.DetachFollow();
+            if (WorldLightLoader.Instance != null)
+                _undoWorldGeneration = WorldLightLoader.Instance.WorldGeneration;
 
             SetStatus("Lighting Editor active. Ctrl+F3 to close.");
             Debug.Log("[LightingEditor] Activated (Ctrl+F3)");
@@ -172,9 +181,16 @@ namespace Valkur.Gameplay.World
         {
             _active = false;
             CancelMove();
+            ClearDragLatch();
             if (_root != null) _root.SetActive(false);
             _hoveredLight  = null;
             _selectedLight = null;
+            // Drop the history with the session. Every command in it addresses a light by id, and
+            // ids are only meaningful against the world that was loaded when they were recorded —
+            // reload the world, or switch map slot, and the same ids name different lights. An
+            // undo surviving into the next session is not a convenience, it is an edit applied to
+            // the wrong map.
+            _undo.Clear();
             _cameraPan.Reset();
             CameraSetup.Instance?.ReattachFollow();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.NotifyDeactivated(this);
@@ -334,6 +350,16 @@ namespace Valkur.Gameplay.World
         private void HandleKeyboardShortcuts()
         {
             bool ctrl = KeyboardInputManager.IsCtrlHeld();
+            // Not while a drag is in flight. The drag writes the light's position every frame, so
+            // an undo applied mid-drag is overwritten before it is ever seen — and the CommitMove
+            // that follows clears the redo branch, leaving that history step unreachable in both
+            // directions. Finish or cancel the drag first.
+            if (ctrl && _moving && (KeyboardInputManager.WasKeyPressedThisFrame(Key.Z, KeyCode.Z) ||
+                                    KeyboardInputManager.WasKeyPressedThisFrame(Key.Y, KeyCode.Y)))
+            {
+                SetStatus("Finish the drag (release LMB) or cancel it (Esc) before undoing.");
+                return;
+            }
             if (ctrl && KeyboardInputManager.WasKeyPressedThisFrame(Key.Z, KeyCode.Z)) DoUndo();
             if (ctrl && KeyboardInputManager.WasKeyPressedThisFrame(Key.Y, KeyCode.Y)) DoRedo();
             if (ctrl && KeyboardInputManager.WasKeyPressedThisFrame(Key.S, KeyCode.S)) DoSave();

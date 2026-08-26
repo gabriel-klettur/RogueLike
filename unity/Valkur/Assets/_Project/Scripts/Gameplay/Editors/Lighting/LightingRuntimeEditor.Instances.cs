@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Gameplay.Editors;
@@ -26,17 +26,38 @@ namespace Valkur.Gameplay.World
             for (int i = _ui.InstancesListContent.childCount - 1; i >= 0; i--)
                 Destroy(_ui.InstancesListContent.GetChild(i).gameObject);
 
-            int total = WorldLightLoader.Instance != null ? WorldLightLoader.Instance.ActiveLightCount : 0;
-            if (_ui.InstancesCountTmp != null)
-                _ui.InstancesCountTmp.text = total == 1 ? "1 light spawned" : $"{total} lights spawned";
+            var loader = WorldLightLoader.Instance;
 
-            if (total == 0)
+            // Authored lights only. The list used to show ActiveLightObjects, which folds in the
+            // lights derived from lamp-post buildings: those are not in the light file, a save
+            // never writes them, and deleting a row for one does nothing the next load undoes.
+            // Counting them made the header disagree with the save by however many lamps the
+            // world happened to hold.
+            int authored  = loader != null ? loader.PersistentLightCount : 0;
+            int derived   = loader != null ? loader.DerivedLightCount    : 0;
+            int unspawned = loader != null ? loader.UnspawnedRecordCount : 0;
+            int listed    = authored - unspawned;
+
+            if (_ui.InstancesCountTmp != null)
             {
-                AddInstancePlaceholder("(no lights placed yet)\n\nUse Spawn mode to drop a light.\nClick a row to focus the camera.");
+                string text = listed == 1 ? "1 authored light" : $"{listed} authored lights";
+                if (unspawned > 0) text += $"  (+{unspawned} unspawnable, kept)";
+                if (derived   > 0) text += $"  -  {derived} from buildings";
+                _ui.InstancesCountTmp.text = text;
+            }
+
+            if (listed == 0)
+            {
+                string empty = "(no lights placed yet)\n\nUse Spawn mode to drop a light.\nClick a row to focus the camera.";
+                if (unspawned > 0)
+                    empty = $"(none of the {unspawned} record(s) in the light file\ncould be spawned - unknown preset, or the\nzone is not loaded)\n\nThey are preserved on save. See the console.";
+                else if (derived > 0)
+                    empty += $"\n\n({derived} light(s) come from buildings and are\nnot listed here - they are not in the light file.)";
+                AddInstancePlaceholder(empty);
                 return;
             }
 
-            foreach (var go in WorldLightLoader.Instance.ActiveLightObjects)
+            foreach (var go in loader.PersistentLightObjects)
             {
                 if (go == null) continue;
                 AddInstanceRow(go);

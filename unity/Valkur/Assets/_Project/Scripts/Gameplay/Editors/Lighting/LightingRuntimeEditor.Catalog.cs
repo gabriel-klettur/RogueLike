@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -154,8 +154,8 @@ namespace Valkur.Gameplay.World
 
             // Prefer the active map selection's preset if there is one.
             string key = _selectedPresetKey;
-            if (string.IsNullOrEmpty(key) && _selectedLight != null)
-                key = ExtractPresetFromName(_selectedLight.name);
+            if (string.IsNullOrEmpty(key) && _selectedLight != null && WorldLightLoader.Instance != null)
+                key = WorldLightLoader.Instance.GetLightPresetKey(_selectedLight);
 
             if (string.IsNullOrEmpty(key) || _catalog == null)
             {

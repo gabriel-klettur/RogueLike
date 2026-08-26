@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using Valkur.Core.Input;
@@ -42,9 +42,18 @@ namespace Valkur.Gameplay.World
         private const float HIT_RADIUS_WORLD = 0.6f;
         private const float LMB_DRAG_THRESHOLD_PX = 6f;
 
-        private Vector2 _lmbPressScreenPos;
-        private bool    _lmbPressOnHovered;
-        private bool    _consumedLmbReleaseAsDrag;
+        private Vector2    _lmbPressScreenPos;
+        private bool       _consumedLmbReleaseAsDrag;
+
+        /// <summary>
+        /// The light the press landed on, and the anchor its undo will restore.
+        ///
+        /// These belong together. The old code latched a bool and an anchor position on press,
+        /// then picked the light to drag from whatever was hovered when the drag threshold was
+        /// crossed — so a press on light A followed by a small movement onto light B dragged B
+        /// while the undo remembered A's position, and undoing sent B to where A used to be.
+        /// </summary>
+        private GameObject _lmbPressedLight;
 
         private void HandleMapInteraction()
         {
@@ -102,25 +111,37 @@ namespace Valkur.Gameplay.World
             bool lmbHeld    = MouseInputManager.IsLeftMouseButtonPressed();
             bool lmbRelease = MouseInputManager.WasLeftMouseButtonReleasedThisFrame();
 
-            // Press: arm a pending drag iff the LMB lands on a hovered light,
-            // outside UI, and we are NOT in Delete mode (which has destructive intent).
+            // Press: arm a pending drag iff the LMB lands on a hovered light, outside UI, and we
+            // are NOT in Delete mode (which has destructive intent). Remember WHICH light, not
+            // merely that there was one.
             if (lmbDown && !overUi && !_moving && _hoveredLight != null && _mode != EditorMode.Delete)
             {
-                _lmbPressOnHovered  = true;
-                _lmbPressScreenPos  = MouseInputManager.GetScreenMousePosition();
-                _moveStartWorldPos  = _hoveredLight.transform.position;
+                // A derived light follows its building. Dragging one moves it until the next
+                // load and saves nothing, so refuse at the press rather than after the drag.
+                if (WorldLightLoader.Instance != null &&
+                    WorldLightLoader.Instance.CaptureLight(_hoveredLight) == null)
+                {
+                    SetStatus($"'{_hoveredLight.name}' belongs to a building — move the building instead.");
+                }
+                else
+                {
+                    _lmbPressedLight   = _hoveredLight;
+                    _lmbPressScreenPos = MouseInputManager.GetScreenMousePosition();
+                    _moveStartWorldPos = _hoveredLight.transform.position;
+                }
             }
 
             // Hold: cross threshold → start moving, then follow the cursor.
             if (lmbHeld)
             {
-                if (!_moving && _lmbPressOnHovered && _hoveredLight != null)
+                if (!_moving && _lmbPressedLight != null)
                 {
                     Vector2 cur = MouseInputManager.GetScreenMousePosition();
                     if (Vector2.Distance(cur, _lmbPressScreenPos) > LMB_DRAG_THRESHOLD_PX)
                     {
+                        // The light that was PRESSED, not whatever the cursor has since slid over.
                         _moving      = true;
-                        _movingLight = _hoveredLight;
+                        _movingLight = _lmbPressedLight;
                         FocusLight(_movingLight);
                         SetStatus("Moving light… release LMB to drop, Esc to cancel.");
                     }
@@ -137,8 +158,22 @@ namespace Valkur.Gameplay.World
             if (lmbRelease)
             {
                 if (_moving) CommitMove();
-                _lmbPressOnHovered = false;
+                _lmbPressedLight = null;
             }
+        }
+
+        /// <summary>
+        /// Forget any armed-but-not-yet-started drag.
+        ///
+        /// Clearing <c>_moving</c> alone is not enough while the button is still down: the next
+        /// frame sees a live latch and re-arms, so Esc did not cancel a drag so much as hand it to
+        /// whichever light the cursor had reached — carrying the FIRST light's undo anchor with
+        /// it. Deactivate has the same problem across sessions.
+        /// </summary>
+        private void ClearDragLatch()
+        {
+            _lmbPressedLight          = null;
+            _consumedLmbReleaseAsDrag = false;
         }
 
         private void CommitMove()
@@ -152,18 +187,34 @@ namespace Valkur.Gameplay.World
 
             if (moved == null || WorldLightLoader.Instance == null) return;
 
+            // Address the light by its stable id, never by the captured GameObject. A captured
+            // reference dies the moment some other undo deletes and re-creates that light, and a
+            // dead reference makes the command a silent no-op that still moves between the undo
+            // and redo stacks — so the stacks go on claiming edits the world never saw.
+            var snapshot = WorldLightLoader.Instance.CaptureLight(moved);
+            if (snapshot == null) return;   // derived light, or not ours: nothing to record
+            int id = snapshot.Id;
+
             _undo.Record(new UndoStack.LambdaCommand(
                 "Move light",
-                doAction:   () =>
-                {
-                    if (moved != null) WorldLightLoader.Instance.MoveLight(moved, to);
-                },
-                undoAction: () =>
-                {
-                    if (moved != null) WorldLightLoader.Instance.MoveLight(moved, from);
-                }));
+                doAction:   () => MoveById(id, to),
+                undoAction: () => MoveById(id, from)));
             RebuildInstancesList();
             SetStatus($"Moved to ({to.x:F1}, {to.y:F1}). Save (Ctrl+S) to persist.");
+        }
+
+        /// <summary>Re-resolve the light at command time and move it, or say why it could not.</summary>
+        private void MoveById(int id, Vector3 target)
+        {
+            var loader = WorldLightLoader.Instance;
+            var go     = loader != null ? loader.FindLightById(id) : null;
+            if (go == null)
+            {
+                Debug.LogWarning($"[LightingEditor] Undo/redo of a move could not find light id={id}.");
+                return;
+            }
+            loader.MoveLight(go, target);
+            RebuildInstancesList();
         }
 
         private void CancelMove()
@@ -173,6 +224,7 @@ namespace Valkur.Gameplay.World
                 WorldLightLoader.Instance.MoveLight(_movingLight, _moveStartWorldPos);
             _moving      = false;
             _movingLight = null;
+            ClearDragLatch();
             SetStatus("Move cancelled.");
         }
 
@@ -194,18 +246,14 @@ namespace Valkur.Gameplay.World
             var go = WorldLightLoader.Instance.RegisterRuntimeLight(preset, worldPos);
             if (go == null) { SetStatus($"Could not spawn '{preset}'."); return; }
 
+            // Snapshot the light we just made, so a redo re-creates THAT light — same id, same
+            // overrides — rather than a fresh one that merely resembles it.
+            var snapshot = WorldLightLoader.Instance.CaptureLight(go);
+
             _undo.Record(new UndoStack.LambdaCommand(
                 $"Spawn {preset}",
-                doAction:   () =>
-                {
-                    if (go == null && WorldLightLoader.Instance != null)
-                        WorldLightLoader.Instance.RegisterRuntimeLight(preset, worldPos);
-                },
-                undoAction: () =>
-                {
-                    if (go != null && WorldLightLoader.Instance != null)
-                        WorldLightLoader.Instance.RemoveLight(go);
-                }));
+                doAction:   () => RestoreSnapshot(snapshot),
+                undoAction: () => RemoveById(snapshot != null ? snapshot.Id : 0)));
             FocusLight(go);
             RebuildInstancesList();
             SetStatus($"Spawned '{preset}' at ({worldPos.x:F1}, {worldPos.y:F1}).");
@@ -214,23 +262,61 @@ namespace Valkur.Gameplay.World
         public void DeleteLight(GameObject lightGo)
         {
             if (lightGo == null || WorldLightLoader.Instance == null) return;
-            string label  = lightGo.name;
-            Vector3 pos   = lightGo.transform.position;
-            string preset = ExtractPresetFromName(lightGo.name);
+            string label = lightGo.name;
+
+            // Capture BEFORE destroying. The preset key alone is not enough to bring a light
+            // back: it says what family the light belongs to, not what it was. Undo used to
+            // re-register from a key parsed out of the GameObject's NAME, which minted a new id
+            // and dropped every per-instance override — measured live, id=1 with an authored
+            // colour came back as id=15 with none.
+            var snapshot = WorldLightLoader.Instance.CaptureLight(lightGo);
+            if (snapshot == null)
+            {
+                // A derived light belongs to its building, not to the light file. Deleting it
+                // here would only make it come back on the next load.
+                SetStatus($"'{label}' comes from a building — delete the building instead.");
+                return;
+            }
 
             _undo.Record(new UndoStack.LambdaCommand(
                 $"Delete {label}",
-                doAction:   () => { /* the destruction below is the do-side */ },
-                undoAction: () =>
-                {
-                    if (WorldLightLoader.Instance != null && !string.IsNullOrEmpty(preset))
-                        WorldLightLoader.Instance.RegisterRuntimeLight(preset, pos);
-                    RebuildInstancesList();
-                }));
+                doAction:   () => RemoveById(snapshot.Id),
+                undoAction: () => RestoreSnapshot(snapshot)));
             WorldLightLoader.Instance.RemoveLight(lightGo);
             if (_selectedLight == lightGo) _selectedLight = null;
             RebuildInstancesList();
             SetStatus($"Deleted '{label}'. Save (Ctrl+S) to persist.");
+        }
+
+        /// <summary>Re-create a captured light and refresh the panel.</summary>
+        private void RestoreSnapshot(WorldLightLoader.LightSnapshot snapshot)
+        {
+            var loader = WorldLightLoader.Instance;
+            if (loader == null || snapshot == null) return;
+            var go = loader.RestoreLight(snapshot);
+            if (go == null)
+                Debug.LogWarning($"[LightingEditor] Could not restore light id={snapshot.Id} " +
+                                 $"(preset '{snapshot.PresetId}').");
+            RebuildInstancesList();
+        }
+
+        /// <summary>Destroy the light with this id, if it is still there.</summary>
+        private void RemoveById(int id)
+        {
+            var loader = WorldLightLoader.Instance;
+            var go     = loader != null ? loader.FindLightById(id) : null;
+            if (go == null)
+            {
+                // Say so. A command that runs, finds nothing and returns normally still moves
+                // between the undo and redo stacks, so the history goes on claiming a step the
+                // world never took — the same silence UndoStack.ReportFailure exists to break,
+                // and one its try/catch cannot see because nothing threw.
+                Debug.LogWarning($"[LightingEditor] Undo/redo of a delete could not find light id={id}.");
+                return;
+            }
+            loader.RemoveLight(go);
+            if (_selectedLight == go) _selectedLight = null;
+            RebuildInstancesList();
         }
 
         private void FocusLight(GameObject lightGo)
@@ -241,14 +327,5 @@ namespace Valkur.Gameplay.World
         }
 
         // Recovers presetKey from the WorldLightLoader naming convention "Light_{id}_{presetKey}".
-        private static string ExtractPresetFromName(string goName)
-        {
-            if (string.IsNullOrEmpty(goName)) return null;
-            int firstUnderscore  = goName.IndexOf('_');
-            if (firstUnderscore < 0) return null;
-            int secondUnderscore = goName.IndexOf('_', firstUnderscore + 1);
-            if (secondUnderscore < 0 || secondUnderscore + 1 >= goName.Length) return null;
-            return goName.Substring(secondUnderscore + 1);
-        }
     }
 }
