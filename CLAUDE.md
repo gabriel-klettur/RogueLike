@@ -500,6 +500,49 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   confirm the new code is actually loaded — `typeof(X).GetMethod("NewThing") != null` through
   `execute_code` — before trusting a measurement or a green console.
 
+- **A world swap is not a tile repaint.** `WorldGridBuilder.ClearWorld` calls
+  `ClearAllTiles` on the tilemaps and destroys NOTHING else, so every placed building, light,
+  spawner and particle emitter — and each building's per-cell `BoxCollider2D` — survived into
+  the swapped-in overlay and floated over it, walls and all. `WorldTransitionService` is now
+  the single owner of the swap and tears world content down through
+  `MapEditorManager.ClearAllSpawnedWorldContent` / `ReloadAllWorldContent`, the same public
+  entry points `reloadworld` uses. `ZonePortal` delegates to it; so does `BuildingDoor`.
+- **Clearing the world before validating the destination is not transactional.**
+  `OverlayLoader` logs and returns on a missing or malformed file, which — after the world had
+  already been cleared — left the player standing in a black void with no way back. Check
+  `WorldTransitionService.IsOverlayLoadable` FIRST; the F10 Door panel and the `door` console
+  command refuse an unloadable target at author time for the same reason.
+- **`ZoneManager.ForceZoneName` survives exactly one frame.** `Update` re-detects a zone from
+  the player's position against the BASE-WORLD zone list every frame, so an interior loaded at
+  (0,0) is immediately re-labelled with whatever outdoor zone overlaps it, taking the music and
+  ambience with it. Use `SuspendDetection` / `ResumeDetection` around any overlay that is not
+  part of the zone database.
+- **An editor autosave while the world is torn down persists the emptiness.** Every runtime
+  editor force-saves the scene on each edit, and inside an interior the scene legitimately
+  holds no buildings, lights or emitters while the files hold hundreds. Count-based anti-wipe
+  guards read that as "the author deleted everything" — it cost 188 placed particle emitters
+  once. `WorldTransitionService.IsBaseWorldContentSuspended` states the fact instead of
+  inferring it; `RefuseWorldContentWrite` is checked by the Buildings and Particles save paths.
+- **A doorway anchor is normalized, never a collision-grid glyph.**
+  `BuildingCollisionLoader.ResampleGrid` collapses each destination cell to one bool by OR-ing
+  its sources, so a `D` glyph in that matrix is erased the moment the instance carries a
+  `scale` override — silently, on exactly the buildings a designer resized. `hasDoor` +
+  `doorOffsetNormalized` + `doorSizeNormalized` live on the template (where the ART has a
+  door); `overrides.door` lives per instance (where THIS house leads).
+- **A doorway is detected by polling, not by a trigger.** Buildings carry no `Rigidbody2D`, so
+  a trigger depends entirely on the player's Dynamic body — and a Dynamic body that comes to
+  rest goes to sleep (`Player.prefab`: Sleeping Mode = Start Awake, Time To Sleep = 0.5 s). A
+  SLEEPING BODY STARTS NO NEW CONTACTS. `ResurrectionZone` already polls for the same reason.
+  Every teleport also zeroes `velocity` and calls `WakeUp()`.
+- **Everything directly under `StreamingAssets/Maps/` is a 50x50 zone tile** — `WorldLoader`
+  composes them by offset and `RealShippedOverlayBoundsAndNamesTests` asserts that size for
+  every file it finds there. Interiors are rooms of arbitrary size and live in
+  `Maps/Interiors/`; generate one with `tools/maps/generate_interior_overlay.py`.
+- **`<Keyboard>/e` is bound TWICE** in `ValkurInputActions.inputactions` — to both `Interact`
+  and `SpellSlash` — and nothing reads `InputService.Gameplay.Interact`.
+  `NPCInteractable.Interact()` has no caller either, so vendors' `OnInteract` never fires. Any
+  feature that wants a key-press interaction has to resolve that binding first.
+
 ## Incident reports
 
 Past incidents that left investigation hooks behind. Read these first when a
@@ -516,6 +559,17 @@ related symptom reappears.
 - **Multi-map Phase B/C** — Phase A (per-slot persistence routing) shipped 2026-08-18: buildings, spawners, lights, particles and authored item drops each own their file per map slot. Still open: built-in parallel worlds (Sky / Hell) and cross-world portals at runtime. See `.github/MAP_EDITOR_MULTIMAP_ROADMAP.md`.
 - **Asset pipeline Phase 2** — finalised `asset_map.csv` schema + the formal naming convention. Bulk reimport already executed; `ValkurAssetPostprocessor` writes Uncompressed platform overrides. Atlas consolidation is **done** (2026-08-18): exactly 9 atlases, all under `_Project/SpriteAtlases/`, one owner (`SpriteAtlasBuilder`).
 - **Day/night overhaul** — audited 2026-08-25 at **2.0/10**; Phases 0-3 shipped the same day, now **6.4/10**. The cycle used to reach no rendered pixel: three wrong URP enum literals (URP 14: `Freeform=1, Sprite=2, Point=3, Global=4`) left the scene light a `Point` of radius 1 and every placed torch a cookie-less `Sprite` light, while `WorldGridBuilder` forced the whole world to `Sprite-Unlit-Default` unconditionally. Now: typed URP API in all three light paths; world and entities lit (`Valkur/SpriteHDRTintLit`); placed lights on blend style **1 (Additive)**; colour from an 8-key Gradient in `Resources/DayNightProfile.asset`; the `Buildings/lights/` prop family emits its own light via `BuildingTemplateData.lightPresetKey` + `WorldLightLoader.RegisterDerivedLight` (derived lights are `persistent = false`, so `SaveAll` never writes them to `light_instances.json`); and a **`ScreenGradeFeature`** renderer feature on `Renderer2D.asset` does per-phase saturation/contrast/vignette/dither in one blit at a measured **0.215 ms/frame** — it does NOT need `renderPostProcessing`, so the ~18 ms UberPost stack stays off. Single owners: `AmbientLitSortingLayers` (light mask), `Core/Rendering/WorldSpriteMaterials` (lit vs unlit), `ScreenGradeSettings` (the live grade; static because Core cannot reference Gameplay). **URP 2D shadows render correctly but are disabled**: measured 11 % of pixels changed with a valid probe, yet URP derives the caster shape from the `Renderer` bounds, so every building throws a hard rectangular wedge. Accurate silhouettes would need the painted collision grid as caster geometry. NOTE `ShadowCaster2D.IsLit` reads `light.boundingSphere.radius`, written only by `Light2D.LateUpdate` — a light created and rendered in the same call has radius 0 and measures a false zero. Still open: atmosphere (3.0) and gameplay coupling (0.0), plus persisting the time of day and the F2 editor's authoring. **The phases are pinned by 40 tests** across `DayNightPhaseLookTests` (reads the shipped `Resources/DayNightProfile.asset`, asserts characteristics not literals), `DayNightPipelineWiringTests` (the URP enum constants, exactly one Global light, the sorting-layer mask vs the layers that go lit, blend style 1 still Additive, the ScreenGrade feature still installed) and `TimeWeatherPhaseShortcutTests` (each F2 phase button's hour, label and the phase the cycle actually reports there). Full findings and the roadmap: `.github/DAY_NIGHT_AUDIT_AND_ROADMAP.md`.
+- **Building doors & interiors** — shipped 2026-08-26. A placed building can declare a
+  doorway and lead somewhere: `hasDoor` + a normalized anchor on `BuildingTemplateData`,
+  `overrides.door` per instance, `BuildingDoor` (a poll, not a trigger) parented to the
+  building, `WorldTransitionService` as the single owner of the world swap, and an
+  `InteriorExit` dropped on the arrival tile that arms once the player steps away. Authored
+  from **F10 -> Door** or from the `door` / `doors` / `overlays` / `leave` console commands,
+  both through the same `BuildingsRuntimeEditor.TrySetDoor` seams. Working example: building
+  ID 64 (`houses/curse_house_topdown`) leads to
+  `Maps/Interiors/house_interior_small.overlay.json`. Still open: interiors are bare rooms
+  (no furniture, NPCs, loot or lighting), one file per doorway, no nesting, and no press-to-
+  enter until the `E` double-binding is resolved. See `.github/BUILDING_DOORS_ROADMAP.md`.
 - **Boss music tracks** — the wiring is done (`BossDefinition.Phase.musicTrackId` → `BossConfigurator.ApplyPhaseMusic` → `IAudioService.PlayMusicByTrackId`, with `BossPhaseAudio` as the inspector-authored alternative). What remains is **data**: no boss-specific track exists in `AudioCatalog.asset` yet, so `SampleBoss.asset` leaves `musicTrackId` empty.
 
 The **`Valkur.Infrastructure.Persistence.Profile`** layer (run history, kill stats, achievements, profile counters, statistics HUD) lives behind `IProfileDb` (`JsonProfileDb` today; SQLite ready as a drop-in once row counts justify it) — see `.github/SQLITE_MIGRATION_AUDIT.md`.
