@@ -337,6 +337,15 @@ PACK_PRIMARY_MATERIAL = {
     "sand_rock":  0,   # primary sand   -> #cc9c54 tan   (mat 0); rock  is #3c3c3c
     "rock_water": 0,   # primary rock   -> #3c3c3c dark  (mat 0); water is #246cb4
     "grass_dirt": 1,   # primary grass  -> #549c3c green (mat 1); dirt  is #54543c (mat 0)
+
+    # Blob-island packs cut from the 2026-08-26 Aseprite batch. Only dirt_sand
+    # reads as a clean two-material sheet; grass_sand and sand_ocean_3 carry a
+    # third (and fourth) material on their edges -- the soil rim under the grass,
+    # the surf band and the cliff line under the water -- which the binary
+    # corner16 model has no symbol for. They are deliberately left out here so
+    # emit_rulesets skips them loudly instead of collapsing a third terrain into
+    # whichever of the two it happens to sit closest to in RGB.
+    "dirt_sand":  1,   # primary dirt   -> #54543c dark   (mat 1); sand is #e4b484 (mat 0)
 }
 
 

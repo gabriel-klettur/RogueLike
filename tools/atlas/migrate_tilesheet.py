@@ -45,6 +45,20 @@ DEFAULT_CELL = 32
 SCHEMA_VERSION = 1
 
 
+def rel(path: Path) -> str:
+    """Repo-relative display path, falling back to the absolute one.
+
+    A source PNG staged outside the repo (an export written to a temp dir, say)
+    is a legitimate input -- the migration copies it in -- but Path.relative_to
+    raises on it, which used to kill the run inside the very first banner line,
+    after nothing had been written. Display must never be able to fail a job.
+    """
+    try:
+        return str(path.relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
 def read_png_dimensions(filepath: Path):
     """Read PNG width/height/color_type without Pillow.
 
@@ -145,14 +159,14 @@ def slice_and_manifest(source_png: Path, out_dir: Path, prefix: str, cell: int,
             json.dump(manifest, f, indent=2, ensure_ascii=False)
 
     print(f"  Wrote {len(cells_meta)} cell PNGs ({len(uniques)} unique tiles) + _manifest.json")
-    print(f"  Output dir: {out_dir.relative_to(REPO_ROOT)}")
+    print(f"  Output dir: {rel(out_dir)}")
     return manifest
 
 
 def move_source_png(source_png: Path, dest_dir: Path, dest_name: str, dry_run: bool):
     """Move and rename the source PNG into Art/Tiles/_source/<dest>/."""
     target = dest_dir / dest_name
-    print(f"  Move source: {source_png.relative_to(REPO_ROOT)} -> {target.relative_to(REPO_ROOT)}")
+    print(f"  Move source: {rel(source_png)} -> {rel(target)}")
     if dry_run:
         return target
     dest_dir.mkdir(parents=True, exist_ok=True)
@@ -162,9 +176,94 @@ def move_source_png(source_png: Path, dest_dir: Path, dest_name: str, dry_run: b
     orig_meta = source_png.with_suffix(source_png.suffix + ".meta")
     if orig_meta.exists():
         orig_meta.unlink()
-        print(f"  Removed orphan meta: {orig_meta.relative_to(REPO_ROOT)}")
+        print(f"  Removed orphan meta: {rel(orig_meta)}")
 
     return target
+
+
+
+def rebuild_pack_manifest(pack_dir: Path, dry_run: bool):
+    """Merge every ``<pack>/*_slices/_manifest.json`` into one at the pack root.
+
+    A pack may hold several sheets of the SAME terrain pair (grass_rock already
+    ships three). The Tile Editor reads exactly one manifest per category --
+    ``TileCatalog.BuildFromResources`` probes ``Tiles/<cat>/_manifest`` at the
+    category ROOT while ``Resources.LoadAll<Sprite>`` under it recurses -- so a
+    multi-sheet pack with only per-sheet manifests falls back to the legacy flat
+    list and silently loses the grid view, the (r, c) coordinates and the dedup
+    toggle. Merging is what keeps a variant pack looking like one sheet.
+
+    Sheets stack VERTICALLY in sorted subfolder order: sheet k takes rows
+    [offset, offset + rows_k). Column counts must agree across sheets, which
+    they do for any pack cut from same-sized sources; a mismatch raises rather
+    than writing a misaligned grid.
+
+    uniqueId is re-derived across the WHOLE pack from the per-cell hashes the
+    per-sheet manifests already carry, so the dedup toggle collapses the filler
+    cells (pure sand, pure water) that every variant of a blob template repeats
+    -- exactly what that toggle exists for. No PNG is re-read.
+
+    Idempotent: it reads only the per-sheet manifests and fully rewrites the
+    root one, so re-running after adding a fourth sheet is the whole update.
+    """
+    subs = sorted(d for d in pack_dir.iterdir()
+                  if d.is_dir() and (d / "_manifest.json").exists())
+    if not subs:
+        return None
+
+    per_sheet = [json.loads((d / "_manifest.json").read_text(encoding="utf-8")) for d in subs]
+
+    cols = per_sheet[0]["cols"]
+    for sub, m in zip(subs, per_sheet):
+        if m["cols"] != cols:
+            raise ValueError(
+                f"{pack_dir.name}: sheet '{sub.name}' has {m['cols']} cols but the pack "
+                f"is {cols}. Merging would misalign the grid.")
+
+    row_offset = 0
+    cells = []
+    uniques = []
+    hash_to_id = {}
+    sources = []
+
+    for sub, m in zip(subs, per_sheet):
+        # A cell that is not itself a "unique" shares another cell's hash, so
+        # recover it through the uniqueId rather than re-hashing the PNG.
+        id_to_hash = {u["id"]: u["hash"] for u in m.get("uniques", [])}
+        for cell in m["cells"]:
+            h = id_to_hash.get(cell["uniqueId"])
+            if h is None:
+                raise ValueError(
+                    f"{sub.name}/_manifest.json: cell '{cell['file']}' references "
+                    f"uniqueId {cell['uniqueId']}, which the manifest does not define.")
+            if h not in hash_to_id:
+                hash_to_id[h] = len(uniques)
+                uniques.append({"id": hash_to_id[h], "file": cell["file"], "hash": h})
+            cells.append({
+                "r": cell["r"] + row_offset,
+                "c": cell["c"],
+                "file": cell["file"],
+                "uniqueId": hash_to_id[h],
+                "transparent": cell["transparent"],
+            })
+        row_offset += m["rows"]
+        sources.append(m.get("source", sub.name))
+
+    merged = {
+        "schemaVersion": SCHEMA_VERSION,
+        "source": " + ".join(sources),
+        "cellPx": per_sheet[0]["cellPx"],
+        "cols": cols,
+        "rows": row_offset,
+        "cells": cells,
+        "uniques": uniques,
+    }
+    print(f"  Merged {len(subs)} sheet manifest(s) -> {pack_dir.name}/_manifest.json "
+          f"({cols} x {row_offset} grid, {len(cells)} cells, {len(uniques)} unique)")
+    if not dry_run:
+        with open(pack_dir / "_manifest.json", "w", encoding="utf-8") as f:
+            json.dump(merged, f, indent=2, ensure_ascii=False)
+    return merged
 
 
 def main():
@@ -179,6 +278,12 @@ def main():
                        help="Snake_case filename for the moved source, e.g. pandora_castle_exterior.png")
     parser.add_argument("--slice-prefix", required=True,
                        help="Prefix for sliced cell filenames, e.g. 'pandora' -> pandora_r00_c00.png")
+    parser.add_argument("--slices-subdir", default=None,
+                       help="Optional subfolder under Resources/Tiles/<dest-name>/ for this "
+                            "sheet's slices, e.g. 'dirt_sand2_slices'. Use it when one pack is "
+                            "cut from several sheets of the same terrain pair; the per-sheet "
+                            "manifests are then merged into one at the pack root so the Tile "
+                            "Editor still sees a single grid.")
     parser.add_argument("--cell", type=int, default=DEFAULT_CELL,
                        help=f"Cell size in pixels (default {DEFAULT_CELL}).")
     group = parser.add_mutually_exclusive_group(required=True)
@@ -207,17 +312,25 @@ def main():
         return 1
 
     dest_source_dir = ART_TILES_SOURCE / args.dest_name
-    dest_resources_dir = RESOURCES_TILES / args.dest_name
+    if args.slices_subdir is not None and (
+            not args.slices_subdir.replace("_", "").isalnum()
+            or args.slices_subdir != args.slices_subdir.lower()):
+        print(f"ERROR: --slices-subdir must be snake_case lowercase: {args.slices_subdir!r}",
+              file=sys.stderr)
+        return 1
+
+    pack_dir = RESOURCES_TILES / args.dest_name
+    dest_resources_dir = pack_dir / args.slices_subdir if args.slices_subdir else pack_dir
 
     print("=" * 70)
     print("  TILESHEET MIGRATION " + ("(DRY-RUN)" if args.dry_run else "(EXECUTE)"))
     print("=" * 70)
-    print(f"  Source PNG:   {source_path.relative_to(REPO_ROOT)}")
+    print(f"  Source PNG:   {rel(source_path)}")
     print(f"  Dimensions:   {w}x{h} px")
     print(f"  Cell:         {args.cell}x{args.cell}")
     print(f"  Cols x Rows:  {w // args.cell} x {h // args.cell}  ({(w // args.cell) * (h // args.cell)} cells)")
-    print(f"  Dest source:  {(dest_source_dir / args.dest_source_name).relative_to(REPO_ROOT)}")
-    print(f"  Dest slices:  {dest_resources_dir.relative_to(REPO_ROOT)}/")
+    print(f"  Dest source:  {rel((dest_source_dir / args.dest_source_name))}")
+    print(f"  Dest slices:  {rel(dest_resources_dir)}/")
     print()
 
     # Pillow is required only for the actual slice; defer the import so dry-run
@@ -232,7 +345,8 @@ def main():
 
     # Step 1: slice + manifest. Do this BEFORE moving so we can re-run safely
     # if the user aborts halfway.
-    print("[1/2] Slicing source PNG and writing manifest...")
+    total_steps = 3 if args.slices_subdir else 2
+    print(f"[1/{total_steps}] Slicing source PNG and writing manifest...")
     slice_and_manifest(
         source_png=source_path,
         out_dir=dest_resources_dir,
@@ -244,13 +358,20 @@ def main():
 
     # Step 2: move source PNG into _source/. (After slicing, so if the slice
     # fails we still have the original in place.)
-    print("\n[2/2] Moving source PNG into _source/...")
+    print(f"\n[2/{total_steps}] Moving source PNG into _source/...")
     move_source_png(
         source_png=source_path,
         dest_dir=dest_source_dir,
         dest_name=args.dest_source_name,
         dry_run=args.dry_run,
     )
+
+    if args.slices_subdir:
+        print(f"\n[3/{total_steps}] Merging per-sheet manifests into the pack root...")
+        if args.dry_run:
+            print("  (dry-run: merge skipped -- it reads manifests that were not written.)")
+        else:
+            rebuild_pack_manifest(pack_dir, dry_run=False)
 
     if args.dry_run:
         print("\n  Dry-run complete. Re-run with --execute to apply.")
