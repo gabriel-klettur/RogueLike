@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Valkur.UIKit
@@ -83,7 +83,8 @@ namespace Valkur.UIKit
         {
             if (_undo.Count == 0) return false;
             var cmd = _undo.Last.Value; _undo.RemoveLast();
-            try { cmd.Undo(); } catch { }
+            try { cmd.Undo(); }
+            catch (Exception ex) { ReportFailure("Undo", cmd, ex); }
             _redo.Push(cmd);
             Changed?.Invoke();
             return true;
@@ -93,10 +94,27 @@ namespace Valkur.UIKit
         {
             if (_redo.Count == 0) return false;
             var cmd = _redo.Pop();
-            try { cmd.Execute(); } catch { }
+            try { cmd.Execute(); }
+            catch (Exception ex) { ReportFailure("Redo", cmd, ex); }
             _undo.AddLast(cmd);
             Changed?.Invoke();
             return true;
+        }
+
+        /// <summary>
+        /// A command that throws still moves between the stacks, because wedging the history is
+        /// worse for the author than one lost step. But it must not do so in SILENCE: both of
+        /// these catches used to be empty, so a broken undo looked exactly like a working one and
+        /// the stack went on claiming edits the world had never seen. Five runtime editors share
+        /// this class, which is why the failure is reported rather than rethrown — a throw here
+        /// would take the whole editor down for a single bad step.
+        /// </summary>
+        private static void ReportFailure(string direction, ICommand cmd, Exception ex)
+        {
+            UnityEngine.Debug.LogError(
+                $"[UndoStack] {direction} of '{cmd?.Label ?? "?"}' threw {ex.GetType().Name}: {ex.Message}. " +
+                "The step is consumed anyway; the world and the history may now disagree." +
+                Environment.NewLine + ex.StackTrace);
         }
 
         public string PeekUndoLabel() => _undo.Count > 0 ? _undo.Last.Value.Label : null;
