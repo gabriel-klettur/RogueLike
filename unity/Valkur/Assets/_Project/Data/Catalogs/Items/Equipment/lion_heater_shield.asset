@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f7abf3dd53ab354eb1de6a1c670f0d2, type: 3}
+  m_Name: lion_heater_shield
+  m_EditorClassIdentifier: 
+  itemId: lion_heater_shield
+  displayName: Lion Heater Shield
+  description: A broad heater shield bearing the golden rampant lion on crimson.
+  itemType: blacksmith
+  stackable: 0
+  maxStack: 1
+  icon: {fileID: 21300000, guid: 310c985ec2dd2ca4da4344a1280f43da, type: 3}
+  iconSmall: {fileID: 21300000, guid: 310c985ec2dd2ca4da4344a1280f43da, type: 3}
+  iconLarge: {fileID: 21300000, guid: 310c985ec2dd2ca4da4344a1280f43da, type: 3}
+  equipSlot: 8
+  damage: 0
+  attackSpeed: 0
+  range: 0
+  critChance: 0
+  critMultiplier: 1
+  durability: 100
+  value: 90
+  buyPrice: 90
+  sellPrice: 45
+  rarity: 1
+  levelRequirement: 5
+  weight: 4
+  threshold: 0
+  experience: 0
+  effect: 
+  questId: 
+  scaleEditor: 1
+  scaleMap: 1
+  scaleInventory: 1
+  zLayer: 0
+  despawnTime: 0
+  healing: 0
+  mana: 0
+  energy: 0
+  hunger: 0
+  buffStat: 
+  buffValue: 0
+  duration: 0
