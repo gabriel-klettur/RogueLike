@@ -66,6 +66,7 @@ namespace Valkur.Gameplay
 
             bool preferCardinalDirectionSampling = idleUsesFourDirectionalLayout || walkUsesFourDirectionalLayout;
             animator.SetSpriteSets(idleSet, walkSet, chaseSet, castSet, attackSet, damageSet, deathSet, preferCardinalDirectionSampling);
+            animator.SetAttackVariants(BuildAttackVariants(assetConfig));
             var initialFrame = animator.PeekFirstFrame(idleSet);
             if (initialFrame != null)
                 renderer.sprite = initialFrame;
@@ -123,6 +124,34 @@ namespace Valkur.Gameplay
             }
 
             return default;
+        }
+
+        /// <summary>
+        /// The entity's alternative attack animations, in authored order, built through the
+        /// same directional-or-sheet path as the seven base states.
+        ///
+        /// A variant with no frames is DROPPED rather than kept as an empty set: the
+        /// selector picks an index at random, and an empty slot would render the idle pose
+        /// mid-swing roughly one attack in N. Returns null when nothing survives, which is
+        /// what every entity but the knight does today.
+        /// </summary>
+        private static List<DirectionalAnimator.DirectionalSpriteSet> BuildAttackVariants(
+            EntityAssetConfig assetConfig)
+        {
+            if (assetConfig.attackVariants == null || assetConfig.attackVariants.Count == 0)
+                return null;
+
+            var sets = new List<DirectionalAnimator.DirectionalSpriteSet>(assetConfig.attackVariants.Count);
+            for (int i = 0; i < assetConfig.attackVariants.Count; i++)
+            {
+                AttackVariant variant = assetConfig.attackVariants[i];
+                if (variant == null) continue;
+
+                var set = BuildSet(variant.directional, variant.sheets, out _);
+                if (HasFrames(set)) sets.Add(set);
+            }
+
+            return sets.Count > 0 ? sets : null;
         }
 
         private static bool HasDirectionalSprites(DirectionalSprites d)

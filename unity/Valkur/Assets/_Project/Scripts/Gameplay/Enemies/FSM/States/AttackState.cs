@@ -14,18 +14,71 @@ namespace Valkur.Gameplay.FSM
         private bool _attacked;
         private float _windupDuration;
         private float _attackDuration;
+        private int _variant = -1;
 
         public void Enter(StateMachine fsm)
         {
-            _timer = 0f;
-            _attacked = false;
-            _windupDuration = fsm.GetContextFloat("attack_windup_s", 0.2f);
-            _attackDuration = _windupDuration + 0.3f;
-
             var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
             if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
 
-            FacePlayer(fsm, c);
+            _windupDuration = fsm.GetContextFloat("attack_windup_s", 0.2f);
+            BeginSwing(fsm, c);
+        }
+
+        /// <summary>
+        /// Starts one swing: picks the attack animation, sizes the state to it, and
+        /// resets the damage gate. Shared by <see cref="Enter"/> and the re-swing branch in
+        /// <see cref="Execute"/> — a knight the player never backs away from stays in this
+        /// state indefinitely, so without this the second swing would reuse the first one's
+        /// animation and start wherever its sprite loop happened to be.
+        /// </summary>
+        private void BeginSwing(StateMachine fsm, FSMComponents c)
+        {
+            _timer = 0f;
+            _attacked = false;
+            _variant = PickVariant(c);
+
+            // Turn FIRST, then measure. GetStateLength reports the frame count of the
+            // animator's CURRENT direction, so measuring before the turn sizes this swing
+            // against whichever way the entity happened to be facing when it entered —
+            // measured, that made the very first swing 0.5 s instead of 1.2 s on a set whose
+            // direction buckets differ in length.
+            FacePlayer(fsm, c, _variant);
+
+            // windup + 0.3 s is the historical swing length and stays the FLOOR, so the 18
+            // monsters with a one-frame attack pose are paced exactly as before. An entity
+            // whose attack is genuinely animated gets the length its frames need: the
+            // knight's eight frames run 1.2 s against that 0.75 s floor and were being cut
+            // mid-arc.
+            //
+            // This DOES move the damage rate for such an entity, and the melee cooldown does
+            // not hold it steady — it only bounds it. One TryAttack is attempted per swing,
+            // at the windup, so the realised interval is the swing period rounded up to the
+            // next multiple that clears the cooldown. knight_red measured: a 0.75 s swing
+            // against a 1.1 s cooldown lands a hit every 1.5 s (every other attempt refused);
+            // a 1.2 s swing lands one every 1.2 s. Retiming an attack animation retimes its
+            // damage, so re-check meleeCooldown when you do.
+            _attackDuration = _windupDuration + 0.3f;
+            if (c?.Animator != null)
+            {
+                float animLength = c.Animator.GetStateLength(
+                    DirectionalAnimator.AnimState.Attack, _variant);
+                if (animLength > _attackDuration) _attackDuration = animLength;
+            }
+
+            c?.Animator?.RestartCurrentState();
+        }
+
+        /// <summary>
+        /// Which attack animation this swing uses. -1 when the entity has none declared,
+        /// which is every monster but the knight and resolves to the single attack set.
+        /// Random for now; the knobs a smarter rule would need (range, windup) already
+        /// arrive as FSM context floats right here.
+        /// </summary>
+        private static int PickVariant(FSMComponents c)
+        {
+            int count = c?.Animator != null ? c.Animator.AttackVariantCount : 0;
+            return count > 0 ? Random.Range(0, count) : -1;
         }
 
         public void Execute(StateMachine fsm, float dt)
@@ -53,7 +106,7 @@ namespace Valkur.Gameplay.FSM
             _timer += dt;
 
             // Keep facing the player throughout the swing.
-            FacePlayer(fsm, c);
+            FacePlayer(fsm, c, _variant);
 
             // Windup phase
             if (!_attacked && _timer >= _windupDuration)
@@ -81,9 +134,9 @@ namespace Valkur.Gameplay.FSM
                     float dist = Vector2.Distance(fsm.Owner.transform.position, player2.transform.position);
                     if (dist <= meleeRange * 1.5f)
                     {
-                        // Stay in attack range, reset
-                        _timer = 0f;
-                        _attacked = false;
+                        // Stay in attack range and swing again — through BeginSwing, so the
+                        // next swing re-rolls its animation and replays it from frame 0.
+                        BeginSwing(fsm, c);
                         return;
                     }
                 }
@@ -93,7 +146,7 @@ namespace Valkur.Gameplay.FSM
 
         public void Exit(StateMachine fsm) { }
 
-        private static void FacePlayer(StateMachine fsm, FSMComponents c)
+        private static void FacePlayer(StateMachine fsm, FSMComponents c, int variant)
         {
             if (c?.Animator == null) return;
             var player = EntityRegistry.Player;
@@ -101,7 +154,7 @@ namespace Valkur.Gameplay.FSM
             Vector2 toPlayer = (Vector2)player.transform.position - (Vector2)fsm.Owner.transform.position;
             if (toPlayer.sqrMagnitude < 0.0001f) return;
             var dir = c.Animator.ResolveDirectionFromVector(toPlayer);
-            c.Animator.SetState(DirectionalAnimator.AnimState.Attack, dir);
+            c.Animator.SetState(DirectionalAnimator.AnimState.Attack, dir, variant);
         }
     }
 }

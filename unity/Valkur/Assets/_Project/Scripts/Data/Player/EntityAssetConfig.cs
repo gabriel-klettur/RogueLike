@@ -44,6 +44,37 @@ namespace Valkur.Data
     }
 
     /// <summary>
+    /// One alternative attack animation, beyond the single <c>attack</c> slot.
+    ///
+    /// A LIST, not three more slots. The seven animation states are enumerated
+    /// positionally in four independent places — this class's own fields,
+    /// <c>DirectionalAnimator</c>'s seven serialized sets plus its seven accessors and
+    /// its seven-argument <c>SetSpriteSets</c>, the <c>GetSpriteSet</c> switch, and
+    /// <c>EntityAnimationBinder</c>'s build-and-fallback chain. Adding an eighth state
+    /// pays that tax four times over and again for the ninth; a list pays it once.
+    ///
+    /// It also keeps <c>AnimState</c> untouched, which matters more than it looks:
+    /// <c>PlayerController.Movement</c> gates locomotion on an Idle/Walk/Chase whitelist
+    /// and reverts on a Cast/Attack whitelist. A new enum value missing from the second
+    /// list is entered and never left. A variant INDEX under the existing Attack state
+    /// inherits both whitelists by construction.
+    /// </summary>
+    [Serializable]
+    public class AttackVariant
+    {
+        [Tooltip("Identifier used in logs and by any future range/cooldown selection rule.")]
+        public string key;
+
+        [Tooltip("Directional sprites for this variant. Takes precedence over sheets, " +
+                 "exactly as the seven base slots do.")]
+        public DirectionalSprites directional;
+
+        [Tooltip("Linear frame list for this variant: eight contiguous per-direction " +
+                 "buckets in the order S, SE, E, NE, N, NW, W, SW.")]
+        public List<Sprite> sheets;
+    }
+
+    /// <summary>
     /// Complete asset configuration for an entity.
     /// Maps to Python's "assets" block in new_hostiles/new_players.
     /// </summary>
@@ -67,6 +98,14 @@ namespace Valkur.Data
         public List<Sprite> attackSheets;
         public List<Sprite> damageSheets;
         public List<Sprite> deathSheets;
+
+        [Header("Attack Variants")]
+        // Empty for every entity that has one attack, which is all of them but the knight.
+        // When it is non-empty it REPLACES the single attack set for selection purposes:
+        // index 0 is what a picker falls back to, so put the entity's default swing first.
+        // `attack`/`attackSheets` stay authoritative for callers that know nothing about
+        // variants (the Spells Editor preview reads AttackSprites directly).
+        public List<AttackVariant> attackVariants = new List<AttackVariant>();
 
         [Header("Scale & Tint")]
         public AnimationScaleConfig scaleConfig;

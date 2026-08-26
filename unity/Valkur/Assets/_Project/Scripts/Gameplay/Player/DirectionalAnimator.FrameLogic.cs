@@ -39,7 +39,7 @@ namespace Valkur.Gameplay
 
         private void AdvanceFrame()
         {
-            var spriteSet = GetSpriteSet(_currentState);
+            var spriteSet = GetSpriteSet(_currentState, _activeAttackVariant);
             Sprite[] frames = spriteSet.GetFrames(_currentDirection);
 
             if (frames == null || frames.Length == 0)
@@ -141,8 +141,29 @@ namespace Valkur.Gameplay
             return null;
         }
 
-        private DirectionalSpriteSet GetSpriteSet(AnimState state)
+        /// <summary>
+        /// Frames for a state, direction and attack variant, WITHOUT touching the
+        /// animation cursor. <see cref="GetStateLength"/> needs to measure a variant it is
+        /// not currently playing, and every other path here mutates <c>_frameIndex</c>.
+        /// Returns null when nothing is wired, so a caller can treat that as zero length
+        /// rather than as one frame.
+        /// </summary>
+        private Sprite[] ResolveFrames(AnimState state, Direction direction, int attackVariant)
         {
+            Sprite[] frames = GetSpriteSet(state, attackVariant).GetFrames(direction);
+            return frames != null && frames.Length > 0 ? frames : null;
+        }
+
+        private DirectionalSpriteSet GetSpriteSet(AnimState state, int attackVariant = -1)
+        {
+            // A selected variant REPLACES the single attack set. Bounds are re-checked
+            // here rather than trusted from the caller: the variant array is rebuilt on
+            // every ApplyVisuals, and an index cached across a shorter rebuild would
+            // throw out of the render path, where it is hardest to trace.
+            if (state == AnimState.Attack && _attackVariants != null &&
+                attackVariant >= 0 && attackVariant < _attackVariants.Length)
+                return _attackVariants[attackVariant];
+
             return state switch
             {
                 AnimState.Idle => idleSprites,
