@@ -1081,6 +1081,7 @@ MonoBehaviour:
   spawnRadius: 5
   overlayFile: lobby.overlay.json
   loadFullWorld: 1
+  initialWorld: {fileID: 0}
   _particlePresetCatalog: {fileID: 11400000, guid: 29fa5a684bfc8f74bafa10c0e031b7e2, type: 2}
   _lightPresetCatalog: {fileID: 11400000, guid: 79a535589eb9b644db6b938380e2e967, type: 2}
   _spawnerTemplateCatalog: {fileID: 11400000, guid: e6a17de5dba17684191b5bb9d9f512b1, type: 2}
@@ -1089,6 +1090,7 @@ MonoBehaviour:
   _audioCatalog: {fileID: 11400000, guid: d6f4650fee0545f43a3d9e5d1c11e6e8, type: 2}
   _combatSfxConfig: {fileID: 11400000, guid: 605d705fef7bb744e9a2dcaca953e364, type: 2}
   _spellCatalog: {fileID: 11400000, guid: b5f4bf60bea172e4f89f60d72bc82a03, type: 2}
+  _itemCatalog: {fileID: 0}
   _dungeonConfig: {fileID: 0}
   _dungeonSeed: -1
   _generateBspDungeon: 0
@@ -1201,14 +1203,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   orthoSize: 5
   cameraZOffset: -10
-  zoomStep: 0.5
-  minOrthoSize: 3
-  maxOrthoSize: 14
-  mapEditorMaxZoomMultiplier: 20
-  mapEditorZoomStepMultiplier: 4
+  zoomSpeed: 0.25
+  minZoomOrthoSize: 2
+  maxZoomOrthoSize: 25
+  maxEditorZoomOrthoSize: 4000
   assetsPPU: 32
+  snapPPU: 16
   refResolutionX: 640
   refResolutionY: 360
+  forceSafeBackgroundColor: 1
+  safeBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!114 &881348595
 MonoBehaviour:
   m_ObjectHideFlags: 0
