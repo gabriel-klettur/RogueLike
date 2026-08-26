@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Core;
@@ -135,6 +135,15 @@ namespace Valkur.Gameplay.VFX
 
         private void SaveInstancesToJson()
         {
+            // Same window as the buildings save: inside an interior the scene holds no placed
+            // emitters by design. The count-based anti-wipe guard further down catches that
+            // shape too, but only by inference - this refuses on the fact.
+            if (Valkur.Gameplay.World.WorldTransitionService.RefuseWorldContentWrite("particles"))
+            {
+                SetStatus("Save skipped - inside an interior.");
+                return;
+            }
+
             if (_isPersistingInstanceChanges) return;
             bool allowEmptyWrite = _allowEmptyWriteOnce;
             _allowEmptyWriteOnce = false;

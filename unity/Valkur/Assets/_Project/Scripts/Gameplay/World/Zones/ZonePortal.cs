@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using Valkur.Core;
 
 namespace Valkur.Gameplay.World
@@ -82,34 +82,18 @@ namespace Valkur.Gameplay.World
             }
             else if (!string.IsNullOrWhiteSpace(destinationOverlay))
             {
-                var gridBuilder = _cachedGridBuilder;
-                if (gridBuilder == null) gridBuilder = Object.FindObjectOfType<WorldGridBuilder>();
-                if (gridBuilder != null)
-                {
-                    // Clear existing world
-                    gridBuilder.ClearWorld();
-
-                    // Load new overlay
-                    OverlayLoader.LoadOverlay(destinationOverlay, gridBuilder);
-
-                    // Reposition player
-                    Vector2 dest = teleportPosition.sqrMagnitude > 0.001f
-                        ? teleportPosition
-                        : new Vector2(25f, 25f); // default lobby center
-
-                    player.transform.position = new Vector3(dest.x, dest.y, 0f);
-
-                    // Notify zone system
-                    var zm = _cachedZoneManager;
-                    if (zm == null) zm = Object.FindObjectOfType<ZoneManager>();
-                    if (zm != null) zm.ForceZoneName(System.IO.Path.GetFileNameWithoutExtension(destinationOverlay));
-
-                    // Notify audio
-                    var audio = ServiceLocator.Get<IAudioService>();
-                    audio?.OnZoneChanged(System.IO.Path.GetFileNameWithoutExtension(destinationOverlay));
-
-                    Debug.Log($"[ZonePortal] Transitioned to overlay '{destinationOverlay}'. Player at {dest}");
-                }
+                // The swap itself has exactly one implementation, in WorldTransitionService.
+                // ZonePortal keeps only what is specific to it: the authored destination and
+                // the zero-vector sentinel its inspector field has always used to mean
+                // "land on the default spot".
+                bool useDefaultSpawn = teleportPosition.sqrMagnitude <= 0.001f;
+                WorldTransitionService.EnterOverlay(
+                    destinationOverlay,
+                    teleportPosition,
+                    useDefaultSpawn,
+                    player,
+                    _cachedGridBuilder,
+                    _cachedZoneManager);
             }
 
             // Allow re-trigger after brief cooldown (e.g. portaling back)

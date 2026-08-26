@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Core;
@@ -53,6 +53,14 @@ namespace Valkur.Gameplay.World
 
         private void Update()
         {
+            // An interior loaded by a portal or a building doorway is NOT in the zone list:
+            // the zones describe the base world, which is still what DetectZone measures
+            // against. Left running, it re-detects the base zone under the player's new
+            // coordinates on the very next frame and overwrites the name ForceZoneName just
+            // set - taking the music and the ambience with it. WorldTransitionService
+            // suspends detection for as long as an interior is loaded.
+            if (_detectionSuspended) return;
+
             if (_playerTransform == null)
             {
                 _playerTransform = EntityRegistry.PlayerTransform;

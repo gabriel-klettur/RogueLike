@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using Valkur.Core;
 
@@ -6,6 +6,39 @@ namespace Valkur.Gameplay.World
 {
     public partial class ZoneManager
     {
+        // Set while a swapped-in overlay (an interior, a dungeon) is the loaded world.
+        // Not [SerializeField]: it is transition state, not authored configuration, and a
+        // value left serialized on the component would silently disable zone detection for
+        // a whole session.
+        private bool _detectionSuspended;
+
+        /// <summary>
+        /// True while zone auto-detection is held off because a swapped-in overlay is loaded.
+        /// </summary>
+        public bool IsDetectionSuspended => _detectionSuspended;
+
+        /// <summary>
+        /// Pin the zone name and stop auto-detection. Used when an overlay that is NOT part of
+        /// the base world's zone list becomes the loaded world - an interior, a dungeon.
+        ///
+        /// Without this, <see cref="Update"/> re-detects a BASE-WORLD zone from the player's
+        /// interior coordinates on the next frame and overwrites the pinned name, which is how
+        /// a house interior ends up reporting (and playing the music of) whatever outdoor zone
+        /// happens to overlap it.
+        /// </summary>
+        public void SuspendDetection(string pinnedZoneName)
+        {
+            if (!string.IsNullOrWhiteSpace(pinnedZoneName)) ForceZoneName(pinnedZoneName);
+            _detectionSuspended = true;
+        }
+
+        /// <summary>
+        /// Resume auto-detection after the base world is loaded again. Detection picks up from
+        /// the player's CURRENT position on the next frame, so the caller must have moved them
+        /// back into the base world first.
+        /// </summary>
+        public void ResumeDetection() => _detectionSuspended = false;
+
         /// <summary>
         /// Override the current zone name without detection (used by ZonePortal on overlay swap).
         /// </summary>
