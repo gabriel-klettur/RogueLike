@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Core;
@@ -519,7 +519,11 @@ namespace Valkur.Gameplay.MapEditor
                 var loader = WorldLightLoader.Instance != null
                     ? WorldLightLoader.Instance
                     : FindObjectOfType<WorldLightLoader>();
-                if (loader == null || loader.ActiveLightCount == 0) return;
+                // PersistentLightCount, not ActiveLightCount: the latter counts the lights
+                // derived from lamp-post buildings, which SaveAll never writes. A world whose
+                // authored lights failed to spawn but whose fixtures did would otherwise pass
+                // this guard with a non-zero count and then flush an empty array.
+                if (loader == null || loader.PersistentLightCount == 0) return;
                 int written = loader.SaveAll();
                 if (written > 0)
                     Debug.Log($"[MapEditor] Flushed {written} light instance(s) " +

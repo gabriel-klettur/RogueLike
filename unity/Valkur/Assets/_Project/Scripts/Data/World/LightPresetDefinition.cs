@@ -27,6 +27,33 @@ namespace Valkur.Data
         [Range(0f, 1f)]
         public float falloff = 0.8f;
 
+        [Tooltip("How much of this light ILLUMINATES the surface instead of veiling it. " +
+                  "0 = the old behaviour: the light is purely additive, which in URP's 2D shader " +
+                  "means its colour is added to the frame WITHOUT being multiplied by the sprite " +
+                  "underneath (finalOutput = albedo * modulate + additive). That paints a flat " +
+                  "coloured disc over the ground rather than lighting it: measured on the shipped " +
+                  "torch, the cobblestone's relative texture contrast fell from 0.75 outside the " +
+                  "pool to 0.15 inside it, which is the 'milky fog patch' look. " +
+                  "1 = the light goes entirely into the multiply buffer alongside the ambient, so " +
+                  "it scales the surface: same measurement gave 0.265 texture and 0.393 saturation " +
+                  "against additive's 0.152 and 0.187. Values in between split the light between a " +
+                  "multiplicative body and an additive core, which is what real firelight looks " +
+                  "like — a hot centre that blows out, and a warm tint on everything around it.")]
+        [Range(0f, 1f)]
+        public float surfaceMix = 0f;
+
+        [Tooltip("Radius of the additive core, as a fraction of the light's radius. Only used when " +
+                  "surfaceMix is above 0. The core is what reads as 'too bright to look at'; keeping " +
+                  "it small is what stops the additive half from washing the texture out again.")]
+        [Range(0.05f, 1f)]
+        public float coreScale = 0.35f;
+
+        [Tooltip("Brightness multiplier applied to the multiplicative half. A multiply light shares " +
+                  "the ambient's buffer, where the night ambient sits around 0.10, so it needs a " +
+                  "larger number than an additive light to reach the same luminance.")]
+        [Range(0.5f, 8f)]
+        public float surfaceGain = 3f;
+
         [Tooltip("Light color.")]
         public Color color = new Color(1f, 0.78f, 0.55f, 1f);
 
