@@ -52,17 +52,23 @@ namespace Valkur.Tests.EditMode.Editors.Particles
         /// which is the only test in this fixture that exercises the deserializer rather than
         /// the C# field initialisers.
         ///
-        /// Chosen because it is about as far from the vegetation work as a preset gets: an
-        /// additive torch flame, one of the effects the fields must NOT have disturbed. Roughly
-        /// 120 of the shipped presets are in the same state, so if this one is ever re-authored
-        /// through F1 (which writes all four keys) point the const at another one — the test
-        /// asserts the absence itself and will say so rather than quietly passing.
+        /// Chosen because it is about as far from the vegetation work as a preset gets, and 118
+        /// of the shipped presets are still in the same state, so if this one is ever re-authored
+        /// point the const at another one — the test asserts the absence itself and will say so
+        /// rather than quietly passing.
+        ///
+        /// It used to be PP_torch_flame, and the test did exactly what it promised: giving that
+        /// preset a lightPresetKey meant saving it through Unity, and Unity re-serialises a whole
+        /// asset, filling in every previously-absent field with its default. All four sorting keys
+        /// appeared, every one of them at the value the absent-key path already produced, so
+        /// nothing changed at runtime — but the file stopped exercising the path this fixture
+        /// exists for, and it said so instead of passing for the wrong reason.
         /// </summary>
         private const string UNAUTHORED_DEPTH_ASSET_PATH =
-            "Assets/_Project/Data/Catalogs/Particles/PP_torch_flame.asset";
+            "Assets/_Project/Data/Catalogs/Particles/PP_chimney_smoke.asset";
 
         /// <summary>The id <see cref="UNAUTHORED_DEPTH_ASSET_PATH"/> must still carry.</summary>
-        private const string UNAUTHORED_DEPTH_ASSET_ID = "torch_flame";
+        private const string UNAUTHORED_DEPTH_ASSET_ID = "chimney_smoke";
 
         private readonly List<GameObject> _createdGos = new List<GameObject>();
         private readonly List<ScriptableObject> _createdSos = new List<ScriptableObject>();
