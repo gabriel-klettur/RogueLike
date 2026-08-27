@@ -67,6 +67,9 @@ namespace Valkur.Gameplay.Entities
             public Image            RemoveBtnImg;        public TextMeshProUGUI RemoveBtnTmp;
             public Image            AddOnSystemBtnImg;   public TextMeshProUGUI AddOnSystemBtnTmp;
             public Image            ConfirmBtnImg;       public TextMeshProUGUI ConfirmBtnTmp;
+            public TMP_InputField   NewKeyInput;
+            public Image            DuplicateBtnImg;     public TextMeshProUGUI DuplicateBtnTmp;
+            public Image            RenameBtnImg;        public TextMeshProUGUI RenameBtnTmp;
             public TextMeshProUGUI  AddRemoveHintText;
 
             // Properties panel — structured (Identity, Stats, AI, Spawn, Auto-Cast, Assets)
@@ -95,7 +98,9 @@ namespace Valkur.Gameplay.Entities
         private const float PICKER_H     = TILES_DROP_H;          // 564 px
 
         private const float ADDREM_W     = 180f;
-        private const float ADDREM_H     = 240f + PANEL_HDR_H;
+        // Grew from 4 mode buttons to 4 + a New/Rename key input + Duplicate/Rename —
+        // the catalog-authoring row Phase 4 (F5 create/duplicate/rename) added.
+        private const float ADDREM_H     = 380f + PANEL_HDR_H;
 
         private const float PROPS_W      = 320f;
         private const float PROPS_H      = 540f + PANEL_HDR_H;
@@ -122,6 +127,8 @@ namespace Valkur.Gameplay.Entities
             Action<string> onSearchChanged,
             Action         onAdd,         Action onRemove,
             Action         onAddOnSystem, Action onConfirm,
+            Action<string> onNewKeyChanged,
+            Action         onDuplicate,   Action onRename,
             Action         onToggleTutorial)
         {
             // Reserve space below the menu bar so draggable panels cannot occlude it.
@@ -135,7 +142,8 @@ namespace Valkur.Gameplay.Entities
                 onCatHostiles, onCatNeutrals, onCatSpecials, onCatPlayers);
             BuildPickerPanel(canvasT, ref refs, onSearchChanged);
             BuildAddRemovePanel(canvasT, ref refs,
-                onAdd, onRemove, onAddOnSystem, onConfirm);
+                onAdd, onRemove, onAddOnSystem, onConfirm,
+                onNewKeyChanged, onDuplicate, onRename);
             BuildPropertiesPanel(canvasT, ref refs);
 
             return refs;

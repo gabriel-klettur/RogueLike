@@ -27,6 +27,11 @@ namespace Valkur.Gameplay.Spawners
         private bool _triggered;
         private readonly List<GameObject> _activeEntities = new List<GameObject>();
 
+        // Index into the current wave's spawns list for SpawnMode.Periodic — one entry
+        // spawns per cooldown tick instead of the whole wave landing at once. Reset
+        // whenever the wave advances (see AdvanceWave) or the cycle restarts (UpdateDone).
+        private int _periodicEntryIndex;
+
         // Overrides
         private bool _visibleOverride;
         private bool _hasVisibleOverride;
@@ -163,7 +168,30 @@ namespace Valkur.Gameplay.Spawners
                 return;
             }
 
-            // Spawn all entries in the current wave
+            if (_template.spawnMode == SpawnMode.Periodic)
+            {
+                // One entry per cooldown tick, spreading the wave out over time instead of
+                // dumping every entry into the world simultaneously — the difference the
+                // field's own tooltip promises ("cooldown between INDIVIDUAL spawns") and
+                // which nothing branched on before this. Every shipped wave holds exactly
+                // one entry, so this is byte-for-byte the old behaviour for existing data.
+                if (_periodicEntryIndex >= wave.spawns.Count)
+                {
+                    _periodicEntryIndex = 0;
+                    if (_template.advanceOn == AdvanceOn.Clear)
+                        _state = SpawnerState.WaitClear;
+                    else
+                        AdvanceWave();
+                    return;
+                }
+
+                SpawnWaveEntry(wave.spawns[_periodicEntryIndex]);
+                _periodicEntryIndex++;
+                _cooldownTimer = _template.cooldownSeconds;
+                return;
+            }
+
+            // Burst: every entry in the current wave spawns at once.
             foreach (var entry in wave.spawns)
             {
                 SpawnWaveEntry(entry);
@@ -187,6 +215,7 @@ namespace Valkur.Gameplay.Spawners
 
         private void AdvanceWave()
         {
+            _periodicEntryIndex = 0;
             _currentWaveIndex++;
             if (_currentWaveIndex >= (_template.waves?.Count ?? 0))
             {
@@ -222,6 +251,7 @@ namespace Valkur.Gameplay.Spawners
             }
 
             _currentWaveIndex = 0;
+            _periodicEntryIndex = 0;
             _cooldownTimer = _template.restartCooldownSeconds;
             _state = SpawnerState.Active;
         }
@@ -240,10 +270,33 @@ namespace Valkur.Gameplay.Spawners
             for (int i = 0; i < entry.count; i++)
             {
                 Vector2 offset = entry.spreadRadius > 0 ? Random.insideUnitCircle * entry.spreadRadius : Vector2.zero;
-                var go = _monsterSpawner.SpawnEntity(monsterDef, (Vector2)transform.position + offset);
+                offset = ClampToSpawnArea(offset);
+                var go = _monsterSpawner.SpawnEntity(monsterDef, (Vector2)transform.position + offset,
+                    persistent: _template.persistent);
                 if (go != null)
                     _activeEntities.Add(go);
             }
+        }
+
+        /// <summary>
+        /// Bounds a wave entry's random offset to the template's authored spawn area
+        /// (<c>spawnRadius</c> + <c>spawnerShape</c>) — previously drawn as a gizmo and
+        /// nothing else, so a <c>spreadRadius</c> larger than <c>spawnRadius</c> could scatter
+        /// entities well outside the area the gizmo showed. <c>spawnRadius &lt;= 0</c> means
+        /// unbounded, which reproduces the exact pre-existing behaviour: every shipped
+        /// template's <c>spreadRadius</c> is well under its <c>spawnRadius</c>, so this clamp
+        /// is a no-op for all of them.
+        /// </summary>
+        private Vector2 ClampToSpawnArea(Vector2 offset)
+        {
+            if (_template.spawnRadius <= 0) return offset;
+            float r = _template.spawnRadius;
+
+            if (_template.spawnerShape == SpawnerShape.Circle)
+                return offset.sqrMagnitude > r * r ? offset.normalized * r : offset;
+
+            // Square: clamp each axis independently.
+            return new Vector2(Mathf.Clamp(offset.x, -r, r), Mathf.Clamp(offset.y, -r, r));
         }
 
         private void CleanupDeadEntities()

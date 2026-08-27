@@ -27,6 +27,30 @@ namespace Valkur.Gameplay.Spawners
         [Tooltip("Catalog of spawner templates for the picker grid.")]
         [SerializeField] private SpawnerTemplateCatalog _catalog;
 
+        /// <summary>
+        /// Injects the template catalog from the bootstrap. The only assignment used to be
+        /// a <c>SerializedObject</c>/<c>FindProperty</c> write inside <c>#if UNITY_EDITOR</c>
+        /// while this manager is created in every build — so a shipped player's F3 picker
+        /// reported "No catalog assigned." and could place nothing. Twin of
+        /// <c>EntitiesRuntimeEditor.SetMonsterCatalog</c>.
+        /// </summary>
+        internal void SetCatalog(SpawnerTemplateCatalog catalog)
+        {
+            if (catalog != null) _catalog = catalog;
+        }
+
+        /// <summary>
+        /// Last-resort lookup for a catalog nobody injected. Deliberately NOT in Awake:
+        /// the bootstrap registers the catalog during its own Start, which can run after
+        /// this component's Awake.
+        /// </summary>
+        private void ResolveCatalogFallback()
+        {
+            if (_catalog != null) return;
+            if (ServiceLocator.TryGet<SpawnerTemplateCatalog>(out var catalog) && catalog != null)
+                _catalog = catalog;
+        }
+
         [Tooltip("Camera used for screen-to-world conversion.")]
         [SerializeField] private Camera _camera;
 

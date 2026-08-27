@@ -81,9 +81,18 @@ namespace Valkur.Gameplay.Entities
         // ── Add/Remove Panel ──────────────────────────────────────────────────────
         // Mirrors Python entities_add_remove_panel:
         //   ADD_ENTITIE / REMOVE_ENTITIE / ADD_ENTITIES_ON_SYSTEM / CONFIRM.
+        //
+        // The catalog-authoring row (New/Rename Key + Duplicate/Rename buttons) is new:
+        // "Add on System" + "Confirm" used to be a status-string stub, and there was no
+        // way to duplicate or rename a definition without leaving Play Mode for the
+        // Inspector. One text field feeds both verbs — Confirm reads it as the key for a
+        // brand-new definition, Rename reads it as the new key/name for whichever
+        // definition is selected in the Picker — so the panel does not grow a second
+        // input for what is the same gesture ("type a name, then say what it names").
 
         private static void BuildAddRemovePanel(Transform canvasT, ref UIRefs refs,
-            Action onAdd, Action onRemove, Action onAddOnSystem, Action onConfirm)
+            Action onAdd, Action onRemove, Action onAddOnSystem, Action onConfirm,
+            Action<string> onNewKeyChanged, Action onDuplicate, Action onRename)
         {
             refs.AddRemoveDropdown = MakeDrop("EntitiesAddRemovePanel", canvasT,
                 PanelDock.TopRight, PANEL_GAP + PROPS_W + PANEL_GAP, PANEL_TOP_OFFSET,
@@ -94,6 +103,27 @@ namespace Valkur.Gameplay.Entities
             refs.RemoveBtnImg      = AddModeBtn(t, "Remove",         "Delete entity", 44f, onRemove,      out refs.RemoveBtnTmp);
             refs.AddOnSystemBtnImg = AddModeBtn(t, "Add on System",  "New class",     44f, onAddOnSystem, out refs.AddOnSystemBtnTmp);
             refs.ConfirmBtnImg     = AddModeBtn(t, "Confirm",        "Persist class", 44f, onConfirm,     out refs.ConfirmBtnTmp);
+
+            // New/Rename key text field — shared by Confirm (create) and Rename.
+            var keyRowGo = CreateUI("NewKeyRow", t);
+            keyRowGo.AddComponent<LayoutElement>().preferredHeight = 18f;
+            var keyHlg = keyRowGo.AddComponent<HorizontalLayoutGroup>();
+            keyHlg.spacing               = 6f;
+            keyHlg.childForceExpandWidth  = false;
+            keyHlg.childForceExpandHeight = true;
+            keyHlg.childControlWidth      = true;
+            keyHlg.childControlHeight     = true;
+            // AddCommit fires onCommit on Enter/blur (TMP onEndEdit); Confirm/Rename also need
+            // the LIVE text if the author clicks straight from typing without pressing Enter,
+            // so onValueChanged feeds the same callback on every keystroke too.
+            refs.NewKeyInput = UIInputField.AddCommit(keyRowGo.transform, "", v => onNewKeyChanged?.Invoke(v), 18f, 10f);
+            refs.NewKeyInput.contentType = TMP_InputField.ContentType.Standard;
+            refs.NewKeyInput.onValueChanged.AddListener(v => onNewKeyChanged?.Invoke(v));
+            var keyLe = refs.NewKeyInput.GetComponent<LayoutElement>();
+            if (keyLe != null) keyLe.flexibleWidth = 1f;
+
+            refs.DuplicateBtnImg = AddModeBtn(t, "Duplicate", "Clone selected", 40f, onDuplicate, out refs.DuplicateBtnTmp);
+            refs.RenameBtnImg    = AddModeBtn(t, "Rename",    "Apply key above", 40f, onRename,   out refs.RenameBtnTmp);
 
             // Hint
             var hintGo = CreateUI("AddRemHint", t);

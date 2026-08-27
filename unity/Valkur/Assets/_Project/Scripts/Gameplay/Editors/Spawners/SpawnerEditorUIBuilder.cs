@@ -50,8 +50,11 @@ namespace Valkur.Gameplay.Spawners
             public RectTransform    PickerContent;
             public TextMeshProUGUI  StatusText;
 
-            // Properties panel
-            public TextMeshProUGUI  PropsText;
+            // Properties panel — a scrollable form of rows (read-only labels for
+            // identity/runtime info, committed TMP_InputFields for the numeric template
+            // fields that actually drive behaviour), rebuilt on every selection change by
+            // RefreshPropertiesPanel via EntitiesEditorUIBuilder.AddPropertyRow/AddEditableRow.
+            public RectTransform    PropsFormRoot;
             public Image            DeleteFromPropsBtnImg;
             public GameObject       DeleteFromPropsBtnGo;   // hidden when no spawner selected
             public TextMeshProUGUI  DeleteFromPropsBtnTmp;

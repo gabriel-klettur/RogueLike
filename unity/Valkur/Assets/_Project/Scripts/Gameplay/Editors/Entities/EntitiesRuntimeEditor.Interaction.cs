@@ -14,8 +14,10 @@ namespace Valkur.Gameplay.Entities
 {
     /// <summary>
     /// Interaction layer: mode switching, picker refresh, structured property
-    /// rendering, map click-handling. UI-only phase â€” spawn/delete/persist
-    /// remain stubs but emit status messages so the workflow can be exercised.
+    /// rendering, map click-handling. Spawn and delete route through the real placement path
+    /// (<c>EntitiesRuntimeEditor.PickerDrag.cs</c>); persistence lives in
+    /// <c>EntitiesRuntimeEditor.Persistence.cs</c>. Every mutation still emits a status message
+    /// through <see cref="SetStatus"/> so the workflow reads clearly either way.
     /// </summary>
     public partial class EntitiesRuntimeEditor : SingletonMonoBehaviour<EntitiesRuntimeEditor>, GameEditorManager.IGameEditor
     {
@@ -82,8 +84,18 @@ namespace Valkur.Gameplay.Entities
         {
             if (_ui.PickerContent == null) return;
 
+            ResolveMonsterCatalogFallback();
+
             for (int i = _ui.PickerContent.childCount - 1; i >= 0; i--)
-                Destroy(_ui.PickerContent.GetChild(i).gameObject);
+            {
+                // Same guard EntitiesEditorUIBuilder.ClearSection already uses two files
+                // over: Object.Destroy is deferred and, outside Play Mode, Unity answers it
+                // with an error. The picker is refreshed by Create/Duplicate/Rename, which
+                // are Editor-time operations, so this path genuinely runs in both modes.
+                var child = _ui.PickerContent.GetChild(i).gameObject;
+                if (Application.isPlaying) Destroy(child);
+                else                       DestroyImmediate(child);
+            }
 
             string filter = _searchFilter?.Trim().ToLowerInvariant() ?? "";
             int shown = 0;
@@ -296,6 +308,179 @@ namespace Valkur.Gameplay.Entities
             ShowPlayerProperties(key);
         }
 
+        // ── Editable stat rows ──────────────────────────────────────────────────
+        //
+        // A committed row does three things, in this order:
+        //   1. parse + clamp, refusing garbage rather than writing a broken value
+        //   2. write the field on the MonsterDefinition and mark the asset dirty
+        //   3. re-apply the definition to every LIVE monster of that key
+        //
+        // Step 3 is what makes this a tuning loop instead of a form. It reuses
+        // EntitySetup.ConfigureMonster — the same idempotent path the DevConsole
+        // `reconfig` command uses — so positions are preserved. Note that it also
+        // re-initialises Health, so a monster being tuned mid-fight comes back to
+        // full HP; that is `reconfig`'s documented behaviour, not a new quirk.
+
+        private void AddIntStat(RectTransform section, string label, int current, int min,
+                                System.Action<int> apply, MonsterDefinition def)
+        {
+            EntitiesEditorUIBuilder.AddEditableRow(section, label, current.ToString(), raw =>
+            {
+                if (!int.TryParse(raw, out int parsed))
+                {
+                    SetStatus($"'{raw}' is not a whole number — {label} unchanged.");
+                    ShowMonsterProperties(def.monsterKey);
+                    return;
+                }
+                apply(Mathf.Max(min, parsed));
+                CommitDefinitionEdit(def, label);
+            }, TMPro.TMP_InputField.ContentType.IntegerNumber);
+        }
+
+        private void AddFloatStat(RectTransform section, string label, float current, float min,
+                                  System.Action<float> apply, MonsterDefinition def)
+        {
+            EntitiesEditorUIBuilder.AddEditableRow(section, label, current.ToString("0.###"), raw =>
+            {
+                if (!float.TryParse(raw, System.Globalization.NumberStyles.Float,
+                                    System.Globalization.CultureInfo.InvariantCulture, out float parsed))
+                {
+                    SetStatus($"'{raw}' is not a number — {label} unchanged.");
+                    ShowMonsterProperties(def.monsterKey);
+                    return;
+                }
+                apply(Mathf.Max(min, parsed));
+                CommitDefinitionEdit(def, label);
+            });
+        }
+
+        /// <summary>
+        /// Boolean counterpart to <see cref="AddIntStat"/>/<see cref="AddFloatStat"/> — added
+        /// alongside them for <c>MonsterDefinition.autoCast</c>, the flag that used to have no
+        /// editable widget in any editor (the F5 properties panel only ever rendered it as a
+        /// read-only label).
+        /// </summary>
+        private void AddBoolStat(RectTransform section, string label, bool current,
+                                 System.Action<bool> apply, MonsterDefinition def)
+        {
+            EntitiesEditorUIBuilder.AddToggleRow(section, label, current, v =>
+            {
+                apply(v);
+                CommitDefinitionEdit(def, label);
+            });
+        }
+
+        // ── Auto-Cast list editing ──────────────────────────────────────────────
+        //
+        // MonsterDefinition.autoCast / autoCastList are consumed at spawn time by
+        // EntitySetup.ConfigureMonsterAutoCast, but until now nothing could WRITE them —
+        // all 19 shipped monsters shipped autoCast=false with an empty list, and there was
+        // no working example to copy. Entries are edited through a dropdown of catalog
+        // keys rather than free text: the widget itself is the validation, so a mistyped
+        // key can't be authored the way it could through a text field.
+
+        /// <summary>
+        /// Validates <paramref name="spellKey"/> against the injected SpellCatalog before
+        /// appending it to <see cref="MonsterDefinition.autoCastList"/>. Refuses (and reports
+        /// through <see cref="SetStatus"/>) an unknown key or a duplicate — appending either
+        /// would either be silently skipped by <c>ConfigureMonsterAutoCast</c> at spawn time
+        /// (unknown key) or waste a spell-caster slot on a repeat (duplicate).
+        /// </summary>
+        private bool TryAddAutoCastSpell(MonsterDefinition def, string spellKey)
+        {
+            if (def == null || string.IsNullOrWhiteSpace(spellKey)) return false;
+
+            if (_spellCatalog == null || !_spellCatalog.TryGet(spellKey, out _))
+            {
+                SetStatus($"'{spellKey}' is not a known spell — autoCastList unchanged.");
+                return false;
+            }
+
+            var existing = def.autoCastList ?? System.Array.Empty<string>();
+            foreach (var s in existing)
+            {
+                if (string.Equals(s, spellKey, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    SetStatus($"'{spellKey}' is already in {def.monsterKey}'s auto-cast list.");
+                    return false;
+                }
+            }
+
+            var list = new List<string>(existing) { spellKey };
+            def.autoCastList = list.ToArray();
+            CommitDefinitionEdit(def, "Auto-Cast");
+            return true;
+        }
+
+        /// <summary>Swaps the spell at <paramref name="index"/>, re-validating against the catalog.</summary>
+        private bool TrySetAutoCastSpellAt(MonsterDefinition def, int index, string spellKey)
+        {
+            if (def == null || def.autoCastList == null) return false;
+            if (index < 0 || index >= def.autoCastList.Length) return false;
+
+            if (_spellCatalog == null || !_spellCatalog.TryGet(spellKey, out _))
+            {
+                SetStatus($"'{spellKey}' is not a known spell — autoCastList unchanged.");
+                return false;
+            }
+
+            def.autoCastList[index] = spellKey;
+            CommitDefinitionEdit(def, "Auto-Cast");
+            return true;
+        }
+
+        /// <summary>Removes the entry at <paramref name="index"/> from <c>autoCastList</c>.</summary>
+        private void RemoveAutoCastSpellAt(MonsterDefinition def, int index)
+        {
+            if (def == null || def.autoCastList == null) return;
+            if (index < 0 || index >= def.autoCastList.Length) return;
+
+            var list = new List<string>(def.autoCastList);
+            list.RemoveAt(index);
+            def.autoCastList = list.ToArray();
+            CommitDefinitionEdit(def, "Auto-Cast");
+        }
+
+        /// <summary>
+        /// Persists the edited definition and pushes it onto everything already alive.
+        /// </summary>
+        private void CommitDefinitionEdit(MonsterDefinition def, string label)
+        {
+            if (def == null) return;
+
+#if UNITY_EDITOR
+            // SetDirty alone, never Undo.RecordObject: a bulk editor that records to
+            // the GLOBAL undo stack is what silently reverted 193 building templates
+            // in memory the first time anything popped it.
+            UnityEditor.EditorUtility.SetDirty(def);
+#endif
+            int live = ReapplyToLiveMonsters(def);
+            _pendingAssetWrites = true;
+            SetStatus(live > 0
+                ? $"{label} updated — {live} live {def.monsterKey} reconfigured. Save to write the asset."
+                : $"{label} updated. Save to write the asset.");
+            RefreshPicker();
+        }
+
+        /// <summary>
+        /// Re-runs the shipped configure path on every spawned monster sharing this
+        /// definition. Returns how many were touched.
+        /// </summary>
+        private int ReapplyToLiveMonsters(MonsterDefinition def)
+        {
+            int count = 0;
+            var monsters = new List<GameObject>(EntityRegistry.Monsters);
+            foreach (var go in monsters)
+            {
+                if (go == null) continue;
+                var brain = go.GetComponent<FSM.FSMMonsterBrain>();
+                if (brain == null || brain.Definition != def) continue;
+                EntitySetup.ConfigureMonster(go, def);
+                count++;
+            }
+            return count;
+        }
+
         private void ShowMonsterProperties(string key)
         {
             ClearPropsSections();
@@ -304,24 +489,40 @@ namespace Valkur.Gameplay.Entities
             var def = _monsterCatalog.GetByKey(key);
             if (def == null) { ShowPropsHint($"Entity '{key}' not found."); return; }
 
+            ResolveSpellCatalogFallback();
             HidePropsHint();
             var s = def.stats;
 
             EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsIdentitySection, "Key",  def.monsterKey);
             EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsIdentitySection, "Name", def.displayName);
 
-            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsStatsSection, "HP",            s.hp.ToString());
-            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsStatsSection, "Speed",         $"{s.speed} / chase {s.chasingSpeed}");
-            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsStatsSection, "Defense",       s.defense.ToString());
-            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsStatsSection, "Power",         s.power.ToString());
-            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsStatsSection, "Melee Dmg",     s.meleeDamage.ToString());
-            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsStatsSection, "Melee Range",   s.meleeRange.ToString());
-            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsStatsSection, "Melee CD",      $"{s.meleeCooldown:F2}s");
-            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsStatsSection, "Aggro Range",   s.aggroRange.ToString());
-            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsStatsSection, "Atk Windup",    $"{s.attackWindupSeconds:F2}s");
+            // The stats a designer actually tunes are editable and write straight back
+            // to the .asset; the rest stay labels. `power` is deliberately NOT editable —
+            // no runtime code reads it beyond an XP fallback, and an input box that
+            // silently changes nothing is worse than a label that admits it.
+            AddIntStat(_ui.PropsStatsSection,   "HP",          s.hp,          1,     v => def.stats.hp = v,          def);
+            AddFloatStat(_ui.PropsStatsSection, "Speed",       s.speed,       0f,    v => def.stats.speed = v,       def);
+            AddFloatStat(_ui.PropsStatsSection, "Chase Speed", s.chasingSpeed, 0f,   v => def.stats.chasingSpeed = v, def);
+            // Defense mitigates as of the damage-model pass — Health.MitigateDamage
+            // subtracts it with a floor of 1 — so it is a real knob now, not a label.
+            AddIntStat(_ui.PropsStatsSection,   "Defense",     s.defense,     0,     v => def.stats.defense = v,     def);
+            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsStatsSection, "Power",    $"{s.power}  (xp fallback only)");
+            AddIntStat(_ui.PropsStatsSection,   "Melee Dmg",   s.meleeDamage, 0,     v => def.stats.meleeDamage = v, def);
+            // meleeRange is a float now: "knife range" was not expressible while it was an
+            // int, and the shipped values were 0, 2, 3 and 7 with nothing in between.
+            AddFloatStat(_ui.PropsStatsSection, "Melee Range", s.meleeRange,  0f,    v => def.stats.meleeRange = v,  def);
+            AddFloatStat(_ui.PropsStatsSection, "Melee CD",    s.meleeCooldown, 0.01f, v => def.stats.meleeCooldown = v, def);
+            AddFloatStat(_ui.PropsStatsSection, "Aggro Range", s.aggroRange,  0f,    v => def.stats.aggroRange = v,  def);
+            AddFloatStat(_ui.PropsStatsSection, "Atk Windup",  s.attackWindupSeconds, 0f,
+                                                                              v => def.stats.attackWindupSeconds = v, def);
 
-            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAISection, "FSM Set",   def.fsmSet);
-            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAISection, "Patrol",    def.patrolType.ToString());
+            // Both are plain strings and both are null on a definition that was just
+            // created rather than loaded — the F5 "Create" button mints exactly that, and
+            // .ToString() on the null one took the whole properties panel down with it.
+            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAISection, "FSM Set",
+                string.IsNullOrEmpty(def.fsmSet) ? "(none)" : def.fsmSet);
+            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAISection, "Patrol",
+                string.IsNullOrEmpty(def.patrolType) ? "(none)" : def.patrolType);
             EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAISection, "Telegraph", def.useAttackTelegraph ? "yes" : "no");
 
             EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsSpawnSection, "Count",   s.spawnCount.ToString());
@@ -329,15 +530,42 @@ namespace Valkur.Gameplay.Entities
             EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsSpawnSection, "Margin",  s.spawnMargin.ToString());
             EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsSpawnSection, "Faction", s.faction);
 
-            if (def.autoCast && def.autoCastList != null && def.autoCastList.Length > 0)
+            // Enabled toggle + a dropdown-per-entry list validated against the SpellCatalog —
+            // see the "Auto-Cast list editing" region above for the write path. The dropdown
+            // itself is the validation, so a mistyped key can never be authored here.
+            AddBoolStat(_ui.PropsAutoCastSection, "Enabled", def.autoCast, v => def.autoCast = v, def);
+
+            string[] spellKeys = _spellCatalog != null ? _spellCatalog.GetAllKeys() : System.Array.Empty<string>();
+            System.Array.Sort(spellKeys, System.StringComparer.OrdinalIgnoreCase);
+
+            var autoCastList = def.autoCastList ?? System.Array.Empty<string>();
+            for (int i = 0; i < autoCastList.Length; i++)
             {
-                int i = 0;
-                foreach (var spell in def.autoCastList)
-                    EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAutoCastSection, $"#{++i}", spell);
+                int idx = i; // capture per-iteration for the closures below
+                EntitiesEditorUIBuilder.AddSpellListRow(_ui.PropsAutoCastSection, $"#{idx + 1}",
+                    spellKeys, autoCastList[idx],
+                    newKey =>
+                    {
+                        if (TrySetAutoCastSpellAt(def, idx, newKey)) ShowMonsterProperties(def.monsterKey);
+                    },
+                    () =>
+                    {
+                        RemoveAutoCastSpellAt(def, idx);
+                        ShowMonsterProperties(def.monsterKey);
+                    });
+            }
+
+            if (spellKeys.Length == 0)
+            {
+                EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAutoCastSection, "-",
+                    _spellCatalog == null ? "spell catalog not available" : "no spells in catalog");
             }
             else
             {
-                EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAutoCastSection, "â€”", "no auto-cast");
+                EntitiesEditorUIBuilder.AddSpellAddRow(_ui.PropsAutoCastSection, spellKeys, newKey =>
+                {
+                    if (TryAddAutoCastSpell(def, newKey)) ShowMonsterProperties(def.monsterKey);
+                });
             }
 
             string idle = (def.assetConfig != null && def.assetConfig.idle.south != null)
@@ -401,8 +629,14 @@ namespace Valkur.Gameplay.Entities
 
         private void HandleMapInteraction()
         {
-            var mouse = Mouse.current;
-            if (mouse == null || !Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame()) return;
+            // Don't bail when Mouse.current is null — MouseInputManager wraps the new
+            // InputSystem AND the legacy backend, and the legacy half is the one that still
+            // works during the recurring Unity 2022.3 Editor event-drop bug this project
+            // exists to survive. The `mouse` local here was read for the null check and
+            // never used again, so the gate did nothing but disable F5's map clicks in
+            // exactly the situation the fallback was built for. Buildings and Items removed
+            // the same gate.
+            if (!Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame()) return;
             if (UnityEngine.EventSystems.EventSystem.current != null &&
                 UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) return;
 
@@ -421,11 +655,17 @@ namespace Valkur.Gameplay.Entities
             }
         }
 
+        /// <summary>
+        /// Add-mode click-to-spawn.
+        ///
+        /// This used to be a status-string stub while the only working spawn was the
+        /// undiscoverable drag-from-picker gesture, so a designer picked a monster,
+        /// pressed Add, clicked the map, read a confirmation, and nothing appeared.
+        /// Both gestures now land on the same path.
+        /// </summary>
         private void SpawnEntityAtPosition(Vector3 worldPos)
         {
-            // UI-only stub â€” spawn pipeline integration is the next phase.
-            SetStatus($"Spawn '{_selectedKey}' at ({worldPos.x:F1}, {worldPos.y:F1})  [stub]");
-            Debug.Log($"[EntitiesEditor] Spawn {_selectedKey} at {worldPos}");
+            PlaceEntityFromDrag(_selectedKey, _selectedIsPlayer, worldPos);
         }
 
         private void DeleteEntityAtPosition(Vector3 worldPos)
@@ -435,7 +675,11 @@ namespace Valkur.Gameplay.Entities
             {
                 SetStatus($"Deleted {hit.gameObject.name}");
                 Debug.Log($"[EntitiesEditor] Deleted {hit.gameObject.name}");
+                // Deleting a placement has to reach the saved file too, or it comes back on
+                // the next Stop/Play the same way it would if it had never been removed.
+                bool wasPlacedEntity = hit.GetComponent<PersistedEntityInstance>() != null;
                 Destroy(hit.gameObject);
+                if (wasPlacedEntity) MarkEntityPlacementsDirty();
             }
             else
             {

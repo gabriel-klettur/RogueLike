@@ -220,6 +220,21 @@ namespace Valkur.Gameplay.Entities
 
         private void SpawnPlayerAt(string playerKey, Vector3 worldPos)
         {
+            // A second player is unrecoverable from inside this editor, so refuse it.
+            // EntitySetup.ConfigurePlayer ends in EntityRegistry.RegisterPlayer, which
+            // overwrites the global player unconditionally and re-points InventoryUI,
+            // SpellBarHUD and CombatRangeVisualizer at the clone — while the camera
+            // keeps following the original. Delete mode cannot undo it either: its
+            // overlap masks NPC only, and the clone is on the Player layer. One stray
+            // drag from the Players tab (which sits right next to Hostiles) cost the
+            // whole Play session.
+            if (EntityRegistry.Player != null)
+            {
+                SetStatus("A player already exists — spawning a second one would hijack " +
+                          "the HUD and the input. Stop Play Mode to change class.");
+                return;
+            }
+
             var setup = FindObjectOfType<GameplaySceneSetup>();
             var prefab = setup != null ? setup.PlayerPrefab : null;
             if (prefab == null)
@@ -247,7 +262,18 @@ namespace Valkur.Gameplay.Entities
             Debug.Log($"[EntitiesEditor] Spawned player {playerKey} at {worldPos}");
         }
 
-        private void SpawnMonsterAt(string monsterKey, Vector3 worldPos)
+        /// <summary>
+        /// Spawns a monster and tags it as an F5 placement so it survives a Stop
+        /// (<see cref="PersistedEntityInstance"/>, saved by
+        /// <c>EntitiesRuntimeEditor.Persistence.cs</c>).
+        /// </summary>
+        /// <param name="existingPlacementId">Non-null when this call is re-materialising a
+        /// placement loaded from disk — keeps the same stable id instead of minting a new one,
+        /// so a re-save of an untouched placement is not read as a delete-and-recreate.</param>
+        /// <param name="markDirty">False during boot-time load: spawning what the file already
+        /// says should not itself schedule another save.</param>
+        private void SpawnMonsterAt(string monsterKey, Vector3 worldPos,
+            string existingPlacementId = null, bool markDirty = true)
         {
             if (_monsterCatalog == null)
             {
@@ -286,6 +312,11 @@ namespace Valkur.Gameplay.Entities
 
             if (go != null)
             {
+                var marker = go.GetComponent<PersistedEntityInstance>()
+                             ?? go.AddComponent<PersistedEntityInstance>();
+                marker.Initialize(existingPlacementId, monsterKey);
+                if (markDirty) MarkEntityPlacementsDirty();
+
                 SetStatus($"Spawned '{monsterKey}' at ({worldPos.x:F1}, {worldPos.y:F1}).");
                 Debug.Log($"[EntitiesEditor] Spawned monster {monsterKey} at {worldPos}");
             }

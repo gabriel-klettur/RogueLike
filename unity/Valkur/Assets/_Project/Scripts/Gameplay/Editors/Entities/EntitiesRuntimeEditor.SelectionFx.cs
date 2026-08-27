@@ -195,8 +195,9 @@ namespace Valkur.Gameplay.Entities
         /// </summary>
         private bool UpdateEntitySelectionAndDrag()
         {
-            var mouse = Mouse.current;
-            if (mouse == null) return false;
+            // No Mouse.current gate: MouseInputManager reads both backends, and gating on
+            // the new one disabled selection and RMB drag during the event-drop bug the
+            // fallback exists for. The local was never used past the null check.
 
             bool overUi = UnityEngine.EventSystems.EventSystem.current != null
                        && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();

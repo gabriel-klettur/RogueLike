@@ -57,17 +57,21 @@ namespace Valkur.Gameplay.Spawners
         }
 
         // ── Properties Panel ────────────────────────────────────────────────────
-        // Mirrors Python spawner_properties_panel: read-only form on the
-        // currently selected spawner instance, plus a context-sensitive Delete
-        // button that replaces the legacy Modes panel "Delete" mode. The button
-        // is hidden whenever <c>_selectedInstance == null</c> so the panel
-        // only exposes destructive actions when something is actually picked.
+        // Mirrors Python spawner_properties_panel: a form on the currently selected
+        // spawner instance, plus a context-sensitive Delete button that replaces the
+        // legacy Modes panel "Delete" mode. The button is hidden whenever
+        // <c>_selectedInstance == null</c> so the panel only exposes destructive
+        // actions when something is actually picked.
         //
-        // Layout mirrors ParticlesEditorUIBuilder.Properties::DeleteInstance:
-        // a thin separator + a 28 px-tall danger button placed directly inside
-        // the panel content's VerticalLayoutGroup (no row wrapper). The
-        // button itself is the GameObject toggled — eliminates the "red blob
-        // floating in a fixed-height row" mismatch.
+        // The form itself used to be a single read-only StringBuilder dump into one
+        // TextMeshProUGUI. It is now a row-based form — read-only labels for identity
+        // and runtime info, committed input fields for the numeric template fields
+        // that actually drive behaviour — mirroring the pattern
+        // EntitiesEditorUIBuilder.AddEditableRow established for F5's monster stats.
+        // PropsFormRoot is the VerticalLayoutGroup content MakeScrollView already
+        // builds; SpawnerEditorManager.RefreshPropertiesPanel clears and repopulates
+        // it on every selection change via EntitiesEditorUIBuilder.AddPropertyRow /
+        // AddEditableRow, reused as-is since both editors share the Gameplay assembly.
 
         private static void BuildPropertiesPanel(Transform canvasT, ref UIRefs refs,
             Action onDeleteSelected)
@@ -77,34 +81,32 @@ namespace Valkur.Gameplay.Spawners
                 PROPS_W, PROPS_H, "Properties",
                 out var t, out refs.PropsPanelDrag);
 
-            // Scrollable content so long property dumps don't overflow.
+            // Scrollable content so a long form doesn't overflow the panel.
             var (scroll, content) = EditorUIHelpers.MakeScrollView(t, "PropsScroll");
             var le = scroll.gameObject.AddComponent<LayoutElement>();
             le.flexibleHeight = 1f;
             le.minHeight      = 200f;
             EditorUIHelpers.AddVerticalScrollbar(scroll);
 
-            var textGo = EditorUIHelpers.CreateUI("PropsText", content);
-            var rt     = textGo.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0f, 1f);
-            rt.anchorMax = new Vector2(1f, 1f);
-            rt.pivot     = new Vector2(0f, 1f);
+            // MakeScrollView's content already carries a VerticalLayoutGroup +
+            // ContentSizeFitter, which is what AddPropertyRow/AddEditableRow need from
+            // their parent to stack — but the generic helper leaves childControlWidth/
+            // Height at Unity's default (false), which only POSITIONS children rather
+            // than sizing them. Force both on, matching the explicit setup
+            // EntitiesEditorUIBuilder.MakeFormSection uses for the same job, so every
+            // row actually renders at its LayoutElement-declared height instead of
+            // whatever its own freshly-created RectTransform happened to default to.
+            var contentVlg = content.GetComponent<VerticalLayoutGroup>();
+            if (contentVlg != null)
+            {
+                contentVlg.childControlWidth  = true;
+                contentVlg.childControlHeight = true;
+            }
+            refs.PropsFormRoot = content;
 
-            var fitter = textGo.AddComponent<ContentSizeFitter>();
-            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-            refs.PropsText                     = textGo.AddComponent<TextMeshProUGUI>();
-            refs.PropsText.text                = "<i>No spawner selected.</i>";
-            refs.PropsText.fontSize            = 11f;
-            refs.PropsText.color               = UITheme.TEXT_PRIMARY;
-            refs.PropsText.alignment           = TextAlignmentOptions.TopLeft;
-            refs.PropsText.enableWordWrapping  = true;
-            refs.PropsText.richText            = true;
-            refs.PropsText.margin              = new Vector4(8f, 4f, 12f, 4f);
-
-            // Visually divides the read-only properties from the destructive
-            // action below — same separator the Particles Properties panel
-            // uses before its "Delete Instance" button.
+            // Visually divides the properties form from the destructive action below —
+            // same separator the Particles Properties panel uses before its "Delete
+            // Instance" button.
             EditorUIHelpers.BuildSeparator(t);
 
             refs.DeleteFromPropsBtnImg = EditorUIHelpers.AddDangerBtn(

@@ -1,10 +1,10 @@
-using System.Text;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
 using Valkur.Data;
+using Valkur.Gameplay.Entities;
 using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Spawners
@@ -19,6 +19,8 @@ namespace Valkur.Gameplay.Spawners
         private void RefreshPicker()
         {
             if (_ui.PickerContent == null) return;
+
+            ResolveCatalogFallback();
 
             foreach (var row in _pickerRows)
                 if (row != null) Destroy(row);
@@ -125,57 +127,135 @@ namespace Valkur.Gameplay.Spawners
         }
 
         // ── Properties panel ────────────────────────────────────────────────────
+        //
+        // Rebuilt from scratch on every selection change (same "clear the section,
+        // repopulate" pattern EntitiesRuntimeEditor.ShowMonsterProperties uses for F5) rather
+        // than diffed in place — a spawner-template form has few enough rows that a full
+        // rebuild is imperceptible, and it keeps the code from tracking which row belongs to
+        // which field across refreshes.
+        //
+        // Editing one of the numeric rows below writes straight onto the SHARED
+        // SpawnerTemplateData asset, not onto the selected instance: unlike a MonsterDefinition
+        // edit in F5 (which must be re-applied onto every already-alive monster because Health
+        // snapshots stats at spawn time), every live SpawnerInstance holds a direct reference to
+        // this same asset and reads its fields fresh every Update — so a change here reaches
+        // every OTHER placed instance of the template immediately too, no re-apply pass needed.
+        // That is "one key, every instance" — the same semantics F5 uses for monster stats.
 
         private void RefreshPropertiesPanel()
         {
-            if (_ui.PropsText == null) return;
+            if (_ui.PropsFormRoot == null) return;
 
             // Show the Delete button only when a spawner is selected, so the
             // panel only exposes destructive actions in a meaningful state.
             if (_ui.DeleteFromPropsBtnGo != null)
                 _ui.DeleteFromPropsBtnGo.SetActive(_selectedInstance != null);
 
+            EntitiesEditorUIBuilder.ClearSection(_ui.PropsFormRoot);
+
             if (_selectedInstance == null || _selectedInstance.Template == null)
             {
-                _ui.PropsText.text =
-                    "<i>No spawner selected.</i>\n\n" +
-                    "Pick a template and click the map to place, drag a template " +
-                    "from the picker, or click on a spawner to inspect it.";
+                EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsFormRoot, "—",
+                    "No spawner selected. Pick a template and click the map to place, drag a " +
+                    "template from the picker, or click on a spawner to inspect it.");
                 return;
             }
 
             var t   = _selectedInstance.Template;
             var pos = _selectedInstance.transform.position;
 
-            var sb = new StringBuilder();
-            sb.AppendLine($"<b>Identity</b>");
-            sb.AppendLine($"  ID:        {_selectedInstance.InstanceId}");
-            sb.AppendLine($"  Template:  {t.templateId}");
-            sb.AppendLine($"  Zone:      {_selectedInstance.Zone}");
-            sb.AppendLine($"  Pos:       ({pos.x:F2}, {pos.y:F2})");
-            sb.AppendLine();
-            sb.AppendLine($"<b>Trigger</b>");
-            sb.AppendLine($"  Type:      {t.triggerType}");
-            sb.AppendLine($"  Radius:    {t.triggerRadius}");
-            sb.AppendLine($"  AutoStart: {t.autoStart}");
-            sb.AppendLine();
-            sb.AppendLine($"<b>Policy</b>");
-            sb.AppendLine($"  Mode:      {t.spawnMode}");
-            sb.AppendLine($"  Cooldown:  {t.cooldownSeconds}s");
-            sb.AppendLine($"  AdvanceOn: {t.advanceOn}");
-            sb.AppendLine($"  MaxActive: {t.maxActive}");
-            sb.AppendLine($"  Persistent:{t.persistent}");
-            sb.AppendLine();
-            sb.AppendLine($"<b>Waves</b>");
-            sb.AppendLine($"  Count:     {t.waves?.Count ?? 0}");
-            sb.AppendLine($"  WavesId:   {(string.IsNullOrEmpty(t.wavesId) ? "(inline)" : t.wavesId)}");
-            sb.AppendLine();
-            sb.AppendLine($"<b>Runtime</b>");
-            sb.AppendLine($"  State:     {_selectedInstance.State}");
-            sb.AppendLine($"  WaveIdx:   {_selectedInstance.CurrentWaveIndex}");
-            sb.AppendLine($"  Active:    {_selectedInstance.ActiveEntityCount}");
+            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsFormRoot, "ID",       _selectedInstance.InstanceId);
+            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsFormRoot, "Template", t.templateId);
+            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsFormRoot, "Zone",     _selectedInstance.Zone);
+            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsFormRoot, "Pos",      $"({pos.x:F2}, {pos.y:F2})");
 
-            _ui.PropsText.text = sb.ToString();
+            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsFormRoot, "Trigger",   t.triggerType.ToString());
+            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsFormRoot, "AutoStart", t.autoStart ? "yes" : "no");
+            AddFloatStat(_ui.PropsFormRoot, "Trigger Radius", t.triggerRadius, 0f,
+                v => t.triggerRadius = v, t);
+
+            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsFormRoot, "Mode", t.spawnMode.ToString());
+            AddFloatStat(_ui.PropsFormRoot, "Cooldown (s)", t.cooldownSeconds, 0f,
+                v => t.cooldownSeconds = v, t);
+            AddFloatStat(_ui.PropsFormRoot, "Between Waves (s)", t.betweenWavesCooldownSeconds, 0f,
+                v => t.betweenWavesCooldownSeconds = v, t);
+            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsFormRoot, "Advance On", t.advanceOn.ToString());
+            AddIntStat(_ui.PropsFormRoot, "Max Active (0=∞)", t.maxActive, 0,
+                v => t.maxActive = v, t);
+            AddFloatStat(_ui.PropsFormRoot, "Restart CD (s)", t.restartCooldownSeconds, 0f,
+                v => t.restartCooldownSeconds = v, t);
+            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsFormRoot, "Persistent",
+                t.persistent ? "yes (exempt from despawn)" : "no");
+
+            AddIntStat(_ui.PropsFormRoot, "Spawn Radius (0=∞)", t.spawnRadius, 0,
+                v => t.spawnRadius = v, t);
+            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsFormRoot, "Spawn Shape", t.spawnerShape.ToString());
+
+            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsFormRoot, "Waves", (t.waves?.Count ?? 0).ToString());
+
+            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsFormRoot, "State",    _selectedInstance.State.ToString());
+            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsFormRoot, "Wave Idx", _selectedInstance.CurrentWaveIndex.ToString());
+            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsFormRoot, "Active",   _selectedInstance.ActiveEntityCount.ToString());
+        }
+
+        /// <summary>
+        /// A float row on the shared template — parses, floors to <paramref name="min"/>,
+        /// writes via <paramref name="apply"/>, then <see cref="CommitTemplateEdit"/>.
+        /// Rejects unparsable input without touching the field (matches
+        /// EntitiesRuntimeEditor.AddFloatStat's contract: a bad string never silently zeroes
+        /// a value).
+        /// </summary>
+        private void AddFloatStat(RectTransform section, string label, float current, float min,
+                                  System.Action<float> apply, SpawnerTemplateData template)
+        {
+            EntitiesEditorUIBuilder.AddEditableRow(section, label, current.ToString("0.###"), raw =>
+            {
+                if (!float.TryParse(raw, System.Globalization.NumberStyles.Float,
+                                    System.Globalization.CultureInfo.InvariantCulture, out float parsed))
+                {
+                    SetStatus($"'{raw}' is not a number — {label} unchanged.");
+                    RefreshPropertiesPanel();
+                    return;
+                }
+                apply(Mathf.Max(min, parsed));
+                CommitTemplateEdit(template, label);
+            });
+        }
+
+        /// <summary>Integer counterpart of <see cref="AddFloatStat"/>.</summary>
+        private void AddIntStat(RectTransform section, string label, int current, int min,
+                                System.Action<int> apply, SpawnerTemplateData template)
+        {
+            EntitiesEditorUIBuilder.AddEditableRow(section, label, current.ToString(), raw =>
+            {
+                if (!int.TryParse(raw, out int parsed))
+                {
+                    SetStatus($"'{raw}' is not a whole number — {label} unchanged.");
+                    RefreshPropertiesPanel();
+                    return;
+                }
+                apply(Mathf.Max(min, parsed));
+                CommitTemplateEdit(template, label);
+            }, TMP_InputField.ContentType.IntegerNumber);
+        }
+
+        /// <summary>
+        /// Marks the shared template dirty (Editor-only) and refreshes the panel. No
+        /// "re-apply to every live instance" pass is needed here — see the class-level
+        /// remark above <see cref="RefreshPropertiesPanel"/> for why that differs from F5.
+        /// </summary>
+        private void CommitTemplateEdit(SpawnerTemplateData template, string label)
+        {
+            if (template == null) return;
+#if UNITY_EDITOR
+            // SetDirty alone, never Undo.RecordObject — a bulk/repeated editor that records
+            // to the GLOBAL undo stack is what silently reverted 193 building templates in
+            // memory the first time anything else popped it. See BuildingPropImporter incident.
+            UnityEditor.EditorUtility.SetDirty(template);
+#endif
+            SetStatus($"{label} updated on '{template.templateId}' — affects every placed " +
+                      "instance of this template.");
+            RefreshPropertiesPanel();
         }
 
         // ── Delete from Properties (replaces the legacy Delete mode) ────────────

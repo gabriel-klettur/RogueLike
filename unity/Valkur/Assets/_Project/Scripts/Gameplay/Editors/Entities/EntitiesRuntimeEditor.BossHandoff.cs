@@ -52,6 +52,22 @@ namespace Valkur.Gameplay.Entities
         private BossDefinition FindBossDefForMonsterKey(string monsterKey)
         {
             if (string.IsNullOrEmpty(monsterKey)) return null;
+
+            // Forward reference first. MonsterDefinition now carries `bossDefinition`
+            // outright — it is what EntitySetup.ConfigureMonster reads to attach the phase
+            // controller — so the monster already knows it is a boss and no lookup is
+            // needed. This path also works in a build, unlike the scan below.
+            if (_monsterCatalog != null)
+            {
+                var monster = _monsterCatalog.GetByKey(monsterKey);
+                if (monster != null && monster.bossDefinition != null)
+                    return monster.bossDefinition;
+            }
+
+            // Reverse scan, kept for a BossDefinition authored before the forward field
+            // existed: it names its baseMonster but the monster does not name it back.
+            // Editor-only by construction (AssetDatabase), which is exactly why it cannot
+            // be the primary path.
             EnsureBossDefCache();
             _bossDefByKey.TryGetValue(monsterKey, out var def);
             return def;

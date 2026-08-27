@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -173,6 +174,195 @@ namespace Valkur.Gameplay.Entities
             valTmp.alignment     = TextAlignmentOptions.MidlineLeft;
             valTmp.enableWordWrapping = false;
             valTmp.overflowMode  = TextOverflowModes.Truncate;
+        }
+
+        /// <summary>
+        /// A property row whose value is a committed input field rather than a label.
+        ///
+        /// The panel used to be built entirely from <see cref="AddPropertyRow"/> — two
+        /// TextMeshProUGUI per row and no input widget anywhere in the four UI-builder
+        /// partials — so the one screen named after entity authoring could only ever
+        /// display a monster's combat numbers. Every balance iteration meant leaving
+        /// Play Mode for the Inspector.
+        /// </summary>
+        /// <param name="onCommit">
+        /// Raised on end-of-edit with the raw text. The caller parses and validates:
+        /// what counts as a legal value belongs to the field, not to the widget.
+        /// </param>
+        public static TMP_InputField AddEditableRow(RectTransform sectionBody, string label,
+                                                    string value, System.Action<string> onCommit,
+                                                    TMP_InputField.ContentType contentType =
+                                                        TMP_InputField.ContentType.DecimalNumber)
+        {
+            var rowGo = CreateUI($"Row_{label}", sectionBody);
+            rowGo.AddComponent<LayoutElement>().preferredHeight = 18f;
+
+            var hlg = rowGo.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing                = 6f;
+            hlg.childForceExpandWidth  = false;
+            hlg.childForceExpandHeight = true;
+            hlg.childControlWidth      = true;
+            hlg.childControlHeight     = true;
+
+            var lblGo = CreateUI("Label", rowGo.transform);
+            lblGo.AddComponent<LayoutElement>().preferredWidth = 110f;
+            var lblTmp                = lblGo.AddComponent<TextMeshProUGUI>();
+            lblTmp.text               = label;
+            lblTmp.fontSize           = 10f;
+            lblTmp.color              = TEXT_SECONDARY;
+            lblTmp.alignment          = TextAlignmentOptions.MidlineLeft;
+            lblTmp.enableWordWrapping = false;
+            lblTmp.overflowMode       = TextOverflowModes.Truncate;
+
+            var input = UIInputField.AddCommit(rowGo.transform, value ?? "", onCommit, 18f, 10f);
+            input.contentType = contentType;
+            var le = input.GetComponent<LayoutElement>();
+            if (le != null) le.flexibleWidth = 1f;
+            return input;
+        }
+
+        /// <summary>
+        /// A property row whose value is a checkbox — added alongside
+        /// <see cref="AddEditableRow"/> for boolean fields. First consumer is
+        /// <c>MonsterDefinition.autoCast</c>, which used to render as a plain label with no
+        /// widget anywhere in the four UI-builder partials: the whole NPC-casting feature
+        /// shipped dormant because nothing could turn it on from inside the game.
+        /// </summary>
+        public static Toggle AddToggleRow(RectTransform sectionBody, string label, bool value,
+                                          System.Action<bool> onChanged)
+        {
+            var rowGo = CreateUI($"Row_{label}", sectionBody);
+            rowGo.AddComponent<LayoutElement>().preferredHeight = 18f;
+
+            var hlg = rowGo.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing                = 6f;
+            hlg.childForceExpandWidth  = false;
+            hlg.childForceExpandHeight = true;
+            hlg.childControlWidth      = true;
+            hlg.childControlHeight     = true;
+
+            var lblGo = CreateUI("Label", rowGo.transform);
+            lblGo.AddComponent<LayoutElement>().preferredWidth = 110f;
+            var lblTmp                = lblGo.AddComponent<TextMeshProUGUI>();
+            lblTmp.text               = label;
+            lblTmp.fontSize           = 10f;
+            lblTmp.color              = TEXT_SECONDARY;
+            lblTmp.alignment          = TextAlignmentOptions.MidlineLeft;
+            lblTmp.enableWordWrapping = false;
+            lblTmp.overflowMode       = TextOverflowModes.Truncate;
+
+            var toggleGo = CreateUI("Toggle", rowGo.transform);
+            toggleGo.AddComponent<LayoutElement>().preferredWidth = 18f;
+            var bg = toggleGo.AddComponent<Image>();
+            bg.color = new Color(0.16f, 0.16f, 0.20f, 1f);
+            var toggle = toggleGo.AddComponent<Toggle>();
+            toggle.targetGraphic = bg;
+
+            var checkGo = CreateUI("Check", toggleGo.transform);
+            var checkRt = checkGo.GetComponent<RectTransform>();
+            checkRt.anchorMin = Vector2.zero;
+            checkRt.anchorMax = Vector2.one;
+            checkRt.offsetMin = new Vector2(3f, 3f);
+            checkRt.offsetMax = new Vector2(-3f, -3f);
+            var checkImg = checkGo.AddComponent<Image>();
+            checkImg.color = ACCENT;
+            toggle.graphic = checkImg;
+
+            toggle.SetIsOnWithoutNotify(value);
+            if (onChanged != null) toggle.onValueChanged.AddListener(v => onChanged(v));
+
+            return toggle;
+        }
+
+        /// <summary>
+        /// One entry of <c>MonsterDefinition.autoCastList</c>: a dropdown scoped to every key in
+        /// the injected <c>SpellCatalog</c> plus a remove button. The dropdown IS the validation —
+        /// unlike a free-text field, it cannot produce a key that fails to resolve at spawn time
+        /// (<c>EntitySetup.ConfigureMonsterAutoCast</c> silently skips unknown keys with a
+        /// console warning, which is exactly the failure mode this widget makes unreachable).
+        /// </summary>
+        public static TMP_Dropdown AddSpellListRow(RectTransform sectionBody, string label,
+            IReadOnlyList<string> catalogKeys, string currentKey,
+            System.Action<string> onChanged, System.Action onRemove)
+        {
+            var rowGo = CreateUI($"Row_{label}", sectionBody);
+            rowGo.AddComponent<LayoutElement>().preferredHeight = 20f;
+
+            var hlg = rowGo.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing                = 6f;
+            hlg.childForceExpandWidth  = false;
+            hlg.childForceExpandHeight = true;
+            hlg.childControlWidth      = true;
+            hlg.childControlHeight     = true;
+
+            var lblGo = CreateUI("Label", rowGo.transform);
+            lblGo.AddComponent<LayoutElement>().preferredWidth = 32f;
+            var lblTmp       = lblGo.AddComponent<TextMeshProUGUI>();
+            lblTmp.text      = label;
+            lblTmp.fontSize  = 10f;
+            lblTmp.color     = TEXT_SECONDARY;
+            lblTmp.alignment = TextAlignmentOptions.MidlineLeft;
+
+            var ddHost = CreateUI("DropdownHost", rowGo.transform);
+            ddHost.AddComponent<LayoutElement>().flexibleWidth = 1f;
+
+            int selectedIndex = -1;
+            if (catalogKeys != null)
+            {
+                for (int i = 0; i < catalogKeys.Count; i++)
+                {
+                    if (string.Equals(catalogKeys[i], currentKey, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            var dd = UIDropdown.Add(ddHost.transform, catalogKeys, selectedIndex, 10f);
+            dd.onValueChanged.AddListener(i =>
+            {
+                if (catalogKeys != null && i >= 0 && i < catalogKeys.Count) onChanged?.Invoke(catalogKeys[i]);
+            });
+
+            var rmImg = AddActionBtn(rowGo.transform, "x", 18f, onRemove, out _);
+            var rmLe  = rmImg.GetComponent<LayoutElement>();
+            if (rmLe != null) rmLe.preferredWidth = 22f;
+
+            return dd;
+        }
+
+        /// <summary>
+        /// The "add a new auto-cast spell" row — a catalog dropdown plus an Add button. The
+        /// caller only builds this when the catalog resolved at least one key; an empty catalog
+        /// falls back to a plain hint row via <see cref="AddPropertyRow"/> instead.
+        /// </summary>
+        public static void AddSpellAddRow(RectTransform sectionBody, IReadOnlyList<string> catalogKeys,
+            System.Action<string> onAdd)
+        {
+            var rowGo = CreateUI("Row_AddSpell", sectionBody);
+            rowGo.AddComponent<LayoutElement>().preferredHeight = 20f;
+
+            var hlg = rowGo.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing                = 6f;
+            hlg.childForceExpandWidth  = false;
+            hlg.childForceExpandHeight = true;
+            hlg.childControlWidth      = true;
+            hlg.childControlHeight     = true;
+
+            var ddHost = CreateUI("DropdownHost", rowGo.transform);
+            ddHost.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            var dd = UIDropdown.Add(ddHost.transform, catalogKeys, 0, 10f);
+
+            string selected = catalogKeys != null && catalogKeys.Count > 0 ? catalogKeys[0] : null;
+            dd.onValueChanged.AddListener(i =>
+            {
+                if (catalogKeys != null && i >= 0 && i < catalogKeys.Count) selected = catalogKeys[i];
+            });
+
+            var addImg = AddActionBtn(rowGo.transform, "+ Add", 18f, () => onAdd?.Invoke(selected), out _);
+            var addLe  = addImg.GetComponent<LayoutElement>();
+            if (addLe != null) addLe.preferredWidth = 54f;
         }
 
         public static void ClearSection(RectTransform sectionBody)
