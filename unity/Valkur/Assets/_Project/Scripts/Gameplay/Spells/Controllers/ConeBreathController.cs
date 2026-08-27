@@ -22,6 +22,7 @@ namespace Valkur.Gameplay.Spells
         private Transform _caster;
         private LayerMask _targetLayers;
         private string _element;
+        private SpellElement? _damageElement;
         private LineRenderer _lr;
         private ParticleSystem _ps;
         private GameObject _lightGo;
@@ -42,7 +43,8 @@ namespace Valkur.Gameplay.Spells
         }
 
         public void Initialize(float duration, float arc, float length, int damagePerTick,
-            float tickPeriod, Vector2 direction, Transform caster, LayerMask targetLayers, string element)
+            float tickPeriod, Vector2 direction, Transform caster, LayerMask targetLayers, string element,
+            SpellElement? damageElement = null)
         {
             _remaining = duration;
             _arc = arc;
@@ -54,6 +56,7 @@ namespace Valkur.Gameplay.Spells
             _caster = caster;
             _targetLayers = targetLayers;
             _element = element;
+            _damageElement = damageElement;
 
             SetupVisual();
 
@@ -297,7 +300,7 @@ namespace Valkur.Gameplay.Spells
 
                 if (angleDiff <= halfArc)
                 {
-                    health.TakeDamage(_damagePerTick);
+                    health.TakeDotDamage(_damagePerTick, _caster.gameObject, _damageElement);
                     if (_caster != null)
                         Valkur.Core.GameEvents.FireHitDealt(_caster.gameObject, hit.gameObject, _damagePerTick);
 
@@ -308,7 +311,7 @@ namespace Valkur.Gameplay.Spells
                         // fix in PuddleController.DamageTick.
                         var statusMgr = health.GetComponent<StatusEffectManager>();
                         if (statusMgr != null)
-                            statusMgr.Apply(new BurnEffect(2f, 3));
+                            statusMgr.Apply(new BurnEffect(2f, 3, applier: _caster.gameObject));
                     }
                 }
             }

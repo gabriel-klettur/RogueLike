@@ -227,8 +227,13 @@ namespace Valkur.Gameplay.Spells
             Health health = collider.GetComponentInParent<Health>();
             if (health == null || health.IsDead) return;
 
-            health.TakeDamage(damage);
-            GameEvents.FireHitDealt(ctx.Caster.gameObject, health.gameObject, damage);
+            // Attributed + typed: an unattributed hit leaves CameraFeelDirector's Hurt cue
+            // with no direction and PlayerHurtReaction with nothing to face (see Health.cs's
+            // "anything with a location should use the overload" doc).
+            GameObject casterGo = ctx.Caster != null ? ctx.Caster.gameObject : null;
+            health.TakeDamage(damage, casterGo, ProjectileExecutor.ResolveElement(ctx.Spell));
+            GameEvents.FireHitDealt(casterGo, health.gameObject, damage);
+            Combat.StatusApplicationFactory.ApplyAll(ctx.Spell.statusApplications, health.gameObject, casterGo);
         }
     }
 }

@@ -1,5 +1,6 @@
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Data;
 using Valkur.Gameplay.Combat;
 
 namespace Valkur.Gameplay.Spells
@@ -18,12 +19,16 @@ namespace Valkur.Gameplay.Spells
         private float _tickTimer;
         private LayerMask _targetLayers;
         private string _element;
+        private GameObject _caster;
+        private SpellElement? _damageElement;
+        private StatusApplication[] _statusApplications;
 
         private AreaFXRig _rig;
         private float _pulse;
 
         public void Initialize(float duration, float radius, int damagePerTick, float tickPeriod,
-            LayerMask targetLayers, string element)
+            LayerMask targetLayers, string element, GameObject caster = null,
+            SpellElement? damageElement = null, StatusApplication[] statusApplications = null)
         {
             _remaining = duration;
             _radius = radius;
@@ -32,6 +37,9 @@ namespace Valkur.Gameplay.Spells
             _tickTimer = 0f;
             _targetLayers = targetLayers;
             _element = element;
+            _caster = caster;
+            _damageElement = damageElement;
+            _statusApplications = statusApplications;
 
             BuildVisual();
 
@@ -102,7 +110,10 @@ namespace Valkur.Gameplay.Spells
                 if (health == null || health.IsDead) continue;
 
                 if (_damagePerTick > 0)
-                    health.TakeDamage(_damagePerTick);
+                {
+                    health.TakeDotDamage(_damagePerTick, _caster, _damageElement);
+                    StatusApplicationFactory.ApplyAll(_statusApplications, health.gameObject, _caster);
+                }
 
                 if (_element == "lava" || _element == "fire")
                 {
@@ -112,7 +123,7 @@ namespace Valkur.Gameplay.Spells
                     // sits on a child took the damage but never caught fire.
                     var statusMgr = health.GetComponent<StatusEffectManager>();
                     if (statusMgr != null)
-                        statusMgr.Apply(new BurnEffect(3f, 5));
+                        statusMgr.Apply(new BurnEffect(3f, 5, applier: _caster));
                 }
             }
         }

@@ -467,8 +467,15 @@ namespace Valkur.Gameplay.Spells
                             var health = c.GetComponentInParent<Health>();
                             if (health != null && !health.IsDead)
                             {
-                                health.TakeDamage(dmg);
-                                Valkur.Core.GameEvents.FireHitDealt(gameObject, c.gameObject, dmg);
+                                // Was attributing every hit to the beam's own GameObject
+                                // instead of the caster — CameraFeelDirector's Hurt cue got
+                                // no direction and PlayerHurtReaction had nothing to face.
+                                // A sustained beam ticks faster than a discrete swing, so it
+                                // bypasses the post-hit grace window like any other DoT.
+                                GameObject casterGo = _ctx.Caster != null ? _ctx.Caster.gameObject : gameObject;
+                                health.TakeDotDamage(dmg, casterGo, ProjectileExecutor.ResolveElement(_ctx.Spell));
+                                Valkur.Core.GameEvents.FireHitDealt(casterGo, c.gameObject, dmg);
+                                Combat.StatusApplicationFactory.ApplyAll(_ctx.Spell.statusApplications, health.gameObject, casterGo);
                                 damagedThisTick.Add(c.gameObject);
                             }
                         }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Data;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.VFX;
 
@@ -19,9 +20,13 @@ namespace Valkur.Gameplay.Spells
         private int _damage;
         private LayerMask _targetLayers;
         private string _impactPreset;
+        private GameObject _caster;
+        private SpellElement? _element;
+        private StatusApplication[] _statusApplications;
 
         public void Initialize(int count, float interval, float areaRadius, float impactRadius,
-            int damage, LayerMask targetLayers, string impactPreset)
+            int damage, LayerMask targetLayers, string impactPreset, GameObject caster = null,
+            SpellElement? element = null, StatusApplication[] statusApplications = null)
         {
             _remaining = count;
             _interval = interval;
@@ -31,6 +36,9 @@ namespace Valkur.Gameplay.Spells
             _damage = damage;
             _targetLayers = targetLayers;
             _impactPreset = impactPreset;
+            _caster = caster;
+            _element = element;
+            _statusApplications = statusApplications;
         }
 
         private void Update()
@@ -68,7 +76,12 @@ namespace Valkur.Gameplay.Spells
             {
                 var health = hit.GetComponentInParent<Health>();
                 if (health != null && !health.IsDead)
-                    health.TakeDamage(_damage);
+                {
+                    // A meteor impact is a discrete, attributable event (not a periodic
+                    // tick), so it respects the post-hit grace window like any other hit.
+                    health.TakeDamage(_damage, _caster, _element);
+                    StatusApplicationFactory.ApplyAll(_statusApplications, health.gameObject, _caster);
+                }
             }
 
             if (VFXManager.Instance != null)

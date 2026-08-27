@@ -48,6 +48,11 @@ MonoBehaviour:
   forceMode: 
   followCaster: 0
   spawnAtMouse: 0
+  statusApplications:
+  - type: 4
+    duration: 3
+    magnitude: 0.5
+    chance: 1
   meteorCount: 0
   meteorInterval: 0
   meteorAreaRadius: 0

@@ -26,7 +26,8 @@ namespace Valkur.Gameplay.Spells
             var controller = coneGo.AddComponent<ConeBreathController>();
             controller.SetCastOrigin(ctx.Spell);
             controller.Initialize(duration, arc, length, Mathf.RoundToInt(damagePerTick),
-                tickPeriod, ctx.Direction, ctx.Caster, ctx.TargetLayers, ctx.Spell.element);
+                tickPeriod, ctx.Direction, ctx.Caster, ctx.TargetLayers, ctx.Spell.element,
+                ProjectileExecutor.ResolveElement(ctx.Spell));
 
             if (VFXManager.Instance != null && !string.IsNullOrEmpty(ctx.Spell.vfxPreset))
                 VFXManager.Instance.SpawnParticlePreset(ctx.Spell.vfxPreset, castStart, duration);

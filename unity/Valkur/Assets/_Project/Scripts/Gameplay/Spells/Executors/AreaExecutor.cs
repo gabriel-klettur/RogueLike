@@ -1,5 +1,6 @@
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay.Spells
@@ -13,6 +14,7 @@ namespace Valkur.Gameplay.Spells
         {
             float radius = ctx.Spell.radius > 0 ? ctx.Spell.radius : 2f;
             Vector2 center = (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * radius;
+            SpellElement? element = ProjectileExecutor.ResolveElement(ctx.Spell);
 
             var hits = Physics2D.OverlapCircleAll(center, radius, ctx.TargetLayers);
             foreach (var hit in hits)
@@ -22,8 +24,9 @@ namespace Valkur.Gameplay.Spells
                 if (health != null && !health.IsDead)
                 {
                     int dealt = Mathf.RoundToInt(ctx.Spell.damage);
-                    health.TakeDamage(dealt, ctx.Caster.gameObject);
+                    health.TakeDamage(dealt, ctx.Caster.gameObject, element);
                     Valkur.Core.GameEvents.FireHitDealt(ctx.Caster.gameObject, hit.gameObject, dealt);
+                    StatusApplicationFactory.ApplyAll(ctx.Spell.statusApplications, health.gameObject, ctx.Caster.gameObject);
                 }
             }
 

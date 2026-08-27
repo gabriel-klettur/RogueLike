@@ -157,7 +157,11 @@ namespace Valkur.Gameplay.Spells
             if (manaCost > 0 && !ignoreManaCost)
             {
                 var mana = ResolveMana();
-                if (mana == null)
+                if (mana != null)
+                {
+                    if (!mana.TryConsume(manaCost)) return false;
+                }
+                else if (!_freeCastWithoutMana)
                 {
                     if (!_missingManaWarningLogged)
                     {
@@ -166,7 +170,8 @@ namespace Valkur.Gameplay.Spells
                     }
                     return false;
                 }
-                if (!mana.TryConsume(manaCost)) return false;
+                // else: opted out via SetFreeCastWithoutMana(true) — casts for free
+                // (BossCueDispatcher's chart-driven casts route through here).
             }
 
             _activeSlot = -1;

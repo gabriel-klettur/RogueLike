@@ -39,15 +39,19 @@ MonoBehaviour:
   distance: 0
   knockback: 0
   collisionDamage: 0
+  infinite: 0
   duration: 5
-  damagePerTick: 6
-  tickPeriod: 0.4
+  damagePerTick: 9
+  tickPeriod: 0.6
   element: 
   healPerTick: 0
   force: 0
   forceMode: 
   followCaster: 0
   spawnAtMouse: 0
+  statusApplications: []
+  castAnchor: 0
+  castForwardOffset: 0
   meteorCount: 0
   meteorInterval: 0
   meteorAreaRadius: 0
@@ -83,5 +87,9 @@ MonoBehaviour:
   particleColors: []
   sizeRange: []
   emitRate: 0
-  vfxPreset: arcane_flame_emitter
+  vfxPreset: 
   impactPreset: 
+  vfxPresetLayers: []
+  impactPresetLayers: []
+  castPreset: 
+  castPresetLayers: []

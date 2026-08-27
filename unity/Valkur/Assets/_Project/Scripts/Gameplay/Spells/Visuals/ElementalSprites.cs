@@ -11,6 +11,7 @@ namespace Valkur.Gameplay.Spells
     {
         private static Sprite _hotCore, _core, _glow, _halo, _ring, _sparkle, _sparkleStar, _snowflake, _bolt, _blade, _wisp;
         private static Material _unlitMaterial;
+        private static Material _additiveMaterial;
 
         public static Sprite HotCore       { get { EnsureAll(); return _hotCore; } }
         public static Sprite Core          { get { EnsureAll(); return _core; } }
@@ -25,6 +26,48 @@ namespace Valkur.Gameplay.Spells
         public static Sprite Wisp          { get { EnsureAll(); return _wisp; } }
 
         public static Material SharedUnlitMaterial { get { EnsureAll(); return _unlitMaterial; } }
+
+        /// <summary>
+        /// Additive twin of <see cref="SharedUnlitMaterial"/>, for SpriteRenderer quads
+        /// that must ADD light instead of replacing the pixel under them.
+        ///
+        /// This cannot be expressed by patching the unlit material: its shader
+        /// (<c>URP/2D/Sprite-Unlit-Default</c>) declares no <c>_SrcBlend</c>/<c>_DstBlend</c>,
+        /// so a blend-mode assignment against it compiles, logs nothing, and changes
+        /// nothing — the same trap <see cref="Valkur.Gameplay.VFX.BeamMaterialCache"/>
+        /// documents. <c>Valkur/SpriteAdditive</c> is a separate shader whose blend is
+        /// fixed at <c>SrcAlpha One</c>, matching
+        /// <see cref="Valkur.Gameplay.VFX.ParticleMaterialCache"/>'s additive particle
+        /// material so sprite layers and particle layers composite identically.
+        ///
+        /// Like every other static here it survives Domain Reload (which is OFF) only
+        /// through the <c>== null</c> guard in <see cref="EnsureAll"/> — Unity's
+        /// overloaded null catches the destroyed native object on the second Play and
+        /// rebuilds. Never copy this reference into another un-guarded static field.
+        /// </summary>
+        public static Material SharedAdditiveMaterial { get { EnsureAll(); return _additiveMaterial; } }
+
+        /// <summary>
+        /// Domain Reload is OFF, so these twelve statics survive into the next Play session
+        /// holding DESTROYED native objects. They were self-healing only by accident —
+        /// Unity's overloaded <c>== null</c> reports a destroyed object as null, so the
+        /// guards in <see cref="EnsureAll"/> happened to rebuild them. That is a property
+        /// of the guards, not a reset, and it fails the moment any caller copies one of
+        /// these into its own un-guarded static field.
+        ///
+        /// Nulling them here makes the rebuild explicit and gets this class off the
+        /// unreset-statics baseline, where all twelve sat as accepted debt. Everything is
+        /// regenerated from constants on the next touch, so dropping them costs one
+        /// rebuild and nothing else.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            _hotCore = _core = _glow = _halo = _ring = _sparkle = _sparkleStar =
+                _snowflake = _bolt = _blade = _wisp = null;
+            _unlitMaterial = null;
+            _additiveMaterial = null;
+        }
 
         public static void EnsureAll()
         {
@@ -45,6 +88,17 @@ namespace Valkur.Gameplay.Spells
                 var sh = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
                          ?? Shader.Find("Sprites/Default");
                 _unlitMaterial = new Material(sh);
+            }
+
+            if (_additiveMaterial == null)
+            {
+                // Fall back to the alpha shader rather than to Sprites/Default: a
+                // missing custom shader should degrade to "looks like it used to",
+                // not to an untinted magenta error quad.
+                var sh = Shader.Find("Valkur/SpriteAdditive")
+                         ?? Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
+                         ?? Shader.Find("Sprites/Default");
+                _additiveMaterial = new Material(sh) { name = "ElementalSprites_Additive" };
             }
         }
 

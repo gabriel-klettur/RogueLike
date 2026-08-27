@@ -1,4 +1,6 @@
 using UnityEngine;
+using Valkur.Data;
+using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay.Spells
@@ -17,9 +19,11 @@ namespace Valkur.Gameplay.Spells
         [SerializeField] private float range = 20f;
         [SerializeField] private LayerMask targetLayers;
 
-        // Layers that block the projectile but don't receive damage (walls, buildings, tiles)
-        private static readonly LayerMask ObstacleLayers =
-            (1 << 11) | (1 << 14); // World=11, Building=14
+        // Layers that block the projectile but don't receive damage (walls, buildings, tiles).
+        // World(11) + Building(14) alone cover only the building boxes: every painted
+        // collision cell is re-emitted by WorldCollisionBaker onto WorldL0..WorldAll,
+        // so a projectile masked on the two legacy layers flies through painted walls.
+        private static LayerMask ObstacleLayers => World.Layering.WorldCollisionLayers.BlockingMask();
 
         private Vector2 _direction;
         private Vector2 _origin;
@@ -38,6 +42,14 @@ namespace Valkur.Gameplay.Spells
         // <Health> would walk up from the child collider and find the caster's
         // own Health, producing the "fireball blew up in my face" regression.
         private Transform _caster;
+
+        // Damage type + status effects the caster's SpellDefinition authored, so the impact
+        // seam can consult the victim's elemental resistances and roll any status
+        // applications. Set by the spawning executor via SetElement / SetStatusApplications;
+        // both default to "none", which reproduces the pre-existing unmitigated,
+        // status-free behaviour for a caller that never sets them.
+        private SpellElement? _element;
+        private StatusApplication[] _statusApplications;
 
         // Override impact position used for VFX (set when sweep produces a real hit point).
         // When unset (default), VFX spawns at transform.position.
@@ -101,6 +113,12 @@ namespace Valkur.Gameplay.Spells
         /// a Projectile to keep self-damage impossible by construction.
         /// </summary>
         public void SetCaster(Transform caster) => _caster = caster;
+
+        /// <summary>Damage type consulted against the victim's Health.resistances on impact.</summary>
+        public void SetElement(SpellElement? element) => _element = element;
+
+        /// <summary>Status effects rolled against the victim on a successful hit.</summary>
+        public void SetStatusApplications(StatusApplication[] applications) => _statusApplications = applications;
 
         public void Initialize(Vector2 direction, float spd, float dmg, float life, float rng, LayerMask targets)
         {
@@ -216,8 +234,10 @@ namespace Valkur.Gameplay.Spells
                 if (health != null && !health.IsDead)
                 {
                     int dealt = Mathf.RoundToInt(damage);
-                    health.TakeDamage(dealt);
+                    GameObject casterGo = _caster != null ? _caster.gameObject : null;
+                    health.TakeDamage(dealt, casterGo, _element);
                     ReportHit(health.gameObject, dealt);
+                    StatusApplicationFactory.ApplyAll(_statusApplications, health.gameObject, casterGo);
                 }
             }
             // Obstacle hits do no damage but still expire.
@@ -277,8 +297,10 @@ namespace Valkur.Gameplay.Spells
                     if (h != null && !h.IsDead)
                     {
                         int dealt = Mathf.RoundToInt(_explosionDamage > 0f ? _explosionDamage : damage);
-                        h.TakeDamage(dealt);
+                        GameObject casterGo = _caster != null ? _caster.gameObject : null;
+                        h.TakeDamage(dealt, casterGo, _element);
                         ReportHit(h.gameObject, dealt);
+                        StatusApplicationFactory.ApplyAll(_statusApplications, h.gameObject, casterGo);
                     }
                 }
             }
@@ -313,7 +335,12 @@ namespace Valkur.Gameplay.Spells
             else
             {
                 gameObject.SetActive(false);
-                Destroy(gameObject);
+                // Object.Destroy is deferred and Unity refuses it outside Play Mode with an
+                // error. An un-pooled projectile is exactly what an EditMode test builds, so
+                // the un-pooled branch is the one that has to answer for both modes. Same
+                // guard the runtime editors already use when they clear their UI.
+                if (Application.isPlaying) Destroy(gameObject);
+                else                       DestroyImmediate(gameObject);
             }
         }
 
@@ -330,6 +357,8 @@ namespace Valkur.Gameplay.Spells
             _impactPresets.Clear();   // pool reuse: never inherit the last spell's explosion
             _caster = null; // pool reuse: drop the previous caster so the next
                             // shooter doesn't inherit a stale ignore-target.
+            _element = null;
+            _statusApplications = null; // pool reuse: never inherit the last spell's statuses
             if (_rb != null) _rb.velocity = Vector2.zero;
         }
 

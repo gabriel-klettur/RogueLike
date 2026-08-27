@@ -42,6 +42,10 @@ namespace Valkur.Gameplay.Spells
             boom.Initialize(ctx.Caster, ctx.Direction, speed, returnSpd,
                             ctx.Spell.damage, range, hitRadius, passes,
                             ctx.TargetLayers, col);
+            // Damage typing for Health.resistances, independent of the hardcoded
+            // SpellElement.Boomerang palette below (which only drives the visual).
+            boom.SetElement(ProjectileExecutor.ResolveElement(ctx.Spell));
+            boom.SetStatusApplications(ctx.Spell.statusApplications);
 
             if (ctx.Spell.sprite != null)
             {

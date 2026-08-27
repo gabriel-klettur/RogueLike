@@ -37,6 +37,12 @@ namespace Valkur.Data
             "castAnchor", "castForwardOffset",
             // Telegraph — drawn by the caster, not the executor
             "telegraphColor", "telegraphAlpha",
+            // Status effects — rolled by StatusApplicationFactory.ApplyAll wherever a spell's
+            // damage seam already runs (Projectile, Area, Slash, Lightning, Dash, Meteor,
+            // Mine, Puddle, Beam, Boomerang today). Kept universal rather than per-type: a
+            // status application is a general-purpose combat knob any damaging spell could
+            // grow, the same reasoning that keeps the telegraph fields universal above.
+            "statusApplications",
         };
 
         /// <summary>

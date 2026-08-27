@@ -74,6 +74,10 @@ namespace Valkur.Gameplay.Spells
                 // explosion attached to it. CollectImpactPresets also folds in
                 // impactPresetLayers, which a spell may use without a primary.
                 proj.SetImpactPresets(ctx.Spell.CollectImpactPresets());
+                // Damage typing + status rolls, consulted by Health on impact — see
+                // ResolveElement's doc for why the SO field wins over the legacy key switch.
+                proj.SetElement(ResolveElement(ctx.Spell));
+                proj.SetStatusApplications(ctx.Spell.statusApplications);
                 // Acceleration: reuses the SpellDefinition.distance field (unused for projectiles).
                 if (ctx.Spell.distance > 0f)
                     proj.SetAcceleration(ctx.Spell.distance);

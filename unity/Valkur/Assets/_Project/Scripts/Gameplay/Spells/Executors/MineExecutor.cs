@@ -45,7 +45,8 @@ namespace Valkur.Gameplay.Spells
             var controller = mineGo.AddComponent<MineController>();
             controller.Initialize(armingTime, triggerRadius, explosionRadius,
                 Mathf.RoundToInt(explosionDamage), ttl, ctx.TargetLayers,
-                ctx.Spell.impactPreset);
+                ctx.Spell.impactPreset, ctx.Caster != null ? ctx.Caster.gameObject : null,
+                ProjectileExecutor.ResolveElement(ctx.Spell), ctx.Spell.statusApplications);
 
         
             // Free-standing world object: nothing else can end it. The registry

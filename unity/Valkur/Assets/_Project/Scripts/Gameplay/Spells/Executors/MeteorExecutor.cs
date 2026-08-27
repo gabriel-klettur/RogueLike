@@ -30,7 +30,9 @@ namespace Valkur.Gameplay.Spells
             controllerGo.transform.position = (Vector3)center;
             var controller = controllerGo.AddComponent<MeteorStrikeController>();
             controller.Initialize(count, interval, areaRadius, impactRadius,
-                Mathf.RoundToInt(damage), ctx.TargetLayers, ctx.Spell.impactPreset);
+                Mathf.RoundToInt(damage), ctx.TargetLayers, ctx.Spell.impactPreset,
+                ctx.Caster != null ? ctx.Caster.gameObject : null,
+                ProjectileExecutor.ResolveElement(ctx.Spell), ctx.Spell.statusApplications);
 
         }
 

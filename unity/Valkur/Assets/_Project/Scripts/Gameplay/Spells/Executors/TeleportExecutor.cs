@@ -18,8 +18,12 @@ namespace Valkur.Gameplay.Spells
     {
         private const float DEFAULT_DISTANCE = 4f;
 
-        /// <summary>World and Building: the two layers a blink may not pass through.</summary>
-        private const int BLOCKING_MASK = (1 << 11) | (1 << 14);
+        /// <summary>
+        /// Every layer a blink may not pass through or land inside: World(11),
+        /// Building(14) and every painted <c>WorldL{N}</c> / <c>WorldAll</c> cell.
+        /// Masking on the two legacy layers alone blinked the caster into walls.
+        /// </summary>
+        private static int BLOCKING_MASK => World.Layering.WorldCollisionLayers.BlockingMask();
 
         /// <summary>Probe radius and wall clearance for the blink sweep, in world units.</summary>
         private const float SWEEP_RADIUS = 0.3f;

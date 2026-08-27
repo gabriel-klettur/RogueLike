@@ -33,6 +33,12 @@ namespace Valkur.Gameplay.Spells
         private Mana _mana;
         private bool _missingManaWarningLogged;
 
+        // Explicit opt-out of the "no Mana component => refuse" gate below.
+        // Defaults false so every existing caster keeps the historical
+        // behaviour (refuse + warn once) unless something deliberately opts
+        // it out — see SetFreeCastWithoutMana for who does that and why.
+        private bool _freeCastWithoutMana;
+
         // SpellBook: key-based spell lookup for expanded bindings beyond 4 slots
         private readonly Dictionary<string, SpellDefinition> _spellBook = new Dictionary<string, SpellDefinition>();
         private readonly Dictionary<string, float> _spellBookCooldowns = new Dictionary<string, float>();
@@ -115,6 +121,26 @@ namespace Valkur.Gameplay.Spells
             _mana = GetComponent<Mana>();
         }
 
+        /// <summary>
+        /// Opts this caster out of the "no Mana component present => refuse the
+        /// cast" gate for spells with a positive mana cost. Called by
+        /// <c>EntitySetup.ConfigureMonsterAutoCast</c> / <c>ConfigureBoss</c> on
+        /// every SpellCaster it adds to an NPC or boss — never on the player's.
+        ///
+        /// Why: EntitySetup.ConfigureMonster never attaches a Mana component to
+        /// NPCs, and EntityStats carries no per-monster maxMana/manaRegen field
+        /// to size a real pool from — there is no data to author one from, and
+        /// no HUD element would show an NPC's mana even if there were. Gating
+        /// NPC casts on an invisible, unauthored resource would make a monster
+        /// silently stop casting mid-fight with no player-visible feedback,
+        /// which reads as a bug rather than tactical depth. So NPCs cast for
+        /// free; the player (and every caster that never calls this) keeps the
+        /// original refuse-and-warn contract. If a future monster needs a real
+        /// depletable resource, give it a Mana component explicitly and leave
+        /// this flag false for it — the two are independent.
+        /// </summary>
+        public void SetFreeCastWithoutMana(bool free) => _freeCastWithoutMana = free;
+
         private void Update()
         {
             for (int i = 0; i < _cooldownTimers.Length; i++)
@@ -159,7 +185,12 @@ namespace Valkur.Gameplay.Spells
             if (manaCost > 0)
             {
                 var mana = ResolveMana();
-                if (mana == null)
+                if (mana != null)
+                {
+                    if (!mana.TryConsume(manaCost))
+                        return false;
+                }
+                else if (!_freeCastWithoutMana)
                 {
                     if (!_missingManaWarningLogged)
                     {
@@ -168,9 +199,7 @@ namespace Valkur.Gameplay.Spells
                     }
                     return false;
                 }
-
-                if (!mana.TryConsume(manaCost))
-                    return false;
+                // else: opted out via SetFreeCastWithoutMana(true) — casts for free.
             }
 
             _activeSlot = slotIndex;
@@ -200,8 +229,16 @@ namespace Valkur.Gameplay.Spells
             if (manaCost > 0)
             {
                 var mana = ResolveMana();
-                if (mana == null || !mana.HasMana(manaCost))
+                if (mana != null)
+                {
+                    if (!mana.HasMana(manaCost))
+                        return false;
+                }
+                else if (!_freeCastWithoutMana)
+                {
                     return false;
+                }
+                // else: opted out via SetFreeCastWithoutMana(true) — always affordable.
             }
             return _cooldownTimers[slotIndex] <= 0f;
         }

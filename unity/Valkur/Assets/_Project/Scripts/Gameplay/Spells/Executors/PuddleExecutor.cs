@@ -69,7 +69,8 @@ namespace Valkur.Gameplay.Spells
 
             var controller = puddleGo.AddComponent<PuddleController>();
             controller.Initialize(duration, radius, Mathf.RoundToInt(damagePerTick), tickPeriod,
-                ctx.TargetLayers, ctx.Spell.element);
+                ctx.TargetLayers, ctx.Spell.element, ctx.Caster != null ? ctx.Caster.gameObject : null,
+                ProjectileExecutor.ResolveElement(ctx.Spell), ctx.Spell.statusApplications);
 
             // Default puddle gets an orange ground halo for visibility; root whip
             // is already busy enough with rising tendrils — skip the halo there.

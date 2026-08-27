@@ -149,6 +149,13 @@ namespace Valkur.Data
         [Tooltip("Spawn effect at mouse position instead of caster")]
         public bool spawnAtMouse;
 
+        [Header("Status Effects")]
+        [Tooltip("Status effects this spell may inflict on a successful hit, rolled " +
+                 "independently per application by StatusApplicationFactory.ApplyAll. Empty " +
+                 "(the default) means no status effects, exactly as every spell authored " +
+                 "before this field existed.")]
+        public StatusApplication[] statusApplications;
+
         [Header("Cast Origin")]
         [Tooltip("Where on the caster's body this spell is born. Scales with the caster's " +
                  "size, so the same setting reads correctly on a rat and on a boss.")]

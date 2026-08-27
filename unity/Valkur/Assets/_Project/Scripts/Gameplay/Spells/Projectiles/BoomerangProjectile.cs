@@ -1,4 +1,6 @@
 using UnityEngine;
+using Valkur.Data;
+using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay.Spells
@@ -26,10 +28,18 @@ namespace Valkur.Gameplay.Spells
         private bool _passesThrough;
         private LayerMask _targetLayers;
         private Color _vfxColor;
+        private SpellElement? _element;
+        private StatusApplication[] _statusApplications;
 
         private Phase _phase = Phase.Outbound;
         private Rigidbody2D _rb;
         private bool _expired;
+
+        /// <summary>Damage type consulted against the victim's Health.resistances on hit.</summary>
+        public void SetElement(SpellElement? element) => _element = element;
+
+        /// <summary>Status effects rolled against a victim on a successful hit.</summary>
+        public void SetStatusApplications(StatusApplication[] applications) => _statusApplications = applications;
 
         public void Initialize(Transform caster, Vector2 direction, float speed, float returnSpeed,
                                float damage, float maxRange, float hitRadius, bool passesThrough,
@@ -107,9 +117,11 @@ namespace Valkur.Gameplay.Spells
                 if (health != null && !health.IsDead)
                 {
                     int dealt = Mathf.RoundToInt(_damage);
-                    health.TakeDamage(dealt);
+                    GameObject casterGo = _caster != null ? _caster.gameObject : null;
+                    health.TakeDamage(dealt, casterGo, _element);
                     if (_caster != null)
                         Valkur.Core.GameEvents.FireHitDealt(_caster.gameObject, hit.gameObject, dealt);
+                    StatusApplicationFactory.ApplyAll(_statusApplications, health.gameObject, casterGo);
                     if (VFXManager.Instance != null)
                         VFXManager.Instance.SpawnImpact(hit.transform.position, _vfxColor, 0.25f);
                     hitSomething = true;

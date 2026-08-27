@@ -98,7 +98,10 @@ namespace Valkur.Gameplay.Spells
                 {
                     var oldest = list[0];
                     list.RemoveAt(0);
-                    if (oldest != null) DestroySafely(oldest.gameObject);
+                    // The handle is already out of the list, so an effect that takes
+                    // ownership of its own fade no longer counts against maxInstances —
+                    // the recast that evicted it is not refused while it dissipates.
+                    if (oldest != null) DestroySafely(oldest.gameObject, EvictionDissipateSeconds);
                 }
             }
 
@@ -170,14 +173,38 @@ namespace Valkur.Gameplay.Spells
         }
 
         /// <summary>
+        /// How long an evicted effect gets to close if it implements
+        /// <see cref="ISpellEffectDissipates"/>. Deliberately short: an effect that lingers
+        /// too long after the cast that replaced it reads as a failure to despawn, and a
+        /// deferred object surviving a world swap is the class of bug CLAUDE.md's "a world
+        /// swap is not a tile repaint" note describes.
+        /// </summary>
+        private const float EvictionDissipateSeconds = 0.28f;
+
+        /// <summary>
         /// <c>Object.Destroy</c> is deferred to end-of-frame and Unity refuses it outside
         /// Play Mode with an error. The registry only runs at cast time in practice, but
         /// EditMode tests construct gameplay objects freely, and an error logged from a
         /// test run is indistinguishable from a real one.
+        ///
+        /// <para>When <paramref name="dissipateSeconds"/> is above zero and the effect
+        /// implements <see cref="ISpellEffectDissipates"/>, it is offered the chance to
+        /// close itself instead of vanishing in one frame. It may decline, and it is not
+        /// offered at all outside Play Mode — a deferred teardown cannot run there.</para>
+        ///
+        /// <para>The zone-change and clear-everything paths pass zero ON PURPOSE: the world
+        /// they were drawn into is being torn down underneath them.</para>
         /// </summary>
-        private static void DestroySafely(GameObject go)
+        private static void DestroySafely(GameObject go, float dissipateSeconds = 0f)
         {
             if (go == null) return;
+
+            if (dissipateSeconds > 0f && Application.isPlaying)
+            {
+                var fading = go.GetComponent<ISpellEffectDissipates>();
+                if (fading != null && fading.BeginDissipate(dissipateSeconds)) return;
+            }
+
             if (Application.isPlaying) Object.Destroy(go);
             else Object.DestroyImmediate(go);
         }

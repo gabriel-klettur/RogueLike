@@ -130,11 +130,13 @@ namespace Valkur.Gameplay.Spells
         {
             int before = health.CurrentHp;
             int damage = Mathf.Max(1, Mathf.RoundToInt(_context.Spell.damage));
-            health.TakeDamage(damage, _context.Caster.gameObject);
+            GameObject casterGo = _context.Caster.gameObject;
+            health.TakeDamage(damage, casterGo, ProjectileExecutor.ResolveElement(_context.Spell));
             if (health.CurrentHp == before) return;
 
             _damaged.Add(health);
-            GameEvents.FireHitDealt(_context.Caster.gameObject, health.gameObject, damage);
+            GameEvents.FireHitDealt(casterGo, health.gameObject, damage);
+            StatusApplicationFactory.ApplyAll(_context.Spell.statusApplications, health.gameObject, casterGo);
 
             CombatFeedback feedback = health.GetComponent<CombatFeedback>();
             if (feedback != null) feedback.ApplyKnockback(transform.position);

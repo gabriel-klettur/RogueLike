@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using Valkur.Core;
+using Valkur.Data;
 using Valkur.Gameplay.Combat;
 
 namespace Valkur.Gameplay.Spells

@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using Valkur.Core;
+using Valkur.Data;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.VFX;
 
@@ -28,6 +29,9 @@ namespace Valkur.Gameplay.Spells
         private LayerMask _targetLayers;
         private string _impactPreset;
         private bool _armed;
+        private GameObject _caster;
+        private SpellElement? _element;
+        private StatusApplication[] _statusApplications;
 
         // â”€â”€ Visual rig â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private SpriteRenderer _core, _glow, _ring, _halo;
@@ -42,7 +46,8 @@ namespace Valkur.Gameplay.Spells
         private static readonly Color ArmedRing     = new Color(1.00f, 0.40f, 0.15f, 0.85f);
 
         public void Initialize(float armingTime, float triggerRadius, float explosionRadius,
-            int explosionDamage, float ttl, LayerMask targetLayers, string impactPreset)
+            int explosionDamage, float ttl, LayerMask targetLayers, string impactPreset,
+            GameObject caster = null, SpellElement? element = null, StatusApplication[] statusApplications = null)
         {
             _armingTimer = armingTime;
             _triggerRadius = triggerRadius;
@@ -51,6 +56,9 @@ namespace Valkur.Gameplay.Spells
             _ttl = ttl;
             _targetLayers = targetLayers;
             _impactPreset = impactPreset;
+            _caster = caster;
+            _element = element;
+            _statusApplications = statusApplications;
 
             BuildVisual();
 
@@ -223,7 +231,12 @@ namespace Valkur.Gameplay.Spells
             {
                 var health = hit.GetComponentInParent<Health>();
                 if (health != null && !health.IsDead)
-                    health.TakeDamage(_explosionDamage);
+                {
+                    // A detonation is a one-shot discrete event, so it respects the
+                    // post-hit grace window like any other attack.
+                    health.TakeDamage(_explosionDamage, _caster, _element);
+                    Combat.StatusApplicationFactory.ApplyAll(_statusApplications, health.gameObject, _caster);
+                }
             }
 
             // Epic explosion FX

@@ -96,6 +96,7 @@ namespace Valkur.Gameplay.Spells
             if (hits.Length == 0) return;
 
             int damage = Mathf.RoundToInt(ctx.Spell.collisionDamage);
+            var element = ProjectileExecutor.ResolveElement(ctx.Spell);
             var struck = new HashSet<Health>();
 
             for (int i = 0; i < hits.Length; i++)
@@ -107,8 +108,9 @@ namespace Valkur.Gameplay.Spells
                 Health health = collider.GetComponentInParent<Health>();
                 if (health == null || health.IsDead || !struck.Add(health)) continue;
 
-                health.TakeDamage(damage, ctx.Caster.gameObject);
+                health.TakeDamage(damage, ctx.Caster.gameObject, element);
                 GameEvents.FireHitDealt(ctx.Caster.gameObject, health.gameObject, damage);
+                Combat.StatusApplicationFactory.ApplyAll(ctx.Spell.statusApplications, health.gameObject, ctx.Caster.gameObject);
 
                 if (ctx.Spell.knockback <= 0) continue;
                 var hitRb = health.GetComponent<Rigidbody2D>();

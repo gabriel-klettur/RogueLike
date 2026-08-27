@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Data;
 
 namespace Valkur.Gameplay.Spells
 {
