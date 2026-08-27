@@ -44,12 +44,64 @@ namespace Valkur.Tests.EditMode.Game.AI
         // --- Initialization ---
 
         [Test]
-        public void Constructor_EntersInitialState()
+        public void Constructor_InstallsInitialState_ButDefersEnteringIt()
+        {
+            // Enter() is where a state reads the context, and every caller publishes
+            // the context AFTER construction — so entering in the constructor ran the
+            // initial state against an empty dictionary. See StateMachine.Begin().
+            var state = new StubState();
+            var fsm = CreateFSM(state);
+            Assert.AreEqual(state, fsm.CurrentState, "the state is installed immediately");
+            Assert.AreEqual(0, state.EnterCount, "but not entered until the context exists");
+            Assert.IsTrue(fsm.IsInitialEnterPending);
+            Cleanup(fsm);
+        }
+
+        [Test]
+        public void Begin_EntersInitialState_AndIsIdempotent()
         {
             var state = new StubState();
             var fsm = CreateFSM(state);
+
+            fsm.Begin();
             Assert.AreEqual(1, state.EnterCount);
-            Assert.AreEqual(state, fsm.CurrentState);
+            Assert.IsFalse(fsm.IsInitialEnterPending);
+
+            fsm.Begin();
+            fsm.Update(0.016f);
+            Assert.AreEqual(1, state.EnterCount,
+                "a second Begin, and the Update safety net, must not re-enter");
+            Cleanup(fsm);
+        }
+
+        [Test]
+        public void Update_EntersInitialState_WhenBeginWasNeverCalled()
+        {
+            var state = new StubState();
+            var fsm = CreateFSM(state);
+
+            fsm.Update(0.016f);
+
+            Assert.AreEqual(1, state.EnterCount,
+                "a caller that forgets Begin() still gets the entry, one tick late " +
+                "rather than never");
+            Cleanup(fsm);
+        }
+
+        [Test]
+        public void ChangeState_BeforeBegin_DoesNotExitAStateThatNeverEntered()
+        {
+            var initial = new StubState();
+            var next    = new StubState();
+            var fsm     = CreateFSM(initial);
+
+            fsm.ChangeState(next);
+
+            Assert.AreEqual(0, initial.ExitCount,
+                "Exit would tear down setup Enter never performed");
+            Assert.AreEqual(0, initial.EnterCount);
+            Assert.AreEqual(1, next.EnterCount);
+            Assert.IsFalse(fsm.IsInitialEnterPending);
             Cleanup(fsm);
         }
 
@@ -70,6 +122,7 @@ namespace Valkur.Tests.EditMode.Game.AI
             var stateA = new StubState();
             var stateB = new StubState();
             var fsm = CreateFSM(stateA);
+            fsm.Begin();   // stateA has to be live before leaving it means anything
 
             fsm.ChangeState(stateB);
 
@@ -245,5 +298,58 @@ namespace Valkur.Tests.EditMode.Game.AI
             Assert.IsInstanceOf<UnconsciousState>(fsm.CurrentState);
             Cleanup(fsm);
         }
+
+        // --- Double flinch ---
+
+        [Test]
+        public void SecondFlinch_PreservesTheOriginalInterruptedState()
+        {
+            // A hit landing DURING a flinch used to capture "DamageState" as the state to
+            // resume, which the factory cannot construct (three-parameter constructor), so
+            // the resume silently degraded into ChaseState: a patrolling monster hit twice
+            // in half a second came out of the stagger hunting. The second flinch must
+            // restart the stagger but carry the ORIGINAL interrupted state forward.
+            var fsm = CreateFSM(new PatrolState());
+            fsm.SetContext("damage_stop_probability", 1f); // every hit wins the roll
+            fsm.SetContext("damage_duration", 10f);        // stagger outlives the test
+            fsm.Begin();
+
+            fsm.QueueEvent(new FSMEvent { Type = FSMEventType.OnHit });
+            fsm.Update(0.016f);
+            var first = fsm.CurrentState as DamageState;
+            Assert.IsNotNull(first, "the first hit must flinch");
+            Assert.AreEqual(nameof(PatrolState), first.ReturnStateClass);
+
+            fsm.QueueEvent(new FSMEvent { Type = FSMEventType.OnHit });
+            fsm.Update(0.016f);
+            var second = fsm.CurrentState as DamageState;
+            Assert.IsNotNull(second, "the second hit re-flinches");
+            Assert.AreNotSame(first, second, "a fresh stagger, not the old instance");
+            Assert.AreEqual(nameof(PatrolState), second.ReturnStateClass,
+                "the resume target is what the FIRST flinch interrupted, never DamageState");
+            Cleanup(fsm);
+        }
+
+        [Test]
+        public void FlinchResume_ReturnsToTheInterruptedState()
+        {
+            var fsm = CreateFSM(new PatrolState());
+            fsm.SetContext("damage_stop_probability", 1f);
+            fsm.SetContext("damage_duration", 0.05f);
+            fsm.Begin();
+
+            fsm.QueueEvent(new FSMEvent { Type = FSMEventType.OnHit });
+            fsm.Update(0.016f);
+            Assert.IsInstanceOf<DamageState>(fsm.CurrentState);
+
+            // One tick past the stagger. PatrolState's own Execute then runs and may move
+            // on, so assert the RESUME, not the state after a full extra frame: the
+            // DamageState instance is gone and what replaced it is a fresh PatrolState.
+            fsm.Update(0.1f);
+            Assert.IsInstanceOf<PatrolState>(fsm.CurrentState,
+                "the flinch must resume what it interrupted, not fall back to ChaseState");
+            Cleanup(fsm);
+        }
+
     }
 }

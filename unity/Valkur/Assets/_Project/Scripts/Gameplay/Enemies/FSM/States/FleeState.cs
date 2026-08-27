@@ -10,7 +10,7 @@ namespace Valkur.Gameplay.FSM
     public class FleeState : IState
     {
         private float _fleeTimer;
-        private const float FLEE_DURATION = 3f;
+
 
         public void Enter(StateMachine fsm)
         {
@@ -27,7 +27,7 @@ namespace Valkur.Gameplay.FSM
             }
 
             _fleeTimer += dt;
-            if (_fleeTimer >= FLEE_DURATION)
+            if (_fleeTimer >= FSMTuning.FleeDuration(fsm))
             {
                 fsm.ChangeState(new PatrolState());
                 return;
@@ -44,9 +44,9 @@ namespace Valkur.Gameplay.FSM
             Vector2 playerPos = player.transform.position;
             Vector2 fleeDir = (myPos - playerPos).normalized;
 
-            float speed = fsm.GetContextFloat("speed", 2f) * 1.5f;
+            float speed = fsm.GetContextFloat("speed", 2f) * FSMTuning.FleeSpeedMultiplier(fsm);
             if (c?.Rb != null)
-                c.Rb.velocity = fleeDir * speed;
+                c.SetVelocity(fleeDir * speed);
 
             if (c?.Animator != null && fleeDir.sqrMagnitude > 0.0001f)
             {
@@ -58,7 +58,7 @@ namespace Valkur.Gameplay.FSM
         public void Exit(StateMachine fsm)
         {
             var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
-            if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
+            c?.StopMovement();
         }
     }
 }

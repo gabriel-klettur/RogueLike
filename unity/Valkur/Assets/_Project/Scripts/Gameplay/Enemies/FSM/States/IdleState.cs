@@ -13,7 +13,7 @@ namespace Valkur.Gameplay.FSM
         public void Enter(StateMachine fsm)
         {
             var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
-            if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
+            c?.StopMovement();
             if (c?.Animator != null)
                 c.Animator.SetState(DirectionalAnimator.AnimState.Idle, c.Animator.CurrentDirection);
         }
@@ -35,11 +35,19 @@ namespace Valkur.Gameplay.FSM
             var spirit = player.GetComponent<PlayerSpiritState>();
             if (spirit != null && spirit.IsSpirit) return;
 
-            float dist = Vector2.Distance(fsm.Owner.transform.position, player.transform.position);
-            if (dist <= aggroRange)
-            {
-                fsm.ChangeState(new ChaseState());
-            }
+            Vector2 myPos = fsm.Owner.transform.position;
+            Vector2 playerPos = player.transform.position;
+            float dist = Vector2.Distance(myPos, playerPos);
+            if (dist > aggroRange) return;
+
+            // Aggro requires an unobstructed line. Without it this was a naked
+            // distance test and everything behind a wall woke up when the player
+            // walked past it. Line of sight is checked on ACQUISITION only —
+            // ChaseState keeps its distance-based exit, so a monster that has already
+            // committed does not give up the instant you round a corner.
+            if (World.LineOfSight.IsBlocked(myPos, playerPos)) return;
+
+            fsm.ChangeState(new ChaseState());
         }
 
         public void Exit(StateMachine fsm) { }

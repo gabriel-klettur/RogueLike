@@ -158,7 +158,10 @@ namespace Valkur.Tests.EditMode.Game.AI
         private static void Enter(StateMachine fsm, float windupSeconds)
         {
             fsm.SetContext("attack_windup_s", windupSeconds);
-            fsm.CurrentState.Enter(fsm);
+            // Begin(), not CurrentState.Enter(): entering by hand leaves the machine's
+            // pending flag set, and the first Update would then enter the swing a
+            // second time and restart its measurement mid-test.
+            fsm.Begin();
         }
 
         // ---- The floor -------------------------------------------------------

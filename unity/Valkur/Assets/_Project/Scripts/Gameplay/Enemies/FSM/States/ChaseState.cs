@@ -13,10 +13,12 @@ namespace Valkur.Gameplay.FSM
     /// </summary>
     public class ChaseState : IState
     {
-        private const float AGGRO_EXIT_HYSTERESIS = 1.15f;
-        private const float CHASE_SPEED_MULTIPLIER = 1.5f;
-        private const float REPATH_INTERVAL = 0.5f;
-        private const float WAYPOINT_REACH_DIST = 0.25f;
+        // Every feel knob this state used to hold as a private const now resolves through
+        // FSMTuning, which owns the key AND the default. Two of them — the repath interval
+        // and the waypoint reach distance — were also written out verbatim in
+        // AlertChaseState, free to drift apart the moment anyone edited one and not the
+        // other. Read once per Enter/Execute rather than cached in a field, because a
+        // live `reconfig` re-publishes the context and the state should pick that up.
 
         private List<Vector2> _waypoints = new List<Vector2>();
         private int _waypointIndex;
@@ -26,7 +28,7 @@ namespace Valkur.Gameplay.FSM
         {
             _waypoints.Clear();
             _waypointIndex = 0;
-            _repathTimer = REPATH_INTERVAL; // force immediate repath on first frame
+            _repathTimer = float.MaxValue; // force immediate repath on first frame
         }
 
         public void Execute(StateMachine fsm, float dt)
@@ -75,19 +77,46 @@ namespace Valkur.Gameplay.FSM
 
             // Check aggro exit
             float aggroRange = fsm.GetContextFloat("aggro_range", 5f);
-            float exitRange = aggroRange * AGGRO_EXIT_HYSTERESIS;
+            float exitRange = aggroRange * FSMTuning.AggroExitHysteresis(fsm);
             if (distSq > exitRange * exitRange)
             {
                 fsm.ChangeState(new PatrolState());
                 return;
             }
 
-            float baseSpeed = fsm.GetContextFloat("chasing_speed", 3f);
-            float chaseSpeed = baseSpeed * CHASE_SPEED_MULTIPLIER;
+            // Leash. This class has documented "leash support" since it was written and
+            // never had any: the only exit was player distance, so a monster would follow
+            // across the whole map as long as the player stayed inside its aggro ring, and
+            // barbol_gigante's ring is 30 units wide. Breaking off returns it to
+            // PatrolState, whose waypoints are anchored at the spawn point, so it walks
+            // home on its own without needing a new state class.
+            //
+            // The range is authorable per monster (MonsterDefinition.aiTuning.leashRange);
+            // unset, it derives from this monster's own aggro range, so a wide-ranging
+            // monster gets a correspondingly long tether without anyone having to keep two
+            // numbers in agreement.
+            if (fsm.Context.ContainsKey(FSMHomeAnchor.KeyX))
+            {
+                float leash = FSMTuning.LeashRange(fsm, aggroRange);
+                var home = new Vector2(fsm.GetContextFloat(FSMHomeAnchor.KeyX),
+                                       fsm.GetContextFloat(FSMHomeAnchor.KeyY));
+                if ((myPos - home).sqrMagnitude > leash * leash)
+                {
+                    fsm.ChangeState(new PatrolState());
+                    return;
+                }
+            }
+
+            // chasing_speed IS the chase speed. It used to be multiplied by a hidden
+            // 1.5 here and in AlertChaseState, so every authored chasingSpeed in every
+            // monster asset understated the real value by a third and the two states
+            // would drift apart the moment one was edited. The assets were rebaselined
+            // (x1.5) when the multiplier was removed, so behaviour is unchanged.
+            float chaseSpeed = fsm.GetContextFloat("chasing_speed", 4.5f);
 
             // Repath periodically
             _repathTimer += dt;
-            if (_repathTimer >= REPATH_INTERVAL)
+            if (_repathTimer >= FSMTuning.RepathInterval(fsm))
             {
                 _repathTimer = 0f;
                 if (PathFinder.Instance != null)
@@ -103,7 +132,8 @@ namespace Valkur.Gameplay.FSM
             {
                 Vector2 target = _waypoints[_waypointIndex];
                 Vector2 toTarget = target - myPos;
-                if (toTarget.sqrMagnitude < WAYPOINT_REACH_DIST * WAYPOINT_REACH_DIST)
+                float reach = FSMTuning.WaypointReachDistance(fsm);
+                if (toTarget.sqrMagnitude < reach * reach)
                     _waypointIndex++;
                 moveDir = toTarget.sqrMagnitude > 0.001f ? toTarget.normalized : delta.normalized;
             }
@@ -113,7 +143,7 @@ namespace Valkur.Gameplay.FSM
             }
 
             if (c?.Rb != null)
-                c.Rb.velocity = moveDir * chaseSpeed;
+                c.SetVelocity(moveDir * chaseSpeed);
 
             // Drive 8-direction animator each frame so the sprite faces the
             // movement direction. flipX would corrupt directional sprites.
@@ -127,7 +157,7 @@ namespace Valkur.Gameplay.FSM
         public void Exit(StateMachine fsm)
         {
             var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
-            if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
+            c?.StopMovement();
         }
     }
 }

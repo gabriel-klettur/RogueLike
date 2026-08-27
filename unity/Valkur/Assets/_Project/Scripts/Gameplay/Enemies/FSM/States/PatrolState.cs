@@ -45,8 +45,11 @@ namespace Valkur.Gameplay.FSM
                 bool playerVisible = playerSpirit == null || !playerSpirit.IsSpirit;
                 if (playerAlive && playerVisible)
                 {
-                    float dist = Vector2.Distance(fsm.Owner.transform.position, player.transform.position);
-                    if (dist <= aggroRange)
+                    Vector2 myPos = fsm.Owner.transform.position;
+                    Vector2 playerPos = player.transform.position;
+                    // Same acquisition rule as IdleState: in range AND in sight.
+                    if (Vector2.Distance(myPos, playerPos) <= aggroRange &&
+                        World.LineOfSight.IsClear(myPos, playerPos))
                     {
                         fsm.ChangeState(new ChaseState());
                         return;
@@ -57,7 +60,7 @@ namespace Valkur.Gameplay.FSM
             // No waypoints: stay idle
             if (_waypoints == null || _waypoints.Length == 0)
             {
-                if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
+                c?.StopMovement();
                 return;
             }
 
@@ -86,7 +89,7 @@ namespace Valkur.Gameplay.FSM
                 {
                     _waiting = true;
                     _dwellTimer = dwellTime;
-                    if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
+                    c?.StopMovement();
                 }
                 else
                 {
@@ -96,7 +99,7 @@ namespace Valkur.Gameplay.FSM
             else
             {
                 Vector2 moveDir = dir.normalized;
-                if (c?.Rb != null) c.Rb.velocity = moveDir * speed;
+                c?.SetVelocity(moveDir * speed);
                 if (c?.Animator != null && moveDir.sqrMagnitude > 0.0001f)
                 {
                     var animDir = c.Animator.ResolveDirectionFromVector(moveDir);
@@ -108,7 +111,7 @@ namespace Valkur.Gameplay.FSM
         public void Exit(StateMachine fsm)
         {
             var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
-            if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
+            c?.StopMovement();
         }
     }
 }

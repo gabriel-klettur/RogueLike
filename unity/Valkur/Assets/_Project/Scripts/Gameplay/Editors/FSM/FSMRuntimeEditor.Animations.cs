@@ -22,8 +22,10 @@ namespace Valkur.Gameplay.Enemies.FSM
         {
             var content = _uiRefs.AnimationsContent;
             if (content == null) return;
+            // SafeDestroy: this refresh also runs from EditMode tests, where a raw
+            // Object.Destroy is a silent no-op that logs an error instead.
             for (int i = content.childCount - 1; i >= 0; i--)
-                Destroy(content.GetChild(i).gameObject);
+                SafeDestroy.GameObjectOf(content.GetChild(i));
 
             BuildAnimationsHeader(content);
 
@@ -116,10 +118,12 @@ namespace Valkur.Gameplay.Enemies.FSM
                 }
                 return d;
             }
-            if (!_animationMapRoot.TryGetValue("by_set", out var bsObj) || !(bsObj is Dictionary<string, object> bs))
+            // "per_set" is the name FSMSeedGenerator.BuildAnimationMapRoot writes — see the
+            // migration in LoadAnimationMapFromDisk for why this used to say "by_set".
+            if (!_animationMapRoot.TryGetValue("per_set", out var bsObj) || !(bsObj is Dictionary<string, object> bs))
             {
                 bs = new Dictionary<string, object>();
-                _animationMapRoot["by_set"] = bs;
+                _animationMapRoot["per_set"] = bs;
             }
             if (!bs.TryGetValue(target, out var t) || !(t is Dictionary<string, object> dt))
             {

@@ -1,0 +1,53 @@
+﻿{
+  "by_set": {
+    "Monster_Default": {
+      "nodes": {
+        "AlertChaseState": {
+          "x": 80,
+          "y": 240
+        },
+        "AttackState": {
+          "x": 300,
+          "y": 240
+        },
+        "ChaseState": {
+          "x": 520,
+          "y": 80
+        },
+        "DamageState": {
+          "x": 200,
+          "y": 220
+        },
+        "DeathState": {
+          "x": 520,
+          "y": 400
+        },
+        "FleeState": {
+          "x": 520,
+          "y": 240
+        },
+        "IdleState": {
+          "x": 80,
+          "y": 80
+        },
+        "NPCCastState": {
+          "x": 80,
+          "y": 400
+        },
+        "PatrolState": {
+          "x": 300,
+          "y": 80
+        },
+        "UnconsciousState": {
+          "x": 300,
+          "y": 400
+        }
+      },
+      "viewport": {
+        "pan_x": 277.41009521484375,
+        "pan_y": -94.388473510742188,
+        "zoom": 1
+      }
+    }
+  }
+}

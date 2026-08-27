@@ -1,95 +1,528 @@
-{
+﻿{
   "sets": [
     {
       "auto_generated": true,
       "blackboard": {},
       "id": "Monster_Default",
       "initial": "IdleState",
-      "label": "Default Hostile Monster",
+      "label": "Melee Hostile",
       "states": [
         {
+          "class": "",
+          "h": 60,
           "id": "IdleState",
-          "is_initial": true,
-          "is_terminal": false,
           "label": "Idle",
           "props": {},
+          "terminal": false,
+          "w": 120,
           "x": 80,
           "y": 80
         },
         {
+          "class": "",
+          "h": 60,
           "id": "PatrolState",
-          "is_initial": false,
-          "is_terminal": false,
           "label": "Patrol",
           "props": {},
+          "terminal": false,
+          "w": 120,
           "x": 300,
           "y": 80
         },
         {
+          "class": "",
+          "h": 60,
           "id": "ChaseState",
-          "is_initial": false,
-          "is_terminal": false,
           "label": "Chase",
           "props": {},
+          "terminal": false,
+          "w": 120,
           "x": 520,
           "y": 80
         },
         {
+          "class": "",
+          "h": 60,
           "id": "AlertChaseState",
-          "is_initial": false,
-          "is_terminal": false,
           "label": "Alert Chase",
           "props": {},
+          "terminal": false,
+          "w": 120,
           "x": 80,
           "y": 240
         },
         {
+          "class": "",
+          "h": 60,
           "id": "AttackState",
-          "is_initial": false,
-          "is_terminal": false,
           "label": "Attack",
           "props": {},
+          "terminal": false,
+          "w": 120,
           "x": 300,
           "y": 240
         },
         {
+          "class": "",
+          "h": 60,
           "id": "FleeState",
-          "is_initial": false,
-          "is_terminal": false,
           "label": "Flee",
           "props": {},
+          "terminal": false,
+          "w": 120,
           "x": 520,
           "y": 240
         },
         {
+          "class": "",
+          "h": 60,
+          "id": "UnconsciousState",
+          "label": "Unconscious",
+          "props": {},
+          "terminal": true,
+          "w": 120,
+          "x": 300,
+          "y": 400
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "DeathState",
+          "label": "Death",
+          "props": {},
+          "terminal": true,
+          "w": 120,
+          "x": 520,
+          "y": 400
+        },
+        {
+          "class": "DamageState",
+          "external_entry": true,
+          "h": 60,
+          "id": "DamageState",
+          "label": "Damage",
+          "props": {},
+          "special": "damage",
+          "terminal": false,
+          "w": 120,
+          "x": 200,
+          "y": 220
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [],
+          "cooldown_frames": 180,
+          "event": "",
+          "from": "ChaseState",
+          "guard": "hp_pct < 0.25",
+          "id": "t_chase_flee",
+          "label": "hp_pct < 0.25",
+          "priority": 100,
+          "to": "FleeState",
+          "when": ""
+        },
+        {
+          "actions": [],
+          "cooldown_frames": 180,
+          "event": "",
+          "from": "AttackState",
+          "guard": "hp_pct < 0.25",
+          "id": "t_attack_flee",
+          "label": "hp_pct < 0.25",
+          "priority": 100,
+          "to": "FleeState",
+          "when": ""
+        },
+        {
+          "actions": [],
+          "cooldown_frames": 300,
+          "event": "",
+          "from": "*",
+          "global": true,
+          "guard": "time_since_hit < 0.5 && distance_to_player > aggro_range",
+          "id": "t_any_alert",
+          "label": "time_since_hit < 0.5 && distance_to_player > aggro_range",
+          "priority": 200,
+          "to": "AlertChaseState",
+          "when": ""
+        }
+      ]
+    },
+    {
+      "blackboard": {},
+      "id": "Monster_Caster",
+      "initial": "IdleState",
+      "label": "Casting Hostile",
+      "states": [
+        {
+          "class": "",
+          "h": 60,
+          "id": "IdleState",
+          "label": "Idle",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 80,
+          "y": 80
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "PatrolState",
+          "label": "Patrol",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 300,
+          "y": 80
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "ChaseState",
+          "label": "Chase",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 520,
+          "y": 80
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "AlertChaseState",
+          "label": "Alert Chase",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 80,
+          "y": 240
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "AttackState",
+          "label": "Attack",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 300,
+          "y": 240
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "FleeState",
+          "label": "Flee",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 520,
+          "y": 240
+        },
+        {
+          "class": "",
+          "h": 60,
           "id": "NPCCastState",
-          "is_initial": false,
-          "is_terminal": false,
           "label": "NPC Cast",
           "props": {},
+          "terminal": false,
+          "w": 120,
           "x": 80,
           "y": 400
         },
         {
+          "class": "",
+          "h": 60,
           "id": "UnconsciousState",
-          "is_initial": false,
-          "is_terminal": true,
           "label": "Unconscious",
           "props": {},
+          "terminal": true,
+          "w": 120,
           "x": 300,
           "y": 400
         },
         {
+          "class": "",
+          "h": 60,
           "id": "DeathState",
-          "is_initial": false,
-          "is_terminal": true,
           "label": "Death",
           "props": {},
+          "terminal": true,
+          "w": 120,
           "x": 520,
           "y": 400
+        },
+        {
+          "class": "DamageState",
+          "external_entry": true,
+          "h": 60,
+          "id": "DamageState",
+          "label": "Damage",
+          "props": {},
+          "special": "damage",
+          "terminal": false,
+          "w": 120,
+          "x": 200,
+          "y": 220
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [],
+          "cooldown_frames": 180,
+          "event": "",
+          "from": "ChaseState",
+          "guard": "hp_pct < 0.25",
+          "id": "t_chase_flee",
+          "label": "hp_pct < 0.25",
+          "priority": 100,
+          "to": "FleeState",
+          "when": ""
+        },
+        {
+          "actions": [],
+          "cooldown_frames": 180,
+          "event": "",
+          "from": "AttackState",
+          "guard": "hp_pct < 0.25",
+          "id": "t_attack_flee",
+          "label": "hp_pct < 0.25",
+          "priority": 100,
+          "to": "FleeState",
+          "when": ""
+        },
+        {
+          "actions": [],
+          "cooldown_frames": 300,
+          "event": "",
+          "from": "*",
+          "global": true,
+          "guard": "time_since_hit < 0.5 && distance_to_player > aggro_range",
+          "id": "t_any_alert",
+          "label": "time_since_hit < 0.5 && distance_to_player > aggro_range",
+          "priority": 200,
+          "to": "AlertChaseState",
+          "when": ""
+        },
+        {
+          "actions": [],
+          "cooldown_frames": 90,
+          "event": "",
+          "from": "AttackState",
+          "guard": "distance_to_player < 1.5",
+          "id": "t_kite_attack",
+          "label": "distance_to_player < 1.5",
+          "priority": 120,
+          "to": "FleeState",
+          "when": ""
+        },
+        {
+          "actions": [],
+          "cooldown_frames": 90,
+          "event": "",
+          "from": "ChaseState",
+          "guard": "distance_to_player < 1.5",
+          "id": "t_kite_chase",
+          "label": "distance_to_player < 1.5",
+          "priority": 120,
+          "to": "FleeState",
+          "when": ""
+        }
+      ]
+    },
+    {
+      "blackboard": {},
+      "id": "Monster_Boss",
+      "initial": "IdleState",
+      "label": "Boss (no flee)",
+      "states": [
+        {
+          "class": "",
+          "h": 60,
+          "id": "IdleState",
+          "label": "Idle",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 80,
+          "y": 80
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "PatrolState",
+          "label": "Patrol",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 300,
+          "y": 80
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "ChaseState",
+          "label": "Chase",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 520,
+          "y": 80
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "AlertChaseState",
+          "label": "Alert Chase",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 80,
+          "y": 240
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "AttackState",
+          "label": "Attack",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 300,
+          "y": 240
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "NPCCastState",
+          "label": "NPC Cast",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 80,
+          "y": 400
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "UnconsciousState",
+          "label": "Unconscious",
+          "props": {},
+          "terminal": true,
+          "w": 120,
+          "x": 300,
+          "y": 400
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "DeathState",
+          "label": "Death",
+          "props": {},
+          "terminal": true,
+          "w": 120,
+          "x": 520,
+          "y": 400
+        },
+        {
+          "class": "DamageState",
+          "external_entry": true,
+          "h": 60,
+          "id": "DamageState",
+          "label": "Damage",
+          "props": {},
+          "special": "damage",
+          "terminal": false,
+          "w": 120,
+          "x": 200,
+          "y": 220
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [],
+          "cooldown_frames": 300,
+          "event": "",
+          "from": "*",
+          "global": true,
+          "guard": "time_since_hit < 0.5 && distance_to_player > aggro_range",
+          "id": "t_any_alert",
+          "label": "time_since_hit < 0.5 && distance_to_player > aggro_range",
+          "priority": 200,
+          "to": "AlertChaseState",
+          "when": ""
+        },
+        {
+          "actions": [],
+          "cooldown_frames": 600,
+          "event": "",
+          "from": "*",
+          "guard": "hp_pct < 0.5",
+          "id": "t_boss_enrage",
+          "label": "hp_pct < 0.5",
+          "priority": 150,
+          "to": "AlertChaseState",
+          "when": ""
+        }
+      ]
+    },
+    {
+      "blackboard": {},
+      "id": "NPC_Passive",
+      "initial": "IdleState",
+      "label": "Passive NPC (never fights)",
+      "states": [
+        {
+          "class": "",
+          "h": 60,
+          "id": "IdleState",
+          "label": "Idle",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 80,
+          "y": 80
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "UnconsciousState",
+          "label": "Unconscious",
+          "props": {},
+          "terminal": true,
+          "w": 120,
+          "x": 300,
+          "y": 400
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "DeathState",
+          "label": "Death",
+          "props": {},
+          "terminal": true,
+          "w": 120,
+          "x": 520,
+          "y": 400
+        },
+        {
+          "class": "DamageState",
+          "external_entry": true,
+          "h": 60,
+          "id": "DamageState",
+          "label": "Damage",
+          "props": {},
+          "special": "damage",
+          "terminal": false,
+          "w": 120,
+          "x": 200,
+          "y": 220
         }
       ],
       "transitions": []
     }
-  ]
+  ],
+  "version": 1
 }

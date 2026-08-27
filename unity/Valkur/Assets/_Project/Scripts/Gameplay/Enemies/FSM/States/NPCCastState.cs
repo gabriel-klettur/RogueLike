@@ -49,7 +49,7 @@ namespace Valkur.Gameplay.FSM
             // StunComponent for the channel duration; the simpler Unity
             // approach is to zero velocity here and refrain from writing
             // any new velocity in Execute.
-            if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
+            c?.StopMovement();
 
             // Face the player so the cast direction lines up with the
             // animator's idle-facing pose. The animator state itself is
@@ -69,7 +69,7 @@ namespace Valkur.Gameplay.FSM
             _stateTimer += dt;
 
             // Hold velocity at zero in case some other system nudged it.
-            if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
+            c?.StopMovement();
 
             // SpellCaster missing or invalid configuration → fall through
             // immediately so the NPC doesn't get stuck. Defensive only;

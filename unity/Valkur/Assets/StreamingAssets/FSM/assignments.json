@@ -1,15 +1,24 @@
-{
+﻿{
   "by_archetype": {
     "barbol": "Monster_Default",
     "barbol_amarillo_4": "Monster_Default",
     "barbol_baby": "Monster_Default",
-    "barbol_boss": "Monster_Default",
-    "barbol_cyan": "Monster_Default",
+    "barbol_boss": "Monster_Boss",
+    "barbol_brother_felipondor": "NPC_Passive",
+    "barbol_cyan": "Monster_Caster",
     "barbol_gigante": "Monster_Default",
     "barbol_gris": "Monster_Default",
     "barbol_morado": "Monster_Default",
     "barbol_musgo": "Monster_Default",
-    "barbol_oscuro": "Monster_Default"
+    "barbol_oscuro": "Monster_Default",
+    "knight_red": "Monster_Default",
+    "mon1": "Monster_Default",
+    "vendor_alchemist_valeria": "NPC_Passive",
+    "vendor_banker_abigail": "NPC_Passive",
+    "vendor_blacksmith_smith": "NPC_Passive",
+    "vendor_cheff_gatita": "NPC_Passive",
+    "vendor_lumberjack_pavel": "NPC_Passive",
+    "vendor_mague_roberto": "NPC_Passive"
   },
   "by_eid": {}
 }

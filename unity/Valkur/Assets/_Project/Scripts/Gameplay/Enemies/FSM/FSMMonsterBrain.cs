@@ -70,14 +70,47 @@ namespace Valkur.Gameplay.FSM
             }
         }
 
+        /// <summary>
+        /// This entity's <see cref="Valkur.Gameplay.Entities.PersistedEntityInstance.PlacementId"/>
+        /// once one exists. Empty for a spawner-spawned monster, which has no placement
+        /// identity and therefore no per-placement FSM override to look up.
+        /// </summary>
+        private string _placementId;
+
+        /// <summary>
+        /// Called by <see cref="Valkur.Gameplay.Entities.PersistedEntityInstance"/> the moment
+        /// this entity gains a placement identity, which is AFTER
+        /// <c>EntitySetup.ConfigureMonster</c> has already run <see cref="Initialize"/> — the
+        /// F5 spawn path configures the monster and only then stamps the id onto it.
+        /// So the id cannot be read during the first Initialize, and the only honest way to
+        /// honour a <c>by_eid</c> override is to rebuild once the id arrives.
+        ///
+        /// Rebuilds NOTHING unless assignments.json actually names a set for this placement,
+        /// which no shipped placement does — so the normal path is one dictionary probe.
+        /// </summary>
+        public void RebindFsmForPlacement(string placementId)
+        {
+            if (string.IsNullOrEmpty(placementId) || placementId == _placementId) return;
+            _placementId = placementId;
+            if (definition == null) return;
+            if (!FSMRuntimeFactory.HasPlacementOverride(placementId)) return;
+            Initialize(definition);
+        }
+
         public void Initialize(MonsterDefinition def)
         {
             definition = def;
-            _health.Initialize(def.stats.hp);
+
+            // Only hp / meleeDamage / defense answer to MonsterDefinition.level; every
+            // other stat below is read off `def.stats` on purpose, so a levelled copy
+            // still moves, reaches and times exactly like the monster it is a copy of.
+            // Level <= 1 (every shipped monster today) returns `stats` unchanged.
+            var scaled = def.GetScaledStats();
+            _health.Initialize(scaled.hp);
 
             var combat = GetComponent<MeleeCombat>();
             if (combat != null)
-                combat.Initialize(def.stats.meleeDamage, def.stats.meleeCooldown, def.stats.meleeRange);
+                combat.Initialize(scaled.meleeDamage, def.stats.meleeCooldown, def.stats.meleeRange);
 
             gameObject.name = def.displayName;
 
@@ -87,13 +120,17 @@ namespace Valkur.Gameplay.FSM
             // hard-coded boot whenever the archetype isn't seeded — keeps
             // brand-new monster prefabs working before the designer runs the
             // generator.
-            if (!FSMRuntimeFactory.TryBuildForArchetype(def.monsterKey, gameObject, out _fsm))
+            // def.fsmSet is passed as the LAST-RESORT hint. It is authored on assets and was
+            // read by nothing: knight_red says "Monster_Default" and still booted a bare
+            // IdleState because only assignments.json resolved. See TryBuildForEntity.
+            if (!FSMRuntimeFactory.TryBuildForEntity(_placementId, def.monsterKey, def.fsmSet,
+                                                     gameObject, out _fsm))
             {
                 _fsm = new StateMachine(gameObject, new IdleState());
             }
             _fsm.SetContext(FSMComponents.KEY, new FSMComponents(gameObject));
             _fsm.SetContext("aggro_range", def.stats.aggroRange);
-            _fsm.SetContext("melee_range", (float)def.stats.meleeRange);
+            _fsm.SetContext("melee_range", def.stats.meleeRange);
             _fsm.SetContext("speed", def.stats.speed);
             _fsm.SetContext("chasing_speed", def.stats.chasingSpeed);
             _fsm.SetContext("damage_duration", def.stats.damageDuration);
@@ -101,16 +138,68 @@ namespace Valkur.Gameplay.FSM
             _fsm.SetContext("death_disappear_time", def.stats.deathDisappearTime);
             _fsm.SetContext("attack_windup_s", def.stats.attackWindupSeconds);
             _fsm.SetContext("faction", def.stats.faction);
+            _fsm.SetContext("use_attack_telegraph", def.useAttackTelegraph);
+            PublishBehaviourTuning(def.aiTuning);
+
+            // The authored moveset, so AttackState can weigh and gate its variants instead
+            // of rolling a uniform Random over whatever the animator happens to hold.
+            if (def.assetConfig != null && def.assetConfig.attackVariants != null &&
+                def.assetConfig.attackVariants.Count > 0)
+            {
+                // Fully qualified: this class exposes an `FSM` property of type StateMachine,
+                // so a bare `FSM.AttackState` binds to that member instead of the namespace.
+                _fsm.SetContext(Valkur.Gameplay.FSM.AttackState.AttackVariantContextKey,
+                                def.assetConfig.attackVariants.ToArray());
+            }
+
+            // Where this entity belongs. Until now the spawn position was read once to
+            // seed patrol waypoints and then thrown away, so nothing downstream could ask
+            // "how far have I been pulled from home" — which is why ChaseState's own
+            // docblock promised leash support that was never implemented, and a de-aggroed
+            // monster simply patrolled from wherever it happened to stop.
+            Vector2 spawnPos = transform.position;
+            _fsm.SetContext(FSMHomeAnchor.KeyX, spawnPos.x);
+            _fsm.SetContext(FSMHomeAnchor.KeyY, spawnPos.y);
 
             // Generate patrol waypoints from definition
             if (!string.IsNullOrEmpty(def.patrolType))
             {
-                Vector2 spawnPos = transform.position;
                 var waypoints = PatrolWaypointGenerator.Generate(spawnPos, def.patrolType);
                 _fsm.SetContext("patrol_waypoints", waypoints);
             }
 
             _fsm.OnStateChanged += OnFSMStateChanged;
+
+            // Everything the initial state reads is now published, so it is safe to
+            // enter it. Deliberately last: an authored initial PatrolState reads the
+            // waypoints set five lines up, and IdleState reads FSMComponents.
+            _fsm.Begin();
+        }
+
+        /// <summary>
+        /// Publishes only the feel knobs the author actually set.
+        ///
+        /// Zero means "use the engine default", so an unset field publishes NOTHING and
+        /// <c>FSMTuning</c>'s default is what the state reads. That is the whole reason
+        /// every shipped monster still behaves exactly as it did when these values were
+        /// compile-time constants — writing a 0 into the context instead would have made
+        /// every monster's aggro hysteresis, repath interval and flee duration zero.
+        /// </summary>
+        private void PublishBehaviourTuning(AIBehaviourTuning t)
+        {
+            void Publish(string key, float value)
+            {
+                if (value > 0f) _fsm.SetContext(key, value);
+            }
+
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeyAggroExitHysteresis, t.aggroExitHysteresis);
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeyLeashRange,          t.leashRange);
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeyRepathInterval,      t.repathInterval);
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeyWaypointReachDist,   t.waypointReachDistance);
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeyAlertDuration,       t.alertDuration);
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeyFleeDuration,        t.fleeDuration);
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeyFleeSpeedMultiplier, t.fleeSpeedMultiplier);
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeyReswingRangeFactor,  t.reswingRangeFactor);
         }
 
         private void InitializeDefault()
@@ -127,14 +216,35 @@ namespace Valkur.Gameplay.FSM
             _fsm.SetContext("attack_windup_s", 0.2f);
 
             _fsm.OnStateChanged += OnFSMStateChanged;
+            _fsm.Begin();
         }
+
+        /// <summary>
+        /// Longest span a single throttled tick may replay. An offscreen entity is
+        /// let through every <c>offscreenUpdateInterval</c> frames, so the real
+        /// accumulation is ~0.13 s; this only bounds a genuine hitch (a world load,
+        /// a domain reload) so a monster cannot resolve a whole swing in one frame.
+        /// </summary>
+        private const float MaxCatchUpSeconds = 0.5f;
+
+        private float _pendingDt;
 
         private void Update()
         {
+            // Accumulate EVERY frame, not just the ones that tick. The FSM used to be
+            // handed a single frame's deltaTime on the 1-in-8 frame an offscreen
+            // monster was allowed through, so attack windup, damage_duration,
+            // death_disappear_time and the patrol dwell all ran at an eighth speed
+            // whenever the camera looked away — behaviour you could not reproduce
+            // because it depended on where the player was looking.
+            _pendingDt += Time.deltaTime;
+
             if (_culling != null && !_culling.ShouldUpdate)
                 return;
 
-            _fsm?.Update(Time.deltaTime);
+            float dt = Mathf.Min(_pendingDt, MaxCatchUpSeconds);
+            _pendingDt = 0f;
+            _fsm?.Update(dt);
         }
 
         private void OnDeath()

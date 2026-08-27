@@ -29,6 +29,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                 onRedo:           () => _undo.Redo(),
                 onSave:           () => PersistSets(),
                 onReload:         () => { LoadSets(); RefreshSetsList(); RefreshGraph(); RefreshProperties(); },
+                onToggleBuiltIn:  ToggleBuiltInEdges,
                 onSearchChanged:  v  => { _searchFilter = v ?? ""; RefreshSetsList(); },
                 onTabState:       () => SwitchTab(PropsTab.State),
                 onTabTransition:  () => SwitchTab(PropsTab.Transition),
@@ -47,6 +48,10 @@ namespace Valkur.Gameplay.Enemies.FSM
                 onToolDisconnect: () => SetGraphTool(GraphTool.Disconnect),
                 onToggleTutorial: () => ToggleTutorial(),
                 onPerfToggle:     null);
+
+            // The caption has to match the field's initial value, or the very first click
+            // reads as a no-op to anyone watching the label rather than the graph.
+            RefreshBuiltInButtonLabel();
 
             // Wire panel close → keep dropdown state in sync (mirrors Buildings Editor)
             if (_uiRefs.ToolsPanelDrag != null)
@@ -243,7 +248,12 @@ namespace Valkur.Gameplay.Enemies.FSM
             RefreshEntities();
             RefreshAnimations();
             if (_statusTmp != null)
-                _statusTmp.text = $"Set: {set.label ?? set.id} ({set.states.Count} states, {set.transitions.Count} trans)";
+            {
+                string seedNote = IsSeedGeneratedSet(set)
+                    ? " — [seed] state list auto-refreshes on regen; transitions/labels are yours"
+                    : "";
+                _statusTmp.text = $"Set: {set.label ?? set.id} ({set.states.Count} states, {set.transitions.Count} trans){seedNote}";
+            }
         }
     }
 }

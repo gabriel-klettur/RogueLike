@@ -64,10 +64,17 @@ namespace Valkur.Gameplay.Enemies.FSM
             hlg.childControlHeight = true;
             hlg.childControlWidth  = true;
 
-            // Main select button
-            var selectBtn = EditorUIHelpers.MakeButton(row.transform, set.label ?? set.id,
+            // Main select button. The "[seed]" suffix is the only place a designer can
+            // see, without opening the set, that this set's STATE LIST auto-refreshes
+            // from "Generate Seed from Runtime States" — everything else on it
+            // (transitions, blackboard, labels) never does. See AUTO_GENERATED_FLAG_KEY.
+            string rowLabel = set.label ?? set.id;
+            bool isSeeded = IsSeedGeneratedSet(set);
+            if (isSeeded) rowLabel += "  [seed]";
+            var selectBtn = EditorUIHelpers.MakeButton(row.transform, rowLabel,
                 () => SelectSet(set), 26f, 11f);
             if (set == _selectedSet) selectBtn.GetComponent<Image>().color = EditorUIHelpers.BTN_ACTIVE;
+            else if (isSeeded) selectBtn.GetComponent<Image>().color = new Color(0.30f, 0.28f, 0.16f, 0.95f);
             var btnLE = selectBtn.GetComponent<LayoutElement>() ?? selectBtn.gameObject.AddComponent<LayoutElement>();
             btnLE.flexibleWidth = 1f;
 
@@ -99,16 +106,37 @@ namespace Valkur.Gameplay.Enemies.FSM
             copyRaw["id"] = newId;
             copyRaw["label"] = (src.label ?? src.id) + " (copy)";
 
-            // Append to raw + rebuild typed view
-            var rawSets = (List<object>)_setsRoot["sets"];
-            rawSets.Add(copyRaw);
-            BuildTypedSetsFromRaw();
-            PersistSets();
+            var prevSelectedId = _selectedSet?.id;
 
-            _selectedSet = _fsmSets.FirstOrDefault(x => x.id == newId);
-            RefreshSetsListInteractive();
-            RefreshGraph();
-            RefreshProperties();
+            // NOTE: every closure below re-fetches `(List<object>)_setsRoot["sets"]` rather
+            // than closing over today's list instance — PersistSets REPLACES that list on
+            // every call (`_setsRoot["sets"] = rawSets` with a freshly built list), so a
+            // captured reference would silently go stale the moment any OTHER save happens
+            // between this Do() and a later Undo()/Redo() of it.
+            _undo.Do($"Clone set → '{newId}'",
+                doAction: () =>
+                {
+                    RawSets().Add(copyRaw);
+                    BuildTypedSetsFromRaw();
+                    PersistSets();
+                    _selectedSet = _fsmSets.FirstOrDefault(x => x.id == newId);
+                    RefreshSetsListInteractive();
+                    RefreshGraph();
+                    RefreshProperties();
+                },
+                undoAction: () =>
+                {
+                    RawSets().RemoveAll(o => (o is Dictionary<string, object> d) &&
+                                             System.Convert.ToString(d.ContainsKey("id") ? d["id"] : "") == newId);
+                    BuildTypedSetsFromRaw();
+                    PersistSets();
+                    _selectedSet = prevSelectedId != null
+                        ? _fsmSets.FirstOrDefault(x => x.id == prevSelectedId)
+                        : null;
+                    RefreshSetsListInteractive();
+                    RefreshGraph();
+                    RefreshProperties();
+                });
             if (_statusTmp != null) _statusTmp.text = $"Cloned → {newId}";
         }
 
@@ -125,28 +153,59 @@ namespace Valkur.Gameplay.Enemies.FSM
 
         private void DeleteSetConfirmed(FSMSetData set)
         {
-            int idx = _fsmSets.IndexOf(set);
-            if (idx < 0) return;
-            _fsmSets.RemoveAt(idx);
-            // Mirror in raw
-            var rawSets = (List<object>)_setsRoot["sets"];
-            rawSets.RemoveAll(o => (o is Dictionary<string, object> d) &&
-                                   System.Convert.ToString(d.ContainsKey("id") ? d["id"] : "") == set.id);
-            // Drop layout entry
-            if (_layoutsRoot != null && _layoutsRoot["by_set"] is Dictionary<string, object> bySet)
-                bySet.Remove(set.id);
-            SaveLayouts();
-            PersistSets();
+            int typedIdx = _fsmSets.IndexOf(set);
+            if (typedIdx < 0) return;
 
-            // Clamp selection
-            if (_selectedSet == set)
+            // Fallback selection if the deleted set was the active one — computed against
+            // the list with `set` already excluded, matching what the old
+            // `_fsmSets.RemoveAt(idx); … _fsmSets[Mathf.Clamp(idx, 0, _fsmSets.Count-1)]`
+            // sequence picked, without relying on `_fsmSets` already being mutated.
+            bool wasSelected = ReferenceEquals(_selectedSet, set);
+            string fallbackId = null;
+            if (wasSelected)
             {
-                _selectedSet = _fsmSets.Count > 0 ? _fsmSets[Mathf.Clamp(idx, 0, _fsmSets.Count - 1)] : null;
-                _selectedState = null; _selectedTransition = null;
+                var remaining = _fsmSets.Where(s => !ReferenceEquals(s, set)).ToList();
+                if (remaining.Count > 0)
+                    fallbackId = remaining[Mathf.Clamp(typedIdx, 0, remaining.Count - 1)].id;
             }
-            RefreshSetsListInteractive();
-            RefreshGraph();
-            RefreshProperties();
+
+            object savedLayoutEntry = null;
+            bool hadLayoutEntry = _layoutsRoot != null &&
+                                   AsDict(_layoutsRoot["by_set"]).TryGetValue(set.id, out savedLayoutEntry);
+
+            _undo.Do($"Delete set '{set.id}'",
+                doAction: () =>
+                {
+                    _fsmSets.Remove(set);
+                    RawSets().RemoveAll(o => (o is Dictionary<string, object> d) &&
+                                             System.Convert.ToString(d.ContainsKey("id") ? d["id"] : "") == set.id);
+                    if (_layoutsRoot != null && _layoutsRoot["by_set"] is Dictionary<string, object> bySet)
+                        bySet.Remove(set.id);
+                    SaveLayouts();
+                    PersistSets();
+
+                    if (wasSelected)
+                    {
+                        _selectedSet = fallbackId != null ? _fsmSets.FirstOrDefault(x => x.id == fallbackId) : null;
+                        _selectedState = null; _selectedTransition = null;
+                    }
+                    RefreshSetsListInteractive();
+                    RefreshGraph();
+                    RefreshProperties();
+                },
+                undoAction: () =>
+                {
+                    int insertAt = Mathf.Clamp(typedIdx, 0, _fsmSets.Count);
+                    _fsmSets.Insert(insertAt, set);
+                    if (hadLayoutEntry && _layoutsRoot != null && _layoutsRoot["by_set"] is Dictionary<string, object> bySet2)
+                        bySet2[set.id] = savedLayoutEntry;
+                    SaveLayouts();
+                    PersistSets(); // rebuilds _setsRoot["sets"] from _fsmSets, restoring set.raw's slot
+                    if (wasSelected) _selectedSet = set;
+                    RefreshSetsListInteractive();
+                    RefreshGraph();
+                    RefreshProperties();
+                });
             if (_statusTmp != null) _statusTmp.text = $"Deleted '{set.id}'";
         }
 
@@ -179,16 +238,47 @@ namespace Valkur.Gameplay.Enemies.FSM
                         },
                         { "transitions", new List<object>() },
                     };
-                    var rawSets = (List<object>)_setsRoot["sets"];
-                    rawSets.Add(newRaw);
-                    BuildTypedSetsFromRaw();
-                    PersistSets();
-                    _selectedSet = _fsmSets.FirstOrDefault(x => x.id == newId);
-                    RefreshSetsListInteractive();
-                    RefreshGraph();
-                    RefreshProperties();
+                    var prevSelectedId = _selectedSet?.id;
+
+                    _undo.Do($"New set '{newId}'",
+                        doAction: () =>
+                        {
+                            RawSets().Add(newRaw);
+                            BuildTypedSetsFromRaw();
+                            PersistSets();
+                            _selectedSet = _fsmSets.FirstOrDefault(x => x.id == newId);
+                            RefreshSetsListInteractive();
+                            RefreshGraph();
+                            RefreshProperties();
+                        },
+                        undoAction: () =>
+                        {
+                            RawSets().RemoveAll(o => (o is Dictionary<string, object> d) &&
+                                                     System.Convert.ToString(d.ContainsKey("id") ? d["id"] : "") == newId);
+                            BuildTypedSetsFromRaw();
+                            PersistSets();
+                            _selectedSet = prevSelectedId != null
+                                ? _fsmSets.FirstOrDefault(x => x.id == prevSelectedId)
+                                : null;
+                            RefreshSetsListInteractive();
+                            RefreshGraph();
+                            RefreshProperties();
+                        });
                     if (_statusTmp != null) _statusTmp.text = $"Created '{newId}'";
                 });
+        }
+
+        /// <summary>Always re-fetches the live raw sets list — see the note in
+        /// <see cref="CloneSet"/> about why undo/redo closures must not cache it.</summary>
+        private List<object> RawSets()
+        {
+            if (_setsRoot == null) _setsRoot = new Dictionary<string, object> { { "version", 1L }, { "sets", new List<object>() } };
+            if (!(_setsRoot["sets"] is List<object> list))
+            {
+                list = new List<object>();
+                _setsRoot["sets"] = list;
+            }
+            return list;
         }
 
         // ── MiniJson assembly bridge ────────────────────────────────────────────

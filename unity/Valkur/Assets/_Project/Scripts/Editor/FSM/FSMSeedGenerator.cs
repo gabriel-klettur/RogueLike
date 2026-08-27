@@ -25,6 +25,21 @@ namespace Valkur.Editor.FSM
     /// archetype assignment the user pinned manually. New states added to the
     /// codebase show up automatically in the next regen.
     ///
+    /// A set that DOES carry <c>auto_generated: true</c> (every set this
+    /// generator has ever written, including the shipped <c>Monster_Default</c>)
+    /// is **not** replaced wholesale on a regen — only its STATE VOCABULARY is
+    /// refreshed additively (<see cref="MergeStateVocabulary"/>): any state id
+    /// the fresh vocabulary has that the saved set doesn't get appended, and
+    /// every existing state (position, label, props) is left untouched. Every
+    /// OTHER field on the set — transitions, blackboard, label, initial — is
+    /// never touched by a regen, auto-flag or not. This is what F12 authoring
+    /// writes to (see <c>FSMRuntimeEditor.SyncSetToRaw</c>), and a designer
+    /// tuning a graph in F12 has no way to know a later regen would otherwise
+    /// discard it: the shipped <c>Monster_Default</c> carries three authored
+    /// transitions (t_chase_flee, t_attack_flee, t_any_alert) that drive
+    /// <c>FleeState</c> and <c>AlertChaseState</c>, and a full replace used to
+    /// delete all three silently on every regen.
+    ///
     /// Menu: <c>Valkur &gt; FSM &gt; Generate Seed from Runtime States</c>.
     /// </summary>
     public static class FSMSeedGenerator
@@ -122,8 +137,10 @@ namespace Valkur.Editor.FSM
                 bool ok = EditorUtility.DisplayDialog(
                     "FSM Seed Generator",
                     $"sets.json already exists at:\n{setsPath}\n\n" +
-                    "Auto-generated sets will be regenerated. Manually-edited sets " +
-                    "(without an 'auto_generated' flag) will be preserved.\n\n" +
+                    "Auto-generated sets will have their STATE LIST refreshed with any " +
+                    "new state class — everything else on them (transitions, blackboard, " +
+                    "labels, positions) is preserved untouched. Hand-created sets (without " +
+                    "an 'auto_generated' flag) are preserved verbatim, as always.\n\n" +
                     "Continue?",
                     "Generate", "Cancel");
                 if (!ok) return null;
@@ -238,10 +255,27 @@ namespace Valkur.Editor.FSM
         // ── Idempotent merge logic ──────────────────────────────────────────────
 
         /// <summary>
-        /// Replaces every set tagged <c>auto_generated: true</c> in
-        /// <paramref name="existing"/> with the matching set from
-        /// <paramref name="generated"/>. Sets without the flag (i.e. user-edited)
-        /// are preserved verbatim. New auto sets are appended.
+        /// Refreshes the STATE VOCABULARY of every existing set tagged
+        /// <c>auto_generated: true</c> whose id matches a freshly generated set —
+        /// any state id the fresh vocabulary carries that the existing set doesn't
+        /// get appended (see <see cref="MergeStateVocabulary"/>). Everything else on
+        /// the existing set (transitions, blackboard, label, initial, every
+        /// already-present state's position/label/props) is left completely
+        /// untouched, auto-flag or not.
+        ///
+        /// This used to REPLACE the whole set wholesale — drop the existing dict and
+        /// splice in the fresh one — which is indistinguishable from "delete every
+        /// F12 edit": the shipped <c>Monster_Default</c> carries three authored
+        /// transitions that drive <c>FleeState</c>/<c>AlertChaseState</c>, and a full
+        /// replace silently deleted all three on every regen. The class doc's promise
+        /// — "new states show up automatically in the next regen" — only needs the
+        /// STATE LIST refreshed, so that is now the only thing a regen touches on an
+        /// existing set.
+        ///
+        /// Sets without the flag (hand-created via F12's "+ New Set") are preserved
+        /// verbatim, exactly as before. A freshly generated set with no existing
+        /// counterpart at all (first-ever run, or a brand-new default set id) is
+        /// appended as-is.
         /// </summary>
         public static Dictionary<string, object> MergeSetsIdempotent(
             Dictionary<string, object> existing,
@@ -250,33 +284,82 @@ namespace Valkur.Editor.FSM
             var existingList  = AsList(existing.TryGetValue("sets", out var es) ? es : null);
             var generatedList = AsList(generated.TryGetValue("sets", out var gs) ? gs : null);
 
-            // Collect IDs of generated sets so we can drop their existing auto-copies.
-            var generatedIds = new HashSet<string>();
+            // Index generated sets by id for the vocabulary-refresh lookup below.
+            var generatedById = new Dictionary<string, Dictionary<string, object>>();
             foreach (var item in generatedList)
             {
-                var dict = item as Dictionary<string, object>;
-                if (dict != null && dict.TryGetValue("id", out var idObj))
-                    generatedIds.Add(idObj?.ToString() ?? "");
+                if (item is Dictionary<string, object> dict &&
+                    dict.TryGetValue("id", out var idObj))
+                {
+                    generatedById[idObj?.ToString() ?? ""] = dict;
+                }
             }
 
-            var merged = new List<object>();
+            var merged     = new List<object>();
+            var existingIds = new HashSet<string>();
             foreach (var item in existingList)
             {
-                var dict = item as Dictionary<string, object>;
-                if (dict == null) continue;
+                if (!(item is Dictionary<string, object> dict)) continue;
+                string id   = dict.TryGetValue("id", out var idObj) ? idObj?.ToString() : null;
                 bool isAuto = dict.TryGetValue(AUTO_FLAG_KEY, out var autoVal) &&
                               autoVal is bool b && b;
-                string id   = dict.TryGetValue("id", out var idObj) ? idObj?.ToString() : null;
 
-                // Drop any existing auto-set whose ID will be regenerated.
-                if (isAuto && id != null && generatedIds.Contains(id)) continue;
+                if (isAuto && id != null && generatedById.TryGetValue(id, out var freshDict))
+                    MergeStateVocabulary(dict, freshDict);
 
+                if (id != null) existingIds.Add(id);
                 merged.Add(dict);
             }
-            // Append the freshly-generated sets.
-            merged.AddRange(generatedList);
+            // Append any freshly-generated set with no existing counterpart at all —
+            // never one whose id already exists (auto or not), which the loop above
+            // already refreshed in place or deliberately left alone.
+            foreach (var item in generatedList)
+            {
+                if (!(item is Dictionary<string, object> dict)) continue;
+                string id = dict.TryGetValue("id", out var idObj) ? idObj?.ToString() : null;
+                if (id != null && existingIds.Contains(id)) continue;
+                merged.Add(dict);
+            }
 
             return new Dictionary<string, object> { ["sets"] = merged };
+        }
+
+        /// <summary>
+        /// Appends any state in <paramref name="freshSet"/> that
+        /// <paramref name="existingSet"/> doesn't already have (by id). Never
+        /// mutates an already-present state's dict, never touches
+        /// <c>transitions</c>/<c>blackboard</c>/<c>label</c>, and only fills
+        /// <c>initial</c> in when the existing set doesn't have one at all — an
+        /// authored graph's entry point is never overridden.
+        /// </summary>
+        private static void MergeStateVocabulary(
+            Dictionary<string, object> existingSet,
+            Dictionary<string, object> freshSet)
+        {
+            var existingStates = AsList(existingSet.TryGetValue("states", out var es) ? es : null);
+            var freshStates    = AsList(freshSet.TryGetValue("states", out var fs) ? fs : null);
+
+            var existingStateIds = new HashSet<string>();
+            foreach (var s in existingStates)
+                if (s is Dictionary<string, object> sd && sd.TryGetValue("id", out var sid))
+                    existingStateIds.Add(sid?.ToString() ?? "");
+
+            var mergedStates = new List<object>(existingStates);
+            foreach (var s in freshStates)
+            {
+                if (!(s is Dictionary<string, object> sd)) continue;
+                string sid = sd.TryGetValue("id", out var idObj) ? idObj?.ToString() : null;
+                if (sid == null || existingStateIds.Contains(sid)) continue;
+                mergedStates.Add(sd);
+            }
+            existingSet["states"] = mergedStates;
+
+            if (!existingSet.TryGetValue("initial", out var initObj) ||
+                string.IsNullOrEmpty(initObj as string))
+            {
+                if (freshSet.TryGetValue("initial", out var freshInit))
+                    existingSet["initial"] = freshInit;
+            }
         }
 
         /// <summary>

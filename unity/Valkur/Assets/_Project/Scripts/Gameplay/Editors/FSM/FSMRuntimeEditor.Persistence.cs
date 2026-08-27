@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEngine;
 using Valkur.Core;
 using Valkur.Gameplay.Editors;
+using Valkur.Gameplay.VFX;   // AtomicJsonFile
 using Valkur.Gameplay.World; // MiniJsonRuntime
 
 namespace Valkur.Gameplay.Enemies.FSM
@@ -23,13 +24,44 @@ namespace Valkur.Gameplay.Enemies.FSM
     {
         private const bool AUTO_INCLUDE_DAMAGE = true;
 
+        /// <summary>
+        /// Mirrors <c>Valkur.Editor.FSM.FSMSeedGenerator.AUTO_FLAG_KEY</c> — duplicated
+        /// rather than referenced because <c>Valkur.Gameplay</c> cannot depend on
+        /// <c>Valkur.Editor</c> (see the assembly table in CLAUDE.md). A set carrying this
+        /// flag has its STATE VOCABULARY refreshed by "Valkur &gt; FSM &gt; Generate Seed
+        /// from Runtime States" whenever a new state class ships — everything else on it
+        /// (transitions, blackboard, per-state props/label/position) is the designer's and
+        /// is never touched by that regen (<c>FSMSeedGenerator.MergeStateVocabulary</c>).
+        /// Surfaced in the UI: <c>FSMRuntimeEditor.Sets.BuildSetRow</c> (list badge),
+        /// <c>FSMRuntimeEditor.SelectSet</c> (status line) and
+        /// <c>FSMRuntimeEditor.Properties.BuildStateTab</c> (info row).
+        /// </summary>
+        private const string AUTO_GENERATED_FLAG_KEY = "auto_generated";
+
+        // ── Test seam ─────────────────────────────────────────────────────────────
+        //
+        // FSM StreamingAssets writes have no repository abstraction to inject (unlike
+        // Particles' IParticleInstanceStore — FileParticleInstanceStore /
+        // InMemoryParticleInstanceStore). A test that exercises the real mutation path
+        // (PersistSets / SyncSetToRaw / BuildTypedSetsFromRaw) needs some way to redirect
+        // off the real StreamingAssets/FSM/ without ever touching the shipped
+        // Monster_Default set. Set from a test's [SetUp], cleared in [TearDown];
+        // production code never assigns it. Static because Domain Reload is OFF — reset
+        // so a fixture that threw before its TearDown can't leave a later test silently
+        // writing into a stale temp folder for the rest of the session.
+
+        internal static string TestDataDirOverride;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetTestDataDirOverride() => TestDataDirOverride = null;
+
         // ── Path resolution ──────────────────────────────────────────────────────
 
         private static string FsmDataDir
         {
             get
             {
-                string sa = Path.Combine(Application.streamingAssetsPath, "FSM");
+                string sa = TestDataDirOverride ?? Path.Combine(Application.streamingAssetsPath, "FSM");
                 if (!Directory.Exists(sa)) Directory.CreateDirectory(sa);
                 return sa;
             }
@@ -40,6 +72,23 @@ namespace Valkur.Gameplay.Enemies.FSM
         private static string AnimationMapPath  => Path.Combine(FsmDataDir, "animation_map.json");
         private static string LayoutsPath       => Path.Combine(FsmDataDir, "layouts.json");
         private static string FsmIdsPath        => Path.Combine(FsmDataDir, "fsm_ids.json");
+
+        // ── Anti-wipe guard ──────────────────────────────────────────────────────
+        //
+        // ReadJsonObject used to swallow a parse failure and hand the caller an empty
+        // dict indistinguishable from "file legitimately doesn't exist yet". NormalizeSets
+        // then built `sets: []` out of it, and the very next click (every mutation calls
+        // PersistSets immediately) wrote that emptiness over whatever was on disk.
+        // Buildings/Particles/Spawners/Lights all refuse a write after a failed load for
+        // the same reason — these four flags are that guard for FSM's four files. Only a
+        // genuine parse failure (file exists, content is not valid JSON / not the expected
+        // shape) sets one; a missing file is the legitimate first-run state and must not
+        // block saving.
+
+        private bool _setsLoadFailed;
+        private bool _assignmentsLoadFailed;
+        private bool _animMapLoadFailed;
+        private bool _layoutsLoadFailed;
 
         // ── ID generation ────────────────────────────────────────────────────────
 
@@ -76,33 +125,60 @@ namespace Valkur.Gameplay.Enemies.FSM
 
         // ── Generic JSON helpers ─────────────────────────────────────────────────
 
-        private static Dictionary<string, object> ReadJsonObject(string path)
+        /// <param name="parseFailed">
+        /// True only when the file EXISTS but could not be read as a JSON object —
+        /// never true just because the file is absent. Callers wire this into the
+        /// per-file anti-wipe flag above.
+        /// </param>
+        private static Dictionary<string, object> ReadJsonObject(string path, out bool parseFailed)
         {
+            parseFailed = false;
             if (!File.Exists(path)) return new Dictionary<string, object>();
             try
             {
                 var raw = MiniJsonRuntime.Deserialize(File.ReadAllText(path)) as Dictionary<string, object>;
-                return raw ?? new Dictionary<string, object>();
+                if (raw == null)
+                {
+                    parseFailed = true;
+                    Debug.LogError($"[FSMEditor] '{path}' did not deserialize to a JSON object — " +
+                                    "refusing to treat it as empty.");
+                    return new Dictionary<string, object>();
+                }
+                return raw;
             }
             catch (Exception ex)
             {
+                parseFailed = true;
                 Debug.LogError($"[FSMEditor] Failed to read '{path}': {ex.Message}");
                 return new Dictionary<string, object>();
             }
         }
 
+        /// <summary>
+        /// Atomic write (temp file + rename via <see cref="AtomicJsonFile"/>) so a crash
+        /// or process kill mid-write can never leave sets.json/assignments.json/etc. half
+        /// written — the same mechanism <c>FileParticleInstanceStore</c> uses for
+        /// <c>particles_instances.json</c>.
+        /// </summary>
         private static void WriteJson(string path, object obj)
         {
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(path));
-                File.WriteAllText(path, MiniJsonRuntime.Serialize(obj, pretty: true));
+                AtomicJsonFile.Write(path, MiniJsonRuntime.Serialize(obj, pretty: true));
             }
             catch (Exception ex)
             {
                 Debug.LogError($"[FSMEditor] Failed to write '{path}': {ex.Message}");
             }
         }
+
+        /// <summary>True when <paramref name="set"/> carries <see cref="AUTO_GENERATED_FLAG_KEY"/>
+        /// — its state vocabulary (not its transitions/blackboard/labels) refreshes on
+        /// the next "Generate Seed from Runtime States".</summary>
+        private static bool IsSeedGeneratedSet(FSMSetData set) =>
+            set?.raw != null &&
+            set.raw.TryGetValue(AUTO_GENERATED_FLAG_KEY, out var flag) &&
+            flag is bool b && b;
 
         private static List<object> AsList(object o) => o as List<object> ?? new List<object>();
         private static Dictionary<string, object> AsDict(object o)
@@ -144,6 +220,9 @@ namespace Valkur.Gameplay.Enemies.FSM
         /// <summary>
         /// Mirrors Python <c>fsm_persistence/normalize._ensure_ids_and_defaults()</c>.
         /// Forces version, ids, props={}, AUTO_INCLUDE_DAMAGE, transition cross-fill.
+        /// Also migrates two writer/reader key mismatches so a saved file only ever
+        /// carries the name the rest of the editor (and the runtime factory) actually
+        /// reads — see the inline comments at each migration.
         /// </summary>
         public static void NormalizeSets(Dictionary<string, object> root)
         {
@@ -173,24 +252,58 @@ namespace Valkur.Gameplay.Enemies.FSM
                     if (!(sraw is Dictionary<string, object> st)) continue;
                     if (!st.ContainsKey("id") || string.IsNullOrEmpty(AsStr(st["id"])))
                         st["id"] = NewNodeId(stateIds);
+
+                    // Legacy sentinel for the synthetic Damage vocabulary entry (see
+                    // AUTO_INCLUDE_DAMAGE below). Every other node's id equals its class
+                    // name unless overridden — "Damage" (not "DamageState") was the one
+                    // exception, predating that convention. Renaming here keeps the
+                    // Contains("DamageState") check below single-name and stops a stale
+                    // "Damage" copy from ever coexisting with a fresh "DamageState" one.
+                    if (AsStr(st["id"]) == "Damage") st["id"] = "DamageState";
+
                     stateIds.Add(AsStr(st["id"]));
                     if (!st.ContainsKey("props")) st["props"] = new Dictionary<string, object>();
                     if (!st.ContainsKey("label") || string.IsNullOrEmpty(AsStr(st["label"])))
                         st["label"] = AsStr(st["id"]);
                     if (!st.ContainsKey("class")) st["class"] = "";
+
+                    // Writer/reader mismatch: FSMSeedGenerator.BuildDefaultSetsRoot emits
+                    // "is_terminal"; the editor has only ever read/written "terminal"
+                    // (BuildTypedSetsFromRaw / SyncSetToRaw). Left alone, the two states the
+                    // seed marks terminal (Death/Unconscious) rendered as ordinary nodes, and
+                    // after one save each state carried BOTH keys — one of them stale. Fold
+                    // the legacy value in (only when "terminal" isn't already authored, so a
+                    // hand-edit via the Properties panel always wins) and drop the old key.
+                    if (st.ContainsKey("is_terminal"))
+                    {
+                        if (!st.ContainsKey("terminal"))
+                            st["terminal"] = AsBool(st["is_terminal"]);
+                        st.Remove("is_terminal");
+                    }
+
+                    // "is_initial" is a second source of truth for what the set-level
+                    // "initial" field already names, and nothing keeps it in sync with the
+                    // Mark-Initial tool (MarkInitial only ever updates set["initial"]) — so a
+                    // stale "is_initial: true" on a state that is no longer initial could
+                    // linger forever. Strip it; nothing reads it.
+                    st.Remove("is_initial");
                 }
 
-                // AUTO_INCLUDE_DAMAGE
-                if (AUTO_INCLUDE_DAMAGE && !stateIds.Contains("Damage"))
+                // AUTO_INCLUDE_DAMAGE — every set needs a vocabulary entry for DamageState so
+                // a designer inspecting the graph can see it exists, even though the runtime
+                // enters it directly via StateMachine.HandleHitEvent regardless of whether a
+                // node is present (StateMachine.ChangeState's isSpecial escape hatch bypasses
+                // the allowed-state guard for it unconditionally either way).
+                if (AUTO_INCLUDE_DAMAGE && !stateIds.Contains("DamageState"))
                 {
                     var damage = new Dictionary<string, object>
                     {
-                        { "id", "Damage" }, { "label", "Damage" },
-                        { "class", "DamageState" }, { "props", new Dictionary<string, object>() },
+                        { "id", "DamageState" }, { "label", "Damage" }, { "class", "DamageState" },
+                        { "props", new Dictionary<string, object>() },
                         { "special", "damage" }, { "external_entry", true }, { "terminal", false },
                     };
                     AsList(set["states"]).Add(damage);
-                    stateIds.Add("Damage");
+                    stateIds.Add("DamageState");
                 }
 
                 // initial: must reference a state id
@@ -232,52 +345,114 @@ namespace Valkur.Gameplay.Enemies.FSM
         /// <summary>Load + normalize sets.json into the editor's typed model.</summary>
         public void LoadSetsFromDisk()
         {
-            _setsRoot = ReadJsonObject(SetsPath);
+            _setsRoot = ReadJsonObject(SetsPath, out _setsLoadFailed);
             NormalizeSets(_setsRoot);
             BuildTypedSetsFromRaw();
         }
 
-        /// <summary>Normalize → write sets.json → export fsm_ids.json.</summary>
+        /// <summary>Normalize → write sets.json → export fsm_ids.json → invalidate the
+        /// runtime FSM cache so a live monster's next spawn (or `reconfig`) picks up the
+        /// edit without a console command.</summary>
         public void SaveSets()
         {
+            if (_setsLoadFailed)
+            {
+                Debug.LogError($"[FSMEditor] Refusing to save — '{SetsPath}' failed to parse " +
+                                "on load. Fix or delete the file on disk and reopen F12 before saving again.");
+                if (_statusTmp != null) _statusTmp.text = "SAVE BLOCKED — sets.json failed to parse. See console.";
+                return;
+            }
             if (_setsRoot == null) _setsRoot = new Dictionary<string, object>();
             NormalizeSets(_setsRoot);
             WriteJson(SetsPath, _setsRoot);
             ExportFsmIds();
+            // Every mutation funnels through PersistSets → SaveSets, so this is the single
+            // choke point that turns the iteration loop into "edit → fight" instead of
+            // "edit → remember to type reloadfsm → fight". InvalidateCache's only production
+            // caller used to be that console command.
+            FSMRuntimeFactory.InvalidateCache();
             if (_statusTmp != null) _statusTmp.text = $"Saved {SetsPath}";
         }
 
         public void LoadAssignmentsFromDisk()
         {
-            _assignmentsRoot = ReadJsonObject(AssignmentsPath);
+            _assignmentsRoot = ReadJsonObject(AssignmentsPath, out _assignmentsLoadFailed);
             if (!_assignmentsRoot.ContainsKey("by_archetype"))
                 _assignmentsRoot["by_archetype"] = new Dictionary<string, object>();
             if (!_assignmentsRoot.ContainsKey("by_eid"))
                 _assignmentsRoot["by_eid"] = new Dictionary<string, object>();
         }
 
-        public void SaveAssignments() => WriteJson(AssignmentsPath, _assignmentsRoot ?? new Dictionary<string, object>());
+        public void SaveAssignments()
+        {
+            if (_assignmentsLoadFailed)
+            {
+                Debug.LogError($"[FSMEditor] Refusing to save — '{AssignmentsPath}' failed to " +
+                                "parse on load. Fix or delete the file on disk and reopen F12 before saving again.");
+                if (_statusTmp != null) _statusTmp.text = "SAVE BLOCKED — assignments.json failed to parse. See console.";
+                return;
+            }
+            WriteJson(AssignmentsPath, _assignmentsRoot ?? new Dictionary<string, object>());
+            // assignments.json is the other file FSMRuntimeFactory reads (by_archetype) —
+            // an archetype re-pointed at a different set needs the same cache invalidation
+            // sets.json gets, or the next spawn still resolves the old set.
+            FSMRuntimeFactory.InvalidateCache();
+        }
 
         public void LoadAnimationMapFromDisk()
         {
-            _animationMapRoot = ReadJsonObject(AnimationMapPath);
+            _animationMapRoot = ReadJsonObject(AnimationMapPath, out _animMapLoadFailed);
             if (!_animationMapRoot.ContainsKey("default"))
                 _animationMapRoot["default"] = new Dictionary<string, object>();
-            if (!_animationMapRoot.ContainsKey("overrides"))
-                _animationMapRoot["overrides"] = new Dictionary<string, object>();
+
+            // Three names have existed for "per-set animation overrides": the seed
+            // generator writes "per_set" (FSMSeedGenerator.BuildAnimationMapRoot), and the
+            // Animations panel — the only real reader/writer — now agrees
+            // (GetAnimMapDict). This method used to inject a third name, "overrides", that
+            // nothing else in the project ever read. Fold whichever legacy key carries data
+            // into "per_set" once, then drop both legacy names so a save carries exactly one.
+            if (!_animationMapRoot.ContainsKey("per_set"))
+            {
+                var migrated = AsDict(_animationMapRoot.ContainsKey("overrides") ? _animationMapRoot["overrides"] : null);
+                if (migrated.Count == 0)
+                    migrated = AsDict(_animationMapRoot.ContainsKey("by_set") ? _animationMapRoot["by_set"] : null);
+                _animationMapRoot["per_set"] = migrated;
+            }
+            _animationMapRoot.Remove("overrides");
+            _animationMapRoot.Remove("by_set");
         }
 
-        public void SaveAnimationMap() => WriteJson(AnimationMapPath, _animationMapRoot ?? new Dictionary<string, object>());
+        public void SaveAnimationMap()
+        {
+            if (_animMapLoadFailed)
+            {
+                Debug.LogError($"[FSMEditor] Refusing to save — '{AnimationMapPath}' failed to " +
+                                "parse on load. Fix or delete the file on disk and reopen F12 before saving again.");
+                if (_statusTmp != null) _statusTmp.text = "SAVE BLOCKED — animation_map.json failed to parse. See console.";
+                return;
+            }
+            WriteJson(AnimationMapPath, _animationMapRoot ?? new Dictionary<string, object>());
+        }
 
         public void LoadLayoutsFromDisk()
         {
-            _layoutsRoot = ReadJsonObject(LayoutsPath);
+            _layoutsRoot = ReadJsonObject(LayoutsPath, out _layoutsLoadFailed);
             if (!_layoutsRoot.ContainsKey("by_set"))
                 _layoutsRoot["by_set"] = new Dictionary<string, object>();
             ApplyLayoutToSelectedSet();
         }
 
-        public void SaveLayouts() => WriteJson(LayoutsPath, _layoutsRoot ?? new Dictionary<string, object>());
+        public void SaveLayouts()
+        {
+            if (_layoutsLoadFailed)
+            {
+                Debug.LogError($"[FSMEditor] Refusing to save — '{LayoutsPath}' failed to " +
+                                "parse on load. Fix or delete the file on disk and reopen F12 before saving again.");
+                if (_statusTmp != null) _statusTmp.text = "SAVE BLOCKED — layouts.json failed to parse. See console.";
+                return;
+            }
+            WriteJson(LayoutsPath, _layoutsRoot ?? new Dictionary<string, object>());
+        }
 
         // ── Layout per-set helpers ──────────────────────────────────────────────
 
@@ -384,6 +559,12 @@ namespace Valkur.Gameplay.Enemies.FSM
                         to     = AsStr(trDict.ContainsKey("to") ? trDict["to"] : ""),
                         whenEvent = AsStr(trDict.ContainsKey("when") ? trDict["when"]
                                          : trDict.ContainsKey("event") ? trDict["event"] : ""),
+                        // The guard was write-only: the Transition tab pushed it into
+                        // raw["guard"] but nothing ever read it back, so reopening the
+                        // editor showed an empty field over a condition that was on disk
+                        // — and pressing Enter on that empty field overwrote the real one.
+                        condition = AsStr(trDict.ContainsKey("guard") ? trDict["guard"]
+                                         : trDict.ContainsKey("condition") ? trDict["condition"] : ""),
                         priority       = AsInt(trDict.ContainsKey("priority") ? trDict["priority"] : 0),
                         cooldownFrames = AsInt(trDict.ContainsKey("cooldown_frames") ? trDict["cooldown_frames"] : 0),
                     };
@@ -431,6 +612,10 @@ namespace Valkur.Gameplay.Enemies.FSM
                 tr.raw["to"]    = tr.to   ?? "";
                 tr.raw["when"]  = tr.whenEvent ?? "";
                 tr.raw["event"] = tr.whenEvent ?? "";
+                // Written from the typed model, not only from the commit handler, so the
+                // guard survives every save path — including saves triggered by editing a
+                // different field on the same transition.
+                tr.raw["guard"] = tr.condition ?? "";
                 tr.raw["priority"]        = (long)tr.priority;
                 tr.raw["cooldown_frames"] = (long)tr.cooldownFrames;
                 if (!tr.raw.ContainsKey("actions")) tr.raw["actions"] = new List<object>();

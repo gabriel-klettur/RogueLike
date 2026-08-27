@@ -1,0 +1,26 @@
+﻿{
+  "SET_IDS": [
+    "Monster_Default"
+  ],
+  "STATES_BY_SET": {
+    "Monster_Default": [
+      "IdleState",
+      "PatrolState",
+      "ChaseState",
+      "AlertChaseState",
+      "AttackState",
+      "FleeState",
+      "NPCCastState",
+      "UnconsciousState",
+      "DeathState",
+      "DamageState"
+    ]
+  },
+  "TRANSITIONS_BY_SET": {
+    "Monster_Default": [
+      "t_chase_flee",
+      "t_attack_flee",
+      "t_any_alert"
+    ]
+  }
+}

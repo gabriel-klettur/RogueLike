@@ -13,10 +13,8 @@ namespace Valkur.Gameplay.FSM
     public class AlertChaseState : IState
     {
         private float _timer;
-        private const float ALERT_DURATION = 5f;
-        private const float CHASE_SPEED_MULTIPLIER = 1.5f;
-        private const float REPATH_INTERVAL = 0.5f;
-        private const float WAYPOINT_REACH_DIST = 0.25f;
+        // Resolved through FSMTuning, which owns the keys and the defaults — these three
+        // were duplicated from ChaseState and would have drifted apart on the first edit.
 
         private List<Vector2> _waypoints = new List<Vector2>();
         private int _waypointIndex;
@@ -27,7 +25,7 @@ namespace Valkur.Gameplay.FSM
             _timer = 0f;
             _waypoints.Clear();
             _waypointIndex = 0;
-            _repathTimer = REPATH_INTERVAL; // force immediate repath on first frame
+            _repathTimer = float.MaxValue; // force immediate repath on first frame
         }
 
         public void Execute(StateMachine fsm, float dt)
@@ -40,7 +38,7 @@ namespace Valkur.Gameplay.FSM
             }
 
             _timer += dt;
-            if (_timer >= ALERT_DURATION)
+            if (_timer >= FSMTuning.AlertDuration(fsm))
             {
                 fsm.ChangeState(new PatrolState());
                 return;
@@ -72,12 +70,30 @@ namespace Valkur.Gameplay.FSM
             Vector2 playerPos = player.transform.position;
             Vector2 delta = playerPos - myPos;
 
-            float baseSpeed = fsm.GetContextFloat("chasing_speed", 3f);
-            float chaseSpeed = baseSpeed * CHASE_SPEED_MULTIPLIER;
+            // Reaching the target has to mean the same thing here as it does in ChaseState.
+            // Without this branch an alerted monster sprinted to the player and then stood
+            // inside melee range doing nothing for the whole alert window, because the only
+            // exits from this state were death, the timer and losing the target — the
+            // `distSq <= meleeRange * meleeRange -> AttackState` test simply was not here.
+            // That made the highest-priority authored edge in the shipped data
+            // (t_any_alert, priority 200) lead to a state that could not fight, so being
+            // shot from out of range turned a monster passive for five seconds instead of
+            // provoking it. Tested BEFORE the movement block for the same reason ChaseState
+            // tests it before its own: a monster already in reach must not take another step.
+            float meleeRange = fsm.GetContextFloat("melee_range", 1.5f);
+            if (delta.sqrMagnitude <= meleeRange * meleeRange)
+            {
+                fsm.ChangeState(new AttackState());
+                return;
+            }
+
+            // Same contract as ChaseState: chasing_speed is the speed, not a base to
+            // scale. See the note there on the removed hidden 1.5 multiplier.
+            float chaseSpeed = fsm.GetContextFloat("chasing_speed", 4.5f);
 
             // Repath periodically
             _repathTimer += dt;
-            if (_repathTimer >= REPATH_INTERVAL)
+            if (_repathTimer >= FSMTuning.RepathInterval(fsm))
             {
                 _repathTimer = 0f;
                 if (PathFinder.Instance != null)
@@ -93,7 +109,8 @@ namespace Valkur.Gameplay.FSM
             {
                 Vector2 target = _waypoints[_waypointIndex];
                 Vector2 toTarget = target - myPos;
-                if (toTarget.sqrMagnitude < WAYPOINT_REACH_DIST * WAYPOINT_REACH_DIST)
+                float reach = FSMTuning.WaypointReachDistance(fsm);
+                if (toTarget.sqrMagnitude < reach * reach)
                     _waypointIndex++;
                 moveDir = toTarget.sqrMagnitude > 0.001f ? toTarget.normalized : delta.normalized;
             }
@@ -103,7 +120,7 @@ namespace Valkur.Gameplay.FSM
             }
 
             if (c?.Rb != null)
-                c.Rb.velocity = moveDir * chaseSpeed;
+                c.SetVelocity(moveDir * chaseSpeed);
 
             if (c?.Animator != null && moveDir.sqrMagnitude > 0.0001f)
             {
@@ -115,7 +132,7 @@ namespace Valkur.Gameplay.FSM
         public void Exit(StateMachine fsm)
         {
             var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
-            if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
+            c?.StopMovement();
         }
     }
 }

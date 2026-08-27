@@ -53,6 +53,7 @@ namespace Valkur.Gameplay.Enemies.FSM
 
             // Tools panel
             public Image UndoBtnImg, RedoBtnImg, SaveBtnImg, ReloadBtnImg;
+            public Image BuiltInBtnImg;   public TextMeshProUGUI BuiltInBtnTmp;
 
             // Sets panel
             public TMP_InputField  SearchBox;
@@ -137,6 +138,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             Action<string> onDropdownToggle,
             Action         onUndo,    Action onRedo,
             Action         onSave,    Action onReload,
+            Action         onToggleBuiltIn,
             Action<string> onSearchChanged,
             Action         onTabState,      Action onTabTransition,
             Action         onTabActions,    Action onTabConditions,
@@ -157,7 +159,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             var refs = new UIRefs();
 
             BuildMenuBar(canvasT, ref refs, onDropdownToggle, onToggleTutorial, onPerfToggle);
-            BuildToolsPanel(canvasT, ref refs, onUndo, onRedo, onSave, onReload);
+            BuildToolsPanel(canvasT, ref refs, onUndo, onRedo, onSave, onReload, onToggleBuiltIn);
             BuildSetsPanel(canvasT, ref refs, onSearchChanged);
             BuildEntitiesPanel(canvasT, ref refs);
             BuildAnimationsPanel(canvasT, ref refs);

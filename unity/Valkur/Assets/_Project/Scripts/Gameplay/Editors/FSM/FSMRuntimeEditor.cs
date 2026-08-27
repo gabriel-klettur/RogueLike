@@ -24,6 +24,13 @@ namespace Valkur.Gameplay.Enemies.FSM
         [SerializeField, Tooltip("FSM sets JSON (StreamingAssets or TextAsset)")]
         private TextAsset _setsJsonAsset;
 
+        [SerializeField, Tooltip("Monster catalog asset — drives the Entities panel's " +
+            "by_archetype key picker. Same Editor-only self-resolution limitation as " +
+            "EntitiesRuntimeEditor/F3's spawner catalog (see FSMRuntimeEditor.Entities.cs " +
+            "ResolveMonsterCatalogIfNeeded): empty in a standalone build until this gets a " +
+            "real injection seam.")]
+        private Valkur.Data.MonsterCatalog _monsterCatalog;
+
         // ── State ──
 
         private bool _active;
@@ -162,6 +169,24 @@ namespace Valkur.Gameplay.Enemies.FSM
             }
             if (!_active) return;
             HandleGraphInput();
+            HandleUndoRedoShortcuts();
+        }
+
+        /// <summary>
+        /// Ctrl+Z / Ctrl+Y, matching what the tutorial overlay has always advertised
+        /// (<c>("Ctrl+Z", "Undo")</c> / <c>("Ctrl+Y", "Redo")</c> in <c>BuildUI</c>'s
+        /// <c>TutorialOverlay.Build</c> call) — previously true only of the two toolbar
+        /// buttons, which themselves recorded nothing. Mirrors the pattern in
+        /// <c>BuildingsRuntimeEditor.Modes.HandleKeyboardShortcuts</c>: routed through
+        /// <c>KeyboardInputManager</c>, never <c>Keyboard.current</c> directly, so the
+        /// legacy backend still supplies these reads when the new InputSystem package
+        /// drops OS events.
+        /// </summary>
+        private void HandleUndoRedoShortcuts()
+        {
+            bool ctrl = KeyboardInputManager.IsCtrlHeld();
+            if (ctrl && KeyboardInputManager.WasKeyPressedThisFrame(Key.Z, KeyCode.Z)) _undo.Undo();
+            if (ctrl && KeyboardInputManager.WasKeyPressedThisFrame(Key.Y, KeyCode.Y)) _undo.Redo();
         }
 
         public void Activate()

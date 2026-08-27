@@ -20,7 +20,7 @@ namespace Valkur.Gameplay.FSM
             var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
             if (c?.Rb != null)
             {
-                c.Rb.velocity = Vector2.zero;
+                c.StopMovement();
                 // Stop physics on the corpse so collisions don't shove it around
                 // during the despawn window. Static body keeps the transform fixed
                 // without paying for kinematic integration every frame.

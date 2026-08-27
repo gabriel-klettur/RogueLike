@@ -12,7 +12,7 @@ namespace Valkur.Gameplay.FSM
         public void Enter(StateMachine fsm)
         {
             var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
-            if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
+            c?.StopMovement();
 
             bool isPlayer = fsm.Owner.CompareTag("Player");
             if (!isPlayer)
