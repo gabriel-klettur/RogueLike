@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/cline.json",
+  "description": "Valkur workspace settings for Cline. Ported from .claude/settings.json. Cline does not consume this file programmatically — it is the versioned source of truth that .clinerules/00-cline-system.md references. Machine-local overrides (e.g. the Unity editor path) live in settings.local.json (gitignored).",
+  "env": {
+    "VALKUR_UNITY_PROJECT": "d:/Python/RogueLike/unity/Valkur",
+    "VALKUR_PYTHON_REF": "d:/Python/RogueLike/python",
+    "VALKUR_INSPIRATION": "d:/Python/RogueLike/unity/Udemy_Inspiration/DungeonGunnerCourse"
+  },
+  "notes": {
+    "approvals": "Cline auto-approve settings are configured in the Cline UI (global), not in this file.",
+    "sync": "Keep in sync with .claude/settings.json — that file is the Claude Code equivalent."
+  }
+}
