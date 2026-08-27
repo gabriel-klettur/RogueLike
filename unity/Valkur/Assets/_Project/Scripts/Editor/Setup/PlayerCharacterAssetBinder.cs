@@ -11,6 +11,16 @@ namespace Valkur.Editor
     /// Prepares player character sheets (SpriteMode=Multiple + 128x128 slicing)
     /// and binds resulting sprites into PlayerDefinition.assetConfig sheet lists.
     /// Baseline scope: players with idle + walk animations.
+    ///
+    /// This owns only <b>mague</b> and <b>valkyrie</b> now. dwarf, barbarian and elven moved
+    /// to <see cref="Valkur.Editor.Players.PlayerFramesImporter"/>, which binds one
+    /// tightly-cropped PNG per frame out of side-view art mirrored into two directions —
+    /// there is no <c>&lt;key&gt;_idle.png</c> strip left for them to slice, and their strips
+    /// were deleted rather than left to rot beside the art that replaced them.
+    ///
+    /// Running this is still safe for the migrated three: <see cref="BindClassSheets"/> finds
+    /// no sheets, warns, and returns false WITHOUT writing, so it cannot blank a config the
+    /// other importer owns. Do not "fix" that warning by re-adding strips.
     /// </summary>
     public static class PlayerCharacterAssetBinder
     {

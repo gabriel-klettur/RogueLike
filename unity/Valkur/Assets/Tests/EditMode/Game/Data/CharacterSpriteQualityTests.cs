@@ -35,17 +35,22 @@ namespace Valkur.Tests.EditMode.Game.Data
 
         // ── Test-case source ────────────────────────────────────────────────
 
+        private const string CharactersRoot = "Assets/_Project/Art/Characters";
+
+        /// <summary>
+        /// The multi-frame strips still produced by the LEGACY player pipeline
+        /// (<c>PlayerCharacterAssetBinder</c>): one 5120x128 PNG per state, sliced into
+        /// 8 directions x 5 frames of 128 px.
+        ///
+        /// dwarf, barbarian and elven used to be here too. They are now built by
+        /// <c>tools/atlas/wave3/build_player_frames.py</c> as one tightly-cropped PNG per
+        /// frame and bound by <c>PlayerFramesImporter</c>, so they have no strip to name -
+        /// the per-file invariants below (single sprite mode, 128 px cells) do not apply to
+        /// them, while the folder-wide ones (PPU, filter, no downsampling, atlas membership)
+        /// still do and are asserted over <see cref="CharactersRoot"/> instead.
+        /// </summary>
         private static readonly string[] CharacterPaths =
         {
-            "Assets/_Project/Art/Characters/barbarian/barbarian_idle.png",
-            "Assets/_Project/Art/Characters/barbarian/barbarian_casting.png",
-            "Assets/_Project/Art/Characters/barbarian/barbarian_walking.png",
-            "Assets/_Project/Art/Characters/dwarf/dwarf_idle.png",
-            "Assets/_Project/Art/Characters/dwarf/dwarf_casting.png",
-            "Assets/_Project/Art/Characters/dwarf/dwarf_walking.png",
-            "Assets/_Project/Art/Characters/elven/elven_idle.png",
-            "Assets/_Project/Art/Characters/elven/elven_casting.png",
-            "Assets/_Project/Art/Characters/elven/elven_walking.png",
             "Assets/_Project/Art/Characters/mague/mague_idle.png",
             "Assets/_Project/Art/Characters/mague/mague_casting.png",
             "Assets/_Project/Art/Characters/mague/mague_walking.png",
@@ -270,34 +275,48 @@ namespace Valkur.Tests.EditMode.Game.Data
         // ────────────────────────────────────────────────────────────────────
 
         [Test]
-        public void SpriteAtlas_AllPackedSprites_AreAtLeast128x128()
+        public void CharacterTextures_ImportAtTheirFullSourceResolution()
         {
-            var atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(AtlasPath);
-            Assert.IsNotNull(atlas, $"SpriteAtlas not found at '{AtlasPath}'.");
-
-            var sprites = new Sprite[atlas.spriteCount];
-            atlas.GetSprites(sprites);
-
-            Assert.That(sprites.Length, Is.GreaterThan(0),
-                $"SpriteAtlas '{AtlasPath}' contains no sprites. " +
-                "The atlas may not be packed yet — pack it in the Sprite Atlas editor.");
-
+            // What this actually guards is DOWNSAMPLING: the original bug was
+            // maxTextureSize capping a 5120x128 walking strip to 2048, which silently
+            // dropped 24 of its 40 frames and shrank the rest.
+            //
+            // It used to be asserted as "every packed sprite is at least 128x128", which
+            // worked only while every character sheet was a grid of 128x128 cells. The
+            // wave3 characters (dwarf, barbarian, elven) are built by
+            // tools/atlas/wave3/build_player_frames.py as one tightly-cropped PNG per
+            // frame, so their sizes are whatever the pose needs - 43x115 for the elf's
+            // idle, 180x117 for the dwarf's death. Under the old assertion 330 correctly
+            // imported sprites failed for being narrow, which is not what the test is
+            // about; a 43px-wide idle is not a downsampled 128px one.
+            //
+            // So compare the imported texture against the source file directly. That is
+            // the real invariant, it holds for both sheet layouts, and it fails loudly on
+            // exactly the capping bug that motivated the original test.
             var failures = new List<string>();
-            foreach (var sprite in sprites)
+
+            foreach (string guid in AssetDatabase.FindAssets("t:Texture2D", new[] { CharactersRoot }))
             {
-                if (sprite == null) continue;
-                if (sprite.rect.width < 128f || sprite.rect.height < 128f)
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+                var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                if (importer == null || texture == null) continue;
+
+                importer.GetSourceTextureWidthAndHeight(out int srcW, out int srcH);
+                if (srcW <= 0 || srcH <= 0) continue;
+
+                if (texture.width != srcW || texture.height != srcH)
                 {
                     failures.Add(
-                        $"  '{sprite.name}': {sprite.rect.width}x{sprite.rect.height} px " +
-                        "(expected >= 128x128)");
+                        $"  '{path}': imported {texture.width}x{texture.height} from a " +
+                        $"{srcW}x{srcH} source (maxTextureSize is {importer.maxTextureSize})");
                 }
             }
 
             Assert.That(failures.Count, Is.EqualTo(0),
-                $"SpriteAtlas '{AtlasPath}': {failures.Count} sprite(s) have dimensions " +
-                $"below 128x128, indicating atlas-level downsampling:\n" +
-                string.Join("\n", failures));
+                $"{failures.Count} character texture(s) were downsampled on import. Raise " +
+                "maxTextureSize for them (ValkurAssetPostprocessor forces 8192 under " +
+                "Art/Characters/ for this reason):\n" + string.Join("\n", failures));
         }
 
         // ────────────────────────────────────────────────────────────────────

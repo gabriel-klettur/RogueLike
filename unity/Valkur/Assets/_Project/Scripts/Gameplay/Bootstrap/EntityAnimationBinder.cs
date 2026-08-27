@@ -36,37 +36,48 @@ namespace Valkur.Gameplay
             if (animator == null)
                 animator = go.AddComponent<DirectionalAnimator>();
 
-            var idleSet = BuildSet(assetConfig.idle, assetConfig.idleSheets, out bool idleUsesFourDirectionalLayout);
+            EntitySheetDirectionLayout layout = assetConfig.directionLayout;
+
+            var idleSet = BuildSet(assetConfig.idle, assetConfig.idleSheets, layout, out bool idleUsesFourDirectionalLayout);
             if (!HasFrames(idleSet))
                 return false;
 
-            var walkSet = BuildSet(assetConfig.walk, assetConfig.walkSheets, out bool walkUsesFourDirectionalLayout);
+            var walkSet = BuildSet(assetConfig.walk, assetConfig.walkSheets, layout, out bool walkUsesFourDirectionalLayout);
             if (!HasFrames(walkSet))
                 walkSet = idleSet;
 
-            var chaseSet = BuildSet(assetConfig.chase, assetConfig.chaseSheets, out _);
+            var chaseSet = BuildSet(assetConfig.chase, assetConfig.chaseSheets, layout, out _);
             if (!HasFrames(chaseSet))
                 chaseSet = walkSet;
 
-            var castSet = BuildSet(assetConfig.cast, assetConfig.castSheets, out _);
+            var castSet = BuildSet(assetConfig.cast, assetConfig.castSheets, layout, out _);
             if (!HasFrames(castSet))
                 castSet = walkSet;
 
-            var attackSet = BuildSet(assetConfig.attack, assetConfig.attackSheets, out _);
+            var attackSet = BuildSet(assetConfig.attack, assetConfig.attackSheets, layout, out _);
             if (!HasFrames(attackSet))
                 attackSet = castSet;
 
-            var damageSet = BuildSet(assetConfig.damage, assetConfig.damageSheets, out _);
+            var damageSet = BuildSet(assetConfig.damage, assetConfig.damageSheets, layout, out _);
             if (!HasFrames(damageSet))
                 damageSet = idleSet;
 
-            var deathSet = BuildSet(assetConfig.death, assetConfig.deathSheets, out _);
+            var deathSet = BuildSet(assetConfig.death, assetConfig.deathSheets, layout, out _);
             if (!HasFrames(deathSet))
                 deathSet = idleSet;
 
+            // Deliberately NOT falling back to idle here: DirectionalAnimator.GetSpriteSet
+            // already does that for Recover, and doing it twice would make an entity that
+            // genuinely has no recover art indistinguishable from one whose art failed to
+            // resolve when reading the animator in the inspector.
+            var recoverSet = BuildSet(assetConfig.recover, assetConfig.recoverSheets, layout, out _);
+
             bool preferCardinalDirectionSampling = idleUsesFourDirectionalLayout || walkUsesFourDirectionalLayout;
             animator.SetSpriteSets(idleSet, walkSet, chaseSet, castSet, attackSet, damageSet, deathSet, preferCardinalDirectionSampling);
-            animator.SetAttackVariants(BuildAttackVariants(assetConfig));
+            animator.SetRecoverSprites(recoverSet);
+            animator.SetAttackVariants(BuildAttackVariants(assetConfig, layout));
+            animator.SetVariants(DirectionalAnimator.AnimState.Cast, BuildCastVariants(assetConfig, layout));
+            animator.SetAnimationSpeedMultiplier(assetConfig.scaleConfig.animationSpeedMultiplier);
             var initialFrame = animator.PeekFirstFrame(idleSet);
             if (initialFrame != null)
                 renderer.sprite = initialFrame;
@@ -103,7 +114,11 @@ namespace Valkur.Gameplay
             renderer.SetPropertyBlock(mpb);
         }
 
-        private static DirectionalAnimator.DirectionalSpriteSet BuildSet(DirectionalSprites directional, List<Sprite> sheetFrames, out bool usesFourDirectionalLayout)
+        private static DirectionalAnimator.DirectionalSpriteSet BuildSet(
+            DirectionalSprites directional,
+            List<Sprite> sheetFrames,
+            EntitySheetDirectionLayout layout,
+            out bool usesFourDirectionalLayout)
         {
             usesFourDirectionalLayout = false;
 
@@ -112,18 +127,38 @@ namespace Valkur.Gameplay
 
             if (sheetFrames != null && sheetFrames.Count > 0)
             {
-                // Auto-detect layout: 8-direction strips have 40 frames (8 dirs × 5 frames),
-                // 4-direction strips have 16–20 frames (4 dirs × 4–5 frames).
-                // If dividing by 8 yields fewer than 3 frames per direction but dividing
-                // by 4 yields 3+, prefer the 4-directional mapping to avoid wrong directions.
-                bool preferFourDir = sheetFrames.Count % 4 == 0
-                                     && sheetFrames.Count / 8 < 3
-                                     && sheetFrames.Count / 4 >= 3;
+                bool preferFourDir = ResolvePreferFourDirectional(sheetFrames.Count, layout);
                 usesFourDirectionalLayout = preferFourDir;
                 return DirectionalAnimator.CreateSetFromLinearFrames(sheetFrames, preferFourDir);
             }
 
             return default;
+        }
+
+        /// <summary>
+        /// Explicit layouts (<see cref="EntitySheetDirectionLayout.EightDirectional"/> /
+        /// <see cref="EntitySheetDirectionLayout.FourDirectional_S_W_E_N"/>) win outright.
+        /// <see cref="EntitySheetDirectionLayout.Auto"/> — the value every asset authored
+        /// before this field existed resolves to — falls back to the historical frame-count
+        /// heuristic, unchanged, so no shipped asset's rendering moves.
+        /// </summary>
+        private static bool ResolvePreferFourDirectional(int frameCount, EntitySheetDirectionLayout layout)
+        {
+            switch (layout)
+            {
+                case EntitySheetDirectionLayout.FourDirectional_S_W_E_N:
+                    return true;
+                case EntitySheetDirectionLayout.EightDirectional:
+                    return false;
+                default:
+                    // Auto-detect layout: 8-direction strips have 40 frames (8 dirs × 5 frames),
+                    // 4-direction strips have 16–20 frames (4 dirs × 4–5 frames).
+                    // If dividing by 8 yields fewer than 3 frames per direction but dividing
+                    // by 4 yields 3+, prefer the 4-directional mapping to avoid wrong directions.
+                    return frameCount % 4 == 0
+                        && frameCount / 8 < 3
+                        && frameCount / 4 >= 3;
+            }
         }
 
         /// <summary>
@@ -136,7 +171,7 @@ namespace Valkur.Gameplay
         /// what every entity but the knight does today.
         /// </summary>
         private static List<DirectionalAnimator.DirectionalSpriteSet> BuildAttackVariants(
-            EntityAssetConfig assetConfig)
+            EntityAssetConfig assetConfig, EntitySheetDirectionLayout layout)
         {
             if (assetConfig.attackVariants == null || assetConfig.attackVariants.Count == 0)
                 return null;
@@ -147,7 +182,32 @@ namespace Valkur.Gameplay
                 AttackVariant variant = assetConfig.attackVariants[i];
                 if (variant == null) continue;
 
-                var set = BuildSet(variant.directional, variant.sheets, out _);
+                var set = BuildSet(variant.directional, variant.sheets, layout, out _);
+                if (HasFrames(set)) sets.Add(set);
+            }
+
+            return sets.Count > 0 ? sets : null;
+        }
+
+        /// <summary>
+        /// Same, for the casting animations. Kept a separate method rather than a generic
+        /// over the two variant types because <see cref="AttackVariant"/> and
+        /// <see cref="CastVariant"/> are deliberately unrelated classes — see CastVariant's
+        /// doc for why sharing a base would change how the shipped attack variants serialize.
+        /// </summary>
+        private static List<DirectionalAnimator.DirectionalSpriteSet> BuildCastVariants(
+            EntityAssetConfig assetConfig, EntitySheetDirectionLayout layout)
+        {
+            if (assetConfig.castVariants == null || assetConfig.castVariants.Count == 0)
+                return null;
+
+            var sets = new List<DirectionalAnimator.DirectionalSpriteSet>(assetConfig.castVariants.Count);
+            for (int i = 0; i < assetConfig.castVariants.Count; i++)
+            {
+                CastVariant variant = assetConfig.castVariants[i];
+                if (variant == null) continue;
+
+                var set = BuildSet(variant.directional, variant.sheets, layout, out _);
                 if (HasFrames(set)) sets.Add(set);
             }
 
@@ -165,6 +225,15 @@ namespace Valkur.Gameplay
         /// Python pre-scales sprites: rendered_px = raw_px * scale_idle.
         /// Unity equivalent: localScale = scaleIdle * sprite.pixelsPerUnit / PYTHON_TILE_PX.
         /// Skipped when scaleIdle is zero (e.g. players use default scale).
+        ///
+        /// PYTHON_TILE_PX is fixed at 32 (Python's tile size) regardless of the importing
+        /// sprite's own PPU — NPC art imports at PPU 64, so this formula halves scaleIdle's
+        /// effective size relative to a naive "PPU / PPU" read, which is WHY every barbol
+        /// variant is authored at ~0.15 rather than ~0.3. That is not a bug to silently
+        /// "fix": every shipped scaleIdle value was tuned against exactly this formula, so
+        /// changing PYTHON_TILE_PX (or reading renderer.sprite.pixelsPerUnit for anything
+        /// other than the multiply above) would resize every monster and vendor in the
+        /// catalog at once. See CLAUDE.md dimension-10 audit notes before touching this.
         /// </summary>
         private static void ApplyEntityScale(GameObject go, AnimationScaleConfig scaleConfig, SpriteRenderer renderer)
         {

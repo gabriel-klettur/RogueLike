@@ -39,7 +39,7 @@ namespace Valkur.Gameplay
 
         private void AdvanceFrame()
         {
-            var spriteSet = GetSpriteSet(_currentState, _activeAttackVariant);
+            var spriteSet = GetSpriteSet(_currentState, _activeVariant);
             Sprite[] frames = spriteSet.GetFrames(_currentDirection);
 
             if (frames == null || frames.Length == 0)
@@ -156,13 +156,13 @@ namespace Valkur.Gameplay
 
         private DirectionalSpriteSet GetSpriteSet(AnimState state, int attackVariant = -1)
         {
-            // A selected variant REPLACES the single attack set. Bounds are re-checked
+            // A selected variant REPLACES that state's single set. Bounds are re-checked
             // here rather than trusted from the caller: the variant array is rebuilt on
             // every ApplyVisuals, and an index cached across a shorter rebuild would
             // throw out of the render path, where it is hardest to trace.
-            if (state == AnimState.Attack && _attackVariants != null &&
-                attackVariant >= 0 && attackVariant < _attackVariants.Length)
-                return _attackVariants[attackVariant];
+            DirectionalSpriteSet[] variants = VariantsFor(state);
+            if (variants != null && attackVariant >= 0 && attackVariant < variants.Length)
+                return variants[attackVariant];
 
             return state switch
             {
@@ -173,8 +173,25 @@ namespace Valkur.Gameplay
                 AnimState.Attack => attackSprites,
                 AnimState.Damage => damageSprites,
                 AnimState.Death => deathSprites,
+                // An entity with no recover art falls back to idle rather than to an empty
+                // set, so a revive that plays on a character without the animation still
+                // shows the character standing instead of nothing at all.
+                AnimState.Recover => HasFrames(recoverSprites) ? recoverSprites : idleSprites,
                 _ => idleSprites
             };
+        }
+
+        /// <summary>True when any direction of the set carries at least one frame.</summary>
+        private static bool HasFrames(DirectionalSpriteSet set)
+        {
+            return (set.south != null && set.south.Length > 0) ||
+                   (set.southEast != null && set.southEast.Length > 0) ||
+                   (set.east != null && set.east.Length > 0) ||
+                   (set.northEast != null && set.northEast.Length > 0) ||
+                   (set.north != null && set.north.Length > 0) ||
+                   (set.northWest != null && set.northWest.Length > 0) ||
+                   (set.west != null && set.west.Length > 0) ||
+                   (set.southWest != null && set.southWest.Length > 0);
         }
 
         private static Sprite[] ToSingleFrameArray(Sprite sprite)

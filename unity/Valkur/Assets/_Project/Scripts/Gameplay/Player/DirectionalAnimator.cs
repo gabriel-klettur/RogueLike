@@ -38,7 +38,24 @@ namespace Valkur.Gameplay
             Cast,
             Attack,
             Damage,
-            Death
+            Death,
+
+            /// <summary>
+            /// Getting back up. Entered ONLY by <c>DeathSequenceController.ReviveRoutine</c>,
+            /// which owns both the entry and the exit.
+            ///
+            /// This is the eighth value, and CLAUDE.md warns at length that adding one is how
+            /// you get a state the player enters and never leaves — <c>PlayerController
+            /// .Movement</c> overrides locomotion on an Idle/Walk/Chase whitelist and reverts
+            /// on a Cast/Attack one, so a value missing from the second list is a soft lock.
+            /// Recover is in that revert list, and unlike Cast/Attack it also carries a hard
+            /// deadline in <c>TickCastAnimRevert</c>, because the system that entered it is a
+            /// coroutine that a scene change can kill mid-flight.
+            ///
+            /// It exists rather than being folded into Damage because the two read as opposite
+            /// things: Damage is a flinch that interrupts, Recover is a rise that resolves.
+            /// </summary>
+            Recover
         }
 
         [Serializable]
@@ -78,6 +95,9 @@ namespace Valkur.Gameplay
         [SerializeField] private DirectionalSpriteSet attackSprites;
         [SerializeField] private DirectionalSpriteSet damageSprites;
         [SerializeField] private DirectionalSpriteSet deathSprites;
+        // Installed by SetRecoverSprites rather than by the seven-argument SetSpriteSets,
+        // so every existing caller of that method keeps compiling untouched.
+        [SerializeField] private DirectionalSpriteSet recoverSprites;
 
         [Header("Timing")]
         [SerializeField] private float frameInterval = 0.15f;
@@ -95,10 +115,25 @@ namespace Valkur.Gameplay
         private Direction _prevDirection;
         private bool _preferCardinalDirectionSampling;
 
-        // Alternative attack animations. Deliberately NOT seven more serialized fields:
-        // see EntityAssetConfig.AttackVariant for why the vocabulary lives in data.
-        private DirectionalSpriteSet[] _attackVariants;
-        private int _activeAttackVariant = -1;
+        // Per-entity animation speed. Kept OFF the serialized frameInterval field so its
+        // authored 0.15s value (identical across the whole bestiary today) stays the
+        // single source of truth; this is a runtime multiplier applied on top of it. See
+        // EntityAssetConfig.AnimationScaleConfig.animationSpeedMultiplier for the authoring
+        // side and SetAnimationSpeedMultiplier below for the <=0 "unset" sentinel.
+        private const float MinAnimationSpeedMultiplier = 0.01f;
+        private float _animationSpeedMultiplier = 1f;
+
+        // Alternative animations, per state. Deliberately NOT a serialized field per state
+        // per variant: see EntityAssetConfig.AttackVariant for why the vocabulary lives in
+        // data rather than in the enum.
+        //
+        // This started as an Attack-only array. It is indexed by AnimState now because the
+        // elven character ships three spellcasting animations, and a second parallel
+        // cast-only array would have paid the same positional tax a second time — the tax
+        // AttackVariant's own doc-comment exists to complain about. A state with no entry
+        // resolves to its single set exactly as before.
+        private DirectionalSpriteSet[][] _variantsByState;
+        private int _activeVariant = -1;
 
         public AnimState CurrentState => _currentState;
         public Direction CurrentDirection => _currentDirection;
@@ -113,23 +148,48 @@ namespace Valkur.Gameplay
         public DirectionalSpriteSet AttackSprites => attackSprites;
         public DirectionalSpriteSet DamageSprites => damageSprites;
         public DirectionalSpriteSet DeathSprites  => deathSprites;
+        public DirectionalSpriteSet RecoverSprites => recoverSprites;
         public bool PrefersCardinalDirectionSampling => _preferCardinalDirectionSampling;
 
-        /// <summary>How many alternative attack animations this entity carries. 0 = one attack.</summary>
-        public int AttackVariantCount => _attackVariants?.Length ?? 0;
+        /// <summary>How many alternative animations this entity carries for one state. 0 = one.</summary>
+        public int VariantCount(AnimState state)
+        {
+            DirectionalSpriteSet[] variants = VariantsFor(state);
+            return variants?.Length ?? 0;
+        }
 
-        /// <summary>Variant currently selected under <see cref="AnimState.Attack"/>; -1 = the base set.</summary>
-        public int ActiveAttackVariant => _activeAttackVariant;
+        /// <summary>How many alternative attack animations this entity carries. 0 = one attack.</summary>
+        public int AttackVariantCount => VariantCount(AnimState.Attack);
+
+        /// <summary>Variant currently selected for the active state; -1 = the base set.</summary>
+        public int ActiveVariant => _activeVariant;
+
+        /// <summary>Kept for the monster path, which only ever varies its attack.</summary>
+        public int ActiveAttackVariant => _activeVariant;
 
         /// <summary>
         /// One variant's sprite set, or the empty set when the index is out of range.
         /// Read-only, in the same spirit as <see cref="AttackSprites"/>: it lets a caller
         /// name the frames a variant should be showing without reaching into the array.
         /// </summary>
-        public DirectionalSpriteSet AttackVariantSet(int index)
-            => _attackVariants != null && index >= 0 && index < _attackVariants.Length
-                ? _attackVariants[index]
+        public DirectionalSpriteSet VariantSet(AnimState state, int index)
+        {
+            DirectionalSpriteSet[] variants = VariantsFor(state);
+            return variants != null && index >= 0 && index < variants.Length
+                ? variants[index]
                 : default;
+        }
+
+        public DirectionalSpriteSet AttackVariantSet(int index)
+            => VariantSet(AnimState.Attack, index);
+
+        private DirectionalSpriteSet[] VariantsFor(AnimState state)
+        {
+            int i = (int)state;
+            return _variantsByState != null && i >= 0 && i < _variantsByState.Length
+                ? _variantsByState[i]
+                : null;
+        }
 
         /// <summary>
         /// Runtime assignment API for data-driven character definitions.
@@ -165,33 +225,91 @@ namespace Valkur.Gameplay
         /// that never calls this one resolves Attack to its single attack set as before.
         /// </summary>
         public void SetAttackVariants(IReadOnlyList<DirectionalSpriteSet> variants)
+            => SetVariants(AnimState.Attack, variants);
+
+        /// <summary>
+        /// Installs the alternative animations for one state. Additive to
+        /// <see cref="SetSpriteSets"/> on purpose — every existing caller of that
+        /// seven-argument method keeps compiling and behaving identically, and a state that
+        /// never gets variants resolves to its single set as before.
+        /// </summary>
+        public void SetVariants(AnimState state, IReadOnlyList<DirectionalSpriteSet> variants)
         {
+            int stateCount = Enum.GetValues(typeof(AnimState)).Length;
+            if (_variantsByState == null || _variantsByState.Length != stateCount)
+                _variantsByState = new DirectionalSpriteSet[stateCount][];
+
+            int index = (int)state;
+            if (index < 0 || index >= stateCount)
+                return;
+
             if (variants == null || variants.Count == 0)
             {
-                _attackVariants = null;
-                _activeAttackVariant = -1;
-                return;
+                _variantsByState[index] = null;
+            }
+            else
+            {
+                var copy = new DirectionalSpriteSet[variants.Count];
+                for (int i = 0; i < variants.Count; i++)
+                    copy[i] = variants[i];
+                _variantsByState[index] = copy;
             }
 
-            _attackVariants = new DirectionalSpriteSet[variants.Count];
-            for (int i = 0; i < variants.Count; i++)
-                _attackVariants[i] = variants[i];
-            _activeAttackVariant = -1;
+            _activeVariant = -1;
         }
 
         /// <summary>
-        /// How long one full pass of a state's animation takes, in seconds.
+        /// Installs the "getting back up" set. Separate from <see cref="SetSpriteSets"/> for
+        /// the same reason <see cref="SetAttackVariants"/> is: widening that method to eight
+        /// arguments would break every existing caller for a state most entities do not have.
+        /// </summary>
+        public void SetRecoverSprites(DirectionalSpriteSet recover)
+        {
+            recoverSprites = recover;
+        }
+
+        /// <summary>
+        /// Per-entity playback speed set from <c>EntityAssetConfig.AnimationScaleConfig
+        /// .animationSpeedMultiplier</c> via <c>EntityAnimationBinder.ApplyVisuals</c>.
+        ///
+        /// A value &lt;= 0 collapses to 1 (identity, i.e. today's flat 0.15s/frame for
+        /// every monster). That is deliberate, not just a clamp: a struct field with no
+        /// matching key in an asset serialized before this field existed deserializes to
+        /// its CLR default, 0 — not the C# line's absent initializer — so every shipped
+        /// monster keeps its exact current timing until an author sets this explicitly.
+        /// </summary>
+        public void SetAnimationSpeedMultiplier(float multiplier)
+        {
+            _animationSpeedMultiplier = multiplier <= 0f
+                ? 1f
+                : Mathf.Max(MinAnimationSpeedMultiplier, multiplier);
+        }
+
+        /// <summary>Read-only, for tests and inspection — the value <see cref="Update"/> and <see cref="GetStateLength"/> actually run at.</summary>
+        public float AnimationSpeedMultiplier => _animationSpeedMultiplier;
+
+        /// <summary>
+        /// The authored <see cref="frameInterval"/> divided by <see cref="_animationSpeedMultiplier"/>.
+        /// Every reader of the per-frame timing (the Update loop and GetStateLength) goes
+        /// through this single accessor so the two can never disagree about how fast a
+        /// state is actually playing.
+        /// </summary>
+        private float EffectiveFrameInterval => frameInterval / _animationSpeedMultiplier;
+
+        /// <summary>
+        /// How long one full pass of a state's animation takes, in seconds, AT THIS
+        /// ENTITY'S current animation speed.
         ///
         /// Exists because <c>AttackState</c> hardcodes its swing at windup + 0.3 s while
-        /// every frame runs for <see cref="frameInterval"/> — an eight-frame swing needs
-        /// 1.2 s and was being cut at frame four, mid-arc. Returns 0 when the state has
-        /// no frames, so a caller can take the larger of the two and never SHORTEN a
-        /// swing that the rest of the bestiary depends on.
+        /// every frame runs for <see cref="EffectiveFrameInterval"/> — an eight-frame swing
+        /// needs 1.2 s at the default speed and was being cut at frame four, mid-arc.
+        /// Returns 0 when the state has no frames, so a caller can take the larger of the
+        /// two and never SHORTEN a swing that the rest of the bestiary depends on.
         /// </summary>
         public float GetStateLength(AnimState state, int attackVariant = -1)
         {
             Sprite[] frames = ResolveFrames(state, _currentDirection, attackVariant);
-            return frames == null || frames.Length == 0 ? 0f : frames.Length * frameInterval;
+            return frames == null || frames.Length == 0 ? 0f : frames.Length * EffectiveFrameInterval;
         }
 
         /// <summary>
@@ -222,8 +340,9 @@ namespace Valkur.Gameplay
         private void Update()
         {
             _frameTimer += Time.deltaTime;
-            if (_frameTimer < frameInterval) return;
-            _frameTimer -= frameInterval;
+            float interval = EffectiveFrameInterval;
+            if (_frameTimer < interval) return;
+            _frameTimer -= interval;
 
             AdvanceFrame();
         }
@@ -236,7 +355,7 @@ namespace Valkur.Gameplay
         /// Maps to Python's set_mapped_anim / Animator.current_state assignment.
         /// </summary>
         public void SetState(AnimState state, Direction direction)
-            => SetState(state, direction, _activeAttackVariant);
+            => SetState(state, direction, _activeVariant);
 
         /// <summary>
         /// Same, choosing which attack animation plays. <paramref name="attackVariant"/> is
@@ -251,9 +370,12 @@ namespace Valkur.Gameplay
         {
             bool stateChanged = state != _currentState;
             bool directionChanged = direction != _currentDirection;
-            bool variantChanged = state == AnimState.Attack && attackVariant != _activeAttackVariant;
+            // Any state that carries variants, not just Attack: the elven character casts
+            // three different ways, and without this a second cast in the same direction
+            // with a different animation returns early and keeps playing the first one.
+            bool variantChanged = VariantsFor(state) != null && attackVariant != _activeVariant;
 
-            _activeAttackVariant = attackVariant;
+            _activeVariant = attackVariant;
 
             if (!stateChanged && !directionChanged && !variantChanged)
                 return;
@@ -303,7 +425,7 @@ namespace Valkur.Gameplay
             // which during an attack means the player is strafing. Resolving the BASE attack
             // set here flashes one frame of the sword swing into the middle of a kick every
             // time the facing sector changes, and the next AdvanceFrame tick hides it again.
-            var spriteSet = GetSpriteSet(_currentState, _activeAttackVariant);
+            var spriteSet = GetSpriteSet(_currentState, _activeVariant);
             Sprite[] frames = spriteSet.GetFrames(_currentDirection);
 
             if (frames == null || frames.Length == 0)

@@ -104,63 +104,80 @@ namespace Valkur.Tests.EditMode.Game.Data
         [Test]
         public void EveryPlayerDefinition_HasEnoughWalkFrames_For8DirSplit()
         {
-            // Walking requires the full 8×5 = 40 frames for Python parity.
-            // Allow ≥40 (extra trailing frames are harmless — binder ignores them).
+            // 8 directions x 3 frames is the floor below which a walk reads as a
+            // stutter. This used to demand 40 (8 x 5) "for Python parity", which was
+            // really a restatement of the single sheet layout that shipped at the
+            // time; the wave3 characters walk on 8 frames per direction, and the
+            // legacy five still clear this bar with their 40.
             foreach (var def in AllPlayerDefs())
             {
                 int valid = ValidSpriteCount(def.assetConfig.walkSheets);
-                Assert.GreaterOrEqual(valid, 40,
+                Assert.GreaterOrEqual(valid, 24,
                     $"'{def.name}' walkSheets has only {valid} valid frames " +
-                    "(need ≥40 for 8 directions × 5 frames matching Python parity).");
+                    "(need at least 8 directions x 3 frames).");
             }
         }
 
-        // ---- Binder produces 5 frames per direction (the actual bug) -----
+        // ---- Binder splits the frame list evenly across all eight directions ----
 
         [Test]
-        public void EveryPlayerDefinition_WalkBinder_Produces5FramesPerDirection()
+        public void EveryPlayerDefinition_WalkBinder_SplitsEvenlyAcrossAllEightDirections()
         {
-            // The original bug: 17 valid frames / 8 = 2 frames per direction.
-            // After fix: 40 valid frames / 8 = 5 frames per direction.
             foreach (var def in AllPlayerDefs())
-            {
-                var clean = StripNulls(def.assetConfig.walkSheets);
-                Assert.GreaterOrEqual(clean.Count, 40,
-                    $"'{def.name}' walkSheets must have ≥40 non-null entries.");
-
-                var set = DirectionalAnimator.CreateSetFromLinearFrames(clean);
-
-                AssertDirectionHasFrames(def.name, "south",     set.south,     5);
-                AssertDirectionHasFrames(def.name, "southEast", set.southEast, 5);
-                AssertDirectionHasFrames(def.name, "east",      set.east,      5);
-                AssertDirectionHasFrames(def.name, "northEast", set.northEast, 5);
-                AssertDirectionHasFrames(def.name, "north",     set.north,     5);
-                AssertDirectionHasFrames(def.name, "northWest", set.northWest, 5);
-                AssertDirectionHasFrames(def.name, "west",      set.west,      5);
-                AssertDirectionHasFrames(def.name, "southWest", set.southWest, 5);
-            }
+                AssertEvenEightWaySplit(def.name, "walkSheets", def.assetConfig.walkSheets);
         }
 
         [Test]
-        public void EveryPlayerDefinition_IdleBinder_Produces5FramesPerDirection()
+        public void EveryPlayerDefinition_IdleBinder_SplitsEvenlyAcrossAllEightDirections()
         {
             foreach (var def in AllPlayerDefs())
-            {
-                var clean = StripNulls(def.assetConfig.idleSheets);
-                Assert.GreaterOrEqual(clean.Count, 40,
-                    $"'{def.name}' idleSheets must have ≥40 non-null entries.");
+                AssertEvenEightWaySplit(def.name, "idleSheets", def.assetConfig.idleSheets);
+        }
 
-                var set = DirectionalAnimator.CreateSetFromLinearFrames(clean);
+        /// <summary>
+        /// The bug this guards is a SHORT, UNEVEN split, not a specific frame count.
+        ///
+        /// Originally: 40 entries of which 23 were stale nulls, leaving 17 valid, which
+        /// BuildEightDirectionalSet floored to 2 frames per direction - the walk visibly
+        /// stuttered. The assertion was written as "== 5" because every player then shipped
+        /// one 5120x128 sheet holding 8 directions x 5 frames, so 5 was the only right answer.
+        ///
+        /// It is no longer. dwarf, barbarian and elven are built by
+        /// <c>tools/atlas/wave3/build_player_frames.py</c> out of side-view art drawn in ONE
+        /// direction and mirrored, and their states carry however many frames the source
+        /// animation actually has - 4 for a hurt, 6 for an idle, 7 for a death, 8 for a walk.
+        /// Hardcoding 5 would force every future animation to be padded or truncated to match
+        /// an artefact of whichever sheets happened to ship first.
+        ///
+        /// So assert the invariant rather than the number: every direction gets the same count,
+        /// that count is <c>valid / 8</c>, and it is at least 3 - below which the animation reads
+        /// as a stutter, the same floor the sibling frame-count tests use. The original
+        /// 17-valid-frame bug still fails this, at 17 / 8 = 2.
+        /// </summary>
+        private static void AssertEvenEightWaySplit(string playerName, string sheetField,
+                                                    IList<Sprite> sheets)
+        {
+            var clean = StripNulls(sheets);
+            Assert.GreaterOrEqual(clean.Count, 24,
+                $"'{playerName}' {sheetField} has only {clean.Count} non-null entries " +
+                "(need at least 8 directions x 3 frames).");
+            // Integer division on purpose, and NOT also asserted to divide evenly. The legacy
+            // strips are 5248 px = 41 frames of 128, so mague, valkyrie, dwarf-as-was and
+            // friends carry a 41st frame that BuildEightDirectionalSet floors away. That
+            // trailing frame has never rendered and nothing depends on it; failing the shipped
+            // data over it would be this guard inventing a rule rather than protecting the
+            // stutter bug it exists for.
+            int expected = clean.Count / 8;
+            var set = DirectionalAnimator.CreateSetFromLinearFrames(clean);
 
-                AssertDirectionHasFrames(def.name, "south",     set.south,     5);
-                AssertDirectionHasFrames(def.name, "east",      set.east,      5);
-                AssertDirectionHasFrames(def.name, "north",     set.north,     5);
-                AssertDirectionHasFrames(def.name, "west",      set.west,      5);
-                AssertDirectionHasFrames(def.name, "northEast", set.northEast, 5);
-                AssertDirectionHasFrames(def.name, "northWest", set.northWest, 5);
-                AssertDirectionHasFrames(def.name, "southEast", set.southEast, 5);
-                AssertDirectionHasFrames(def.name, "southWest", set.southWest, 5);
-            }
+            AssertDirectionHasFrames(playerName, "south",     set.south,     expected);
+            AssertDirectionHasFrames(playerName, "southEast", set.southEast, expected);
+            AssertDirectionHasFrames(playerName, "east",      set.east,      expected);
+            AssertDirectionHasFrames(playerName, "northEast", set.northEast, expected);
+            AssertDirectionHasFrames(playerName, "north",     set.north,     expected);
+            AssertDirectionHasFrames(playerName, "northWest", set.northWest, expected);
+            AssertDirectionHasFrames(playerName, "west",      set.west,      expected);
+            AssertDirectionHasFrames(playerName, "southWest", set.southWest, expected);
         }
 
         // ---- Helpers -------------------------------------------------------
