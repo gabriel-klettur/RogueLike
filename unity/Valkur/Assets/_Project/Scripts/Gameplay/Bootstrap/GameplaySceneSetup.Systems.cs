@@ -214,6 +214,26 @@ namespace Valkur.Gameplay
             Debug.Log("[GameplaySceneSetup] NPCSeparationSystem created.");
         }
 
+        /// <summary>
+        /// Creates the A* service the chase states consume.
+        ///
+        /// <see cref="World.PathFinder"/> is a <c>SingletonMonoBehaviour</c> whose
+        /// <c>Instance</c> is assigned in <c>Awake</c> and never self-creates, and no
+        /// scene or prefab in the project referenced it — so <c>PathFinder.Instance</c>
+        /// was null for the whole life of the game and both
+        /// <c>ChaseState</c> and <c>AlertChaseState</c> permanently took their
+        /// straight-line fallback. Every monster beelined into the first corner
+        /// between it and the player.
+        /// </summary>
+        private void EnsurePathFinder()
+        {
+            if (FindObjectOfType<World.PathFinder>() != null) return;
+            var go = new GameObject("PathFinder");
+            go.AddComponent<World.PathFinder>();
+            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
+            Debug.Log("[GameplaySceneSetup] PathFinder created.");
+        }
+
         private void EnsureVendorShopUI()
         {
             if (VendorShopUI.Instance != null) return;

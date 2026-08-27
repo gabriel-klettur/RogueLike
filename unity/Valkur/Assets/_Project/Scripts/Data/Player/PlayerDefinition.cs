@@ -60,6 +60,7 @@ namespace Valkur.Data
             assetConfig.attackSheets = SanitizeSheet(assetConfig.attackSheets);
             assetConfig.damageSheets = SanitizeSheet(assetConfig.damageSheets);
             assetConfig.deathSheets = SanitizeSheet(assetConfig.deathSheets);
+            assetConfig.recoverSheets = SanitizeSheet(assetConfig.recoverSheets);
 
             // Variants are picked by index at runtime, so a null hole inside one is a
             // blank frame mid-swing rather than a merely wasted slot.
@@ -68,6 +69,15 @@ namespace Valkur.Data
                 for (int i = 0; i < assetConfig.attackVariants.Count; i++)
                 {
                     var variant = assetConfig.attackVariants[i];
+                    if (variant != null) variant.sheets = SanitizeSheet(variant.sheets);
+                }
+            }
+
+            if (assetConfig.castVariants != null)
+            {
+                for (int i = 0; i < assetConfig.castVariants.Count; i++)
+                {
+                    var variant = assetConfig.castVariants[i];
                     if (variant != null) variant.sheets = SanitizeSheet(variant.sheets);
                 }
             }

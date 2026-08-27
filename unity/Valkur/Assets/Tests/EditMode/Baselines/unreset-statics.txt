@@ -79,7 +79,6 @@ COLLECTION	Valkur.Gameplay.World.Dungeon.Strategy.DungeonStrategyResolver._strat
 COLLECTION	Valkur.Gameplay.World.Dungeon.Udemy.Runtime.RoomTilemapLayerMapping.NameToLayer
 COLLECTION	Valkur.Gameplay.World.Layering.VisualLayerSortingSync.SortingLayerByVisualLayer
 COLLECTION	Valkur.Gameplay.World.Layering.WorldCollisionLayers._worldLayerIndices
-COLLECTION	Valkur.Gameplay.World.PathFinder.Cardinals
 COLLECTION	Valkur.UI.EditorSubTabData.All
 # 2026-08-25 field-level ratchet sharpening: `CountLabelCache[count] ??= ...` really
 # does mutate this readonly array as a lazy string-format cache; the type's hook only
@@ -121,18 +120,6 @@ UNITYOBJ	Valkur.Gameplay.Spells.AuraSpriteFactory._pulseRingSprite
 UNITYOBJ	Valkur.Gameplay.Spells.AuraSpriteFactory._runeInnerSprite
 UNITYOBJ	Valkur.Gameplay.Spells.AuraSpriteFactory._runeOuterSprite
 UNITYOBJ	Valkur.Gameplay.Spells.AuraSpriteFactory._sparkleSprite
-UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._blade
-UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._bolt
-UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._core
-UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._glow
-UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._halo
-UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._hotCore
-UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._ring
-UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._snowflake
-UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._sparkle
-UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._sparkleStar
-UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._unlitMaterial
-UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._wisp
 UNITYOBJ	Valkur.Gameplay.TileEditor.TerrainCatalogLoader._cached
 UNITYOBJ	Valkur.Gameplay.UI.SpellBarHUD._whitePixel
 UNITYOBJ	Valkur.Gameplay.VFX.ParticleEmitterOutlineRenderer.s_lineMat
@@ -194,8 +181,6 @@ VALUE	Valkur.Gameplay.Spells.ElementalProjectileVisual._l2dOuter
 VALUE	Valkur.Gameplay.Spells.ElementalProjectileVisual._l2dResolved
 VALUE	Valkur.Gameplay.Spells.ElementalProjectileVisual._light2DType
 VALUE	Valkur.Gameplay.TileEditor.TileRegistry._instance
-VALUE	Valkur.Gameplay.World.Layering.WorldCollisionLayers._resolved
-VALUE	Valkur.Gameplay.World.Layering.WorldCollisionLayers._worldAllIndex
 VALUE	Valkur.UIKit.DraggablePanel.BottomReservedPx
 VALUE	Valkur.UIKit.DraggablePanel.GlobalInterPanelSnap
 VALUE	Valkur.UIKit.DraggablePanel.LeftReservedPx

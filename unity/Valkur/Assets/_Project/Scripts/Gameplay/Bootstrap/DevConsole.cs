@@ -582,9 +582,17 @@ namespace Valkur.Gameplay
             // ── spawning ──────────────────────────────────────────────────────
             RegisterCommand(new ConsoleCommand {
                 Name = "spawn",
-                Usage = "spawn <monster_key> [qty]", Help = "spawn monster(s) near the player",
+                Usage = "spawn <monster_key> [qty] [@cursor]",
+                Help = "spawn monster(s) near the player, or at the mouse cursor with @cursor",
                 Category = "spawning",
                 Handler = args => CmdSpawn(args),
+                Completer = args => MonsterKeyCompleter(args)
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "monsterinfo",
+                Usage = "monsterinfo <key>", Help = "show full stats for a monster definition",
+                Category = "spawning",
+                Handler = args => CmdMonsterInfo(args),
                 Completer = args => MonsterKeyCompleter(args)
             });
 

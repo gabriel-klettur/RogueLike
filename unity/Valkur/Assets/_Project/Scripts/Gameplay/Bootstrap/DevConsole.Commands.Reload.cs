@@ -111,6 +111,16 @@ namespace Valkur.Gameplay
                 return;
             }
 
+            // Monsters are parented to [Entities], not to the SpawnerInstance that made them,
+            // so ClearAllSpawnedWorldContent — which tears down buildings, spawner instances,
+            // lights and particles — has nothing that owns them to destroy. Without this kill,
+            // ReloadAllWorldContent recreates every SpawnerInstance in a fresh state and each
+            // one spawns its wave again into a world that still has the OLD population standing
+            // in it: the fastest reload command in the console silently doubled the monster
+            // count on every call. respawnnpcs already guards against exactly this with the
+            // same CmdKillAll() call — see CmdRespawnNpcs below.
+            CmdKillAll();
+
             manager.ClearAllSpawnedWorldContent();
             manager.ReloadAllWorldContent();
             Log($"[reload] World content reloaded for slot '{manager.ActiveMapSlot}'.");

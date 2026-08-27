@@ -117,6 +117,22 @@ namespace Valkur.Gameplay
         {
             _setupStep = 0;
 
+            // Every runtime editor's OnEnable does `if (GameEditorManager.HasInstance)
+            // …Register(this)` with NO retry — a handful (Tile, General, DungeonNodeGraph)
+            // self-heal via GameEditorManager.EnsureInstance(), but most (Spawners,
+            // Buildings, FSM, Items, Spells, Entities, Boss, Inventory, Particles, Lighting)
+            // do not, and if the manager doesn't exist yet when one of THOSE runs its
+            // Register call is silently skipped FOREVER — that editor never joins the
+            // exclusivity group, so its first hotkey press opens it without closing
+            // whatever else is open (two canvases stacked, both eating clicks). In
+            // practice EnsureTileEditor() below happens to self-create the manager before
+            // any of the non-retrying editors are created, so the bug is latent rather
+            // than live — but that protection is incidental to call ORDER, not to an
+            // explicit contract, so reordering Ensure*Editor calls could silently reopen
+            // it for a whole batch of editors at once. Make the guarantee explicit instead
+            // of implicit: create the manager before ANY editor (including Tile) can run.
+            GameEditorManager.EnsureInstance();
+
             BuildWorldGrid();
             Report("Building grid"); yield return null;
 
@@ -178,6 +194,9 @@ namespace Valkur.Gameplay
 
             EnsureNPCSeparation();
             Report("Initializing NPC separation"); yield return null;
+
+            EnsurePathFinder();
+            Report("Initializing pathfinding"); yield return null;
 
             EnsureVendorShopUI();
             Report("Initializing shops"); yield return null;

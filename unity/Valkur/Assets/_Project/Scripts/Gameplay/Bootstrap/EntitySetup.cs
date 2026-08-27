@@ -3,6 +3,7 @@ using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.Combat.Death;
+using Valkur.Gameplay.Enemies;
 using Valkur.Gameplay.FSM;
 using Valkur.Gameplay.World;
 using Valkur.Gameplay.Inventory;
@@ -124,13 +125,30 @@ namespace Valkur.Gameplay
                 EntitySpriteHelper.EnsureMonsterSprite(spriteRenderer);
             EntitySpriteHelper.EnsureUnlitMaterial(spriteRenderer);
             EntityColliderConfigurator.ConfigureNpcBodyCollider(go, spriteRenderer);
-            InitHealth(go, def.stats.hp);
+            // hp / defense / meleeDamage are the three stats MonsterDefinition.level scales;
+            // everything else is read straight off def.stats on purpose. Level <= 1 — every
+            // shipped monster today — returns the authored struct unchanged.
+            var scaled = def.GetScaledStats();
+            InitHealth(go, scaled.hp);
+
+            // Defensive stats are pushed onto the live components here because Health owns
+            // the damage seam and does not know about MonsterDefinition. Until this
+            // existed, `defense` was authored on every shipped hostile (5 or 10), asserted
+            // by a test, shown in the F5 panel — and read by no gameplay code at all, so a
+            // designer tuning it changed nothing.
+            var monsterHealth = go.GetComponent<Health>();
+            if (monsterHealth != null)
+            {
+                monsterHealth.SetDefense(scaled.defense);
+                monsterHealth.SetResistances(def.stats.resistances);
+            }
 
             if (go.GetComponent<FloatingDamageSpawner>() == null)
                 go.AddComponent<FloatingDamageSpawner>();
 
-            if (go.GetComponent<StatusEffectManager>() == null)
-                go.AddComponent<StatusEffectManager>();
+            var statusMgr = go.GetComponent<StatusEffectManager>();
+            if (statusMgr == null) statusMgr = go.AddComponent<StatusEffectManager>();
+            statusMgr.SetImmunities(def.stats.statusImmunities);
 
             // Hit flash + knockback. Nothing attached this before, which is why
             // NPCs took damage without ever flashing white.
@@ -144,6 +162,7 @@ namespace Valkur.Gameplay
                 go.AddComponent<GrayscaleDeath>();
 
             ConfigureMonsterAutoCast(go, def);
+            ConfigureBoss(go, def);
 
             // Minimap dot (monster = red) — uses reflection to avoid Gameplay→UI circular dependency
             ConfigureMinimapDot(go, "Monster", new Color(0.9f, 0.2f, 0.2f, 1f));
@@ -159,7 +178,8 @@ namespace Valkur.Gameplay
             ySort.ZLayerBase = SortingConfig.Z_ENTITY;
 
             EntityRegistry.RegisterMonster(go);
-            Debug.Log($"[EntitySetup] Monster configured: {def.displayName}, HP={def.stats.hp}");
+            Valkur.Core.VerboseLog.Log(Valkur.Core.VerboseLog.Category.Bootstrap,
+                () => $"[EntitySetup] Monster configured: {def.displayName}, HP={scaled.hp}");
         }
 
         // ── Private helpers ──
@@ -167,7 +187,17 @@ namespace Valkur.Gameplay
         private static void InitHealth(GameObject go, int maxHp)
         {
             var health = go.GetComponent<Health>();
-            if (health != null) health.Initialize(maxHp);
+            if (health == null) return;
+
+            health.Initialize(maxHp);
+
+            // The post-hit grace defaults to 0 on the component so that dozens of EditMode
+            // tests which call TakeDamage twice in one method keep measuring what they
+            // think they measure — Time.time does not advance inside an EditMode test.
+            // Wiring it HERE is what makes it live in the game, for player and monster
+            // alike: without it five monsters at cooldown 1 land five separate hits in the
+            // same frame and a pack burst-deletes the player with no counterplay window.
+            health.SetPostHitGrace(Health.RecommendedGraceSeconds);
         }
 
         // Adds the two components that drive the spirit/altar revive flow on
@@ -303,6 +333,7 @@ namespace Valkur.Gameplay
             var caster = go.GetComponent<SpellCaster>();
             if (caster == null) caster = go.AddComponent<SpellCaster>();
             caster.SetTargetLayers(1 << PlayerLayer);
+            caster.SetFreeCastWithoutMana(true);
             ProjectilePrefabFactory.EnsureFireballPrefab(caster);
 
             var auto = go.GetComponent<NPCAutoCast>();
@@ -337,6 +368,83 @@ namespace Valkur.Gameplay
 
             Debug.Log($"[EntitySetup] Monster '{def.monsterKey}' auto-cast: " +
                       $"{registered}/{def.autoCastList.Length} spell(s) wired.");
+        }
+
+        // ── Boss wiring ──────────────────────────────────────────────────────
+        // MonsterDefinition.bossDefinition is the single opt-in flag: when set,
+        // this monster becomes a boss. Before this method, BossConfigurator /
+        // BossPhaseController were constructed in exactly one place in the whole
+        // project — the F-key Boss Editor's preview sandbox — so no spawned
+        // monster, including barbol_boss (2000 HP, xpReward 500), ever got
+        // phases, a phase-driven spell rotation, phase music, or the boss
+        // health bar.
+        //
+        // SpellCaster + NPCAutoCast are ensured HERE rather than relying on
+        // ConfigureMonsterAutoCast above: a boss's spell rotation normally
+        // lives entirely on BossDefinition.phases[i].autoCastList, and the
+        // shipped bosses leave the base MonsterDefinition.autoCast false (see
+        // barbol_boss.asset) — so ConfigureMonsterAutoCast no-ops for them and
+        // BossConfigurator.Awake would otherwise resolve a null SpellCaster/
+        // NPCAutoCast, permanently no-opping ConfigureRotation
+        // (BossConfigurator.cs's `if (... _autoCast == null || _caster == null)
+        // return;` guard). Component add order mirrors
+        // BossEditorPreviewSandbox.Spawn so every Awake() finds its siblings:
+        // SpellCaster -> BossPhaseController (needs Health, already added by
+        // InitHealth above) -> NPCAutoCast (needs SpellCaster) ->
+        // BossBeatChoreographer -> BossCueDispatcher (before BossConfigurator
+        // so its Awake finds the dispatcher) -> BossConfigurator (needs
+        // BossPhaseController).
+        internal static void ConfigureBoss(GameObject go, MonsterDefinition def)
+        {
+            if (def == null || def.bossDefinition == null) return;
+
+            var caster = go.GetComponent<SpellCaster>();
+            if (caster == null) caster = go.AddComponent<SpellCaster>();
+            caster.SetTargetLayers(1 << PlayerLayer);
+            caster.SetFreeCastWithoutMana(true);
+            ProjectilePrefabFactory.EnsureFireballPrefab(caster);
+
+            if (go.GetComponent<BossPhaseController>() == null)
+                go.AddComponent<BossPhaseController>();
+
+            if (go.GetComponent<NPCAutoCast>() == null)
+                go.AddComponent<NPCAutoCast>();
+
+            if (go.GetComponent<BossBeatChoreographer>() == null)
+                go.AddComponent<BossBeatChoreographer>();
+
+            if (go.GetComponent<BossCueDispatcher>() == null)
+                go.AddComponent<BossCueDispatcher>();
+
+            var configurator = go.GetComponent<BossConfigurator>();
+            if (configurator == null) configurator = go.AddComponent<BossConfigurator>();
+
+            configurator.SetDefinition(def.bossDefinition, _spellCatalog);
+            // Rebuild BossPhaseController's phase list from the BossDefinition
+            // right away (not deferred to Start()): BossPhaseController.Awake
+            // + OnEnable already ran synchronously inside the AddComponent call
+            // above and registered with BossHealthBarHUD using its own default
+            // placeholder phases — ConfigurePhasesFromDefinition swaps those for
+            // the real authored ones before anything can render a frame.
+            configurator.ConfigurePhasesFromDefinition();
+
+            // The entry-phase spell rotation, music and chart are primed by
+            // BossConfigurator.Start() (see that method), which Unity guarantees
+            // to run before this same GameObject's first Update() — i.e. before
+            // NPCAutoCast.Update could ever consider firing a cast — so nothing
+            // further is needed here.
+            var phases = def.bossDefinition.phases;
+
+            if (_spellCatalog == null)
+            {
+                Debug.LogWarning($"[EntitySetup] Boss '{def.monsterKey}' configured before a " +
+                                 "SpellCatalog was injected via SetSpellCatalog — phase spell " +
+                                 "keys will not resolve until the catalog is set.");
+            }
+
+            Valkur.Core.VerboseLog.Log(Valkur.Core.VerboseLog.Category.Bootstrap,
+                () => $"[EntitySetup] Boss configured: {def.monsterKey} -> '{def.bossDefinition.name}', " +
+                      $"{(phases != null ? phases.Length : 0)} phase(s).");
         }
 
     }

@@ -129,14 +129,57 @@ namespace Valkur.Tests.EditMode.Game.Data
                 "Offenders:\n  - " + string.Join("\n  - ", offenders));
         }
 
+        /// <summary>
+        /// The rule is in the name: these must never be COMMITTED. It used to assert they
+        /// were not present on disk, which is a different and unsatisfiable claim — Unity's
+        /// Test Runner writes <c>InitTestScene&lt;ticks&gt;.unity</c> into <c>Assets/</c> when a
+        /// run starts, so the file exists for the whole duration of the very run that
+        /// checks for it. Under the project's documented MCP workflow (CLAUDE.md makes MCP
+        /// the preferred way to run tests) the old form failed every single time, which is
+        /// how a permanently-red test trains people to ignore the suite.
+        ///
+        /// So it asks git instead. A transient artifact in a gitignored path is not a
+        /// violation; one that someone force-added is, and that is exactly what this now
+        /// catches. If git is unavailable the test is inconclusive rather than green —
+        /// silently passing would be worse than the failure it replaces.
+        /// </summary>
         [Test]
         public void HardRules_NoInitTestScenesCommitted()
         {
-            var offenders = Directory.EnumerateFiles(AssetsPath, "InitTestScene*.unity",
-                                                     SearchOption.TopDirectoryOnly).ToList();
+            string repoRoot = Directory.GetParent(Application.dataPath)?.Parent?.Parent?.FullName;
+            if (string.IsNullOrEmpty(repoRoot) || !Directory.Exists(Path.Combine(repoRoot, ".git")))
+                Assert.Ignore("Not a git working tree — cannot check what is tracked.");
+
+            string tracked;
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo("git", "ls-files -- \"*InitTestScene*.unity\"")
+                {
+                    WorkingDirectory = repoRoot,
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                };
+                using (var proc = System.Diagnostics.Process.Start(psi))
+                {
+                    tracked = proc.StandardOutput.ReadToEnd();
+                    proc.WaitForExit(10000);
+                }
+            }
+            catch (Exception ex)
+            {
+                Assert.Ignore("git is not on PATH — cannot check what is tracked (" + ex.Message + ").");
+                return;
+            }
+
+            var offenders = tracked
+                .Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                .ToList();
+
             Assert.That(offenders, Is.Empty,
-                "InitTestScene*.unity files are Unity Test Runner artifacts; they're already in .gitignore\n" +
-                "and must never be committed. Run: git rm <files> and delete them from disk.");
+                "InitTestScene*.unity files are Unity Test Runner artifacts; they are already in\n" +
+                ".gitignore and must never be committed. Run: git rm --cached <files>.\n" +
+                "Tracked:\n  - " + string.Join("\n  - ", offenders));
         }
 
         [Test]

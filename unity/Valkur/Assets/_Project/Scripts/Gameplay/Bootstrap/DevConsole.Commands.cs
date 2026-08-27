@@ -160,7 +160,7 @@ namespace Valkur.Gameplay
 
         private void CmdSpawn(string[] parts)
         {
-            if (parts.Length < 2) { Log("Usage: spawn <monster_key>"); return; }
+            if (parts.Length < 2) { Log("Usage: spawn <monster_key> [qty] [@cursor]"); return; }
             string key = parts[1];
             var player = EntityRegistry.PlayerTransform;
             if (player == null) { Log("No player found."); return; }
@@ -171,9 +171,86 @@ namespace Valkur.Gameplay
             foreach (var d in allDefs)
                 if (d.monsterKey.Equals(key, StringComparison.OrdinalIgnoreCase)) { def = d; break; }
             if (def == null) { Log($"Monster '{key}' not found."); return; }
-            Vector2 spawnPos = (Vector2)player.position + UnityEngine.Random.insideUnitCircle.normalized * 3f;
-            spawner.RequestSpawn(def, spawnPos);
-            Log($"Spawned {def.displayName} @ ({spawnPos.x:F1}, {spawnPos.y:F1}).");
+
+            int qty = 1;
+            bool atCursor = false;
+            for (int i = 2; i < parts.Length; i++)
+            {
+                if (string.Equals(parts[i], "@cursor", StringComparison.OrdinalIgnoreCase))
+                    atCursor = true;
+                else if (int.TryParse(parts[i], out int parsedQty))
+                    qty = Mathf.Max(1, parsedQty);
+            }
+
+            Vector2 center;
+            if (atCursor)
+            {
+                if (!Valkur.Core.Input.MouseInputManager.TryGetWorldMousePosition(out Vector2 cursorWorld))
+                {
+                    Log("Could not read mouse position for @cursor.");
+                    return;
+                }
+                center = cursorWorld;
+            }
+            else
+            {
+                center = (Vector2)player.position;
+            }
+
+            for (int i = 0; i < qty; i++)
+            {
+                // A single spawn keeps the original placement — a fixed 3-unit offset from
+                // the player, or exactly on the cursor for @cursor ("where I'm looking" means
+                // THIS tile, not a random one nearby). Multiple spawns scatter around the
+                // target so they don't stack on the same cell.
+                Vector2 offset = qty == 1
+                    ? (atCursor ? Vector2.zero : UnityEngine.Random.insideUnitCircle.normalized * 3f)
+                    : UnityEngine.Random.insideUnitCircle * 2f;
+                spawner.RequestSpawn(def, center + offset);
+            }
+
+            Log($"Spawned {qty}x {def.displayName} @ ({center.x:F1}, {center.y:F1})" +
+                $"{(atCursor ? " [cursor]" : "")}.");
+        }
+
+        private void CmdMonsterInfo(string[] parts)
+        {
+            if (parts.Length < 2) { Log("Usage: monsterinfo <monster_key>"); return; }
+            string key = parts[1];
+
+            var allDefs = Resources.FindObjectsOfTypeAll<Data.MonsterDefinition>();
+            Data.MonsterDefinition def = null;
+            foreach (var d in allDefs)
+                if (d.monsterKey.Equals(key, StringComparison.OrdinalIgnoreCase)) { def = d; break; }
+            if (def == null) { Log($"Monster '{key}' not found."); return; }
+
+            var s = def.stats;
+            Log($"--- {def.displayName} ({def.monsterKey}) ---");
+            Log($"  HP:          {s.hp}");
+            Log($"  Speed:       {s.speed}  (chase {s.chasingSpeed})");
+            Log($"  Defense:     {s.defense}");
+            Log($"  Power:       {s.power}  (XP fallback only when xpReward == 0)");
+            Log($"  Melee Dmg:   {s.meleeDamage}");
+            Log($"  Melee Range: {s.meleeRange:F2}");
+            Log($"  Melee CD:    {s.meleeCooldown:F2}s");
+            Log($"  Aggro Range: {s.aggroRange:F2}");
+            Log($"  Atk Windup:  {s.attackWindupSeconds:F2}s");
+            Log($"  Faction:     {s.faction}");
+            Log($"  FSM Set:     {(string.IsNullOrEmpty(def.fsmSet) ? "<none>" : def.fsmSet)}");
+            Log($"  Patrol:      {def.patrolType}");
+            Log($"  XP Reward:   {(def.xpReward > 0 ? def.xpReward.ToString() : "(fallback heuristic)")}");
+            Log($"  Loot Table:  {(def.lootTable != null ? def.lootTable.name : "<none>")}");
+            Log($"  Boss:        {(def.bossDefinition != null ? def.bossDefinition.name : "no")}");
+            Log($"  Auto-Cast:   {(def.autoCast && def.autoCastList != null && def.autoCastList.Length > 0 ? string.Join(", ", def.autoCastList) : "no")}");
+            if (s.resistances != null && s.resistances.Length > 0)
+            {
+                var res = new string[s.resistances.Length];
+                for (int i = 0; i < s.resistances.Length; i++)
+                    res[i] = $"{s.resistances[i].element}x{s.resistances[i].multiplier:F2}";
+                Log($"  Resistances: {string.Join(", ", res)}");
+            }
+            if (s.statusImmunities != null && s.statusImmunities.Length > 0)
+                Log($"  Immunities:  {string.Join(", ", s.statusImmunities)}");
         }
 
         // ── World swap commands (Wave C.1) ──────────────────────────────────────

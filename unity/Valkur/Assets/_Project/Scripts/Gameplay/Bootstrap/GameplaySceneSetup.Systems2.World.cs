@@ -1,4 +1,6 @@
 using UnityEngine;
+using Valkur.Core;
+using Valkur.Data;
 using Valkur.Gameplay.Buildings;
 using Valkur.Gameplay.Spawners;
 #if UNITY_EDITOR
@@ -9,28 +11,38 @@ namespace Valkur.Gameplay
 {
     public partial class GameplaySceneSetup
     {
+        /// <summary>
+        /// Build-safe half of the F3 catalog wiring — same pattern and same rationale as
+        /// <c>GameplaySceneSetup.RegisterMonsterCatalogFallback</c>
+        /// (<c>GameplaySceneSetup.Systems2.Editors.cs</c>). Split into its own method (no
+        /// GameObject/editor creation) so it is cheap and safe to call from a test.
+        /// TODO(<c>Gameplay/Editors/Spawners</c>, currently under concurrent edit): add
+        ///   internal void SetCatalog(SpawnerTemplateCatalog catalog) { if (catalog !=
+        ///   null) _catalog = catalog; }
+        /// called unconditionally from <see cref="EnsureSpawnerEditor"/>, with an
+        /// OnEnable/Awake fallback to ServiceLocator.TryGet&lt;SpawnerTemplateCatalog&gt;
+        /// when the field is still null.
+        /// </summary>
+        private void RegisterSpawnerTemplateCatalogFallback()
+        {
+            if (_spawnerTemplateCatalog != null)
+                ServiceLocator.Register<SpawnerTemplateCatalog>(_spawnerTemplateCatalog);
+        }
+
         private void EnsureSpawnerEditor()
         {
+            RegisterSpawnerTemplateCatalogFallback();
+
             if (SpawnerEditorManager.Instance != null) return;
 
             var go = new GameObject("SpawnerEditorManager");
             var mgr = go.AddComponent<SpawnerEditorManager>();
             go.transform.SetParent(GetSceneContainer("[Editors]"), false);
 
-            if (_spawnerTemplateCatalog != null)
-            {
-                // Set catalog via serialized field
-                var so = new UnityEngine.Object[] { mgr };
-#if UNITY_EDITOR
-                var serialized = new UnityEditor.SerializedObject(mgr);
-                var catalogProp = serialized.FindProperty("_catalog");
-                if (catalogProp != null)
-                {
-                    catalogProp.objectReferenceValue = _spawnerTemplateCatalog;
-                    serialized.ApplyModifiedPropertiesWithoutUndo();
-                }
-#endif
-            }
+            // Plain setter, called unconditionally. This was a SerializedObject write
+            // inside #if UNITY_EDITOR while the manager itself is created in every build,
+            // so a shipped player's F3 picker reported "No catalog assigned."
+            mgr.SetCatalog(_spawnerTemplateCatalog);
 
             Debug.Log("[GameplaySceneSetup] SpawnerEditorManager created. Press F3 to toggle.");
         }

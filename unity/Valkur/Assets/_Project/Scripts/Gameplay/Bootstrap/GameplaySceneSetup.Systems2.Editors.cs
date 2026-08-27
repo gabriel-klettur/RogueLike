@@ -254,26 +254,47 @@ namespace Valkur.Gameplay
             Debug.Log("[GameplaySceneSetup] BossEditorManager created (accessible via General Editor).");
         }
 
+        /// <summary>
+        /// Build-safe half of the F5 catalog wiring: registers the inspector-assigned
+        /// catalog through ServiceLocator BEFORE the Editor-only SerializedObject
+        /// injection in <see cref="EnsureEntitiesRuntimeEditor"/>, exactly like
+        /// <see cref="EnsureItemsRuntimeEditor"/> does for <c>ItemCatalog</c>. Split into
+        /// its own method (no GameObject/editor creation) so it is cheap and safe to call
+        /// from a test.
+        ///
+        /// This alone does not populate the F5 picker in a BUILT player —
+        /// <c>EntitiesRuntimeEditor</c> has no ServiceLocator-first lookup yet (unlike
+        /// <see cref="ResolveItemCatalogFallback"/> for Items) — but it means the value is
+        /// already waiting on the bus the moment that lookup is added.
+        /// TODO(<c>Gameplay/Editors/Entities</c>, currently under concurrent edit): add
+        ///   internal void SetMonsterCatalog(MonsterCatalog catalog) { if (catalog !=
+        ///   null) _monsterCatalog = catalog; }
+        /// called unconditionally (no #if UNITY_EDITOR) from
+        /// <see cref="EnsureEntitiesRuntimeEditor"/>, and fall back to
+        /// <c>ServiceLocator.TryGet&lt;MonsterCatalog&gt;</c> in OnEnable/Awake when the
+        /// field is still null — mirroring ResolveItemCatalogFallback's
+        /// ServiceLocator-first, AssetDatabase-second order.
+        /// </summary>
+        private void RegisterMonsterCatalogFallback()
+        {
+            if (_monsterCatalog != null)
+                ServiceLocator.Register<MonsterCatalog>(_monsterCatalog);
+        }
+
         private void EnsureEntitiesRuntimeEditor()
         {
+            RegisterMonsterCatalogFallback();
+
             if (EntitiesRuntimeEditor.Instance != null) return;
 
             var go = new GameObject("EntitiesRuntimeEditor");
             var editor = go.AddComponent<EntitiesRuntimeEditor>();
             go.transform.SetParent(GetSceneContainer("[Editors]"), false);
 
-            if (_monsterCatalog != null)
-            {
-#if UNITY_EDITOR
-                var serialized = new UnityEditor.SerializedObject(editor);
-                var catalogProp = serialized.FindProperty("_monsterCatalog");
-                if (catalogProp != null)
-                {
-                    catalogProp.objectReferenceValue = _monsterCatalog;
-                    serialized.ApplyModifiedPropertiesWithoutUndo();
-                }
-#endif
-            }
+            // Plain setter, called unconditionally. This used to be a SerializedObject
+            // write inside #if UNITY_EDITOR while the editor itself was created in every
+            // build, so a shipped player's F5 picker was permanently empty.
+            editor.SetMonsterCatalog(_monsterCatalog);
 
             Debug.Log("[GameplaySceneSetup] EntitiesRuntimeEditor created. Press F5 to toggle.");
         }

@@ -91,6 +91,19 @@ namespace Valkur.Core.Input
             if (newModule == null)
                 newModule = eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
 
+            // Disable BEFORE assigning, not after.
+            //
+            // AddComponent on an active GameObject brings the module up enabled, and
+            // InputSystemUIInputModule.OnDisable unhooks and clears its action
+            // references — so assigning them first and disabling afterwards wiped every
+            // one of them on the very call that set them. The symptom was a freshly
+            // built [PersistentEventSystem] whose module had actionsAsset = null and no
+            // point action, while a SECOND ConfigureModule call on the same object
+            // worked perfectly (the module was already disabled by then, so setting
+            // enabled = false was a no-op and no OnDisable fired to undo the work).
+            // Pinned by RuntimeMouseMenuInputPlayTests.
+            newModule.enabled = false;
+
             var ui = InputService.Instance?.UI;
             if (ui != null)
             {
@@ -104,7 +117,6 @@ namespace Valkur.Core.Input
                 newModule.submit       = InputActionReference.Create(ui.Submit);
                 newModule.cancel       = InputActionReference.Create(ui.Cancel);
             }
-            newModule.enabled = false;
 
             // Order matters: drop scene-shipped EventSystems FIRST so their OnDisable
             // removes them from EventSystem.m_EventSystems before we (re)enable the

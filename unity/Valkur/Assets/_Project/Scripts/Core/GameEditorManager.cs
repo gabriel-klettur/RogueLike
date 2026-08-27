@@ -37,6 +37,14 @@ namespace Valkur.Core
         public bool AnyEditorActive => _activeEditor != null;
 
         /// <summary>
+        /// Every editor that has called <see cref="Register"/> and not yet <see cref="Unregister"/>.
+        /// Read-only view over the exclusivity roster itself (not merely the active one) —
+        /// e.g. a launcher panel that wants to grey out entries for editors not yet booted,
+        /// or a diagnostic that wants to assert exactly N editors registered this boot.
+        /// </summary>
+        public IReadOnlyList<IGameEditor> RegisteredEditors => _registered;
+
+        /// <summary>
         /// Returns the existing instance, or creates a new GameObject hosting one if missing.
         /// Use this from any editor's Awake/Start to guarantee the manager exists at runtime.
         /// </summary>

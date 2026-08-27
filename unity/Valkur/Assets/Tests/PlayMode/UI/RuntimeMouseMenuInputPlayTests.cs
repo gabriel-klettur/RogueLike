@@ -74,6 +74,12 @@ namespace Valkur.Tests.PlayMode.UI
 
             var module = _eventSystem.GetComponent<InputSystemUIInputModule>();
             Assert.IsNotNull(module, "Menus must use InputSystemUIInputModule at runtime.");
+            // Regression: ConfigureModule used to assign these references and THEN
+            // disable the module, and InputSystemUIInputModule.OnDisable clears them —
+            // so a freshly created [PersistentEventSystem] came up with no actionsAsset
+            // and no point action at all. Runtime menus had no pointer pipeline.
+            Assert.IsNotNull(module.actionsAsset,
+                "The UI module must keep the canonical asset after ConfigureModule.");
             Assert.IsNotNull(module.point?.action, "Point action must be configured for runtime menu hover/click.");
             Assert.IsNotNull(module.leftClick?.action, "Left click action must be configured for runtime menu buttons.");
 

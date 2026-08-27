@@ -26,6 +26,10 @@ namespace Valkur.Gameplay
         // stays alive for as long as the player is channeling.
         private float _castAnimEndTime;
 
+        // Next animation variant to play, per AnimState. Sized lazily from the enum rather
+        // than from a literal, so an added state cannot silently index past the end.
+        private int[] _nextVariantByState;
+
         private void Update()
         {
             // Spirit-form players still control movement and facing, but skip
@@ -438,12 +442,64 @@ namespace Valkur.Gameplay
             var dir = _animator.ResolveDirectionFromVector(_facingDirection);
             bool isRegularSlash = string.Equals(spellKey, RegularSlashAttack.SpellKey,
                 System.StringComparison.OrdinalIgnoreCase);
-            _animator.SetState(isRegularSlash
+            var state = isRegularSlash
                 ? DirectionalAnimator.AnimState.Attack
-                : DirectionalAnimator.AnimState.Cast, dir);
+                : DirectionalAnimator.AnimState.Cast;
+
+            _animator.SetState(state, dir, NextVariant(state));
             _castAnimEndTime = Time.time + (isRegularSlash
                 ? REGULAR_SLASH_ANIMATION_DURATION
                 : CAST_ANIMATION_DURATION);
+        }
+
+        /// <summary>
+        /// Advances this state's animation variant one step and returns the new index, or -1
+        /// when the character carries only the single set.
+        ///
+        /// Before this, a PLAYER never picked a variant at all: only <c>FSMMonsterBrain</c>
+        /// set one, through the monster FSM's <c>AttackState</c>. The two-argument
+        /// <c>SetState</c> reuses whatever index is already active, and for a player that was
+        /// -1 forever — so every alternative animation authored on a PlayerDefinition was
+        /// dead data that could not render. The elven character ships three punches and three
+        /// spellcasts; the dwarf four unarmed attacks; the barbarian two axe swings.
+        ///
+        /// Rotating rather than randomising, because a cycle is what reads as a combo: a
+        /// random pick repeats the same swing back to back about one time in N and looks like
+        /// the animation failed to change.
+        /// </summary>
+        private int NextVariant(DirectionalAnimator.AnimState state)
+        {
+            int count = _animator.VariantCount(state);
+            if (count <= 0) return -1;
+
+            int index = (int)state;
+            if (_nextVariantByState == null ||
+                _nextVariantByState.Length <= index)
+            {
+                System.Array.Resize(ref _nextVariantByState,
+                    System.Enum.GetValues(typeof(DirectionalAnimator.AnimState)).Length);
+            }
+
+            int variant = _nextVariantByState[index] % count;
+            _nextVariantByState[index] = (variant + 1) % count;
+            return variant;
+        }
+
+        /// <summary>
+        /// Plays the "getting back up" animation, holding locomotion off for its duration.
+        /// Called by <c>DeathSequenceController.ReviveRoutine</c> once the player is out of
+        /// spirit form. Safe to call on a character with no recover art —
+        /// <c>DirectionalAnimator.GetSpriteSet</c> falls Recover back to idle.
+        /// </summary>
+        public void PlayRecoverAnimation(float duration)
+        {
+            if (_animator == null) return;
+            var dir = _animator.ResolveDirectionFromVector(_facingDirection);
+            _animator.SetState(DirectionalAnimator.AnimState.Recover, dir);
+            // Shares the cast timer on purpose: it is the one deadline TickCastAnimRevert
+            // already checks every frame, so Recover cannot outlive its own animation even
+            // if the coroutine that started it is killed by a scene change mid-rise.
+            _castAnimEndTime = Time.time + Mathf.Max(0.05f, duration);
         }
 
         /// <summary>
@@ -456,8 +512,12 @@ namespace Valkur.Gameplay
         {
             if (_animator == null || _castAnimEndTime <= 0f) return;
             if (Time.time < _castAnimEndTime) return;
+            // Recover is in this list for the reason AnimState.Recover's doc gives: a state
+            // that locomotion refuses to override and nothing reverts is a soft lock, and
+            // the coroutine that entered Recover can be killed by a scene change.
             if (_animator.CurrentState == DirectionalAnimator.AnimState.Cast ||
-                _animator.CurrentState == DirectionalAnimator.AnimState.Attack)
+                _animator.CurrentState == DirectionalAnimator.AnimState.Attack ||
+                _animator.CurrentState == DirectionalAnimator.AnimState.Recover)
             {
                 var dir = _animator.ResolveDirectionFromVector(_facingDirection);
                 var state = IsMoving ? DirectionalAnimator.AnimState.Walk : DirectionalAnimator.AnimState.Idle;
