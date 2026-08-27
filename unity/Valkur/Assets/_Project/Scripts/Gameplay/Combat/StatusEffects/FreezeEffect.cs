@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Data;
 
 namespace Valkur.Gameplay.Combat
 {
@@ -10,6 +11,8 @@ namespace Valkur.Gameplay.Combat
     public sealed class FreezeEffect : StatusEffect
     {
         private Rigidbody2D _rb;
+
+        public override StatusEffectKind Kind => StatusEffectKind.Freeze;
 
         public FreezeEffect(float duration, GameObject applier = null)
             : base(duration, applier) { }

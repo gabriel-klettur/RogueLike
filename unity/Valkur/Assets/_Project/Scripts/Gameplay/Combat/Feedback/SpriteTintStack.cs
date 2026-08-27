@@ -16,6 +16,13 @@ namespace Valkur.Gameplay.Combat
         Death = 5,
         Spirit = 6,
         Teleport = 7,
+        /// <summary>
+        /// Standing inside an arcane hazard. Held for as long as the entity is in the
+        /// zone rather than pulsed per tick — a 0.14 s hit flash covers a fifth of a
+        /// 0.6 s beat, so without this a monster in the fire looks identical to one
+        /// outside it most of the time.
+        /// </summary>
+        Arcane = 8,
     }
 
     /// <summary>
@@ -39,7 +46,11 @@ namespace Valkur.Gameplay.Combat
     [DisallowMultipleComponent]
     public sealed class SpriteTintStack : MonoBehaviour
     {
-        private const int LAYER_COUNT = 8;
+        // Must equal the number of TintLayer values: the enum indexes _layers directly and
+        // feeds a 1<<layer bitmask, so a new value without a matching bump here is an
+        // IndexOutOfRange on the first Set. SpriteTintStackTests.EveryLayerHasItsOwnSlot
+        // fails loudly if the two drift apart.
+        private const int LAYER_COUNT = 9;
 
         private readonly Color[] _layers = new Color[LAYER_COUNT];
         private int _activeMask;

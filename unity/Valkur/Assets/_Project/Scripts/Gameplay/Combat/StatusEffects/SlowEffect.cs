@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Data;
 
 namespace Valkur.Gameplay.Combat
 {
@@ -11,6 +12,8 @@ namespace Valkur.Gameplay.Combat
         private readonly float _slowFactor;
         private Rigidbody2D _rb;
         private float _originalDrag;
+
+        public override StatusEffectKind Kind => StatusEffectKind.Slow;
 
         /// <param name="duration">Duration in seconds.</param>
         /// <param name="slowFactor">Speed multiplier (0.5 = 50% speed).</param>

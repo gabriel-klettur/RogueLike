@@ -24,6 +24,17 @@ namespace Valkur.Gameplay.Combat
         private SpriteRenderer _spriteRenderer;
         private Rigidbody2D _rb;
         private bool _isDying;
+        private float _knockbackUntil = -1f;
+
+        /// <summary>
+        /// True while an impulse from <see cref="ApplyKnockback"/> is still meant to
+        /// be carrying the body. The FSM states consult this through
+        /// <c>FSMComponents.SetVelocity</c> and leave the velocity alone until it
+        /// clears — without it the impulse survived at most one frame, because the
+        /// next FSM tick overwrote <c>velocity</c> outright and every hit in the
+        /// game read as weightless.
+        /// </summary>
+        public bool KnockbackActive => Time.time < _knockbackUntil;
 
         private void Awake()
         {
@@ -74,6 +85,7 @@ namespace Valkur.Gameplay.Combat
 
             Vector2 direction = ((Vector2)transform.position - sourcePosition).normalized;
             _rb.AddForce(direction * knockbackForce, ForceMode2D.Impulse);
+            _knockbackUntil = Time.time + knockbackDuration;
 
             if (gameObject.activeInHierarchy)
                 StartCoroutine(KnockbackDecayRoutine());

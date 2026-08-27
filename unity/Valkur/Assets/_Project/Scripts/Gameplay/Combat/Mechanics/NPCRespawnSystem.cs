@@ -17,6 +17,21 @@ namespace Valkur.Gameplay
         [SerializeField, Tooltip("Max concurrent respawn entries tracked.")]
         private int maxTracked = 64;
 
+        [SerializeField, Tooltip("Also respawn hostile (EVIL) NPCs. Off by design: hostiles are " +
+                                 "owned by their SpawnerInstance, which already refills a wave " +
+                                 "on its own timer. With this on, every kill is replaced TWICE " +
+                                 "— once by the spawner and once here — so population climbs " +
+                                 "during any sustained fight and clear-rate or DPS cannot be " +
+                                 "measured. Turn it on only for a world with no spawners.")]
+        private bool respawnHostiles;
+
+        /// <summary>
+        /// Faction that marks an NPC as spawner-owned. Values ship uppercase
+        /// (EVIL / NEUTRAL); the comparison is case-insensitive anyway because
+        /// nothing validates the field.
+        /// </summary>
+        private const string HostileFaction = "EVIL";
+
         [SerializeField, Tooltip("Monster prefab used as the template for respawned NPCs. " +
                                  "Without it, SpawnNPC would have to fall back to building " +
                                  "an entity from a bare GameObject, which leaves an invincible " +
@@ -60,9 +75,21 @@ namespace Valkur.Gameplay
             var brain = victim.GetComponent<FSMMonsterBrain>();
             if (brain == null || brain.Definition == null) return;
 
-            // Only respawn non-hostile or configurable NPCs
+            // Only respawn non-hostile or configurable NPCs.
+            //
+            // This branch is the whole point of the check and it was missing: `faction`
+            // was computed and then never read, so EVERY victim with an FSMMonsterBrain
+            // was queued — on top of whatever its SpawnerInstance was already doing.
+            // barbol_periodic_no_stack ships restartOnDone:1 with a 0 s cooldown, so a
+            // killed barbol was replaced immediately by the spawner AND again 30 s later
+            // by this system. Population climbed through any sustained fight, which made
+            // every DPS and clear-rate measurement meaningless.
             string faction = brain.Definition.stats.faction;
-            if (string.IsNullOrEmpty(faction)) faction = "evil";
+            if (string.IsNullOrEmpty(faction)) faction = HostileFaction;
+
+            if (!respawnHostiles &&
+                string.Equals(faction, HostileFaction, System.StringComparison.OrdinalIgnoreCase))
+                return;
 
             // Queue respawn
             if (_count < maxTracked)

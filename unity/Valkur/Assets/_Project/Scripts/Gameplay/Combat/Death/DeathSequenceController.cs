@@ -193,6 +193,32 @@ namespace Valkur.Gameplay.Combat.Death
                 _activeCorpse = null;
             }
 
+            // Getting back up, after the body is solid again and the corpse is gone, so the
+            // player sees themselves rise rather than rise next to their own corpse. Skipped
+            // on the instant path: ForceRevive is the DevConsole cheat, where waiting out an
+            // animation is the opposite of what was asked for.
+            if (!instant && player != null)
+            {
+                var controller = player.GetComponent<PlayerController>();
+                if (controller != null)
+                {
+                    // Length of the actual animation, not a constant: the elven rise is eight
+                    // frames and a character with no recover art falls back to a one-frame
+                    // idle, which must not hold locomotion for a fixed fifth of a second.
+                    float duration = ResolveRecoverDuration(player);
+                    if (duration > 0f)
+                    {
+                        controller.PlayRecoverAnimation(duration);
+                        float elapsed = 0f;
+                        while (elapsed < duration)
+                        {
+                            elapsed += Time.unscaledDeltaTime;
+                            yield return null;
+                        }
+                    }
+                }
+            }
+
             CurrentPhase = Phase.Alive;
             _activeCoroutine = null;
 
@@ -201,6 +227,34 @@ namespace Valkur.Gameplay.Combat.Death
             // distinguish "real revive" from "DevConsole instant resurrect".
             GameEvents.FirePlayerResurrected();
             GameEvents.FirePlayerRevived();
+        }
+
+        /// <summary>
+        /// How long the rise animation actually runs, or 0 when this character has none.
+        ///
+        /// Returns 0 rather than a default when the set is missing so the caller skips the
+        /// wait entirely: <c>DirectionalAnimator</c> falls Recover back to idle, and holding
+        /// a character in an idle pose for a fixed duration after a revive would read as the
+        /// game having frozen.
+        /// </summary>
+        private static float ResolveRecoverDuration(GameObject player)
+        {
+            var animator = player.GetComponent<DirectionalAnimator>();
+            if (animator == null) return 0f;
+
+            var recover = animator.RecoverSprites;
+            bool hasRecoverArt =
+                (recover.south != null && recover.south.Length > 0) ||
+                (recover.southEast != null && recover.southEast.Length > 0) ||
+                (recover.east != null && recover.east.Length > 0) ||
+                (recover.northEast != null && recover.northEast.Length > 0) ||
+                (recover.north != null && recover.north.Length > 0) ||
+                (recover.northWest != null && recover.northWest.Length > 0) ||
+                (recover.west != null && recover.west.Length > 0) ||
+                (recover.southWest != null && recover.southWest.Length > 0);
+            if (!hasRecoverArt) return 0f;
+
+            return animator.GetStateLength(DirectionalAnimator.AnimState.Recover);
         }
 
         private void EnterSpirit(GameObject player)

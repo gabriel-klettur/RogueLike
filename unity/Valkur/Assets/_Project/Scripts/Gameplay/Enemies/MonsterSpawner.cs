@@ -2,7 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
+using Valkur.Gameplay.Entities;
 using Valkur.Gameplay.FSM;
+using Valkur.Gameplay.Spawners;
 
 namespace Valkur.Gameplay
 {
@@ -102,7 +104,15 @@ namespace Valkur.Gameplay
         /// Immediately spawn a single entity and return it.
         /// Used by SpawnerInstance to track active entities.
         /// </summary>
-        public GameObject SpawnEntity(MonsterDefinition def, Vector2 position)
+        /// <param name="persistent">
+        /// When true, attaches <see cref="PersistentSpawnMarker"/> so <see cref="ProcessDespawns"/>
+        /// exempts this entity from the distance-based despawn sweep — wired from
+        /// <see cref="Valkur.Data.SpawnerTemplateData.persistent"/> by
+        /// <see cref="Valkur.Gameplay.Spawners.SpawnerInstance"/> for every entity a persistent
+        /// template spawns (vendors, "defend the spawn point forever" packs). Defaults to false
+        /// so every other caller (F5 drag, BossCueDispatcher) is unaffected.
+        /// </param>
+        public GameObject SpawnEntity(MonsterDefinition def, Vector2 position, bool persistent = false)
         {
             if (monsterPrefab == null) return null;
 
@@ -110,6 +120,7 @@ namespace Valkur.Gameplay
             var container = GetEntitiesContainer();
             if (container != null) go.transform.SetParent(container, true);
             EntitySetup.ConfigureMonster(go, def);
+            if (persistent) go.AddComponent<PersistentSpawnMarker>();
 
             _activeMonsters.Add(go);
             return go;
@@ -181,12 +192,40 @@ namespace Valkur.Gameplay
                 }
 
                 float distSq = ((Vector2)m.transform.position - playerPos).sqrMagnitude;
-                if (distSq > despawnSq)
-                {
-                    Destroy(m);
-                    _activeMonsters.RemoveAt(i);
-                }
+                if (distSq <= despawnSq) continue;
+
+                // A monster placed for a test — by hand through F5, or spawned from a
+                // template the designer marked persistent (every shipped vendor respawn
+                // template is) — must not evaporate just because the player walked away
+                // from it. See IsExemptFromDespawn.
+                if (IsExemptFromDespawn(m)) continue;
+
+                Destroy(m);
+                _activeMonsters.RemoveAt(i);
             }
+        }
+
+        /// <summary>
+        /// Whether an active monster is exempt from the distance-based despawn sweep in
+        /// <see cref="ProcessDespawns"/>. Two independent sources, both markers rather than a
+        /// shared field because they answer different questions that only happen to overlap
+        /// today:
+        /// <list type="bullet">
+        /// <item><see cref="PersistentSpawnMarker"/> — spawned from a
+        /// <see cref="Valkur.Data.SpawnerTemplateData"/> with <c>persistent = true</c>.</item>
+        /// <item><see cref="PersistedEntityInstance"/> — placed by hand through the Entities
+        /// runtime editor (F5); it is going to be saved to
+        /// <c>entities_instances.json</c>, so it must survive being walked away from long
+        /// enough to test.</item>
+        /// </list>
+        /// Internal so EditMode tests can assert the rule directly rather than depending on
+        /// <see cref="Object.Destroy"/>'s edit-mode-vs-play-mode behaviour.
+        /// </summary>
+        internal static bool IsExemptFromDespawn(GameObject go)
+        {
+            if (go == null) return false;
+            return go.GetComponent<PersistentSpawnMarker>() != null
+                || go.GetComponent<PersistedEntityInstance>() != null;
         }
 
         /// <summary>

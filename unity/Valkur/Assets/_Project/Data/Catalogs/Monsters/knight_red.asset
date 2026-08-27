@@ -17,7 +17,7 @@ MonoBehaviour:
   stats:
     hp: 140
     speed: 1.2
-    chasingSpeed: 2
+    chasingSpeed: 3
     defense: 10
     power: 14
     meleeRange: 2
@@ -35,14 +35,16 @@ MonoBehaviour:
     feetHeightFactor: 0.2
     faction: EVIL
     chatRange: 0
+    resistances: []
+    statusImmunities: 
   fsmSet: Monster_Default
   patrolType: line
   useAttackTelegraph: 1
-  nextPhase: 
-  phaseIndex: 0
+  bossDefinition: {fileID: 0}
   autoCast: 0
   autoCastList: []
   xpReward: 60
+  lootTable: {fileID: 0}
   assetConfig:
     idle:
       south: {fileID: 21300000, guid: 360280247afde2144a03218402a99ca1, type: 3}
@@ -372,6 +374,12 @@ MonoBehaviour:
     deathSheets: []
     attackVariants:
     - key: slash
+      damageMultiplier: 1
+      rangeMultiplier: 1
+      cooldownMultiplier: 1
+      weight: 4
+      minDistance: 0
+      maxDistance: 0
       directional:
         south: {fileID: 0}
         southEast: {fileID: 0}
@@ -447,6 +455,12 @@ MonoBehaviour:
       - {fileID: 21300000, guid: 5f2b1d273ebaad44f87f5463a3d40aa1, type: 3}
       - {fileID: 21300000, guid: 98659b53710a7e04fa0844eadea5658c, type: 3}
     - key: shieldbash
+      damageMultiplier: 0.7
+      rangeMultiplier: 0.8
+      cooldownMultiplier: 0.7
+      weight: 3
+      minDistance: 0
+      maxDistance: 1.6
       directional:
         south: {fileID: 0}
         southEast: {fileID: 0}
@@ -522,6 +536,12 @@ MonoBehaviour:
       - {fileID: 21300000, guid: 3efa8e49916a95947a72e9f52376cb92, type: 3}
       - {fileID: 21300000, guid: e1478f51697d03143a92abc4b4326ddb, type: 3}
     - key: punch
+      damageMultiplier: 0.6
+      rangeMultiplier: 0.7
+      cooldownMultiplier: 0.6
+      weight: 3
+      minDistance: 0
+      maxDistance: 1.4
       directional:
         south: {fileID: 0}
         southEast: {fileID: 0}
@@ -597,6 +617,12 @@ MonoBehaviour:
       - {fileID: 21300000, guid: 9e4b1e83e5f44634ba006780057d0b5d, type: 3}
       - {fileID: 21300000, guid: ba01b24ea5d91164d9f95612c0d85289, type: 3}
     - key: kick
+      damageMultiplier: 1.1
+      rangeMultiplier: 1
+      cooldownMultiplier: 1.15
+      weight: 2
+      minDistance: 0
+      maxDistance: 0
       directional:
         south: {fileID: 0}
         southEast: {fileID: 0}
@@ -672,6 +698,12 @@ MonoBehaviour:
       - {fileID: 21300000, guid: 2c2a866362c0af44e8b0d57913550033, type: 3}
       - {fileID: 21300000, guid: 3e97ae7b99ef9dc49a4205feac42390a, type: 3}
     - key: jumpkick
+      damageMultiplier: 1.6
+      rangeMultiplier: 1.6
+      cooldownMultiplier: 1.8
+      weight: 2
+      minDistance: 1.8
+      maxDistance: 0
       directional:
         south: {fileID: 0}
         southEast: {fileID: 0}

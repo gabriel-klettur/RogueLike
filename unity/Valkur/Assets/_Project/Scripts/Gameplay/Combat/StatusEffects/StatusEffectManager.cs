@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Data;
 
 namespace Valkur.Gameplay.Combat
 {
@@ -28,18 +29,50 @@ namespace Valkur.Gameplay.Combat
         // allocated up to 7 lists/frame, triggering Gen0 GC in tight combat loops.
         private readonly List<Type> _removalBuffer = new();
 
+        // Status effect kinds this entity refuses outright. Wired from
+        // MonsterDefinition.stats.statusImmunities by EntitySetup via SetImmunities; empty
+        // (the default) means immune to nothing, exactly as before this field existed.
+        [SerializeField]
+        [Tooltip("Status effect kinds Apply() refuses before OnApply ever runs. Usually set " +
+                 "at runtime via SetImmunities rather than authored here directly.")]
+        private StatusEffectKind[] immuneKinds = Array.Empty<StatusEffectKind>();
+
         public event Action<StatusEffect> OnEffectApplied;
         public event Action<StatusEffect> OnEffectRemoved;
+        // Fired when Apply() refuses an effect because the entity is immune to its Kind.
+        // Distinct from OnEffectRemoved (which implies the effect was active at least one
+        // frame) so a "shrugged it off" VFX can key off this instead.
+        public event Action<StatusEffectKind> OnEffectImmune;
 
         // ── Public API ───────────────────────────────────────────────────────
 
+        /// <summary>Wired from MonsterDefinition.stats.statusImmunities by EntitySetup.</summary>
+        public void SetImmunities(StatusEffectKind[] kinds) => immuneKinds = kinds ?? Array.Empty<StatusEffectKind>();
+
+        /// <summary>True when this entity refuses the given status effect kind outright.</summary>
+        public bool IsImmuneTo(StatusEffectKind kind)
+        {
+            if (immuneKinds == null) return false;
+            for (int i = 0; i < immuneKinds.Length; i++)
+                if (immuneKinds[i] == kind) return true;
+            return false;
+        }
+
         /// <summary>
         /// Apply a status effect. If an effect of the same type already exists it is
-        /// removed first (refresh/replace), then the new effect is applied.
+        /// removed first (refresh/replace), then the new effect is applied. Refused
+        /// outright — no OnApply, no OnEffectApplied — when the entity is immune to the
+        /// effect's <see cref="StatusEffect.Kind"/> (see <see cref="SetImmunities"/>).
         /// </summary>
         public void Apply(StatusEffect effect)
         {
             if (effect == null) return;
+
+            if (IsImmuneTo(effect.Kind))
+            {
+                OnEffectImmune?.Invoke(effect.Kind);
+                return;
+            }
 
             var type = effect.GetType();
 

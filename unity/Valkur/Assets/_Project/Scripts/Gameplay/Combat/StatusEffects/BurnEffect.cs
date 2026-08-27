@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Data;
 
 namespace Valkur.Gameplay.Combat
 {
@@ -13,6 +14,8 @@ namespace Valkur.Gameplay.Combat
         // Python defaults: damage_per_tick=2, tick_period=1.0
         public int   DamagePerTick { get; }
         public float TickPeriod    { get; }
+
+        public override StatusEffectKind Kind => StatusEffectKind.Burn;
 
         private float _nextTickTime;
 
@@ -43,7 +46,7 @@ namespace Valkur.Gameplay.Combat
 
             var hp = target.GetComponent<Health>();
             if (hp != null && !hp.IsDead)
-                hp.TakeDamage(DamagePerTick * ticks);
+                hp.TakeDotDamage(DamagePerTick * ticks, Applier, SpellElement.Fire);
         }
 
         private System.Collections.IEnumerator BurnTintRoutine(SpriteTintStack tint,

@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Data;
 
 namespace Valkur.Gameplay.Combat
 {
@@ -11,6 +12,8 @@ namespace Valkur.Gameplay.Combat
     {
         public int   DamagePerTick { get; }
         public float TickPeriod    { get; }
+
+        public override StatusEffectKind Kind => StatusEffectKind.Poison;
 
         private float _nextTickTime;
 
@@ -40,7 +43,7 @@ namespace Valkur.Gameplay.Combat
 
             var hp = target.GetComponent<Health>();
             if (hp != null && !hp.IsDead)
-                hp.TakeDamage(DamagePerTick * ticks);
+                hp.TakeDotDamage(DamagePerTick * ticks, Applier);
         }
 
         private System.Collections.IEnumerator PoisonTintRoutine(SpriteTintStack tint,

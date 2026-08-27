@@ -78,15 +78,26 @@ namespace Valkur.Gameplay
             if (_phases != null) _phases.OnPhaseChanged -= OnPhaseChanged;
         }
 
-        // Bind the entry-phase chart once the scene is fully built. Phase 0
-        // never goes through OnPhaseChanged (it is the initial state, not a
-        // transition target), so the chart binding has to be primed here.
-        // ConfigureRotation is left untouched — that path was already wired
-        // by the existing inspector authoring of the boss prefab.
+        // Bind the entry-phase chart (and, as of this method, the entry-phase
+        // spell rotation too) once the scene is fully built. Phase 0 never
+        // goes through OnPhaseChanged (it is the initial state, not a
+        // transition target), so both have to be primed here — see the
+        // comment on the ConfigureRotation(0) call below.
         private void Start()
         {
             if (definition == null || definition.phases == null || definition.phases.Length == 0) return;
-            // Music first: ResolveChart picks the chart whose musicTrackId
+
+            // Entry-phase rotation. BossPhaseController.OnPhaseChanged only fires on
+            // an actual transition (EvaluateAt requires target > CurrentPhase), and
+            // CurrentPhase starts at 0 — so phase 0 never reaches OnPhaseChanged and
+            // nothing else calls ConfigureRotation(0). Before this line that meant a
+            // freshly-spawned boss stood there mute until it crossed its first HP
+            // threshold, even though the class doc above (step 3) has promised this
+            // call since the file was written and the phase-0 autoCastList is
+            // authored data (see SampleBoss.asset's "Opening" phase).
+            ConfigureRotation(0);
+
+            // Music next: ResolveChart picks the chart whose musicTrackId
             // matches the ACTIVE song, so the entry theme has to be playing
             // before the chart is bound or the boss silently falls back to
             // the cooldown rotation on its own opening phase.

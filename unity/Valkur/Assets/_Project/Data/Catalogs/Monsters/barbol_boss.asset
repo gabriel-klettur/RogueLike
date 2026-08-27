@@ -17,7 +17,7 @@ MonoBehaviour:
   stats:
     hp: 2000
     speed: 1.5
-    chasingSpeed: 3.5
+    chasingSpeed: 5.25
     defense: 5
     power: 10
     meleeRange: 7
@@ -38,11 +38,11 @@ MonoBehaviour:
   fsmSet: Monster_Default
   patrolType: line
   useAttackTelegraph: 0
-  nextPhase: 
-  phaseIndex: 0
+  bossDefinition: {fileID: 11400000, guid: 5c73276de984ab545b2cf2eaf1ba826b, type: 2}
   autoCast: 0
   autoCastList: []
   xpReward: 500
+  lootTable: {fileID: 0}
   assetConfig:
     idle:
       south: {fileID: 21300000, guid: a55b35d407872ed418e10e772f9f28ed, type: 3}
@@ -81,11 +81,11 @@ MonoBehaviour:
       west: {fileID: 0}
       southWest: {fileID: 0}
     attack:
-      south: {fileID: 0}
+      south: {fileID: 21300000, guid: 1e58a280e4bff5b4e9dc8c4cfebdd3ae, type: 3}
       southEast: {fileID: 0}
-      east: {fileID: 0}
+      east: {fileID: 21300000, guid: 8e4d953da111cb54b98ada988af94f49, type: 3}
       northEast: {fileID: 0}
-      north: {fileID: 0}
+      north: {fileID: 21300000, guid: faa86387c7ba42c449a68aa8a820e233, type: 3}
       northWest: {fileID: 0}
       west: {fileID: 0}
       southWest: {fileID: 0}
@@ -114,6 +114,7 @@ MonoBehaviour:
     attackSheets: []
     damageSheets: []
     deathSheets: []
+    attackVariants: []
     scaleConfig:
       scaleIdle: 0.35
       scaleWalk: 0.35

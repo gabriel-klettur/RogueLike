@@ -26,12 +26,36 @@ namespace Valkur.Gameplay
 
         private float _lastAttackTime = -999f;
 
+        // One entity may present several colliders to the overlap query (body +
+        // hurtbox + perception trigger). Hoisted and cleared per swing rather than
+        // allocated, since a pack of monsters swings every frame.
+        private static readonly System.Collections.Generic.HashSet<int> _damagedThisSwing =
+            new System.Collections.Generic.HashSet<int>();
+
+        // Domain Reload is OFF, so the buffer would carry the last session's instance
+        // IDs into the next Play. PerformAttack clears it before every swing, but a
+        // shared static that survives a Play boundary is exactly what
+        // DomainReloadStaticResetTests exists to refuse.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState() => _damagedThisSwing.Clear();
+
         /// <summary>Fired when this entity hits a target. Args: (hitGameObject, damage)</summary>
         public event Action<GameObject, int> OnHitTarget;
 
-        public bool CanAttack => Time.time >= _lastAttackTime + cooldown;
-        public float CooldownRemaining => Mathf.Max(0f, (_lastAttackTime + cooldown) - Time.time);
-        public float CooldownTotal => cooldown;
+        /// <summary>
+        /// Cooldown multiplier contributed by the LAST swing's attack variant. A heavy move
+        /// that hits harder should also leave a longer opening, and the opening only makes
+        /// sense measured from the move that created it — so this is stamped by
+        /// <see cref="TryAttack"/> and read by every cooldown query until the next swing.
+        /// 1 for every entity with no variants, which is all but one shipped monster.
+        /// </summary>
+        private float _cooldownScale = 1f;
+
+        private float ScaledCooldown => cooldown * _cooldownScale;
+
+        public bool CanAttack => Time.time >= _lastAttackTime + ScaledCooldown;
+        public float CooldownRemaining => Mathf.Max(0f, (_lastAttackTime + ScaledCooldown) - Time.time);
+        public float CooldownTotal => ScaledCooldown;
         public int Damage => damage;
         public float Range => range;
         public float ArcDegrees => arcDegrees;
@@ -54,51 +78,89 @@ namespace Valkur.Gameplay
             targetLayers = layers;
         }
 
-        public void TryAttack(Vector2 direction)
+        /// <summary>
+        /// Swing. The three multipliers come from the attack variant the FSM picked, so one
+        /// entity's moveset can differ move to move instead of being five animations over
+        /// one identical hit. All default to 1, which is exactly the old behaviour.
+        /// </summary>
+        /// <param name="damageMultiplier">Scales this swing's damage. Floors at 1 point.</param>
+        /// <param name="rangeMultiplier">Scales reach AND the drawn arc, together.</param>
+        /// <param name="cooldownMultiplier">Scales the opening this swing leaves behind.</param>
+        public void TryAttack(Vector2 direction,
+                              float damageMultiplier = 1f,
+                              float rangeMultiplier = 1f,
+                              float cooldownMultiplier = 1f)
         {
             if (!CanAttack) return;
 
+            _cooldownScale = Mathf.Max(0.01f, cooldownMultiplier);
             _lastAttackTime = Time.time;
-            PerformAttack(direction);
-            SpawnSlashVFX(direction);
+
+            int swingDamage = Mathf.Max(1, Mathf.RoundToInt(damage * Mathf.Max(0f, damageMultiplier)));
+            float swingRange = Mathf.Max(0.01f, range * Mathf.Max(0.01f, rangeMultiplier));
+
+            PerformAttack(direction, swingDamage, swingRange);
+            SpawnSlashVFX(direction, swingRange);
         }
 
-        private void PerformAttack(Vector2 direction)
+        private void PerformAttack(Vector2 direction, int swingDamage, float swingRange)
         {
-            // Cast from entity center; the overlap circle covers the full attack range in front
+            // The damage query is centred on the entity with radius `swingRange` — exactly
+            // the circle SpawnSlashVFX draws the crescent inside, and exactly what
+            // OnDrawGizmosSelected shows. It used to be centred at
+            // `origin + dir * range * 0.5` with radius `range`, so the furthest
+            // damaged point was range * 1.5: you were hit a tile and a half outside
+            // the visible arc, and three and a half tiles outside it on barbol_boss.
             Vector2 origin = (Vector2)transform.position;
-            Vector2 center = origin + direction.normalized * (range * 0.5f);
-            var hits = Physics2D.OverlapCircleAll(center, range, targetLayers);
+            var hits = Physics2D.OverlapCircleAll(origin, swingRange, targetLayers);
 
             int hitCount = 0;
+            _damagedThisSwing.Clear();
             foreach (var hit in hits)
             {
                 if (hit.gameObject == gameObject) continue;
 
-                var health = hit.GetComponent<Health>();
-                if (health != null && !health.IsDead)
-                {
-                    // Arc check: angle from attack direction to target direction
-                    Vector2 toTarget = ((Vector2)hit.transform.position - origin).normalized;
-                    float angle = Vector2.Angle(direction.normalized, toTarget);
-                    if (angle <= arcDegrees * 0.5f)
-                    {
-                        health.TakeDamage(damage, gameObject);
-                        hitCount++;
+                // GetComponentInParent, not GetComponent: an entity may carry its
+                // body collider on a child (SlashAttack.Damage already resolves it
+                // this way). The self-check has to be repeated on the resolved owner
+                // — a child hurtbox of our own would otherwise walk up to our Health.
+                var health = hit.GetComponentInParent<Health>();
+                if (health == null || health.IsDead) continue;
 
-                        // Apply knockback via CombatFeedback
-                        var feedback = hit.GetComponent<Combat.CombatFeedback>();
-                        if (feedback != null)
-                            feedback.ApplyKnockback(origin);
+                var victim = health.gameObject;
+                if (victim == gameObject) continue;
 
-                        OnHitTarget?.Invoke(hit.gameObject, damage);
-                        GameEvents.FireHitDealt(gameObject, hit.gameObject, damage);
-                    }
-                }
+                // One entity, one hit: resolving through the parent means a body
+                // collider and a perception trigger on the same entity both land here.
+                if (!_damagedThisSwing.Add(victim.GetInstanceID())) continue;
+
+                // Arc check, measured against the entity we are actually damaging
+                // rather than whichever of its colliders the query happened to return.
+                Vector2 victimPos = victim.transform.position;
+                Vector2 toTarget = (victimPos - origin).normalized;
+                float angle = Vector2.Angle(direction.normalized, toTarget);
+                if (angle > arcDegrees * 0.5f) continue;
+
+                // A swing does not pass through world geometry. barbol_boss reaches
+                // 7 units, which is most of a building — without this it hit players
+                // standing on the far side of one.
+                if (World.LineOfSight.IsBlocked(origin, victimPos)) continue;
+
+                health.TakeDamage(swingDamage, gameObject);
+                hitCount++;
+
+                // Apply knockback via CombatFeedback
+                var feedback = victim.GetComponent<Combat.CombatFeedback>();
+                if (feedback != null)
+                    feedback.ApplyKnockback(origin);
+
+                OnHitTarget?.Invoke(victim, swingDamage);
+                GameEvents.FireHitDealt(gameObject, victim, swingDamage);
             }
 
             if (hitCount > 0)
-                Debug.Log($"[MeleeCombat] {gameObject.name} hit {hitCount} target(s) for {damage} damage");
+                Valkur.Core.VerboseLog.Log(Valkur.Core.VerboseLog.Category.Combat,
+                    () => $"[MeleeCombat] {gameObject.name} hit {hitCount} target(s) for {swingDamage} damage");
         }
 
         /// <summary>
@@ -111,14 +173,47 @@ namespace Valkur.Gameplay
         /// wherever a monster swung. The arc is the whole point of a melee attack: it is what
         /// tells the player which side of them is dangerous.
         /// </summary>
-        private void SpawnSlashVFX(Vector2 direction)
+        private void SpawnSlashVFX(Vector2 direction, float swingRange)
         {
             if (!showSlashVfx) return;
 
             Vector2 origin = transform.position;
             Spells.SlashAttack.SpawnVisual(transform, origin, direction.normalized,
-                                           range, arcDegrees, slashVfxColor);
+                                           swingRange, arcDegrees, slashVfxColor);
         }
+
+        /// <summary>
+        /// Draws the crescent this entity is ABOUT to swing, dimmed, at the start of the
+        /// windup — the "this is going to hit you, here" tell.
+        ///
+        /// It reuses the very shape the real swing draws rather than inventing a separate
+        /// marker, so the promise and the payoff cannot disagree about reach or direction:
+        /// the same origin, the same arc, the same range the damage query will use. That
+        /// mattered enough to fix once already — the damage circle used to reach 1.5x what
+        /// the arc showed.
+        ///
+        /// Driven by <c>MonsterDefinition.useAttackTelegraph</c>, a field that was authored
+        /// on barbol and knight_red and read by nothing but a label in the F5 panel.
+        /// </summary>
+        public void SpawnTelegraph(Vector2 direction, float rangeMultiplier = 1f)
+        {
+            if (!showSlashVfx) return;
+
+            float swingRange = Mathf.Max(0.01f, range * Mathf.Max(0.01f, rangeMultiplier));
+            var color = slashVfxColor;
+            color.a *= TelegraphAlphaScale;
+
+            Vector2 origin = transform.position;
+            Spells.SlashAttack.SpawnVisual(transform, origin, direction.normalized,
+                                           swingRange, arcDegrees, color);
+        }
+
+        /// <summary>
+        /// How much dimmer the telegraph is than the swing itself. It has to read as a
+        /// warning rather than as the hit — if the two look alike, a player learns to
+        /// dodge the wrong one.
+        /// </summary>
+        private const float TelegraphAlphaScale = 0.35f;
 
         private void OnDrawGizmosSelected()
         {
