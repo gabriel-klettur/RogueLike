@@ -16,10 +16,22 @@ namespace Valkur.Gameplay.World.Layering
     ///   matches their current visual layer.</item>
     ///   <item><b>Player vs WorldAll = ON</b> always. Wildcard cells block
     ///   the player on every layer.</item>
-    ///   <item><b>NPC + Projectile vs every WorldL = ON</b> (M2.1 simplification).
-    ///   They collide with every painted cell regardless of tag for now;
+    ///   <item><b>NPC vs every WorldL + WorldAll = ON</b> (M2.1 simplification).
+    ///   NPCs collide with every painted cell regardless of tag for now;
     ///   M2.2 will give them the same opt-in treatment as the player.</item>
     /// </list>
+    ///
+    /// The NPC half of that list used to be documentation only — the body
+    /// configured <c>playerLayer</c> and returned, leaving the project's
+    /// <c>Physics2DSettings</c> matrix (which ignores NPC vs 18..27) in force.
+    /// Since <see cref="VisualLayerColliderSync"/> is attached to the player alone,
+    /// every NPC collider carried <c>includeLayers = 0</c> with no matrix entry to
+    /// fall back on, so monsters walked through every painted wall, river and cliff
+    /// and only the building <c>CollTile_*</c> boxes on <c>World</c>(11) stopped them.
+    ///
+    /// Projectiles are deliberately NOT in the matrix: they resolve obstacles
+    /// through a swept query against <see cref="WorldCollisionLayers.BlockingMask"/>,
+    /// so a matrix entry would double-handle the same hit.
     ///
     /// Runs at <see cref="RuntimeInitializeLoadType.SubsystemRegistration"/> so
     /// the matrix is correct BEFORE any scene loads or any physics tick fires.
@@ -36,6 +48,8 @@ namespace Valkur.Gameplay.World.Layering
                 return;
             }
 
+            int npcLayer = LayerMask.NameToLayer("NPC");
+
             // Force re-resolution of cached layer indices in case the TagManager
             // changed between Play sessions (Domain Reload OFF means statics
             // survive across plays).
@@ -49,6 +63,11 @@ namespace Valkur.Gameplay.World.Layering
                 // toggles one back ON via Collider2D.includeLayers based on the
                 // entity's current visual layer.
                 Physics2D.IgnoreLayerCollision(playerLayer, wl, true);
+
+                // NPCs have no VisualLayerColliderSync, so they have nothing to opt
+                // back in with — they must be blocked by every painted layer outright.
+                if (npcLayer >= 0)
+                    Physics2D.IgnoreLayerCollision(npcLayer, wl, false);
             }
 
             // Player vs WorldAll: NEVER ignored — wildcard colliders apply to
@@ -57,7 +76,14 @@ namespace Valkur.Gameplay.World.Layering
             // from a previous Play session (Domain Reload OFF).
             int worldAll = WorldCollisionLayers.GetWorldAllIndex();
             if (worldAll >= 0)
+            {
                 Physics2D.IgnoreLayerCollision(playerLayer, worldAll, false);
+                if (npcLayer >= 0)
+                    Physics2D.IgnoreLayerCollision(npcLayer, worldAll, false);
+            }
+
+            if (npcLayer < 0)
+                Debug.LogWarning("[VisualLayerPhysicsSetup] 'NPC' layer not found — NPCs will not collide with painted cells.");
         }
     }
 }

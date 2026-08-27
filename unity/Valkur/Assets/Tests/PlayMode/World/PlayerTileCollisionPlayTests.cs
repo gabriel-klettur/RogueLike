@@ -285,6 +285,22 @@ namespace Valkur.Tests.PlayMode.World
 
             var lobbyComposite = collision.GetComponent<CompositeCollider2D>();
             Assert.IsNotNull(lobbyComposite, "Collision tilemap is missing CompositeCollider2D.");
+
+            // Force the TilemapCollider2D to rebuild before generating geometry. It was
+            // created by WorldGridBuilder before any tile existed and never ingests the
+            // SetTile burst OverlayLoader issues afterwards — not on RefreshAllTiles, not
+            // after waiting frames. Re-enabling the component makes it read the cells that
+            // are already there. Production sidesteps this entirely: WorldCollisionBaker
+            // disables this collider and owns collision through CollisionPhysics_*
+            // sub-tilemaps whose colliders are ADDED after the cells are stamped.
+            // Measured: lobby's 75 painted cells yield 9 composite paths this way.
+            collision.RefreshAllTiles();
+            var lobbyTmCollider = collision.GetComponent<UnityEngine.Tilemaps.TilemapCollider2D>();
+            if (lobbyTmCollider != null)
+            {
+                lobbyTmCollider.enabled = false;
+                lobbyTmCollider.enabled = true;
+            }
             lobbyComposite.GenerateGeometry();
             yield return new WaitForFixedUpdate();
 

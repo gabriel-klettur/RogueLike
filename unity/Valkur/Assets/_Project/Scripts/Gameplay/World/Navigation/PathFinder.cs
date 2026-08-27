@@ -33,8 +33,10 @@ namespace Valkur.Gameplay.World
         [SerializeField] private int maxPathLength = 100;
 #pragma warning restore CS0414
 
-        // Layers that block NPC movement: World(11) + Building(14)
-        private static readonly int BlockingMask = (1 << 11) | (1 << 14);
+        // Layers that block NPC movement. World(11) + Building(14) alone see only
+        // the building boxes — the painted collision cells live on WorldL0..WorldAll,
+        // so a path solved without them routes straight through walls and water.
+        private static int BlockingMask => Layering.WorldCollisionLayers.BlockingMask();
 
         protected override bool Persist => false;
 
@@ -73,63 +75,143 @@ namespace Valkur.Gameplay.World
             if (rawPath == null || rawPath.Count == 0)
                 return new List<Vector2>();
 
-            // Convert cells back to world-space centers
-            var waypoints = new List<Vector2>(rawPath.Count);
-            foreach (var cell in rawPath)
-                waypoints.Add(CellToWorld(cell));
+            // Drop the start cell. Reconstruct returns the path INCLUDING the cell the
+            // caller is already standing in, and its world centre is almost never where
+            // the caller actually is — so the follower's first move was toward its own
+            // tile centre, i.e. backwards, once per repath (every 0.5 s while chasing).
+            int first = (rawPath[0] == startCell && rawPath.Count > 1) ? 1 : 0;
+
+            var waypoints = new List<Vector2>(rawPath.Count - first);
+            for (int i = first; i < rawPath.Count; i++)
+                waypoints.Add(CellToWorld(rawPath[i]));
 
             // Always put actual goal position as last waypoint
             if (waypoints.Count > 0)
                 waypoints[waypoints.Count - 1] = goal;
 
+            SmoothPath(start, waypoints);
             return waypoints;
+        }
+
+        /// <summary>
+        /// String-pulling: drop every waypoint the follower can simply walk past.
+        ///
+        /// A* returns one waypoint per TILE, and the follower steers straight at each one
+        /// in turn — so an open diagonal run came out as a visible zig-zag between tile
+        /// centres, and a straight corridor cost one course correction per tile. Keeping a
+        /// waypoint is only worth it when the geometry actually requires the turn.
+        ///
+        /// The test is the same <see cref="LineOfSight"/> the aggro and melee checks use,
+        /// so "can I walk straight there" means exactly what it means everywhere else in
+        /// the game. It is affordable now precisely because that helper exists: before it,
+        /// this pass would have been a second, differently-masked raycast implementation.
+        ///
+        /// Cost is O(n) casts on a path of n tiles, against the up-to-8,000 walkability
+        /// probes the search itself may do — and it usually REDUCES total work downstream,
+        /// because a chasing monster stops recomputing a heading every tile.
+        /// </summary>
+        private static void SmoothPath(Vector2 start, List<Vector2> waypoints)
+        {
+            if (waypoints.Count < 2) return;
+
+            Vector2 from = start;
+            int i = 0;
+            while (i < waypoints.Count - 1)
+            {
+                // If the waypoint AFTER this one is directly reachable, this one is a
+                // corner the path did not actually need to turn at.
+                if (LineOfSight.IsClear(from, waypoints[i + 1]))
+                {
+                    waypoints.RemoveAt(i);
+                    continue;   // re-test the same index against the new successor
+                }
+
+                from = waypoints[i];
+                i++;
+            }
+        }
+
+        /// <summary>
+        /// Drop the memoised walkability grid. MUST be called whenever the painted
+        /// collision changes — <see cref="Layering.WorldCollisionBaker"/> calls it after
+        /// every rebake — or the solver keeps routing around walls that were erased and
+        /// straight through walls that were painted.
+        /// </summary>
+        public static void InvalidateWalkability()
+        {
+            if (HasInstance) Instance._walkCache.Clear();
         }
 
         // ── A* implementation ────────────────────────────────────────────────
 
+        // Reused across every search. A chasing pack repaths 40 times a second between
+        // them; allocating a SortedList, two Dictionaries and two Lists per call fed the
+        // garbage collector in exactly the scenario a fight creates.
+        private readonly MinHeap _open = new MinHeap(256);
+        private readonly Dictionary<Vector2Int, Vector2Int> _cameFrom = new Dictionary<Vector2Int, Vector2Int>(512);
+        private readonly Dictionary<Vector2Int, float> _gScore = new Dictionary<Vector2Int, float>(512);
+        private readonly List<Vector2Int> _path = new List<Vector2Int>(128);
+
         private List<Vector2Int> AStar(Vector2Int start, Vector2Int goal)
         {
-            var openSet = new SortedList<float, Vector2Int>(new DuplicateKeyComparer());
-            var cameFrom = new Dictionary<Vector2Int, Vector2Int>();
-            var gScore = new Dictionary<Vector2Int, float> { [start] = 0f };
+            _open.Clear();
+            _cameFrom.Clear();
+            _gScore.Clear();
 
-            float startF = Heuristic(start, goal);
-            openSet.Add(startF, start);
+            _gScore[start] = 0f;
+            _open.Push(Heuristic(start, goal), start);
 
             int expanded = 0;
 
-            while (openSet.Count > 0)
+            while (_open.Count > 0)
             {
-                var current = openSet.Values[0];
-                openSet.RemoveAt(0);
+                var current = _open.Pop();
+
+                // A cell can be pushed several times with improving scores; the stale
+                // copies surface later and are skipped here. The old SortedList could
+                // not do this — its comparer never returned 0 specifically so duplicate
+                // keys would be kept, so every stale entry stayed in the set forever.
+                if (_gScore.TryGetValue(current, out float gCur) == false) continue;
 
                 if (current == goal)
-                    return Reconstruct(cameFrom, current);
+                    return Reconstruct(current);
 
                 if (++expanded > maxNodes)
                     break;
 
-                foreach (var dir in Cardinals)
+                for (int i = 0; i < _neighbours.Length; i++)
                 {
+                    var dir = _neighbours[i];
                     var neighbor = current + dir;
 
                     if (!IsWalkable(neighbor)) continue;
 
-                    // Base step cost is 1; an optional penalty provider can add to it.
+                    bool diagonal = dir.x != 0 && dir.y != 0;
+                    if (diagonal)
+                    {
+                        // Never cut a wall corner: a diagonal step is legal only when both
+                        // orthogonal cells it passes between are open. Without this the
+                        // solver happily slides through the gap where two walls meet.
+                        if (!IsWalkable(new Vector2Int(current.x + dir.x, current.y)) ||
+                            !IsWalkable(new Vector2Int(current.x, current.y + dir.y)))
+                            continue;
+                    }
+
+                    // Base step cost; an optional penalty provider can add to it.
                     // Provider is null in vanilla Valkur; the Udemy dungeon system installs one.
-                    float stepCost = 1f;
+                    float stepCost = diagonal ? Sqrt2 : 1f;
                     if (_penaltyProvider != null)
                     {
                         int extra = _penaltyProvider.GetExtraPenalty(neighbor);
                         if (extra > 0) stepCost += extra;
                     }
-                    float tentG = gScore[current] + stepCost;
-                    if (!gScore.TryGetValue(neighbor, out float oldG) || tentG < oldG)
+
+                    float tentG = gCur + stepCost;
+                    if (!_gScore.TryGetValue(neighbor, out float oldG) || tentG < oldG)
                     {
-                        cameFrom[neighbor] = current;
-                        gScore[neighbor] = tentG;
-                        float f = tentG + Heuristic(neighbor, goal);
-                        openSet.Add(f, neighbor);
+                        _cameFrom[neighbor] = current;
+                        _gScore[neighbor] = tentG;
+                        _open.Push(tentG + Heuristic(neighbor, goal), neighbor);
                     }
                 }
             }
@@ -137,31 +219,129 @@ namespace Valkur.Gameplay.World
             return null; // no path
         }
 
-        private static List<Vector2Int> Reconstruct(Dictionary<Vector2Int, Vector2Int> cameFrom,
-                                                     Vector2Int current)
+        private List<Vector2Int> Reconstruct(Vector2Int current)
         {
-            var path = new List<Vector2Int> { current };
-            while (cameFrom.TryGetValue(current, out var prev))
+            _path.Clear();
+            _path.Add(current);
+            while (_cameFrom.TryGetValue(current, out var prev))
             {
                 current = prev;
-                path.Add(current);
+                _path.Add(current);
             }
-            path.Reverse();
-            return path;
+            _path.Reverse();
+            return _path;
+        }
+
+        /// <summary>
+        /// Array-backed binary min-heap. Replaces a <c>SortedList</c> whose <c>Add</c> is
+        /// an O(n) array shift — on a 2000-node search with a wide frontier that is the
+        /// dominant cost, and it grew worse the longer the path got.
+        /// </summary>
+        private sealed class MinHeap
+        {
+            private float[] _keys;
+            private Vector2Int[] _values;
+            private int _count;
+
+            public MinHeap(int capacity)
+            {
+                _keys = new float[capacity];
+                _values = new Vector2Int[capacity];
+            }
+
+            public int Count => _count;
+            public void Clear() => _count = 0;
+
+            public void Push(float key, Vector2Int value)
+            {
+                if (_count == _keys.Length) Grow();
+
+                int i = _count++;
+                _keys[i] = key;
+                _values[i] = value;
+
+                while (i > 0)
+                {
+                    int parent = (i - 1) >> 1;
+                    if (_keys[parent] <= _keys[i]) break;
+                    Swap(parent, i);
+                    i = parent;
+                }
+            }
+
+            public Vector2Int Pop()
+            {
+                var top = _values[0];
+                _count--;
+                if (_count > 0)
+                {
+                    _keys[0] = _keys[_count];
+                    _values[0] = _values[_count];
+
+                    int i = 0;
+                    while (true)
+                    {
+                        int l = (i << 1) + 1, r = l + 1, smallest = i;
+                        if (l < _count && _keys[l] < _keys[smallest]) smallest = l;
+                        if (r < _count && _keys[r] < _keys[smallest]) smallest = r;
+                        if (smallest == i) break;
+                        Swap(i, smallest);
+                        i = smallest;
+                    }
+                }
+                return top;
+            }
+
+            private void Grow()
+            {
+                System.Array.Resize(ref _keys, _keys.Length * 2);
+                System.Array.Resize(ref _values, _values.Length * 2);
+            }
+
+            private void Swap(int a, int b)
+            {
+                float k = _keys[a]; _keys[a] = _keys[b]; _keys[b] = k;
+                Vector2Int v = _values[a]; _values[a] = _values[b]; _values[b] = v;
+            }
         }
 
         // ── Grid utilities ───────────────────────────────────────────────────
 
-        private static readonly Vector2Int[] Cardinals =
+        private static readonly float Sqrt2 = Mathf.Sqrt(2f);
+
+        /// <summary>
+        /// Eight neighbours, cardinals first so equal-cost ties resolve to a straight
+        /// step. The solver used to be cardinal-only with a Manhattan heuristic, which
+        /// turned every diagonal approach into a right-angled staircase of one-tile
+        /// waypoints — and because the follower steers straight at each waypoint, the
+        /// monster visibly zig-zagged across open ground while paying a node per tile.
+        /// Instance-level, not static: this type is a singleton, so one array either way,
+        /// and a static collection would need a Domain-Reload reset hook to earn its keep.
+        /// </summary>
+        private readonly Vector2Int[] _neighbours =
         {
             new Vector2Int( 1,  0),
             new Vector2Int(-1,  0),
             new Vector2Int( 0,  1),
             new Vector2Int( 0, -1),
+            new Vector2Int( 1,  1),
+            new Vector2Int( 1, -1),
+            new Vector2Int(-1,  1),
+            new Vector2Int(-1, -1),
         };
 
+        /// <summary>
+        /// Octile distance — the exact cost of the cheapest unobstructed 8-way path, so
+        /// it stays admissible (never overestimates) while being far better informed than
+        /// Manhattan was once diagonals exist. Manhattan over an 8-way grid OVERestimates
+        /// diagonal runs, which would have made the search return non-optimal paths.
+        /// </summary>
         private static float Heuristic(Vector2Int a, Vector2Int b)
-            => Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
+        {
+            float dx = Mathf.Abs(a.x - b.x);
+            float dy = Mathf.Abs(a.y - b.y);
+            return (dx + dy) + (Sqrt2 - 2f) * Mathf.Min(dx, dy);
+        }
 
         private Vector2Int WorldToCell(Vector2 world)
             => new Vector2Int(Mathf.FloorToInt(world.x / tileSize),
@@ -171,10 +351,24 @@ namespace Valkur.Gameplay.World
             => new Vector2(cell.x * tileSize + tileSize * 0.5f,
                            cell.y * tileSize + tileSize * 0.5f);
 
+        /// <summary>
+        /// Memoised walkability. Each cell used to cost a live
+        /// <c>Physics2D.OverlapCircle</c> EVERY time it was probed — four probes per
+        /// expansion, up to <c>maxNodes</c> expansions, so as many as 8,000 physics
+        /// queries per search, and the same terrain was re-probed from scratch by every
+        /// monster on every repath. The cache is dropped wholesale by
+        /// <see cref="InvalidateWalkability"/> when the painted collision changes.
+        /// </summary>
+        private readonly Dictionary<Vector2Int, bool> _walkCache = new Dictionary<Vector2Int, bool>(4096);
+
         private bool IsWalkable(Vector2Int cell)
         {
+            if (_walkCache.TryGetValue(cell, out bool cached)) return cached;
+
             Vector2 center = CellToWorld(cell);
-            return Physics2D.OverlapCircle(center, walkableRadius, BlockingMask) == null;
+            bool walkable = Physics2D.OverlapCircle(center, walkableRadius, BlockingMask) == null;
+            _walkCache[cell] = walkable;
+            return walkable;
         }
 
         private Vector2Int FindNearestWalkable(Vector2Int cell, int searchRadius)
@@ -192,14 +386,5 @@ namespace Valkur.Gameplay.World
             return cell;
         }
 
-        // ── Helper: SortedList doesn't allow duplicate keys ───────────────────
-        private class DuplicateKeyComparer : IComparer<float>
-        {
-            public int Compare(float x, float y)
-            {
-                int result = x.CompareTo(y);
-                return result == 0 ? 1 : result;
-            }
-        }
     }
 }

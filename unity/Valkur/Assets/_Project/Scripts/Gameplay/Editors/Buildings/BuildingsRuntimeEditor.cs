@@ -176,7 +176,13 @@ namespace Valkur.Gameplay.Buildings
         private bool  _splitDragging;
         private bool  _splitHovering;      // cursor is near the split line (hover highlight)
         private float _splitDragStartRatio;        // ratio when drag began (for undo)
-        private const float SPLIT_HANDLE_WORLD_RADIUS = 0.5f;  // world-units pick radius (~16 px at PPU=32)
+        // Fixed SCREEN-space pick padding around the split-ratio bar, in pixels.
+        // A world-space radius (the old SPLIT_HANDLE_WORLD_RADIUS) shrinks to a
+        // handful of screen pixels whenever the editor camera zooms out — exactly
+        // the zoom level authors use to see many buildings at once — which made
+        // the hover/click hitbox feel "pixel precise". Screen space keeps the
+        // interactive band a constant, generous size regardless of zoom.
+        private const float SPLIT_HANDLE_SCREEN_PADDING_PX = 14f;
 
         private Image _selectBtnImg, _placeBtnImg, _deleteBtnImg, _resizeBtnImg;
         private Image _addBtnImg, _removeBtnImg;
@@ -349,6 +355,12 @@ namespace Valkur.Gameplay.Buildings
 
         protected override void OnDestroy()
         {
+            // Defensive mirror of Deactivate()'s collider-overlay teardown: with
+            // Domain Reload + Scene Reload disabled, stopping Play Mode does NOT
+            // reload the scene, so any collider-debug overlay left visible (e.g.
+            // the editor singleton destroyed without going through F10 first)
+            // would otherwise sit in the Editor scene after Stop.
+            HideCollidersOverlayHard();
             if (_ownsToggleAction) _toggleAction?.Dispose();
             if (_collBrushCursorMat != null) Destroy(_collBrushCursorMat);
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);

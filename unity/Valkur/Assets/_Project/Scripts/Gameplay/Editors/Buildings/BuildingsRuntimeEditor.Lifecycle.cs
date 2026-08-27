@@ -79,10 +79,13 @@ namespace Valkur.Gameplay.Buildings
             _collBrushMode = CollBrushMode.Off;
             _activeColliderSession = null;
             _colliderStroke.Active = false;
-            // Stop any in-flight progressive overlay build so it doesn't keep
-            // running on a hidden editor and SetActive(true) overlays after
-            // we've already torn the editor down.
-            StopProgressiveShowOverlay();
+            // "Show Colliders" must not survive the editor closing: stop any
+            // in-flight progressive overlay build, hide every overlay visual,
+            // and reset the toggle so the NEXT F10 open starts with colliders
+            // off. Without this, closing F10 while the toggle was on left the
+            // debug overlay quads/lines sitting in the world with no editor
+            // open to turn them off.
+            HideCollidersOverlayHard();
             // Reset the culling cache so the NEXT activation always recomputes
             // visibilities even if the camera ended up at the same position.
             InvalidateOverlayCullingCache();

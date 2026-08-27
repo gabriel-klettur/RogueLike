@@ -247,6 +247,50 @@ namespace Valkur.Gameplay.Buildings
             _colliderStroke.InstanceId = session.InstanceId;
             _colliderStroke.Before = CloneGrid(session.WorkingGrid);
             _colliderStroke.Changed = false;
+
+            // Seed the PHYSICAL colliders from the session's starting grid once,
+            // so the incremental per-cell deltas HandleColliderPaint applies for
+            // the rest of the drag (see ApplyGridCellToBuilding) are valid diffs
+            // against a fully-materialised baseline. Without this, a "cold"
+            // building — solid by template default but never individually
+            // painted before, so it has no CollTile children yet — would only
+            // ever grow colliders for the cells the brush actually touched,
+            // leaving every other nominally-solid cell walkable until the
+            // stroke ends and EndColliderStroke's full resync catches up.
+            // O(total solid cells) here, but only ONCE per stroke (mouse-down)
+            // instead of once per mouse-move sample.
+            ApplyGridOverrideToBuilding(_activeBuilding, session.WorkingGrid);
+            if (session.Scope == ColliderAuthoringScope.CG)
+                SeedSharedTemplatesFromGrid(session);
+        }
+
+        /// <summary>
+        /// Full-rebuild counterpart to <see cref="ApplyGridOverrideToBuilding"/>
+        /// for every OTHER building sharing this stroke's CG image key. Called
+        /// once from <see cref="BeginColliderStroke"/> so siblings start the
+        /// drag with the same fully-materialised baseline as the active
+        /// building — the live per-cell propagation during the drag
+        /// (<see cref="PropagateLiveStrokeToSharedTemplates"/>) only needs to
+        /// apply the cells that actually changed after that point.
+        /// </summary>
+        private void SeedSharedTemplatesFromGrid(ActiveColliderGridSession session)
+        {
+            if (session == null || session.WorkingGrid == null) return;
+            string sharedKey = session.ImageKey ?? string.Empty;
+            if (string.IsNullOrEmpty(sharedKey)) return;
+
+            var all = GetCachedBuildings();
+            for (int i = 0; i < all.Length; i++)
+            {
+                var b = all[i];
+                if (b == null || b.Template == null) continue;
+                if (ReferenceEquals(b, _activeBuilding)) continue;
+                if (string.Equals(b.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (!string.Equals(ResolveSharedScopeKey(b), sharedKey, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                ApplyGridOverrideToBuilding(b, session.WorkingGrid);
+            }
         }
 
         private void EndColliderStroke()

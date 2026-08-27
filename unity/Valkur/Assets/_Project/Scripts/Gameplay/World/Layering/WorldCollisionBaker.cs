@@ -288,6 +288,12 @@ namespace Valkur.Gameplay.World.Layering
         {
             if (!_isReady || _sourceCollision == null) return;
 
+            // The pathfinder memoises walkability per cell, and this method is the one
+            // place that changes what "walkable" means. Without this the solver keeps
+            // routing around walls the author just erased and straight through walls
+            // they just painted, for the rest of the session.
+            PathFinder.InvalidateWalkability();
+
             // A full sweep re-derives every cell from scratch, so it supersedes
             // whatever was queued for the incremental path — drop it so LateUpdate
             // doesn't pay a redundant (harmless but wasted) incremental pass for

@@ -5,12 +5,36 @@ using Valkur.Core;
 namespace Valkur.Gameplay.World
 {
     /// <summary>
-    /// Scene-level system that resolves overlaps between NPC colliders each physics frame.
-    /// Mirrors Python NpcSeparationSystem: uses broad-phase (Physics2D.OverlapCircleAll)
-    /// and applies gentle separation impulses so NPCs never share the same space.
+    /// Scene-level system that resolves overlaps between NPC bodies each physics frame,
+    /// so a pack converging on the player spreads instead of stacking into one sprite.
+    /// Mirrors Python NpcSeparationSystem.
     ///
-    /// Attach to any persistent scene GameObject (e.g. GameDirector child).
-    /// Works only on GameObjects in the NPC layer (9).
+    /// Attach to any persistent scene GameObject (created by
+    /// <c>GameplaySceneSetup.EnsureNPCSeparation</c>).
+    ///
+    /// <para><b>Why this is written the way it is.</b> The original solved each pair
+    /// TWICE per iteration — once while visiting A with B as a neighbour and again while
+    /// visiting B with A as one — and EACH visit moved BOTH bodies, so with three
+    /// iterations every overlap was corrected six times against an authored strength of
+    /// 2.5. It also applied each correction through <c>Rigidbody2D.MovePosition</c>
+    /// inside the neighbour loop, and a body honours only the LAST MovePosition issued
+    /// before a physics step — so with K overlapping neighbours, K-1 of the corrections
+    /// were computed and thrown away. Over-correcting and then discarding most of it is
+    /// what made a clump jitter instead of spreading.</para>
+    ///
+    /// <para>Now: neighbours come from <see cref="EntityRegistry.Monsters"/> and cached
+    /// positions rather than a per-NPC <c>Physics2D.OverlapCircleAll</c> (which allocated
+    /// a fresh array 3xN times per FixedUpdate — 3,000/s for a pack of twenty), each
+    /// unordered pair is visited exactly once, every correction accumulates into a
+    /// per-entity displacement, and the total is written to each body ONCE at the end.</para>
+    ///
+    /// <para>The final write is to <c>Rigidbody2D.position</c>, not <c>MovePosition</c>.
+    /// MovePosition is a swept move that OWNS the body's motion for that step, which
+    /// would fight the FSM states — they write <c>velocity</c> from <c>Update</c>, at a
+    /// different rate, with no execution order defined between them. A direct position
+    /// nudge composes with the velocity integration instead of replacing it, so a monster
+    /// being separated still advances. The corrections are bounded by
+    /// <c>overlap * separationStrength * fixedDeltaTime</c>, far too small to tunnel.</para>
     /// </summary>
     public class NPCSeparationSystem : MonoBehaviour
     {
@@ -27,70 +51,141 @@ namespace Valkur.Gameplay.World
         [Tooltip("Number of solver iterations per frame. Python: max_iters = 3")]
         [SerializeField] private int solverIterations = 3;
 
-        private static readonly int NpcLayerMask = 1 << 9; // NPC layer
+        // Per-FixedUpdate working set. Instance fields, not statics, so Domain Reload
+        // being OFF cannot carry a destroyed Rigidbody2D into the next Play session.
+        private readonly List<Rigidbody2D> _bodies = new List<Rigidbody2D>(64);
+        private readonly List<Vector2> _positions = new List<Vector2>(64);
+        private readonly List<float> _radii = new List<float>(64);
+        private readonly List<Vector2> _displacements = new List<Vector2>(64);
+
+        /// <summary>
+        /// Body-collider radius per entity, keyed by instance id.
+        /// <c>EntityColliderConfigurator.GetBodyCollider</c> allocates internally via
+        /// <c>GetComponents&lt;Collider2D&gt;()</c>, and a collider's size does not change
+        /// between frames, so resolving it once per entity instead of once per neighbour
+        /// per iteration removes the system's last per-frame allocation.
+        /// </summary>
+        private readonly Dictionary<int, float> _radiusCache = new Dictionary<int, float>(128);
+
+        /// <summary>Prune threshold for <see cref="_radiusCache"/> — monsters die and respawn.</summary>
+        private const int RadiusCacheMax = 512;
 
         private void FixedUpdate()
         {
-            // Use EntityRegistry instead of FindObjectsOfType (O(1) vs O(n) scene scan)
-            var monsterList = EntityRegistry.Monsters;
-            if (monsterList == null || monsterList.Count < 2) return;
+            var monsters = EntityRegistry.Monsters;
+            if (monsters == null || monsters.Count < 2) return;
+
+            GatherActiveBodies(monsters);
+            int n = _bodies.Count;
+            if (n < 2) return;
+
+            float searchRadiusSq = searchRadius * searchRadius;
+            float dt = Time.fixedDeltaTime;
 
             for (int iter = 0; iter < solverIterations; iter++)
             {
+                for (int i = 0; i < n; i++) _displacements[i] = Vector2.zero;
                 bool movedAny = false;
 
-                for (int i = 0; i < monsterList.Count; i++)
+                // j > i: every unordered pair exactly once. The old loop visited each
+                // pair twice and moved both bodies on each visit.
+                for (int i = 0; i < n; i++)
                 {
-                    var npcGo = monsterList[i];
-                    if (npcGo == null || !npcGo.activeInHierarchy) continue;
+                    Vector2 posA = _positions[i];
+                    float radA = _radii[i];
 
-                    var rbA = npcGo.GetComponent<Rigidbody2D>();
-                    var colA = EntityColliderConfigurator.GetBodyCollider(npcGo);
-                    if (rbA == null || colA == null) continue;
-                    if (rbA.isKinematic) continue;
-
-                    // Broad-phase: find nearby NPCs
-                    var hits = Physics2D.OverlapCircleAll(
-                        (Vector2)npcGo.transform.position, searchRadius, NpcLayerMask);
-
-                    foreach (var hit in hits)
+                    for (int j = i + 1; j < n; j++)
                     {
-                        if (hit.gameObject == npcGo) continue;
+                        Vector2 delta = posA - _positions[j];
+                        float distSq = delta.sqrMagnitude;
+                        if (distSq > searchRadiusSq) continue;
 
-                        // Verify the hit object is on NPC layer
-                        if (hit.gameObject.layer != 9) continue;
+                        float minDist = radA + _radii[j];
+                        if (distSq >= minDist * minDist) continue;
 
-                        var rbB = hit.GetComponent<Rigidbody2D>();
-                        if (rbB == null || rbB.isKinematic) continue;
-
-                        // Compute separation vector between feet positions
-                        Vector2 posA = rbA.position;
-                        Vector2 posB = rbB.position;
-                        Vector2 delta = posA - posB;
-                        float dist = delta.magnitude;
-
-                        // Estimate combined half-extents from colliders
-                        float radA = GetColliderRadius(colA);
-                        float radB = GetColliderRadius(hit);
-                        float minDist = radA + radB;
-
+                        float dist = Mathf.Sqrt(distSq);
                         float overlap = minDist - dist;
                         if (overlap < minOverlap) continue;
 
-                        // Push apart proportionally (lighter entity moves more)
-                        Vector2 sep = dist > 0.001f
-                            ? delta.normalized * overlap * separationStrength * Time.fixedDeltaTime
-                            : new Vector2(Random.Range(-1f, 1f), Random.Range(-1f, 1f)).normalized
-                              * overlap * separationStrength * Time.fixedDeltaTime;
+                        Vector2 dir = dist > 0.001f
+                            ? delta / dist
+                            // Perfectly coincident: any direction will do, but it must be
+                            // deterministic per pair or two stacked monsters jitter forever
+                            // on fresh random values every physics step.
+                            : DeterministicNudge(i, j);
 
-                        rbA.MovePosition(posA + sep * 0.5f);
-                        rbB.MovePosition(posB - sep * 0.5f);
+                        Vector2 sep = dir * (overlap * separationStrength * dt * 0.5f);
+                        _displacements[i] += sep;
+                        _displacements[j] -= sep;
                         movedAny = true;
                     }
                 }
 
                 if (!movedAny) break;
+
+                // Integrate this iteration into the working positions so the next one
+                // solves against the partially-resolved layout, exactly as before.
+                for (int i = 0; i < n; i++) _positions[i] += _displacements[i];
             }
+
+            // One write per body per physics step.
+            for (int i = 0; i < n; i++)
+            {
+                var rb = _bodies[i];
+                if (rb == null) continue;
+                Vector2 target = _positions[i];
+                if ((target - rb.position).sqrMagnitude > 0f)
+                    rb.position = target;
+            }
+        }
+
+        private void GatherActiveBodies(IReadOnlyList<GameObject> monsters)
+        {
+            _bodies.Clear();
+            _positions.Clear();
+            _radii.Clear();
+            _displacements.Clear();
+
+            for (int i = 0; i < monsters.Count; i++)
+            {
+                var go = monsters[i];
+                if (go == null || !go.activeInHierarchy) continue;
+
+                var rb = go.GetComponent<Rigidbody2D>();
+                if (rb == null || rb.isKinematic) continue;
+
+                float radius = ResolveRadius(go);
+                if (radius <= 0f) continue;
+
+                _bodies.Add(rb);
+                _positions.Add(rb.position);
+                _radii.Add(radius);
+                _displacements.Add(Vector2.zero);
+            }
+        }
+
+        private float ResolveRadius(GameObject go)
+        {
+            int id = go.GetInstanceID();
+            if (_radiusCache.TryGetValue(id, out float cached)) return cached;
+
+            var col = EntityColliderConfigurator.GetBodyCollider(go);
+            float radius = col != null ? GetColliderRadius(col) : 0f;
+
+            if (_radiusCache.Count >= RadiusCacheMax) _radiusCache.Clear();
+            _radiusCache[id] = radius;
+            return radius;
+        }
+
+        /// <summary>
+        /// A stable pseudo-direction for two exactly-coincident bodies. Derived from the
+        /// pair's indices rather than <c>Random</c> so the push does not change direction
+        /// every physics step, which is its own source of jitter.
+        /// </summary>
+        private static Vector2 DeterministicNudge(int i, int j)
+        {
+            float angle = ((i * 73856093) ^ (j * 19349663)) * 0.0001f;
+            return new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
         }
 
         private static float GetColliderRadius(Collider2D col)

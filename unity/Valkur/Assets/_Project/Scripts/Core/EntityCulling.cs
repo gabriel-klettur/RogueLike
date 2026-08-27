@@ -65,7 +65,16 @@ namespace Valkur.Core
         private bool IsIntervalFrame()
         {
             if (offscreenUpdateInterval <= 1) return true;
-            return (Time.frameCount % offscreenUpdateInterval) == (_entityHash % offscreenUpdateInterval);
+
+            // The phase MUST be non-negative. GetInstanceID hands runtime-created
+            // objects a NEGATIVE id, and C# `%` keeps the sign of the dividend — so
+            // `_entityHash % 8` lands in (-8, 0] while `Time.frameCount % 8` lands in
+            // [0, 8). The two could only ever meet at exactly 0, which means roughly
+            // seven of every eight monsters never ticked offscreen at all: kite one
+            // past the camera edge and it froze until something damaged it.
+            // Masking off the sign bit is overflow-safe, unlike Mathf.Abs(int.MinValue).
+            int phase = (_entityHash & int.MaxValue) % offscreenUpdateInterval;
+            return (Time.frameCount % offscreenUpdateInterval) == phase;
         }
     }
 }

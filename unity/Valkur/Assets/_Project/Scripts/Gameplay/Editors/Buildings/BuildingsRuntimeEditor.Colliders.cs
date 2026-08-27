@@ -58,6 +58,25 @@ namespace Valkur.Gameplay.Buildings
         }
 
         /// <summary>
+        /// Force-hides the "Show Colliders" overlay and resets the toggle, without
+        /// touching physical collision data. Called from <see cref="Deactivate"/>
+        /// (and defensively from <c>OnDestroy</c>) so the debug overlay never
+        /// survives the editor closing — the visual toggle is per-session, not
+        /// persisted, so "reset off" is the only sane state to hand back.
+        /// Safe to call when colliders are already hidden (idempotent) and safe
+        /// to call before the editor UI/scene state is fully torn down.
+        /// </summary>
+        private void HideCollidersOverlayHard()
+        {
+            StopProgressiveShowOverlay();
+            _collidersVisible = false;
+            SetTilemapCollidersVisible(false);
+            RefreshCollidersOverlay();
+            if (_uiRefs.CollVisibilityBtnLabel != null)
+                _uiRefs.CollVisibilityBtnLabel.text = "Show Colliders";
+        }
+
+        /// <summary>
         /// Print a one-shot diagnostic snapshot of every BuildingObject's
         /// physical collider state (root collider + CollTile children) so we
         /// can verify in the Console exactly what the physics engine sees:
@@ -279,6 +298,14 @@ namespace Valkur.Gameplay.Buildings
         // contents into its own array, so we can safely reuse this list across
         // every building/frame and avoid the per-call List<Rect>(256) allocation.
         private readonly List<Rect> _authoringCellsScratch = new List<Rect>(256);
+
+        // Reusable scratch buffer of the grid cells (x = row, y = col) that
+        // actually changed within a single HandleColliderPaint brush stamp.
+        // Lets the live-drag path apply an incremental collider update
+        // (ApplyGridCellToBuilding, O(brush cells)) instead of the full
+        // teardown-and-rebuild ApplyGridOverrideToBuilding (O(total solid
+        // cells)) on every mouse-move sample.
+        private readonly List<Vector2Int> _collPaintChangedCellsScratch = new List<Vector2Int>(64);
 
         // Cached BuildingObject snapshot used by full-refresh paths. Invalidated
         // by InvalidateBuildingCache() whenever the editor knows the set may

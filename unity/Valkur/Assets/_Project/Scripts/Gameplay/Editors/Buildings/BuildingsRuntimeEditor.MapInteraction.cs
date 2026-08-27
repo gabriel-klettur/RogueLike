@@ -61,17 +61,7 @@ namespace Valkur.Gameplay.Buildings
             }
 
             // â”€â”€ Hover proximity for split line (always computed, drives highlight colour)
-            _splitHovering = false;
-            if (!overUi && _activeBuilding != null && _activeBuilding.TryGetWorldRect(out var hoverRect))
-            {
-                float hsr = _activeBuilding.SplitRatioOverride >= 0f
-                    ? _activeBuilding.SplitRatioOverride
-                    : (_activeBuilding.Template != null ? _activeBuilding.Template.splitRatio : 0.5f);
-                float hSplitY = hoverRect.yMin + hoverRect.height * (1f - hsr);
-                _splitHovering = Mathf.Abs(worldPos.y - hSplitY) <= SPLIT_HANDLE_WORLD_RADIUS
-                              && worldPos.x >= hoverRect.xMin - SPLIT_HANDLE_WORLD_RADIUS
-                              && worldPos.x <= hoverRect.xMax + SPLIT_HANDLE_WORLD_RADIUS;
-            }
+            _splitHovering = !overUi && IsScreenPosOnSplitHandle(_activeBuilding, cam, screenPos);
 
             // Hover detection (skip when over UI): collect all buildings under cursor.
             if (!_buildingsVisible)
@@ -219,24 +209,18 @@ namespace Valkur.Gameplay.Buildings
                 return;
             }
 
-            // LMB on split handle â€” start split-ratio drag
+            // LMB on split handle â€” start split-ratio drag. Hit test is
+            // SCREEN-space (IsScreenPosOnSplitHandle) so the interactive band
+            // stays a fixed, generous size in pixels regardless of camera zoom.
             if (!overUi && Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame() && _activeBuilding != null
-                && _activeBuilding.TryGetWorldRect(out var checkRect))
+                && IsScreenPosOnSplitHandle(_activeBuilding, cam, screenPos))
             {
                 float sr = _activeBuilding.SplitRatioOverride >= 0f
                     ? _activeBuilding.SplitRatioOverride
                     : (_activeBuilding.Template != null ? _activeBuilding.Template.splitRatio : 0.5f);
-                float handleWorldY = checkRect.yMin + checkRect.height * (1f - sr);
-                float distY = Mathf.Abs(worldPos.y - handleWorldY);
-                // Also check horizontal proximity (within building X bounds + small margin)
-                float marginX = SPLIT_HANDLE_WORLD_RADIUS;
-                bool withinX = worldPos.x >= checkRect.xMin - marginX && worldPos.x <= checkRect.xMax + marginX;
-                if (distY <= SPLIT_HANDLE_WORLD_RADIUS && withinX)
-                {
-                    _splitDragging = true;
-                    _splitDragStartRatio = sr;
-                    return;   // consume event
-                }
+                _splitDragging = true;
+                _splitDragStartRatio = sr;
+                return;   // consume event
             }
 
             // LMB â€” primary action
@@ -253,10 +237,15 @@ namespace Valkur.Gameplay.Buildings
                 if (_hoveredBuilding != null) SetActiveBuilding(_hoveredBuilding);
             }
 
-            // RMB on a building â†’ move drag (resize is now LMB-drag via the R handle).
-            if (Valkur.Core.Input.MouseInputManager.WasRightMouseButtonPressedThisFrame() && _hoveredBuilding != null)
+            // RMB drag-moves the ALREADY-SELECTED building (resize is LMB-drag
+            // via the R handle). Selection is LEFT-click only (see the LMB
+            // primary-action block above) — a bare RMB press on a building
+            // that isn't the current selection does nothing, freeing the
+            // button for future context-menu actions instead of doubling as
+            // an implicit select.
+            if (Valkur.Core.Input.MouseInputManager.WasRightMouseButtonPressedThisFrame()
+                && _hoveredBuilding != null && _hoveredBuilding == _activeBuilding)
             {
-                SetActiveBuilding(_hoveredBuilding);
                 _dragging   = true;
                 _dragStartWorldPos = _activeBuilding.transform.position;
                 _dragOffset = _activeBuilding.transform.position - worldPos;
@@ -303,6 +292,37 @@ namespace Valkur.Gameplay.Buildings
                     RefreshInspector();
                     if (_statusTmp != null) _statusTmp.text = $"Move reverted â†’ ({startPos.x:F2}, {startPos.y:F2})";
                 });
+        }
+
+        /// <summary>
+        /// Whether <paramref name="screenPos"/> is within the padded, fixed-size
+        /// interactive band around <paramref name="building"/>'s split-ratio bar
+        /// (the on-screen line drawn at the Z-layer boundary between the
+        /// Footprint/WallsBottom and Canopy/WallsTop halves — see UpdateSplitLine).
+        /// Projects the same world-space split Y that draws the visual bar into
+        /// SCREEN space and pads by a fixed pixel amount, so the hit area tracks
+        /// the visible bar exactly and never shrinks below a usable size when the
+        /// editor camera is zoomed out. Used by both the hover flag and the LMB
+        /// click that starts a split-ratio drag.
+        /// </summary>
+        private static bool IsScreenPosOnSplitHandle(BuildingObject building, Camera cam, Vector2 screenPos)
+        {
+            if (building == null || cam == null || !building.TryGetWorldRect(out var rect)) return false;
+
+            float sr = building.SplitRatioOverride >= 0f
+                ? building.SplitRatioOverride
+                : (building.Template != null ? building.Template.splitRatio : 0.5f);
+            float worldSplitY = rect.yMin + rect.height * (1f - sr);
+
+            Vector3 leftScreen  = cam.WorldToScreenPoint(new Vector3(rect.xMin, worldSplitY, 0f));
+            Vector3 rightScreen = cam.WorldToScreenPoint(new Vector3(rect.xMax, worldSplitY, 0f));
+
+            float minX = Mathf.Min(leftScreen.x, rightScreen.x) - SPLIT_HANDLE_SCREEN_PADDING_PX;
+            float maxX = Mathf.Max(leftScreen.x, rightScreen.x) + SPLIT_HANDLE_SCREEN_PADDING_PX;
+            float lineScreenY = leftScreen.y; // same world Y on both sides → same screen Y
+
+            return screenPos.x >= minX && screenPos.x <= maxX
+                && Mathf.Abs(screenPos.y - lineScreenY) <= SPLIT_HANDLE_SCREEN_PADDING_PX;
         }
 
         // Returns the building's current visible bounds in PIXEL units (world units * PPU).

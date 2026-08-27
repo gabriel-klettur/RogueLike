@@ -42,7 +42,12 @@ namespace Valkur.Gameplay.Buildings
             // reachable from the redesigned UX (the UI "Erase" button maps to
             // CollBrushMode.Walk). Kept in the enum for undo-snapshot compatibility.
 
+            // Solid mode writes "#"; Walk (UI "Erase") writes ".".
+            bool solidNow = _collBrushMode == CollBrushMode.Solid;
+            string next = solidNow ? "#" : ".";
+
             bool changed = false;
+            _collPaintChangedCellsScratch.Clear();
             for (int dr = brushStart; dr <= brushEnd; dr++)
             {
                 for (int dc = brushStart; dc <= brushEnd; dc++)
@@ -52,12 +57,10 @@ namespace Valkur.Gameplay.Buildings
                     if (r < 0 || r >= session.WorkingGrid.height || c < 0 || c >= session.WorkingGrid.width)
                         continue;
 
-                    // Solid mode writes "#"; Walk (UI "Erase") writes ".".
-                    string next = _collBrushMode == CollBrushMode.Solid ? "#" : ".";
-
                     if (session.WorkingGrid.collision[r][c] == next) continue;
                     session.WorkingGrid.collision[r][c] = next;
                     changed = true;
+                    _collPaintChangedCellsScratch.Add(new Vector2Int(r, c)); // x = row, y = col
                 }
             }
 
@@ -65,7 +68,25 @@ namespace Valkur.Gameplay.Buildings
 
             PersistSessionToStore(session);
             _colliderStroke.Changed = true;
-            ApplyGridOverrideToBuilding(_activeBuilding, session.WorkingGrid);
+
+            // Incremental apply: touch only the cells that changed in THIS
+            // brush stamp instead of tearing down and rebuilding every tile
+            // on the building. ApplyGridOverrideToBuilding is O(total solid
+            // cells) — fine for the single call EndColliderStroke makes once
+            // per stroke, but ruinous once per mouse-move sample on a
+            // mostly-solid footprint, which is exactly the Erase workflow.
+            int gridRows = session.WorkingGrid.height;
+            int gridCols = session.WorkingGrid.width;
+            for (int i = 0; i < _collPaintChangedCellsScratch.Count; i++)
+            {
+                var cell = _collPaintChangedCellsScratch[i];
+                ApplyGridCellToBuilding(_activeBuilding, cell.x, cell.y, gridRows, gridCols, solidNow);
+            }
+            // Per-cell colliders supersede the whole-sprite root collider once
+            // any grid is authored — mirror ApplyGridOverrideToBuilding's
+            // invariant without re-walking the grid to decide it.
+            var mainCollider = _activeBuilding.GetComponent<BoxCollider2D>();
+            if (mainCollider != null) mainCollider.enabled = false;
 
             // Live propagation for Shared (CG) scope: every other building that
             // resolves to the same shared key (template-based) and has not been
@@ -74,7 +95,7 @@ namespace Valkur.Gameplay.Buildings
             // O(N) loop cheap, and CU buildings are skipped so per-instance
             // overrides remain authoritative.
             if (session.Scope == ColliderAuthoringScope.CG)
-                PropagateLiveStrokeToSharedTemplates(session);
+                PropagateLiveStrokeToSharedTemplates(session, _collPaintChangedCellsScratch, solidNow);
 
             Physics2D.SyncTransforms();
             // For CU strokes, the heavier ApplyCollisionTargetsFor is still
@@ -85,11 +106,15 @@ namespace Valkur.Gameplay.Buildings
             RefreshCollidersPanel();
         }
 
-        private void PropagateLiveStrokeToSharedTemplates(ActiveColliderGridSession session)
+        private void PropagateLiveStrokeToSharedTemplates(
+            ActiveColliderGridSession session, List<Vector2Int> changedCells, bool solidNow)
         {
             if (session == null || session.WorkingGrid == null) return;
             string sharedKey = session.ImageKey ?? string.Empty;
             if (string.IsNullOrEmpty(sharedKey)) return;
+
+            int gridRows = session.WorkingGrid.height;
+            int gridCols = session.WorkingGrid.width;
 
             var all = GetCachedBuildings();
             for (int i = 0; i < all.Length; i++)
@@ -102,7 +127,18 @@ namespace Valkur.Gameplay.Buildings
                 if (!string.Equals(ResolveSharedScopeKey(b), sharedKey, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                ApplyGridOverrideToBuilding(b, session.WorkingGrid);
+                // Same incremental apply as the active building — a shared
+                // (CG) grid can fan this out to dozens of sibling instances,
+                // so a full ApplyGridOverrideToBuilding rebuild PER SIBLING
+                // PER SAMPLE would multiply the already-expensive full
+                // rebuild by the sibling count on every mouse-move.
+                for (int ci = 0; ci < changedCells.Count; ci++)
+                {
+                    var cell = changedCells[ci];
+                    ApplyGridCellToBuilding(b, cell.x, cell.y, gridRows, gridCols, solidNow);
+                }
+                var mainCollider = b.GetComponent<BoxCollider2D>();
+                if (mainCollider != null) mainCollider.enabled = false;
 
                 if (_collidersVisible)
                 {

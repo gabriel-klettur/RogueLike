@@ -71,6 +71,43 @@ namespace Valkur.Gameplay.Buildings
             box.size = localSize;
         }
 
+        /// <summary>
+        /// Cheap incremental counterpart to <see cref="ApplyGridOverrideToBuilding"/>:
+        /// toggles the physical collider for exactly ONE grid cell instead of
+        /// deactivating every tile on the building and re-walking the whole
+        /// grid to recreate the ones still solid. <see cref="HandleColliderPaint"/>
+        /// calls this once per cell that actually changed within a brush
+        /// stamp, so the live-drag cost is O(brush cells) instead of O(total
+        /// solid cells). The full-rebuild path stayed fine for Paint (grids
+        /// usually start near-empty) but made Erase — usually carving cells
+        /// OUT of an already mostly-solid footprint, e.g. a doorway — redo
+        /// every remaining solid tile on every single mouse-move sample.
+        /// </summary>
+        private void ApplyGridCellToBuilding(BuildingObject building, int row, int col, int rows, int cols, bool solid)
+        {
+            if (building == null) return;
+
+            if (solid)
+            {
+                EnsureCollTile(building, row, col, rows, cols);
+                return;
+            }
+
+            string childName = $"{CollTilePrefix}{row}_{col}";
+            var tileTransform = building.transform.Find(childName);
+            if (tileTransform == null) return; // already walkable — nothing to hide
+
+            var box = tileTransform.GetComponent<BoxCollider2D>();
+            if (box != null) box.enabled = false;
+            tileTransform.gameObject.SetActive(false);
+            // Rename into the pooled bucket so a LATER EnsureCollTile call (this
+            // cell — or a different one — going solid again) can reclaim the
+            // GameObject instead of allocating a new one. Same pooling contract
+            // ClearCollisionTiles uses; GetInstanceID() keeps the name unique
+            // without needing a shared counter across incremental calls.
+            tileTransform.name = $"{PooledCollTilePrefix}{tileTransform.GetInstanceID()}";
+        }
+
         private static Transform TryReusePooledCollTile(Transform parent, string childName)
         {
             for (int i = 0; i < parent.childCount; i++)

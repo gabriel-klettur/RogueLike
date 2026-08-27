@@ -474,6 +474,13 @@ namespace Valkur.Gameplay.MapEditor
             FindObjectOfType<WorldLightLoader>()?.ClearSpawnedLights();
 
             FindObjectOfType<Valkur.Gameplay.VFX.ParticleInstancesLoader>()?.ClearAll();
+
+            // Entities placed through F5 are the fifth kind of world content, and until the
+            // Entities editor grew a repository they were the only one with nothing to
+            // clear — so a monster placed on map A survived the swap and floated over map B.
+            // ClearPlacedEntities flushes the pending autosave first, against the OUTGOING
+            // slot, because the active-slot pointer has not flipped yet at this point.
+            Valkur.Gameplay.Entities.EntitiesRuntimeEditor.Instance?.ClearPlacedEntities();
         }
 
         public void ReloadAllWorldContent()
@@ -487,6 +494,7 @@ namespace Valkur.Gameplay.MapEditor
             FindObjectOfType<WorldLightLoader>()?.Reload();
             FindObjectOfType<Valkur.Gameplay.VFX.ParticleInstancesLoader>()?.Reload();
             ServiceLocator.Get<Valkur.Gameplay.WorldDrops.ItemDropService>()?.ReloadForActiveSlot();
+            Valkur.Gameplay.Entities.EntitiesRuntimeEditor.Instance?.ReloadPlacedEntities();
         }
 
         // Persists the live light set to the OUTGOING slot's file before the

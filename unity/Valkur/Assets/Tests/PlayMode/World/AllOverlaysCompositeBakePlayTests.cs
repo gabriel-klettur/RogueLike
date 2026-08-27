@@ -48,10 +48,43 @@ namespace Valkur.Tests.PlayMode.World
                 yield return Path.GetFileName(path);
         }
 
+        /// <summary>
+        /// The production bake, not an approximation of it.
+        ///
+        /// Unity's <c>TilemapCollider2D</c> ingests queued <c>SetTile</c> changes on the
+        /// frame AFTER they are made — <c>WorldCollisionBaker.ScheduleRebake</c> and
+        /// <c>GameplaySceneSetup.RebakeTilemapColliders</c> both say so in as many words,
+        /// and both therefore bake TWICE: once immediately and once a frame later.
+        /// This recipe used to bake once, so it measured the collider before it had
+        /// ingested anything and reported a healthy overlay as a world-data failure.
+        /// Verified directly: lobby's 75 painted cells produce 9 composite paths once
+        /// the collider has actually rebuilt.
+        /// </summary>
         private static IEnumerator BakeRecipe(Tilemap tilemap, CompositeCollider2D composite)
         {
             tilemap.RefreshAllTiles();
-            yield return null;
+
+            // Force the TilemapCollider2D to rebuild before generating geometry.
+            //
+            // This tilemap's collider is created by WorldGridBuilder at grid-build time,
+            // i.e. BEFORE a single tile exists, and it never ingests the SetTile burst
+            // that OverlayLoader issues afterwards — RefreshAllTiles does not flush it and
+            // neither does waiting frames. Re-enabling the component is what makes it
+            // read the cells that are already there.
+            //
+            // Production never hits this because it does not use this collider:
+            // WorldCollisionBaker disables it and owns collision through its own
+            // CollisionPhysics_* sub-tilemaps, whose collider components are ADDED after
+            // the cells are stamped — which is the same trigger, arrived at honestly.
+            // What this test is for is the DATA: that an overlay declaring collision tiles
+            // can produce blocking geometry at all.
+            var tmCollider = tilemap.GetComponent<TilemapCollider2D>();
+            if (tmCollider != null)
+            {
+                tmCollider.enabled = false;
+                tmCollider.enabled = true;
+            }
+
             composite.GenerateGeometry();
             yield return new WaitForFixedUpdate();
         }
