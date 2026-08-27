@@ -151,6 +151,87 @@ Notes that cost time to rediscover:
   the manifest. The source sheets are gitignored (`downloads/`), so the manifest is the only
   versioned record of what was imported.
 
+## Monster sheet pipeline (character sheets → MonsterDefinition)
+
+Authoring a new monster used to be a full day of manual work — see
+`.github/ENTITIES_FSM_PVM_AUDIT.md`, "Authoring monster #21 — the concrete cost today". The
+bottleneck was steps 1, 2, 5 and 6: no generic slicer existed (only a one-off knight script),
+mirrors had to be hand-baked, up to 56 sprite fields had to be wired by hand (knight_red carries
+585 references across 757 lines), and `MonsterCatalog.UpsertDefinition` had zero callers so
+registration was a manual drag into the Inspector. Four stages now turn a character sheet into a
+registered `MonsterDefinition`, the same shape as the prop-sheet pipeline:
+
+| Stage | Tool | In → Out |
+|---|---|---|
+| 1. Slice | `tools/atlas/slice_prop_sheet.py` (unchanged, reused as-is) | sheet PNG → crops + `*.slices.json` |
+| 2. Align + mirror | `tools/atlas/build_monster_frames.py` | crops + `--config` → `Art/NPC/monsters/<key>/*.png` + `monster_frames_manifest*.json` |
+| 3. Import | `Valkur/Monsters/Import Frame Sheets (Apply)` (`MonsterFramesImporter.cs`) | manifest → `MonsterDefinition` assets + `MonsterCatalog` |
+
+Stage 2 generalises `tools/atlas/wave2/build_knight_frames.py` (built for exactly one monster)
+into a manifest-driven tool, the way `build_building_props.py` generalised prop staging:
+
+- **Slicing alone jitters a cycle.** `slice_prop_sheet.py` trims every crop tight to its own
+  alpha, which is right for a prop and wrong for an animation — a cape or a sword moves the
+  bounding box frame to frame, so a tight-trimmed walk cycle jitters and the feet leave the
+  ground. `build_monster_frames.py` pastes every frame of a state onto one SHARED canvas instead,
+  anchored on the grid CELL's centre (never the body — that would cancel the hip sway/lunge the
+  animation is made of) and on the row's lowest BODY pixel (the ground line), taken from each
+  frame's largest connected component so a torn-off cape tip below the boots cannot drag the line
+  down.
+- **A turnaround idle anchors differently.** A static pose carries no motion to preserve, so
+  `build_monster_frames.py` anchors those on the body itself: feet on the canvas floor, hips on
+  the canvas centre line. Config declares which raw slice indices are which compass direction
+  (`idle.poses`) and which directions to fill by mirroring an authored one (`idle.mirrorFrom`).
+- **Mirrors are baked in Python, never at runtime.** `DirectionalAnimator` never touches `flipX`
+  (`DirectionalAnimator.SpriteSetBuilder.BuildEightDirectionalSet` slices a linear list into eight
+  *contiguous* per-direction buckets — feeding it one side-facing cycle silently yields one static
+  frame per direction) — CLAUDE.md documents this as a hard constraint. Baking real mirrored PNGs
+  via `Image.transpose(FLIP_LEFT_RIGHT)` was chosen over any runtime-flip alternative specifically
+  because it is lower-risk: it touches zero engine code and reuses the exact mechanism
+  `build_knight_frames.py` already shipped. `DirectionalAnimator` was deliberately left untouched.
+- **A 2-directional source still has to fill all eight compass buckets.** The default
+  `directionMap` (overridable per monster) is exactly what `knight_red` ships with today, pinned
+  by `KnightRedSpriteIntegrityTests.SideByDirection`: south/north/northWest/west/southWest draw
+  from the west pose, southEast/east/northEast draw from the mirrored east pose. A monster whose
+  source art suits a different split (e.g. it has a genuine front/back pose) overrides
+  `directionMap` in its config entry instead of taking the default.
+- **Resample in premultiplied alpha** (`Image.convert("RGBa")`), same reason as the prop
+  pipeline: straight RGBA blends the zeroed RGB of transparent pixels into every edge.
+- **The manifest is self-describing — no bucket math on the C# side.** Python already flattens
+  each cyclic state into the exact 8-direction × N-frame order `DirectionalAnimator` expects
+  (S, SE, E, NE, N, NW, W, SW, each block in frame order); the importer just loads sprites by path
+  and assigns them. A turnaround idle is emitted as 8 `{direction, path}` pairs consumed straight
+  into `EntityAssetConfig.idle` (the `DirectionalSprites` struct); a cyclic state is emitted as a
+  flat sprite-path list consumed straight into the matching `*Sheets` field
+  (`walkSheets`/`chaseSheets`/`castSheets`/`attackSheets`/`damageSheets`/`deathSheets`, or
+  `idleSheets` if a monster's idle is itself a cycle rather than a static turnaround).
+- **Only the states a manifest actually names are written.** `EntityAnimationBinder` already
+  falls each empty state back to a neighbour (walk → idle, chase → walk, cast → walk,
+  attack → cast, damage/death → idle), so a monster authored with only idle + walk is playable
+  immediately and gains new animations without disturbing anything a designer set by hand later.
+- **Never overwrite what a designer owns.** `MonsterFramesImporter` never touches
+  `stats`/`fsmSet`/`autoCastList`/`xpReward`/`lootTable` — the pixel pipeline owns sprites only,
+  same line the prop pipeline draws for `solid`/`splitRatio`/light vs. a building's gameplay role.
+- **Stage 3 is idempotent**, keyed on `monsterKey`: re-running after re-slicing updates the same
+  `MonsterDefinition` asset in place (`Data/Catalogs/Monsters/<monsterKey>.asset`) rather than
+  creating a duplicate, and registers it via `MonsterCatalog.UpsertDefinition` — which had zero
+  callers before this importer. Deliberately **not** `Undo.RecordObject`: see the
+  `BuildingPropImporter` incident CLAUDE.md documents (a bulk import lands dozens of assets on the
+  global editor undo stack; the first stray Ctrl+Z or runtime-editor undo test reverts every one
+  of them in memory to its empty creation state while the correct data sits on disk).
+  `EditorUtility.SetDirty` alone is correct for data an operator re-runs rather than undoes.
+- A dry run (`Valkur/Monsters/Import Frame Sheets (Dry Run)`) resolves every sprite path and
+  reports missing ones WITHOUT writing anything, same as the create/update accounting — so a
+  broken manifest is caught before anyone applies it for real.
+- Every generated `monster_frames_manifest*.json` under `tools/atlas/generated/` is read together
+  (one per wave, never clobbering an earlier one), exactly like `building_props_manifest*.json`.
+- `Tests/EditMode/Game/Data/MonsterFramesImporterTests.cs` exercises the importer end to end
+  against a fully sandboxed manifest directory, an in-memory `MonsterCatalog` and a scratch asset
+  folder — nothing shipped is ever at risk from running the suite. It pins: a manifest creates a
+  definition and registers it; a re-run refreshes the same asset instead of duplicating it;
+  `UpsertDefinition` never appends a second catalog entry; sprite slots are wired correctly;
+  and a dry run writes nothing while still reporting a broken sprite path.
+
 ## Player character sheets (retouch round trip)
 
 `Art/Characters/<class>/<class>_{idle,walking,casting}.png` are single-row strips of 128x128

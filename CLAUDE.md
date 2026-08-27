@@ -173,7 +173,7 @@ The full convention lives in `.github/skills/asset-pipeline/SKILL.md` (sections 
 | Vendors | `Data/Vendor/{EconomyGroups,Configs}/*.asset` |
 | Players | `Data/Catalogs/Players/*.asset` |
 | World state (placed buildings, lights, spawners, particles, tile overlays) | `StreamingAssets/{Buildings,Lights,Spawners,Particles,Maps}/*.json` (written by F1/F3/F8/F10/F11/Ctrl+F3). `Particles/particles_instances.json` is schema v4: each record carries its own `config` (the copy of the preset it was placed with, defaults omitted), and may carry the legacy `spawn_scale_x` / `spawn_scale_y` / `reach` size ratios from v3 |
-| FSM (states, assignments, animation map) | `StreamingAssets/FSM/*.json` (written by F12) |
+| FSM (states, assignments, animation map) | `StreamingAssets/FSM/*.json` (written by F12) — four sets: `Monster_Default` (melee), `Monster_Caster`, `Monster_Boss` (no `FleeState`), `NPC_Passive` (Idle/Unconscious/Death only). All 19 monsters are assigned in `assignments.json`; the resolution order is `by_eid` → `by_archetype` → `MonsterDefinition.fsmSet` → hard-coded IdleState |
 | Player saves + run history | `Application.persistentDataPath/{Saves,profile.json}` (atomic-write + checksum + 5 rotating backups) |
 
 ## Unity MCP setup (Claude Code)
@@ -634,6 +634,143 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   and `SpellSlash` — and nothing reads `InputService.Gameplay.Interact`.
   `NPCInteractable.Interact()` has no caller either, so vendors' `OnInteract` never fires. Any
   feature that wants a key-press interaction has to resolve that binding first.
+- **`Sprite-Unlit-Default` declares no `_SrcBlend`/`_DstBlend`, so every blend-mode write
+  against it is a SILENT no-op.** `ElementalSprites.SharedUnlitMaterial` is built on that
+  shader, and `SetInt("_SrcBlend", One)` on it compiles, logs nothing, and leaves the
+  surface on fixed alpha — `BeamMaterialCache` records the same measurement. On alpha the
+  brightest pixel a "glow" can produce is its own colour, so a mid-value lilac core cannot
+  blow out and a wide faint halo is a net luminance LOSS over pale ground. There are two
+  correct additive paths and they are not interchangeable: `ParticleMaterialCache.Get(tex,
+  additive: true)` (URP/Particles/Unlit) for a `ParticleSystemRenderer`, and
+  `ElementalSprites.SharedAdditiveMaterial` (`Valkur/SpriteAdditive`) for a `SpriteRenderer`.
+  Both are `SrcAlpha/One`, not `One/One`, so alpha still modulates brightness and a fade
+  actually fades. Related: a material handed to a `ParticleSystemRenderer` must carry its own
+  texture — a `SpriteRenderer` supplies one, a particle renderer does not, so the untextured
+  shared material draws hard white SQUARES, and `AuraController.cs:262` writes
+  `sharedMaterial.mainTexture` through that same global static, so casting a healing aura
+  retextures every other effect pointed at it.
+- **A persistent spell effect has five exit paths and only `OnDestroy` is on all of them.**
+  Its own timer, eviction by `maxInstances`, a zone change, its caster dying, and scene
+  unload — the last four go through `SpellEffectRegistry`'s `Object.Destroy`, so a fade the
+  effect implements on its own timeline is simply skipped, and by the time any of its code
+  runs the object is already doomed. That is not the edge case: `arcane_flame` runs 5 s on a
+  2 s cooldown, so in normal play every instance but the last is EVICTED and the hard cut is
+  what the player sees, roughly every two seconds. `ISpellEffectDissipates` is the seam —
+  `DestroySafely` offers ownership before destroying, and because the handle is dropped first
+  a dissipating effect stops counting against `maxInstances`, so the recast that evicted it is
+  never refused. The zone-change path passes zero on purpose: the world it was drawn into is
+  being torn down underneath it. Note also that a rig built in `Initialize` renders ONE frame
+  before `Update` first runs, so an ignition ramp has to be seated at the end of `Initialize`
+  or the effect pops at full alpha for 16 ms before starting to fade in.
+- **Every `ElementalSprites` sprite is exactly 1x1 world unit, so a scale constant IS a world
+  diameter.** `Sprite.Create` is handed the texture size as `pixelsPerUnit` for all eleven, so
+  a 128 px Halo is no bigger in world than a 32 px HotCore — the resolution buys detail, not
+  extent. `Ring`'s bright band peaks at normalized radius **0.78**, which makes the drawn
+  boundary pinnable to the damage radius at ANY size: `ringScale = radius / 0.39`. Getting
+  this wrong is invisible in code and brutal on screen — the arcane flame's only hard contour
+  sat at 1.511 u against a 2.5 u damage circle, so 46 % of the area that hurt carried no
+  readable pixel. Corollary: prefer an identity root and absolute per-child sizes over scaling
+  the root, because a scaled root also scales any `Light2D` parented under it (that is what
+  `WorldLightLoader`'s counter-scale by `1f / lossyScale` exists to undo) and silently renders
+  an authored radius at several times its value.
+
+## Player character pipeline (2 directions)
+
+`dwarf`, `barbarian` and `elven` are built from **side-view art drawn facing right, in one
+direction**, and mirrored. `mague` and `valkyrie` still run on the legacy 8-direction
+strips. The two pipelines coexist on purpose and have different owners:
+
+| | wave3 (dwarf, barbarian, elven) | legacy (mague, valkyrie) |
+|---|---|---|
+| Source | `staging/players/<char>/` (gitignored, repo root); elven is `elf_wave4/` | `Art/Characters/<key>/<key>_<state>.png` |
+| Cutter | `tools/atlas/wave3/build_player_frames.py` | — |
+| Binder | `PlayerFramesImporter` (`Valkur > Players > Import Frame Sheets`) | `PlayerCharacterAssetBinder` (`Valkur > Setup > Rebuild Player Character Assets`) |
+| On disk | one tightly-cropped PNG per frame, `<key>_<state>_<r\|l><i>.png` | one 5120x128 strip per state, 128 px cells |
+| Record | `tools/atlas/generated/player_frames_manifest_wave3.json` | — |
+
+```text
+slice_prop_sheet.py --all --sheet-dir staging/players/<char> --out <slices>
+wave3/build_player_frames.py <slices>     # align, scale, mirror, write manifest
+Valkur > Players > Import Frame Sheets (Dry Run) then (Apply)
+```
+
+- **The mirrored half is baked as its own sprite.** `DirectionalAnimator` never flips —
+  `ChaseState` says so — so the importer fills all eight buckets from two. Each state's list
+  is `framesPerDirection * 8` and repeats each sprite four or five times. `knight_red`
+  already shipped this way.
+- **Which half is the mirror has to be MEASURED, and this wave's art faces WEST.** All three
+  characters are drawn facing left, so the authored frames are the `_w` half and the `_e`
+  half is their mirror; S/SE/E/NE/N take `_e`, NW/W/SW take `_w`. Getting it backwards is
+  invisible everywhere except in play: `Direction.East` is +X (`DirectionalAnimator.FrameLogic`
+  resolves 0° to East), so putting west-facing art in the east buckets makes every character
+  face AWAY from the cursor — while each individual frame, every contact sheet and every
+  count in the manifest still looks right, because the mapping is internally consistent and
+  disagrees only with the art. It shipped that way once. `wave2/build_knight_frames.py` had
+  already recorded the same fact for `knight_red` ("The art faces left"), which is the note
+  that should have been read before assuming. `PlayerTwoDirectionRigTests` now pins the
+  bucket/suffix contract and that the two halves really are mirrors of each other; it cannot
+  pin which way the art points, so re-measure that by eye when a new wave is staged.
+- **`build_player_frames.py` scales each state off FRAME 0's foot-to-crown height.** Every
+  sheet in the wave opens on a neutral standing pose, and that is the only frame whose height
+  means "how big is this character" — the AI rendered each sheet at its own zoom. Both
+  obvious alternatives fail, in opposite directions and measurably: the tallest bounding box
+  is weapon-inclusive (an axe raised overhead shares a connected component with the hands
+  holding it), which rendered the barbarian's overhead swing at 59 px against a 115 px idle;
+  the median is dominated by whatever the sheet mostly does, so on a death — four of seven
+  frames prone — it took a LYING body as the standing reference and rendered the knight at
+  405x263. A sheet that opens mid-pose needs a `SCALE_OVERRIDE` entry; `elf_attack_jump_8f`
+  is the only one, at 0.871. All 26 shipped states land within 2.6% of their own idle.
+- **The ground line is the lowest row with real horizontal EXTENT, not the lowest pixel.**
+  Same reason: a blade sweeping the floor, a cape tip and an outstretched leg are slivers,
+  boots are not. Anchoring on the lowest pixel floated the character for the rest of the
+  swing. Nothing is reserved below that line, so the canvas bottom IS the ground line and the
+  postprocessor's `(0.5, 0)` pivot lands on the feet.
+- **`TARGET_BODY_PX` is 115** because that is what the five legacy characters measure. Every
+  melee range, projectile offset and camera lead tuned against the old art still reads.
+- **A wave OWNS the whole character.** `PlayerFramesImporter.ClearUnlistedStates` empties any
+  state the manifest does not name — unlike `MonsterFramesImporter`, which leaves unnamed
+  slots alone. A monster manifest is often a partial refresh of a hand-authored asset; a
+  player wave is a replacement, and the barbarian's unnamed `cast`/`damage`/`death` were still
+  holding the previous 8-direction art of a different-looking character. `EntityAnimationBinder`
+  falls an empty slot back to a neighbour, so the player sees the right character in a less
+  specific pose instead of the wrong character.
+- **A player never used to pick a variant, so every alternative animation was dead data.**
+  Only `FSMMonsterBrain` set one, through the monster FSM's `AttackState`; the two-argument
+  `SetState` reuses the active index, which on a player was `-1` forever.
+  `PlayerController.NextVariant` now rotates one per action, so the elven character's three
+  punches and three spellcasts, the dwarf's four unarmed attacks and the barbarian's two axe
+  swings all render. Rotating, not randomising: a random pick repeats the same swing back to
+  back about one time in N and reads as the animation having failed to change.
+- **Variants are per STATE, not per attack.** `DirectionalAnimator._variantsByState` is
+  indexed by `AnimState` because elven ships three casting animations, and a second parallel
+  cast-only array would have paid the positional tax `AttackVariant`'s own doc-comment exists
+  to complain about. `SetAttackVariants` is a thin wrapper over `SetVariants(Attack, …)`, so
+  every monster caller is untouched. On the data side the two lists stay separate classes:
+  `CastVariant` carries no damage/range/cooldown, because a spell's damage is on its
+  `SpellDefinition`, and a shared base would need `[SerializeReference]` and change how every
+  already-authored attack variant round-trips.
+- **`AnimState.Recover` is the eighth state, and the only one entered by the death flow.**
+  `DeathSequenceController.ReviveRoutine` plays it after the body is solid and the corpse is
+  despawned, for exactly `GetStateLength(Recover)` — measured, not a constant, and skipped
+  entirely on `ForceRevive` (the DevConsole cheat, where waiting out an animation is the
+  opposite of what was asked). It is in `TickCastAnimRevert`'s revert whitelist as well as
+  being owned by that coroutine, because CLAUDE.md's own warning applies to it: a state
+  locomotion refuses to override and nothing reverts is a soft lock, and a coroutine can be
+  killed by a scene change mid-rise. A character with no recover art falls back to idle in
+  `GetSpriteSet`, and `ResolveRecoverDuration` returns 0 for it so the revive does not pause
+  on a still pose.
+- **Extra attacks are `attackVariants`, never new `AnimState` values** — the reason is in the
+  gotchas below. The importer refreshes a variant's `sheets` and leaves its damage/range/
+  cooldown/weight exactly as authored.
+- **`staging/` lives at the repo root, not under `Assets/`.** Unity imports everything under
+  `Assets/` whether or not it is referenced; these are ~250 MB of source PNGs that only the
+  Python pipelines read. `AssetConventionsTests` enforces the boundary
+  (`HardRules_AssetsRoot_OnlyContainsWhitelistedEntries`, and `HardRules_NoIterationSuffixes`
+  against the `_vN` variant names staged there).
+- Barbarian has **no hurt or death art in either loadout**; both fall back to idle, and
+  `GrayscaleDeath` is what sells the death. `staging/players/` also holds a full unshipped
+  sword-and-shield loadout for the knight and an axe-less one for the barbarian — see
+  `stagedNotShipped` in the manifest for what was held back and why.
 
 ## Prop / building sheet pipeline
 
@@ -667,6 +804,43 @@ BuildingPropImporter    manifest(s)      -> BuildingTemplateData assets + Buildi
   category folder needs no atlas wiring — but it DOES need a rule in `BuildingCategory`, or
   every template in it silently drains into the Structures tab. `BuildingCategoryTests`
   fails on exactly that.
+
+## The FSM is two machines, and only one of them is authored
+
+A monster's state graph has two owners and they do not overlap:
+
+- **Authored** — `StreamingAssets/FSM/sets.json`, edited in F12. Supplies the initial state, the
+  allowed-state vocabulary (which becomes `StateMachine.SetAllowedStates`) and a handful of
+  transitions. `FleeState` and `AlertChaseState` are reachable ONLY from here: grep returns zero
+  `new FleeState(` / `new AlertChaseState(` sites in the whole project.
+- **Coded** — 24 `fsm.ChangeState(new X())` edges inside the state classes, plus the flinch and
+  death edges raised by `StateMachine`'s event queue and the cast edge pushed by `NPCAutoCast`.
+  These own every real decision: aggro acquisition, melee entry, de-aggro, leash, corpse timer.
+
+Only the authored half was ever drawn, so F12 showed three edges of a machine that has 27.
+`FSMBuiltInTransitions` now declares the coded half and the graph renders it dimmed and locked;
+`FSMBuiltInTransitionRegistryTests` scans the state classes for every `ChangeState(new X())` and
+fails when the table and the source disagree **in either direction**, which is what stops the
+table becoming another `animation_map.json`. Adding a `ChangeState` call without declaring it
+is a red test, by design.
+
+Consequences worth knowing before editing any of it:
+
+- **A set's node list is a whitelist, and deleting a node deadlocks silently.** A refused
+  `ChangeState` used to return with no log at all; it now warns once per `From>To` pair.
+  `DeathState`, `DamageState` and `UnconsciousState` bypass the whitelist by hardcoded name, so
+  deleting them changes nothing.
+- **The whitelist is the only thing that makes a faction peaceful.** No state class reads
+  `stats.faction` — zero occurrences in Idle/Patrol/Chase/Attack. Vendors used to be harmless
+  only because `aggroRange` was 0; raising it would have made them hunt the player. `NPC_Passive`
+  declares no `ChaseState`, so the acquisition is refused structurally.
+- **An authored edge with an empty guard is UNCONDITIONAL, not inert.** `FSMCondition.Parse("")`
+  returns null and `StateMachine` treats a null condition as pass. `Parse` validates the SHAPE of
+  a clause, never the NAME of a signal: an unknown term falls through to `GetContextFloat(term, 0f)`,
+  so a misspelled `hp_pctt < 0.25` compares `0 < 0.25` and fires forever.
+- **`cooldown_frames` is seconds x 60**, divided by a hardcoded 60 at load — and `AppliesTo` is
+  tested before the cooldown, so the clock only advances on ticks spent in the edge's `from` state.
+- **`Actions`, `Blackboard` and per-state `props` round-trip to disk and reach no runtime code.**
 
 ## Incident reports
 
