@@ -66,9 +66,8 @@ namespace Valkur.Gameplay.Enemies.FSM
                 case GraphTool.Connect:    HandleConnectClickFrom(GLOBAL_NODE_ID, isConnect: true);  break;
                 case GraphTool.Disconnect: HandleConnectClickFrom(GLOBAL_NODE_ID, isConnect: false); break;
                 default:
-                    if (_statusTmp != null)
-                        _statusTmp.text = "Any State (*) — the wildcard source FSMTransition.IsGlobal " +
-                                           "reads. Switch to Connect/Disconnect to wire an edge from it.";
+                    SetStatus("Any State (*) — the wildcard source FSMTransition.IsGlobal " +
+                                           "reads. Switch to Connect/Disconnect to wire an edge from it.");
                     break;
             }
         }
@@ -81,7 +80,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             else if (_pendingConnectFrom != null)
             {
                 _pendingConnectFrom = null;
-                if (_statusTmp != null) _statusTmp.text = "Cancelled.";
+                SetStatus("Cancelled.");
             }
         }
 
@@ -133,8 +132,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                     RefreshGraph();
                     RefreshProperties();
                 });
-            if (_statusTmp != null)
-                _statusTmp.text = $"Added node '{newId}' at ({nodeCoords.x:F0}, {nodeCoords.y:F0})";
+            SetStatus($"Added node '{newId}' at ({nodeCoords.x:F0}, {nodeCoords.y:F0})");
         }
 
         private void CloneNode(FSMStateNode src)
@@ -173,7 +171,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                     RefreshGraph();
                     RefreshProperties();
                 });
-            if (_statusTmp != null) _statusTmp.text = $"Cloned → '{newId}'";
+            SetStatus($"Cloned → '{newId}'");
         }
 
         private void DeleteNode(FSMStateNode node)
@@ -212,7 +210,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                     RefreshGraph();
                     RefreshProperties();
                 });
-            if (_statusTmp != null) _statusTmp.text = $"Deleted node '{node.id}'";
+            SetStatus($"Deleted node '{node.id}'");
         }
 
         private void DeleteEdge(FSMTransitionData tr)
@@ -240,7 +238,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                     RefreshGraph();
                     RefreshProperties();
                 });
-            if (_statusTmp != null) _statusTmp.text = $"Deleted edge {tr.from}→{tr.to}";
+            SetStatus($"Deleted edge {tr.from}→{tr.to}");
         }
 
         /// <summary>
@@ -258,9 +256,8 @@ namespace Valkur.Gameplay.Enemies.FSM
             {
                 _pendingConnectFrom = id;
                 string fromLabel = id == GLOBAL_NODE_ID ? "ANY STATE (*)" : $"'{id}'";
-                if (_statusTmp != null)
-                    _statusTmp.text = (isConnect ? "Connect: pick TARGET node" : "Disconnect: pick TARGET node")
-                                       + $" (from {fromLabel})";
+                SetStatus((isConnect ? "Connect: pick TARGET node" : "Disconnect: pick TARGET node")
+                                       + $" (from {fromLabel})");
                 return;
             }
             string from = _pendingConnectFrom;
@@ -274,10 +271,9 @@ namespace Valkur.Gameplay.Enemies.FSM
                 // "applicable" already requires being IN that exact state, so the edge is
                 // dead by construction, not merely low-value. The Any State node is the
                 // supported way to wire a transition that fires from every OTHER state.
-                if (_statusTmp != null)
-                    _statusTmp.text = $"Cancelled — a self-transition ('{from}' → '{from}') can never fire " +
+                SetStatus($"Cancelled — a self-transition ('{from}' → '{from}') can never fire " +
                                        "(StateMachine.TryTakeAuthoredTransition skips To == current state). " +
-                                       "Use the Any State (*) node instead.";
+                                       "Use the Any State (*) node instead.");
                 return;
             }
 
@@ -323,11 +319,10 @@ namespace Valkur.Gameplay.Enemies.FSM
                 // fires on its first eligible frame with no hint that it did. Creation is
                 // deliberately NOT blocked — an unconditional edge is legitimate — only the
                 // surprise is removed.
-                if (_statusTmp != null)
-                    _statusTmp.text = $"Connected {from}→{to} — UNCONDITIONAL until a condition is " +
+                SetStatus($"Connected {from}→{to} — UNCONDITIONAL until a condition is " +
                                        "typed: an edge with no guard fires on its first eligible " +
                                        $"frame in '{from}'. Add one in the Transition tab, or leave " +
-                                       "it empty on purpose.";
+                                       "it empty on purpose.");
             }
             else
             {
@@ -351,7 +346,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                         RefreshGraph();
                         RefreshProperties();
                     });
-                if (_statusTmp != null) _statusTmp.text = $"Disconnected {from}→{to} ({removed.Count} edges)";
+                SetStatus($"Disconnected {from}→{to} ({removed.Count} edges)");
             }
         }
 
@@ -380,7 +375,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                     RefreshGraph();
                     RefreshProperties();
                 });
-            if (_statusTmp != null) _statusTmp.text = $"Initial = '{node.id}'";
+            SetStatus($"Initial = '{node.id}'");
         }
 
         private void ToggleTerminal(FSMStateNode node)
@@ -403,7 +398,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                     RefreshGraph();
                     RefreshProperties();
                 });
-            if (_statusTmp != null) _statusTmp.text = $"Terminal '{node.id}' = {newValue}";
+            SetStatus($"Terminal '{node.id}' = {newValue}");
         }
 
         // ── Coordinate-frame conversion ─────────────────────────────────────────
@@ -440,7 +435,6 @@ namespace Valkur.Gameplay.Enemies.FSM
             if (_graphContent == null) return false;
             var canvasArea = _graphContent.parent as RectTransform;
             if (canvasArea == null) return false;
-            var mouse = Mouse.current; if (mouse == null) return false;
             Vector2 screen = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
             // Mouse over scrollable canvas area (not toolbar)?
             if (!RectTransformUtility.RectangleContainsScreenPoint(canvasArea, screen, _canvas.worldCamera))

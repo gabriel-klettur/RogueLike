@@ -1,9 +1,23 @@
 ﻿{
   "SET_IDS": [
-    "Monster_Default"
+    "Monster_Default",
+    "Monster_Caster",
+    "Monster_Boss",
+    "NPC_Passive"
   ],
   "STATES_BY_SET": {
-    "Monster_Default": [
+    "Monster_Boss": [
+      "IdleState",
+      "PatrolState",
+      "ChaseState",
+      "AlertChaseState",
+      "AttackState",
+      "NPCCastState",
+      "UnconsciousState",
+      "DeathState",
+      "DamageState"
+    ],
+    "Monster_Caster": [
       "IdleState",
       "PatrolState",
       "ChaseState",
@@ -14,13 +28,42 @@
       "UnconsciousState",
       "DeathState",
       "DamageState"
+    ],
+    "Monster_Default": [
+      "IdleState",
+      "PatrolState",
+      "ChaseState",
+      "AlertChaseState",
+      "AttackState",
+      "FleeState",
+      "UnconsciousState",
+      "DeathState",
+      "DamageState"
+    ],
+    "NPC_Passive": [
+      "IdleState",
+      "UnconsciousState",
+      "DeathState",
+      "DamageState"
     ]
   },
   "TRANSITIONS_BY_SET": {
+    "Monster_Boss": [
+      "t_any_alert",
+      "t_boss_enrage"
+    ],
+    "Monster_Caster": [
+      "t_chase_flee",
+      "t_attack_flee",
+      "t_any_alert",
+      "t_kite_attack",
+      "t_kite_chase"
+    ],
     "Monster_Default": [
       "t_chase_flee",
       "t_attack_flee",
       "t_any_alert"
-    ]
+    ],
+    "NPC_Passive": []
   }
 }

@@ -51,7 +51,8 @@ namespace Valkur.Gameplay.Enemies.FSM
             hintGo.AddComponent<LayoutElement>().preferredHeight = 32f;
             refs.EntitiesHintText                    = hintGo.AddComponent<TextMeshProUGUI>();
             refs.EntitiesHintText.text               =
-                "Map entities to FSM Sets. (Functionality pending.)";
+                "Map monsters to FSM Sets. Amber rows have NO set (they boot a bare " +
+                "IdleState); grey rows inherit MonsterDefinition.fsmSet.";
             refs.EntitiesHintText.fontSize           = 10f;
             refs.EntitiesHintText.color              = TEXT_SECONDARY;
             refs.EntitiesHintText.enableWordWrapping = true;
@@ -84,7 +85,8 @@ namespace Valkur.Gameplay.Enemies.FSM
             hintGo.AddComponent<LayoutElement>().preferredHeight = 32f;
             refs.AnimationsHintText                    = hintGo.AddComponent<TextMeshProUGUI>();
             refs.AnimationsHintText.text               =
-                "Map FSM states to animation clips. (Functionality pending.)";
+                "Map FSM state classes to animation clips. '<' / '>' cycles the target: " +
+                "'default' is inherited by every set; per-set tabs override it.";
             refs.AnimationsHintText.fontSize           = 10f;
             refs.AnimationsHintText.color              = TEXT_SECONDARY;
             refs.AnimationsHintText.enableWordWrapping = true;

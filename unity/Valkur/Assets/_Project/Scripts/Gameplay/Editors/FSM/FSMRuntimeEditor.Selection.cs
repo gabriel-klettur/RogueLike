@@ -22,22 +22,61 @@ namespace Valkur.Gameplay.Enemies.FSM
 
         // â”€â”€ Graph Input (Pan/Zoom) â”€â”€
 
+        // Zoom clamp shared by the wheel and the toolbar ± buttons — previously the
+        // wheel clamped to [0.3, 2.0] while AdjustZoom clamped to [0.25, 3.0], so
+        // alternating inputs made the zoom "jump" at the boundaries.
+        private const float ZOOM_MIN = 0.25f;
+        private const float ZOOM_MAX = 3f;
+
+        /// <summary>
+        /// True when the screen-space pointer is over the graph canvas area. Guards
+        /// both wheel-zoom and MMB-pan: without it, scrolling the Sets/Properties
+        /// panels ALSO zoomed the graph (the ScrollRect scrolled the list while this
+        /// method zoomed the canvas), and middle-clicking a panel header started a
+        /// graph pan behind the drag. Null camera matches the overlay canvas —
+        /// RectangleContainsScreenPoint handles that like the rest of this file.
+        /// </summary>
+        private bool IsPointerOverGraphArea()
+        {
+            if (_graphContent == null) return false;
+            var canvasArea = _graphContent.parent as RectTransform;
+            if (canvasArea == null) return false;
+            return RectTransformUtility.RectangleContainsScreenPoint(
+                canvasArea,
+                Valkur.Core.Input.MouseInputManager.GetScreenMousePosition(),
+                _canvas != null ? _canvas.worldCamera : null);
+        }
+
+        /// <summary>
+        /// Single zoom entry point: clamps, syncs the toolbar % label (the wheel path
+        /// used to skip it, desyncing the label from the real zoom) and repaints.
+        /// Both the wheel below and <c>AdjustZoom</c> route through here.
+        /// </summary>
+        private void SetZoom(float value)
+        {
+            _zoom = Mathf.Clamp(value, ZOOM_MIN, ZOOM_MAX);
+            if (_uiRefs.GraphZoomLabel != null)
+                _uiRefs.GraphZoomLabel.text = $"{Mathf.RoundToInt(_zoom * 100f)}%";
+            ApplyZoomPan();
+        }
+
         private void HandleGraphInput()
         {
             var mouse = Mouse.current;
 
-            // Zoom with scroll wheel (when pointer is over graph area).
-            // MouseInputManager.GetMouseWheelDelta() ORs new + legacy backends so
-            // the graph keeps zooming when the new InputSystem package drops events.
+            // Zoom with scroll wheel — ONLY when the pointer is over the graph canvas.
+            // The old comment claimed that guard existed; it did not. (The test env:
+            // MouseInputManager.GetMouseWheelDelta() ORs new + legacy backends so the
+            // graph keeps zooming when the new InputSystem package drops events.)
             float scrollDelta = Valkur.Core.Input.MouseInputManager.GetMouseWheelDelta();
-            if (Mathf.Abs(scrollDelta) > 0.01f)
+            if (Mathf.Abs(scrollDelta) > 0.01f && IsPointerOverGraphArea())
             {
-                _zoom = Mathf.Clamp(_zoom + scrollDelta * 0.001f, 0.3f, 2f);
-                ApplyZoomPan();
+                SetZoom(_zoom + scrollDelta * 0.001f);
             }
 
-            // Pan with MMB
-            if (Valkur.Core.Input.MouseInputManager.WasMiddleMouseButtonPressedThisFrame())
+            // Pan with MMB — same containment rule as zoom.
+            if (Valkur.Core.Input.MouseInputManager.WasMiddleMouseButtonPressedThisFrame()
+                && IsPointerOverGraphArea())
             {
                 _panning = true;
                 _panStart = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition() - _pan;
@@ -108,70 +147,6 @@ namespace Valkur.Gameplay.Enemies.FSM
             RebuildPropertiesContent();
         }
 
-        private void ShowStateProperties()
-        {
-            if (_selectedState == null)
-            {
-                _propsTmp.text = "Click a state node to view properties.";
-                return;
-            }
-            var s = _selectedState;
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine("<b>STATE PROPERTIES</b>");
-            sb.AppendLine();
-            sb.AppendLine($"<b>ID:</b> {s.id}");
-            sb.AppendLine($"<b>Label:</b> {s.label}");
-            sb.AppendLine($"<b>Class:</b> {s.stateClass}");
-            sb.AppendLine($"<b>Initial:</b> {s.isInitial || (_selectedSet?.initial == s.id)}");
-            sb.AppendLine($"<b>Terminal:</b> {s.isTerminal}");
-            sb.AppendLine($"<b>Position:</b> ({s.x:F0}, {s.y:F0})");
-            sb.AppendLine($"<b>Size:</b> {s.w:F0} Ã— {s.h:F0}");
-
-            // Show outgoing transitions
-            if (_selectedSet != null)
-            {
-                var outgoing = _selectedSet.transitions.Where(t => t.from == s.id).ToList();
-                if (outgoing.Count > 0)
-                {
-                    sb.AppendLine();
-                    sb.AppendLine($"<b>Outgoing Transitions ({outgoing.Count}):</b>");
-                    foreach (var t in outgoing)
-                        sb.AppendLine($"  â†’ {t.to} [{t.label ?? t.whenEvent ?? "?"}]");
-                }
-                var incoming = _selectedSet.transitions.Where(t => t.to == s.id).ToList();
-                if (incoming.Count > 0)
-                {
-                    sb.AppendLine($"<b>Incoming Transitions ({incoming.Count}):</b>");
-                    foreach (var t in incoming)
-                        sb.AppendLine($"  â† {t.from} [{t.label ?? t.whenEvent ?? "?"}]");
-                }
-            }
-
-            _propsTmp.text = sb.ToString();
-        }
-
-        private void ShowTransitionProperties()
-        {
-            if (_selectedTransition == null)
-            {
-                _propsTmp.text = "Click a transition label to view properties.";
-                return;
-            }
-            var t = _selectedTransition;
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine("<b>TRANSITION PROPERTIES</b>");
-            sb.AppendLine();
-            sb.AppendLine($"<b>ID:</b> {t.id}");
-            sb.AppendLine($"<b>From:</b> {t.from}");
-            sb.AppendLine($"<b>To:</b> {t.to}");
-            sb.AppendLine($"<b>Label:</b> {t.label}");
-            sb.AppendLine($"<b>Event:</b> {t.whenEvent}");
-            sb.AppendLine($"<b>Condition:</b> {(string.IsNullOrEmpty(t.condition) ? "â€“" : t.condition)}");
-            sb.AppendLine($"<b>Priority:</b> {t.priority}");
-            sb.AppendLine($"<b>Cooldown:</b> {t.cooldownFrames} frames");
-            _propsTmp.text = sb.ToString();
-        }
-
         // â”€â”€ Live Entity Inspection â”€â”€
 
         /// <summary>
@@ -182,7 +157,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             var brain = entity.GetComponent<Valkur.Gameplay.FSM.FSMMonsterBrain>();
             if (brain == null) return;
 
-            _statusTmp.text = $"Inspecting: {entity.name} â€” State: {brain.CurrentStateName}";
+            SetStatus($"Inspecting: {entity.name} â€” State: {brain.CurrentStateName}");
         }
     }
 }

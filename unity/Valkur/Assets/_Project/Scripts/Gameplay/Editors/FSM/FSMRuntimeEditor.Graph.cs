@@ -95,12 +95,9 @@ namespace Valkur.Gameplay.Enemies.FSM
             _showBuiltInEdges = !_showBuiltInEdges;
             RefreshBuiltInButtonLabel();
             RefreshGraph();
-            if (_statusTmp != null)
-            {
-                _statusTmp.text = _showBuiltInEdges
-                    ? $"Showing {FSMBuiltInTransitions.All.Count} built-in edges — the transitions the state classes take on their own."
-                    : "Built-in edges hidden — the graph now shows ONLY what this editor owns.";
-            }
+            SetStatus(_showBuiltInEdges
+                ? $"Showing {FSMBuiltInTransitions.All.Count} built-in edges — the transitions the state classes take on their own."
+                : "Built-in edges hidden — the graph now shows ONLY what this editor owns.");
         }
 
         /// <summary>Caption states what the button will do next, not what is true now.</summary>
@@ -176,10 +173,9 @@ namespace Valkur.Gameplay.Enemies.FSM
         /// </summary>
         private void OnBuiltInEdgeClicked(FSMBuiltInEdge edge)
         {
-            if (_statusTmp == null) return;
-            _statusTmp.text =
+            SetStatus(
                 $"BUILT-IN {edge.From} → {edge.To}: {edge.Label}. Not editable here — " +
-                $"owned by {edge.SourceFile}.";
+                $"owned by {edge.SourceFile}.");
         }
 
         /// <summary>

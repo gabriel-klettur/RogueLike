@@ -309,27 +309,26 @@ namespace Valkur.Gameplay.Enemies.FSM
             var parsed = Valkur.Gameplay.FSM.FSMCondition.Parse(text, out string error);
             if (error != null)
             {
-                _statusTmp.text = $"Condition saved, but {edge} will NOT exist at runtime — " +
-                                   $"FSMRuntimeFactory drops the whole edge on a parse error: {error}";
+                SetStatus($"Condition saved, but {edge} will NOT exist at runtime — " +
+                          $"FSMRuntimeFactory drops the whole edge on a parse error: {error}");
                 return;
             }
             if (parsed == null)
             {
-                _statusTmp.text = $"Condition cleared — {edge} is UNCONDITIONAL and fires on " +
-                                   "its first eligible frame.";
+                SetStatus($"Condition cleared — {edge} is UNCONDITIONAL and fires on its first eligible frame.");
                 return;
             }
 
             var unknown = CollectUnknownGuardLeftTerms(text);
             if (unknown.Count > 0)
             {
-                _statusTmp.text = $"Condition on {edge} saved, but '{string.Join("', '", unknown)}' " +
-                                   "is not a built-in signal — it will read as the context key " +
-                                   $"'{unknown[0]}' and evaluate as 0 unless something publishes it. " +
-                                   $"Built-ins: {string.Join(", ", KNOWN_GUARD_SIGNALS)}.";
+                SetStatus($"Condition on {edge} saved, but '{string.Join("', '", unknown)}' " +
+                          "is not a built-in signal — it will read as the context key " +
+                          $"'{unknown[0]}' and evaluate as 0 unless something publishes it. " +
+                          $"Built-ins: {string.Join(", ", KNOWN_GUARD_SIGNALS)}.");
                 return;
             }
-            _statusTmp.text = $"Condition on {edge} parses; every signal is recognised.";
+            SetStatus($"Condition on {edge} parses; every signal is recognised.");
         }
 
         /// <summary>

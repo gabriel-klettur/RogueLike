@@ -47,7 +47,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                 onToolCloneNode:  () => SetGraphTool(GraphTool.CloneNode),
                 onToolDisconnect: () => SetGraphTool(GraphTool.Disconnect),
                 onToggleTutorial: () => ToggleTutorial(),
-                onPerfToggle:     null);
+                onPerfToggle:     () => Toast("PERF overlay — not yet wired."));
 
             // The caption has to match the field's initial value, or the very first click
             // reads as a no-op to anyone watching the label rather than the graph.
@@ -77,15 +77,19 @@ namespace Valkur.Gameplay.Enemies.FSM
             // Tutorial overlay (mirrors Python fsm_tutorial_panel content).
             _tutorial = TutorialOverlay.Build(_root.transform, "FSM HOTKEYS", new[]
             {
-                ("F12",    "Toggle FSM Editor"),
-                ("Click",  "Select set / state / transition"),
-                ("Drag",   "Move state node"),
-                ("MMB",    "Pan graph"),
-                ("Wheel",  "Zoom graph"),
-                ("Type",   "Filter sets"),
-                ("Ctrl+Z", "Undo"),
-                ("Ctrl+Y", "Redo"),
-                ("Esc",    "Close all editors"),
+                ("F12",      "Toggle FSM Editor"),
+                ("Click",    "Select set / state / transition"),
+                ("Drag",     "Move state node"),
+                ("MMB",      "Pan graph (over the canvas)"),
+                ("Wheel",    "Zoom graph (over the canvas)"),
+                ("Type",     "Filter sets"),
+                ("Ctrl+Z",   "Undo"),
+                ("Ctrl+Y",   "Redo"),
+                ("Esc",      "Cancel connect / close tutorial / close editor"),
+                ("Toolbar",  "Select / Add / Clone / Connect / Disconnect / Delete / Mark Ini-End"),
+                ("Any (*)",  "Wildcard source - Connect/Disconnect from it"),
+                ("C / X",    "Clone / delete a set (Sets panel rows)"),
+                ("Built-in", "Toggles the code-owned edges"),
             });
             _tutorial.SetActive(false);
 
@@ -170,8 +174,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             _graphTool = tool;
             _pendingConnectFrom = null;
             RefreshGraphToolHighlights();
-            if (_statusTmp != null)
-                _statusTmp.text = $"Tool: {tool}";
+            SetStatus($"Tool: {tool}");
         }
 
         private void RefreshGraphToolHighlights()
@@ -186,13 +189,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             FSMEditorUIBuilder.ApplyTabStyle(_uiRefs.MarkEndToolImg,    null, _graphTool == GraphTool.MarkTerminal);
         }
 
-        private void AdjustZoom(float delta)
-        {
-            _zoom = Mathf.Clamp(_zoom + delta, 0.25f, 3f);
-            if (_uiRefs.GraphZoomLabel != null)
-                _uiRefs.GraphZoomLabel.text = $"{Mathf.RoundToInt(_zoom * 100f)}%";
-            ApplyZoomPan();
-        }
+        private void AdjustZoom(float delta) => SetZoom(_zoom + delta);
 
         // ── Tutorial / Save Stub ─────────────────────────────────────────────────
 
@@ -200,14 +197,6 @@ namespace Valkur.Gameplay.Enemies.FSM
         {
             if (_tutorial == null) return;
             _tutorial.SetActive(!_tutorial.activeSelf);
-        }
-
-        private void SaveFsmStub()
-        {
-            // UI-only migration phase: save logic will be ported in the
-            // functionality-migration phase (mirrors Python fsm_persistence).
-            if (_statusTmp != null)
-                _statusTmp.text = "Save: not yet implemented (UI-only phase).";
         }
 
         // ── Data Loading ─────────────────────────────────────────────────────────
@@ -247,13 +236,10 @@ namespace Valkur.Gameplay.Enemies.FSM
             RefreshProperties();
             RefreshEntities();
             RefreshAnimations();
-            if (_statusTmp != null)
-            {
-                string seedNote = IsSeedGeneratedSet(set)
-                    ? " — [seed] state list auto-refreshes on regen; transitions/labels are yours"
-                    : "";
-                _statusTmp.text = $"Set: {set.label ?? set.id} ({set.states.Count} states, {set.transitions.Count} trans){seedNote}";
-            }
+            string seedNote = IsSeedGeneratedSet(set)
+                ? " — [seed] state list auto-refreshes on regen; transitions/labels are yours"
+                : "";
+            SetStatus($"Set: {set.label ?? set.id} ({set.states.Count} states, {set.transitions.Count} trans){seedNote}");
         }
     }
 }

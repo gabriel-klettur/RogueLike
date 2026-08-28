@@ -359,7 +359,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             {
                 Debug.LogError($"[FSMEditor] Refusing to save — '{SetsPath}' failed to parse " +
                                 "on load. Fix or delete the file on disk and reopen F12 before saving again.");
-                if (_statusTmp != null) _statusTmp.text = "SAVE BLOCKED — sets.json failed to parse. See console.";
+                SetStatus("SAVE BLOCKED — sets.json failed to parse. See console.");
                 return;
             }
             if (_setsRoot == null) _setsRoot = new Dictionary<string, object>();
@@ -371,7 +371,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             // "edit → remember to type reloadfsm → fight". InvalidateCache's only production
             // caller used to be that console command.
             FSMRuntimeFactory.InvalidateCache();
-            if (_statusTmp != null) _statusTmp.text = $"Saved {SetsPath}";
+            SetStatus($"Saved {SetsPath}");
         }
 
         public void LoadAssignmentsFromDisk()
@@ -389,7 +389,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             {
                 Debug.LogError($"[FSMEditor] Refusing to save — '{AssignmentsPath}' failed to " +
                                 "parse on load. Fix or delete the file on disk and reopen F12 before saving again.");
-                if (_statusTmp != null) _statusTmp.text = "SAVE BLOCKED — assignments.json failed to parse. See console.";
+                SetStatus("SAVE BLOCKED — assignments.json failed to parse. See console.");
                 return;
             }
             WriteJson(AssignmentsPath, _assignmentsRoot ?? new Dictionary<string, object>());
@@ -428,7 +428,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             {
                 Debug.LogError($"[FSMEditor] Refusing to save — '{AnimationMapPath}' failed to " +
                                 "parse on load. Fix or delete the file on disk and reopen F12 before saving again.");
-                if (_statusTmp != null) _statusTmp.text = "SAVE BLOCKED — animation_map.json failed to parse. See console.";
+                SetStatus("SAVE BLOCKED — animation_map.json failed to parse. See console.");
                 return;
             }
             WriteJson(AnimationMapPath, _animationMapRoot ?? new Dictionary<string, object>());
@@ -448,7 +448,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             {
                 Debug.LogError($"[FSMEditor] Refusing to save — '{LayoutsPath}' failed to " +
                                 "parse on load. Fix or delete the file on disk and reopen F12 before saving again.");
-                if (_statusTmp != null) _statusTmp.text = "SAVE BLOCKED — layouts.json failed to parse. See console.";
+                SetStatus("SAVE BLOCKED — layouts.json failed to parse. See console.");
                 return;
             }
             WriteJson(LayoutsPath, _layoutsRoot ?? new Dictionary<string, object>());

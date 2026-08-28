@@ -21,9 +21,6 @@ namespace Valkur.Gameplay.Enemies.FSM
     {
         // ── Inspector ──
 
-        [SerializeField, Tooltip("FSM sets JSON (StreamingAssets or TextAsset)")]
-        private TextAsset _setsJsonAsset;
-
         [SerializeField, Tooltip("Monster catalog asset — drives the Entities panel's " +
             "by_archetype key picker. Same Editor-only self-resolution limitation as " +
             "EntitiesRuntimeEditor/F3's spawner catalog (see FSMRuntimeEditor.Entities.cs " +
@@ -173,20 +170,43 @@ namespace Valkur.Gameplay.Enemies.FSM
         }
 
         /// <summary>
-        /// Ctrl+Z / Ctrl+Y, matching what the tutorial overlay has always advertised
-        /// (<c>("Ctrl+Z", "Undo")</c> / <c>("Ctrl+Y", "Redo")</c> in <c>BuildUI</c>'s
-        /// <c>TutorialOverlay.Build</c> call) — previously true only of the two toolbar
-        /// buttons, which themselves recorded nothing. Mirrors the pattern in
-        /// <c>BuildingsRuntimeEditor.Modes.HandleKeyboardShortcuts</c>: routed through
+        /// Ctrl+Z / Ctrl+Y / Esc, matching what the tutorial overlay advertises
+        /// (<c>("Ctrl+Z", "Undo")</c> / <c>("Ctrl+Y", "Redo")</c> / <c>("Esc", …)</c> in
+        /// <c>BuildUI</c>'s <c>TutorialOverlay.Build</c> call) — previously Ctrl+Z/Y were
+        /// true only of the two toolbar buttons, and Esc did nothing at all. Mirrors
+        /// <c>ItemsRuntimeEditor.Modes.HandleKeyboardShortcuts</c>: routed through
         /// <c>KeyboardInputManager</c>, never <c>Keyboard.current</c> directly, so the
         /// legacy backend still supplies these reads when the new InputSystem package
-        /// drops OS events.
+        /// drops OS events. Esc unwinds the same escalation Items uses — cancel the
+        /// in-progress Connect/Disconnect, then the tutorial, then the editor. The
+        /// method keeps its historical name because <c>FSMEditorGraphToolsTests</c>
+        /// reflects on it.
         /// </summary>
         private void HandleUndoRedoShortcuts()
         {
             bool ctrl = KeyboardInputManager.IsCtrlHeld();
             if (ctrl && KeyboardInputManager.WasKeyPressedThisFrame(Key.Z, KeyCode.Z)) _undo.Undo();
             if (ctrl && KeyboardInputManager.WasKeyPressedThisFrame(Key.Y, KeyCode.Y)) _undo.Redo();
+
+            if (KeyboardInputManager.WasEscapePressedThisFrame())
+            {
+                if (_pendingConnectFrom != null)
+                {
+                    _pendingConnectFrom = null;
+                    SetStatus("Cancelled.");
+                }
+                else if (_tutorial != null && _tutorial.activeSelf)
+                {
+                    _tutorial.SetActive(false);
+                }
+                else
+                {
+                    if (GameEditorManager.HasInstance)
+                        GameEditorManager.Instance.ToggleExclusive(this);
+                    else
+                        ToggleActive();
+                }
+            }
         }
 
         public void Activate()
@@ -195,7 +215,11 @@ namespace Valkur.Gameplay.Enemies.FSM
             _root.SetActive(true);
             LoadSets();
             RefreshSetsList();
-            _statusTmp.text = "FSM Editor active. F12 to close.";
+            // Canonical parity (Items F7 / Buildings F10): detach the Cinemachine
+            // follow while authoring so the camera holds still behind the overlay;
+            // reattached in Deactivate.
+            CameraSetup.Instance?.DetachFollow();
+            SetStatus("FSM Editor active. F12 to close.");
             Debug.Log("[FSMEditor] Activated (F12)");
         }
 
@@ -203,9 +227,12 @@ namespace Valkur.Gameplay.Enemies.FSM
         {
             _active = false;
             _root.SetActive(false);
+            _pendingConnectFrom = null;   // cancel any half-wired Connect/Disconnect
+            _panning = false;
             _selectedSet = null;
             _selectedState = null;
             _selectedTransition = null;
+            CameraSetup.Instance?.ReattachFollow();
             if (GameEditorManager.HasInstance)
                 GameEditorManager.Instance.NotifyDeactivated(this);
             Debug.Log("[FSMEditor] Deactivated (F12)");
@@ -214,6 +241,23 @@ namespace Valkur.Gameplay.Enemies.FSM
         private void ToggleActive()
         {
             if (_active) Deactivate(); else Activate();
+        }
+
+        // ── Status feedback (canonical Items F7 pattern) ──────────────────────────
+
+        /// <summary>Writes the shared status line. Null-safe: several refresh paths
+        /// also run from EditMode tests where BuildUI may not have run.</summary>
+        private void SetStatus(string msg)
+        {
+            if (_statusTmp != null) _statusTmp.text = msg;
+        }
+
+        /// <summary>SetStatus + console log — reserved for actions worth a paper
+        /// trail; routine selections stay status-line-only to avoid log spam.</summary>
+        private void Toast(string msg)
+        {
+            SetStatus(msg);
+            Debug.Log($"[FSMEditor] {msg}");
         }
 
         // ── UI Construction ──

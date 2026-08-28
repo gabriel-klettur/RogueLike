@@ -142,7 +142,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             else                  dict[key] = val;
             SaveAnimationMap();
             RefreshAnimations();
-            if (_statusTmp != null) _statusTmp.text = "Animations saved.";
+            SetStatus("Animations saved.");
         }
     }
 }

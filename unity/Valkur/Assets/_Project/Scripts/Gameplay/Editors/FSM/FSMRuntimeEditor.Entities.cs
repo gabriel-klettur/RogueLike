@@ -547,7 +547,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             else                    d[key] = value;
             SaveAssignments();
             RefreshEntities();
-            if (_statusTmp != null) _statusTmp.text = $"Assignments saved.";
+            SetStatus("Assignments saved.");
         }
     }
 }

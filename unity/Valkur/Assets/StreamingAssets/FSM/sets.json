@@ -459,6 +459,7 @@
           "cooldown_frames": 600,
           "event": "",
           "from": "*",
+          "global": true,
           "guard": "hp_pct < 0.5",
           "id": "t_boss_enrage",
           "label": "hp_pct < 0.5",

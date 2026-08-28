@@ -137,7 +137,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                     RefreshGraph();
                     RefreshProperties();
                 });
-            if (_statusTmp != null) _statusTmp.text = $"Cloned → {newId}";
+            SetStatus($"Cloned → {newId}");
         }
 
         // ── Delete (with confirmation modal) ─────────────────────────────────────
@@ -206,7 +206,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                     RefreshGraph();
                     RefreshProperties();
                 });
-            if (_statusTmp != null) _statusTmp.text = $"Deleted '{set.id}'";
+            SetStatus($"Deleted '{set.id}'");
         }
 
         // ── New Set ──────────────────────────────────────────────────────────────
@@ -264,7 +264,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                             RefreshGraph();
                             RefreshProperties();
                         });
-                    if (_statusTmp != null) _statusTmp.text = $"Created '{newId}'";
+                    SetStatus($"Created '{newId}'");
                 });
         }
 

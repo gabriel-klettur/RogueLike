@@ -1,0 +1,9 @@
+chore: commit session working-tree churn (non-tree)
+
+Commits unrelated working-tree modifications present before the tree-import task:
+
+- 12 FSM editor C# files (FSMRuntimeEditor.*.cs, FSMEditorUIBuilder.Panels.cs):
+  mid-flight FSM editor dev; compiles clean (editor console empty after refresh).
+- StreamingAssets/*.json (Buildings/*, FSM/*, Particles/*): runtime world-state
+  written via the IRepository pattern; .bak sidecar is gitignored.
+- ProjectSettings/Physics2DSettings.asset; dwarf.asset; MainGameplay.unity.
