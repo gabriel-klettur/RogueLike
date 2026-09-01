@@ -207,6 +207,8 @@ namespace Valkur.Gameplay.Buildings
         private TextMeshProUGUI _gridColsVal, _gridRowsVal;
         private TextMeshProUGUI _scopeBtnLabel;
         private Image _scopeBtnImg;
+        private TextMeshProUGUI _interactableBtnLabel;
+        private Image _interactableBtnImg;
 
         // Floating world-space handle (R) — overlay positioned each frame at top-right of active building.
         // Delete (E) and Reset (D) moved to the Properties inspector panel.

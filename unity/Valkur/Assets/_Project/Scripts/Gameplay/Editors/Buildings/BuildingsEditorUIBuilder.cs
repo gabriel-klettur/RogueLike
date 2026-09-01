@@ -86,6 +86,8 @@ namespace Valkur.Gameplay.Buildings
             public TextMeshProUGUI GridColsVal, GridRowsVal;   // collider grid resolution stepper values
             public Image           ScopeBtnImg;
             public TextMeshProUGUI ScopeBtnLabel;
+            public Image           InteractableBtnImg;
+            public TextMeshProUGUI InteractableBtnLabel;
 
             // Colliders panel refs (redesigned: ON/OFF toggle + Paint/Erase action + scope + size).
             public Image           CollVisibilityBtnImg;   public TextMeshProUGUI CollVisibilityBtnLabel;
@@ -149,6 +151,7 @@ namespace Valkur.Gameplay.Buildings
             Action         onGridColsMinus, Action onGridColsPlus,
             Action         onGridRowsMinus, Action onGridRowsPlus,
             Action         onColliderScope,
+            Action         onInteractable,
             Action         onPaintSolid,   Action onPaintWalk, Action onSaveCU,
             Action         onDeleteBuilding,
             Action         onResetBuilding,
@@ -207,7 +210,7 @@ namespace Valkur.Gameplay.Buildings
             BuildPropertiesPanel(canvasT, ref refs, onSplitChanged,
                 onZBottomMinus, onZBottomPlus, onZTopMinus, onZTopPlus,
                 onGridColsMinus, onGridColsPlus, onGridRowsMinus, onGridRowsPlus,
-                onColliderScope, onPaintSolid, onPaintWalk, onSaveCU, onDeleteBuilding, onResetBuilding);
+                onColliderScope, onInteractable, onPaintSolid, onPaintWalk, onSaveCU, onDeleteBuilding, onResetBuilding);
             return refs;
         }
 

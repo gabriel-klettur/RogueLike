@@ -211,6 +211,26 @@ namespace Valkur.Gameplay.Entities
             return new Color(c.r, c.g, c.b, 1f);
         }
 
+        /// <summary>
+        /// Total frames across every "Sprite Sheet Mode" list on a config. All EIGHT lists
+        /// are counted, including chase and recover: a character can be authored entirely
+        /// through the sheet path, and omitting a list would under-report exactly the
+        /// characters that use it. Null lists are an unauthored state, not zero frames of
+        /// something - they simply contribute nothing.
+        /// </summary>
+        private static int CountSheetFrames(EntityAssetConfig ac)
+        {
+            if (ac == null) return 0;
+            return (ac.idleSheets?.Count    ?? 0)
+                 + (ac.walkSheets?.Count    ?? 0)
+                 + (ac.chaseSheets?.Count   ?? 0)
+                 + (ac.castSheets?.Count    ?? 0)
+                 + (ac.attackSheets?.Count  ?? 0)
+                 + (ac.damageSheets?.Count  ?? 0)
+                 + (ac.deathSheets?.Count   ?? 0)
+                 + (ac.recoverSheets?.Count ?? 0);
+        }
+
         // â”€â”€ Player icons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         //
         // The picker shows player classes using their south-facing idle sprite
@@ -597,6 +617,47 @@ namespace Valkur.Gameplay.Entities
             EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsStatsSection, "Armor",        p.BasicArmor.ToString());
             EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsStatsSection, "Speed",        p.BasicSpeed.ToString());
             EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsStatsSection, "Mana Regen",   $"{p.ManaRegenPerSecond}/s");
+
+            // ── Assets section ──────────────────────────────────────────────────────────
+            // Read off the PlayerDefinition's EntityAssetConfig, resolved through the SAME
+            // lookup the picker uses for its icons, so a class listed there always has its
+            // assets described here. Each value is reported the way its CONSUMER reads it.
+            var def = FindPlayerDefinition(key);
+            if (def != null && def.assetConfig != null)
+            {
+                var ac = def.assetConfig;
+
+                string idleSprite = ac.idle.south != null ? ac.idle.south.name : "\u2014";
+                EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAssetsSection, "Idle Sprite", idleSprite);
+
+                // scaleIdle <= 0 is not missing data: EntityAnimationBinder.ApplyEntityScale
+                // skips the resize entirely, which is what every player def relies on.
+                EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAssetsSection, "Scale",
+                    ac.scaleConfig.scaleIdle > 0f
+                        ? ac.scaleConfig.scaleIdle.ToString("0.##")
+                        : "1 (unscaled)");
+
+                // NormalizeTint promotes the unset (0,0,0,0) colour to white \- the reading
+                // EntityAnimationBinder and the picker icons both apply. ToHtmlStringRGB
+                // never returns null, so there is no empty case to guard.
+                EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAssetsSection, "Tint",
+                    $"#{ColorUtility.ToHtmlStringRGB(NormalizeTint(ac.scaleConfig.tint))}");
+
+                int sheetFrames = CountSheetFrames(ac);
+                EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAssetsSection, "Sheet Frames",
+                    sheetFrames > 0 ? sheetFrames.ToString() : "\u2014");
+
+                // <= 0 is treated as 1 by DirectionalAnimator.SetAnimationSpeedMultiplier \-
+                // which is what every asset predating the field deserializes to.
+                float animSpeed = ac.scaleConfig.animationSpeedMultiplier;
+                EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAssetsSection, "Anim Speed",
+                    animSpeed > 0f ? $"{animSpeed:0.##}x" : "1x (default)");
+            }
+            else
+            {
+                EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAssetsSection, "Assets",
+                    def == null ? "PlayerDefinition not found" : "no asset config");
+            }
 
             if (_ui.BossHandoffBtnGo != null) _ui.BossHandoffBtnGo.SetActive(false);
             SetStatus($"Selected: {p.DisplayName ?? key}");

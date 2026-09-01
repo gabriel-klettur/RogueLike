@@ -763,6 +763,82 @@ namespace Valkur.Tests.EditMode.Game.World
             Object.DestroyImmediate(go);
         }
 
+        // ── Interactable (player-mode hover highlight) ──────────────────────
+
+        [Test]
+        public void Interactable_NoTemplate_ReturnsFalse()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            var go = new GameObject("TestBuilding");
+            var bObj = go.AddComponent<BuildingObject>();
+
+            Assert.IsFalse(bObj.Interactable,
+                "With no template and no override, Interactable must default to false.");
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void Interactable_TemplateFlag_IsInherited()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            var go = new GameObject("TestBuilding");
+            var bObj = go.AddComponent<BuildingObject>();
+
+            var tmpl = ScriptableObject.CreateInstance<BuildingTemplateData>();
+            tmpl.interactable = true;
+            SetPrivateField(bObj, "_template", tmpl);
+
+            Assert.IsTrue(bObj.Interactable,
+                "Interactable must inherit template.interactable when the per-instance override is -1.");
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(tmpl);
+        }
+
+        [Test]
+        public void InteractableOverride_On_ForcesTrue_IgnoringTemplate()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            var go = new GameObject("TestBuilding");
+            var bObj = go.AddComponent<BuildingObject>();
+
+            var tmpl = ScriptableObject.CreateInstance<BuildingTemplateData>();
+            tmpl.interactable = false;
+            SetPrivateField(bObj, "_template", tmpl);
+            bObj.InteractableOverride = 1;
+
+            Assert.IsTrue(bObj.Interactable,
+                "Override 1 must force Interactable on even when the template is false.");
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(tmpl);
+        }
+
+        [Test]
+        public void InteractableOverride_Off_ForcesFalse_IgnoringTemplate()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            var go = new GameObject("TestBuilding");
+            var bObj = go.AddComponent<BuildingObject>();
+
+            var tmpl = ScriptableObject.CreateInstance<BuildingTemplateData>();
+            tmpl.interactable = true;
+            SetPrivateField(bObj, "_template", tmpl);
+            bObj.InteractableOverride = 0;
+
+            Assert.IsFalse(bObj.Interactable,
+                "Override 0 must force Interactable off even when the template is true.");
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(tmpl);
+        }
+
+
         // ── Small helper to keep the new tests compact ─────────────────────
         private static SpriteRenderer MakeChildRenderer(GameObject parent, string name, int texW, int texH)
         {

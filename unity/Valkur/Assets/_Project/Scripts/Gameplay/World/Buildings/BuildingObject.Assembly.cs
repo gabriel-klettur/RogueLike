@@ -58,6 +58,8 @@ namespace Valkur.Gameplay.World
                 return;
             }
 
+            _sourceSprite = sourceSprite;
+
             Texture2D tex = sourceSprite.texture;
             // ATLAS-SAFE: sourceSprite.texture is the atlas page when the sprite
             // lives inside a SpriteAtlas; Reading tex.width/height directly would
@@ -226,7 +228,14 @@ namespace Valkur.Gameplay.World
             // built-in Sprites-Default shader which renders BLACK in the URP pipeline.
             // WorldSpriteMaterials picks lit or unlit once for the whole world, so a
             // building darkens with the tiles it stands on instead of staying noon-bright.
-            var mat = Valkur.Core.Rendering.WorldSpriteMaterials.World;
+            //
+            // Cap role: a building collects snow on the edges that have open sky above them —
+            // the roof line, the top of a wall, the crown of a tree prop — which the shader
+            // reads out of the sprite's own alpha. That is what makes it work for all 969
+            // templates without a single snow variant being drawn, and keep working after an
+            // instance is rescaled or a new prop wave is imported.
+            var mat = Valkur.Core.Rendering.WorldSpriteMaterials.WorldWithSnow(
+                Valkur.Core.Rendering.WorldSpriteMaterials.SnowRole.Cap);
             if (mat != null)
                 sr.sharedMaterial = mat;
         }

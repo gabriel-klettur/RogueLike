@@ -182,12 +182,13 @@ namespace Valkur.Gameplay.Buildings
                     bool hasColliderScope = !string.IsNullOrEmpty(b.ColliderScopeOverride);
                     bool hasZBottomOverride = b.ZBottomOffset != 0;
                     bool hasZTopOverride = b.ZTopOffset != 0;
+                    bool hasInteractableOverride = b.InteractableOverride != -1;
                     // A doorway is written only when it actually leads somewhere. An empty
                     // target is the resting state of every un-assigned house; persisting it
                     // would add a dead block to hundreds of records.
                     var doorSpec = b.DoorSpec;
                     bool hasDoorOverride = doorSpec != null && doorSpec.IsValid;
-                    bool hasOv = b.SplitRatioOverride >= 0f || sov.x > 0 || sov.y > 0 || hasColliderScope || hasZBottomOverride || hasZTopOverride || hasDoorOverride || writeCollisionOverride;
+                    bool hasOv = b.SplitRatioOverride >= 0f || sov.x > 0 || sov.y > 0 || hasColliderScope || hasZBottomOverride || hasZTopOverride || hasInteractableOverride || hasDoorOverride || writeCollisionOverride;
                     if (hasOv)
                     {
                         sb.Append(", \"overrides\": {");
@@ -216,6 +217,12 @@ namespace Valkur.Gameplay.Buildings
                         {
                             if (!first) sb.Append(", ");
                             sb.Append($"\"z_top\": {b.ZTopOffset}");
+                            first = false;
+                        }
+                        if (hasInteractableOverride)
+                        {
+                            if (!first) sb.Append(", ");
+                            sb.Append($"\"interactable\": {b.InteractableOverride}");
                             first = false;
                         }
                         if (hasDoorOverride)

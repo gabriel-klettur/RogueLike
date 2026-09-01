@@ -46,7 +46,6 @@ namespace Valkur.Gameplay.Enemies.FSM
         private bool _panning;
         private Vector2 _panStart;
         private bool _draggingNode;
-        private Vector2 _dragOffset;
 
         // UI refs
         private Canvas _canvas;

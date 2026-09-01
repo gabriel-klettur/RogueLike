@@ -22,16 +22,24 @@ namespace Valkur.Editor
     {
         private static readonly AtlasGroupDef[] AtlasGroups = new[]
         {
-            new AtlasGroupDef("env-tiles",   "Assets/_Project/Resources/Tiles",    2048, false),
-            new AtlasGroupDef("characters",  "Assets/_Project/Art/Characters",      2048, false),
-            new AtlasGroupDef("npc",         "Assets/_Project/Art/NPC",             2048, false),
-            new AtlasGroupDef("spells",      "Assets/_Project/Art/Spells",          2048, false),
-            new AtlasGroupDef("items",       "Assets/_Project/Art/Items",           2048, false),
-            new AtlasGroupDef("vfx",         "Assets/_Project/Art/VFX",             2048, false),
-            new AtlasGroupDef("buildings",   "Assets/_Project/Resources/Buildings", 4096, false),
-            new AtlasGroupDef("ui",          "Assets/_Project/Art/UI",              2048, true),
-            new AtlasGroupDef("misc",        "Assets/_Project/Art/Misc",            2048, false),
-            new AtlasGroupDef("backgrounds", "Assets/_Project/Art/Backgrounds",     4096, true),
+            new AtlasGroupDef("env-tiles",   2048, false, "Assets/_Project/Resources/Tiles"),
+            new AtlasGroupDef("characters",  2048, false, "Assets/_Project/Art/Characters"),
+            new AtlasGroupDef("npc",         2048, false, "Assets/_Project/Art/NPC"),
+            new AtlasGroupDef("spells",      2048, false, "Assets/_Project/Art/Spells"),
+            new AtlasGroupDef("items",       2048, false, "Assets/_Project/Art/Items"),
+            // VFX must NOT pack its whole Art/VFX tree: that folder contains
+            // Vendor/SlashVFX/Demo, whose demo scene art (mannequin diffuse, EXR
+            // reflection probe) would ship in the build. List the texture folders
+            // explicitly — see SpriteAtlasPackablesTests.
+            new AtlasGroupDef("vfx",         2048, false,
+                "Assets/_Project/Art/VFX/explosions",
+                "Assets/_Project/Art/VFX/flame",
+                "Assets/_Project/Art/VFX/smoke",
+                "Assets/_Project/Art/VFX/Vendor/SlashVFX/Textures"),
+            new AtlasGroupDef("buildings",   4096, false, "Assets/_Project/Resources/Buildings"),
+            new AtlasGroupDef("ui",          2048, true,  "Assets/_Project/Art/UI"),
+            new AtlasGroupDef("misc",        2048, false, "Assets/_Project/Art/Misc"),
+            new AtlasGroupDef("backgrounds", 4096, true,  "Assets/_Project/Art/Backgrounds"),
         };
 
         private const string ATLAS_OUTPUT_DIR = "Assets/_Project/SpriteAtlases";
@@ -54,46 +62,67 @@ namespace Valkur.Editor
                 bool exists = File.Exists(Path.Combine(Application.dataPath, "..",
                     atlasPath.Replace('/', Path.DirectorySeparatorChar)));
 
-                if (!AssetDatabase.IsValidFolder(group.sourceFolder))
+                // Validate every source folder up front and collect the valid ones.
+                // A missing folder is skipped, but an in-folder atlas or a foreign
+                // atlas claiming one of these folders still aborts the whole group —
+                // those mean the project is double-packing and need a human decision.
+                var validFolders = new List<string>();
+                bool abortGroup = false;
+
+                foreach (var sourceFolder in group.sourceFolders)
                 {
-                    Debug.LogWarning($"[SpriteAtlasBuilder] Source folder not found: {group.sourceFolder} — skipping {group.name}");
-                    continue;
+                    if (!AssetDatabase.IsValidFolder(sourceFolder))
+                    {
+                        Debug.LogWarning($"[SpriteAtlasBuilder] Source folder not found: {sourceFolder} — skipping it for {group.name}");
+                        continue;
+                    }
+
+                    // If a SpriteAtlas is already living inside the source folder
+                    // (typically a hand-curated one like Atlas_Characters_Players),
+                    // skip this group: producing a second atlas covering the same
+                    // sprites makes Unity log a "matches more than one built-in
+                    // atlases" warning per sprite per LoadAssetAtPath, which can
+                    // cascade into editor freezes once the player spawn pipeline
+                    // touches dozens of walking frames.
+                    var existingInFolder = AssetDatabase.FindAssets("t:SpriteAtlas",
+                        new[] { sourceFolder });
+                    if (existingInFolder != null && existingInFolder.Length > 0)
+                    {
+                        string existingName = AssetDatabase.GUIDToAssetPath(existingInFolder[0]);
+                        Debug.LogWarning(
+                            $"[SpriteAtlasBuilder] '{sourceFolder}' already contains " +
+                            $"a SpriteAtlas ({existingName}). Skipping '{group.name}' to avoid " +
+                            "duplicate-packing conflicts. Delete the in-folder atlas if you want " +
+                            "the convention-named one at SpriteAtlases/ to take over.");
+                        abortGroup = true;
+                        break;
+                    }
+
+                    // The check above only catches an atlas sitting INSIDE the source
+                    // folder. A stray atlas anywhere else that lists the same folder as
+                    // a packable is just as damaging and slipped through for months:
+                    // Art/Tiles/Atlas_Tiles.spriteatlas packed Resources/Tiles, the same
+                    // folder as this 'env-tiles' group, producing 3077 "matches more than
+                    // one built-in atlases" warnings and a duplicated atlas in the build.
+                    string foreignAtlas = FindForeignAtlasPacking(sourceFolder, atlasPath);
+                    if (foreignAtlas != null)
+                    {
+                        Debug.LogError(
+                            $"[SpriteAtlasBuilder] '{foreignAtlas}' already packs " +
+                            $"'{sourceFolder}'. Skipping '{group.name}' — two atlases over " +
+                            "the same sprites warn once per sprite and ship the atlas twice. " +
+                            "Delete the stray atlas, then re-run this menu item.");
+                        abortGroup = true;
+                        break;
+                    }
+
+                    validFolders.Add(sourceFolder);
                 }
 
-                // If a SpriteAtlas is already living inside the source folder
-                // (typically a hand-curated one like Atlas_Characters_Players),
-                // skip this group: producing a second atlas covering the same
-                // sprites makes Unity log a "matches more than one built-in
-                // atlases" warning per sprite per LoadAssetAtPath, which can
-                // cascade into editor freezes once the player spawn pipeline
-                // touches dozens of walking frames.
-                var existingInFolder = AssetDatabase.FindAssets("t:SpriteAtlas",
-                    new[] { group.sourceFolder });
-                if (existingInFolder != null && existingInFolder.Length > 0)
+                if (abortGroup || validFolders.Count == 0)
                 {
-                    string existingName = AssetDatabase.GUIDToAssetPath(existingInFolder[0]);
-                    Debug.LogWarning(
-                        $"[SpriteAtlasBuilder] '{group.sourceFolder}' already contains " +
-                        $"a SpriteAtlas ({existingName}). Skipping '{group.name}' to avoid " +
-                        "duplicate-packing conflicts. Delete the in-folder atlas if you want " +
-                        "the convention-named one at SpriteAtlases/ to take over.");
-                    continue;
-                }
-
-                // The check above only catches an atlas sitting INSIDE the source
-                // folder. A stray atlas anywhere else that lists the same folder as
-                // a packable is just as damaging and slipped through for months:
-                // Art/Tiles/Atlas_Tiles.spriteatlas packed Resources/Tiles, the same
-                // folder as this 'env-tiles' group, producing 3077 "matches more than
-                // one built-in atlases" warnings and a duplicated atlas in the build.
-                string foreignAtlas = FindForeignAtlasPacking(group.sourceFolder, atlasPath);
-                if (foreignAtlas != null)
-                {
-                    Debug.LogError(
-                        $"[SpriteAtlasBuilder] '{foreignAtlas}' already packs " +
-                        $"'{group.sourceFolder}'. Skipping '{group.name}' — two atlases over " +
-                        "the same sprites warn once per sprite and ship the atlas twice. " +
-                        "Delete the stray atlas, then re-run this menu item.");
+                    if (!abortGroup)
+                        Debug.LogWarning($"[SpriteAtlasBuilder] No valid source folders for '{group.name}' — skipping.");
                     continue;
                 }
 
@@ -133,13 +162,18 @@ namespace Valkur.Editor
                 platformSettings.textureCompression = TextureImporterCompression.Uncompressed;
                 atlas.SetPlatformSettings(platformSettings);
 
-                // Set the source folder as the packable
-                var folderObj = AssetDatabase.LoadAssetAtPath<DefaultAsset>(group.sourceFolder);
-                if (folderObj != null)
+                // Set every valid source folder as a packable.
+                var folderObjs = new List<Object>(validFolders.Count);
+                foreach (var sourceFolder in validFolders)
                 {
-                    atlas.Remove(atlas.GetPackables());
-                    atlas.Add(new Object[] { folderObj });
+                    var folderObj = AssetDatabase.LoadAssetAtPath<DefaultAsset>(sourceFolder);
+                    if (folderObj != null)
+                        folderObjs.Add(folderObj);
                 }
+
+                atlas.Remove(atlas.GetPackables());
+                if (folderObjs.Count > 0)
+                    atlas.Add(folderObjs.ToArray());
 
                 if (!exists)
                 {
@@ -161,16 +195,16 @@ namespace Valkur.Editor
         private struct AtlasGroupDef
         {
             public string name;
-            public string sourceFolder;
+            public string[] sourceFolders;
             public int maxSize;
             public bool bilinear;
 
-            public AtlasGroupDef(string name, string sourceFolder, int maxSize, bool bilinear)
+            public AtlasGroupDef(string name, int maxSize, bool bilinear, params string[] sourceFolders)
             {
                 this.name = name;
-                this.sourceFolder = sourceFolder;
                 this.maxSize = maxSize;
                 this.bilinear = bilinear;
+                this.sourceFolders = sourceFolders;
             }
         }
         /// <summary>

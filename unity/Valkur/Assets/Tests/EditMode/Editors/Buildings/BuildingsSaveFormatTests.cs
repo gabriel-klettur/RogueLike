@@ -146,7 +146,8 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
         private static BuildingObject MakeBuildingInScene(
             string name, BuildingTemplateData tmpl,
             int instanceId = 1, string zone = "Lobby",
-            float splitOverride = -1f, Vector2Int scaleOverride = default)
+            float splitOverride = -1f, Vector2Int scaleOverride = default,
+            int interactableOverride = -1)
         {
             var go   = new GameObject(name);
             var bObj = go.AddComponent<BuildingObject>();
@@ -155,6 +156,7 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
             bObj.ZoneName           = zone;
             bObj.SplitRatioOverride = splitOverride;
             bObj.ScaleOverride      = scaleOverride;
+            bObj.InteractableOverride = interactableOverride;
             return bObj;
         }
 
@@ -451,6 +453,26 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
             Assert.IsNotNull(json);
             StringAssert.DoesNotContain("\"overrides\"", json,
                 "Buildings with no scale/split overrides must not have an 'overrides' key in JSON.");
+
+            Object.DestroyImmediate(editor.gameObject);
+            Object.DestroyImmediate(tmpl);
+        }
+
+        [TestCase(0)]
+        [TestCase(1)]
+        public void SaveJson_WithInteractableOverride_WritesOverride(int value)
+        {
+            LogAssert.ignoreFailingMessages = true;
+            var editor = CreateSingleton<BuildingsRuntimeEditor>("TestEditor");
+            var tmpl   = MakeTemplate(id: 1);
+            MakeBuildingInScene("B1", tmpl, interactableOverride: value);
+
+            string json = InvokeAndReadJson(editor);
+
+            Assert.IsNotNull(json);
+            StringAssert.Contains("\"overrides\"", json);
+            StringAssert.Contains($"\"interactable\": {value}", json,
+                "The per-instance interactable value must survive serialization.");
 
             Object.DestroyImmediate(editor.gameObject);
             Object.DestroyImmediate(tmpl);

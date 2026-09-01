@@ -178,7 +178,8 @@ namespace Valkur.Editor
                 sb.Append($"\"rel_y\": {relY}");
 
                 bool hasZOv = b.ZBottomOffset != 0 || b.ZTopOffset != 0;
-                bool hasOverrides = splitOverride >= 0f || scaleOv.x > 0 || scaleOv.y > 0 || hasZOv;
+                bool hasInteractableOv = b.InteractableOverride != -1;
+                bool hasOverrides = splitOverride >= 0f || scaleOv.x > 0 || scaleOv.y > 0 || hasZOv || hasInteractableOv;
                 if (hasOverrides)
                 {
                     sb.Append(", \"overrides\": {");
@@ -204,6 +205,13 @@ namespace Valkur.Editor
                     {
                         if (!firstOv) sb.Append(", ");
                         sb.Append($"\"z_top\": {b.ZTopOffset}");
+                        firstOv = false;
+                    }
+                    if (hasInteractableOv)
+                    {
+                        if (!firstOv) sb.Append(", ");
+                        sb.Append($"\"interactable\": {b.InteractableOverride}");
+                        firstOv = false;
                     }
                     sb.Append("}");
                 }

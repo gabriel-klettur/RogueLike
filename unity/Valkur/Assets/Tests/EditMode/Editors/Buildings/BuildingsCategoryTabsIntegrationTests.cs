@@ -65,6 +65,7 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
                 onGridColsMinus: () => { }, onGridColsPlus: () => { },
                 onGridRowsMinus: () => { }, onGridRowsPlus: () => { },
                 onColliderScope: () => { },
+                onInteractable: () => { },
                 onPaintSolid: () => { }, onPaintWalk: () => { }, onSaveCU: () => { },
                 onDeleteBuilding: () => { },
                 onResetBuilding: () => { },

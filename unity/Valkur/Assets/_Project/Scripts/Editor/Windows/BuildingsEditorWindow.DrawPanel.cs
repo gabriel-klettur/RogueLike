@@ -142,11 +142,37 @@ namespace Valkur.Editor
         {
             EditorGUILayout.BeginVertical();
 
+            DrawSelectedTemplateInspector();
+            EditorGUILayout.Space(4);
             DrawSelectedBuildingInspector();
             EditorGUILayout.Space(4);
             DrawSceneBuildingsList();
 
             EditorGUILayout.EndVertical();
+        }
+
+        private void DrawSelectedTemplateInspector()
+        {
+            EditorGUILayout.LabelField("Selected Template", EditorStyles.boldLabel);
+
+            if (_selectedTemplate == null)
+            {
+                EditorGUILayout.HelpBox("Click a template in the palette to edit it.",
+                    MessageType.None);
+                return;
+            }
+
+            EditorGUILayout.ObjectField("Template", _selectedTemplate,
+                typeof(BuildingTemplateData), allowSceneObjects: false);
+
+            EditorGUI.BeginChangeCheck();
+            bool interactable = EditorGUILayout.Toggle("Interactable (template)", _selectedTemplate.interactable);
+            if (EditorGUI.EndChangeCheck())
+            {
+                Undo.RecordObject(_selectedTemplate, "Toggle Building Template Interactable");
+                _selectedTemplate.interactable = interactable;
+                EditorUtility.SetDirty(_selectedTemplate);
+            }
         }
 
         private void DrawSelectedBuildingInspector()
@@ -195,11 +221,21 @@ namespace Valkur.Editor
                 Vector2Int scaleOv = _selectedBuilding.ScaleOverride;
                 Vector2Int newScale = EditorGUILayout.Vector2IntField("Scale Override (0=default)", scaleOv);
 
+                // Interactable override (player-mode yellow hover highlight)
+                int[] iaValues = { -1, 1, 0 };
+                string[] iaNames = { "Inherit (template)", "On", "Off" };
+                int currentInteractable = Array.IndexOf(iaValues, _selectedBuilding.InteractableOverride) >= 0
+                    ? _selectedBuilding.InteractableOverride
+                    : -1;
+                int newInteractable = EditorGUILayout.IntPopup(
+                    "Interactable", currentInteractable, iaNames, iaValues);
+
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(_selectedBuilding, "Edit Building");
                     _selectedBuilding.SplitRatioOverride = newSplitOverride;
                     _selectedBuilding.ScaleOverride      = newScale;
+                    _selectedBuilding.InteractableOverride = newInteractable;
                     if (tpl != null)
                         _selectedBuilding.Apply(tpl, newScale, newSplitOverride);
                     EditorUtility.SetDirty(_selectedBuilding);

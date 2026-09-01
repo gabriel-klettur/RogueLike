@@ -32,6 +32,8 @@ namespace Valkur.Data
         public int ZBottomOffset;
         /// <summary>Sorting order delta for the WallsTop renderer. 0 = no override.</summary>
         public int ZTopOffset;
+        /// <summary>-1 = inherit template.interactable; 0 = force off; 1 = force on.</summary>
+        public int InteractableOverride = -1;
 
         public BuildingInstance() { }
 

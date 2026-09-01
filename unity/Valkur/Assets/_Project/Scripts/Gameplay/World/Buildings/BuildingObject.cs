@@ -59,6 +59,9 @@ namespace Valkur.Gameplay.World
         [Tooltip("Per-instance collider scope override: empty = use template, 'CG' = shared, 'CU' = per-instance.")]
         [SerializeField] private string _colliderScopeOverride = "";
 
+        [Tooltip("Per-instance interactable override: -1 = inherit template, 0 = off, 1 = on. Maps to overrides.interactable in buildings_instances.json.")]
+        [SerializeField] private int _interactableOverride = -1;
+
         [Header("Runtime Info (read-only)")]
         [Tooltip("Zone name this building belongs to. Set by BuildingLoader.")]
         [SerializeField] private string _zoneName;
@@ -71,6 +74,10 @@ namespace Valkur.Gameplay.World
         private SpriteRenderer _topRenderer;
         private BoxCollider2D  _collider;
 
+        // Full (un-split) sprite last applied by Apply(). Used by the gameplay hover
+        // highlight so the yellow silhouette follows the complete art, not the halves.
+        private Sprite _sourceSprite;
+
         // ── Public accessors ───────────────────────────────────────────────────────
         public BuildingTemplateData Template      => _template;
         public string               ZoneName      { get => _zoneName;           set => _zoneName = value;           }
@@ -80,6 +87,19 @@ namespace Valkur.Gameplay.World
         public int   ZBottomOffset                { get => _zBottomOffset;      set { _zBottomOffset = value; ApplyZOffsets(); } }
         public int   ZTopOffset                   { get => _zTopOffset;         set { _zTopOffset    = value; ApplyZOffsets(); } }
         public string ColliderScopeOverride       { get => _colliderScopeOverride; set => _colliderScopeOverride = value ?? ""; }
+        public int    InteractableOverride        { get => _interactableOverride;   set => _interactableOverride = value; }
+
+        /// <summary>Full (un-split) sprite last applied, or null before <see cref="Apply"/>.</summary>
+        public Sprite SourceSprite => _sourceSprite;
+
+        /// <summary>
+        /// Whether this placement is interactable: the per-instance override when set,
+        /// otherwise the template's flag. Drives the player-mode hover highlight.
+        /// </summary>
+        public bool Interactable =>
+            _interactableOverride == -1
+                ? (_template != null && _template.interactable)
+                : _interactableOverride == 1;
 
         /// <summary>
         /// Effective collider scope: instance override (if set) else template's value.

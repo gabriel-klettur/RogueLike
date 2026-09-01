@@ -164,6 +164,9 @@ namespace Valkur.Gameplay.Enemies.FSM
 
             _edgeObjects.Add(lineGo);
             _edgeObjects.Add(labelGo);
+
+            // Built-in edges are also directed.
+            CreateArrowhead(fromCenter, toCenter, toRect, angle, BUILTIN_EDGE_COLOR);
         }
 
         /// <summary>
@@ -178,40 +181,82 @@ namespace Valkur.Gameplay.Enemies.FSM
                 $"owned by {edge.SourceFile}.");
         }
 
+        /// <summary>Height of a node's coloured header band, in graph-content units. The
+        /// label reserves exactly this much at the top, so the two cannot drift apart.</summary>
+        private const float NODE_HEADER_H = 14f;
+
+        /// <summary>Gap between the header band and the first line of the label.</summary>
+        private const float NODE_LABEL_PAD = 2f;
+
+        /// <summary>
+        /// Shared chrome for every node in the graph: body panel, coloured header band and a
+        /// 1 px border. Both node kinds (real states and the wildcard "*" marker) build on
+        /// this so their silhouettes stay identical and only the palette differs — the header
+        /// is what separates two adjacent nodes at a glance when the graph is zoomed out.
+        /// The border is a uGUI <see cref="Outline"/>, i.e. an offset copy of the quad; the
+        /// body is an untextured <see cref="Image"/>, so the corners are square.
+        /// Callers add the label, the port dots and the click handler on top.
+        /// </summary>
+        private GameObject BuildNodeBase(string nodeName, Transform parent,
+            float w, float h, Vector2 anchoredPos, Color bodyColor, Color headerColor,
+            Color outlineColor)
+        {
+            var go = new GameObject(nodeName, typeof(RectTransform), typeof(Image));
+            go.transform.SetParent(parent, false);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0, 1);
+            rt.pivot = new Vector2(0, 1);
+            rt.sizeDelta = new Vector2(w, h);
+            rt.anchoredPosition = anchoredPos;
+
+            // Body — the only raycast target on the node; the header, label and ports are
+            // all transparent to clicks so the Button below receives every hit.
+            go.GetComponent<Image>().color = bodyColor;
+
+            var ol = go.AddComponent<Outline>();
+            ol.effectColor = outlineColor;
+            ol.effectDistance = new Vector2(1.2f, -1.2f);
+
+            // Header band, pinned to the top edge and stretched across the full width.
+            var hdrGo = new GameObject("Header", typeof(RectTransform), typeof(Image));
+            hdrGo.transform.SetParent(go.transform, false);
+            var hrt = hdrGo.GetComponent<RectTransform>();
+            hrt.anchorMin = new Vector2(0f, 1f);
+            hrt.anchorMax = new Vector2(1f, 1f);
+            hrt.pivot = new Vector2(0.5f, 1f);
+            hrt.anchoredPosition = Vector2.zero;
+            hrt.sizeDelta = new Vector2(0f, NODE_HEADER_H);
+            var hdrImg = hdrGo.GetComponent<Image>();
+            hdrImg.color = headerColor;
+            hdrImg.raycastTarget = false;
+
+            return go;
+        }
+
         /// <summary>
         /// Fixed, non-deletable marker for the wildcard transition source ("*"). Pinned to
         /// the left of the normal auto-layout grid (which starts at x≈40) so it never
         /// overlaps a real node; pans/zooms with the rest of the content but does not drag.
         /// Click dispatch is <see cref="OnAnyStateNodeClicked"/>, not
         /// <see cref="OnNodeClicked"/> — there is no backing <see cref="FSMStateNode"/>.
+        /// It carries an OUTPUT port only: "*" is a transition source and nothing can ever
+        /// target it.
         /// </summary>
         private RectTransform CreateAnyStateNodeVisual()
         {
-            const float w = 110f, h = 44f;
-            var go = new GameObject("Node_AnyState", typeof(RectTransform), typeof(Image));
-            go.transform.SetParent(_graphContent, false);
+            const float w = 120f, h = 48f;
+            var anchoredPos = new Vector2(-200f, 40f);
+
+            var go = BuildNodeBase("Node_AnyState", _graphContent,
+                w, h, anchoredPos,
+                new Color(0.35f, 0.26f, 0.06f, 0.95f),  // body: dark amber — no real state uses it
+                new Color(0.55f, 0.42f, 0.10f, 1f),     // header: the same amber, lifted
+                new Color(0.70f, 0.55f, 0.20f, 0.6f));
+
             var rt = go.GetComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(0, 1);
-            rt.pivot = new Vector2(0, 1);
-            rt.sizeDelta = new Vector2(w, h);
-            rt.anchoredPosition = new Vector2(-200f, 40f);
 
-            var img = go.GetComponent<Image>();
-            img.color = new Color(0.42f, 0.32f, 0.08f, 0.95f); // amber — distinct from any real state colour
-
-            var labelGo = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
-            labelGo.transform.SetParent(go.transform, false);
-            var lrt = labelGo.GetComponent<RectTransform>();
-            lrt.anchorMin = Vector2.zero; lrt.anchorMax = Vector2.one;
-            lrt.offsetMin = new Vector2(4, 2); lrt.offsetMax = new Vector2(-4, -2);
-            var tmp = labelGo.GetComponent<TextMeshProUGUI>();
-            tmp.text = "<b>Any State</b>\n<size=8>(*) — Connect tool</size>";
-            tmp.fontSize = 10f;
-            tmp.alignment = TextAlignmentOptions.Center;
-            tmp.color = Color.white;
-            tmp.richText = true;
-            tmp.enableWordWrapping = true;
-            tmp.overflowMode = TextOverflowModes.Truncate;
+            AddNodeLabel(go, "<b>Any State</b>\n<size=8>(*) — Connect tool</size>", 10f);
+            AddPortIndicator(go.transform, isInput: false);
 
             var btn = go.AddComponent<Button>();
             btn.onClick.AddListener(OnAnyStateNodeClicked);
@@ -221,51 +266,164 @@ namespace Valkur.Gameplay.Enemies.FSM
 
         private RectTransform CreateNodeVisual(FSMStateNode state)
         {
-            float w = state.w > 0 ? state.w : 100f;
-            float h = state.h > 0 ? state.h : 50f;
+            float w = state.w > 0 ? state.w : 120f;
+            float h = state.h > 0 ? state.h : 52f;
 
-            var go = new GameObject($"Node_{state.id}", typeof(RectTransform), typeof(Image));
-            go.transform.SetParent(_graphContent, false);
-            var rt = go.GetComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(0, 1); // top-left anchor
-            rt.pivot = new Vector2(0, 1);
-            rt.sizeDelta = new Vector2(w, h);
-            rt.anchoredPosition = new Vector2(state.x, -state.y);
-
-            var img = go.GetComponent<Image>();
             bool isSelected = _selectedState != null && _selectedState.id == state.id;
             bool isInitial = state.isInitial || (_selectedSet != null && _selectedSet.initial == state.id);
             bool isTerminal = state.isTerminal;
 
-            if (isSelected)
-                img.color = EditorUIHelpers.BTN_ACTIVE;
-            else if (isInitial)
-                img.color = new Color(0.2f, 0.5f, 0.2f, 0.9f);
-            else if (isTerminal)
-                img.color = new Color(0.55f, 0.15f, 0.15f, 0.9f);
-            else
-                img.color = new Color(0.15f, 0.18f, 0.22f, 0.9f);
+            // Palette by role — selected wins over initial wins over terminal, the same
+            // precedence the flat-colour version used.
+            Color bodyColor, headerColor, outlineColor;
 
-            // Label
-            var labelGo = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
-            labelGo.transform.SetParent(go.transform, false);
-            var lrt = labelGo.GetComponent<RectTransform>();
-            lrt.anchorMin = Vector2.zero; lrt.anchorMax = Vector2.one;
-            lrt.offsetMin = new Vector2(4, 2); lrt.offsetMax = new Vector2(-4, -2);
-            var tmp = labelGo.GetComponent<TextMeshProUGUI>();
-            tmp.text = $"<b>{state.label ?? state.id}</b>\n<size=9>{state.stateClass}</size>";
-            tmp.fontSize = 11f;
-            tmp.alignment = TextAlignmentOptions.Center;
-            tmp.color = Color.white;
-            tmp.richText = true;
-            tmp.enableWordWrapping = true;
-            tmp.overflowMode = TextOverflowModes.Truncate;
+            if (isSelected)
+            {
+                bodyColor = EditorUIHelpers.BTN_ACTIVE;
+                headerColor = new Color(0.35f, 0.55f, 0.75f, 1f);
+                outlineColor = EditorUIHelpers.ACCENT;
+            }
+            else if (isInitial)
+            {
+                bodyColor = new Color(0.18f, 0.35f, 0.18f, 0.92f);
+                headerColor = new Color(0.25f, 0.55f, 0.25f, 1f);
+                outlineColor = new Color(0.3f, 0.7f, 0.3f, 0.6f);
+            }
+            else if (isTerminal)
+            {
+                bodyColor = new Color(0.40f, 0.12f, 0.12f, 0.92f);
+                headerColor = new Color(0.60f, 0.18f, 0.18f, 1f);
+                outlineColor = new Color(0.7f, 0.3f, 0.3f, 0.6f);
+            }
+            else
+            {
+                bodyColor = new Color(0.12f, 0.14f, 0.17f, 0.92f);
+                headerColor = new Color(0.18f, 0.22f, 0.28f, 1f);
+                outlineColor = new Color(0.3f, 0.35f, 0.4f, 0.5f);
+            }
+
+            var anchoredPos = new Vector2(state.x, -state.y);
+            var go = BuildNodeBase($"Node_{state.id}", _graphContent,
+                w, h, anchoredPos, bodyColor, headerColor, outlineColor);
+
+            var rt = go.GetComponent<RectTransform>();
+
+            AddNodeLabel(go, $"<b>{state.label ?? state.id}</b>\n<size=9>{state.stateClass}</size>", 11f);
+
+            // A real state is both a target and a source, so it shows both dots.
+            AddPortIndicator(go.transform, isInput: true);
+            AddPortIndicator(go.transform, isInput: false);
 
             // Click handler — dispatched via current GraphTool
             var btn = go.AddComponent<Button>();
             btn.onClick.AddListener(() => OnNodeClicked(state));
 
             return rt;
+        }
+
+        /// <summary>
+        /// Node caption, stretched over the body minus the header band so a long state name
+        /// truncates instead of running under the coloured stripe. Never a raycast target:
+        /// the body Image is the click surface for the Button the caller adds.
+        /// </summary>
+        private static void AddNodeLabel(GameObject node, string richText, float fontSize)
+        {
+            var labelGo = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+            labelGo.transform.SetParent(node.transform, false);
+            var lrt = labelGo.GetComponent<RectTransform>();
+            lrt.anchorMin = Vector2.zero;
+            lrt.anchorMax = Vector2.one;
+            lrt.offsetMin = new Vector2(6f, 4f);
+            lrt.offsetMax = new Vector2(-6f, -(NODE_HEADER_H + NODE_LABEL_PAD));
+
+            var tmp = labelGo.GetComponent<TextMeshProUGUI>();
+            tmp.text = richText;
+            tmp.fontSize = fontSize;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = Color.white;
+            tmp.richText = true;
+            tmp.enableWordWrapping = true;
+            tmp.overflowMode = TextOverflowModes.Truncate;
+            tmp.raycastTarget = false;
+        }
+
+        /// <summary>
+        /// Small dot on the left (input) or right (output) edge, marking where the edge
+        /// lines meet the node. PURELY decorative: connections are still made by clicking
+        /// the node body with the Connect tool, and the dot is not a raycast target, so it
+        /// never steals that click. <see cref="CreateEdgeVisual"/> anchors its lines on the
+        /// node rects, not on these — they are a reading aid, not geometry.
+        /// </summary>
+        private void AddPortIndicator(Transform nodeTransform, bool isInput)
+        {
+            const float PORT_SIZE = 8f;
+            var portGo = new GameObject(isInput ? "InputPort" : "OutputPort",
+                typeof(RectTransform), typeof(Image));
+            portGo.transform.SetParent(nodeTransform, false);
+            var prt = portGo.GetComponent<RectTransform>();
+            var edge = new Vector2(isInput ? 0f : 1f, 0.5f);
+            prt.anchorMin = prt.anchorMax = prt.pivot = edge;
+            // Half the dot hangs outside the body, so it reads as a port and not as a
+            // rectangle painted on the panel.
+            prt.anchoredPosition = new Vector2(isInput ? -PORT_SIZE * 0.5f : PORT_SIZE * 0.5f, 0f);
+            prt.sizeDelta = new Vector2(PORT_SIZE, PORT_SIZE);
+
+            var pImg = portGo.GetComponent<Image>();
+            pImg.color = new Color(0.5f, 0.6f, 0.7f, 0.6f);
+            pImg.raycastTarget = false;
+        }
+
+        /// <summary>
+        /// Directional arrowhead drawn at the &quot;to&quot; end of a directed edge.
+        /// Uses two short Image segments (same technique as the edge line itself)
+        /// angled ±30° from the edge direction to form a V. No TextMeshProUGUI,
+        /// no font glyphs, no runtime-surprise dependencies — just rotated rects
+        /// like the edge lines that already work.
+        /// </summary>
+        private void CreateArrowhead(Vector2 fromCenter, Vector2 toCenter,
+            RectTransform toRect, float edgeAngleDeg, Color color)
+        {
+            var dir = (toCenter - fromCenter).normalized;
+            if (dir.sqrMagnitude < 0.0001f) return;
+
+            float halfW = toRect.sizeDelta.x * 0.5f;
+            float halfH = toRect.sizeDelta.y * 0.5f;
+
+            // Distance from toCenter to the node boundary going backwards (-dir).
+            float tx = Mathf.Abs(dir.x) > 0.0001f ? halfW / Mathf.Abs(dir.x) : float.MaxValue;
+            float ty = Mathf.Abs(dir.y) > 0.0001f ? halfH / Mathf.Abs(dir.y) : float.MaxValue;
+            float distToEdge = Mathf.Min(tx, ty);
+
+            // The tip sits just outside the node's visual boundary.
+            Vector2 tipPos = toCenter - dir * (distToEdge + 2f);
+
+            const float WING_LEN   = 14f;   // px — wing length
+            const float WING_WIDTH = 3f;   // px — wing thickness
+            const float WING_ANGLE = 30f;  // degrees — half-opening of the V
+
+            // Two wings, symmetric around the edge direction.
+            float[] wingAngles = { edgeAngleDeg + 180f - WING_ANGLE,
+                                   edgeAngleDeg + 180f + WING_ANGLE };
+
+            for (int i = 0; i < 2; i++)
+            {
+                var wingGo = new GameObject("ArrowWing_" + i,
+                    typeof(RectTransform), typeof(Image), typeof(CanvasRenderer));
+                wingGo.transform.SetParent(_graphContent, false);
+
+                var rt = wingGo.GetComponent<RectTransform>();
+                rt.anchorMin = rt.anchorMax = new Vector2(0, 1);
+                rt.pivot = new Vector2(0, 0.5f);
+                rt.anchoredPosition = tipPos;
+                rt.sizeDelta = new Vector2(WING_LEN, WING_WIDTH);
+                rt.localRotation = Quaternion.Euler(0, 0, wingAngles[i]);
+
+                var img = wingGo.GetComponent<Image>();
+                img.color = color;
+                img.raycastTarget = false;
+
+                _edgeObjects.Add(wingGo);
+            }
         }
 
         private void CreateEdgeVisual(FSMTransitionData trans)
@@ -321,6 +479,10 @@ namespace Valkur.Gameplay.Enemies.FSM
 
             _edgeObjects.Add(lineGo);
             _edgeObjects.Add(labelGo);
+
+            // Directional arrowhead — transitions are not bidirectional.
+            Color arrowColor = lineGo.GetComponent<Image>().color;
+            CreateArrowhead(fromCenter, toCenter, toRect, angle, arrowColor);
         }
 
     }

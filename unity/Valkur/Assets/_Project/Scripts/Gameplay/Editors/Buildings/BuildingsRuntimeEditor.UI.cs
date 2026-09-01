@@ -57,6 +57,7 @@ namespace Valkur.Gameplay.Buildings
                 onGridRowsMinus:   () => AdjustGridResolution(dCols:  0, dRows: -1),
                 onGridRowsPlus:    () => AdjustGridResolution(dCols:  0, dRows: +1),
                 onColliderScope:   () => ToggleColliderScope(),
+                onInteractable:    () => CycleInteractable(),
                 onPaintSolid:      () => SetCollBrushMode(CollBrushMode.Solid),
                 onPaintWalk:       () => SetCollBrushMode(CollBrushMode.Walk),
                 onSaveCU:          () => SaveColliderAuthoring(),
@@ -113,6 +114,8 @@ namespace Valkur.Gameplay.Buildings
             _gridRowsVal   = _uiRefs.GridRowsVal;
             _scopeBtnImg   = _uiRefs.ScopeBtnImg;
             _scopeBtnLabel = _uiRefs.ScopeBtnLabel;
+            _interactableBtnImg   = _uiRefs.InteractableBtnImg;
+            _interactableBtnLabel = _uiRefs.InteractableBtnLabel;
             _selectBtnImg  = _uiRefs.SelectBtnImg;
             _placeBtnImg   = _uiRefs.PlaceBtnImg;
             _resizeBtnImg  = _uiRefs.ResizeBtnImg;

@@ -38,6 +38,9 @@ namespace Valkur.Tests.EditMode.Editors.FSM
             return h;
         }
 
+        private static object GTool(int ordinal) => System.Enum.ToObject(
+            typeof(FSMRuntimeEditor).GetNestedType("GraphTool", System.Reflection.BindingFlags.NonPublic), ordinal);
+
         // ── Fixture builders ─────────────────────────────────────────────────────
 
         private static FSMRuntimeEditor.FSMSetData MakeTestSet(string id = "TestSet")
@@ -322,18 +325,131 @@ namespace Valkur.Tests.EditMode.Editors.FSM
             Invoke(h.Editor, "RefreshGraph");
 
             var edgeObjects = GetField<List<GameObject>>(h.Editor, "_edgeObjects");
-            // One line + one label per edge (CreateEdgeVisual). Before the Any State node
-            // existed, CreateEdgeVisual looked up _nodeRects["*"], found nothing, and
-            // returned early — a global edge was authored but never drawn.
-            Assert.AreEqual(2, edgeObjects.Count);
+            // One line + one label + two arrow-wings per edge (CreateEdgeVisual).
+            // Before the Any State node existed, CreateEdgeVisual looked up
+            // _nodeRects["*"], found nothing, and returned early — a global edge was
+            // authored but never drawn.
+            Assert.AreEqual(4, edgeObjects.Count);
 
             // ...and with the built-in layer on, the same authored edge is still there plus
             // the code-owned ones. This half is what would have caught the layer silently
             // not drawing at all.
             SetField(h.Editor, "_showBuiltInEdges", true);
             Invoke(h.Editor, "RefreshGraph");
-            Assert.Greater(GetField<List<GameObject>>(h.Editor, "_edgeObjects").Count, 2,
+            Assert.Greater(GetField<List<GameObject>>(h.Editor, "_edgeObjects").Count, 4,
                 "the built-in edge layer must add to the authored edges, not replace them");
+        }
+    // ── Interaction sanity: nodes, edges, keyboard, and pan/zoom ──────────
+
+        [Test]
+        public void OnNodeClicked_SelectTool_SelectsState()
+        {
+            var h = NewEditor();
+            var set = MakeTestSet();
+            InstallSet(h.Editor, set);
+
+            SetField(h.Editor, "_graphTool", GTool(0)); // Select
+            Invoke(h.Editor, "OnNodeClicked", set.states[0]);
+
+            var sel = GetField<FSMRuntimeEditor.FSMStateNode>(h.Editor, "_selectedState");
+            Assert.AreEqual("IdleState", sel.id, "Clicking a node with Select tool must select it.");
+        }
+
+        [Test]
+        public void OnNodeClicked_DeleteTool_DeletesNode()
+        {
+            var h = NewEditor();
+            var set = MakeTestSet();
+            InstallSet(h.Editor, set);
+
+            int before = set.states.Count;
+            SetField(h.Editor, "_graphTool", GTool(5)); // Delete
+            Invoke(h.Editor, "OnNodeClicked", set.states[0]);
+
+            Assert.AreEqual(before - 1, set.states.Count, "Delete tool must remove the node.");
+        }
+
+        [Test]
+        public void OnEdgeClicked_SelectTool_SelectsTransition()
+        {
+            var h = NewEditor();
+            var set = MakeTestSet();
+            var tr = AddTransition(set, "IdleState", "ChaseState");
+            InstallSet(h.Editor, set);
+
+            SetField(h.Editor, "_graphTool", GTool(0)); // Select
+            Invoke(h.Editor, "OnEdgeClicked", tr);
+
+            var sel = GetField<FSMRuntimeEditor.FSMTransitionData>(h.Editor, "_selectedTransition");
+            Assert.IsNotNull(sel, "Clicking an edge with Select tool must select it.");
+            Assert.AreEqual("t1", sel.id);
+        }
+
+        [Test]
+        public void RefreshGraph_ArrowheadImages_AreCreatedWithoutTextMeshPro()
+        {
+            var h = NewEditor();
+            var set = MakeTestSet();
+            InstallSet(h.Editor, set);
+            SetField(h.Editor, "_showBuiltInEdges", false);
+
+            // Give the two nodes distinct positions so the edge has a non-zero
+            // direction — otherwise CreateArrowhead's normalised vector is zero
+            // and the early-return fires.
+            set.states[0].x = 100f; set.states[0].y = 100f;
+            set.states[1].x = 300f; set.states[1].y = 100f;
+
+            // Create the transition through the Connect tool (same path as existing tests)
+            // so NormalizeSets and the editor's internal wiring all run.
+            SetField(h.Editor, "_graphTool", GTool(3)); // Connect
+            Invoke(h.Editor, "HandleConnectClickFrom", "IdleState", true);
+            Invoke(h.Editor, "HandleConnectClickFrom", "ChaseState", true);
+
+            // After HandleConnectClickFrom completes, it already calls RefreshGraph.
+            // Read back what the graph actually drew.
+            var edgeObjects = GetField<List<GameObject>>(h.Editor, "_edgeObjects");
+            // 1 line + 1 label + 2 arrow wings per authored edge +
+            // potentially the Any State node's own child objects. We just need > 0 and
+            // to verify every arrow wing is Image (not TMP).
+            var wingRects = new List<RectTransform>();
+            foreach (var go in edgeObjects)
+            {
+                if (go == null || !go.name.StartsWith("ArrowWing_")) continue;
+                Assert.IsNull(go.GetComponent<TMPro.TextMeshProUGUI>(),
+                    $"Arrow wing '{go.name}' must NOT carry TextMeshProUGUI — it blocks the Canvas raycaster.");
+                var img = go.GetComponent<UnityEngine.UI.Image>();
+                Assert.IsNotNull(img, $"Arrow wing '{go.name}' must have an Image.");
+                Assert.IsFalse(img.raycastTarget, $"Arrow wing '{go.name}' must have raycastTarget=false.");
+                wingRects.Add(go.GetComponent<RectTransform>());
+            }
+            Assert.AreEqual(2, wingRects.Count, "Exactly 2 arrow-wing Images per directed edge.");
+            Assert.That(Vector2.Distance(wingRects[0].anchoredPosition, wingRects[1].anchoredPosition),
+                Is.LessThan(0.01f), "Both wings must start at the same arrow tip.");
+            foreach (var wing in wingRects)
+            {
+                float rightX = Mathf.Cos(wing.localEulerAngles.z * Mathf.Deg2Rad);
+                Assert.Less(rightX, 0f,
+                    "For a left-to-right edge, each arrow wing must extend backwards from the tip.");
+            }
+        }
+
+        [Test]
+        public void RefreshGraph_CalledTwice_DoesNotLeakEdgeObjects()
+        {
+            var h = NewEditor();
+            var set = MakeTestSet();
+            InstallSet(h.Editor, set);
+            SetField(h.Editor, "_graphTool", GTool(3)); // Connect
+            Invoke(h.Editor, "HandleConnectClickFrom", "IdleState", true);
+            Invoke(h.Editor, "HandleConnectClickFrom", "ChaseState", true);
+
+            int first = GetField<List<GameObject>>(h.Editor, "_edgeObjects").Count;
+            Assert.Greater(first, 0);
+
+            Invoke(h.Editor, "RefreshGraph");
+            int second = GetField<List<GameObject>>(h.Editor, "_edgeObjects").Count;
+            Assert.AreEqual(first, second,
+                "RefreshGraph must replace the edge visuals without growing their tracked count.");
         }
     }
 }

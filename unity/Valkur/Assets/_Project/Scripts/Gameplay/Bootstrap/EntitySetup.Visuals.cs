@@ -41,6 +41,12 @@ namespace Valkur.Gameplay
             if (go.GetComponent<WorldDropInteractor>() == null)
                 go.AddComponent<WorldDropInteractor>();
 
+            // Building hover highlight: yellow silhouette on interactable buildings
+            // (template.interactable or per-instance overrides.interactable) in
+            // player mode. Self-disables while the F10 Buildings editor is open.
+            if (go.GetComponent<BuildingHoverInteractor>() == null)
+                go.AddComponent<BuildingHoverInteractor>();
+
             // Currency wallet (Python: gold field on player entity)
             if (go.GetComponent<CurrencyWallet>() == null)
                 go.AddComponent<CurrencyWallet>();

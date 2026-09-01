@@ -39,6 +39,11 @@ namespace Valkur.Data
                  "'CU' = per-instance collision map.")]
         public string colliderScope = "CG";
 
+        [Tooltip("If true, every placement of this template is interactable and highlights in " +
+                 "yellow when hovered in player mode. Per-instance overrides.interactable can " +
+                 "force an individual placement on or off regardless of this flag.")]
+        public bool interactable;
+
         [Tooltip("Source image dimensions in pixels. Used to compute world size and split in Unity units.")]
         public Vector2Int originalScale;
 

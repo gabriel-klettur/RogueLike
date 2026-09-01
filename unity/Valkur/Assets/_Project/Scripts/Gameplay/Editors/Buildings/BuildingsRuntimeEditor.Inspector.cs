@@ -50,6 +50,7 @@ namespace Valkur.Gameplay.Buildings
             sb.AppendLine($"<b>Template:</b> #{t.templateId} ({t.name})");
             sb.AppendLine($"<b>Asset:</b> {t.assetPath}");
             sb.AppendLine($"<b>Solid:</b> {t.solid}");
+            sb.AppendLine($"<b>Interactable:</b> {_activeBuilding.Interactable} (template {t.interactable}, override {_activeBuilding.InteractableOverride})");
             sb.AppendLine($"<b>Original:</b> {t.originalScale.x}×{t.originalScale.y} px");
             var sov = _activeBuilding.ScaleOverride;
             if (sov.x > 0 || sov.y > 0) sb.AppendLine($"<b>Scale ovr:</b> {sov.x}×{sov.y}");
@@ -67,6 +68,8 @@ namespace Valkur.Gameplay.Buildings
             string scope = _activeBuilding.EffectiveColliderScope;
             if (_scopeBtnLabel != null) _scopeBtnLabel.text = GetScopeButtonLabel(scope);
             if (_scopeBtnImg   != null) _scopeBtnImg.color = scope == "CU" ? EditorUIHelpers.ACCENT_BG : EditorUIHelpers.BTN_NORMAL;
+            if (_interactableBtnLabel != null) _interactableBtnLabel.text = GetInteractableButtonLabel(_activeBuilding.InteractableOverride);
+            if (_interactableBtnImg   != null) _interactableBtnImg.color = _activeBuilding.Interactable ? EditorUIHelpers.ACCENT_BG : EditorUIHelpers.BTN_NORMAL;
             RefreshCollidersPanel();
         }
 
@@ -98,6 +101,7 @@ namespace Valkur.Gameplay.Buildings
             sb.AppendLine($"<b>Original size:</b> {tmpl.originalScale.x}×{tmpl.originalScale.y} px");
             sb.AppendLine($"<b>Default split:</b> {tmpl.splitRatio:F2}");
             sb.AppendLine($"<b>Solid:</b> {tmpl.solid}");
+            sb.AppendLine($"<b>Interactable:</b> {tmpl.interactable}");
             sb.AppendLine($"<b>Collider scope:</b> {(string.IsNullOrEmpty(tmpl.colliderScope) ? "CG (shared)" : tmpl.colliderScope)}");
             sb.AppendLine();
             sb.AppendLine("<color=#888888><i>Drag this template onto the\nmap to place an instance.</i></color>");
@@ -113,6 +117,16 @@ namespace Valkur.Gameplay.Buildings
             if (string.Equals(scope, "CU", StringComparison.OrdinalIgnoreCase)) return "Instance";
             if (string.Equals(scope, "CG", StringComparison.OrdinalIgnoreCase)) return "Shared";
             return string.IsNullOrEmpty(scope) ? "Shared" : scope;
+        }
+
+        private static string GetInteractableButtonLabel(int overrideValue)
+        {
+            switch (overrideValue)
+            {
+                case 1:  return "On";
+                case 0:  return "Off";
+                default: return "Inherit";
+            }
         }
 
         private void OnSplitSliderChanged(float v)
@@ -146,6 +160,17 @@ namespace Valkur.Gameplay.Buildings
                 () => { _activeBuilding.ColliderScopeOverride = oldOv; RefreshCollisionFor(_activeBuilding); RefreshInspector(); });
         }
 
+        private void CycleInteractable()
+        {
+            if (_activeBuilding == null) { Toast("Select a building first."); return; }
+            int cur  = _activeBuilding.InteractableOverride;
+            int next = cur switch { -1 => 1, 1 => 0, _ => -1 };
+            int old  = cur;
+            ExecutePersistedEdit($"Interactable {GetInteractableButtonLabel(next)}",
+                () => { _activeBuilding.InteractableOverride = next; RefreshInspector(); },
+                () => { _activeBuilding.InteractableOverride = old; RefreshInspector(); });
+        }
+
         private void ResetActiveBuilding()
         {
             if (_activeBuilding == null) return;
@@ -155,9 +180,10 @@ namespace Valkur.Gameplay.Buildings
             var oldZB = b.ZBottomOffset;
             var oldZT = b.ZTopOffset;
             var oldScope = b.ColliderScopeOverride;
+            var oldIa = b.InteractableOverride;
             ExecutePersistedEdit("Reset building",
-                () => { b.Apply(b.Template, Vector2Int.zero, -1f); b.ZBottomOffset = 0; b.ZTopOffset = 0; b.ColliderScopeOverride = ""; RefreshCollisionFor(b); RefreshInspector(); },
-                () => { b.Apply(b.Template, oldScale, oldSplit); b.ZBottomOffset = oldZB; b.ZTopOffset = oldZT; b.ColliderScopeOverride = oldScope; RefreshCollisionFor(b); RefreshInspector(); });
+                () => { b.Apply(b.Template, Vector2Int.zero, -1f); b.ZBottomOffset = 0; b.ZTopOffset = 0; b.ColliderScopeOverride = ""; b.InteractableOverride = -1; RefreshCollisionFor(b); RefreshInspector(); },
+                () => { b.Apply(b.Template, oldScale, oldSplit); b.ZBottomOffset = oldZB; b.ZTopOffset = oldZT; b.ColliderScopeOverride = oldScope; b.InteractableOverride = oldIa; RefreshCollisionFor(b); RefreshInspector(); });
         }
 
         // ──────────────────────────────────────────────────────────────────────────

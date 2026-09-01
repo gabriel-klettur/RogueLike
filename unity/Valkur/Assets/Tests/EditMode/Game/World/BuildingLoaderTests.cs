@@ -258,6 +258,31 @@ namespace Valkur.Tests.EditMode.Game.World
                 "(signals BuildingLoader to use template.splitRatio).");
         }
 
+        [TestCase(0)]
+        [TestCase(1)]
+        public void ParseInstances_InteractableOverride_ParsesFromOverrides(int expected)
+        {
+            string json =
+                "[{\"id\":1,\"template_id\":1,\"zone\":\"lobby\",\"rel_x\":0,\"rel_y\":0," +
+                $"\"overrides\":{{\"interactable\":{expected}}}}}]";
+
+            IList items = InvokeParse(json);
+
+            Assert.AreEqual(expected, GetField<int>(items[0], "InteractableOverride"));
+        }
+
+        [Test]
+        public void ParseInstances_NoInteractableOverride_DefaultsToInherit()
+        {
+            const string json =
+                @"[{""id"":1,""template_id"":1,""zone"":""lobby"",""rel_x"":0,""rel_y"":0}]";
+
+            IList items = InvokeParse(json);
+
+            Assert.AreEqual(-1, GetField<int>(items[0], "InteractableOverride"),
+                "An absent interactable override must inherit the template value.");
+        }
+
         // ─────────────────────────────────────────────────────────────────────────
         // 3. Coordinate-conversion tests
         // ─────────────────────────────────────────────────────────────────────────

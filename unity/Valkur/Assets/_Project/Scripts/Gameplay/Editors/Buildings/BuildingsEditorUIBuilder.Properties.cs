@@ -20,6 +20,7 @@ namespace Valkur.Gameplay.Buildings
             Action onGridColsMinus, Action onGridColsPlus,
             Action onGridRowsMinus, Action onGridRowsPlus,
             Action onScope,
+            Action onInteractable,
             Action onPaintSolid, Action onPaintWalk, Action onSaveCU,
             Action onDelete, Action onReset)
         {
@@ -52,7 +53,7 @@ namespace Valkur.Gameplay.Buildings
                 onSplitChanged,
                 onZBottomMinus, onZBottomPlus, onZTopMinus, onZTopPlus,
                 onGridColsMinus, onGridColsPlus, onGridRowsMinus, onGridRowsPlus,
-                onScope, onPaintSolid, onPaintWalk, onSaveCU, onDelete, onReset);
+                onScope, onInteractable, onPaintSolid, onPaintWalk, onSaveCU, onDelete, onReset);
 
             refs.InspectorRoot.SetActive(false);
             refs.PropsDropdown.SetActive(false);
@@ -65,6 +66,7 @@ namespace Valkur.Gameplay.Buildings
             Action onGridColsMinus, Action onGridColsPlus,
             Action onGridRowsMinus, Action onGridRowsPlus,
             Action onScope,
+            Action onInteractable,
             Action onPaintSolid, Action onPaintWalk, Action onSaveCU,
             Action onDelete, Action onReset)
         {
@@ -147,6 +149,33 @@ namespace Valkur.Gameplay.Buildings
             sbtn.colors = sc; sbtn.targetGraphic = refs.ScopeBtnImg;
             if (onScope != null) sbtn.onClick.AddListener(() => onScope.Invoke());
             refs.ScopeBtnLabel = AddCenteredText(scopeBtn.transform, "Shared", 10f, FontStyles.Bold, TEXT_PRIMARY);
+
+            // Interactable override (player-mode yellow hover highlight). Cycles
+            // Inherit (template) → On → Off → Inherit.
+            var iaRow = CreateUI("InteractableRow", parent);
+            iaRow.AddComponent<LayoutElement>().preferredHeight = 26f;
+            var iaHlg = iaRow.AddComponent<HorizontalLayoutGroup>();
+            iaHlg.spacing = 4f; iaHlg.childForceExpandWidth = true; iaHlg.childForceExpandHeight = true;
+            iaHlg.childControlWidth = true; iaHlg.childControlHeight = true;
+
+            var iaLblGo = CreateUI("InteractableLbl", iaRow.transform);
+            iaLblGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            var iaLblTmp = iaLblGo.AddComponent<TextMeshProUGUI>();
+            iaLblTmp.text      = "Interactable";
+            iaLblTmp.fontSize  = 10f;
+            iaLblTmp.color     = TEXT_SECONDARY;
+            iaLblTmp.alignment = TextAlignmentOptions.MidlineLeft;
+
+            var iaBtn = CreateUI("InteractableBtn", iaRow.transform);
+            iaBtn.AddComponent<LayoutElement>().preferredWidth = 72f;
+            refs.InteractableBtnImg       = iaBtn.AddComponent<Image>();
+            refs.InteractableBtnImg.color = BTN_NORMAL;
+            var iaButton                  = iaBtn.AddComponent<Button>();
+            var iaColors                  = iaButton.colors;
+            iaColors.normalColor = BTN_NORMAL; iaColors.highlightedColor = BTN_HOVER; iaColors.pressedColor = BTN_ACTIVE;
+            iaButton.colors = iaColors; iaButton.targetGraphic = refs.InteractableBtnImg;
+            if (onInteractable != null) iaButton.onClick.AddListener(() => onInteractable.Invoke());
+            refs.InteractableBtnLabel = AddCenteredText(iaBtn.transform, "Inherit", 10f, FontStyles.Bold, TEXT_PRIMARY);
 
             // Delete building (danger) + Reset building
             BuildSeparator(parent);

@@ -47,7 +47,7 @@ namespace Valkur.Gameplay.World
 
             return SpawnAtCore(inst.Id, inst.Zone, template, new Vector3(worldX, worldY, 0f),
                 inst.ScaleOverride, inst.SplitRatioOverride, inst.ColliderScopeOverride,
-                inst.ZBottomOffset, inst.ZTopOffset, inst.DoorSpec) != null;
+                inst.ZBottomOffset, inst.ZTopOffset, inst.DoorSpec, inst.InteractableOverride) != null;
         }
 
         /// <summary>
@@ -71,14 +71,14 @@ namespace Valkur.Gameplay.World
                 return null;
             }
             return SpawnAtCore(instanceId, zoneName, template, worldPosition,
-                Vector2Int.zero, -1f, string.Empty, 0, 0, doorSpec: null);
+                Vector2Int.zero, -1f, string.Empty, 0, 0, doorSpec: null, interactableOverride: -1);
         }
 
         private BuildingObject SpawnAtCore(int instanceId, string zoneName,
             BuildingTemplateData template, Vector3 worldPos,
             Vector2Int scaleOverride, float splitRatioOverride,
             string colliderScopeOverride, int zBottomOffset, int zTopOffset,
-            BuildingDoorSpec doorSpec)
+            BuildingDoorSpec doorSpec, int interactableOverride = -1)
         {
             Transform root = _buildingsRoot != null ? _buildingsRoot : transform;
 
@@ -92,6 +92,7 @@ namespace Valkur.Gameplay.World
             bObj.InstanceId           = instanceId;
             bObj.Apply(template, scaleOverride, splitRatioOverride);
             bObj.ColliderScopeOverride = colliderScopeOverride;
+            bObj.InteractableOverride  = interactableOverride;
             if (zBottomOffset != 0) bObj.ZBottomOffset = zBottomOffset;
             if (zTopOffset    != 0) bObj.ZTopOffset    = zTopOffset;
 
@@ -130,6 +131,7 @@ namespace Valkur.Gameplay.World
                     RelX             = GetInt(dict, "rel_x"),
                     RelY             = GetInt(dict, "rel_y"),
                     SplitRatioOverride = -1f,          // default: no override
+                    InteractableOverride = -1,          // default: inherit template
                 };
 
                 // Optional 'overrides' block
@@ -155,6 +157,9 @@ namespace Valkur.Gameplay.World
 
                     if (overrides.TryGetValue("z_top", out var zTopRaw) && zTopRaw != null)
                         inst.ZTopOffset = Convert.ToInt32(zTopRaw);
+
+                    if (overrides.TryGetValue("interactable", out var iaRaw) && iaRaw != null)
+                        inst.InteractableOverride = Convert.ToInt32(iaRaw);
 
                     if (overrides.TryGetValue("door", out var doorRaw) &&
                         doorRaw is Dictionary<string, object> doorDict)
@@ -234,6 +239,8 @@ namespace Valkur.Gameplay.World
             public int        ZBottomOffset;
             /// <summary>Sorting order delta for the top (WallsTop) renderer. 0 = no override.</summary>
             public int        ZTopOffset;
+            /// <summary>-1 = inherit template.interactable; 0 = off; 1 = on.</summary>
+            public int        InteractableOverride;
             /// <summary>Per-instance doorway destination, or null when this placement has none.</summary>
             public BuildingDoorSpec DoorSpec;
         }
