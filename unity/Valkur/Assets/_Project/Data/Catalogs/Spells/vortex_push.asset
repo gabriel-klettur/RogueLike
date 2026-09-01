@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: Vortex Push
   type: 21
   audience: 1
+  usesAttackAnimation: 1
   manaCost: 10
   maxInstances: 1
   allowOverlap: 1
@@ -39,6 +40,7 @@ MonoBehaviour:
   distance: 0
   knockback: 0
   collisionDamage: 0
+  infinite: 0
   duration: 2
   damagePerTick: 0
   tickPeriod: 0
@@ -48,6 +50,9 @@ MonoBehaviour:
   forceMode: push
   followCaster: 1
   spawnAtMouse: 0
+  statusApplications: []
+  castAnchor: 0
+  castForwardOffset: 0
   meteorCount: 0
   meteorInterval: 0
   meteorAreaRadius: 0
@@ -68,6 +73,7 @@ MonoBehaviour:
   totemKind: 
   coneArc: 0
   coneLength: 0
+  loadoutKey: 
   sprite: {fileID: 0}
   scale: 1
   speedMultiplier: 1
@@ -85,3 +91,7 @@ MonoBehaviour:
   emitRate: 0
   vfxPreset: vortex_dark
   impactPreset: 
+  vfxPresetLayers: []
+  impactPresetLayers: []
+  castPreset: 
+  castPresetLayers: []

@@ -63,31 +63,214 @@
                     "processors": "",
                     "interactions": ""
                 },
-                { "name": "MiddleClick",          "type": "Button", "id": "a1b2c3d4-0002-0007-1001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellDarkball",        "type": "Button", "id": "a1b2c3d4-0002-0008-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellIceball",         "type": "Button", "id": "a1b2c3d4-0002-0009-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellLightball",       "type": "Button", "id": "a1b2c3d4-0002-000a-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellPuddleLava",      "type": "Button", "id": "a1b2c3d4-0002-000b-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellMineBasic",       "type": "Button", "id": "a1b2c3d4-0002-0020-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellBoomerang",       "type": "Button", "id": "a1b2c3d4-0002-0021-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellChainLightning",  "type": "Button", "id": "a1b2c3d4-0002-0022-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellVortexPull",      "type": "Button", "id": "a1b2c3d4-0002-0023-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellVortexPush",      "type": "Button", "id": "a1b2c3d4-0002-0024-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellFlameBreath",     "type": "Button", "id": "a1b2c3d4-0002-0025-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellTeleport",        "type": "Button", "id": "a1b2c3d4-0002-0026-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellSlash",           "type": "Button", "id": "a1b2c3d4-0002-0027-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellLightning",       "type": "Button", "id": "a1b2c3d4-0002-0028-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellSphereMagicShield","type": "Button","id": "a1b2c3d4-0002-0029-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellSmoke",           "type": "Button", "id": "a1b2c3d4-0002-002a-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellSmokeEmitter",    "type": "Button", "id": "a1b2c3d4-0002-002b-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellArcaneFlame",     "type": "Button", "id": "a1b2c3d4-0002-002c-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellFireworkLaunch",  "type": "Button", "id": "a1b2c3d4-0002-002d-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellHealingAura",     "type": "Button", "id": "a1b2c3d4-0002-002e-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellMeteorShower",    "type": "Button", "id": "a1b2c3d4-0002-002f-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellHealingTotem",    "type": "Button", "id": "a1b2c3d4-0002-0030-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellSummonBarbol",    "type": "Button", "id": "a1b2c3d4-0002-0031-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "SpellWallIce",         "type": "Button", "id": "a1b2c3d4-0002-0032-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "Pause",                "type": "Button", "id": "a1b2c3d4-0002-000c-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" }
+                {
+                    "name": "MiddleClick",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-0007-1001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellDarkball",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-0008-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellIceball",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-0009-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellLightball",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-000a-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellPuddleLava",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-000b-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellMineBasic",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-0020-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellBoomerang",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-0021-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellChainLightning",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-0022-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellVortexPull",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-0023-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellVortexPush",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-0024-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellFlameBreath",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-0025-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellTeleport",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-0026-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellSlash",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-0027-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellLightning",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-0028-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellSphereMagicShield",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-0029-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellSmoke",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-002a-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellSmokeEmitter",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-002b-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellArcaneFlame",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-002c-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellFireworkLaunch",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-002d-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellHealingAura",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-002e-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellMeteorShower",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-002f-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellHealingTotem",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-0030-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellSummonBarbol",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-0031-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellWallIce",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-0032-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "SpellWeaponToggle",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-0033-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Pause",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-000c-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                }
             ],
             "bindings": [
                 {
@@ -211,31 +394,292 @@
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
-                { "name": "", "id": "b1000007-0001-0001-0001-000000000001", "path": "<Mouse>/middleButton", "interactions": "", "processors": "", "groups": "", "action": "MiddleClick",          "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b1000008-0001-0001-0001-000000000001", "path": "<Keyboard>/1",        "interactions": "", "processors": "", "groups": "", "action": "SpellDarkball",        "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b1000009-0001-0001-0001-000000000001", "path": "<Keyboard>/2",        "interactions": "", "processors": "", "groups": "", "action": "SpellIceball",         "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b100000a-0001-0001-0001-000000000001", "path": "<Keyboard>/3",        "interactions": "", "processors": "", "groups": "", "action": "SpellLightball",       "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b100000b-0001-0001-0001-000000000001", "path": "<Keyboard>/4",        "interactions": "", "processors": "", "groups": "", "action": "SpellPuddleLava",      "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b1000020-0001-0001-0001-000000000001", "path": "<Keyboard>/5",        "interactions": "", "processors": "", "groups": "", "action": "SpellMineBasic",       "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b1000021-0001-0001-0001-000000000001", "path": "<Keyboard>/6",        "interactions": "", "processors": "", "groups": "", "action": "SpellBoomerang",       "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b1000022-0001-0001-0001-000000000001", "path": "<Keyboard>/7",        "interactions": "", "processors": "", "groups": "", "action": "SpellChainLightning",  "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b1000023-0001-0001-0001-000000000001", "path": "<Keyboard>/8",        "interactions": "", "processors": "", "groups": "", "action": "SpellVortexPull",      "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b1000024-0001-0001-0001-000000000001", "path": "<Keyboard>/9",        "interactions": "", "processors": "", "groups": "", "action": "SpellVortexPush",      "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b1000025-0001-0001-0001-000000000001", "path": "<Keyboard>/0",        "interactions": "", "processors": "", "groups": "", "action": "SpellFlameBreath",     "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b1000026-0001-0001-0001-000000000001", "path": "<Keyboard>/q",        "interactions": "", "processors": "", "groups": "", "action": "SpellTeleport",        "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b1000027-0001-0001-0001-000000000001", "path": "<Keyboard>/e",        "interactions": "", "processors": "", "groups": "", "action": "SpellSlash",           "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b1000028-0001-0001-0001-000000000001", "path": "<Keyboard>/r",        "interactions": "", "processors": "", "groups": "", "action": "SpellLightning",       "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b1000029-0001-0001-0001-000000000001", "path": "<Keyboard>/t",        "interactions": "", "processors": "", "groups": "", "action": "SpellSphereMagicShield","isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b100002a-0001-0001-0001-000000000001", "path": "<Keyboard>/f",        "interactions": "", "processors": "", "groups": "", "action": "SpellSmoke",           "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b100002b-0001-0001-0001-000000000001", "path": "<Keyboard>/g",        "interactions": "", "processors": "", "groups": "", "action": "SpellSmokeEmitter",    "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b100002c-0001-0001-0001-000000000001", "path": "<Keyboard>/c",        "interactions": "", "processors": "", "groups": "", "action": "SpellArcaneFlame",     "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b100002d-0001-0001-0001-000000000001", "path": "<Keyboard>/v",        "interactions": "", "processors": "", "groups": "", "action": "SpellFireworkLaunch",  "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b100002e-0001-0001-0001-000000000001", "path": "<Keyboard>/x",        "interactions": "", "processors": "", "groups": "", "action": "SpellHealingAura",     "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b100002f-0001-0001-0001-000000000001", "path": "<Keyboard>/p",        "interactions": "", "processors": "", "groups": "", "action": "SpellMeteorShower",    "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b1000030-0001-0001-0001-000000000001", "path": "<Keyboard>/l",        "interactions": "", "processors": "", "groups": "", "action": "SpellHealingTotem",    "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b1000031-0001-0001-0001-000000000001", "path": "<Keyboard>/u",        "interactions": "", "processors": "", "groups": "", "action": "SpellSummonBarbol",    "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b1000032-0001-0001-0001-000000000001", "path": "<Keyboard>/m",        "interactions": "", "processors": "", "groups": "", "action": "SpellWallIce",         "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b100000c-0001-0001-0001-000000000001", "path": "<Keyboard>/p",        "interactions": "", "processors": "", "groups": "", "action": "Pause",                "isComposite": false, "isPartOfComposite": false }
+                {
+                    "name": "",
+                    "id": "b1000007-0001-0001-0001-000000000001",
+                    "path": "<Mouse>/middleButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MiddleClick",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000008-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/1",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellDarkball",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000009-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/2",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellIceball",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b100000a-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/3",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellLightball",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b100000b-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/4",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellPuddleLava",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000020-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/5",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellMineBasic",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000021-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/6",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellBoomerang",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000022-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/7",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellChainLightning",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000023-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/8",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellVortexPull",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000024-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/9",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellVortexPush",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000025-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/0",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellFlameBreath",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000026-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/q",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellTeleport",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000027-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellSlash",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000028-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/r",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellLightning",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000029-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/t",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellSphereMagicShield",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b100002a-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/f",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellSmoke",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b100002b-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/g",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellSmokeEmitter",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b100002c-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/c",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellArcaneFlame",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b100002d-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/v",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellFireworkLaunch",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b100002e-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/x",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellHealingAura",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b100002f-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/p",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellMeteorShower",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000030-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/l",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellHealingTotem",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000031-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/u",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellSummonBarbol",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000032-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/m",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellWallIce",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000033-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/b",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellWeaponToggle",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b100000c-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/p",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Pause",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
             ]
         },
         {
@@ -523,48 +967,388 @@
             "name": "Editors",
             "id": "a1b2c3d4-0001-0003-0001-000000000001",
             "actions": [
-                { "name": "ToggleParticles",    "type": "Button", "id": "a1b2c3d4-0004-0001-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "ToggleCombatRanges", "type": "Button", "id": "a1b2c3d4-0004-0002-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "ToggleSpawner",      "type": "Button", "id": "a1b2c3d4-0004-0003-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "ToggleLighting",     "type": "Button", "id": "a1b2c3d4-0004-0004-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "ToggleSpells",       "type": "Button", "id": "a1b2c3d4-0004-0005-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "ToggleEntities",     "type": "Button", "id": "a1b2c3d4-0004-0006-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "ToggleInventory",    "type": "Button", "id": "a1b2c3d4-0004-0007-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "ToggleItems",        "type": "Button", "id": "a1b2c3d4-0004-0008-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "ToggleTile",         "type": "Button", "id": "a1b2c3d4-0004-0009-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "ToggleDebugHUD",     "type": "Button", "id": "a1b2c3d4-0004-000a-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "ToggleBuildings",    "type": "Button", "id": "a1b2c3d4-0004-000b-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "ToggleMap",          "type": "Button", "id": "a1b2c3d4-0004-000c-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "ToggleFSM",          "type": "Button", "id": "a1b2c3d4-0004-000d-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "QuickSave",          "type": "Button", "id": "a1b2c3d4-0004-000e-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "QuickLoad",          "type": "Button", "id": "a1b2c3d4-0004-000f-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "CtrlModifier",       "type": "Button", "id": "a1b2c3d4-0004-0010-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "AltModifier",        "type": "Button", "id": "a1b2c3d4-0004-0011-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "ToggleDevConsole",   "type": "Button", "id": "a1b2c3d4-0004-0012-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "OpenGeneralEditor",  "type": "Button", "id": "a1b2c3d4-0004-0013-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "ToggleTimeWeather",  "type": "Button", "id": "a1b2c3d4-0004-0014-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" }
+                {
+                    "name": "ToggleParticles",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-0001-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleCombatRanges",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-0002-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleSpawner",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-0003-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleLighting",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-0004-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleSpells",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-0005-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleEntities",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-0006-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleInventory",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-0007-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleItems",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-0008-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleTile",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-0009-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleDebugHUD",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-000a-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleBuildings",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-000b-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleMap",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-000c-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleFSM",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-000d-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "QuickSave",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-000e-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "QuickLoad",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-000f-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "CtrlModifier",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-0010-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "AltModifier",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-0011-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleDevConsole",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-0012-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "OpenGeneralEditor",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-0013-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleTimeWeather",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0004-0014-0001-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                }
             ],
             "bindings": [
-                { "name": "", "id": "b3000001-0001-0001-0001-000000000001", "path": "<Keyboard>/f1",       "interactions": "", "processors": "", "groups": "", "action": "ToggleParticles",    "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b3000002-0001-0001-0001-000000000001", "path": "<Keyboard>/f2",       "interactions": "", "processors": "", "groups": "", "action": "ToggleCombatRanges", "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b3000003-0001-0001-0001-000000000001", "path": "<Keyboard>/f3",       "interactions": "", "processors": "", "groups": "", "action": "ToggleSpawner",      "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b3000004-0001-0001-0001-000000000001", "path": "<Keyboard>/f3",       "interactions": "", "processors": "", "groups": "", "action": "ToggleLighting",     "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b3000005-0001-0001-0001-000000000001", "path": "<Keyboard>/f4",       "interactions": "", "processors": "", "groups": "", "action": "ToggleSpells",       "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b3000006-0001-0001-0001-000000000001", "path": "<Keyboard>/f5",       "interactions": "", "processors": "", "groups": "", "action": "ToggleEntities",     "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b3000007-0001-0001-0001-000000000001", "path": "<Keyboard>/f6",       "interactions": "", "processors": "", "groups": "", "action": "ToggleInventory",    "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b3000008-0001-0001-0001-000000000001", "path": "<Keyboard>/f7",       "interactions": "", "processors": "", "groups": "", "action": "ToggleItems",        "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b3000009-0001-0001-0001-000000000001", "path": "<Keyboard>/f8",       "interactions": "", "processors": "", "groups": "", "action": "ToggleTile",         "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b300000a-0001-0001-0001-000000000001", "path": "<Keyboard>/f9",       "interactions": "", "processors": "", "groups": "", "action": "ToggleDebugHUD",     "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b300000b-0001-0001-0001-000000000001", "path": "<Keyboard>/f10",      "interactions": "", "processors": "", "groups": "", "action": "ToggleBuildings",    "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b300000c-0001-0001-0001-000000000001", "path": "<Keyboard>/f11",      "interactions": "", "processors": "", "groups": "", "action": "ToggleMap",          "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b300000d-0001-0001-0001-000000000001", "path": "<Keyboard>/f12",      "interactions": "", "processors": "", "groups": "", "action": "ToggleFSM",          "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b300000e-0001-0001-0001-000000000001", "path": "<Keyboard>/f5",       "interactions": "", "processors": "", "groups": "", "action": "QuickSave",          "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b300000f-0001-0001-0001-000000000001", "path": "<Keyboard>/f9",       "interactions": "", "processors": "", "groups": "", "action": "QuickLoad",          "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b3000010-0001-0001-0001-000000000001", "path": "<Keyboard>/leftCtrl", "interactions": "", "processors": "", "groups": "", "action": "CtrlModifier",       "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b3000011-0001-0001-0001-000000000001", "path": "<Keyboard>/leftAlt",  "interactions": "", "processors": "", "groups": "", "action": "AltModifier",        "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b3000012-0001-0001-0001-000000000001", "path": "<Keyboard>/backquote","interactions": "", "processors": "", "groups": "", "action": "ToggleDevConsole",   "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b3000013-0001-0001-0001-000000000001", "path": "<Keyboard>/escape",  "interactions": "", "processors": "", "groups": "", "action": "OpenGeneralEditor",  "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b3000014-0001-0001-0001-000000000001", "path": "<Keyboard>/f2",       "interactions": "", "processors": "", "groups": "", "action": "ToggleTimeWeather",  "isComposite": false, "isPartOfComposite": false }
+                {
+                    "name": "",
+                    "id": "b3000001-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/f1",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleParticles",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b3000002-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/f2",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleCombatRanges",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b3000003-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/f3",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleSpawner",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b3000004-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/f3",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleLighting",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b3000005-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/f4",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleSpells",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b3000006-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/f5",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleEntities",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b3000007-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/f6",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleInventory",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b3000008-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/f7",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleItems",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b3000009-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/f8",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleTile",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b300000a-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/f9",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleDebugHUD",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b300000b-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/f10",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleBuildings",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b300000c-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/f11",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleMap",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b300000d-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/f12",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleFSM",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b300000e-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/f5",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "QuickSave",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b300000f-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/f9",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "QuickLoad",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b3000010-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/leftCtrl",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CtrlModifier",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b3000011-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/leftAlt",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "AltModifier",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b3000012-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/backquote",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleDevConsole",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b3000013-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "OpenGeneralEditor",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b3000014-0001-0001-0001-000000000001",
+                    "path": "<Keyboard>/f2",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleTimeWeather",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
             ]
         }
     ],

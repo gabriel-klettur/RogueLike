@@ -70,6 +70,12 @@ namespace Valkur.Data
             { SpellType.Dash,       Set("distance", "duration", "collisionDamage", "knockback",
                                         "particleColor", "vfxPreset") },
             { SpellType.Teleport,   Set("distance", "particleColor", "vfxPreset") },
+            // No damage, no geometry, no lifetime: it changes which sprites the caster is
+            // drawn with and nothing else.
+            { SpellType.WeaponLoadout, Set("loadoutKey", "vfxPreset") },
+            // A probe has no geometry, no damage and no lifetime — only which animation it
+            // asks the preview to play.
+            { SpellType.AnimationProbe, Set("animState", "loadoutAnimKey") },
             { SpellType.Beam,       Set("damage", "range", "scale", "particleColor", "vfxPreset", "impactPreset") },
             { SpellType.Smoke,      Set("duration", "radius", "vfxPreset") },
             { SpellType.SmokeEmitter, Set("duration", "radius", "vfxPreset") },

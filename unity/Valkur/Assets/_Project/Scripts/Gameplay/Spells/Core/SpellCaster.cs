@@ -73,6 +73,8 @@ namespace Valkur.Gameplay.Spells
             { SpellType.ConeBreath,       new ConeBreathExecutor() },
             { SpellType.Summon,           new SummonExecutor() },
             { SpellType.Totem,            new TotemExecutor() },
+            { SpellType.WeaponLoadout,    new WeaponLoadoutExecutor() },
+            { SpellType.AnimationProbe,   new AnimationProbeExecutor() },
         };
 
         public CastPhase CurrentPhase => _phase;

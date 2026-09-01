@@ -34,6 +34,16 @@ namespace Valkur.Data
         ConeBreath,       // 22
         Summon,           // 23
         Totem,            // 24
+        // Draws or stows a weapon: swaps the caster's PlayerLoadoutController onto the
+        // loadout named by `loadoutKey`. APPENDED, never inserted -- every shipped
+        // SpellDefinition stores this enum as its integer, so renumbering the values above
+        // would repoint 47 assets at the wrong executor without touching a single file.
+        WeaponLoadout,    // 25
+        // Plays an animation and does nothing else. Exists so every authored animation has a
+        // spell that exercises it in the Spells Editor, including the ones no gameplay spell
+        // will ever reach. Its executor is deliberately empty: a probe that dealt damage
+        // would be a spell, and would then need balancing.
+        AnimationProbe,   // 26
     }
 
     /// <summary>
@@ -86,6 +96,12 @@ namespace Valkur.Data
         public SpellAudience audience;
 
         [Header("Casting")]
+        [Tooltip("Play this spell through the character's ATTACK animation instead of its " +
+                 "CAST one. For a spell that is a swing rather than a conjuring — the " +
+                 "regular slash, a punch, a shove. Reservations are then looked up among the " +
+                 "attackVariants, so the animation this plays is pinned on the CHARACTER.")]
+        public bool usesAttackAnimation;
+
         public float manaCost;
         public int maxInstances;
         public bool allowOverlap = true;
@@ -218,6 +234,30 @@ namespace Valkur.Data
         public float coneArc;
         [Tooltip("Cone length")]
         public float coneLength;
+
+        [Header("Animation")]
+        [Tooltip("Which animation state the caster plays for this spell — idle, walk, chase, " +
+                 "cast, attack, damage, death or recover. Empty keeps the default rules " +
+                 "(Attack for an attack-routed spell, Cast otherwise). Applies IN GAME as " +
+                 "well as in the Spells Editor preview: naming a state here is the only way " +
+                 "to reach idle, walk, chase, damage, death and recover, which locomotion " +
+                 "and the damage and death flows own rather than casting.")]
+        [UnityEngine.Serialization.FormerlySerializedAs("previewAnimState")]
+        public string animState;
+
+        [Tooltip("A Loadout key this spell's animation belongs to, e.g. \"armed\". The caster " +
+                 "is put INTO that loadout before the animation plays — a loadout's " +
+                 "locomotion only exists while the loadout is worn, so without this the " +
+                 "armed idle/walk/run animations can never be shown.")]
+        [UnityEngine.Serialization.FormerlySerializedAs("previewLoadoutKey")]
+        public string loadoutAnimKey;
+
+        [Header("Weapon Loadout")]
+        [Tooltip("WeaponLoadout only: the Loadout key on the caster's PlayerDefinition to " +
+                 "draw, e.g. \"armed\". Casting the spell again with the same key stows it. " +
+                 "A key the character does not declare is refused and logged rather than " +
+                 "read as \"unequip\".")]
+        public string loadoutKey;
 
         [Header("Visual")]
         [Tooltip("Sprite shown on the in-world projectile / area / mine / boomerang / summon / wall. " +

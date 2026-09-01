@@ -63,6 +63,12 @@ namespace Valkur.Gameplay.Spells
                     playerAnim.DamageSprites,
                     playerAnim.DeathSprites,
                     playerAnim.PrefersCardinalDirectionSampling);
+                // The seven base sets are not the whole character: the variants, their spell
+                // reservations and their pacing are what decide which animation a given spell
+                // actually plays. Copying them is what lets this preview show the pose a spell
+                // is pinned to rather than the base cast every time.
+                _characterAnimator.CopyVariantsFrom(playerAnim);
+                ApplyPreviewLoadout(player);
                 ApplyCharacterDirection();
             }
             else
@@ -87,18 +93,82 @@ namespace Valkur.Gameplay.Spells
         /// preview reads as "the player dashing". Everything else uses the Cast pose.
         /// No-op when the character has no DirectionalAnimator.
         /// </summary>
+        /// <summary>
+        /// Re-binds the preview rig wearing <c>loadoutAnimKey</c>, when the selected spell
+        /// names one.
+        ///
+        /// Needed because a loadout's LOCOMOTION only exists while the loadout is worn: the
+        /// armed idle, walk and run are overrides that the base bind never installs, so the
+        /// probes for them showed the unarmed art and looked like they were playing the wrong
+        /// animation. Everything else previews whatever the live player is currently wearing,
+        /// which is the honest default — the preview mirrors the character as they are.
+        ///
+        /// The config comes from the player's own <c>PlayerLoadoutController</c>: this rig
+        /// mirrors a running character rather than being bound from a definition, and that
+        /// component is the only route from one back to its <c>EntityAssetConfig</c>.
+        /// </summary>
+        private void ApplyPreviewLoadout(Valkur.Gameplay.PlayerController player)
+        {
+            if (_spell == null || string.IsNullOrEmpty(_spell.loadoutAnimKey)) return;
+            if (player == null || _characterGo == null) return;
+
+            var loadouts = player.GetComponent<Valkur.Gameplay.PlayerLoadoutController>();
+            var config = loadouts != null ? loadouts.Config : null;
+            if (config == null || config.FindLoadout(_spell.loadoutAnimKey) == null) return;
+
+            // The full bind rather than a partial overwrite: it is the same path the game
+            // uses, so the fallback chain decides what an artless state shows here exactly as
+            // it does in play.
+            Valkur.Gameplay.EntityAnimationBinder.ApplyLoadout(
+                _characterGo, config, _spell.loadoutAnimKey);
+            _characterAnimator = _characterGo.GetComponent<Valkur.Gameplay.DirectionalAnimator>();
+        }
+
         private void ApplyCharacterDirection()
         {
             if (_characterAnimator == null) return;
             var dir = _characterAnimator.ResolveDirectionFromVector(_direction);
             var state = ResolvePreviewAnimState(_spell);
-            _characterAnimator.SetState(state, dir);
+
+            // Resolve the VARIANT too. Without this the preview called the two-argument
+            // SetState, which reuses whatever index happened to be active — -1 on a freshly
+            // built rig — so every spell previewed the character's BASE cast pose and the
+            // whole point of pinning an animation to a spell was invisible in the one screen
+            // built for looking at spells.
+            int variant = _spell != null
+                ? _characterAnimator.VariantForSpell(state, _spell.spellKey)
+                : -1;
+            _characterAnimator.SetState(state, dir, variant);
+
+            // SetState EARLY-RETURNS when nothing changed, and on a freshly built animator
+            // `_currentState` already reads Idle — the enum's zero. So an Idle preview changed
+            // no state, no direction and no variant, AdvanceFrame never ran, and because this
+            // rig (unlike EntityAnimationBinder) never seeds renderer.sprite, the character
+            // rendered nothing at all. Restarting also gives the behaviour the screen wants
+            // anyway: picking a spell replays its animation from frame 0 instead of joining
+            // the previous one wherever it happened to be.
+            _characterAnimator.RestartCurrentState();
         }
 
+        /// <summary>
+        /// Which animation state the preview plays. <c>animState</c> wins when the
+        /// spell names one — that is the only way to reach idle, walk, chase, damage, death
+        /// and recover, whose states are owned by locomotion and by the damage and death
+        /// flows rather than by casting, so no gameplay spell ever enters them.
+        ///
+        /// The old rules remain the fallback, so every spell authored before the field
+        /// existed previews exactly as it did.
+        /// </summary>
         private static Valkur.Gameplay.DirectionalAnimator.AnimState ResolvePreviewAnimState(SpellDefinition spell)
         {
+            if (spell != null && !string.IsNullOrEmpty(spell.animState) &&
+                Valkur.Gameplay.PlayerController.TryParseAnimState(spell.animState, out var named))
+                return named;
+
             if (spell != null && spell.type == SpellType.Dash)
                 return Valkur.Gameplay.DirectionalAnimator.AnimState.Chase;
+            if (spell != null && spell.usesAttackAnimation)
+                return Valkur.Gameplay.DirectionalAnimator.AnimState.Attack;
             if (RegularSlashAttack.Matches(spell))
                 return Valkur.Gameplay.DirectionalAnimator.AnimState.Attack;
             return Valkur.Gameplay.DirectionalAnimator.AnimState.Cast;

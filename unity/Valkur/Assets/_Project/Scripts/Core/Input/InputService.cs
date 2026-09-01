@@ -199,6 +199,7 @@ namespace Valkur.Core.Input
             public InputAction SpellHealingTotem     { get; }
             public InputAction SpellSummonBarbol     { get; }
             public InputAction SpellWallIce          { get; }
+            public InputAction SpellWeaponToggle     { get; }
 
             internal GameplayActions(InputActionMap map)
             {
@@ -237,6 +238,7 @@ namespace Valkur.Core.Input
                 SpellHealingTotem      = map.FindAction("SpellHealingTotem",      throwIfNotFound: true);
                 SpellSummonBarbol      = map.FindAction("SpellSummonBarbol",      throwIfNotFound: true);
                 SpellWallIce           = map.FindAction("SpellWallIce",           throwIfNotFound: true);
+                SpellWeaponToggle      = map.FindAction("SpellWeaponToggle",      throwIfNotFound: true);
             }
 
             /// <summary>
@@ -271,6 +273,7 @@ namespace Valkur.Core.Input
                 yield return (SpellHealingTotem,      "healing_totem",       UnityEngine.KeyCode.L);
                 yield return (SpellSummonBarbol,      "summon_barbol",       UnityEngine.KeyCode.U);
                 yield return (SpellWallIce,           "wall_ice",            UnityEngine.KeyCode.M);
+                yield return (SpellWeaponToggle,      "weapon_toggle",       UnityEngine.KeyCode.B);
             }
         }
 
