@@ -20,6 +20,9 @@ Shader "Valkur/SpriteHDRTintLit"
         [HDR] _Color ("HDR Tint", Color) = (1,1,1,1)
         _FlashColor ("Flash Color", Color) = (1,1,1,1)
         _FlashAmount ("Flash Amount", Range(0,1)) = 0
+        // Snow accumulation role: 0 none, 1 cap (silhouette edge), 2 blanket (ground).
+        // See ValkurSnow.hlsl; the amount itself is a global, not a material property.
+        _SnowRole ("Snow Role", Float) = 0
 
         // Legacy sprite properties, so a material using this shader can fall back gracefully.
         [HideInInspector] _RendererColor ("RendererColor", Color) = (1,1,1,1)
@@ -68,9 +71,10 @@ Shader "Valkur/SpriteHDRTintLit"
                 half4  color      : COLOR;
                 float2 uv         : TEXCOORD0;
                 half2  lightingUV : TEXCOORD1;
-                #if defined(DEBUG_DISPLAY)
+                // Unconditional, where it used to be gated behind DEBUG_DISPLAY: the snow
+                // accumulation buffer is indexed by world position, so this is now needed on
+                // every frame of every build, not only when the debug views are compiled in.
                 float3 positionWS : TEXCOORD2;
-                #endif
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
@@ -81,10 +85,14 @@ Shader "Valkur/SpriteHDRTintLit"
             TEXTURE2D(_MaskTex);
             SAMPLER(sampler_MaskTex);
             half4  _MainTex_ST;
+            float4 _MainTex_TexelSize;
             float4 _Color;
             half4  _RendererColor;
             float4 _FlashColor;
             float  _FlashAmount;
+            float  _SnowRole;
+
+            #include "ValkurSnow.hlsl"
 
             #if USE_SHAPE_LIGHT_TYPE_0
             SHAPE_LIGHT(0)
@@ -109,9 +117,7 @@ Shader "Valkur/SpriteHDRTintLit"
                 v.positionOS = UnityFlipSprite(v.positionOS, unity_SpriteFlip);
                 #endif
                 o.positionCS = TransformObjectToHClip(v.positionOS);
-                #if defined(DEBUG_DISPLAY)
                 o.positionWS = TransformObjectToWorld(v.positionOS);
-                #endif
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
                 o.lightingUV = half2(ComputeScreenPos(o.positionCS / o.positionCS.w).xy);
 
@@ -128,7 +134,15 @@ Shader "Valkur/SpriteHDRTintLit"
 
             half4 CombinedShapeLightFragment(Varyings i) : SV_Target
             {
-                const half4 main = i.color * SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
+                half4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
+                // Snow goes on the ALBEDO, BEFORE lighting — unlike the flash below. It is a
+                // surface, so midnight snow has to be midnight-dark; a post-lighting white
+                // would leave a snowed roof glowing at noon values over a night-blue world.
+                tex.rgb = ValkurApplySnow(tex.rgb, tex.a, i.uv, i.positionWS.xy,
+                                          TEXTURE2D_ARGS(_MainTex, sampler_MainTex),
+                                          _MainTex_TexelSize);
+
+                const half4 main = i.color * tex;
                 const half4 mask = SAMPLE_TEXTURE2D(_MaskTex, sampler_MaskTex, i.uv);
 
                 SurfaceData2D surfaceData;

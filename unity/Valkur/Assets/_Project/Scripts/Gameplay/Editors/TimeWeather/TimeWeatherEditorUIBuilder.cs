@@ -54,6 +54,7 @@ namespace Valkur.Gameplay.TimeWeather
             public TextMeshProUGUI   CycleOffTmp;
 
             // Weather panel
+            public TextMeshProUGUI   WeatherZoneTmp;
             public Image[]           WeatherRowBgs;
             public TextMeshProUGUI[] WeatherRowLabels;
             public Image             WeatherOffImg;
@@ -76,7 +77,7 @@ namespace Valkur.Gameplay.TimeWeather
         private const float CYCLE_W    = 196f;
         private const float CYCLE_H    = 230f;
         private const float WEATHER_W  = 168f;
-        private const float WEATHER_H  = 198f;
+        private const float WEATHER_H  = 220f;
         private const float SETTINGS_W = 260f;
         private const float SETTINGS_H = 320f;
 

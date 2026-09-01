@@ -15,6 +15,9 @@ Shader "Valkur/SpriteHDRTint"
         // is a no-op for every renderer that never sets it.
         _FlashColor ("Flash Color", Color) = (1,1,1,1)
         _FlashAmount ("Flash Amount", Range(0,1)) = 0
+        // Snow accumulation role: 0 none, 1 cap (silhouette edge), 2 blanket (ground).
+        // See ValkurSnow.hlsl; the amount itself is a global, not a material property.
+        _SnowRole ("Snow Role", Float) = 0
     }
 
     SubShader
@@ -53,6 +56,9 @@ Shader "Valkur/SpriteHDRTint"
                 float4 positionHCS : SV_POSITION;
                 float4 color       : COLOR;
                 float2 uv          : TEXCOORD0;
+                // Carried unconditionally: the snow accumulation buffer is indexed by world
+                // position, so every world sprite needs to know where in the world it is.
+                float3 positionWS  : TEXCOORD1;
             };
 
             TEXTURE2D(_MainTex);
@@ -62,12 +68,17 @@ Shader "Valkur/SpriteHDRTint"
                 float4 _Color;
                 float4 _FlashColor;
                 float  _FlashAmount;
+                float  _SnowRole;
+                float4 _MainTex_TexelSize;
             CBUFFER_END
+
+            #include "ValkurSnow.hlsl"
 
             Varyings vert(Attributes IN)
             {
                 Varyings OUT;
                 OUT.positionHCS = TransformObjectToHClip(IN.positionOS);
+                OUT.positionWS  = TransformObjectToWorld(IN.positionOS);
                 // Vertex color carries SpriteRenderer.color (clamped to [0,1] via
                 // Color32). We keep using it for alpha fades / dim effects, but
                 // saturated-color tinting flows through the HDR _Color below.
@@ -79,6 +90,11 @@ Shader "Valkur/SpriteHDRTint"
             half4 frag(Varyings IN) : SV_Target
             {
                 half4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
+                // Snow goes on the ALBEDO, before the tints: it is a surface the light and
+                // the HDR tint then act on, not an overlay drawn on top of the finished pixel.
+                tex.rgb = ValkurApplySnow(tex.rgb, tex.a, IN.uv, IN.positionWS.xy,
+                                          TEXTURE2D_ARGS(_MainTex, sampler_MainTex),
+                                          _MainTex_TexelSize);
                 // Multiply texture by per-renderer color (vertex, alpha-friendly)
                 // and by the material's HDR _Color (constant, NOT vertex-clamped).
                 half4 c = tex * IN.color * _Color;

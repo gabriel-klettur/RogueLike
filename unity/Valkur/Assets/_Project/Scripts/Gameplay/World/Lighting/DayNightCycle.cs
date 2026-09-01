@@ -524,6 +524,19 @@ namespace Valkur.Gameplay.World
                 targetVignetteAlpha  = 0f;
             }
 
+            // Storm lightning. Folded into the GLOBAL LIGHT, not only into the screen grade,
+            // because a strike has to light the world — buildings, entities, the tilemap —
+            // and a grade-only flash brightens every pixel by the same amount, which reads as
+            // an exposure change rather than as something happening in the sky. It survives
+            // the "no filter" override above on purpose: the switch silences the day/night
+            // TINT, and a strike is an event, not a tint.
+            float flash = Weather.WeatherGrade.LightFlash01;
+            if (flash > 0.0001f)
+            {
+                targetColor     = Color.Lerp(targetColor, Weather.WeatherGrade.FlashColor, flash * 0.85f);
+                targetIntensity = Mathf.Min(2f, targetIntensity + flash * Weather.WeatherGrade.FlashLightBoost);
+            }
+
             PublishScreenGrade(targetVignetteAlpha);
 
             // Publish the live values so the vignette / ambient particles can
@@ -663,6 +676,16 @@ namespace Valkur.Gameplay.World
         /// </summary>
         private void PublishScreenGrade(float vignetteAlpha)
         {
+            // Lift / gamma / gain are written here and nowhere else, and the day/night look
+            // does not use them — it is expressed as saturation, contrast and vignette. The
+            // weather owns them outright (overcast lift, the cool cast of rain, the lightning
+            // punch), so they are handed over verbatim, before the early returns: leaving a
+            // storm's gain behind when the grade is switched off would be a stale value that
+            // reappears the moment it is switched back on.
+            Valkur.Core.Rendering.ScreenGradeSettings.Gain         = Weather.WeatherGrade.Gain;
+            Valkur.Core.Rendering.ScreenGradeSettings.Lift         = Weather.WeatherGrade.Lift;
+            Valkur.Core.Rendering.ScreenGradeSettings.InverseGamma = Vector3.one;
+
             var look = ActiveProfile;
             if (look == null)
             {
@@ -681,10 +704,16 @@ namespace Valkur.Gameplay.World
 
             look.SampleGrade(TimeNormalized, out float saturation, out float contrast);
 
+            // Weather MODIFIES what the cycle computed rather than replacing it — a downpour
+            // at noon and a downpour at dusk are both desaturated, each relative to its own
+            // hour. Two writers to one absolute value would let whichever ran last win.
+            saturation *= Weather.WeatherGrade.SaturationMultiplier;
+
             Valkur.Core.Rendering.ScreenGradeSettings.Enabled            = true;
             Valkur.Core.Rendering.ScreenGradeSettings.Saturation         = saturation;
             Valkur.Core.Rendering.ScreenGradeSettings.Contrast           = contrast;
-            Valkur.Core.Rendering.ScreenGradeSettings.VignetteIntensity  = vignetteAlpha * VignetteIntensityScale;
+            Valkur.Core.Rendering.ScreenGradeSettings.VignetteIntensity  =
+                vignetteAlpha * VignetteIntensityScale + Weather.WeatherGrade.VignetteAdd;
             Valkur.Core.Rendering.ScreenGradeSettings.VignetteSmoothness = VignetteSmoothness;
             Valkur.Core.Rendering.ScreenGradeSettings.VignetteColor      = look.VignetteTint;
         }

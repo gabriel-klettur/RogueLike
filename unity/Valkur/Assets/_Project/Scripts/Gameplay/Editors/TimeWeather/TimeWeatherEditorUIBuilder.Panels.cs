@@ -211,6 +211,12 @@ namespace Valkur.Gameplay.TimeWeather
                 WEATHER_W, WEATHER_H, "Weather",
                 out var t, out refs.WeatherPanelDrag);
 
+            // Which zone the rows are editing. Not decoration: a click applies to the zone the
+            // player is standing in, so without this the author sets "Rain HEAVY", walks thirty
+            // units, watches the world clear itself and reads it as a bug.
+            refs.WeatherZoneTmp = BuildWeatherZoneLine(t);
+            AddInlineSeparator(t);
+
             int n = WEATHER_ROWS.Length;
             refs.WeatherRowBgs    = new Image[n];
             refs.WeatherRowLabels = new TextMeshProUGUI[n];
@@ -391,6 +397,25 @@ namespace Valkur.Gameplay.TimeWeather
         }
 
         // ── Helper: weather toggle row ────────────────────────────────────────────
+
+        /// <summary>The "editing: &lt;zone&gt;" line at the top of the weather panel.</summary>
+        private static TextMeshProUGUI BuildWeatherZoneLine(Transform parent)
+        {
+            var go = CreateUI("ZoneLine", parent);
+            go.AddComponent<LayoutElement>().preferredHeight = 16f;
+
+            var tmp = go.AddComponent<TextMeshProUGUI>();
+            tmp.text                = "—";
+            tmp.fontSize            = 10f;
+            tmp.fontStyle           = FontStyles.Bold;
+            tmp.alignment           = TextAlignmentOptions.MidlineLeft;
+            tmp.color               = ROW_LABEL;
+            tmp.margin              = new Vector4(8f, 0f, 4f, 0f);
+            tmp.enableWordWrapping  = false;
+            tmp.overflowMode        = TextOverflowModes.Ellipsis;
+            tmp.raycastTarget       = false;
+            return tmp;
+        }
 
         private static void BuildWeatherRow(Transform parent, WeatherRow row, Action onClick,
             out Image img, out TextMeshProUGUI lbl)

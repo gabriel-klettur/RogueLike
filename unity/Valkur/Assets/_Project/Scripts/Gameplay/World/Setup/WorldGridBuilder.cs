@@ -73,15 +73,15 @@ namespace Valkur.Gameplay.World
             // Wait one frame so GameplaySceneSetup.Start has created/repaired the global light.
             yield return null;
 
-            var material = WorldSpriteMaterials.World;
-            if (material == null) yield break;   // Resolve() already logged the missing shader.
-
             bool lit = WorldSpriteMaterials.AmbientLightingAvailable;
             var renderers = _grid.GetComponentsInChildren<TilemapRenderer>();
             int count = 0;
             foreach (var r in renderers)
             {
                 if (!r.enabled) continue; // Skip collision layers
+
+                var material = WorldSpriteMaterials.WorldWithSnow(SnowRoleFor(r));
+                if (material == null) yield break;   // Resolve() already logged the missing shader.
                 r.sharedMaterial = material;
                 count++;
             }
@@ -91,6 +91,36 @@ namespace Valkur.Gameplay.World
             else
                 Debug.LogWarning($"[WorldGridBuilder] No Global Light2D found; {count} TilemapRenderers fell back to " +
                                   "Sprite-Unlit-Default. The world will not react to the day/night cycle.");
+        }
+
+        /// <summary>
+        /// Which snow role a tilemap layer collects in.
+        ///
+        /// The split is the projection, not a preference: in top-down the GROUND faces the sky
+        /// across its whole area, so it takes an even blanket, while everything drawn as a
+        /// standing thing — walls, decorations, overhead detail — only collects on the edges
+        /// with nothing above them, which the shader finds from the sprite's own alpha.
+        /// Getting it backwards is very visible: a blanket role on a wall paints its whole
+        /// face white, which reads as a missing texture.
+        ///
+        /// Resolved from the layer component rather than from the renderer's sorting layer,
+        /// because <c>TilemapLayerSetup</c> is what actually owns the identity of each map.
+        /// A tilemap with no setup component falls back to Cap, the conservative answer: a
+        /// missed cap is a surface that stays bare, a wrong blanket is a white rectangle.
+        /// </summary>
+        private static WorldSpriteMaterials.SnowRole SnowRoleFor(TilemapRenderer renderer)
+        {
+            var setup = renderer.GetComponent<TilemapLayerSetup>();
+            if (setup == null) return WorldSpriteMaterials.SnowRole.Cap;
+
+            switch (setup.Layer)
+            {
+                case TilemapLayerSetup.TilemapLayer.Ground:
+                case TilemapLayerSetup.TilemapLayer.FloorDecals:
+                    return WorldSpriteMaterials.SnowRole.Blanket;
+                default:
+                    return WorldSpriteMaterials.SnowRole.Cap;
+            }
         }
 
         /// <summary>

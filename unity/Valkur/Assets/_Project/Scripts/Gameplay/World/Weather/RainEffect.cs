@@ -3,160 +3,235 @@ using UnityEngine;
 namespace Valkur.Gameplay.World.Weather
 {
     /// <summary>
-    /// Diagonal rain streaks over the camera frustum + optional rain audio.
-    /// Tuned to read as "real rain" without overpowering gameplay readability:
-    ///   • Slim vertical sprites that look like falling drops.
-    ///   • Slight horizontal velocity so the rain has a wind-driven slant.
-    ///   • Cool blue-white tint that composites cleanly over warm worlds.
+    /// Rain, as five depth slices rather than one sheet of drops.
+    ///
+    /// Three of them are falling water — a dim, small, slow FAR layer, the MID layer that
+    /// carries the density, and a sparse NEAR layer of big soft streaks that read as
+    /// out-of-focus drops close to the lens. Nothing about a single-system downpour tells the
+    /// eye how far away the water is, which is why the old one looked like a decal on the
+    /// camera; three sets of drops moving at three speeds is the whole trick.
+    ///
+    /// The other two are what rain does to a place rather than what it looks like in the air:
+    /// SPLASH ripples landing across the ground (in a top-down game the ground is the entire
+    /// visible area, so they spawn over the whole viewport, not along a line), and a very
+    /// faint MIST haze drifting through it.
+    ///
+    /// The slant is not authored — it is <see cref="WeatherWind"/>, read every frame, with a
+    /// per-layer factor so a gust shears the depth stack instead of sliding it sideways.
+    /// Turning the wind on now visibly bends the rain, which is what "Wind + Rain = storm"
+    /// was always supposed to mean.
+    ///
+    /// At Heavy the storm also gets lightning; that lives in <see cref="WeatherGrade"/>,
+    /// because a flash has to reach the global light and the screen grade, not the particles.
     /// </summary>
-    [RequireComponent(typeof(ParticleSystem))]
     public sealed class RainEffect : WeatherEffect
     {
-        [SerializeField, Tooltip("Extra world-unit margin beyond the visible viewport on each side. Keeps drops fading in/out cleanly past the edges.")]
-        private float _viewportMargin = 2f;
+        /// <summary>Fall speed of each streak layer, in world units/second, at the layer's mid range.</summary>
+        private const float FarFall  = 13f;
+        private const float MidFall  = 19f;
+        private const float NearFall = 27f;
 
-        // Average vertical fall speed (used to size the dynamic lifetime so
-        // every spawned drop survives long enough to traverse the viewport).
-        private const float AVG_FALL_SPEED = 19f;
+        private WeatherLayer _far;
+        private WeatherLayer _mid;
+        private WeatherLayer _near;
+        private WeatherLayer _splash;
+        private WeatherLayer _mist;
 
-        // Procedural sprite cache — soft gradient strip used for every rain
-        // drop. Reset on Play Mode entry so Domain-Reload-OFF doesn't keep a
-        // stale Texture2D handle around.
-        private static Sprite _rainSprite;
-        private static Material _rainMaterial;
+        private float _appliedWind = float.NaN;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticsOnPlayModeEnter()
+        protected override WeatherIntensity DefaultIntensity => WeatherIntensity.Medium;
+
+        protected override AudioClip ResolveAudioClip() => WeatherAudio.Rain();
+
+        // ── build ────────────────────────────────────────────────────────────────────
+
+        protected override void BuildLayers()
         {
-            _rainSprite   = null;
-            _rainMaterial = null;
+            _mist   = BuildMist();
+            _far    = BuildStreakLayer("Rain_Far",  depth: 0.15f, order: 4,
+                                       texW: 24, texH: 4, coreBias: 1.35f,
+                                       size: 0.09f, lengthScale: 4.5f,
+                                       color: new Color(0.60f, 0.70f, 0.90f, 0.30f),
+                                       rate: 120f, fall: FarFall, windFactor: 0.55f);
+            _splash = BuildSplash();
+            _mid    = BuildStreakLayer("Rain_Mid",  depth: 0.50f, order: 7,
+                                       texW: 32, texH: 5, coreBias: 1.00f,
+                                       size: 0.15f, lengthScale: 6f,
+                                       color: new Color(0.74f, 0.84f, 1.00f, 0.44f),
+                                       rate: 175f, fall: MidFall, windFactor: 0.90f);
+            _near   = BuildStreakLayer("Rain_Near", depth: 1.00f, order: 11,
+                                       texW: 40, texH: 8, coreBias: 0.70f,
+                                       size: 0.32f, lengthScale: 8f,
+                                       color: new Color(0.86f, 0.92f, 1.00f, 0.26f),
+                                       rate: 40f, fall: NearFall, windFactor: 1.40f);
         }
 
-        protected override void ConfigureParticles()
+        private WeatherLayer BuildStreakLayer(string name, float depth, int order,
+                                              int texW, int texH, float coreBias,
+                                              float size, float lengthScale, Color color,
+                                              float rate, float fall, float windFactor)
         {
-            _main.startLifetime          = 1.0f;     // refined per-frame in UpdateEmissionForViewport
-            _main.startSpeed             = 0f;
-            _main.simulationSpace        = ParticleSystemSimulationSpace.World;
-            _main.maxParticles           = 1200;
-            _main.gravityModifier        = 0f;
-            _main.scalingMode            = ParticleSystemScalingMode.Hierarchy;
-            _main.startColor             = new Color(0.78f, 0.86f, 1.00f, 0.55f);
-            _main.startSize              = 0.18f;
+            var layer = CreateLayer(name, depth);
+            layer.BaseRate        = rate;
+            layer.BaseColor       = color;
+            layer.WindFactor      = windFactor;
+            layer.AmbientResponse = 0.95f;   // falling water is lit by the sky and almost nothing else
 
-            // "Splash on contact" approximation: each drop fades to alpha 0
-            // over the last 18% of its life. Combined with the dynamic
-            // lifetime sized to viewport height in UpdateEmissionForViewport,
-            // every drop visibly dissipates as it nears ground level —
-            // cheap, no per-tile collision query needed.
-            var col = _ps.colorOverLifetime;
-            col.enabled = true;
-            var grad = new Gradient();
-            grad.SetKeys(
-                new[]
-                {
-                    new GradientColorKey(Color.white, 0.0f),
-                    new GradientColorKey(Color.white, 1.0f),
-                },
-                new[]
-                {
-                    new GradientAlphaKey(1.0f, 0.0f),
-                    new GradientAlphaKey(1.0f, 0.82f),
-                    new GradientAlphaKey(0.0f, 1.0f),
-                });
-            col.color = new ParticleSystem.MinMaxGradient(grad);
+            var main = layer.System.main;
+            main.maxParticles = Mathf.CeilToInt(rate * 3.5f);
+            main.startSize    = size;
+            main.startLifetime = 1f;         // replaced in LayoutForViewport
 
-            var emit = _emission;
-            emit.rateOverTime = 220f;
-
-            var shape = _ps.shape;
+            var shape = layer.System.shape;
             shape.enabled   = true;
             shape.shapeType = ParticleSystemShapeType.Box;
-            // Initial size — gets overwritten every frame by UpdateEmissionForViewport.
-            shape.scale     = new Vector3(20f, 0.5f, 0.1f);
-            shape.position  = new Vector3(0f, 8f, 0f);
 
-            var velocity = _ps.velocityOverLifetime;
+            var velocity = layer.System.velocityOverLifetime;
             velocity.enabled = true;
             velocity.space   = ParticleSystemSimulationSpace.World;
-            velocity.x       = new ParticleSystem.MinMaxCurve(-2f, -1f);
-            velocity.y       = new ParticleSystem.MinMaxCurve(-22f, -16f);
+            velocity.y       = new ParticleSystem.MinMaxCurve(-fall * 1.12f, -fall * 0.88f);
             velocity.z       = new ParticleSystem.MinMaxCurve(0f, 0f);
 
-            var renderer            = _ps.GetComponent<ParticleSystemRenderer>();
-            renderer.renderMode     = ParticleSystemRenderMode.Stretch;
-            renderer.lengthScale    = 6f;       // elongates each particle into a streak
-            renderer.velocityScale  = 0.05f;
-            renderer.material       = ResolveMaterial();
-            renderer.sortingLayerName = SortingLayerExists("VFX") ? "VFX" : "Default";
-            renderer.sortingOrder   = 8;
+            // The tail fade is longer than the head fade: a drop that has just entered the
+            // frame is a drop, while a drop about to leave it is about to hit something.
+            ApplyLifetimeFade(layer, fadeIn: 0.06f, fadeOut: 0.22f);
 
-            transform.position = new Vector3(0f, 0f, -1f);
+            var renderer = layer.Renderer;
+            renderer.renderMode    = ParticleSystemRenderMode.Stretch;
+            renderer.lengthScale   = lengthScale;
+            // Stretch by speed as well as by size, so a gust lengthens the streaks it
+            // accelerates instead of only tilting them.
+            renderer.velocityScale = 0.030f;
+            SetupRenderer(layer, WeatherTextures.Streak(texW, texH, coreBias), additive: false, sortingOrder: order);
+
+            return layer;
         }
 
-        protected override void UpdateEmissionForViewport(float halfW, float halfH)
+        /// <summary>
+        /// Ripples where the drops land. Top-down means the ground is the whole frame, so
+        /// these spawn over the entire viewport rather than along a horizon line — and their
+        /// rate therefore has to scale with viewport AREA, or zooming out would thin them out
+        /// while the falling layers (which spawn along an edge that grows with the view) held
+        /// their density.
+        /// </summary>
+        private WeatherLayer BuildSplash()
         {
-            // Spawn from a thin slab right above the visible top edge; drops
-            // fall through the entire viewport during their lifetime.
-            var shape = _ps.shape;
-            shape.scale    = new Vector3((halfW + _viewportMargin) * 2f, 0.5f, 0.1f);
-            shape.position = new Vector3(0f, halfH + _viewportMargin, 0f);
+            var layer = CreateLayer("Rain_Splash", depth: 0.35f);
+            layer.BaseRate                  = 95f;
+            layer.BaseColor                 = new Color(0.80f, 0.89f, 1.00f, 0.34f);
+            layer.WindFactor                = 0f;      // a landed drop is not blown anywhere
+            layer.AmbientResponse           = 0.90f;
+            layer.RateScalesWithViewportArea = true;
 
-            // Randomise lifetime so different drops splash at different Y
-            // positions — some "hit the rooftops" early, some make it all the
-            // way to street level. Combined with the alpha-fade tail in
-            // ConfigureParticles this approximates a ground-collision splash
-            // without per-tile physics queries.
-            float fullTravel = (halfH + _viewportMargin) * 2f;
-            float baseLifetime = fullTravel / AVG_FALL_SPEED;
-            _main.startLifetime = new ParticleSystem.MinMaxCurve(
-                baseLifetime * 0.55f,
-                baseLifetime * 1.00f);
+            var main = layer.System.main;
+            main.maxParticles  = 260;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.30f, 0.48f);
+            main.startSize     = new ParticleSystem.MinMaxCurve(0.16f, 0.30f);
+            main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+
+            var shape = layer.System.shape;
+            shape.enabled   = true;
+            shape.shapeType = ParticleSystemShapeType.Box;
+
+            // A ripple expands fast and then stalls; the ease-out is the whole read.
+            var size = layer.System.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(
+                new Keyframe(0.00f, 0.20f),
+                new Keyframe(0.45f, 0.88f),
+                new Keyframe(1.00f, 1.15f)));
+
+            ApplyLifetimeFade(layer, fadeIn: 0.10f, fadeOut: 0.70f);
+
+            layer.Renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            SetupRenderer(layer, WeatherTextures.Ring(24), additive: false, sortingOrder: 5);
+
+            return layer;
         }
 
-        private static bool SortingLayerExists(string name)
+        /// <summary>
+        /// The haze the downpour hangs in the air. Enormous, almost invisible quads drifting
+        /// slowly — individually unreadable, which is the point: it is the only layer that
+        /// puts anything BETWEEN the drops, and without it the gaps between streaks are as
+        /// clear as a dry day.
+        /// </summary>
+        private WeatherLayer BuildMist()
         {
-            var layers = SortingLayer.layers;
-            for (int i = 0; i < layers.Length; i++)
-                if (layers[i].name == name) return true;
-            return false;
+            var layer = CreateLayer("Rain_Mist", depth: 0.25f);
+            layer.BaseRate                   = 3.0f;
+            layer.BaseColor                  = new Color(0.72f, 0.80f, 0.94f, 0.050f);
+            layer.WindFactor                 = 0.45f;
+            layer.AmbientResponse            = 1.00f;
+            layer.RateScalesWithViewportArea = true;
+
+            var main = layer.System.main;
+            main.maxParticles  = 48;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(6f, 11f);
+            main.startSize     = new ParticleSystem.MinMaxCurve(3.5f, 7.5f);
+            main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+
+            var shape = layer.System.shape;
+            shape.enabled   = true;
+            shape.shapeType = ParticleSystemShapeType.Box;
+
+            var velocity = layer.System.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.space   = ParticleSystemSimulationSpace.World;
+            velocity.y       = new ParticleSystem.MinMaxCurve(-0.35f, -0.10f);
+            velocity.z       = new ParticleSystem.MinMaxCurve(0f, 0f);
+
+            ApplyLifetimeFade(layer, fadeIn: 0.30f, fadeOut: 0.40f);
+
+            layer.Renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            SetupRenderer(layer, WeatherTextures.Dot(64, falloff: 1.7f), additive: false, sortingOrder: 3);
+
+            return layer;
         }
 
-        private static Material ResolveMaterial()
+        // ── viewport ─────────────────────────────────────────────────────────────────
+
+        protected override void LayoutForViewport(float halfW, float halfH)
         {
-            if (_rainMaterial != null) return _rainMaterial;
-            var shader = Shader.Find("Particles/Standard Unlit");
-            if (shader == null) shader = Shader.Find("Sprites/Default");
-            _rainMaterial = new Material(shader);
-            _rainMaterial.mainTexture = ResolveTexture();
-            if (_rainMaterial.HasProperty("_Mode"))     _rainMaterial.SetFloat("_Mode", 2f); // fade
-            if (_rainMaterial.HasProperty("_SrcBlend")) _rainMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            if (_rainMaterial.HasProperty("_DstBlend")) _rainMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            return _rainMaterial;
+            float marginW = halfW + ViewportMargin;
+            float marginH = halfH + ViewportMargin;
+
+            LayoutFallingLayer(_far,  marginW, marginH, FarFall,  0.55f, 1.05f);
+            LayoutFallingLayer(_mid,  marginW, marginH, MidFall,  0.55f, 1.05f);
+            LayoutFallingLayer(_near, marginW, marginH, NearFall, 0.60f, 1.05f);
+
+            LayoutAreaLayer(_splash, marginW, marginH);
+            LayoutAreaLayer(_mist,   marginW, marginH);
         }
 
-        private static Texture2D ResolveTexture()
+        // ── per-frame wind ───────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// The falling layers give back the density a widened spawn slab spread out; the
+        /// splash rate follows the MID layer's slab, because a drop that lands is a drop that
+        /// was in the air, and the ripples have to thin out with the curtain rather than keep
+        /// falling at their fair-weather rate.
+        /// </summary>
+        protected override float RateMultiplier(WeatherLayer layer)
+            => layer == _splash ? _mid.SpawnWidthScale : layer.SpawnWidthScale;
+
+        protected override void OnTick(float deltaTime)
         {
-            if (_rainSprite != null && _rainSprite.texture != null) return _rainSprite.texture;
-            // 4×16 vertical strip with a soft fade at top/bottom for natural rain
-            // streaks. Stretch render-mode elongates this into the visible drop.
-            const int W = 4, H = 16;
-            var tex = new Texture2D(W, H, TextureFormat.RGBA32, false)
-            { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
-            var px  = new Color32[W * H];
-            for (int y = 0; y < H; y++)
-            {
-                float fadeY = Mathf.Clamp01(Mathf.Sin((y + 0.5f) / H * Mathf.PI));
-                for (int x = 0; x < W; x++)
-                {
-                    float dx     = Mathf.Abs((x + 0.5f) - W * 0.5f) / (W * 0.5f);
-                    float fadeX  = 1f - dx;
-                    float a      = fadeX * fadeY;
-                    px[y * W + x] = new Color32(255, 255, 255, (byte)(a * 255));
-                }
-            }
-            tex.SetPixels32(px); tex.Apply();
-            _rainSprite = Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f));
-            return tex;
+            float wind = WeatherWind.VelocityX;
+
+            ApplyWindTo(_far,  wind);
+            ApplyWindTo(_mid,  wind);
+            ApplyWindTo(_near, wind);
+            ApplyWindTo(_mist, wind);
+
+            // The layout depends on the wind too (the spawn slab widens with the drift), but
+            // re-laying it out every frame would rewrite five shapes for a gust that moves in
+            // tenths of a unit. Re-run it only once the wind has moved enough to matter, and
+            // reopen the gated rate write when it does — the slab width IS a rate term.
+            if (!float.IsNaN(_appliedWind) && Mathf.Abs(wind - _appliedWind) <= 0.75f) return;
+
+            _appliedWind = wind;
+            LayoutForViewport(HalfWidth, HalfHeight);
+            InvalidateRates();
         }
     }
 }
