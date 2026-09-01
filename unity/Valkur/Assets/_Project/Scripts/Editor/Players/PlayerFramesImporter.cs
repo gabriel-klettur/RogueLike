@@ -82,6 +82,15 @@ namespace Valkur.Editor.Players
             public List<StateSheetEntry> states = new List<StateSheetEntry>();
             public List<StateSheetEntry> attackVariants = new List<StateSheetEntry>();
             public List<StateSheetEntry> castVariants = new List<StateSheetEntry>();
+            public List<LoadoutEntry> loadouts = new List<LoadoutEntry>();
+        }
+
+        /// <summary>One alternative look, overriding only the states it has art for.</summary>
+        [Serializable]
+        private class LoadoutEntry
+        {
+            public string key;
+            public List<StateSheetEntry> states = new List<StateSheetEntry>();
         }
 
         [Serializable]
@@ -93,6 +102,18 @@ namespace Valkur.Editor.Players
             public int framesPerDirection;
             /// <summary>framesPerDirection * 8, in S, SE, E, NE, N, NW, W, SW order.</summary>
             public List<string> sprites = new List<string>();
+
+            /// <summary>Spells this variant is reserved for. A CREATION DEFAULT only —
+            /// see <see cref="DefaultSpellKeys"/>.</summary>
+            public List<string> spellKeys = new List<string>();
+
+            /// <summary>Playback speed for this variant; 1 = the entity's normal rate.
+            /// A creation default, like <see cref="spellKeys"/>.</summary>
+            public float animationSpeedMultiplier = 1f;
+
+            /// <summary>Whether the last frame holds instead of the animation looping.
+            /// A creation default, like <see cref="spellKeys"/>.</summary>
+            public bool holdLastFrame;
 
             public string Name => string.IsNullOrEmpty(state) ? key : state;
         }
@@ -176,6 +197,20 @@ namespace Valkur.Editor.Players
                 var resolvedVariants = ResolveSheets(entry.attackVariants, entry.playerKey, summary.MissingSprites);
                 var resolvedCasts = ResolveSheets(entry.castVariants, entry.playerKey, summary.MissingSprites);
 
+                // Resolved as a list of lists so a loadout keeps its own state names: they are
+                // the BASE state names (idle/walk/chase/…), so flattening them into one list
+                // would collide with the base states resolved above.
+                var resolvedLoadouts = new List<(string key, List<(string name, List<Sprite> frames)> states)>();
+                if (entry.loadouts != null)
+                {
+                    foreach (LoadoutEntry loadout in entry.loadouts)
+                    {
+                        if (loadout == null || string.IsNullOrEmpty(loadout.key)) continue;
+                        resolvedLoadouts.Add((loadout.key,
+                            ResolveSheets(loadout.states, entry.playerKey, summary.MissingSprites)));
+                    }
+                }
+
                 summary.Updated.Add(entry.playerKey);
                 if (!apply) continue;
 
@@ -197,8 +232,13 @@ namespace Valkur.Editor.Players
                     AssignStateSheet(def.assetConfig, state, frames);
 
                 ClearUnlistedStates(def.assetConfig, resolvedStates, entry.playerKey, summary);
-                ApplyAttackVariants(def.assetConfig, resolvedVariants);
-                ApplyCastVariants(def.assetConfig, resolvedCasts);
+                ApplyAttackVariants(def.assetConfig, resolvedVariants,
+                                    DefaultSpellKeys(entry.attackVariants),
+                                    DefaultPacing(entry.attackVariants));
+                ApplyCastVariants(def.assetConfig, resolvedCasts,
+                                  DefaultSpellKeys(entry.castVariants),
+                                  DefaultPacing(entry.castVariants));
+                ApplyLoadouts(def.assetConfig, resolvedLoadouts);
 
                 EditorUtility.SetDirty(def);
             }
@@ -486,7 +526,9 @@ namespace Valkur.Editor.Players
         /// wave that the re-slice may have renamed out from under it.
         /// </summary>
         private static void ApplyAttackVariants(EntityAssetConfig config,
-                                                List<(string name, List<Sprite> frames)> resolved)
+                                                List<(string name, List<Sprite> frames)> resolved,
+                                                Dictionary<string, List<string>> defaultSpellKeys = null,
+                                                Dictionary<string, (float speed, bool hold)> defaultPacing = null)
         {
             if (resolved == null || resolved.Count == 0)
                 return;
@@ -508,7 +550,26 @@ namespace Valkur.Editor.Players
                     continue;
 
                 if (!existing.TryGetValue(name, out AttackVariant variant))
+                {
                     variant = new AttackVariant { key = name };
+                    // Only on creation — an authored reservation is never overwritten.
+                    if (defaultSpellKeys != null && defaultSpellKeys.TryGetValue(name, out var seed))
+                        variant.spellKeys = new List<string>(seed);
+                    if (defaultPacing != null && defaultPacing.TryGetValue(name, out var pace))
+                    {
+                        variant.animationSpeedMultiplier = pace.speed;
+                        variant.holdLastFrame = pace.hold;
+                    }
+                }
+                else if (!variant.IsReservedForSpell &&
+                         defaultSpellKeys != null && defaultSpellKeys.TryGetValue(name, out var seedExisting))
+                {
+                    // A variant that predates the reservation field carries an empty list,
+                    // which is indistinguishable from "deliberately unreserved". Seeding it is
+                    // the lesser wrong: the manifest is the only place that opinion is written
+                    // down, and leaving it empty ships the animation unreachable.
+                    variant.spellKeys = new List<string>(seedExisting);
+                }
 
                 // Frames are this importer's business; damage/range/cooldown/weight and the
                 // distance gates are a design decision per move and are left exactly as found.
@@ -521,24 +582,148 @@ namespace Valkur.Editor.Players
 
         /// <summary>
         /// Same for the casting animations. A <see cref="CastVariant"/> carries no combat
-        /// data — a spell's damage is on its <c>SpellDefinition</c> — so unlike the attack
-        /// path there is nothing authored to preserve, and the list is rebuilt outright.
+        /// data — a spell's damage is on its <c>SpellDefinition</c> — but it does carry
+        /// <c>spellKeys</c>, the reservation that pins one spell to one animation, and that
+        /// is a design decision an art re-import has no business discarding. It is carried
+        /// across BY KEY rather than by position, because the manifest decides both the order
+        /// and the membership of this list and a wave that adds a sixth spellcast would
+        /// otherwise slide every reservation onto its neighbour.
         /// </summary>
         private static void ApplyCastVariants(EntityAssetConfig config,
-                                              List<(string name, List<Sprite> frames)> resolved)
+                                              List<(string name, List<Sprite> frames)> resolved,
+                                              Dictionary<string, List<string>> defaultSpellKeys = null,
+                                              Dictionary<string, (float speed, bool hold)> defaultPacing = null)
         {
             if (resolved == null || resolved.Count == 0)
                 return;
+
+            var authoredSpellKeys = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            // Pacing is captured separately from the reservation because a variant may carry
+            // one without the other, and "unreserved" must not also mean "reset to 1x".
+            var authoredPacing = new Dictionary<string, (float speed, bool hold)>(StringComparer.OrdinalIgnoreCase);
+            if (config.castVariants != null)
+            {
+                foreach (CastVariant existing in config.castVariants)
+                {
+                    if (existing == null || string.IsNullOrEmpty(existing.key)) continue;
+                    if (existing.IsReservedForSpell)
+                        authoredSpellKeys[existing.key] = new List<string>(existing.spellKeys);
+
+                    float speed = existing.animationSpeedMultiplier > 0f
+                        ? existing.animationSpeedMultiplier : 1f;
+                    if (!Mathf.Approximately(speed, 1f) || existing.holdLastFrame)
+                        authoredPacing[existing.key] = (speed, existing.holdLastFrame);
+                }
+            }
 
             var rebuilt = new List<CastVariant>(resolved.Count);
             foreach ((string name, List<Sprite> frames) in resolved)
             {
                 if (frames == null || frames.Count == 0)
                     continue;
-                rebuilt.Add(new CastVariant { key = name, sheets = frames });
+                var variant = new CastVariant { key = name, sheets = frames };
+                // Authored wins; the manifest's declaration is only what a variant nobody has
+                // pinned yet starts life with.
+                if (authoredSpellKeys.TryGetValue(name, out var keys))
+                    variant.spellKeys = keys;
+                else if (defaultSpellKeys != null && defaultSpellKeys.TryGetValue(name, out var seed))
+                    variant.spellKeys = new List<string>(seed);
+
+                if (authoredPacing.TryGetValue(name, out var authored))
+                {
+                    variant.animationSpeedMultiplier = authored.speed;
+                    variant.holdLastFrame = authored.hold;
+                }
+                else if (defaultPacing != null && defaultPacing.TryGetValue(name, out var pace))
+                {
+                    variant.animationSpeedMultiplier = pace.speed;
+                    variant.holdLastFrame = pace.hold;
+                }
+                rebuilt.Add(variant);
             }
 
             config.castVariants = rebuilt;
+        }
+
+        /// <summary>
+        /// Rebuilds the alternative LOOKS. Like the two variant paths this replaces the list
+        /// outright, and like them it is keyed by name rather than by position — a wave that
+        /// adds a second loadout must not shift the first one's meaning.
+        ///
+        /// A loadout the manifest does not name is REMOVED, which is the same ownership rule
+        /// <c>ClearUnlistedStates</c> applies to the base states and for the same reason: a
+        /// player wave is a replacement, not a partial refresh, and a loadout whose art was
+        /// dropped from the pipeline must not keep rendering from sprites nothing regenerates.
+        /// </summary>
+        private static void ApplyLoadouts(EntityAssetConfig config,
+            List<(string key, List<(string name, List<Sprite> frames)> states)> resolved)
+        {
+            if (resolved == null || resolved.Count == 0)
+            {
+                config.loadouts = new List<Loadout>();
+                return;
+            }
+
+            var rebuilt = new List<Loadout>(resolved.Count);
+            foreach ((string key, List<(string name, List<Sprite> frames)> states) in resolved)
+            {
+                var loadout = new Loadout { key = key, states = new List<LoadoutStateSheets>() };
+                foreach ((string state, List<Sprite> frames) in states)
+                {
+                    if (frames == null || frames.Count == 0) continue;
+                    loadout.states.Add(new LoadoutStateSheets { state = state, sheets = frames });
+                }
+                if (loadout.states.Count > 0)
+                    rebuilt.Add(loadout);
+            }
+
+            config.loadouts = rebuilt;
+        }
+
+        /// <summary>
+        /// The manifest's reservation defaults, by variant key.
+        ///
+        /// A DEFAULT, not an assignment: it is written when the importer CREATES a variant,
+        /// and a reservation already on the asset wins over it. Both halves are needed. A
+        /// brand-new animation that arrives unpinned ships as an unreachable rotation step
+        /// until someone remembers to pin it in the Inspector, which is the second step that
+        /// never happens; and a re-import that overwrote the authored value would undo every
+        /// pin a designer has moved since. The same shape <c>TilesetRulesetImporter</c> uses
+        /// for a ruleset's terrain names, for the same reason.
+        /// </summary>
+        /// <summary>The manifest's pacing defaults, by variant key. Same creation-default
+        /// rule as <see cref="DefaultSpellKeys"/>: written when the variant is created,
+        /// never over an authored value.</summary>
+        private static Dictionary<string, (float speed, bool hold)> DefaultPacing(
+            List<StateSheetEntry> entries)
+        {
+            var byKey = new Dictionary<string, (float, bool)>(StringComparer.OrdinalIgnoreCase);
+            if (entries == null) return byKey;
+
+            foreach (StateSheetEntry entry in entries)
+            {
+                if (entry == null || string.IsNullOrEmpty(entry.Name)) continue;
+                float speed = entry.animationSpeedMultiplier > 0f ? entry.animationSpeedMultiplier : 1f;
+                // A neutral row is not worth recording — it is what a fresh variant already is,
+                // and storing it would make "the manifest has an opinion" untestable.
+                if (Mathf.Approximately(speed, 1f) && !entry.holdLastFrame) continue;
+                byKey[entry.Name] = (speed, entry.holdLastFrame);
+            }
+            return byKey;
+        }
+
+        private static Dictionary<string, List<string>> DefaultSpellKeys(List<StateSheetEntry> entries)
+        {
+            var byKey = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            if (entries == null) return byKey;
+
+            foreach (StateSheetEntry entry in entries)
+            {
+                if (entry == null || string.IsNullOrEmpty(entry.Name)) continue;
+                if (entry.spellKeys == null || entry.spellKeys.Count == 0) continue;
+                byKey[entry.Name] = new List<string>(entry.spellKeys);
+            }
+            return byKey;
         }
 
         // ── Reporting ─────────────────────────────────────────────────────────────────

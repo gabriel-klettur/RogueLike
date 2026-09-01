@@ -14,9 +14,9 @@ namespace Valkur.Gameplay
         // ── Cast animation timing ─────────────────────────────────────────────
         // How long the player's DirectionalAnimator stays in the Cast state after
         // a successful TryCastByKey before locomotion (Idle/Walk) takes over again.
-        // Each Cast sprite-set frame plays at DirectionalAnimator.frameInterval (0.15 s
-        // by default), so 0.35 s reliably plays at least 2 frames of the cast pose
-        // before reverting — enough to read as "casting" without delaying gameplay.
+        /// <summary>Floor for a cast's animation window. The real length is measured off the
+        /// frames — see <see cref="TriggerCastAnimation"/> — and this is what a character
+        /// whose cast art is one static pose gets instead.</summary>
         private const float CAST_ANIMATION_DURATION = 0.35f;
         private const float REGULAR_SLASH_ANIMATION_DURATION = 0.42f;
 
@@ -25,6 +25,27 @@ namespace Valkur.Gameplay
         // cast (including held casts like the laser beam), so the animation
         // stays alive for as long as the player is channeling.
         private float _castAnimEndTime;
+
+        // Which spell the window above belongs to. Only used to tell a HELD channel's
+        // per-frame refresh apart from a fresh cast, so the former does not re-roll the
+        // animation variant on every frame. Null is a legitimate value — the slash, dash and
+        // beam paths pass no key — and null matches null, which is what makes the beam's own
+        // refresh count as "the same cast".
+        private string _castAnimSpellKey;
+
+        // The state the open window pushed the animator into. Needed because a spell can now
+        // name any of the eight, and the revert has to hand control back from whichever one
+        // it actually entered.
+        private DirectionalAnimator.AnimState _castAnimState;
+
+        /// <summary>True while a cast animation still owns the animator. Locomotion holds off
+        /// for as long as this is true, which is what lets a spell play a LOCOMOTION state
+        /// without the movement code overwriting it on the next frame.</summary>
+        private bool IsCastAnimWindowOpen => _castAnimEndTime > 0f && Time.time < _castAnimEndTime;
+
+        // Resolved lazily rather than in Awake: EntitySetup only attaches the component to a
+        // character that declares a loadout, and it does so after the visuals bind.
+        private PlayerLoadoutController _loadouts;
 
         // Next animation variant to play, per AnimState. Sized lazily from the enum rather
         // than from a literal, so an added state cannot silently index past the end.
@@ -411,9 +432,17 @@ namespace Valkur.Gameplay
                 // Only override locomotion states (Idle / Walk / Chase).
                 // Cast, Attack, Damage, and Death animations are owned by other systems
                 // (SpellCaster, MeleeCombat, Health) and must not be interrupted here.
-                if (currentState == DirectionalAnimator.AnimState.Idle ||
-                    currentState == DirectionalAnimator.AnimState.Walk ||
-                    currentState == DirectionalAnimator.AnimState.Chase)
+                //
+                // An OPEN CAST WINDOW is the fourth owner. A spell may name a locomotion
+                // state — that is how the idle, walk and run animations are reachable at all —
+                // and without this guard the very next frame would overwrite it with whatever
+                // the player's movement implies, so the animation would never render for even
+                // one frame. Normal casts are unaffected: they enter Cast or Attack, which
+                // this branch never matched anyway.
+                if (!IsCastAnimWindowOpen &&
+                    (currentState == DirectionalAnimator.AnimState.Idle ||
+                     currentState == DirectionalAnimator.AnimState.Walk ||
+                     currentState == DirectionalAnimator.AnimState.Chase))
                 {
                     var state = IsMoving ? DirectionalAnimator.AnimState.Walk : DirectionalAnimator.AnimState.Idle;
                     _animator.SetState(state, dir);
@@ -440,16 +469,153 @@ namespace Valkur.Gameplay
         {
             if (_animator == null) return;
             var dir = _animator.ResolveDirectionFromVector(_facingDirection);
-            bool isRegularSlash = string.Equals(spellKey, RegularSlashAttack.SpellKey,
-                System.StringComparison.OrdinalIgnoreCase);
-            var state = isRegularSlash
+            bool isRegularSlash = UsesAttackAnimation(spellKey);
+            var state = ResolveCastAnimState(spellKey, isRegularSlash);
+
+            // A channelled spell re-enters this EVERY FRAME while the trigger is held — the
+            // laser beam does, and so does any Beam-typed primary. Advancing the rotation
+            // there hands SetState a different variant sixty times a second, and a changed
+            // variant counts as a state change, so the pose restarted at frame 0 on every
+            // one of them: the character flickered through all five casting animations
+            // instead of playing one. Reuse the variant already on screen for as long as
+            // this same cast's window is open.
+            bool sameCastStillPlaying = _animator.CurrentState == state
+                                        && _castAnimEndTime > 0f
+                                        && Time.time < _castAnimEndTime
+                                        && string.Equals(spellKey, _castAnimSpellKey,
+                                            System.StringComparison.OrdinalIgnoreCase);
+            int variant = sameCastStillPlaying
+                ? _animator.ActiveVariant
+                : ResolveCastVariant(state, spellKey);
+
+            _animator.SetState(state, dir, variant, ShouldPlayCastReversed());
+            _castAnimSpellKey = spellKey;
+            // Remembered so the revert below can hand back control from WHATEVER state this
+            // cast entered, not just from the three it used to be able to reach.
+            _castAnimState = state;
+
+            // Measured, not assumed, and measured AFTER SetState has turned the animator to
+            // `dir`: GetStateLength reports the frame count of the CURRENT direction, so
+            // asking before the turn sizes the animation against whichever way the character
+            // happened to already be facing. The constants stay as a FLOOR rather than being
+            // replaced, so a character whose cast art is a single pose is paced exactly as
+            // before; what changes is that an eight-frame spellcast now runs all eight frames
+            // instead of being cut at frame three by a 0.35 s deadline.
+            float floor = isRegularSlash
+                ? REGULAR_SLASH_ANIMATION_DURATION
+                : CAST_ANIMATION_DURATION;
+            _castAnimEndTime = Time.time + Mathf.Max(floor, _animator.GetStateLength(state, variant));
+        }
+
+        /// <summary>
+        /// Which animation state <paramref name="spellKey"/> plays.
+        ///
+        /// <c>SpellDefinition.animState</c> wins when the spell names one. That is the only
+        /// way a spell can reach idle, walk, chase, damage, death or recover — states that
+        /// locomotion and the damage and death flows own, so nothing that casts ever entered
+        /// them. Before this the state came from <c>usesAttackAnimation</c> alone, so a spell
+        /// asking for `death` silently played CAST and, having no cast variant reserved, took
+        /// whatever the generic rotation handed it.
+        ///
+        /// Two things make that safe and both live elsewhere in this file, because entering a
+        /// state is only half of it: <see cref="TickCastAnimRevert"/> now hands control back
+        /// from whatever state was entered (a state locomotion refuses to override and
+        /// nothing reverts is a soft lock — see <c>AnimState.Recover</c>'s own doc), and the
+        /// locomotion override holds off while a cast window is open, or a spell asking for
+        /// Idle/Walk/Chase would be overwritten on the very next frame and never render.
+        /// </summary>
+        private DirectionalAnimator.AnimState ResolveCastAnimState(string spellKey, bool attackRouted)
+        {
+            SpellDefinition spell = _spellCaster != null ? _spellCaster.GetSpellByKey(spellKey) : null;
+            if (spell != null && !string.IsNullOrEmpty(spell.animState) &&
+                TryParseAnimState(spell.animState, out var named))
+                return named;
+
+            return attackRouted
                 ? DirectionalAnimator.AnimState.Attack
                 : DirectionalAnimator.AnimState.Cast;
+        }
 
-            _animator.SetState(state, dir, NextVariant(state));
-            _castAnimEndTime = Time.time + (isRegularSlash
-                ? REGULAR_SLASH_ANIMATION_DURATION
-                : CAST_ANIMATION_DURATION);
+        /// <summary>
+        /// The manifest's state names, which is the vocabulary a designer sees everywhere
+        /// else. Kept as a string on <see cref="SpellDefinition"/> because <c>AnimState</c>
+        /// lives in <c>Valkur.Gameplay</c> and <c>Valkur.Data</c> may not reference it — the
+        /// same constraint <c>LoadoutStateSheets.state</c> answers the same way.
+        /// </summary>
+        internal static bool TryParseAnimState(string name, out DirectionalAnimator.AnimState state)
+        {
+            switch ((name ?? string.Empty).Trim().ToLowerInvariant())
+            {
+                case "idle":    state = DirectionalAnimator.AnimState.Idle;    return true;
+                case "walk":    state = DirectionalAnimator.AnimState.Walk;    return true;
+                case "chase":   state = DirectionalAnimator.AnimState.Chase;   return true;
+                case "cast":    state = DirectionalAnimator.AnimState.Cast;    return true;
+                case "attack":  state = DirectionalAnimator.AnimState.Attack;  return true;
+                case "damage":  state = DirectionalAnimator.AnimState.Damage;  return true;
+                case "death":   state = DirectionalAnimator.AnimState.Death;   return true;
+                case "recover": state = DirectionalAnimator.AnimState.Recover; return true;
+                default:        state = DirectionalAnimator.AnimState.Cast;    return false;
+            }
+        }
+
+        /// <summary>
+        /// Whether <paramref name="spellKey"/> plays through the ATTACK animation rather than
+        /// the CAST one — a swing instead of a conjuring.
+        ///
+        /// This used to be a hard-coded comparison against <c>slash_regular</c>, which was
+        /// true of exactly one spell and made every other swing-shaped spell unable to reach
+        /// the attack animations at all. On the dwarf that showed up as `punch` and `kick`
+        /// being UNREACHABLE: nothing but the regular slash ever entered Attack, and the
+        /// regular slash is reserved for `armed_slash`, so `NextVariant(Attack)` was never
+        /// called and two authored animations rendered no frame in the whole game.
+        ///
+        /// The key comparison survives as a fallback for the case where the spell cannot be
+        /// resolved — a caster that has not registered yet, or a synthetic cast from a
+        /// preview — so the historical behaviour is what a missing lookup falls back to
+        /// rather than something new.
+        /// </summary>
+        private bool UsesAttackAnimation(string spellKey)
+        {
+            SpellDefinition spell = _spellCaster != null ? _spellCaster.GetSpellByKey(spellKey) : null;
+            if (spell != null) return spell.usesAttackAnimation;
+
+            return string.Equals(spellKey, RegularSlashAttack.SpellKey,
+                System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Whether the cast that just fired should run its frames back to front.
+        ///
+        /// True for exactly one case today: a loadout swap that STOWED. The dwarf's sheathe
+        /// is his draw run backwards — one sheet, one motion, read either way — and playing
+        /// the draw forwards to put a weapon away reads as drawing it a second time.
+        ///
+        /// Asked of the loadout controller rather than keyed off the spell, because the spell
+        /// is the same one in both directions: <c>weapon_toggle</c> cannot tell you which way
+        /// it went, and only the thing that performed the swap can. The one-frame window is
+        /// what makes that safe — the executor runs inside <c>TryCastByKey</c> and this runs
+        /// immediately after it, in the same frame.
+        /// </summary>
+        private bool ShouldPlayCastReversed()
+        {
+            if (_loadouts == null)
+                _loadouts = GetComponent<PlayerLoadoutController>();
+            return _loadouts != null && _loadouts.SwappedThisFrame && _loadouts.LastSwapStowed;
+        }
+
+        /// <summary>
+        /// The variant this cast should play: the one reserved for <paramref name="spellKey"/>
+        /// if a <c>CastVariant</c> claims it, otherwise the next step of the generic rotation.
+        ///
+        /// The reservation is authored on the character, not on the spell, because the poses
+        /// are the character's: <c>spell_3</c> means a different animation on the dwarf than
+        /// it would on the elven, and a spell that names an index would be asserting something
+        /// about art it has never seen.
+        /// </summary>
+        private int ResolveCastVariant(DirectionalAnimator.AnimState state, string spellKey)
+        {
+            int reserved = _animator.VariantForSpell(state, spellKey);
+            return reserved >= 0 ? reserved : NextVariant(state);
         }
 
         /// <summary>
@@ -480,9 +646,20 @@ namespace Valkur.Gameplay
                     System.Enum.GetValues(typeof(DirectionalAnimator.AnimState)).Length);
             }
 
-            int variant = _nextVariantByState[index] % count;
-            _nextVariantByState[index] = (variant + 1) % count;
-            return variant;
+            // A variant a spell has reserved is out of the rotation, so the pose drawn for
+            // that one spell never turns up under another. The cursor still ADVANCES past it
+            // — skipping without advancing would stall on a reserved slot forever.
+            for (int step = 0; step < count; step++)
+            {
+                int variant = _nextVariantByState[index] % count;
+                _nextVariantByState[index] = (variant + 1) % count;
+                if (!_animator.IsVariantReserved(state, variant))
+                    return variant;
+            }
+
+            // Every variant is spoken for. The base set is the honest answer: it is the one
+            // animation no spell has claimed.
+            return -1;
         }
 
         /// <summary>
@@ -496,6 +673,8 @@ namespace Valkur.Gameplay
             if (_animator == null) return;
             var dir = _animator.ResolveDirectionFromVector(_facingDirection);
             _animator.SetState(DirectionalAnimator.AnimState.Recover, dir);
+            _castAnimSpellKey = null;
+            _castAnimState = DirectionalAnimator.AnimState.Recover;
             // Shares the cast timer on purpose: it is the one deadline TickCastAnimRevert
             // already checks every frame, so Recover cannot outlive its own animation even
             // if the coroutine that started it is killed by a scene change mid-rise.
@@ -515,7 +694,14 @@ namespace Valkur.Gameplay
             // Recover is in this list for the reason AnimState.Recover's doc gives: a state
             // that locomotion refuses to override and nothing reverts is a soft lock, and
             // the coroutine that entered Recover can be killed by a scene change.
-            if (_animator.CurrentState == DirectionalAnimator.AnimState.Cast ||
+            //
+            // `_castAnimState` is what makes this general: a spell may now enter ANY state,
+            // and one that locomotion refuses to override with nothing to revert it is a soft
+            // lock — the character would hold the death pose forever. The three literals stay
+            // as a safety net for windows opened before that field was tracked, and for
+            // Recover, whose coroutine can be killed by a scene change mid-rise.
+            if (_animator.CurrentState == _castAnimState ||
+                _animator.CurrentState == DirectionalAnimator.AnimState.Cast ||
                 _animator.CurrentState == DirectionalAnimator.AnimState.Attack ||
                 _animator.CurrentState == DirectionalAnimator.AnimState.Recover)
             {
@@ -524,6 +710,7 @@ namespace Valkur.Gameplay
                 _animator.SetState(state, dir);
             }
             _castAnimEndTime = 0f;
+            _castAnimSpellKey = null;
         }
 
         private Vector2 ResolveFacingOrigin()
@@ -581,7 +768,7 @@ namespace Valkur.Gameplay
             if (MouseInputManager.WasRightMouseButtonPressedThisFrame())
             {
                 if (_spellCaster != null && _spellCaster.TryCastByKey("slash", _facingDirection))
-                    TriggerCastAnimation();
+                    TriggerCastAnimation("slash");
             }
 
             // Middle click → laser beam (hold-to-channel)
@@ -601,8 +788,9 @@ namespace Valkur.Gameplay
                         _spellCaster.TryCastByKey("laser_beam", _facingDirection);
                     // Beam is hold-to-channel — keep refreshing the cast animation
                     // each frame so the pose persists for as long as the player
-                    // holds the trigger.
-                    TriggerCastAnimation();
+                    // holds the trigger. The key is passed so the refresh is recognised
+                    // as the SAME cast and does not re-roll the variant every frame.
+                    TriggerCastAnimation("laser_beam");
                 }
             }
             if (MouseInputManager.WasMiddleMouseButtonReleasedThisFrame())
@@ -666,7 +854,7 @@ namespace Valkur.Gameplay
             if ((dashNew || dashLegacy || dashCtrl) && _spellCaster != null)
             {
                 if (_spellCaster.TryCastByKey("dash", _facingDirection))
-                    TriggerCastAnimation();
+                    TriggerCastAnimation("dash");
             }
 
             // All 23 spell key bindings (1-0, q, e, r, t, f, g, c, v, x, p, l, u, m).

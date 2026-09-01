@@ -63,6 +63,19 @@ namespace Valkur.Gameplay
             if (!appliedDataDrivenVisuals)
                 EntitySpriteHelper.EnsurePlayerSprite(spriteRenderer);
             EntitySpriteHelper.EnsureUnlitMaterial(spriteRenderer);
+
+            // Only for a character that declares one. Adding the component unconditionally
+            // would put an inert MonoBehaviour on four of the five players and make
+            // "does this character have loadouts?" a question you answer by reading its
+            // config anyway.
+            if (appliedDataDrivenVisuals &&
+                def.assetConfig.loadouts != null && def.assetConfig.loadouts.Count > 0)
+            {
+                var loadouts = go.GetComponent<PlayerLoadoutController>();
+                if (loadouts == null)
+                    loadouts = go.AddComponent<PlayerLoadoutController>();
+                loadouts.Initialize(def.assetConfig);
+            }
         }
 
         /// <summary>Health, movement speed, melee combat, dash ability.</summary>

@@ -108,9 +108,25 @@ namespace Valkur.Gameplay
                 return;
             }
 
-            // Default: loop all frames
+            // A variant that ENDS in a pose plays once and stays there, exactly as Death
+            // does above. The dash is why: its body teleports in one physics step and its
+            // wake is gone in 0.14 s, so the charge frames are compressed to fit and the
+            // landing pose holds the remainder of the window rather than the lunge starting
+            // over. Looping a move that finishes somewhere reads as a stutter, not a cycle.
+            if (PacingOf(_currentState, _activeVariant).HoldLastFrame)
+            {
+                int held = Mathf.Min(_frameIndex, frames.Length - 1);
+                ApplyFrame(frames[FrameAt(held, frames.Length)]);
+                if (_frameIndex < frames.Length - 1)
+                    _frameIndex++;
+                return;
+            }
+
+            // Default: loop all frames. The cursor always counts UP; FrameAt is what turns it
+            // into a back-to-front read, so reversed playback inherits the loop, the hold and
+            // the frame clock rather than reimplementing all three.
             _frameIndex %= frames.Length;
-            ApplyFrame(frames[_frameIndex]);
+            ApplyFrame(frames[FrameAt(_frameIndex, frames.Length)]);
             _frameIndex = (_frameIndex + 1) % frames.Length;
         }
 

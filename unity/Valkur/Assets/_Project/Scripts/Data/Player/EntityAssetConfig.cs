@@ -164,6 +164,45 @@ namespace Valkur.Data
         [Tooltip("Linear frame list for this variant: eight contiguous per-direction " +
                  "buckets in the order S, SE, E, NE, N, NW, W, SW.")]
         public List<Sprite> sheets;
+
+        [Tooltip("Spell keys that ALWAYS play this animation. Leave empty to stay in the " +
+                 "generic per-swing rotation.")]
+        public List<string> spellKeys = new List<string>();
+
+        [Header("Pacing")]
+        [Tooltip("Scales this variant's playback speed. 1 = the entity's normal frame rate. " +
+                 "Above 1 plays faster, which is how an animation is fitted to an action " +
+                 "shorter than itself.")]
+        [Min(0.05f)] public float animationSpeedMultiplier = 1f;
+
+        [Tooltip("Play the frames once and hold the last one, instead of looping. Use for a " +
+                 "move that ENDS in a pose rather than returning to where it started.")]
+        public bool holdLastFrame;
+
+
+        /// <summary>
+        /// True when this variant is spoken for by at least one spell — see
+        /// <see cref="CastVariant.IsReservedForSpell"/>, which this mirrors.
+        ///
+        /// It exists on the ATTACK side too because <c>slash_regular</c> is the one slash
+        /// that runs through <c>AnimState.Attack</c> rather than <c>AnimState.Cast</c>
+        /// (<c>RegularSlashAttack</c> keeps its own authored implementation). Without a
+        /// reservation here, "every slash draws the weapon" would be true of four slashes
+        /// out of five and the fifth would swing a bare fist.
+        /// </summary>
+        public bool IsReservedForSpell => spellKeys != null && spellKeys.Count > 0;
+
+        /// <summary>True when <paramref name="spellKey"/> is one this variant claims.</summary>
+        public bool ClaimsSpell(string spellKey)
+        {
+            if (string.IsNullOrEmpty(spellKey) || spellKeys == null) return false;
+            for (int i = 0; i < spellKeys.Count; i++)
+            {
+                if (string.Equals(spellKeys[i], spellKey, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
     }
 
     /// <summary>
@@ -193,6 +232,119 @@ namespace Valkur.Data
         [Tooltip("Linear frame list for this variant: eight contiguous per-direction " +
                  "buckets in the order S, SE, E, NE, N, NW, W, SW.")]
         public List<Sprite> sheets;
+
+        [Tooltip("Spell keys that ALWAYS play this animation — e.g. \"fireball\". Leave " +
+                 "empty to stay in the generic per-cast rotation.")]
+        public List<string> spellKeys = new List<string>();
+
+        [Header("Pacing")]
+        [Tooltip("Scales this variant's playback speed. 1 = the entity's normal frame rate. " +
+                 "Above 1 plays faster, which is how an animation is fitted to an action " +
+                 "shorter than itself.")]
+        [Min(0.05f)] public float animationSpeedMultiplier = 1f;
+
+        [Tooltip("Play the frames once and hold the last one, instead of looping. Use for a " +
+                 "move that ENDS in a pose rather than returning to where it started.")]
+        public bool holdLastFrame;
+
+
+        /// <summary>
+        /// True when this variant is spoken for by at least one spell.
+        ///
+        /// A reserved variant leaves the rotation <c>PlayerController.NextVariant</c> walks.
+        /// Both halves of that are needed and they are not the same statement: claiming a
+        /// spell is what makes the pose ALWAYS play for it, and leaving the rotation is what
+        /// stops every OTHER spell borrowing a pose drawn for one particular thing. Without
+        /// the second half a five-variant character shows the fireball wind-up on one cast in
+        /// five of everything else, which reads as the animation picker being broken.
+        /// </summary>
+        public bool IsReservedForSpell => spellKeys != null && spellKeys.Count > 0;
+
+        /// <summary>
+        /// True when <paramref name="spellKey"/> is one this variant claims. Compared
+        /// <see cref="StringComparison.OrdinalIgnoreCase"/> because a spell key is typed by
+        /// hand in five places — the Inspector, the DevConsole, the spell asset, the HUD
+        /// binding and here — and a casing slip would fail silently by falling back to the
+        /// rotation, which looks exactly like the feature not being wired at all.
+        /// </summary>
+        public bool ClaimsSpell(string spellKey)
+        {
+            if (string.IsNullOrEmpty(spellKey) || spellKeys == null) return false;
+            for (int i = 0; i < spellKeys.Count; i++)
+            {
+                if (string.Equals(spellKeys[i], spellKey, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// One state's art inside a <see cref="Loadout"/>.
+    ///
+    /// Keyed by a STRING rather than by a position or an enum, for two reasons. The seven
+    /// base slots are enumerated positionally in four places and this class exists partly to
+    /// stop a loadout becoming a fifth; and <c>AnimState</c> lives on
+    /// <c>DirectionalAnimator</c> in <c>Valkur.Gameplay</c>, which <c>Valkur.Data</c> is not
+    /// allowed to reference. The names are the same ones the frame manifest uses —
+    /// <c>idle</c>, <c>walk</c>, <c>chase</c>, <c>cast</c>, <c>attack</c>, <c>damage</c>,
+    /// <c>death</c>, <c>recover</c> — so the pipeline and the runtime agree by construction.
+    /// </summary>
+    [Serializable]
+    public class LoadoutStateSheets
+    {
+        [Tooltip("Which base state this overrides: idle, walk, chase, cast, attack, " +
+                 "damage, death or recover.")]
+        public string state;
+
+        [Tooltip("Directional sprites for this state. Takes precedence over sheets, " +
+                 "exactly as the base slots do.")]
+        public DirectionalSprites directional;
+
+        [Tooltip("Linear frame list: eight contiguous per-direction buckets in the order " +
+                 "S, SE, E, NE, N, NW, W, SW.")]
+        public List<Sprite> sheets;
+    }
+
+    /// <summary>
+    /// A named alternative look for the SAME character — the dwarf with his sword drawn.
+    ///
+    /// An OVERRIDE LIST, not a second <see cref="EntityAssetConfig"/>. The armed dwarf has
+    /// art for four states and will never have art for the other six: nobody is going to draw
+    /// a second death, a second hurt and five more spellcasts so the character can be hit
+    /// while holding a sword. A second config would have to either duplicate those six
+    /// (two copies of the same frames, drifting the moment one is re-imported) or leave them
+    /// empty and fall back to a neighbour, which puts the character in the wrong POSE rather
+    /// than merely the wrong hands. Overriding the four that exist keeps the other six
+    /// shared, and shared is also correct: getting hurt looks the same either way.
+    ///
+    /// A loadout is a LOOK, not a stat block. It carries no damage, range or speed — those
+    /// belong to the spell or the variant that uses them, and a loadout that quietly changed
+    /// combat numbers would make the same swing hit differently depending on an animation
+    /// toggle.
+    /// </summary>
+    [Serializable]
+    public class Loadout
+    {
+        [Tooltip("Identifier used by the loadout-toggle spell and in logs, e.g. \"armed\".")]
+        public string key;
+
+        [Tooltip("The states this loadout replaces. Any state not listed keeps the base art.")]
+        public List<LoadoutStateSheets> states = new List<LoadoutStateSheets>();
+
+        /// <summary>The override for <paramref name="state"/>, or null when this loadout
+        /// does not replace it and the base art stands.</summary>
+        public LoadoutStateSheets Find(string state)
+        {
+            if (states == null || string.IsNullOrEmpty(state)) return null;
+            for (int i = 0; i < states.Count; i++)
+            {
+                if (states[i] != null &&
+                    string.Equals(states[i].state, state, StringComparison.OrdinalIgnoreCase))
+                    return states[i];
+            }
+            return null;
+        }
     }
 
     /// <summary>
@@ -247,6 +399,27 @@ namespace Valkur.Data
         // Unlike attackVariants these carry no combat data — a spell's damage lives on its
         // SpellDefinition — so this is purely which animation plays.
         public List<CastVariant> castVariants = new List<CastVariant>();
+
+        [Header("Loadouts")]
+        // Alternative LOOKS for this same character, each overriding only the states it has
+        // art for. Empty for every entity but the dwarf, who ships an `armed` loadout.
+        // Swapped at runtime by PlayerLoadoutController; the base slots above stay the
+        // character's unarmed self and are what an entity with no loadout ever shows.
+        public List<Loadout> loadouts = new List<Loadout>();
+
+        /// <summary>The loadout named <paramref name="key"/>, or null — including for the
+        /// null/empty key, which is how "no loadout, use the base art" is spelled.</summary>
+        public Loadout FindLoadout(string key)
+        {
+            if (loadouts == null || string.IsNullOrEmpty(key)) return null;
+            for (int i = 0; i < loadouts.Count; i++)
+            {
+                if (loadouts[i] != null &&
+                    string.Equals(loadouts[i].key, key, StringComparison.OrdinalIgnoreCase))
+                    return loadouts[i];
+            }
+            return null;
+        }
 
         [Header("Scale & Tint")]
         public AnimationScaleConfig scaleConfig;

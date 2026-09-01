@@ -26,7 +26,48 @@ namespace Valkur.Gameplay
             return ApplyVisuals(go, def.assetConfig);
         }
 
-        private static bool ApplyVisuals(GameObject go, EntityAssetConfig assetConfig)
+        /// <summary>
+        /// Re-applies <paramref name="config"/>'s sprites with <paramref name="loadoutKey"/>
+        /// active — or with the base art when it is null or names no loadout.
+        ///
+        /// Deliberately the SAME code path as the initial bind rather than a swap that
+        /// reaches in and replaces four sets: the fallback chain (walk falls back to idle,
+        /// chase to walk, attack to cast, …) is what decides what a state without art shows,
+        /// and a second implementation of it would answer differently the moment one of the
+        /// six states a loadout does not override happened to be empty.
+        /// </summary>
+        public static bool ApplyLoadout(GameObject go, EntityAssetConfig config, string loadoutKey)
+        {
+            if (go == null || config == null)
+                return false;
+            return ApplyVisuals(go, config, config.FindLoadout(loadoutKey));
+        }
+
+        /// <summary>
+        /// The loadout's override for <paramref name="state"/> if it has one, else the base
+        /// art. Written as one call per state so the fallback chain below reads exactly as it
+        /// did before loadouts existed.
+        /// </summary>
+        private static DirectionalAnimator.DirectionalSpriteSet BuildStateSet(
+            Loadout loadout, string state,
+            DirectionalSprites baseDirectional, List<Sprite> baseSheets,
+            EntitySheetDirectionLayout layout, out bool usesFourDirectionalLayout)
+        {
+            LoadoutStateSheets over = loadout?.Find(state);
+            if (over != null)
+            {
+                var overridden = BuildSet(over.directional, over.sheets, layout,
+                                          out usesFourDirectionalLayout);
+                // An override that resolved to nothing is authoring debris, not an
+                // instruction to blank the state — fall through to the base art.
+                if (HasFrames(overridden))
+                    return overridden;
+            }
+            return BuildSet(baseDirectional, baseSheets, layout, out usesFourDirectionalLayout);
+        }
+
+        private static bool ApplyVisuals(GameObject go, EntityAssetConfig assetConfig,
+                                         Loadout loadout = null)
         {
             var renderer = go.GetComponentInChildren<SpriteRenderer>();
             if (renderer == null)
@@ -38,31 +79,38 @@ namespace Valkur.Gameplay
 
             EntitySheetDirectionLayout layout = assetConfig.directionLayout;
 
-            var idleSet = BuildSet(assetConfig.idle, assetConfig.idleSheets, layout, out bool idleUsesFourDirectionalLayout);
+            var idleSet = BuildStateSet(loadout, "idle", assetConfig.idle, assetConfig.idleSheets,
+                                        layout, out bool idleUsesFourDirectionalLayout);
             if (!HasFrames(idleSet))
                 return false;
 
-            var walkSet = BuildSet(assetConfig.walk, assetConfig.walkSheets, layout, out bool walkUsesFourDirectionalLayout);
+            var walkSet = BuildStateSet(loadout, "walk", assetConfig.walk, assetConfig.walkSheets,
+                                        layout, out bool walkUsesFourDirectionalLayout);
             if (!HasFrames(walkSet))
                 walkSet = idleSet;
 
-            var chaseSet = BuildSet(assetConfig.chase, assetConfig.chaseSheets, layout, out _);
+            var chaseSet = BuildStateSet(loadout, "chase", assetConfig.chase, assetConfig.chaseSheets,
+                                         layout, out _);
             if (!HasFrames(chaseSet))
                 chaseSet = walkSet;
 
-            var castSet = BuildSet(assetConfig.cast, assetConfig.castSheets, layout, out _);
+            var castSet = BuildStateSet(loadout, "cast", assetConfig.cast, assetConfig.castSheets,
+                                        layout, out _);
             if (!HasFrames(castSet))
                 castSet = walkSet;
 
-            var attackSet = BuildSet(assetConfig.attack, assetConfig.attackSheets, layout, out _);
+            var attackSet = BuildStateSet(loadout, "attack", assetConfig.attack, assetConfig.attackSheets,
+                                          layout, out _);
             if (!HasFrames(attackSet))
                 attackSet = castSet;
 
-            var damageSet = BuildSet(assetConfig.damage, assetConfig.damageSheets, layout, out _);
+            var damageSet = BuildStateSet(loadout, "damage", assetConfig.damage, assetConfig.damageSheets,
+                                          layout, out _);
             if (!HasFrames(damageSet))
                 damageSet = idleSet;
 
-            var deathSet = BuildSet(assetConfig.death, assetConfig.deathSheets, layout, out _);
+            var deathSet = BuildStateSet(loadout, "death", assetConfig.death, assetConfig.deathSheets,
+                                         layout, out _);
             if (!HasFrames(deathSet))
                 deathSet = idleSet;
 
@@ -70,13 +118,20 @@ namespace Valkur.Gameplay
             // already does that for Recover, and doing it twice would make an entity that
             // genuinely has no recover art indistinguishable from one whose art failed to
             // resolve when reading the animator in the inspector.
-            var recoverSet = BuildSet(assetConfig.recover, assetConfig.recoverSheets, layout, out _);
+            var recoverSet = BuildStateSet(loadout, "recover", assetConfig.recover,
+                                           assetConfig.recoverSheets, layout, out _);
 
             bool preferCardinalDirectionSampling = idleUsesFourDirectionalLayout || walkUsesFourDirectionalLayout;
             animator.SetSpriteSets(idleSet, walkSet, chaseSet, castSet, attackSet, damageSet, deathSet, preferCardinalDirectionSampling);
             animator.SetRecoverSprites(recoverSet);
-            animator.SetAttackVariants(BuildAttackVariants(assetConfig, layout));
-            animator.SetVariants(DirectionalAnimator.AnimState.Cast, BuildCastVariants(assetConfig, layout));
+            var attackSets = BuildAttackVariants(assetConfig, layout, out var attackSpellKeys,
+                                                out var attackPacing);
+            animator.SetVariants(DirectionalAnimator.AnimState.Attack, attackSets,
+                                 attackSpellKeys, attackPacing);
+            var castSets = BuildCastVariants(assetConfig, layout, out var castSpellKeys,
+                                             out var castPacing);
+            animator.SetVariants(DirectionalAnimator.AnimState.Cast, castSets,
+                                 castSpellKeys, castPacing);
             animator.SetAnimationSpeedMultiplier(assetConfig.scaleConfig.animationSpeedMultiplier);
             var initialFrame = animator.PeekFirstFrame(idleSet);
             if (initialFrame != null)
@@ -171,23 +226,51 @@ namespace Valkur.Gameplay
         /// what every entity but the knight does today.
         /// </summary>
         private static List<DirectionalAnimator.DirectionalSpriteSet> BuildAttackVariants(
-            EntityAssetConfig assetConfig, EntitySheetDirectionLayout layout)
+            EntityAssetConfig assetConfig, EntitySheetDirectionLayout layout,
+            out List<IReadOnlyList<string>> spellKeys,
+            out List<DirectionalAnimator.VariantPacing> pacing)
         {
+            spellKeys = null;
+            pacing = null;
             if (assetConfig.attackVariants == null || assetConfig.attackVariants.Count == 0)
                 return null;
 
             var sets = new List<DirectionalAnimator.DirectionalSpriteSet>(assetConfig.attackVariants.Count);
+            // Appended in lockstep with `sets`, for the reason BuildCastVariants gives: the
+            // loop drops variants that resolved to no frames, so a table indexed by the
+            // authored list would point one variant off from the first empty one onwards.
+            var keys = new List<IReadOnlyList<string>>(assetConfig.attackVariants.Count);
+            var paces = new List<DirectionalAnimator.VariantPacing>(assetConfig.attackVariants.Count);
+            bool anyReserved = false;
+
             for (int i = 0; i < assetConfig.attackVariants.Count; i++)
             {
                 AttackVariant variant = assetConfig.attackVariants[i];
                 if (variant == null) continue;
 
                 var set = BuildSet(variant.directional, variant.sheets, layout, out _);
-                if (HasFrames(set)) sets.Add(set);
+                if (!HasFrames(set)) continue;
+
+                sets.Add(set);
+                keys.Add(variant.spellKeys);
+                paces.Add(PacingOf(variant.animationSpeedMultiplier, variant.holdLastFrame));
+                anyReserved |= variant.IsReservedForSpell;
             }
 
-            return sets.Count > 0 ? sets : null;
+            if (sets.Count == 0) return null;
+            if (anyReserved) spellKeys = keys;
+            pacing = paces;
+            return sets;
         }
+
+        /// <summary>One variant's pacing, with a zero or negative multiplier read as the
+        /// neutral 1x — an unset float on an asset authored before the field existed.</summary>
+        private static DirectionalAnimator.VariantPacing PacingOf(float speed, bool hold)
+            => new DirectionalAnimator.VariantPacing
+            {
+                SpeedMultiplier = speed > 0f ? speed : 1f,
+                HoldLastFrame = hold,
+            };
 
         /// <summary>
         /// Same, for the casting animations. Kept a separate method rather than a generic
@@ -196,22 +279,42 @@ namespace Valkur.Gameplay
         /// doc for why sharing a base would change how the shipped attack variants serialize.
         /// </summary>
         private static List<DirectionalAnimator.DirectionalSpriteSet> BuildCastVariants(
-            EntityAssetConfig assetConfig, EntitySheetDirectionLayout layout)
+            EntityAssetConfig assetConfig, EntitySheetDirectionLayout layout,
+            out List<IReadOnlyList<string>> spellKeys,
+            out List<DirectionalAnimator.VariantPacing> pacing)
         {
+            spellKeys = null;
+            pacing = null;
             if (assetConfig.castVariants == null || assetConfig.castVariants.Count == 0)
                 return null;
 
             var sets = new List<DirectionalAnimator.DirectionalSpriteSet>(assetConfig.castVariants.Count);
+            // Appended in lockstep with `sets`, NOT indexed by the authored list: the loop
+            // below drops any variant that resolved to no frames, so the two lists would
+            // slide apart by one from the first empty slot onwards and every spell after it
+            // would reserve its neighbour's animation.
+            var keys = new List<IReadOnlyList<string>>(assetConfig.castVariants.Count);
+            var paces = new List<DirectionalAnimator.VariantPacing>(assetConfig.castVariants.Count);
+            bool anyReserved = false;
+
             for (int i = 0; i < assetConfig.castVariants.Count; i++)
             {
                 CastVariant variant = assetConfig.castVariants[i];
                 if (variant == null) continue;
 
                 var set = BuildSet(variant.directional, variant.sheets, layout, out _);
-                if (HasFrames(set)) sets.Add(set);
+                if (!HasFrames(set)) continue;
+
+                sets.Add(set);
+                keys.Add(variant.spellKeys);
+                paces.Add(PacingOf(variant.animationSpeedMultiplier, variant.holdLastFrame));
+                anyReserved |= variant.IsReservedForSpell;
             }
 
-            return sets.Count > 0 ? sets : null;
+            if (sets.Count == 0) return null;
+            if (anyReserved) spellKeys = keys;
+            pacing = paces;
+            return sets;
         }
 
         private static bool HasDirectionalSprites(DirectionalSprites d)

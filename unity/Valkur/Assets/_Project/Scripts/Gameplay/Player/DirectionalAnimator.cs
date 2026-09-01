@@ -133,6 +133,26 @@ namespace Valkur.Gameplay
         // AttackVariant's own doc-comment exists to complain about. A state with no entry
         // resolves to its single set exactly as before.
         private DirectionalSpriteSet[][] _variantsByState;
+        /// <summary>Per state, per variant, the spell keys that variant is reserved for.
+        /// Index-aligned with <see cref="_variantsByState"/> — installed in the same call,
+        /// because the binder DROPS variants that resolved to no frames and an index built
+        /// from the unfiltered authored list would point one variant off.</summary>
+        private string[][][] _variantSpellKeysByState;
+        /// <summary>Per state, per variant: playback speed and whether the last frame holds.
+        /// Index-aligned with <see cref="_variantsByState"/> for the same reason the spell
+        /// keys are — installed in the same call, after the binder has dropped the empties.
+        /// </summary>
+        private VariantPacing[][] _variantPacingByState;
+
+        /// <summary>How one variant is paced. A struct so an uninstalled table costs nothing
+        /// and a missing row reads as the neutral 1x, non-holding default.</summary>
+        public struct VariantPacing
+        {
+            public float SpeedMultiplier;
+            public bool HoldLastFrame;
+
+            public static VariantPacing Default => new VariantPacing { SpeedMultiplier = 1f };
+        }
         private int _activeVariant = -1;
 
         public AnimState CurrentState => _currentState;
@@ -233,11 +253,17 @@ namespace Valkur.Gameplay
         /// seven-argument method keeps compiling and behaving identically, and a state that
         /// never gets variants resolves to its single set as before.
         /// </summary>
-        public void SetVariants(AnimState state, IReadOnlyList<DirectionalSpriteSet> variants)
+        public void SetVariants(AnimState state, IReadOnlyList<DirectionalSpriteSet> variants,
+                                IReadOnlyList<IReadOnlyList<string>> variantSpellKeys = null,
+                                IReadOnlyList<VariantPacing> variantPacing = null)
         {
             int stateCount = Enum.GetValues(typeof(AnimState)).Length;
             if (_variantsByState == null || _variantsByState.Length != stateCount)
                 _variantsByState = new DirectionalSpriteSet[stateCount][];
+            if (_variantSpellKeysByState == null || _variantSpellKeysByState.Length != stateCount)
+                _variantSpellKeysByState = new string[stateCount][][];
+            if (_variantPacingByState == null || _variantPacingByState.Length != stateCount)
+                _variantPacingByState = new VariantPacing[stateCount][];
 
             int index = (int)state;
             if (index < 0 || index >= stateCount)
@@ -246,6 +272,8 @@ namespace Valkur.Gameplay
             if (variants == null || variants.Count == 0)
             {
                 _variantsByState[index] = null;
+                _variantSpellKeysByState[index] = null;
+                _variantPacingByState[index] = null;
             }
             else
             {
@@ -253,9 +281,161 @@ namespace Valkur.Gameplay
                 for (int i = 0; i < variants.Count; i++)
                     copy[i] = variants[i];
                 _variantsByState[index] = copy;
+
+                _variantSpellKeysByState[index] = CopySpellKeys(variants.Count, variantSpellKeys);
+                _variantPacingByState[index] = CopyPacing(variants.Count, variantPacing);
             }
 
             _activeVariant = -1;
+        }
+
+        /// <summary>
+        /// Defensive copy of the reservation table, padded or truncated to the variant count
+        /// so a caller that supplies a shorter list cannot make the two arrays disagree —
+        /// every lookup below indexes both with the same integer.
+        /// </summary>
+        private static string[][] CopySpellKeys(int variantCount,
+                                                IReadOnlyList<IReadOnlyList<string>> source)
+        {
+            if (source == null) return null;
+
+            string[][] copy = null;
+            for (int i = 0; i < variantCount && i < source.Count; i++)
+            {
+                IReadOnlyList<string> keys = source[i];
+                if (keys == null || keys.Count == 0) continue;
+
+                copy ??= new string[variantCount][];
+                var row = new string[keys.Count];
+                for (int k = 0; k < keys.Count; k++)
+                    row[k] = keys[k];
+                copy[i] = row;
+            }
+            return copy;
+        }
+
+        /// <summary>
+        /// Defensive copy of the pacing table, padded to the variant count. A row left at
+        /// its default is the neutral 1x non-holding pacing, so a caller may supply a shorter
+        /// list or none at all and every variant still answers.
+        /// </summary>
+        private static VariantPacing[] CopyPacing(int variantCount,
+                                                  IReadOnlyList<VariantPacing> source)
+        {
+            if (source == null) return null;
+
+            var copy = new VariantPacing[variantCount];
+            for (int i = 0; i < variantCount; i++)
+            {
+                copy[i] = i < source.Count && source[i].SpeedMultiplier > 0f
+                    ? source[i]
+                    : VariantPacing.Default;
+            }
+            return copy;
+        }
+
+        /// <summary>
+        /// How <paramref name="index"/> of <paramref name="state"/> is paced, or the neutral
+        /// default. Public so a caller sizing an action's window can ask rather than assume.
+        /// </summary>
+        public VariantPacing PacingOf(AnimState state, int index)
+        {
+            int i = (int)state;
+            VariantPacing[] table = _variantPacingByState != null && i >= 0 &&
+                                    i < _variantPacingByState.Length
+                ? _variantPacingByState[i]
+                : null;
+            return table != null && index >= 0 && index < table.Length
+                ? table[index]
+                : VariantPacing.Default;
+        }
+
+        /// <summary>
+        /// Copies every variant table from <paramref name="source"/> — the sets, the spell
+        /// reservations and the pacing — plus the recover set.
+        ///
+        /// For a rig that mirrors a live character rather than being bound from a definition.
+        /// The Spells Editor's preview is the case: it hand-copies the seven base sets, which
+        /// is lossy in exactly the way that matters to it. Without the variants,
+        /// <c>VariantForSpell</c> answers -1 for everything, so every spell previewed the
+        /// character's BASE cast pose and the pinning of an animation to a spell was
+        /// invisible in the one screen built for looking at spells.
+        /// </summary>
+        public void CopyVariantsFrom(DirectionalAnimator source)
+        {
+            if (source == null) return;
+
+            int stateCount = Enum.GetValues(typeof(AnimState)).Length;
+            for (int i = 0; i < stateCount; i++)
+            {
+                var state = (AnimState)i;
+                DirectionalSpriteSet[] sets = source.VariantsFor(state);
+                if (sets == null || sets.Length == 0)
+                {
+                    SetVariants(state, null);
+                    continue;
+                }
+
+                var keys = new List<IReadOnlyList<string>>(sets.Length);
+                var pacing = new List<VariantPacing>(sets.Length);
+                for (int v = 0; v < sets.Length; v++)
+                {
+                    string[] row = source.SpellKeysFor(state) != null && v < source.SpellKeysFor(state).Length
+                        ? source.SpellKeysFor(state)[v]
+                        : null;
+                    keys.Add(row);
+                    pacing.Add(source.PacingOf(state, v));
+                }
+                SetVariants(state, sets, keys, pacing);
+            }
+
+            SetRecoverSprites(source.RecoverSprites);
+            SetAnimationSpeedMultiplier(source.AnimationSpeedMultiplier);
+        }
+
+        /// <summary>
+        /// Index of the variant reserved for <paramref name="spellKey"/>, or -1 when no
+        /// variant claims it and the caller should fall back to its own rotation.
+        ///
+        /// First match wins: two variants claiming the same spell is an authoring mistake,
+        /// and picking the earlier one deterministically beats alternating between them.
+        /// </summary>
+        public int VariantForSpell(AnimState state, string spellKey)
+        {
+            if (string.IsNullOrEmpty(spellKey)) return -1;
+
+            string[][] table = SpellKeysFor(state);
+            if (table == null) return -1;
+
+            for (int i = 0; i < table.Length; i++)
+            {
+                string[] keys = table[i];
+                if (keys == null) continue;
+                for (int k = 0; k < keys.Length; k++)
+                {
+                    if (string.Equals(keys[k], spellKey, StringComparison.OrdinalIgnoreCase))
+                        return i;
+                }
+            }
+            return -1;
+        }
+
+        /// <summary>
+        /// True when this variant is claimed by at least one spell, and therefore must NOT be
+        /// handed out by a generic rotation — see <c>CastVariant.IsReservedForSpell</c>.
+        /// </summary>
+        public bool IsVariantReserved(AnimState state, int index)
+        {
+            string[][] table = SpellKeysFor(state);
+            return table != null && index >= 0 && index < table.Length && table[index] != null;
+        }
+
+        private string[][] SpellKeysFor(AnimState state)
+        {
+            int i = (int)state;
+            return _variantSpellKeysByState != null && i >= 0 && i < _variantSpellKeysByState.Length
+                ? _variantSpellKeysByState[i]
+                : null;
         }
 
         /// <summary>
@@ -297,6 +477,24 @@ namespace Valkur.Gameplay
         private float EffectiveFrameInterval => frameInterval / _animationSpeedMultiplier;
 
         /// <summary>
+        /// The interval one frame of <paramref name="variant"/> of <paramref name="state"/>
+        /// runs for — the entity's rate, divided again by the variant's own multiplier.
+        ///
+        /// Two multipliers rather than one because they answer different questions: the
+        /// entity's says how fast THIS CREATURE moves, and is tuned once per monster; the
+        /// variant's says how long THIS ANIMATION may take, and exists because an action can
+        /// be shorter than the art drawn for it. The dash is the case that forced it — the
+        /// body teleports in a single physics step and its wake lasts 0.14 s, against eight
+        /// charge frames that read for 1.2 s at the normal rate.
+        /// </summary>
+        private float FrameIntervalFor(AnimState state, int variant)
+        {
+            float variantSpeed = PacingOf(state, variant).SpeedMultiplier;
+            if (variantSpeed <= 0f) variantSpeed = 1f;
+            return EffectiveFrameInterval / variantSpeed;
+        }
+
+        /// <summary>
         /// How long one full pass of a state's animation takes, in seconds, AT THIS
         /// ENTITY'S current animation speed.
         ///
@@ -309,7 +507,9 @@ namespace Valkur.Gameplay
         public float GetStateLength(AnimState state, int attackVariant = -1)
         {
             Sprite[] frames = ResolveFrames(state, _currentDirection, attackVariant);
-            return frames == null || frames.Length == 0 ? 0f : frames.Length * EffectiveFrameInterval;
+            return frames == null || frames.Length == 0
+                ? 0f
+                : frames.Length * FrameIntervalFor(state, attackVariant);
         }
 
         /// <summary>
@@ -340,7 +540,7 @@ namespace Valkur.Gameplay
         private void Update()
         {
             _frameTimer += Time.deltaTime;
-            float interval = EffectiveFrameInterval;
+            float interval = FrameIntervalFor(_currentState, _activeVariant);
             if (_frameTimer < interval) return;
             _frameTimer -= interval;
 
@@ -358,6 +558,22 @@ namespace Valkur.Gameplay
             => SetState(state, direction, _activeVariant);
 
         /// <summary>
+        /// True while the active playback is running its frames back to front. Read by
+        /// <c>AdvanceFrame</c> and <c>RefreshCurrentFrame</c>, which map the cursor rather
+        /// than counting down — so the loop, the hold and the frame clock all keep working
+        /// unchanged and only the sprite they land on differs.
+        /// </summary>
+        private bool _playReversed;
+
+        /// <summary>Which frame the cursor is pointing at, once playback direction is
+        /// applied. Forward playback is the identity.</summary>
+        private int FrameAt(int cursor, int length)
+        {
+            int clamped = Mathf.Clamp(cursor, 0, length - 1);
+            return _playReversed ? length - 1 - clamped : clamped;
+        }
+
+        /// <summary>
         /// Same, choosing which attack animation plays. <paramref name="attackVariant"/> is
         /// an index into <see cref="SetAttackVariants"/>; -1 (or an out-of-range value)
         /// falls back to the single attack set.
@@ -367,6 +583,20 @@ namespace Valkur.Gameplay
         /// silently keeps playing the first one's frames.
         /// </summary>
         public void SetState(AnimState state, Direction direction, int attackVariant)
+            => SetState(state, direction, attackVariant, reversed: false);
+
+        /// <summary>
+        /// Same, choosing playback direction. <paramref name="reversed"/> plays the frames
+        /// back to front, for a move that is literally the undo of another one: the dwarf's
+        /// sheathe is his draw run backwards, and there is one sheet because there is one
+        /// motion. Forward is the default, so every existing caller is unchanged.
+        ///
+        /// A CHANGED DIRECTION OF PLAY counts as a state change, for the same reason a
+        /// changed variant does: drawing and then stowing is Cast-to-Cast on the same
+        /// variant and the same facing, so without this the guard below returns early and
+        /// the sheathe silently keeps playing the draw.
+        /// </summary>
+        public void SetState(AnimState state, Direction direction, int attackVariant, bool reversed)
         {
             bool stateChanged = state != _currentState;
             bool directionChanged = direction != _currentDirection;
@@ -374,13 +604,15 @@ namespace Valkur.Gameplay
             // three different ways, and without this a second cast in the same direction
             // with a different animation returns early and keeps playing the first one.
             bool variantChanged = VariantsFor(state) != null && attackVariant != _activeVariant;
+            bool reversedChanged = reversed != _playReversed;
 
             _activeVariant = attackVariant;
+            _playReversed = reversed;
 
-            if (!stateChanged && !directionChanged && !variantChanged)
+            if (!stateChanged && !directionChanged && !variantChanged && !reversedChanged)
                 return;
 
-            if (variantChanged && !stateChanged)
+            if ((variantChanged || reversedChanged) && !stateChanged)
             {
                 // Same state, different animation: the frame cursor has to go back to 0 or
                 // the new variant starts mid-cycle. Handled here because the block below
@@ -452,7 +684,10 @@ namespace Valkur.Gameplay
             // Walk/Chase skip frame 0 (standing pose).
             if ((_currentState == AnimState.Walk || _currentState == AnimState.Chase) && idx < 1)
                 idx = 1;
-            ApplyFrame(frames[idx]);
+            // Mapped like AdvanceFrame does, or turning mid-sheathe would jump the character
+            // to the mirror-image frame of the one it is on — visible as the draw snapping
+            // back to its start every time the facing sector changes.
+            ApplyFrame(frames[FrameAt(idx, frames.Length)]);
         }
 
         /// <summary>
