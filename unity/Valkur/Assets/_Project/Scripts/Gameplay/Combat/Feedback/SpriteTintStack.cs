@@ -23,6 +23,14 @@ namespace Valkur.Gameplay.Combat
         /// outside it most of the time.
         /// </summary>
         Arcane = 8,
+
+        /// <summary>
+        /// The body catching the light of a weapon being drawn or stowed. A short punch, not
+        /// a state: <c>WeaponSwapFlashFX</c> owns it for the length of its own cycle and
+        /// clears it in <c>OnDestroy</c>, so a swap interrupted by a zone change or a death
+        /// cannot leave the character glowing.
+        /// </summary>
+        Equip = 9,
     }
 
     /// <summary>
@@ -46,11 +54,13 @@ namespace Valkur.Gameplay.Combat
     [DisallowMultipleComponent]
     public sealed class SpriteTintStack : MonoBehaviour
     {
-        // Must equal the number of TintLayer values: the enum indexes _layers directly and
-        // feeds a 1<<layer bitmask, so a new value without a matching bump here is an
-        // IndexOutOfRange on the first Set. SpriteTintStackTests.EveryLayerHasItsOwnSlot
-        // fails loudly if the two drift apart.
-        private const int LAYER_COUNT = 9;
+        // Derived from the enum rather than typed out, because the literal it replaces was a
+        // hand-maintained duplicate of a fact the compiler already knows — and the failure
+        // mode was an IndexOutOfRange on the FIRST Set of whatever new layer forgot to bump
+        // it, i.e. in the new effect rather than here. Adding TintLayer.Equip walked straight
+        // into it. Still a fixed width per instance: the mask below is an int, so 32 layers
+        // is the real ceiling and SpriteTintStackTests guards it.
+        private static readonly int LAYER_COUNT = System.Enum.GetValues(typeof(TintLayer)).Length;
 
         private readonly Color[] _layers = new Color[LAYER_COUNT];
         private int _activeMask;
