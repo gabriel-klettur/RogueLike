@@ -1,0 +1,10 @@
+{
+  "elf_archer_attack": {
+    "drop": [4],
+    "_why_drop": "Raw box 4 is the ARROW in flight, 147x23px of sliver sitting a full cell to the right of the frame that looses it. It is not a frame and it is not part of one: the projectile is spawned by the game, and baking it into frame 3 would inflate that frame's canvas by 190px of empty air, which build_player_frames pads into every one of the state's 8 frames."
+  },
+  "elf_archer_cast": {
+    "merge": [[2, 3]],
+    "_why_merge": "Raw box 3 is the summoned bow materialising in frame 2 - detached from the elf on purpose, since the whole point of the pose is that the weapon is not in his hand yet. Two cores, one frame."
+  }
+}

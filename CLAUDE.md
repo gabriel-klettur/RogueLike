@@ -488,6 +488,75 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   **3.67 x strength x lifetime** from where they started — the pollen haze wandering 4.4 units
   on an authored 0.22. Any bound over noise has to be shaped as `strength x life`, not as a
   constant, or it under-reserves by a unit and more on the long-lived hazes.
+- **`NoiseModule.strengthX/Y/Z` are ignored unless `separateAxes` is set FIRST.** Without it
+  the module reads the scalar `strength`, which defaults to **1** — so the old snow, authored
+  as 0.4 horizontal and 0.05 vertical, was actually being shoved a full unit on every axis
+  including up. Nothing warns; the flakes just do not fall the way the numbers say.
+- **A weather effect is a STACK of systems, never one.** Every drop in a single-system
+  downpour is the same size, brightness and speed, so the eye has no way to resolve distance
+  and reads the whole thing as a decal on the lens — which is exactly how rain, snow and wind
+  looked for as long as each was one `ParticleSystem`. Each now builds three to five
+  `WeatherLayer` depth slices (far/mid/near, plus rain's ground splashes and haze, snow's
+  settled specks, wind's leaves), and the near slices are deliberately large, faint and sparse.
+- **Unity's stretched billboard aligns the quad's U axis with VELOCITY, so a streak texture
+  must be WIDER than it is tall.** Rain shipped a 4x16 *vertical* strip in `Stretch` mode, so
+  every drop was smeared across its own fall instead of along it. `WeatherTextures.Streak`
+  draws horizontally and `WeatherEffectLayerTests` pins it.
+- **A crosswind DISPLACES a curtain, it does not rotate it — and the displacement grows with
+  time aloft.** Emitting from a slab exactly as wide as the viewport leaves the upwind third
+  of the screen dry while everything piles up downwind. `WeatherEffect.LayoutFallingLayer`
+  widens the slab upwind by the full drift, which then thins on-screen density by that same
+  factor — so the rate is multiplied back up by `WeatherLayer.SpawnWidthScale`. Both halves
+  are needed: widening alone makes turning the wind up look like the rain stopping.
+  It also clamps the widening at 1.5 screens and shortens the lifetime to whichever edge the
+  particle reaches first, because snow at ~1 u/s is airborne for 13 s and its honest storm
+  drift is over a hundred units, nearly all of it off-screen.
+- **Snow accumulation answers two questions with two mechanisms, and one alone is a colour
+  grade.** WHERE is `SnowSplatMap`, a camera-following world-space R8 buffer that each
+  expiring flake stamps with a soft additive disc; HOW it sits on a surface is the sprite's
+  OWN alpha, walked up to six texels up to find the distance to open sky. The shader
+  multiplies them, so the local depth sets how far the cap grows DOWN from the silhouette's
+  top edge — a dusting is a one-texel crest, a deep drift creeps five or six texels down the
+  roof. Before the map existed this was one global scalar, and no tuning makes a single
+  scalar read as snow settling: it has no history, so there are no drifts, the wind piles
+  nothing anywhere, and thawing is a slider going down instead of patches shrinking.
+  Measured: with the buffer stamped at (5,5) and the global at 1.0, a wall there reads
+  0.784 / 0.769 / 0.749 / 0.400 down from its top row while an identical wall 25 units away
+  on unstamped ground stays at its bare 0.188 — and at global 0.2 the same drift is one
+  crest row. Three constraints hold it up. Two live in the `.spriteatlas` files, not in the
+  shader: `enableRotation: 0` is the only reason "up in texture space" is up in the world,
+  and `padding: 2` is safe only because the distance is a MINIMUM over the samples, so the
+  transparent padding always wins before a read can reach a neighbour. The third is the
+  role, per material (`WorldSpriteMaterials.WorldWithSnow`): **Blanket** for Ground/
+  FloorDecals, which face the sky across their whole area in a top-down projection, **Cap**
+  for anything with a silhouette, **None** for entities. Getting Blanket onto a wall paints
+  its whole face white and reads as a missing texture.
+- **In Edit Mode a component whose `Awake` never ran never receives `OnDestroy` either.**
+  Unity only calls Awake on a component added in Play Mode (or one marked `[ExecuteAlways]`),
+  and it skips the matching teardown for the same reason — so a test that adds a component,
+  destroys the object and asserts on what teardown released is measuring nothing at all, and
+  passes or fails for unrelated reasons. `SnowSplatMap` pairs `EnsureBuilt()` with
+  `ReleaseBuffer()` for exactly this: Play Mode reaches them through Awake/OnDestroy, tests
+  call them directly. Related, and it bit in the same hour: `Destroy` is an outright ERROR in
+  Edit Mode, so a singleton guard that destroys the loser must instead leave it inert.
+- **A landing is an expiring particle, never a collision.** Unity's particle collision works
+  and would be confidently wrong here: a building's collider is its FOOTPRINT while its
+  sprite is drawn rising above it, so colliding flakes pile along the base of every house
+  instead of on its roof. The randomised lifetimes already stop flakes at a spread of
+  heights, and the per-sprite alpha cap is what decides a landing over a roof sits ON the
+  roof. Related: `SnowAccumulation.SetAmount` has to fill the map as well as set the scalar,
+  because the two multiply — `snow 1` over an empty buffer would change nothing on screen.
+- **A static reset the Domain-Reload ratchet accepts is `stsfld` or `field.Clear()`, nothing
+  else.** `DomainReloadStaticResetTests` reads the hook's raw IL, so
+  `System.Array.Clear(_cache, 0, n)` — which passes the field as an ARGUMENT — counts as no
+  reset at all and fails the suite. A `static readonly` array cache therefore cannot be reset
+  in a way the scanner recognises: drop the `readonly` and assign a fresh array.
+- **Weather particle materials are unlit, so the day/night Global Light 2D reaches none of
+  them.** Midnight rain renders at noon brightness over a world at a few percent of it. The
+  cycle's colour is folded into each layer's START colour (`WeatherLayer.SetTint`), which is
+  the one point `colorOverLifetime` multiplies through. Snow takes far less of it than rain
+  (`AmbientResponse` 0.35-0.55 vs 0.95): a snowfield is the brightest thing in a night scene,
+  and a flake tinted down to the ambient simply vanishes.
 - **`ParticleSystem.Simulate` PAUSES the system it advances, and a system that has never played
   swallows `Emit`.** Both bite in EditMode tests: without a `Play()` before each `Simulate` the
   second step of a test measures a frozen emitter and passes for the wrong reason, and a probe
@@ -676,29 +745,47 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
 
 ## Player character pipeline (2 directions)
 
-`dwarf`, `barbarian` and `elven` are built from **side-view art drawn facing right, in one
-direction**, and mirrored. `mague` and `valkyrie` still run on the legacy 8-direction
-strips. The two pipelines coexist on purpose and have different owners:
+`dwarf`, `barbarian` and `elven` are built from **side-view art drawn in ONE direction**,
+and mirrored. Which direction is a per-sheet fact to be measured, not assumed — wave4 faces
+west, wave5 faces east. `mague` and `valkyrie` still run on the legacy 8-direction strips. The two pipelines coexist on purpose and have different owners:
 
 | | wave3 (dwarf, barbarian, elven) | legacy (mague, valkyrie) |
 |---|---|---|
-| Source | `staging/players/<char>/` (gitignored, repo root); elven is `elf_wave4/` | `Art/Characters/<key>/<key>_<state>.png` |
+| Source | `staging/players/<char>/` (gitignored, repo root); elven is `elf_wave4/` **plus `elf_wave5/`**, dwarf is `knight_wave4/` **plus `knight_wave4_armed/`** | `Art/Characters/<key>/<key>_<state>.png` |
 | Cutter | `tools/atlas/wave3/build_player_frames.py` | — |
 | Binder | `PlayerFramesImporter` (`Valkur > Players > Import Frame Sheets`) | `PlayerCharacterAssetBinder` (`Valkur > Setup > Rebuild Player Character Assets`) |
-| On disk | one tightly-cropped PNG per frame, `<key>_<state>_<r\|l><i>.png` | one 5120x128 strip per state, 128 px cells |
+| On disk | one tightly-cropped PNG per frame under `Art/Characters/<key>/<state>/`, named `<key>_<state>_<e\|w><i>.png` | one 5120x128 strip per state at `Art/Characters/<key>/`, 128 px cells |
 | Record | `tools/atlas/generated/player_frames_manifest_wave3.json` | — |
 
 ```text
 slice_prop_sheet.py --all --sheet-dir staging/players/<char> --out <slices>
+#   elf_wave5 also needs --config tools/atlas/wave5/elf_wave5.slices.json: one sheet
+#   draws the loosed ARROW as its own object, another the summoned bow detached from
+#   the hand conjuring it, and neither is a frame
 wave3/build_player_frames.py <slices>     # align, scale, mirror, write manifest
 Valkur > Players > Import Frame Sheets (Dry Run) then (Apply)
 ```
+
+Every staging folder feeds ONE slices directory — the builder walks all three players in a
+single pass and rewrites the whole manifest, so slicing only the new wave silently drops the
+other two. **Unless you pass `--only <player>`**, which builds just those and MERGES the
+result into the manifest on disk, leaving the other players' records untouched. Reach for it
+whenever another character's staging is mid-wave: a full run reissues every player from
+whatever happens to be staged at that moment, which is how an unrelated character gets
+resliced without its `--config` and quietly reshipped.
 
 - **The mirrored half is baked as its own sprite.** `DirectionalAnimator` never flips —
   `ChaseState` says so — so the importer fills all eight buckets from two. Each state's list
   is `framesPerDirection * 8` and repeats each sprite four or five times. `knight_red`
   already shipped this way.
-- **Which half is the mirror has to be MEASURED, and this wave's art faces WEST.** All three
+- **Facing is per SHEET, not per wave, and `elf_wave5` proves why.** The elf's archer and
+  bard sheets are drawn facing RIGHT while every wave4 sheet of the same character faces
+  LEFT, so `build_player_frames.py` keys facing off `EAST_FACING_SHEETS` rather than one
+  global constant. Measure it off the HEAD — the pointy ear points BACKWARD and the face
+  points forward — never off the silhouette or the weapon, and never off a whole-body
+  correlation against a known sheet (tried: the margin between a pose and its mirror is
+  under 0.05 NCC across differing poses, which is noise).
+- **Which half is the mirror has to be MEASURED, and the wave4 art faces WEST.** All three
   characters are drawn facing left, so the authored frames are the `_w` half and the `_e`
   half is their mirror; S/SE/E/NE/N take `_e`, NW/W/SW take `_w`. Getting it backwards is
   invisible everywhere except in play: `Direction.East` is +X (`DirectionalAnimator.FrameLogic`
@@ -710,7 +797,25 @@ Valkur > Players > Import Frame Sheets (Dry Run) then (Apply)
   that should have been read before assuming. `PlayerTwoDirectionRigTests` now pins the
   bucket/suffix contract and that the two halves really are mirrors of each other; it cannot
   pin which way the art points, so re-measure that by eye when a new wave is staged.
-- **`build_player_frames.py` scales each state off FRAME 0's foot-to-crown height.** Every
+- **A sheet that opens mid-pose declares a `REFERENCE_FRAME`, not a `SCALE_OVERRIDE`.**
+  Both wave5 unarmed casts break the frame-0 assumption in opposite directions, and both
+  are visible next to the idle: `elf_spellcasting_4` opens with the casting arm thrown
+  straight up, and `body_box` measures to the top of the raised HAND (478 px against the
+  344-346 px plateau frames 3,4,5,7 agree on), so normalising on it rendered the elf a head
+  short; `elf_spellcasting_5` opens in a deep crouch (309 px against the 397-403 px plateau
+  of frames 4,5,6) and rendered him oversized. Pointing the reference at a frame on the
+  plateau keeps the number a MEASUREMENT. Reach for the multiplier only when no frame of
+  the sheet is neutral. A head-correlation calibrator was written for this and deleted:
+  it returned 1.20x for `elf_punch`, which is shipped correct with no override, so it
+  failed its own control.
+- **`own_object_only`'s cell test has to be 2D.** On a 4x2 sheet the archer's bow is taller
+  than the gap between rows, so the bow drawn in the row ABOVE lands inside this frame's box
+  in the SAME COLUMN — an x-only ownership test waved it through as a brown arc floating over
+  the archer's head in two frames of eight. Nothing in waves 3-4 is tall enough to cross a
+  row, so it took a bow to find it; adding the row test changed ZERO of the 538 already-shipped
+  player sprites, which is how it was verified.
+- **`build_player_frames.py` scales each state off FRAME 0's foot-to-crown height** (unless
+  `REFERENCE_FRAME` says otherwise). Every
   sheet in the wave opens on a neutral standing pose, and that is the only frame whose height
   means "how big is this character" — the AI rendered each sheet at its own zoom. Both
   obvious alternatives fail, in opposite directions and measurably: the tallest bounding box
@@ -741,6 +846,138 @@ Valkur > Players > Import Frame Sheets (Dry Run) then (Apply)
   punches and three spellcasts, the dwarf's four unarmed attacks and the barbarian's two axe
   swings all render. Rotating, not randomising: a random pick repeats the same swing back to
   back about one time in N and reads as the animation having failed to change.
+- **A second look for the same character is a LOADOUT, not a second character.**
+  `EntityAssetConfig.loadouts` is a list of named override sets; each names only the states it
+  has art for and every other state keeps the base art. The dwarf ships `armed` (idle, walk,
+  chase, attack) from `staging/players/knight_wave4_armed/` and will never have an armed hurt,
+  death, recover or spellcast — nobody is going to redraw six more sheets so the character can
+  be hit while holding a sword. A second `EntityAssetConfig` would have to duplicate those six
+  (two copies drifting apart on the next import) or leave them empty and fall back to a
+  neighbour, which puts the character in the wrong POSE rather than merely the wrong hands.
+  The swap is `PlayerLoadoutController` calling `EntityAnimationBinder.ApplyLoadout`, which is
+  the SAME bind path as boot — the fallback chain (walk falls back to idle, chase to walk,
+  attack to cast) decides what an artless state shows, and a second implementation of it would
+  answer differently. `AnimState` is untouched: there is no "armed idle", there is idle drawn
+  with a sword, so every locomotion whitelist and revert path keeps working because none of
+  them can tell a swap happened. Toggled in game by the `weapon_toggle` spell
+  (`SpellType.WeaponLoadout`, **B**), whose `loadoutKey` names the loadout; an unknown key is
+  refused and logged rather than read as "unequip".
+- **A swap that replaces four sprite sets in one frame needs something over the top.**
+  Without it the character POPS from one set of hands to the other with nothing to read as a
+  cause. `WeaponSwapFlashFX` covers the cut: an additive bloom over the silhouette, a halo, a
+  band that SWEEPS along the body (up when drawing, down when stowing — the only piece that
+  knows the direction), an expanding ring and twinkling motes, plus the body's own colour
+  driven through `SpriteTintStack` on `TintLayer.Equip`. It is additive on purpose: on the
+  alpha material the brightest pixel a glow can make is its own colour, so a flash meant to
+  wash the body out cannot blow out. It FOLLOWS its owner rather than being parented, because
+  the toggle allows movement and parenting would inherit the entity scale — and scale a
+  `Light2D` radius with it. Adding `TintLayer.Equip` also walked straight into
+  `SpriteTintStack`'s hand-maintained `LAYER_COUNT = 9`, whose failure mode is an
+  `IndexOutOfRange` on the first `Set` of the NEW layer, i.e. inside the new effect rather
+  than in the stack; it is now derived from the enum.
+- **Every authored animation has a spell that plays it, and half of them could not.**
+  `SpellType.AnimationProbe` is an inert spell — its executor is deliberately empty — that
+  exists so an animation can be selected and watched in the Spells Editor. It was needed
+  because most animation states are unreachable from casting: idle/walk/chase belong to
+  locomotion, damage to the hit flow, death and recover to `DeathSequenceController`. The
+  dwarf ships one `anim_<state>` probe per sprite folder, `audience = None` so they sit in the
+  picker's "unassigned" tab rather than claiming to be player content, and
+  `AnimationProbeSpellTests` keys its coverage check off the FOLDERS on disk — which is what a
+  wave actually produces — so a new animation without a probe is a red test rather than
+  something nobody notices. Two things had to be fixed for the preview to mean anything:
+  `SpellDefinition.previewAnimState` (a string, because `AnimState` lives in `Valkur.Gameplay`
+  and `Valkur.Data` may not reference it — the constraint `LoadoutStateSheets.state` answers
+  the same way), and `DirectionalAnimator.CopyVariantsFrom`, because the preview rig
+  hand-copies the seven base sets and that copy is lossy in exactly the way that matters: with
+  no variants installed, `VariantForSpell` answered -1 for everything and EVERY spell previewed
+  the base cast pose. The `anim_armed_*` three are the honest exception — a loadout's
+  locomotion only exists while the loadout is worn, so they mirror whatever the live player is
+  wearing.
+- **A spell's animation state is DATA and it must reach the GAME, not only the preview.**
+  `SpellDefinition.animState` names one of the eight states; empty falls back to Attack for an
+  attack-routed spell and Cast otherwise. It shipped first as `previewAnimState`, read only by
+  the Spells Editor's preview panel — and that was the bug: LEFT CLICK with the editor open
+  does not drive the preview, it casts for real through `PollRedirectedPrimaryCast`, and
+  `TriggerCastAnimation` resolved the state from `usesAttackAnimation` alone. So nine of the
+  nineteen probes fell through to Cast, reserved no cast variant, and took whatever
+  `NextVariant` handed them: selecting "Anim: Die" cast a rotating spellcast. Entering an
+  arbitrary state needs TWO more things, and each is a separate way to break it — the revert
+  must hand control back from whatever state was entered (`_castAnimState`; the old whitelist
+  covered three, so a probe asking for `death` would have held the corpse pose forever), and
+  the locomotion override must hold off while a cast window is open, or a spell naming
+  Idle/Walk/Chase is overwritten on the very next frame and never renders. Normal casts are
+  untouched by both: they enter Cast or Attack, which locomotion never overrode anyway.
+- **Which animation state a spell plays is DATA, not a hard-coded key.**
+  `SpellDefinition.usesAttackAnimation` routes a spell through `AnimState.Attack` instead of
+  `AnimState.Cast` — a swing rather than a conjuring. It used to be a literal comparison
+  against `slash_regular`, true of exactly one spell, and the cost was invisible: on the dwarf
+  it made `punch` and `kick` UNREACHABLE. Nothing but the regular slash ever entered Attack,
+  and the regular slash is reserved for `armed_slash`, so `NextVariant(Attack)` was never
+  called and two authored animations rendered no frame anywhere in the game. Reservations for
+  an attack-routed spell are looked up among the `attackVariants`, so which animation it plays
+  is still pinned on the CHARACTER. Shipped today: `slash_regular` → `armed_slash`,
+  `vortex_push` → `punch`, `vortex_pull` → `kick`.
+- **A move that is the undo of another one plays the same sheet BACKWARDS.** The dwarf's
+  sheathe is his draw reversed — one motion, one sheet, read either way — so
+  `SetState(state, dir, variant, reversed)` maps the cursor through `FrameAt` instead of
+  counting down, and the loop, the `holdLastFrame` branch and the frame clock are inherited
+  unchanged. Two things make it work and both are easy to miss: a changed PLAYBACK DIRECTION
+  counts as a state change (drawing then stowing is Cast-to-Cast on the same variant and the
+  same facing, so without it the early-return swallows the sheathe and it replays the draw),
+  and `RefreshCurrentFrame` has to map too or turning mid-sheathe snaps to the mirror-image
+  frame. Who decides is `PlayerLoadoutController.LastSwapStowed`, not the spell: `weapon_toggle`
+  is the same spell in both directions and cannot tell you which way it went. The window is
+  one frame (`SwappedThisFrame`), which is exactly the gap between the executor running inside
+  `TryCastByKey` and `TriggerCastAnimation` running right after it.
+- **An action can be shorter than the art drawn for it, so a variant carries its own pacing.**
+  `animationSpeedMultiplier` and `holdLastFrame` on `AttackVariant`/`CastVariant` are a SECOND
+  multiplier beside the entity's: the entity's says how fast this creature moves and is tuned
+  once per monster, the variant's says how long this animation may take. The dash forced it —
+  in real gameplay `DashExecutor` teleports the body with a single `rb.MovePosition` and its
+  streak and ground wake last 0.14 s (`moveDuration` only drives the FX and the Spells Editor
+  preview, whose synthetic caster has no `Rigidbody2D`), against eight `charging_sprint`
+  frames that read for 1.2 s at the normal 0.15 s each. The dash's `charge` variant therefore
+  ships at **4x with `holdLastFrame`**: the lunge runs in 0.30 s, inside the 0.35 s cast
+  window, and the landing pose holds the remainder instead of the lunge starting over. Both
+  halves are load-bearing — `GetStateLength` multiplies by the variant's speed, so a window
+  sized from it would otherwise hold the pose four times longer than the animation runs, and
+  Cast/Attack LOOP by default (only Death played once), so a move that ends somewhere restarts
+  and reads as a stutter.
+- **A spell can RESERVE a cast variant, and a reserved variant leaves the rotation.**
+  `CastVariant.spellKeys` names the spells that always play that animation; the binder
+  installs the reservation table in the same `SetVariants` call as the sprite sets, because
+  it DROPS variants that resolved to no frames and an index computed from the authored list
+  would slide off from the first empty slot on. `PlayerController.ResolveCastVariant` asks
+  `VariantForSpell` first and only falls back to `NextVariant`, which now skips reserved
+  indices — both halves are needed and they are different statements: the claim is what makes
+  the pose always play for that spell, and leaving the pool is what stops the other four
+  spells borrowing a pose drawn for one. The reservation lives on the CHARACTER, not on the
+  `SpellDefinition`: `spell_3` is a different animation on the dwarf than on the elven, so a
+  spell naming an index would be asserting something about art it has never seen. Shipped
+  today, all on the dwarf: `fireball` → `spell_3`, `healing_aura` → `spell_2`,
+  `weapon_toggle` → `armed_equip` (the draw), `dash` → `charge` (the shoulder-first lunge),
+  and every slash → `armed_slash`, so a slash is always swung with the weapon whether or not
+  the armed loadout is worn. `slash_regular` is reserved on the ATTACK variant of that name
+  instead of the cast one, because it is the single slash that routes through
+  `AnimState.Attack` — `AttackVariant` carries the same `spellKeys` field for exactly that
+  one case, and without it "every slash draws the weapon" would be true of four out of five.
+  `PlayerFramesImporter.ApplyCastVariants` rebuilds the variant list on every import and
+  carries the reservations across BY KEY — by position would move them onto the neighbour the
+  first time a wave adds a sixth spellcast. A variant declaration in `build_player_frames.py`
+  may carry a third element, the spells it is reserved for; that is a CREATION DEFAULT and an
+  authored value always wins, the same shape `TilesetRulesetImporter` uses for terrain names.
+  Both halves earn their keep: a new animation that ships unpinned is an unreachable rotation
+  step until someone remembers the second step, and a re-import that overwrote the authored
+  value would undo every pin a designer has moved.
+- **A cast's animation window was a constant, so most of the animation never rendered.**
+  `TriggerCastAnimation` held Cast for a flat 0.35 s against a `frameInterval` of 0.15 s — an
+  eight-frame spellcast was cut at frame three, every time. It now takes the larger of that
+  historical floor and `GetStateLength(state, variant)`, measured AFTER `SetState` has turned
+  the animator, since `GetStateLength` reports the CURRENT direction's frame count. Related,
+  and the reason the beam looked broken: a channelled spell re-enters that method EVERY FRAME
+  while held, and advancing the rotation there handed `SetState` a different variant sixty
+  times a second — a changed variant counts as a state change, so the pose restarted at frame
+  0 on every one of them. The variant is reused for as long as the same cast's window is open.
 - **Variants are per STATE, not per attack.** `DirectionalAnimator._variantsByState` is
   indexed by `AnimState` because elven ships three casting animations, and a second parallel
   cast-only array would have paid the positional tax `AttackVariant`'s own doc-comment exists
@@ -767,6 +1004,15 @@ Valkur > Players > Import Frame Sheets (Dry Run) then (Apply)
   Python pipelines read. `AssetConventionsTests` enforces the boundary
   (`HardRules_AssetsRoot_OnlyContainsWhitelistedEntries`, and `HardRules_NoIterationSuffixes`
   against the `_vN` variant names staged there).
+- **`elf_wave5` ships its ACTIONS and stages its LOCOMOTION, and that split is structural.**
+  `EntityAnimationBinder` builds variant lists for exactly two states — Attack and Cast — and
+  `PlayerController.NextVariant` rotates one per action, so an idle/walk/chase variant has no
+  selector and would never render a frame. The archer's and bard's seven locomotion sheets
+  therefore stay in `stagedNotShipped` until there is a loadout system; their attack and the
+  four loadout casts ship as variants. Shipping the bow as an attack variant means it appears
+  in the elf's empty hands every fourth swing and vanishes again — the exact pop the barbarian
+  entry avoids — and it was taken deliberately, which is why `bow` sits LAST in the list and
+  `punch` stays index 0.
 - Barbarian has **no hurt or death art in either loadout**; both fall back to idle, and
   `GrayscaleDeath` is what sells the death. `staging/players/` also holds a full unshipped
   sword-and-shield loadout for the knight and an axe-less one for the barbarian — see
@@ -858,6 +1104,40 @@ related symptom reappears.
 - **Multi-map Phase B/C** — Phase A (per-slot persistence routing) shipped 2026-08-18: buildings, spawners, lights, particles and authored item drops each own their file per map slot. Still open: built-in parallel worlds (Sky / Hell) and cross-world portals at runtime. See `.github/MAP_EDITOR_MULTIMAP_ROADMAP.md`.
 - **Asset pipeline Phase 2** — finalised `asset_map.csv` schema + the formal naming convention. Bulk reimport already executed; `ValkurAssetPostprocessor` writes Uncompressed platform overrides. Atlas consolidation is **done** (2026-08-18): exactly 9 atlases, all under `_Project/SpriteAtlases/`, one owner (`SpriteAtlasBuilder`).
 - **Day/night overhaul** — audited 2026-08-25 at **2.0/10**; Phases 0-3 shipped the same day, now **6.4/10**. The cycle used to reach no rendered pixel: three wrong URP enum literals (URP 14: `Freeform=1, Sprite=2, Point=3, Global=4`) left the scene light a `Point` of radius 1 and every placed torch a cookie-less `Sprite` light, while `WorldGridBuilder` forced the whole world to `Sprite-Unlit-Default` unconditionally. Now: typed URP API in all three light paths; world and entities lit (`Valkur/SpriteHDRTintLit`); placed lights on blend style **1 (Additive)**; colour from an 8-key Gradient in `Resources/DayNightProfile.asset`; the `Buildings/lights/` prop family emits its own light via `BuildingTemplateData.lightPresetKey` + `WorldLightLoader.RegisterDerivedLight` (derived lights are `persistent = false`, so `SaveAll` never writes them to `light_instances.json`); and a **`ScreenGradeFeature`** renderer feature on `Renderer2D.asset` does per-phase saturation/contrast/vignette/dither in one blit at a measured **0.215 ms/frame** — it does NOT need `renderPostProcessing`, so the ~18 ms UberPost stack stays off. Single owners: `AmbientLitSortingLayers` (light mask), `Core/Rendering/WorldSpriteMaterials` (lit vs unlit), `ScreenGradeSettings` (the live grade; static because Core cannot reference Gameplay). **URP 2D shadows render correctly but are disabled**: measured 11 % of pixels changed with a valid probe, yet URP derives the caster shape from the `Renderer` bounds, so every building throws a hard rectangular wedge. Accurate silhouettes would need the painted collision grid as caster geometry. NOTE `ShadowCaster2D.IsLit` reads `light.boundingSphere.radius`, written only by `Light2D.LateUpdate` — a light created and rendered in the same call has radius 0 and measures a false zero. Still open: atmosphere (3.0) and gameplay coupling (0.0), plus persisting the time of day and the F2 editor's authoring. **The phases are pinned by 40 tests** across `DayNightPhaseLookTests` (reads the shipped `Resources/DayNightProfile.asset`, asserts characteristics not literals), `DayNightPipelineWiringTests` (the URP enum constants, exactly one Global light, the sorting-layer mask vs the layers that go lit, blend style 1 still Additive, the ScreenGrade feature still installed) and `TimeWeatherPhaseShortcutTests` (each F2 phase button's hour, label and the phase the cycle actually reports there). Full findings and the roadmap: `.github/DAY_NIGHT_AUDIT_AND_ROADMAP.md`.
+- **Weather (Wind / Rain / Snow)** — rebuilt 2026-08-30, zone-scoped 2026-09-01, in
+  `Scripts/Gameplay/World/Weather/`. Weather is **stored per ZONE and rendered once**:
+  `WeatherManager` holds a `zone -> levels` table and drives ONE set of effects at whatever
+  the player's current zone asks for, so crossing a boundary retargets the existing effect
+  and the fade turns that into a ramp. F2 authors the zone the player is standing in and
+  writes its name at the top of the panel; indoors (`ZoneManager.IsDetectionSuspended`) the
+  rows go inert and the weather fades — you are under a roof. Console: `weather`,
+  `weatherzones`, `weatherin <zone> ...`, `weather clear [all]`.
+  Each effect is a stack of `WeatherLayer` depth slices on shared `ParticleMaterialCache`
+  materials with procedural textures (`WeatherTextures`), driven by one shared gust field
+  (`WeatherWind`, ticked once per frame by `WeatherManager` so every reader samples the same
+  gust) and one shared screen-grade/lightning owner (`WeatherGrade`, composed into
+  `DayNightCycle.PublishScreenGrade`; the strike also boosts the Global Light 2D so it lights
+  the world rather than only the post-process). Levels are **Off / Light / Medium / Heavy**
+  (`WeatherIntensity`) — activation (fade) and density (level) are separate scalars, so
+  raising a live weather ramps it instead of restarting it. Wind + Rain is a real composition:
+  the wind effect raises `WeatherWind.WeatherSpeed`, which rain and snow slant with, and Heavy
+  rain arms lightning. Audio is **synthesised** (`WeatherAudio` — filtered noise beds; the
+  project ships no ambient recordings and every subclass had left `ResolveAudioClip` returning
+  null since the class was written, so weather had always been silent); snow is silent on
+  purpose. Snow also **accumulates on the world**, per landed flake: every expiring flake
+  stamps `SnowSplatMap` (a camera-following world-space R8 buffer) and emits one settled
+  speck where it stopped, while `SnowAccumulation` keeps the global depth clock. The two
+  MULTIPLY in `Shaders/ValkurSnow.hlsl` — the map says which ground has a drift, the scalar
+  says how deep a drift can get — and the result is a blanket on Ground/FloorDecals and a
+  silhouette-following cap that grows DOWNWARD from the roof line on everything else. All 969
+  building templates and every generated tile pack collect snow with no snow art authored
+  anywhere, and it melts on a phase-dependent clock (Day 3.2x, Night 0.25x). Authored from **F2 → Weather** (a row click
+  cycles the level) or the `weather` / `wind` / `lightning` / `snow` console commands. Still
+  open: authored climates per zone on disk (the table is session state today), weather that
+  evolves off-screen, blending a zone's weather by DISTANCE to its boundary rather than
+  switching on entry, lying snow that belongs to a zone rather than to the camera-following
+  buffer, rain wetting surfaces the way snow covers them, and gameplay coupling (wet-ground
+  friction, visibility).
 - **Building doors & interiors** — shipped 2026-08-26. A placed building can declare a
   doorway and lead somewhere: `hasDoor` + a normalized anchor on `BuildingTemplateData`,
   `overrides.door` per instance, `BuildingDoor` (a poll, not a trigger) parented to the

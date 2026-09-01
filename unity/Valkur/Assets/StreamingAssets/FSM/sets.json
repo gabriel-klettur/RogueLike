@@ -15,8 +15,8 @@
           "props": {},
           "terminal": false,
           "w": 120,
-          "x": 80,
-          "y": 80
+          "x": 665,
+          "y": 310
         },
         {
           "class": "",
@@ -26,8 +26,8 @@
           "props": {},
           "terminal": false,
           "w": 120,
-          "x": 300,
-          "y": 80
+          "x": 249,
+          "y": 47
         },
         {
           "class": "",
@@ -48,7 +48,7 @@
           "props": {},
           "terminal": false,
           "w": 120,
-          "x": 80,
+          "x": -223,
           "y": 240
         },
         {
@@ -59,8 +59,8 @@
           "props": {},
           "terminal": false,
           "w": 120,
-          "x": 300,
-          "y": 240
+          "x": 188,
+          "y": 166
         },
         {
           "class": "",
@@ -105,8 +105,8 @@
           "special": "damage",
           "terminal": false,
           "w": 120,
-          "x": 200,
-          "y": 220
+          "x": -66,
+          "y": 403
         }
       ],
       "transitions": [

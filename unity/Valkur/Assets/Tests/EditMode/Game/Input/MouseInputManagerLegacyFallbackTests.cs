@@ -27,11 +27,14 @@ namespace Valkur.Tests.EditMode.Game.Input
     [TestFixture]
     public class MouseInputManagerLegacyFallbackTests
     {
+        private Mouse _testMouse;
+
         [SetUp]
         public void SetUp()
         {
             LogAssert.ignoreFailingMessages = true;
-            if (Mouse.current == null) InputSystem.AddDevice<Mouse>();
+            _testMouse = InputSystem.AddDevice<Mouse>();
+            _testMouse.MakeCurrent();
 
             // Cross-fixture defence: any earlier test that exercised
             // InputBlocker (chat / dev-console gates, etc.) might have
@@ -59,6 +62,9 @@ namespace Valkur.Tests.EditMode.Game.Input
         {
             LogAssert.ignoreFailingMessages = false;
             InputBlocker.SetBlocked(false);
+            if (_testMouse != null && _testMouse.added)
+                InputSystem.RemoveDevice(_testMouse);
+            _testMouse = null;
         }
 
         // ── I2: new-system branch of the OR fires after synthetic press ─────
@@ -66,19 +72,11 @@ namespace Valkur.Tests.EditMode.Game.Input
         [Test]
         public void IsLeftMouseButtonPressed_AfterSyntheticPress_ReturnsTrue()
         {
-            QueueButtonValue(Mouse.current.leftButton, 1f);
-            // Synthetic StateEvent → Mouse.current.leftButton.isPressed
-            // propagation is not guaranteed in EditMode (the InputSystem
-            // event pump runs differently when the editor isn't pumping
-            // its game-loop). If the synthetic press didn't land we
-            // declare the test inconclusive instead of failing — the
-            // structural OR-fallback is still verified by
-            // EveryButtonQueryMethod_ReferencesLegacyInput, and any real
-            // regression would surface in PlayMode tests.
-            if (!Mouse.current.leftButton.isPressed)
-                Assert.Inconclusive("Synthetic InputSystem press did not propagate to Mouse.current.leftButton.isPressed in EditMode (Unity InputSystem limitation).");
+            SetButtonValue(MouseButton.Left, true);
+            Assert.IsTrue(_testMouse.leftButton.isPressed,
+                "The dedicated synthetic mouse must receive the queued press.");
             Assert.IsTrue(MouseInputManager.IsLeftMouseButtonPressed());
-            QueueButtonValue(Mouse.current.leftButton, 0f);
+            SetButtonValue(MouseButton.Left, false);
         }
 
         // Note: WasLeftMouseButtonPressedThisFrame / WasLeftMouseButtonReleasedThisFrame
@@ -91,21 +89,21 @@ namespace Valkur.Tests.EditMode.Game.Input
         [Test]
         public void IsRightMouseButtonPressed_AfterSyntheticPress_ReturnsTrue()
         {
-            QueueButtonValue(Mouse.current.rightButton, 1f);
-            if (!Mouse.current.rightButton.isPressed)
-                Assert.Inconclusive("Synthetic InputSystem press did not propagate to Mouse.current.rightButton.isPressed in EditMode (Unity InputSystem limitation).");
+            SetButtonValue(MouseButton.Right, true);
+            Assert.IsTrue(_testMouse.rightButton.isPressed,
+                "The dedicated synthetic mouse must receive the queued press.");
             Assert.IsTrue(MouseInputManager.IsRightMouseButtonPressed());
-            QueueButtonValue(Mouse.current.rightButton, 0f);
+            SetButtonValue(MouseButton.Right, false);
         }
 
         [Test]
         public void IsMiddleMouseButtonPressed_AfterSyntheticPress_ReturnsTrue()
         {
-            QueueButtonValue(Mouse.current.middleButton, 1f);
-            if (!Mouse.current.middleButton.isPressed)
-                Assert.Inconclusive("Synthetic InputSystem press did not propagate to Mouse.current.middleButton.isPressed in EditMode (Unity InputSystem limitation).");
+            SetButtonValue(MouseButton.Middle, true);
+            Assert.IsTrue(_testMouse.middleButton.isPressed,
+                "The dedicated synthetic mouse must receive the queued press.");
             Assert.IsTrue(MouseInputManager.IsMiddleMouseButtonPressed());
-            QueueButtonValue(Mouse.current.middleButton, 0f);
+            SetButtonValue(MouseButton.Middle, false);
         }
 
         // ── I1: legacy fallback branch is structurally present ──────────────
@@ -152,14 +150,13 @@ namespace Valkur.Tests.EditMode.Game.Input
 
         // ── Helpers ─────────────────────────────────────────────────────────
 
-        private static void QueueButtonValue(UnityEngine.InputSystem.Controls.ButtonControl button, float value)
+        private void SetButtonValue(MouseButton button, bool value)
         {
-            using (StateEvent.From(button.device, out InputEventPtr evt))
-            {
-                InputControlExtensions.WriteValueIntoEvent(button, value, evt);
-                InputSystem.QueueEvent(evt);
-            }
-            InputSystem.Update();
+            // QueueEvent + InputSystem.Update is focus-gated by the Unity editor
+            // and can discard synthetic events in EditMode. InputState.Change is
+            // the package's immediate state mutation API and is deterministic for
+            // an isolated virtual device.
+            InputState.Change(_testMouse, new MouseState().WithButton(button, value));
         }
     }
 }

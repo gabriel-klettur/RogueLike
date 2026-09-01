@@ -31,6 +31,8 @@ namespace Valkur.Tests.EditMode.Game.Spawners
         private MonsterSpawner _spawner;
         private GameObject _player;
         private MonsterDefinition _def;
+        private Camera _mainCamera;
+        private bool _mainCameraWasEnabled;
 
         [SetUp]
         public void SetUp()
@@ -39,6 +41,18 @@ namespace Valkur.Tests.EditMode.Game.Spawners
             // InputService — CommandRegistryTests silences the same warnings for the same
             // reason.
             LogAssert.ignoreFailingMessages = true;
+
+            // The @cursor test relies on Camera.main being null ("an EditMode fixture has
+            // no live Camera.main"). That is only true while the editor's open scene has no
+            // MainCamera — leaving MainGameplay open supplies one and makes
+            // MouseInputManager.TryGetWorldMousePosition resolve, so the spawn falls through
+            // instead of aborting. Neutralize the camera for the fixture and restore it after.
+            _mainCamera = Camera.main;
+            if (_mainCamera != null)
+            {
+                _mainCameraWasEnabled = _mainCamera.enabled;
+                _mainCamera.enabled = false;
+            }
 
             _player = new GameObject("Player");
             EntityRegistry.RegisterPlayer(_player);
@@ -73,6 +87,9 @@ namespace Valkur.Tests.EditMode.Game.Spawners
             if (_player != null) Object.DestroyImmediate(_player);
             if (_def != null) Object.DestroyImmediate(_def);
             EntityRegistry.RegisterPlayer(null);
+
+            if (_mainCamera != null)
+                _mainCamera.enabled = _mainCameraWasEnabled;
         }
 
         private int SpawnQueueCount()
