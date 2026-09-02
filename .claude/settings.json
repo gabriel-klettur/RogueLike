@@ -32,7 +32,9 @@
       "Bash(which:*)",
       "Bash(cat:*)",
       "Bash(head:*)",
-      "Bash(tail:*)"
+      "Bash(tail:*)",
+      "Bash(graphify:*)",
+      "Bash(graphify-mcp:*)"
     ],
     "additionalDirectories": [
       "C:\\Users\\gabri\\.claude\\projects\\d--Python-RogueLike"
@@ -43,5 +45,18 @@
     "VALKUR_PYTHON_REF": "d:/Python/RogueLike/python",
     "VALKUR_INSPIRATION": "d:/Python/RogueLike/unity/Udemy_Inspiration/DungeonGunnerCourse",
     "UNITY_EDITOR": "C:/Program Files/Unity/Hub/Editor/2022.3.62f1/Editor/Unity.exe"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/Users/gabri/.local/bin/graphify.EXE hook-guard search"
+          }
+        ]
+      }
+    ]
   }
 }

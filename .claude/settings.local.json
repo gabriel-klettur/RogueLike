@@ -34,5 +34,9 @@
       "Bash(python3)",
       "Bash(dir 'd:\\\\Python')"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "unity",
+    "graphify"
+  ]
 }

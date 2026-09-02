@@ -3,6 +3,12 @@
     "unity": {
       "type": "http",
       "url": "http://127.0.0.1:8080/mcp"
+    },
+    "graphify": {
+      "command": "C:\\Users\\gabri\\.local\\bin\\graphify-mcp.exe",
+      "args": [
+        "D:\\Python\\RogueLike\\graphify-out\\graph.json"
+      ]
     }
   }
 }

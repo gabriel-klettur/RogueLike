@@ -1553,3 +1553,91 @@ related symptom reappears.
 - **Boss music tracks** — the wiring is done (`BossDefinition.Phase.musicTrackId` → `BossConfigurator.ApplyPhaseMusic` → `IAudioService.PlayMusicByTrackId`, with `BossPhaseAudio` as the inspector-authored alternative). What remains is **data**: no boss-specific track exists in `AudioCatalog.asset` yet, so `SampleBoss.asset` leaves `musicTrackId` empty.
 
 The **`Valkur.Infrastructure.Persistence.Profile`** layer (run history, kill stats, achievements, profile counters, statistics HUD) lives behind `IProfileDb` (`JsonProfileDb` today; SQLite ready as a drop-in once row counts justify it) — see `.github/SQLITE_MIGRATION_AUDIT.md`.
+
+## graphify
+
+This repository ships a persistent structural knowledge graph in `graphify-out/`
+(31.5k nodes / 78.4k edges over 2013 code files, built from the C# + Python AST —
+no LLM, no API key, nothing leaves this machine). It is the cheapest way to answer "how does this fit
+together" questions without reading dozens of files.
+
+### Use graphify FIRST for
+
+architecture · dependencies · class/module relationships · call paths · who owns a
+piece of functionality · locating an implementation you cannot name yet ·
+understanding an unfamiliar system · impact analysis before a refactor.
+
+Then open **only** the specific `file:line` results graphify hands back.
+
+### Do NOT reach for graphify when
+
+you already know the file, the edit is a few lines, you are reading a file end to
+end, or you are grepping for a literal string / asset name. Reading the code
+directly is cheaper and more accurate there. The graph is an index, not the truth —
+for exact current implementation detail, read the file.
+
+### Commands
+
+```bash
+graphify query "<question>"        # BFS subgraph for a question (add --budget N to cap output)
+graphify explain "<Symbol>"        # one node, its neighbours, grouped by file — best single tool
+graphify affected "<Symbol>"       # reverse traversal: what breaks if I change this
+graphify path "<A>" "<B>" --undirected   # relationship between two components
+graphify god-nodes --top 15        # architectural hubs
+graphify update .                  # incremental re-extract after code changes (AST only, free)
+```
+
+Notes measured on THIS repo:
+
+- `explain` is the highest-signal command. `query` is broad — a question like
+  "what depends on the inventory system" returns 400+ nodes and truncates against
+  the token budget, and test files crowd the head of the list. Prefer `explain` /
+  `affected` when you can name a symbol.
+- **Ambiguity is the normal case here**, because Valkur splits classes across
+  partials (`BuildingLoader.cs` + `BuildingLoader.Spawning.cs`). `explain "X"`
+  answers `Ambiguous: 'X' matches 2 nodes` **and prints the candidate node ids** —
+  re-run `explain` / `affected` with the full id. `affected` alone just says
+  `No unique node match`, so when that happens, go through `explain` first to get
+  the id.
+- `path` over directed edges often finds nothing; `--undirected` works but can
+  route through hubs like `MonoBehaviour`, which is a true edge and a useless
+  answer. Treat `path` as the weakest of the four.
+- Communities are named after their most central symbol (e.g. `BuildingLoader`,
+  `RoomNodeTypeSO`), not `Community N`.
+- `.graphifyignore` (repo root, tracked) is what keeps `unity/Udemy_Inspiration/`
+  and the vendored VFX demo scripts out of the graph. It matters because
+  **`graphify update` does not read `.gitignore`** — without it, an incremental
+  update silently pulls 3.7k C# files of the read-only reference project into the
+  graph. Verified: 0 nodes from `unity/Udemy_Inspiration/`.
+- `Scripts/Data/Dungeon/Udemy/` IS ours (namespace `Valkur.Data.Dungeon.Udemy`) and
+  is correctly in the graph — do not confuse it with the excluded reference project.
+
+### Vistas generadas (todas en `graphify-out/`, todas gitignored)
+
+| Fichero | Qué es | Comando que lo regenera |
+|---|---|---|
+| `graph.html` | Grafo interactivo 2D (vis-network). Agregado por COMUNIDAD, no por nodo, porque el grafo pasa de 5000 nodos. Carga la librería de `unpkg.com`: necesita internet | `graphify cluster-only . --no-label` |
+| `GRAPH_TREE.html` | Árbol colapsable por carpeta/fichero/símbolo. Es la mejor vista para recorrer la estructura real del repo | `graphify tree --label "Valkur"` |
+| `RogueLike-callflow.html` | Diagramas Mermaid por sección. Las secciones 10-15 son de Valkur; las 2-9 son plantilla genérica de graphify sobre sí mismo, ignóralas | `graphify export callflow-html --lang en` |
+| `wiki/index.md` | 969 artículos, uno por comunidad, ordenados por tamaño. Entrada de navegación en texto plano — barato de leer para un agente | `graphify export wiki` |
+
+No hay vista 3D. `export svg` existe pero necesita `matplotlib` y produce un hairball estático de 31k nodos.
+
+### MCP
+
+`.mcp.json` also registers graphify as a stdio MCP server (tools: `query_graph`,
+`get_node`, `get_neighbors`, `get_community`, `god_nodes`, `graph_stats`,
+`shortest_path`). Either surface is fine; the CLI is the fallback if the MCP server
+is not approved in this session. Argument names differ from the CLI: `get_node` and
+`get_neighbors` take **`label`** (not `node`), `query_graph` takes `question`,
+`shortest_path` takes `source` / `target` / `undirected`.
+
+### Keeping the graph fresh
+
+- Small / normal code changes -> `graphify update .` (incremental, seconds).
+- Large structural change, mass rename or deletion -> `graphify update . --force`,
+  then `graphify cluster-only . --no-label` to refresh `GRAPH_REPORT.md` + `graph.html`.
+- A full rebuild is `graphify extract . --code-only` (~5 min) and is rarely needed.
+- **Do not rebuild at the start of a session.** `graphify-out/` persists on disk;
+  just use it. Rebuild only after real code churn.
+- `graphify-out/` is gitignored (`graph.json` is 66 MB and derived).

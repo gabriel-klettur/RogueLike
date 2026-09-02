@@ -244,3 +244,8 @@ cline-cli-*.tgz
 
 # Cline machine-local settings (Unity editor path etc.)
 .clinerules/settings.local.json
+
+# graphify knowledge graph - derived output, rebuildable with `graphify extract . --code-only`.
+# graph.json is ~66 MB and is rewritten wholesale on every build, so it is never committed.
+graphify-out/
+.claude/settings.json.graphify-bak

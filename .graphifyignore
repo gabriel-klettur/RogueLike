@@ -1,0 +1,25 @@
+# graphify exclusions for Valkur.
+# Always honoured (both `graphify extract` and `graphify update`), unlike .gitignore
+# which `graphify update` does not read — that is why Udemy_Inspiration is repeated here.
+
+# Read-only architectural reference, never our code. 3.7k C# files of another project.
+unity/Udemy_Inspiration/
+
+# Unity generated / machine-local trees.
+unity/Valkur/Library/
+unity/Valkur/Temp/
+unity/Valkur/obj/
+unity/Valkur/Logs/
+unity/Valkur/UserSettings/
+unity/Valkur/Build/
+unity/Valkur/Builds/
+
+# Vendored third-party VFX demo scripts (one of them fails to parse).
+unity/Valkur/Assets/_Project/Art/VFX/Vendor/
+
+# The graph's own output.
+graphify-out/
+
+# Python virtualenvs.
+venv/
+.venv/
