@@ -344,6 +344,48 @@ namespace Valkur.Tests.EditMode.Game.Spells
                 "the debris of an eastward funnel is not trailing west of it");
         }
 
+        /// <summary>
+        /// Mean x of the torn-up ground, in rig space. x is the one axis the ground squash
+        /// leaves alone, and the chips are spread over the whole circle, so their orbit
+        /// cancels and what survives the average is <c>DebrisLag</c> — how far the plume
+        /// trails the funnel that lifted it. Negative means it is trailing west.
+        /// </summary>
+        private static float MeanDebrisX(GameObject host)
+        {
+            float total = 0f;
+            int counted = 0;
+
+            foreach (var child in host.GetComponentsInChildren<Transform>(true))
+            {
+                if (!child.name.StartsWith("Debris")) continue;
+                total += child.localPosition.x;
+                counted++;
+            }
+            return counted == 0 ? 0f : total / counted;
+        }
+
+        /// <summary>
+        /// Where the flared top sits on the travel axis. The neck is the part touching the
+        /// ground and the top is the part being left behind, so the topmost band is the one
+        /// whose offset states the lean; it is named off BandCount rather than a literal,
+        /// because the stack length is tunable.
+        ///
+        /// <para>SIGNED, and the caller drives its rig due east, so a lean with the travel is
+        /// positive. The sway is the reason: it is the same oscillation on both rigs, so a
+        /// signed mean cancels it out of the DIFFERENCE the caller asserts on, while a
+        /// distance leaves it in and makes the comparison land on wherever the sway happened
+        /// to be when the measuring window opened. Measured across five window phases, the
+        /// distance form ran from +0.094 to -0.039 against the caller's 0.25 threshold — it
+        /// would have passed or failed correct code on the draw — where the signed form held
+        /// 0.197 at every one of them.</para>
+        /// </summary>
+        private static float TopBandOffset(GameObject host, int bandCount)
+        {
+            var top = host.transform.Find("Band" + (bandCount - 1));
+            Assert.IsNotNull(top, "the band stack is shorter than BandCount claims");
+            return top.localPosition.x;
+        }
+
         [Test]
         public void TheDebrisIsTheOneOpaqueLayer()
         {
