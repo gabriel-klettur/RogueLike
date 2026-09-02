@@ -1,89 +1,123 @@
 using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay.Combat;
-using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
-    /// Spawns a blocking wall perpendicular to the casterâ†’mouse direction.
-    /// Mirrors Python's WallResolver: wall_ice with HP, blocks projectiles/units.
+    /// Raises a blocking barrier across the cast direction.
+    ///
+    /// <para>UNITS. <c>wallWidth</c> and <c>wallHeight</c> are WORLD UNITS. They used to be
+    /// divided by 32 — a leftover from the Python build, where they were pixels — so the
+    /// shipped <c>wall_ice</c> (12.5 x 3.125) resolved to a quad 0.78 units wide and 0.049
+    /// tall: twelve screen pixels by less than one, collider included. The defaults in this
+    /// file were thirty times larger than anything the asset could produce, which is what
+    /// gave the mistake away.</para>
+    ///
+    /// <para>The barrier stands on the Building layer because that is the layer Player(8),
+    /// NPC(9) and Projectile(10) all collide with in the Physics2D matrix — it blocks the
+    /// caster too, which is deliberate, and <c>PathFinder.IsWalkable</c> masks on
+    /// <c>BlockingMask()</c> (which contains Building), so monsters route around it rather
+    /// than walking into it.</para>
     /// </summary>
     public class WallExecutor : ISpellExecutor
     {
+        private const float DefaultLengthWu = 6f;
+        private const float DefaultHeightWu = 1.8f;
+        private const float DefaultDistanceWu = 3f;
+        private const float DefaultHp = 100f;
+        private const float DefaultDurationSeconds = 6f;
+
         public void Execute(SpellContext ctx)
         {
-            float width = ctx.Spell.wallWidth > 0 ? ctx.Spell.wallWidth / 32f : 6f;
-            float height = ctx.Spell.wallHeight > 0 ? ctx.Spell.wallHeight / 32f : 1.5f;
-            float hp = ctx.Spell.wallHP > 0 ? ctx.Spell.wallHP : 100f;
+            float length = ctx.Spell.wallWidth > 0 ? ctx.Spell.wallWidth : DefaultLengthWu;
+            float height = ctx.Spell.wallHeight > 0 ? ctx.Spell.wallHeight : DefaultHeightWu;
+            float hp = ctx.Spell.wallHP > 0 ? ctx.Spell.wallHP : DefaultHp;
+            float distance = ctx.Spell.distance > 0 ? ctx.Spell.distance : DefaultDistanceWu;
+
             // The wall's real exit is its HP reaching zero; the timer is a backstop.
             float duration = ctx.Spell.infinite
                 ? float.PositiveInfinity
-                : (ctx.Spell.duration > 0 ? ctx.Spell.duration : 6f);
-            float dist = ctx.Spell.distance > 0 ? ctx.Spell.distance : 3f;
+                : (ctx.Spell.duration > 0 ? ctx.Spell.duration : DefaultDurationSeconds);
 
-            Vector2 spawnPos = (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * dist;
-            float angle = Mathf.Atan2(ctx.Direction.y, ctx.Direction.x) * Mathf.Rad2Deg;
+            Vector2 direction = ctx.Direction.sqrMagnitude > 1e-4f ? ctx.Direction.normalized : Vector2.right;
+            Vector2 spawnPos = (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, direction, ctx.Spell)
+                               + direction * distance;
+
+            // Perpendicular to the cast: the barrier stands ACROSS the line of fire.
+            Vector2 axis = new Vector2(-direction.y, direction.x);
 
             var wallGo = new GameObject("SpellWall");
-            wallGo.transform.position = (Vector3)spawnPos;
-            // Wall is perpendicular to cast direction
-            wallGo.transform.rotation = Quaternion.Euler(0, 0, angle + 90f);
+            wallGo.transform.position = spawnPos;
+            // Identity rotation and unit scale: IceWallVisual documents why both matter.
+            wallGo.layer = BuildingLayer();
 
-            // Visual
-            var sr = wallGo.AddComponent<SpriteRenderer>();
-            if (ctx.Spell.sprite != null)
-            {
-                sr.sprite = ctx.Spell.sprite;
-            }
-            else
-            {
-                sr.sprite = CreateWallSprite();
-                sr.color = new Color(0.6f, 0.85f, 1f, 0.9f);
-            }
-            sr.sortingLayerName = "Entities";
-            sr.sortingOrder = 5;
-            wallGo.transform.localScale = new Vector3(width, height, 1f);
+            var collider = BuildCollider(wallGo.transform, axis, length, height, ctx.Spell);
 
-            // Collision
-            var col = wallGo.AddComponent<BoxCollider2D>();
-            col.size = Vector2.one;
-            wallGo.layer = LayerMask.NameToLayer("Building") != -1
-                ? LayerMask.NameToLayer("Building") : 14;
+            var health = wallGo.AddComponent<Health>();
+            health.Initialize(Mathf.RoundToInt(hp));
 
-            // Destroyable health
-            var wallHealth = wallGo.AddComponent<Health>();
-            wallHealth.Initialize(Mathf.RoundToInt(hp));
-
-            // Auto-destroy
             var controller = wallGo.AddComponent<WallController>();
-            controller.Initialize(duration, wallHealth);
-
-            if (VFXManager.Instance != null)
+            controller.Initialize(new WallController.Setup
             {
-                Color col2 = ctx.Spell.particleColor != Color.clear
-                    ? ctx.Spell.particleColor
-                    : new Color(0.6f, 0.85f, 1f, 0.6f);
-                VFXManager.Instance.SpawnAreaIndicator((Vector3)spawnPos, col2, width * 0.5f, 0.3f);
-            }
+                Duration = duration,
+                Health = health,
+                Collider = collider,
+                Length = length,
+                Height = height,
+                Axis = axis,
+                Element = ProjectileExecutor.ResolveElement(ctx.Spell),
+            });
 
-        
-            // Free-standing world object: nothing else can end it. The registry
-            // enforces maxInstances and clears it on a zone change.
+            // Free-standing world object: nothing else can end it. The registry enforces
+            // maxInstances and clears it on a zone change.
             SpellEffectRegistry.Track(wallGo, ctx.Spell, ctx.Caster != null ? ctx.Caster.gameObject : null);
-}
+        }
 
-        private static Sprite CreateWallSprite()
+        /// <summary>
+        /// The blocking box, on its own rotated child.
+        ///
+        /// <para>The root is left unrotated so the crystals can stand up on screen whichever
+        /// way the barrier runs, so the box gets a child of its own. Its depth is a FRACTION
+        /// of the drawn height: in a top-down projection what a wall occupies on the floor is
+        /// its footprint, not its silhouette, and a collider as deep as the art is tall pushes
+        /// the player a body-length away from something they can see themselves touching.</para>
+        /// </summary>
+        private static BoxCollider2D BuildCollider(Transform root, Vector2 axis, float length,
+            float height, SpellDefinition spell)
         {
-            int w = 32, h = 8;
-            var tex = new Texture2D(w, h);
-            tex.filterMode = FilterMode.Point;
-            var pixels = new Color[w * h];
-            for (int i = 0; i < pixels.Length; i++)
-                pixels[i] = Color.white;
-            tex.SetPixels(pixels);
-            tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 16f);
+            var go = new GameObject("Collision");
+            go.transform.SetParent(root, false);
+            go.transform.localPosition = Vector3.zero;
+            go.transform.localRotation = Quaternion.Euler(0f, 0f,
+                Mathf.Atan2(axis.y, axis.x) * Mathf.Rad2Deg);
+            go.layer = BuildingLayer();
+
+            var collider = go.AddComponent<BoxCollider2D>();
+            collider.size = new Vector2(length, Mathf.Clamp(height * 0.42f, 0.35f, 1.1f));
+
+            // blockProjectiles / blockUnits were authored, serialised and shown in the F4
+            // editor for as long as the spell has existed, and no code had ever read either
+            // one: the blocking came entirely from the physics matrix, so clearing a flag
+            // changed nothing. excludeLayers is what makes them mean something.
+            int excluded = 0;
+            if (!spell.blockProjectiles) excluded |= LayerOrZero("Projectile");
+            if (!spell.blockUnits) excluded |= LayerOrZero("Player") | LayerOrZero("NPC");
+            collider.excludeLayers = excluded;
+
+            return collider;
+        }
+
+        private static int BuildingLayer()
+        {
+            int layer = LayerMask.NameToLayer("Building");
+            return layer >= 0 ? layer : 14;
+        }
+
+        private static int LayerOrZero(string name)
+        {
+            int layer = LayerMask.NameToLayer(name);
+            return layer >= 0 ? 1 << layer : 0;
         }
     }
 }

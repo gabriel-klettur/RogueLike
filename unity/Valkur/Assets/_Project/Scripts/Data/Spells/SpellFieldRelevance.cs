@@ -77,19 +77,24 @@ namespace Valkur.Data
             // asks the preview to play.
             { SpellType.AnimationProbe, Set("animState", "loadoutAnimKey") },
             { SpellType.Beam,       Set("damage", "range", "scale", "particleColor", "vfxPreset", "impactPreset") },
-            { SpellType.Smoke,      Set("duration", "radius", "vfxPreset") },
-            { SpellType.SmokeEmitter, Set("duration", "radius", "vfxPreset") },
+            // `particleColor` is on EVERY type below that shows a cast flourish, whether or
+            // not that type's executor reads it: since SpellCastFlourishFX started taking its
+            // hue from the swatch, the field is live for all of them, and a live field the F4
+            // panel hides is one a designer cannot author. The two types deliberately without
+            // it are WeaponLoadout and AnimationProbe, which AppliesTo refuses outright.
+            { SpellType.Smoke,      Set("duration", "radius", "vfxPreset", "particleColor") },
+            { SpellType.SmokeEmitter, Set("duration", "radius", "vfxPreset", "particleColor") },
             { SpellType.Wall,       Set("distance", "duration", "infinite", "particleColor", "sprite",
                                         "wallWidth", "wallHeight", "wallHP",
                                         "blockProjectiles", "blockUnits") },
             { SpellType.Boomerang,  Set("damage", "speed", "range", "hitRadius", "sprite",
                                         "particleColor", "vfxPreset", "impactPreset") },
             { SpellType.Meteor,     Set("damage", "range", "meteorCount", "meteorInterval",
-                                        "meteorAreaRadius", "meteorImpactRadius", "impactPreset") },
+                                        "meteorAreaRadius", "meteorImpactRadius", "impactPreset", "particleColor") },
             { SpellType.Lightning,  Set("damage", "range", "radius", "particleColor", "vfxPreset") },
             { SpellType.ChainLightning, Set("damage", "range", "radius", "particleColor", "vfxPreset") },
-            { SpellType.Aura,       Set("duration", "radius", "healPerTick", "tickPeriod", "vfxPreset") },
-            { SpellType.ArcaneFlame, Set("duration", "radius", "damagePerTick", "tickPeriod", "vfxPreset") },
+            { SpellType.Aura,       Set("duration", "radius", "healPerTick", "tickPeriod", "vfxPreset", "particleColor") },
+            { SpellType.ArcaneFlame, Set("duration", "radius", "damagePerTick", "tickPeriod", "vfxPreset", "particleColor") },
             { SpellType.FireworkLaunch, Set("particleColor", "vfxPreset", "impactPreset") },
             { SpellType.SphereMagicShield, Set("duration", "radius", "particleColor", "vfxPreset") },
             { SpellType.Puddle,     Set("duration", "radius", "range", "distance", "damagePerTick",
@@ -97,15 +102,19 @@ namespace Valkur.Data
                                         "spawnAtMouse", "vfxPreset") },
             { SpellType.Mine,       Set("damage", "armingTime", "triggerRadius", "explosionRadius",
                                         "explosionDamage", "ttl", "infinite", "scale", "sprite",
-                                        "impactPreset") },
+                                        "impactPreset", "particleColor") },
             { SpellType.VortexField, Set("duration", "radius", "range", "force", "forceMode",
-                                         "followCaster", "spawnAtMouse", "vfxPreset") },
+                                         "followCaster", "spawnAtMouse", "vfxPreset", "particleColor") },
             { SpellType.ConeBreath, Set("duration", "coneArc", "coneLength", "damagePerTick",
                                         "tickPeriod", "element", "particleColor", "vfxPreset") },
             { SpellType.Summon,     Set("distance", "scale", "sprite", "summonTemplate",
-                                        "summonCount", "summonDuration", "infinite") },
+                                        "summonCount", "summonDuration", "infinite", "particleColor") },
             { SpellType.Totem,      Set("distance", "duration", "range", "radius", "healPerTick",
-                                        "tickPeriod", "totemKind", "spawnAtMouse", "vfxPreset") },
+                                        "tickPeriod", "totemKind", "spawnAtMouse", "vfxPreset", "particleColor") },
+            // Visual only. `scale` is the INTENSITY dial (see EnergyChargeExecutor) and
+            // `particleColor` is the one swatch the whole aura palette is derived from, so
+            // those two are the entire authoring surface for a charge.
+            { SpellType.EnergyCharge, Set("duration", "infinite", "radius", "scale", "particleColor") },
         };
 
         /// <summary>

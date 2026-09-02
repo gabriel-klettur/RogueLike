@@ -31,7 +31,7 @@ MonoBehaviour:
   damage: 0
   range: 0
   lifetime: 0
-  radius: 5
+  radius: 1.6
   hitRadius: 0
   arcRangeDegrees: 0
   hitArcDegrees: 0
@@ -79,7 +79,7 @@ MonoBehaviour:
   particleDispersion: 0
   particleLifespan: 0
   particleSpeed: 0
-  particleColor: {r: 1, g: 1, b: 1, a: 1}
+  particleColor: {r: 0.42, g: 0.74, b: 1, a: 1}
   particleColors: []
   sizeRange: []
   emitRate: 0

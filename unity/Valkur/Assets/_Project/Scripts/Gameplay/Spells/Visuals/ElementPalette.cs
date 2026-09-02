@@ -38,6 +38,68 @@ namespace Valkur.Gameplay.Spells
             }
         }
 
+        /// <summary>
+        /// Return this palette wearing the spell's own authored hue, keeping every behaviour
+        /// field and every field's own BRIGHTNESS. Returns the palette untouched when the
+        /// swatch is unauthored.
+        ///
+        /// <para>WHY THIS IS A RETINT AND NOT A REPLACEMENT. Two different things live in these
+        /// colour fields at once. The HUE says what element this is; the per-field VALUE is
+        /// tuning — <c>hotCore</c> is near-white and <c>halo</c> is dim, and that spread is what
+        /// makes a flourish read as a hot centre inside a soft bloom rather than as six sprites
+        /// of one colour. Swapping the fields wholesale for a derived palette throws the second
+        /// away, and it fails hardest exactly where it is least recoverable: an authored swatch
+        /// like <c>hostile_slash_dark</c>'s 0.04 grey would drive every layer to near-black, and
+        /// on an ADDITIVE material near-black adds nothing — the flourish would not dim, it
+        /// would disappear. Keeping V per field means a dark spell simply gets a desaturated
+        /// flourish, which is what it should look like.</para>
+        ///
+        /// <para>This exists because 39 of the 74 shipped spells author a
+        /// <c>particleColor</c> and the flourish ignored every one of them, so a green laser
+        /// fired with an arcane-violet gather.</para>
+        /// </summary>
+        public ElementPalette RecolouredTo(Color authored)
+        {
+            // Same sentinel as the ki palette, and deliberately the same owner: opaque white is
+            // what the field holds when nobody has touched it.
+            if (KiPalette.IsUnauthored(authored)) return this;
+
+            Color.RGBToHSV(authored, out float hue, out float saturation, out float value);
+            // A pure grey authored swatch has no hue to give, only an absence of colour — which
+            // is a real request, so it desaturates rather than being ignored.
+            if (value <= 0.001f) saturation = 0f;
+
+            var tinted = this;
+            tinted.hotCore    = Retint(hotCore, hue, saturation);
+            tinted.core       = Retint(core, hue, saturation);
+            tinted.glow       = Retint(glow, hue, saturation);
+            tinted.halo       = Retint(halo, hue, saturation);
+            tinted.accent     = Retint(accent, hue, saturation);
+            tinted.lightColor = Retint(lightColor, hue, saturation);
+            return tinted;
+        }
+
+        /// <summary>
+        /// Move one colour onto <paramref name="hue"/>, keeping its own value and alpha.
+        /// Saturation is blended rather than replaced so a field authored near-white — the hot
+        /// core — picks up a tint without becoming a flat block of the spell's colour.
+        /// </summary>
+        private static Color Retint(Color original, float hue, float saturation)
+        {
+            Color.RGBToHSV(original, out float _, out float s, out float v);
+
+            // An ACHROMATIC swatch has no hue to give — RGBToHSV reports 0 for grey, which is
+            // red — so blending toward it the normal way lights a grey spell with a pale pink
+            // gather. Measured on hostile_slash_gray: a 0.59 grey blade against a
+            // (1.00, 0.84, 0.84) core. Grey is a real request, and what it asks for is the
+            // ABSENCE of colour, so it goes fully neutral at the field's own brightness.
+            if (saturation <= 0.02f) return new Color(v, v, v, original.a);
+
+            var result = Color.HSVToRGB(hue, Mathf.Lerp(s, saturation, 0.7f), v);
+            result.a = original.a;
+            return result;
+        }
+
         // Dark: deep purple/black void with violet halo, slow swirling wisps.
         private static ElementPalette Dark() => new ElementPalette
         {

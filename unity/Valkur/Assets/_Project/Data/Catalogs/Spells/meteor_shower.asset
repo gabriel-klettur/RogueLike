@@ -79,7 +79,7 @@ MonoBehaviour:
   particleDispersion: 0
   particleLifespan: 0
   particleSpeed: 0
-  particleColor: {r: 1, g: 1, b: 1, a: 1}
+  particleColor: {r: 1, g: 0.24, b: 0.08, a: 1}
   particleColors: []
   sizeRange: []
   emitRate: 0

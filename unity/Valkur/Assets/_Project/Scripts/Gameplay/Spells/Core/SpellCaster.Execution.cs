@@ -65,6 +65,12 @@ namespace Valkur.Gameplay.Spells
                 Executors[SpellType.Projectile].Execute(ctx);
             }
 
+            // The flourish on the CASTER. Fired here rather than from PlayerController because
+            // this is the one seam every cast passes through — a monster casting gets it too,
+            // which is most of what makes an enemy wind-up readable. It refuses the two spell
+            // types it would be wrong for; see SpellCastFlourishFX.Play.
+            SpellCastFlourishFX.Play(spell, transform, _castDirection);
+
             // Play spell SFX by spellKey (e.g. "fireball" → fireball SFX in catalog).
             // This is a SPECULATIVE probe: most spells have no authored clip yet, and a
             // spell without a sound is missing content, not a data bug. Gate on HasSfx so

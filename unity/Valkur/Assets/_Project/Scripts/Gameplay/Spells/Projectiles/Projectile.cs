@@ -240,7 +240,22 @@ namespace Valkur.Gameplay.Spells
                     StatusApplicationFactory.ApplyAll(_statusApplications, health.gameObject, casterGo);
                 }
             }
-            // Obstacle hits do no damage but still expire.
+            else
+            {
+                // Obstacle hits do no damage — unless the obstacle is one that can be
+                // attacked down. A spell wall has to live on Building to block anything at
+                // all, and Building is in ObstacleLayers, so this branch is the only place a
+                // projectile can ever reach it. See IDestructibleObstacle.
+                var obstacle = other.GetComponentInParent<IDestructibleObstacle>();
+                if (obstacle != null && obstacle.AcceptsDamage)
+                {
+                    Vector2 contact = _impactVfxPos.HasValue
+                        ? (Vector2)_impactVfxPos.Value
+                        : (Vector2)transform.position;
+                    obstacle.ApplyObstacleDamage(Mathf.RoundToInt(damage),
+                        _caster != null ? _caster.gameObject : null, contact, _element);
+                }
+            }
 
             Expire();
         }

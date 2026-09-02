@@ -81,6 +81,23 @@ namespace Valkur.Gameplay
         public event Action OnDeath;
         public event Action<int> OnDamaged;
 
+        /// <summary>
+        /// A real hit was refused because this entity is invincible. Carries what WOULD have
+        /// been dealt (before mitigation — nothing was mitigated, nothing was dealt) and who
+        /// threw it, which may be null.
+        ///
+        /// <para>This exists because the refusal used to be completely silent: <c>ApplyDamage</c>
+        /// returned on the invincibility check and no system downstream could tell the
+        /// difference between a blow that was stopped and a blow that never happened. A shield
+        /// that cannot react to being struck is an aura, so the one moment the spell exists for
+        /// produced nothing at all on screen.</para>
+        ///
+        /// <para>NOT fired for a hit that was going to do nothing anyway — a zero-damage call,
+        /// or one against something already dead. "Blocked" has to mean a blow was turned
+        /// away, or a listener flashing on it flashes at nothing.</para>
+        /// </summary>
+        public event Action<int, GameObject> OnDamageBlocked;
+
         private void Awake()
         {
             currentHp = maxHp;
@@ -152,7 +169,13 @@ namespace Valkur.Gameplay
 
         private void ApplyDamage(int amount, GameObject attacker, SpellElement? element, bool respectGrace)
         {
-            if (IsDead || amount <= 0 || _invincible) return;
+            if (IsDead || amount <= 0) return;
+
+            if (_invincible)
+            {
+                OnDamageBlocked?.Invoke(amount, attacker);
+                return;
+            }
 
             // Spirit-form players are intangible: they have IsDead==false because
             // we don't actually keep them at HP=0 (we re-init HP on revive), but

@@ -505,6 +505,16 @@ namespace Valkur.Gameplay
                 ? REGULAR_SLASH_ANIMATION_DURATION
                 : CAST_ANIMATION_DURATION;
             _castAnimEndTime = Time.time + Mathf.Max(floor, _animator.GetStateLength(state, variant));
+
+            // A stow commits on the cast frame but its ART is deferred to the END of the
+            // sheathe — the sword has to still be in hand for the animation to be putting it
+            // away. This window is the only measurement of how long that takes: it depends on
+            // the variant the animator just resolved and on that variant's own speed
+            // multiplier, neither of which the executor can see. A no-op unless a stow was
+            // committed THIS frame, so an unrelated spell cast mid-sheathe cannot push the
+            // swap out by its own window.
+            if (_loadouts != null && _loadouts.StowPending && _loadouts.SwappedThisFrame)
+                _loadouts.ScheduleStow(_castAnimEndTime - Time.time);
         }
 
         /// <summary>

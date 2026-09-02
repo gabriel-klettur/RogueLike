@@ -21,10 +21,12 @@ namespace Valkur.Gameplay.Spells
     /// than the animator's, and a monster casting this (nothing does, but nothing stops it)
     /// would drive a player-only component from a shared code path.
     ///
-    /// The swap is applied IMMEDIATELY while the draw plays over it. The alternative — swap
-    /// on the animation's last frame — needs a coroutine that survives a zone change, a
-    /// death and a second cast landing mid-draw, to buy a detail no player reads at 8 frames
-    /// and 0.15 s each.
+    /// WHEN the art swaps is asymmetric and belongs to the controller, not here. Drawing
+    /// lands on the cast frame — the weapon must be in hand for the draw to be showing it.
+    /// Stowing is COMMITTED here and lands when the sheathe finishes, because that animation
+    /// shows the weapon for its whole length and swapping early would play 1.2 s of putting
+    /// away a sword the character no longer has. The flare goes with the swap for the same
+    /// reason: its job is to hide a cut, so it fires where the cut is.
     ///
     /// STOWING PLAYS THE SAME SHEET BACKWARDS. There is one motion and it reads either way,
     /// so putting the weapon away is the draw reversed rather than a second animation nobody
@@ -63,13 +65,11 @@ namespace Valkur.Gameplay.Spells
                 return;
             }
 
-            if (!controller.ToggleLoadout(spell.loadoutKey))
-                return;
-
-            // Only on a swap that landed. A refused one (unknown key, or the loadout already
-            // worn) must not flare, or the spell looks like it worked when it did nothing.
-            // Read AFTER the toggle, because that is what decides the direction.
-            WeaponSwapFlashFX.Play(ctx.Caster, controller.LastSwapStowed);
+            // The toggle owns everything from here: which direction the swap goes, when its
+            // art lands, and the flare that covers the cut. A refused swap (unknown key)
+            // returns false and produces no flare, so the spell cannot look like it worked
+            // when it did nothing.
+            controller.ToggleLoadout(spell.loadoutKey);
         }
     }
 }

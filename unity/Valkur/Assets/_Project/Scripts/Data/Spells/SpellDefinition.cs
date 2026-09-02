@@ -44,6 +44,11 @@ namespace Valkur.Data
         // will ever reach. Its executor is deliberately empty: a probe that dealt damage
         // would be a spell, and would then need balancing.
         AnimationProbe,   // 26
+        // A sustained energy charge burning off the caster -- aura, ki stream, ground debris
+        // and (above a threshold) lightning. Visual only for now: the executor draws it and
+        // nothing else, which is why it has no damage, no radius of effect and no targets.
+        // APPENDED for the same reason as WeaponLoadout above.
+        EnergyCharge,     // 27
     }
 
     /// <summary>

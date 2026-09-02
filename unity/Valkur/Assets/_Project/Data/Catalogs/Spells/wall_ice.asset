@@ -36,13 +36,13 @@ MonoBehaviour:
   arcRangeDegrees: 0
   hitArcDegrees: 0
   length: 0
-  distance: 0
+  distance: 2.6
   knockback: 0
   collisionDamage: 0
   duration: 6
   damagePerTick: 0
   tickPeriod: 0
-  element: 
+  element: Ice
   healPerTick: 0
   force: 0
   forceMode: 
@@ -57,8 +57,8 @@ MonoBehaviour:
   explosionRadius: 0
   explosionDamage: 0
   ttl: 0
-  wallWidth: 12.5
-  wallHeight: 3.125
+  wallWidth: 6
+  wallHeight: 2
   wallHP: 100
   blockProjectiles: 1
   blockUnits: 1
