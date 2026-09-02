@@ -103,8 +103,10 @@ namespace Valkur.Data
             { SpellType.Mine,       Set("damage", "armingTime", "triggerRadius", "explosionRadius",
                                         "explosionDamage", "ttl", "infinite", "scale", "sprite",
                                         "impactPreset", "particleColor") },
+            // No vfxPreset: the funnel is built by VortexFunnelFX off the swatch, and the
+            // preset the executor used to spawn on top of it was a fourth uncoordinated layer.
             { SpellType.VortexField, Set("duration", "radius", "range", "force", "forceMode",
-                                         "followCaster", "spawnAtMouse", "vfxPreset", "particleColor") },
+                                         "followCaster", "spawnAtMouse", "particleColor") },
             { SpellType.ConeBreath, Set("duration", "coneArc", "coneLength", "damagePerTick",
                                         "tickPeriod", "element", "particleColor", "vfxPreset") },
             { SpellType.Summon,     Set("distance", "scale", "sprite", "summonTemplate",

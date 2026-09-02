@@ -1,90 +1,69 @@
 using UnityEngine;
-using Valkur.Core;
 using Valkur.Data;
-using Valkur.Gameplay.Combat;
-using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
-    /// Creates a vortex force field that pulls or pushes enemies.
-    /// Mirrors Python's VortexFieldResolver with force modes: pull, push.
+    /// Spawns a vortex force field that drags bodies in or shoves them out.
+    ///
+    /// <para>The whole look belongs to <see cref="VortexFunnelFX"/>, built by
+    /// <see cref="VortexFieldController"/>. This used to draw a spiral sprite of its own AND
+    /// spawn a particle preset on top of the rig — three uncoordinated layers for one spell,
+    /// and the sprite was disabled by the controller on the very next line, so its 64x64
+    /// texture was generated and leaked once per cast for nothing.</para>
     /// </summary>
     public class VortexFieldExecutor : ISpellExecutor
     {
+        // Fallbacks in WORLD UNITS, for a definition that authors none. The old ones (17.5 and
+        // 87.5) were the Python build's numbers in its own units; carried across unchanged they
+        // drew a circle wider than the screen and applied a force nothing bounded.
+        private const float FallbackRadius = 3.6f;
+        private const float FallbackForce = 24f;
+        private const float FallbackDuration = 2f;
+
+        /// <summary>How far a cursor-aimed vortex may be placed from its caster when the
+        /// definition authors no <c>range</c>. Both shipped vortices author one.</summary>
+        private const float FallbackCastRange = 10f;
+
+        /// <summary>Where a NON-aimed vortex sits, when it authors no <c>distance</c>.</summary>
+        private const float PlacedFallbackDistance = 2f;
+
         public void Execute(SpellContext ctx)
         {
-            // Values are in Unity world units (set in SpellDefinition Inspector)
-            float radius = ctx.Spell.radius > 0 ? ctx.Spell.radius : 17.5f;
-            float force = ctx.Spell.force > 0 ? ctx.Spell.force : 87.5f;
-            float duration = ctx.Spell.duration > 0 ? ctx.Spell.duration : 2f;
+            float radius = ctx.Spell.radius > 0 ? ctx.Spell.radius : FallbackRadius;
+            float force = ctx.Spell.force > 0 ? ctx.Spell.force : FallbackForce;
+            float duration = ctx.Spell.duration > 0 ? ctx.Spell.duration : FallbackDuration;
             bool isPull = string.IsNullOrEmpty(ctx.Spell.forceMode) || ctx.Spell.forceMode == "pull";
-            bool followCaster = ctx.Spell.followCaster;
 
-            // Spawn position: pull at mouse (distance), push at caster
-            Vector2 spawnPos;
-            if (ctx.Spell.spawnAtMouse || isPull)
-            {
-                float dist = ctx.Spell.range > 0 ? ctx.Spell.range : 6f;
-                spawnPos = (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * dist;
-            }
-            else
-            {
-                spawnPos = ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell);
-            }
+            // `|| isPull` used to be here, forcing the offset whichever way the flag was set.
+            // A hard-coded override of authored data makes the field unfalsifiable for half the
+            // spells that carry it: vortex_pull could not be placed on its caster even by
+            // clearing the box.
+            Vector2 spawnPos = SpellTargeting.ResolveGroundTarget(
+                ctx, FallbackCastRange, PlacedFallbackDistance);
 
             var vortexGo = new GameObject(isPull ? "VortexPull" : "VortexPush");
             vortexGo.transform.position = (Vector3)spawnPos;
 
-            // Visual
-            var sr = vortexGo.AddComponent<SpriteRenderer>();
-            sr.sprite = CreateVortexSprite();
-            sr.color = isPull
-                ? new Color(0.3f, 0.4f, 1f, 0.3f)
-                : new Color(1f, 0.4f, 0.3f, 0.3f);
-            sr.sortingLayerName = "VFX";
-            sr.sortingOrder = 1;
-            vortexGo.transform.localScale = Vector3.one * (radius * 0.4f);
-
             var controller = vortexGo.AddComponent<VortexFieldController>();
-            controller.Initialize(duration, radius, force, isPull, followCaster ? ctx.Caster : null, ctx.TargetLayers);
+            controller.Initialize(duration, radius, force, isPull,
+                ctx.Spell.followCaster ? ctx.Caster : null, ctx.TargetLayers,
+                ResolveSwatch(ctx.Spell));
 
-            // VFX: spawn vortex particle preset
-            var vfxService = VFXManager.Instance as IVFXService;
-            if (vfxService != null)
-            {
-                string preset = !string.IsNullOrEmpty(ctx.Spell.vfxPreset) ? ctx.Spell.vfxPreset : "vortex_dark";
-                vfxService.SpawnParticlePreset(preset, spawnPos, duration);
-            }
+            // Free-standing world object: nothing else can end it. The registry enforces
+            // maxInstances and clears it on a zone change.
+            SpellEffectRegistry.Track(vortexGo, ctx.Spell,
+                ctx.Caster != null ? ctx.Caster.gameObject : null);
+        }
 
-        
-            // Free-standing world object: nothing else can end it. The registry
-            // enforces maxInstances and clears it on a zone change.
-            SpellEffectRegistry.Track(vortexGo, ctx.Spell, ctx.Caster != null ? ctx.Caster.gameObject : null);
-}
-
-        private static Sprite CreateVortexSprite()
+        /// <summary>
+        /// The colour the funnel is drawn in. Public because the cast flourish asks the same
+        /// question of the same spell and the two answering differently is exactly the split
+        /// that made a red gather hand over to a violet field.
+        /// </summary>
+        public static Color ResolveSwatch(SpellDefinition spell)
         {
-            int size = 64;
-            var tex = new Texture2D(size, size);
-            tex.filterMode = FilterMode.Bilinear;
-            var pixels = new Color[size * size];
-            float center = size / 2f;
-            float rSq = center * center;
-            for (int y = 0; y < size; y++)
-                for (int x = 0; x < size; x++)
-                {
-                    float dx = x - center + 0.5f, dy = y - center + 0.5f;
-                    float dSq = dx * dx + dy * dy;
-                    float t = 1f - (dSq / rSq);
-                    // Spiral pattern
-                    float angle = Mathf.Atan2(dy, dx);
-                    float spiral = Mathf.Sin(angle * 3f + Mathf.Sqrt(dSq) * 0.5f) * 0.3f + 0.5f;
-                    pixels[y * size + x] = t > 0 ? new Color(1f, 1f, 1f, t * spiral) : Color.clear;
-                }
-            tex.SetPixels(pixels);
-            tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 16f);
+            return spell == null ? Color.white : spell.particleColor;
         }
     }
 }
