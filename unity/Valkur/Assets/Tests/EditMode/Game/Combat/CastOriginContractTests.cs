@@ -69,14 +69,17 @@ namespace Valkur.Tests.EditMode.Game.Combat
             "Gameplay/Spells/Executors/MeteorExecutor.cs",
             "Gameplay/Spells/Executors/MineExecutor.cs",
             "Gameplay/Spells/Executors/ProjectileExecutor.cs",
-            "Gameplay/Spells/Executors/PuddleExecutor.cs",
             "Gameplay/Spells/Executors/SlashExecutor.cs",
             "Gameplay/Spells/Executors/SmokeEmitterExecutor.cs",
             "Gameplay/Spells/Executors/SmokeExecutor.cs",
             "Gameplay/Spells/Executors/SummonExecutor.cs",
-            "Gameplay/Spells/Executors/TotemExecutor.cs",
-            "Gameplay/Spells/Executors/VortexFieldExecutor.cs",
             "Gameplay/Spells/Executors/WallExecutor.cs",
+
+            // The three ground-PLACED spells resolve their origin one level down, in
+            // SpellTargeting, which is the single owner of where an aimed spell lands. Listing
+            // the executors instead would demand a call they no longer make while letting the
+            // helper they now depend on drift unguarded.
+            "Gameplay/Spells/Core/SpellTargeting.cs",
         };
 
         private static readonly Regex BodyCentreCall = new Regex(
