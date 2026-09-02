@@ -17,7 +17,7 @@ MonoBehaviour:
   type: 21
   audience: 1
   usesAttackAnimation: 1
-  manaCost: 10
+  manaCost: 25
   maxInstances: 1
   allowOverlap: 1
   allowMovement: 1
@@ -27,12 +27,12 @@ MonoBehaviour:
   lockCastDirection: 1
   prepareDuration: 0.1
   channelDuration: 0
-  cooldownDuration: 2
+  cooldownDuration: 12
   speed: 0
   damage: 0
-  range: 0
+  range: 10
   lifetime: 0
-  radius: 17.5
+  radius: 3.8
   hitRadius: 0
   arcRangeDegrees: 0
   hitArcDegrees: 0
@@ -41,15 +41,15 @@ MonoBehaviour:
   knockback: 0
   collisionDamage: 0
   infinite: 0
-  duration: 2
+  duration: 8
   damagePerTick: 0
   tickPeriod: 0
   element: 
   healPerTick: 0
-  force: 75
+  force: 30
   forceMode: push
-  followCaster: 1
-  spawnAtMouse: 0
+  followCaster: 0
+  spawnAtMouse: 1
   statusApplications: []
   castAnchor: 0
   castForwardOffset: 0
@@ -69,7 +69,7 @@ MonoBehaviour:
   blockUnits: 0
   summonTemplate: 
   summonCount: 0
-  summonDuration: 2
+  summonDuration: 8
   totemKind: 
   coneArc: 0
   coneLength: 0
@@ -89,7 +89,7 @@ MonoBehaviour:
   particleColors: []
   sizeRange: []
   emitRate: 0
-  vfxPreset: vortex_dark
+  vfxPreset: 
   impactPreset: 
   vfxPresetLayers: []
   impactPresetLayers: []
