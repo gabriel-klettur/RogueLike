@@ -19,6 +19,14 @@ namespace Valkur.Gameplay.Spells
     /// <summary>Where the motes come from while the cast winds up.</summary>
     internal enum MoteApproach
     {
+        /// <summary>
+        /// Riding a helix around a funnel — the radius at any moment comes from the cone's
+        /// profile at that mote's height, so debris hugs the neck and flies wide at the top.
+        /// Only meaningful alongside a funnel; without one the motes orbit a shape that is
+        /// not being drawn.
+        /// </summary>
+        SpiralFunnel,
+
         /// <summary>A ring in the air spiralling into the hands.</summary>
         SpiralIn,
         /// <summary>Off the floor around the caster, lifting as they converge.</summary>
@@ -116,6 +124,24 @@ namespace Valkur.Gameplay.Spells
         public float BodyDrive;
         public float LightMul;
         /// <summary>Radius of the glow at the cast anchor, world units, at the peak.</summary>
+        /// <summary>
+        /// How many arcs the funnel is stacked from. Zero means this family draws none, which
+        /// is every family but Vortex — the pieces a family switches off are never built.
+        /// </summary>
+        public int FunnelBands;
+
+        /// <summary>World height of the funnel, floor to flared top.</summary>
+        public float FunnelHeight;
+
+        /// <summary>World radius where the funnel touches down, and where it opens out.</summary>
+        public float FunnelBaseRadius, FunnelTopRadius;
+
+        /// <summary>
+        /// Degrees per second, SIGNED. The sign is the whole difference between a vortex that
+        /// draws in and one that throws out — reverse it and a pull reads as a push.
+        /// </summary>
+        public float FunnelSpin;
+
         public float HandScale;
 
         /// <summary>
@@ -174,8 +200,10 @@ namespace Valkur.Gameplay.Spells
                 case SpellType.Beam:
                 case SpellType.ConeBreath:
                 case SpellType.ArcaneFlame:
-                case SpellType.VortexField:
                     return CastFlourishFamilies.Channel(spell);
+
+                case SpellType.VortexField:
+                    return CastFlourishFamilies.Vortex(spell);
 
                 case SpellType.Projectile:
                 case SpellType.Boomerang:

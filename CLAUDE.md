@@ -772,13 +772,16 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   caster DOING". They are genuinely orthogonal — an ice wall and an ice bolt are the same blue
   and nothing like the same gesture, while a summoned totem and a summoned wall are different
   colours and the same gesture — and the first version of the flourish had only the first, so
-  all 47 shipped spells cast identically and differed by hue alone. Eight families, dispatched
+  all 47 shipped spells cast identically and differed by hue alone. Nine families, dispatched
   on `SpellDefinition.type` the way `SlashProfile` dispatches on arc: **Hurl** spirals in and
   throws forward, **Edge** strikes sparks off the swing arc and draws no circle at all (a cut
   summons nothing), **Conjure** EXPANDS its circle while motes fall out of the sky (power being
   laid down, not taken in), **Invoke** lifts motes off the floor and throws them at the sky,
   **Ward** orbits the body and never lets go, **Surge** leaves its motes BEHIND, **Vanish**
-  implodes with no burst and no lance, **Channel** breathes and holds. Each family then sizes
+  implodes with no burst and no lance, **Channel** breathes and holds. **Vortex** is the only one with a
+  SILHOUETTE rather than points of light — a funnel narrow at the floor and flared at the
+  top, and `forceMode` reverses both its spin and its debris, which is genuinely the whole
+  difference between `vortex_pull` and `vortex_push`. Each family then sizes
   itself off the spell's own data, so two slashes with different arcs throw different numbers
   of sparks. Measured live on eight spells: Hurl ends +1.10 forward, Surge -0.87 (behind),
   Invoke +1.30 up, Conjure starts +2.82 ABOVE the hand, Vanish ends at radius 0.00.

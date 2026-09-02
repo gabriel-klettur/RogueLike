@@ -26,10 +26,11 @@ namespace Valkur.Gameplay.Spells
     /// meant one flourish per ELEMENT and read as decoration rather than as the character
     /// casting a particular spell.</para>
     ///
-    /// <para>Eight families, each a sentence: <b>Hurl</b> throws, <b>Edge</b> cuts,
+    /// <para>Nine families, each a sentence: <b>Hurl</b> throws, <b>Edge</b> cuts,
     /// <b>Conjure</b> lays something down, <b>Invoke</b> calls something from the sky,
     /// <b>Ward</b> keeps power rather than spending it, <b>Surge</b> makes the body the
-    /// projectile, <b>Vanish</b> implodes, <b>Channel</b> holds. See <see cref="CastFlourishFamilies"/>.</para>
+    /// projectile, <b>Vanish</b> implodes, <b>Channel</b> holds, <b>Vortex</b> turns. See
+    /// <see cref="CastFlourishFamilies"/>.</para>
     ///
     /// <para>Like <see cref="WeaponSwapFlashFX"/> it FOLLOWS its owner rather than being
     /// parented to them — most spells allow movement, and parenting would inherit the entity
@@ -245,6 +246,7 @@ namespace Valkur.Gameplay.Spells
             _handHot = CreateSprite("HandCore", ElementalSprites.HotCore, _palette.hotCore,
                 ORDER_HAND_HOT, SortingConfig.LAYER_VFX);
 
+            BuildFunnel();
             BuildMotes();
             BuildLight();
         }

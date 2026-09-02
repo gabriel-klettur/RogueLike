@@ -33,6 +33,7 @@ namespace Valkur.Gameplay.Spells
             UpdateAura(gather, punch);
             UpdateHand(gather, punch);
             UpdateBurstAndLance(punch, afterglow, sinceRelease > 0f);
+            UpdateFunnel(gather, punch, afterglow, sinceRelease > 0f);
             UpdateMotes(gather, sinceRelease, afterglow);
             UpdateBody(gather, punch);
             UpdateLight(gather, punch);

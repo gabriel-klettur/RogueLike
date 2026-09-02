@@ -8,7 +8,7 @@ namespace Valkur.Tests.EditMode.Game.Spells
 {
     /// <summary>
     /// Pins which gesture each kind of spell casts with, and the invariants that make the
-    /// eight families READ as eight different things.
+    /// nine families READ as nine different things.
     ///
     /// <para>The failure this guards against is silent and gradual: a new spell type is added,
     /// nothing routes it, it falls through to Hurl, and a summoned totem is announced by the
@@ -65,7 +65,7 @@ namespace Valkur.Tests.EditMode.Game.Spells
                     byName[profile.FamilyName] = signature;
             }
 
-            Assert.AreEqual(8, byName.Count, "One of the eight families became unreachable.");
+            Assert.AreEqual(9, byName.Count, "One of the nine families became unreachable.");
 
             var signatures = new HashSet<string>(byName.Values);
             Assert.AreEqual(byName.Count, signatures.Count,
