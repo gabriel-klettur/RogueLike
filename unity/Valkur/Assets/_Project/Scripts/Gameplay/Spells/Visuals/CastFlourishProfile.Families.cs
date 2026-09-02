@@ -205,11 +205,13 @@ namespace Valkur.Gameplay.Spells
             bool pulling = spell != null &&
                            string.Equals(spell.forceMode, "pull", System.StringComparison.OrdinalIgnoreCase);
 
-            // The funnel opens to the spell's own reach, so a wide vortex looks wide. Clamped
-            // because `radius` on these two is authored in the legacy pixel scale (17.5), and
-            // a funnel eight units across would fill the screen.
+            // The funnel opens to the spell's own reach, so a wide vortex looks wide. The
+            // factor used to be 0.11 to survive `radius` being authored in the legacy pixel
+            // scale (17.5); now that both spells author real world units it would clamp every
+            // vortex to the same minimum. Still clamped, because the gather stands on the
+            // CASTER and has to stay smaller than the field it is announcing.
             float reach = spell != null ? CastFlourishProfile.FirstPositive(2.2f, spell.radius) : 2.2f;
-            float top = Mathf.Clamp(reach * 0.11f, 1.15f, 2.4f);
+            float top = Mathf.Clamp(reach * 0.42f, 1.0f, 2.6f);
 
             return new CastFlourishProfile
             {
