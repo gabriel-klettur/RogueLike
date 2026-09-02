@@ -177,6 +177,25 @@ namespace Valkur.Gameplay.Spells
                                                  Mathf.Sin(theta) * r * 0.75f, 0f);
                 }
 
+                // Debris caught in the funnel: the radius at any instant is the CONE's radius
+                // at that mote's height, so a scrap near the neck hugs the axis and one near
+                // the top flies wide. Height cycles rather than converging, because the vortex
+                // is still turning when the cast releases.
+                case MoteApproach.SpiralFunnel:
+                {
+                    float climb = Mathf.Repeat(_moteAngle[i] * 0.14f + _age * 0.85f, 1f);
+                    float coneRadius = Mathf.Lerp(_profile.FunnelBaseRadius, _profile.FunnelTopRadius,
+                                                  Mathf.Pow(climb, 0.75f));
+                    // Sign-matched to the funnel, or the debris turns against the wall it is
+                    // supposed to be riding.
+                    float spin = Mathf.Sign(_profile.FunnelSpin == 0f ? 1f : _profile.FunnelSpin);
+                    float sweep = angle + _age * spin * 5.2f;
+                    return new Vector3(
+                        Mathf.Cos(sweep) * coneRadius,
+                        climb * _profile.FunnelHeight * Mathf.Clamp01(gather * 1.4f),
+                        0f);
+                }
+
                 case MoteApproach.SpiralIn:
                 default:
                 {

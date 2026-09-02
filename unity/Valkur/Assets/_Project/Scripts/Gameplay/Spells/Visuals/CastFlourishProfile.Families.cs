@@ -4,7 +4,7 @@ using Valkur.Data;
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
-    /// The eight cast gestures. Each is a sentence about what the caster is doing, and every
+    /// The nine cast gestures. Each is a sentence about what the caster is doing, and every
     /// field below is that sentence made numeric — so a change here is a change of intent,
     /// not a tweak.
     /// </summary>
@@ -182,6 +182,57 @@ namespace Valkur.Gameplay.Spells
                 Lance = LanceAim.None, LanceLength = 0f,
                 Burst = BurstOrigin.None, BurstRadius = 0f,
                 AuraDrive = 1.7f, BodyDrive = 0.85f, LightMul = 1.2f, HandScale = 0.6f,
+                HandAnchored = false,
+            };
+        }
+
+        /// <summary>
+        /// <b>Vortex</b> — a tornado standing on the caster. The only family with a
+        /// SILHOUETTE of its own: every other gesture is points of light, and points have no
+        /// outline, while a funnel is recognised by its shape long before any debris in it is.
+        ///
+        /// <para>It is one gesture with two directions, and <c>forceMode</c> picks which. A
+        /// PULL turns one way and drags its debris inward; a PUSH turns the other and throws
+        /// it out. Nothing else changes — reversing the spin and the departure is enough,
+        /// because that is genuinely the whole difference between the two spells.</para>
+        ///
+        /// <para>It runs longer than any other family (0.72 s against Hurl's 0.52) and gathers
+        /// for most of it. A vortex that snaps to full size has not spun up, it has appeared,
+        /// and the winding is the part worth watching.</para>
+        /// </summary>
+        public static CastFlourishProfile Vortex(SpellDefinition spell)
+        {
+            bool pulling = spell != null &&
+                           string.Equals(spell.forceMode, "pull", System.StringComparison.OrdinalIgnoreCase);
+
+            // The funnel opens to the spell's own reach, so a wide vortex looks wide. Clamped
+            // because `radius` on these two is authored in the legacy pixel scale (17.5), and
+            // a funnel eight units across would fill the screen.
+            float reach = spell != null ? CastFlourishProfile.FirstPositive(2.2f, spell.radius) : 2.2f;
+            float top = Mathf.Clamp(reach * 0.11f, 1.15f, 2.4f);
+
+            return new CastFlourishProfile
+            {
+                FamilyName = "Vortex",
+                Duration = 0.72f, Gather = 0.42f, Release = 0.10f,
+                Sigil = SigilMotion.Contract, SigilRadius = top * 0.85f, SigilSpin = pulling ? 210f : -210f,
+                SigilAlpha = 0.55f,
+                Approach = MoteApproach.SpiralFunnel,
+                Departure = pulling ? MoteDeparture.PullInward : MoteDeparture.PushOutward,
+                MoteCount = 20, MoteRadius = top * 0.8f,
+                MoteSpeedMin = 2.4f, MoteSpeedMax = 6.5f, MoteSize = 0.14f, MoteSpread = 1.6f,
+                // No lance: a vortex does not point anywhere, it turns.
+                Lance = LanceAim.None, LanceLength = 0f,
+                Burst = BurstOrigin.Ground, BurstRadius = top * 1.15f,
+                FunnelBands = 7,
+                FunnelHeight = 2.9f,
+                FunnelBaseRadius = top * 0.22f,
+                FunnelTopRadius = top,
+                // Fast enough to blur, and signed by direction.
+                FunnelSpin = pulling ? 520f : -520f,
+                AuraDrive = 0.85f, BodyDrive = 0.40f, LightMul = 1.05f, HandScale = 1.0f,
+                // Anchored on the BODY: the funnel encloses the caster rather than being held
+                // out in front of them, so the motes must converge on the same axis.
                 HandAnchored = false,
             };
         }
