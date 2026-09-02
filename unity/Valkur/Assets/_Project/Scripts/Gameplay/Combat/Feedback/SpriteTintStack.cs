@@ -31,6 +31,23 @@ namespace Valkur.Gameplay.Combat
         /// cannot leave the character glowing.
         /// </summary>
         Equip = 9,
+
+        /// <summary>
+        /// The body catching the light of the spell it is casting. Owned by
+        /// <c>SpellCastFlourishFX</c> for the length of one flourish and cleared in its
+        /// <c>OnDestroy</c>, so a cast interrupted by a zone change or a death cannot leave
+        /// the character glowing. Multiplies with <see cref="Equip"/> rather than fighting
+        /// it: a spell cast during a weapon swap reads as both.
+        /// </summary>
+        Cast = 10,
+
+        /// <summary>
+        /// The body lit by a sustained energy charge. Unlike <see cref="Cast"/> this is a
+        /// STATE, held for as long as the aura burns, so it is deliberately gentle: the aura
+        /// itself is additive and blows out on its own, while this layer MULTIPLIES and would
+        /// darken the character toward the aura's colour if it were driven hard.
+        /// </summary>
+        Charge = 11,
     }
 
     /// <summary>

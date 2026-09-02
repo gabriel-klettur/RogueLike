@@ -28,6 +28,34 @@ namespace Valkur.Gameplay.Spells
         /// <summary>Tint used when a slash leaves <c>particleColor</c> unset.</summary>
         private static readonly Color DefaultTint = new Color(0.92f, 0.95f, 1f, 1f);
 
+        /// <summary>
+        /// The colour this slash actually draws with — the blade, and the cast gather that
+        /// precedes it, so the two cannot disagree.
+        ///
+        /// <para>The "unset" test used to be <c>particleColor != Color.clear</c>, and NO
+        /// shipped spell has an alpha-zero swatch, so that branch was unreachable and
+        /// <see cref="DefaultTint"/> was dead code. The real sentinel for an untouched
+        /// <c>particleColor</c> is OPAQUE WHITE — <see cref="KiPalette.IsUnauthored"/> owns
+        /// that rule — and using the wrong one had a visible cost: plain <c>slash</c> swung a
+        /// pure-white arc while its flourish, which does use the right sentinel, read the same
+        /// field as unauthored and gathered arcane violet.</para>
+        ///
+        /// <para>The regular slash's brightness floor is applied HERE rather than at the call
+        /// site, because a gather that ignored it would be darker than the blade it announces.</para>
+        /// </summary>
+        public static Color ResolveTint(SpellDefinition spell)
+        {
+            if (spell == null) return DefaultTint;
+
+            Color tint = KiPalette.IsUnauthored(spell.particleColor)
+                ? DefaultTint
+                : spell.particleColor;
+
+            return RegularSlashAttack.Matches(spell)
+                ? EnsureMinBrightness(tint, MIN_REGULAR_SLASH_BRIGHTNESS)
+                : tint;
+        }
+
         /// <summary>Arc used when a slash leaves <c>arcRangeDegrees</c> unset.</summary>
         private const float DEFAULT_ARC_DEGREES = 90f;
 
@@ -47,12 +75,11 @@ namespace Valkur.Gameplay.Spells
             // visual share it, so the swing cannot detach from its damage area.
             Vector2 castStart = ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell);
 
-            Color tint = ctx.Spell.particleColor != Color.clear ? ctx.Spell.particleColor : DefaultTint;
+            Color tint = ResolveTint(ctx.Spell);
 
             if (RegularSlashAttack.Matches(ctx.Spell))
             {
-                RegularSlashAttack.Spawn(ctx, castStart, hitRadius, arc,
-                    EnsureMinBrightness(tint, MIN_REGULAR_SLASH_BRIGHTNESS));
+                RegularSlashAttack.Spawn(ctx, castStart, hitRadius, arc, tint);
                 return;
             }
 

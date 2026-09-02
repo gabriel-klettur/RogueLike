@@ -75,6 +75,7 @@ namespace Valkur.Gameplay.Spells
             { SpellType.Totem,            new TotemExecutor() },
             { SpellType.WeaponLoadout,    new WeaponLoadoutExecutor() },
             { SpellType.AnimationProbe,   new AnimationProbeExecutor() },
+            { SpellType.EnergyCharge,     new EnergyChargeExecutor() },
         };
 
         public CastPhase CurrentPhase => _phase;

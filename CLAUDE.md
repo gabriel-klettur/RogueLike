@@ -731,6 +731,173 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   being torn down underneath it. Note also that a rig built in `Initialize` renders ONE frame
   before `Update` first runs, so an ignition ramp has to be seated at the end of `Initialize`
   or the effect pops at full alpha for 16 ms before starting to fade in.
+- **An energy charge is a COLUMN, and nothing here drew one.** `AreaFXRig` is a disc and
+  `IceWallVisual` is a line; a ki charge is tall, anchored to a body that can walk, and its
+  silhouette FLICKERS — which is the one thing that separates fire from a light. `KiAuraFX`
+  is seven layers: a smooth column, flame tongues that carry the flicker, a haze, sparks
+  streaming upward, opaque ground debris (the only non-additive layer, and the only one that
+  says the world is being affected rather than just lit), ground pulse rings, and lightning.
+  Its sorting is rebased on the CASTER's own order every time that changes — `YSortEntity`
+  rewrites their order whenever they walk, so a value captured once at build time pops the
+  aura in front of the character the first time they take a step.
+- **Intensity is not a size.** The seven shipped charges (`charge_ki_spirit` … `_void`) run
+  0.15 to 1.00 on `SpellDefinition.scale`, and what that dial moves is DENSITY and BEHAVIOUR:
+  6 to 15 flame tongues, 35 to 130 sparks a second, no ground debris at all below 0.32, no
+  lightning below 0.60, ring pulses every 2.1 s down to every 0.34 s. Height barely moves
+  (3.5 to 4.5 units on a 2.5-unit body) because a calm charge should read as CALM, not as
+  small. Measured: the first height values tried put the void charge at 9.8 units against a
+  10-unit-tall camera, so the aura filled the screen and stopped reading as something coming
+  off a person.
+- **A palette derived from one swatch cannot be authored wrong.** `KiPalette.From` takes the
+  spell's `particleColor` and derives core / mid / edge / light from it, so a designer picks
+  one colour and gets a coherent aura — and it is impossible to author one whose core is
+  darker than its edge. The edge is DEEPENED in HSV rather than multiplied, because plain
+  multiplication desaturates towards black and turns a crimson aura's edge grey, when the edge
+  is supposed to be the most colourful part of it. Note `particleColor` holds opaque white
+  when nobody has touched it, which is indistinguishable from a deliberate white; the fallback
+  is a pale blue-white, so a designer who meant white gets very nearly what they asked for.
+- **A cast pose is not a cast.** At 16 PPU a character is forty pixels tall and the
+  difference between their idle frame and their cast frame is a few of them, so for as long
+  as the game existed every spell's only visible event happened somewhere ELSE — a projectile
+  leaving, a wall rising three units away. What reads as casting is LIGHT gathering on the
+  body and then leaving it. `SpellCastFlourishFX` is that, in three beats: a ground sigil, a
+  ring of motes that gathers, and a release. It fires from `SpellCaster.ExecuteSpell` — the
+  single seam every cast passes through, monsters included — and refuses exactly two spell
+  types: `WeaponLoadout` (whose `WeaponSwapFlashFX` owns those frames) and `AnimationProbe`
+  (whose whole job is that the animation can be SEEN). That carve-out lives in `AppliesTo`
+  rather than inline, because in Edit Mode a test cannot tell it apart from the
+  `Application.isPlaying` leak guard.
+- **Colour and gesture are two axes, and folding them together costs the effect its meaning.**
+  `ElementPalette` answers "what element is this"; `CastFlourishProfile` answers "what is the
+  caster DOING". They are genuinely orthogonal — an ice wall and an ice bolt are the same blue
+  and nothing like the same gesture, while a summoned totem and a summoned wall are different
+  colours and the same gesture — and the first version of the flourish had only the first, so
+  all 47 shipped spells cast identically and differed by hue alone. Eight families, dispatched
+  on `SpellDefinition.type` the way `SlashProfile` dispatches on arc: **Hurl** spirals in and
+  throws forward, **Edge** strikes sparks off the swing arc and draws no circle at all (a cut
+  summons nothing), **Conjure** EXPANDS its circle while motes fall out of the sky (power being
+  laid down, not taken in), **Invoke** lifts motes off the floor and throws them at the sky,
+  **Ward** orbits the body and never lets go, **Surge** leaves its motes BEHIND, **Vanish**
+  implodes with no burst and no lance, **Channel** breathes and holds. Each family then sizes
+  itself off the spell's own data, so two slashes with different arcs throw different numbers
+  of sparks. Measured live on eight spells: Hurl ends +1.10 forward, Surge -0.87 (behind),
+  Invoke +1.30 up, Conjure starts +2.82 ABOVE the hand, Vanish ends at radius 0.00.
+- **`wallWidth` / `wallHeight` are WORLD UNITS, and used not to be.** `WallExecutor` divided
+  both by 32 — a leftover from the Python build, where they were pixels — so the shipped
+  `wall_ice` (12.5 x 3.125) resolved to a barrier **0.78 units wide and 0.049 tall**, collider
+  included: twelve screen pixels by less than one. Nothing failed; the wall simply was not
+  there, and the wrongness was internally consistent everywhere except on screen. The tell was
+  that the executor's own fallbacks (6 x 1.5) were thirty times larger than anything the asset
+  could produce. `IceWallGeometryTests` now asserts the composition rather than either half,
+  the way the spawner-drift note above prescribes.
+- **A radial rig cannot draw a LINE.** `AreaFXRig` is four concentric discs plus a circle
+  emitter — right for a puddle or a vortex, and what the ice wall used for years: stretched
+  onto the barrier's quad the discs became ellipses, the particle emitter became a point in
+  the middle, and the `Light2D` hanging under the scaled root rendered at some other radius
+  entirely. `IceWallVisual` is the line-shaped answer: an UNROTATED, UNSCALED root, crystals
+  placed along the axis by POSITION (so they stand up on screen whichever way the wall runs),
+  absolute per-child sizes, a Box emitter as long as the wall, and lights spread along it.
+  Only the collider child is rotated.
+- **A flat disc cannot draw a sphere, and the tell is that nothing is ever ENCLOSED.**
+  `sphere_magic_shield` was four concentric sprites on `LAYER_VFX`, which draws in front of
+  everything — so the character stood behind their own shield, and it read as a decal on the
+  lens, the same failure the single-system weather effects had. A sphere has a FRONT AND A
+  BACK with the body between them: `ShieldSphereFX` sorts every facet and every mote by the
+  SIGN of its depth against the caster's live order, and that split is the only statement in
+  the rig that anything is inside anything. It also must be rebased every frame — `YSortEntity`
+  rewrites the caster's order when they walk, and a stale base pops the far hemisphere in front
+  and flattens the sphere into a disc for as long as they are moving. Three quantities read off
+  the same depth and have to agree or the motion reads as sliding: a mote SHRINKS, DIMS and
+  SORTS BEHIND together. And the sphere is deliberately NOT squashed on Y — every other round
+  thing here (ground pulses, telegraphs, puddles) lies on the FLOOR and is flattened because
+  the camera looks at it at an angle; this one is in VIEW space, so flattening it makes it read
+  as a disc lying under the character's feet.
+- **A shield that cannot react to being hit is an aura.** `Health.ApplyDamage` opened with
+  `if (IsDead || amount <= 0 || _invincible) return;` — a refused blow was SILENT, so no system
+  downstream could tell a blow that was stopped from a blow that never happened, and the one
+  moment the spell exists for produced no pixel at all. `OnDamageBlocked` is that seam. It fires
+  only for a hit that was really turned away (not a zero hit, not one on a corpse), or a
+  listener flashing on it flashes at nothing. The ripple it drives is placed by GEODESIC
+  distance across the shell, so it wraps around the far side and converges at the antipode;
+  straight-line screen distance would draw a disc that stops at the silhouette, which is a
+  ripple on a plate rather than on a ball.
+- **`SetInvincible` is one bool with three independent owners, so it must be SAVED AND
+  RESTORED, never cleared.** The dev console's god mode, the F4 editor's test invulnerability
+  and the shield all write it; the shield wrote `false` on expiry and switched off whichever
+  of the other two was holding it. `SpellsRuntimeEditor` had already solved this the right way.
+  Save/restore alone is not enough, though — the ORDER matters too: `SpellEffectRegistry.Track`
+  is what evicts the previous shield, and eviction restores the flag that shield claimed, so
+  tracking has to happen BEFORE the new controller claims it. Initialize first and the sequence
+  runs backwards. Measured before the fix: cast twice and `IsInvincible` came back False with
+  two spheres on screen.
+- **The element chooses a flourish's palette; the spell's own swatch chooses its HUE.** 39 of
+  the 74 shipped spells author a `particleColor` and `SpellCastFlourishFX` read none of them —
+  a green laser gathered arcane violet, and a spell with no element (most of them) had no way
+  to say what colour it was. `ElementPalette.RecolouredTo` moves the hue and keeps each field's
+  own VALUE and ALPHA, because those are tuning: `hotCore` is near-white and `halo` is dim, and
+  that spread is what makes a flourish read as a hot centre inside a soft bloom rather than as
+  six sprites of one colour. Deriving the palette FROM the swatch instead fails hardest where
+  it is least recoverable — `hostile_slash_dark` authors a 0.04 grey, and on an ADDITIVE
+  material near-black adds nothing, so the flourish would not dim, it would disappear.
+  Measured across the shipped set, the retint holds every field at value >= 0.85.
+  `fireball` was the worst case: it is in NEITHER the `element` field NOR
+  `MapSpellKeyToElement`'s legacy table, so it fell through to Arcane and gathered violet
+  before throwing a fire ball. It now authors a red swatch. The alternative — `element: Fire`
+  — was rejected twice over: the fire palette's core is ORANGE (1.00, 0.55, 0.10), and setting
+  `element` also feeds `Health.MitigateDamage`, so it silently couples the spell to fire
+  resistance. `meteor_shower` was the same case and took the same red. Ten spells are still in
+  that state (boomerang, healing_aura, healing_totem, laser_beam_white, mine_basic, slash,
+  smoke, summon_barbol, vortex_pull, vortex_push); the nineteen `anim_*` probes are not,
+  because `AppliesTo` refuses them outright.
+- **Two sentinels for "unauthored colour" is one too many, and the disagreement is visible.**
+  `SlashExecutor` tested `particleColor != Color.clear` while `KiPalette.IsUnauthored` tests
+  OPAQUE WHITE. No shipped spell has an alpha-zero swatch, so the executor's branch was
+  unreachable and its `DefaultTint` was dead code — plain `slash` therefore swung a PURE WHITE
+  arc, while the flourish read the very same field as unauthored and gathered arcane violet.
+  Both halves were internally consistent and disagreed only on screen, in the half-second
+  before the blade appeared, which is why it survived. `SlashExecutor.ResolveTint` is now the
+  single answer to "what colour is this slash", applies the regular slash's brightness floor
+  (a gather that ignored it would be darker than the blade it announces), and the flourish
+  asks it through `ResolveSwatch` rather than reading the raw field. A spell type that grows
+  its own resolved tint belongs in that switch, not inline at the call site.
+- **Opaque white is NOT grey, even though it is achromatic.** The two rules meet in the
+  flourish's colour resolution and their order matters: white is the "nobody authored this"
+  sentinel and such a spell correctly keeps its ELEMENT's colour, while a real grey
+  (`hostile_slash_gray`'s 0.59, `smoke_emitter`'s 0.78) is a deliberate request for the absence
+  of colour and must desaturate the gather. Test the sentinel FIRST — checking saturation first
+  catches white in the grey branch and reports eleven perfectly correct spells as broken.
+- **An achromatic swatch has no hue, and `RGBToHSV` reports 0 for it — which is RED.** So
+  blending a grey authored colour into a palette the naive way lights a grey spell with a pale
+  PINK gather: measured on `hostile_slash_gray`, a 0.59 grey blade against a
+  (1.00, 0.84, 0.84) core. Grey is a real request and what it asks for is the ABSENCE of
+  colour, so `ElementPalette.Retint` short-circuits to a neutral at the field's own brightness
+  below 0.02 saturation. The near-black guard is a separate case and both are needed:
+  `hostile_slash_dark` is achromatic AND dark.
+- **A swatch that reaches the flourish must be reachable in F4.** Making
+  `SpellCastFlourishFX` read `particleColor` made the field LIVE for every type that shows a
+  flourish, but `SpellFieldRelevance` exposed it for only 15 of 26 — so on Meteor, Aura,
+  Totem, Summon, Mine, VortexField, ArcaneFlame, Smoke and SmokeEmitter the colour now drove
+  the gather while the panel hid the control for it. The relevance test only fails the other
+  way round (a field an EXECUTOR reads and the panel hides), so nothing caught it. All nine are
+  exposed now; `WeaponLoadout` and `AnimationProbe` stay hidden, correctly, because `AppliesTo`
+  refuses them. Note the meteors themselves were never violet — `MeteorMissileFX` hardcodes its
+  own fire colours — so only the cast read wrong, which is exactly why it survived unnoticed.
+- **A `Health` on a Building-layer object is unreachable code.** Every damage path finds its
+  victims through a `LayerMask` — the player's melee targets NPC(9), a monster's targets
+  Player(8), and `Projectile.ObstacleLayers` stops a shot on World(11)/Building(14) WITHOUT
+  damaging it — and a blocking wall has to be on Building to block at all. So the ice wall
+  shipped with `Health(100)`, a hit flash and a destruction sound that nothing in the project
+  could ever trigger; it always died to its timer. `IDestructibleObstacle` +
+  `DestructibleObstacleRegistry` are the seam, deliberately NOT a mask widening: melee on
+  Building would query every painted collision cell in range on every swing, whereas the
+  registry is normally EMPTY and costs a `Count` check. Projectiles reach it through their
+  existing obstacle branch instead.
+- **A particle module's axes must all be in the same curve MODE.** Assigning only
+  `velocityOverLifetime.y` as a two-constant range leaves x and z as single constants, and
+  Unity rejects the mismatch with `Particle Velocity curves must all be in the same mode` —
+  once per frame, per system, for as long as the effect lives. Related, and the reason the
+  velocity module is needed at all: a **Box shape emits along its own FORWARD**, which in a 2D
+  scene is straight into the screen, so `startSpeed` on a box buys motion nobody can see.
 - **Every `ElementalSprites` sprite is exactly 1x1 world unit, so a scale constant IS a world
   diameter.** `Sprite.Create` is handed the texture size as `pixelsPerUnit` for all eleven, so
   a 128 px Halo is no bigger in world than a 32 px HotCore — the resolution buys detail, not
@@ -875,6 +1042,40 @@ resliced without its `--config` and quietly reshipped.
   `SpriteTintStack`'s hand-maintained `LAYER_COUNT = 9`, whose failure mode is an
   `IndexOutOfRange` on the first `Set` of the NEW layer, i.e. inside the new effect rather
   than in the stack; it is now derived from the enum.
+- **On an additive material, alpha is COVERAGE and colour is brightness — so a "dark" effect
+  is authored by darkening the colour and leaving the alpha alone.** Every layer of
+  `WeaponSwapFlashFX` is on `ElementalSprites.SharedAdditiveMaterial` (`SrcAlpha/One`), which
+  adds what it is given: a deep indigo at alpha 0.85 still covers the whole silhouette, it
+  just adds dark violet light instead of white. Reaching for the alphas instead makes the
+  flare FAINT, not dark, and a faint flare stops hiding the cut it exists for. The dwarf's
+  stow therefore runs `Tint (0.20,0.09,0.34)` / `Hot (0.34,0.15,0.52)` at the SAME alphas as
+  the pale draw. The one layer that could genuinely darken the character is `Body`, which
+  goes through `SpriteTintStack` and MULTIPLIES — it is deliberately held near white in both
+  directions (measured live: `(0.90,0.87,0.95)` at the punch's peak), because dragging the
+  body down reads as the dwarf being dimmed rather than as a dark spell going off around him.
+- **A flare hides a cut, so it fires WHERE the cut is — and the two halves of a toggle put
+  the cut at opposite ends of the same animation.** Drawing has to swap the art on the cast
+  frame, because the draw animation is showing a weapon the character must already be
+  holding. Stowing cannot: the sheathe is that same sheet run backwards and shows the weapon
+  in hand for all eight of its frames, so swapping on the cast frame plays 1.2 s of putting
+  away a sword that is no longer there. `PlayerLoadoutController.ToggleLoadout` therefore
+  COMMITS a stow immediately and defers only its ART — measured live on the dwarf, the flare
+  spawns at 1.16 s while `ActiveLoadoutKey` is still `armed` and the swap lands at 1.20 s.
+  Three separate things make that work and each fails differently. The commit has to be
+  immediate even though the art is late, because `ShouldPlayCastReversed` reads
+  `SwappedThisFrame`/`LastSwapStowed` in the SAME frame the executor ran and a late answer
+  leaves the sheathe playing forwards, i.e. drawing the weapon twice. The delay is not a
+  constant: `TriggerCastAnimation` hands over the cast window it just measured
+  (`ScheduleStow`), which is the only place the sheathe's real length exists, since it
+  depends on the resolved variant and that variant's own speed multiplier — the 0.35 s
+  `STOW_FALLBACK_DELAY` is a backstop against hanging armed forever, not the normal path,
+  and a stow that silently took it would land four times too early. And the flare leads the
+  swap by `FLASH_LEAD = 0.04f` because `WeaponSwapFlashFX`'s bloom peaks 12 % into its 0.34 s
+  cycle: firing them together lands the cut while the flash is still ramping, which is the
+  one frame the whole effect exists to cover. `SetLoadout` stays immediate and flare-free in
+  both directions — it is what the animation probes use to park a character in a loadout, and
+  it CANCELS any pending stow, or one armed a second earlier would undress the character the
+  probe just dressed.
 - **Every authored animation has a spell that plays it, and half of them could not.**
   `SpellType.AnimationProbe` is an inert spell — its executor is deliberately empty — that
   exists so an animation can be selected and watched in the Spells Editor. It was needed

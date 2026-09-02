@@ -10,19 +10,20 @@ namespace Valkur.Gameplay.Spells
     /// Its job is to hide a cut. The swap replaces four sprite sets in a single frame, so
     /// without something over the top the character POPS from one set of hands to the other
     /// — one frame unarmed, the next armed, with nothing in between to read as a cause. A
-    /// flash bright enough to wash the body out for a few frames turns that discontinuity
-    /// into the reason for itself.
+    /// flare that covers the silhouette for a few frames turns that discontinuity into the
+    /// reason for itself. Drawing covers it in pale steel-white; stowing covers it in deep
+    /// violet — same coverage, opposite end of the palette.
     ///
     /// Five pieces, and each is doing a different job:
     ///
     /// * <b>Bloom</b> over the silhouette, additive, punching in two frames and falling off
-    ///   over the rest. This is the part that actually covers the body.
+    ///   over the rest.
     /// * <b>Halo</b>, wide and faint, so the bloom sits in something instead of ending at a
     ///   hard edge.
-    /// * <b>Sweep</b> — a bright band travelling along the body, UP as the weapon comes out
-    ///   and DOWN as it goes away. This is the only piece that knows which direction the
-    ///   swap went, and it is what stops a draw and a sheathe looking identical.
-    /// * <b>Ring</b>, expanding outward from the body's middle: the flash pushing air.
+    /// * <b>Sweep</b> — a band travelling along the body, UP as the weapon comes out and DOWN
+    ///   as it goes away. This is the only piece that knows which direction the swap went,
+    ///   and it is what stops a draw and a sheathe looking identical.
+    /// * <b>Ring</b>, expanding outward from the body's middle: the flare pushing air.
     /// * <b>Motes</b> scattered through the silhouette, twinkling — the detail that makes it
     ///   read as magic rather than as a lighting glitch.
     ///
@@ -40,7 +41,7 @@ namespace Valkur.Gameplay.Spells
     internal sealed class WeaponSwapFlashFX : MonoBehaviour
     {
         /// <summary>Short on purpose. The equip animation runs 1.2 s; this is punctuation at
-        /// the front of it, not a second animation competing with it.</summary>
+        /// one end of it, not a second animation competing with it.</summary>
         private const float DURATION = 0.34f;
 
         private const int MOTE_COUNT = 22;
@@ -51,11 +52,81 @@ namespace Valkur.Gameplay.Spells
         private const int ORDER_SWEEP = 63;
         private const int ORDER_MOTE  = 64;
 
-        /// <summary>Drawing reads as steel catching the light; stowing as it going warm and
-        /// settling. Two palettes rather than one so the two halves of the toggle are
-        /// distinguishable with the sound off.</summary>
-        private static readonly Color DrawTint = new Color(0.68f, 0.90f, 1.00f, 1f);
-        private static readonly Color StowTint = new Color(1.00f, 0.82f, 0.46f, 1f);
+        /// <summary>
+        /// Everything that differs between drawing and stowing. The two directions do not
+        /// merely swap a hue, and they cannot: every sprite layer here is on
+        /// <c>ElementalSprites.SharedAdditiveMaterial</c> (<c>SrcAlpha/One</c>), which ADDS
+        /// what it is given. So a dark FX colour behaves nothing like a dark paint — it adds
+        /// dark violet light instead of white light, and no amount of alpha will ever push it
+        /// toward white. That is exactly what makes the stow readable as dark: the ALPHAS can
+        /// stay high (the flare still covers the silhouette) while the colour it adds stays
+        /// deep. Turning the alphas down instead would not darken the flare, it would make it
+        /// FAINT, which is a different look and loses the cut it exists to cover.
+        ///
+        /// <see cref="Body"/> is the one layer that multiplies rather than adds
+        /// (<see cref="SpriteTintStack"/>), so it is the only one that could take the
+        /// character itself down. It deliberately does NOT: the darkness is an art direction
+        /// for the EFFECT, not for the dwarf, and dragging the body to a silhouette reads as
+        /// the character being dimmed rather than as a dark spell going off around him. The
+        /// stow's value here is a light dusk-violet cast, near enough to white to be felt
+        /// rather than seen.
+        /// </summary>
+        private struct Palette
+        {
+            public Color Tint;            // halo, ring, mote base
+            public Color Hot;             // bloom + Light2D colour
+            public Color Sweep;           // the travelling band
+            public Color Body;            // what the body is pulled toward; < 1 darkens
+            public float BodyDrive;       // how far toward Body at the punch's peak
+            public float HaloAlpha;
+            public float BloomAlpha;
+            public float RingAlpha;
+            public float SweepAlpha;
+            public float LightIntensity;
+            public float MoteWhitenMin;   // how far each mote is pushed toward white
+            public float MoteWhitenMax;
+        }
+
+        /// <summary>Drawing reads as steel catching the light: pale, cold and bright, with
+        /// the body washed toward white.</summary>
+        private static readonly Palette DrawPalette = new Palette
+        {
+            Tint           = new Color(0.68f, 0.90f, 1.00f, 1f),
+            Hot            = new Color(0.94f, 0.98f, 1.00f, 1f),
+            Sweep          = Color.white,
+            Body           = new Color(0.94f, 0.98f, 1.00f, 1f),
+            BodyDrive      = 0.65f,
+            HaloAlpha      = 0.34f,
+            BloomAlpha     = 0.85f,
+            RingAlpha      = 0.70f,
+            SweepAlpha     = 0.90f,
+            LightIntensity = 3.10f,
+            MoteWhitenMin  = 0.35f,
+            MoteWhitenMax  = 1.00f,
+        };
+
+        /// <summary>
+        /// Stowing reads as the weapon going away into shadow: deep violet and near-black
+        /// indigo, every layer of it. The alphas are as strong as the draw's — on an additive
+        /// material they control COVERAGE, not brightness, and the colour is what stays dark.
+        /// The motes are barely whitened at all for the same reason: a white spark is the one
+        /// thing here that could break the palette, and there are twenty-two of them.
+        /// </summary>
+        private static readonly Palette StowPalette = new Palette
+        {
+            Tint           = new Color(0.20f, 0.09f, 0.34f, 1f),
+            Hot            = new Color(0.34f, 0.15f, 0.52f, 1f),
+            Sweep          = new Color(0.44f, 0.22f, 0.68f, 1f),
+            Body           = new Color(0.80f, 0.74f, 0.90f, 1f),
+            BodyDrive      = 0.50f,
+            HaloAlpha      = 0.42f,
+            BloomAlpha     = 0.85f,
+            RingAlpha      = 0.78f,
+            SweepAlpha     = 0.80f,
+            LightIntensity = 1.60f,
+            MoteWhitenMin  = 0.00f,
+            MoteWhitenMax  = 0.22f,
+        };
 
         private Transform _owner;
         private Vector3 _centerOffset;
@@ -63,8 +134,7 @@ namespace Valkur.Gameplay.Spells
         private bool _stowing;
         private float _age;
 
-        private Color _tint;
-        private Color _hotTint;
+        private Palette _palette;
 
         private SpriteRenderer _halo;
         private SpriteRenderer _bloom;
@@ -83,12 +153,17 @@ namespace Valkur.Gameplay.Spells
 
         /// <summary>
         /// Plays one swap flare on <paramref name="owner"/>. Safe to call on a character with
-        /// no sprite: the silhouette falls back to a sensible body-sized box, because a flash
-        /// with no flash is a worse failure than one that is slightly the wrong size.
+        /// no sprite: the silhouette falls back to a sensible body-sized box, because a flare
+        /// with no flare is a worse failure than one that is slightly the wrong size.
         /// </summary>
         public static void Play(Transform owner, bool stowing)
         {
             if (owner == null) return;
+
+            // The rig destroys itself from Update, which never runs outside play. Building
+            // one anyway would leave a permanent five-object cluster in the scene rather
+            // than a 0.34 s effect — a leak, not a flare.
+            if (!Application.isPlaying) return;
 
             SpriteRenderer body = ResolveBodyRenderer(owner);
             Vector2 size = body != null && body.sprite != null
@@ -106,8 +181,7 @@ namespace Valkur.Gameplay.Spells
             fx._centerOffset = centerOffset;
             fx._size = new Vector2(Mathf.Max(0.25f, size.x), Mathf.Max(0.4f, size.y));
             fx._stowing = stowing;
-            fx._tint = stowing ? StowTint : DrawTint;
-            fx._hotTint = Color.Lerp(fx._tint, Color.white, 0.8f);
+            fx._palette = stowing ? StowPalette : DrawPalette;
             fx._bodyTint = SpriteTintStack.Attach(owner.gameObject);
             fx.BuildRig();
         }
@@ -129,19 +203,19 @@ namespace Valkur.Gameplay.Spells
         {
             ElementalSprites.EnsureAll();
 
-            _halo = CreateSprite("Halo", ElementalSprites.Halo, _tint, ORDER_HALO);
+            _halo = CreateSprite("Halo", ElementalSprites.Halo, _palette.Tint, ORDER_HALO);
             _halo.transform.localScale = new Vector3(_size.x * 3.4f, _size.y * 2.2f, 1f);
 
             // Ring's bright band peaks at normalized radius 0.78, so a scale of r / 0.39 puts
             // the drawn contour exactly at world radius r — see the ElementalSprites note in
             // CLAUDE.md. Sized from the body's half-height so it starts at the silhouette.
-            _ring = CreateSprite("Ring", ElementalSprites.Ring, _tint, ORDER_RING);
+            _ring = CreateSprite("Ring", ElementalSprites.Ring, _palette.Tint, ORDER_RING);
 
-            _bloom = CreateSprite("Bloom", ElementalSprites.Glow, _hotTint, ORDER_BLOOM);
+            _bloom = CreateSprite("Bloom", ElementalSprites.Glow, _palette.Hot, ORDER_BLOOM);
             _bloom.transform.localScale = new Vector3(_size.x * 1.9f, _size.y * 1.35f, 1f);
 
             // Wide and thin: a band across the body, not a blob on it.
-            _sweep = CreateSprite("Sweep", ElementalSprites.Glow, Color.white, ORDER_SWEEP);
+            _sweep = CreateSprite("Sweep", ElementalSprites.Glow, _palette.Sweep, ORDER_SWEEP);
             _sweep.transform.localScale = new Vector3(_size.x * 2.3f, _size.y * 0.22f, 1f);
 
             BuildMotes();
@@ -158,8 +232,14 @@ namespace Valkur.Gameplay.Spells
 
             for (int i = 0; i < MOTE_COUNT; i++)
             {
+                // Whitened by a per-palette amount rather than a fixed one: pushing a stow's
+                // motes toward white would put the brightest pixels of the whole effect on
+                // top of the body it is busy darkening.
+                Color moteColor = Color.Lerp(_palette.Tint, Color.white,
+                    Random.Range(_palette.MoteWhitenMin, _palette.MoteWhitenMax));
+
                 var sr = CreateSprite("Mote_" + i.ToString("00"), ElementalSprites.SparkleStar,
-                    Color.Lerp(_tint, Color.white, Random.Range(0.35f, 1f)), ORDER_MOTE);
+                    moteColor, ORDER_MOTE);
                 sr.transform.localScale = Vector3.one * Random.Range(0.05f, 0.13f);
 
                 // Inside the silhouette and tapering upward, so the scatter has the shape of
@@ -190,7 +270,7 @@ namespace Valkur.Gameplay.Spells
                 // is the one the other effects in this folder use.
                 if (typeProp != null)
                     typeProp.SetValue(_light, System.Enum.ToObject(typeProp.PropertyType, 3));
-                ElementalProjectileVisual.GetLight2DColorProp()?.SetValue(_light, _hotTint);
+                ElementalProjectileVisual.GetLight2DColorProp()?.SetValue(_light, _palette.Hot);
                 ElementalProjectileVisual.GetLight2DOuterProp()?.SetValue(_light, _size.y * 2.6f);
                 ElementalProjectileVisual.GetLight2DInnerProp()?.SetValue(_light, 0.15f);
                 ElementalProjectileVisual.GetLight2DFalloffProp()?.SetValue(_light, 0.85f);
@@ -206,7 +286,7 @@ namespace Valkur.Gameplay.Spells
             sr.sprite = sprite;
             sr.color = WithAlpha(color, 0f);
             // Additive, not the unlit alpha material: on alpha the brightest pixel a glow can
-            // produce is its own colour, so a flash meant to wash the body out cannot blow
+            // produce is its own colour, so a flare meant to wash the body out cannot blow
             // out. SharedAdditiveMaterial is SrcAlpha/One, so alpha still fades it.
             sr.sharedMaterial = ElementalSprites.SharedAdditiveMaterial;
             sr.sortingLayerName = SortingConfig.LAYER_VFX;
@@ -252,8 +332,10 @@ namespace Valkur.Gameplay.Spells
 
         private void UpdateBloom(float punch)
         {
-            if (_halo != null) _halo.color = WithAlpha(_tint, punch * 0.34f);
-            if (_bloom != null) _bloom.color = WithAlpha(_hotTint, punch * punch * 0.85f);
+            if (_halo != null)
+                _halo.color = WithAlpha(_palette.Tint, punch * _palette.HaloAlpha);
+            if (_bloom != null)
+                _bloom.color = WithAlpha(_palette.Hot, punch * punch * _palette.BloomAlpha);
         }
 
         private void UpdateRing(float t)
@@ -264,7 +346,7 @@ namespace Valkur.Gameplay.Spells
             float radius = Mathf.Lerp(_size.y * 0.30f, _size.y * 1.5f, Mathf.SmoothStep(0f, 1f, t));
             float scale = radius / 0.39f;
             _ring.transform.localScale = new Vector3(scale, scale * 0.72f, 1f);
-            _ring.color = WithAlpha(_tint, (1f - t) * (1f - t) * 0.7f);
+            _ring.color = WithAlpha(_palette.Tint, (1f - t) * (1f - t) * _palette.RingAlpha);
         }
 
         private void UpdateSweep(float t)
@@ -280,8 +362,8 @@ namespace Valkur.Gameplay.Spells
             float y = Mathf.Lerp(from, to, travel) * _size.y;
 
             _sweep.transform.localPosition = new Vector3(0f, y, 0f);
-            // Brightest crossing the middle of the body, gone by the time it leaves.
-            _sweep.color = WithAlpha(Color.white, Mathf.Sin(t * Mathf.PI) * 0.9f);
+            // Strongest crossing the middle of the body, gone by the time it leaves.
+            _sweep.color = WithAlpha(_palette.Sweep, Mathf.Sin(t * Mathf.PI) * _palette.SweepAlpha);
         }
 
         private void UpdateMotes(float t, float punch)
@@ -303,9 +385,14 @@ namespace Valkur.Gameplay.Spells
         private void UpdateBody(float punch)
         {
             if (_bodyTint == null) return;
-            // Toward white, never past it: the stack MULTIPLIES its layers, so a value above
-            // one here would brighten whatever else is tinting the character too.
-            _bodyTint.Set(TintLayer.Equip, Color.Lerp(Color.white, _hotTint, punch * 0.65f));
+            // The stack MULTIPLIES its layers, so every channel of Palette.Body below 1
+            // darkens the character and none above 1 is allowed — a value over one would
+            // brighten whatever else is tinting them too. Kept close to white in BOTH
+            // directions: this is the only layer that could take the silhouette down, and a
+            // stow that used it hard would read as the dwarf being dimmed rather than as a
+            // dark spell going off around him. The darkness belongs to the FX.
+            _bodyTint.Set(TintLayer.Equip,
+                Color.Lerp(Color.white, _palette.Body, punch * _palette.BodyDrive));
         }
 
         private void UpdateLight(float punch)
@@ -313,7 +400,8 @@ namespace Valkur.Gameplay.Spells
             if (_light == null) return;
             try
             {
-                ElementalProjectileVisual.GetLight2DIntensityProp()?.SetValue(_light, 3.1f * punch);
+                ElementalProjectileVisual.GetLight2DIntensityProp()
+                    ?.SetValue(_light, _palette.LightIntensity * punch);
             }
             catch { /* URP 2D lighting absent in this project configuration. */ }
         }

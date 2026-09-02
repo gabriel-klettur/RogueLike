@@ -1,70 +1,78 @@
 using UnityEngine;
-using Valkur.Data;
-using Valkur.Gameplay.Combat;
-using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
-    /// Creates an invulnerability sphere around the caster for a duration.
-    /// Mirrors Python's SphereMagicShieldResolver.
+    /// Raises a sphere of force around the caster, turning away every blow for a duration.
+    ///
+    /// <para><c>radius</c> IS THE SPHERE RADIUS, IN WORLD UNITS. It used to be divided by 16 —
+    /// the same leftover from the Python build that shipped <c>wall_ice</c> as a barrier
+    /// twelve screen pixels wide — and then it did not matter anyway, because the controller's
+    /// first act was to overwrite the root scale with a hard-coded <c>1.2</c>. Every shield was
+    /// the same size and the authored dial reached nothing at all.</para>
+    ///
+    /// <para><c>particleColor</c> is the one swatch the whole palette is derived from, exactly
+    /// as for an energy charge. Before this the colour was hard-coded blue in the controller
+    /// and the authored value was passed only to a telegraph that flashed for 0.4 s.</para>
     /// </summary>
     public class ShieldExecutor : ISpellExecutor
     {
+        private const float DefaultDurationSeconds = 5f;
+
+        /// <summary>
+        /// Fallback radius as a multiple of the caster's own height, used when the spell
+        /// authors none. A sphere has to clear the silhouette it encloses or it reads as a
+        /// belt; slightly over half the body height puts the shell just outside the shoulders.
+        /// </summary>
+        private const float RadiusPerBodyHeight = 0.62f;
+
+        private const float FallbackRadius = 1.5f;
+
         public void Execute(SpellContext ctx)
         {
-            float duration = ctx.Spell.duration > 0 ? ctx.Spell.duration : 5f;
-            float radius = ctx.Spell.radius > 0 ? ctx.Spell.radius / 16f : 5f;
+            if (ctx.Caster == null || ctx.Spell == null) return;
 
-            // Create shield visual child object
-            var shieldGo = new GameObject("SpellShield");
-            shieldGo.transform.SetParent(ctx.Caster, false);
-            shieldGo.transform.localPosition = Vector3.zero;
+            float duration = ctx.Spell.duration > 0f ? ctx.Spell.duration : DefaultDurationSeconds;
+            float radius = ctx.Spell.radius > 0f
+                ? ctx.Spell.radius
+                : ResolveRadiusFromBody(ctx.Caster);
 
-            var sr = shieldGo.AddComponent<SpriteRenderer>();
-            sr.sprite = CreateShieldSprite();
-            sr.color = new Color(0.3f, 0.5f, 1f, 0.35f);
-            sr.sortingLayerName = "VFX";
-            sr.sortingOrder = 3;
-            shieldGo.transform.localScale = Vector3.one * radius * 0.5f;
+            var go = new GameObject("SpellShield_" + ctx.Spell.spellKey);
+            // Identity rotation and unit scale, and never parented to the caster: a Light2D
+            // under a scaled transform renders its authored radius at some other value, and
+            // the entity's scale is exactly what parenting would inherit.
+            go.transform.position = ctx.Caster.position;
 
-            var controller = shieldGo.AddComponent<ShieldController>();
-            controller.Initialize(duration, ctx.Caster);
+            var controller = go.AddComponent<ShieldController>();
 
-            if (VFXManager.Instance != null)
+            // TRACKED BEFORE IT IS INITIALIZED, and the order is load-bearing. Tracking is what
+            // evicts the previous shield, and eviction RESTORES the invincibility flag that
+            // shield had claimed. Initialize first and the sequence runs backwards: the new
+            // shield claims the flag, then the old one's teardown puts it back to `false` — so
+            // the player stands unprotected inside a shell that has just visibly closed around
+            // them. Measured: cast twice and IsInvincible came back False with both spheres on
+            // screen.
+            SpellEffectRegistry.Track(go, ctx.Spell, ctx.Caster.gameObject);
+
+            controller.Initialize(new ShieldController.Setup
             {
-                Color col = ctx.Spell.particleColor != Color.clear
-                    ? ctx.Spell.particleColor
-                    : new Color(0.3f, 0.5f, 1f, 0.5f);
-                VFXManager.Instance.SpawnAreaIndicator(ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell), col, radius * 0.5f, 0.4f);
-            }
-
+                Caster = ctx.Caster,
+                Duration = duration,
+                // Shares the charge's palette derivation on purpose: the question is the same
+                // one — turn a single authored swatch into an ordered core/mid/edge/light set
+                // that cannot be authored inside-out — and it is already pinned by tests.
+                Palette = KiPalette.From(ctx.Spell.particleColor, 0.6f),
+                Radius = radius,
+            });
         }
 
-        private static Sprite CreateShieldSprite()
+        private static float ResolveRadiusFromBody(Transform caster)
         {
-            int size = 64;
-            var tex = new Texture2D(size, size);
-            tex.filterMode = FilterMode.Bilinear;
-            var pixels = new Color[size * size];
-            float center = size / 2f;
-            float outerSq = (size / 2f) * (size / 2f);
-            float innerSq = (size / 2f - 4f) * (size / 2f - 4f);
-            for (int y = 0; y < size; y++)
-                for (int x = 0; x < size; x++)
-                {
-                    float dx = x - center + 0.5f, dy = y - center + 0.5f;
-                    float dSq = dx * dx + dy * dy;
-                    if (dSq <= outerSq && dSq >= innerSq)
-                        pixels[y * size + x] = new Color(1f, 1f, 1f, 0.8f);
-                    else if (dSq < innerSq)
-                        pixels[y * size + x] = new Color(1f, 1f, 1f, 0.15f);
-                    else
-                        pixels[y * size + x] = Color.clear;
-                }
-            tex.SetPixels(pixels);
-            tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 16f);
+            var renderer = caster.GetComponentInChildren<SpriteRenderer>();
+            if (renderer == null || renderer.sprite == null) return FallbackRadius;
+
+            float height = renderer.bounds.size.y;
+            return height > 0.1f ? height * RadiusPerBodyHeight : FallbackRadius;
         }
     }
 }

@@ -47,6 +47,13 @@ namespace Valkur.Tests.EditMode.Game.Combat
         /// Deliberately absent: DashExecutor and TeleportExecutor. Those move the caster's
         /// body rather than spawning an effect, so anchoring their maths to hand height would
         /// teleport the character upward.
+        ///
+        /// Also absent, for the same shape of reason: ShieldExecutor. The magic shield is a
+        /// sphere ENCLOSING the caster, centred on their sprite bounds — it is not emitted from
+        /// anywhere. Resolving it to hand height plus forward clearance would push the sphere
+        /// up and forward and leave the character standing off-centre inside their own shield.
+        /// It was on this list only because the version that drew a flat disc also spawned a
+        /// 0.4 s telegraph indicator at the cast start, and that telegraph is gone.
         /// </summary>
         private static readonly string[] CasterEmissionCallsites =
         {
@@ -63,7 +70,6 @@ namespace Valkur.Tests.EditMode.Game.Combat
             "Gameplay/Spells/Executors/MineExecutor.cs",
             "Gameplay/Spells/Executors/ProjectileExecutor.cs",
             "Gameplay/Spells/Executors/PuddleExecutor.cs",
-            "Gameplay/Spells/Executors/ShieldExecutor.cs",
             "Gameplay/Spells/Executors/SlashExecutor.cs",
             "Gameplay/Spells/Executors/SmokeEmitterExecutor.cs",
             "Gameplay/Spells/Executors/SmokeExecutor.cs",

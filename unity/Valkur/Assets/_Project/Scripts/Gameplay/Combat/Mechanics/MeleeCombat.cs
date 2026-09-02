@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay
@@ -157,6 +158,13 @@ namespace Valkur.Gameplay
                 OnHitTarget?.Invoke(victim, swingDamage);
                 GameEvents.FireHitDealt(gameObject, victim, swingDamage);
             }
+
+            // Destructible obstacles are not on any target layer — they sit on Building so
+            // they can block — so the overlap query above can never return one. Normally the
+            // registry is empty and this costs a Count check.
+            if (DestructibleObstacleRegistry.Count > 0)
+                hitCount += DestructibleObstacleRegistry.DamageInArc(
+                    origin, swingRange, direction.normalized, arcDegrees, swingDamage, gameObject, null);
 
             if (hitCount > 0)
                 Valkur.Core.VerboseLog.Log(Valkur.Core.VerboseLog.Category.Combat,

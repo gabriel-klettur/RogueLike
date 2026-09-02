@@ -20,6 +20,30 @@ namespace Valkur.Gameplay.Spells
 
             if (_profile.IsRadial) AdvanceRadialDamage(eased);
             else AdvanceAngularDamage(eased);
+
+            AdvanceObstacleDamage(eased);
+        }
+
+        /// <summary>
+        /// A destructible obstacle is struck ONCE per swing, at the point the drawn edge is
+        /// halfway through its arc.
+        ///
+        /// <para>The per-target dedupe above is keyed on <see cref="Health"/>, and an
+        /// obstacle is reached through <see cref="IDestructibleObstacle"/> rather than
+        /// through the overlap query — it lives on Building, which no target mask contains.
+        /// A flag is the honest dedupe for something the sweep cannot enumerate.</para>
+        /// </summary>
+        private void AdvanceObstacleDamage(float eased)
+        {
+            if (_obstaclesStruck || eased < 0.5f) return;
+            if (DestructibleObstacleRegistry.Count == 0) { _obstaclesStruck = true; return; }
+
+            _obstaclesStruck = true;
+            DestructibleObstacleRegistry.DamageInArc(
+                transform.position, _profile.Radius, _direction, _profile.ArcDegrees,
+                Mathf.Max(1, Mathf.RoundToInt(_context.Spell.damage)),
+                _context.Caster != null ? _context.Caster.gameObject : null,
+                ProjectileExecutor.ResolveElement(_context.Spell));
         }
 
         /// <summary>Leading edge crosses the arc; each target is hit as it is passed.</summary>

@@ -184,8 +184,138 @@ namespace Valkur.Tests.EditMode.Game.Player
             StringAssert.StartsWith("armed_idle_", FirstFrameName(go, DirectionalAnimator.AnimState.Idle));
 
             Assert.IsTrue(loadouts.ToggleLoadout("armed"));
+            loadouts.TickPendingStow(5f);
             Assert.IsNull(loadouts.ActiveLoadoutKey);
             StringAssert.StartsWith("base_idle_", FirstFrameName(go, DirectionalAnimator.AnimState.Idle));
+        }
+
+        // ---- Deferred stow --------------------------------------------------
+        //
+        // Drawing and stowing are deliberately asymmetric. The sheathe animation SHOWS the
+        // weapon for its whole length, so stripping it on the cast frame would play a second
+        // of putting away a sword the character is no longer holding.
+
+        [Test]
+        public void Stowing_KeepsTheWeaponUntilTheAnimationFinishes()
+        {
+            var config = ConfigWithArmedLoadout();
+            var go = Character(config, out var loadouts);
+            Assert.IsTrue(loadouts.ToggleLoadout("armed"));
+
+            Assert.IsTrue(loadouts.ToggleLoadout("armed"));
+            Assert.IsTrue(loadouts.StowPending);
+            Assert.AreEqual("armed", loadouts.ActiveLoadoutKey,
+                "The art must not swap on the cast frame - the sheathe is drawn with the " +
+                "weapon in hand for every one of its frames.");
+            StringAssert.StartsWith("armed_idle_", FirstFrameName(go, DirectionalAnimator.AnimState.Idle));
+
+            loadouts.ScheduleStow(1.2f);
+            loadouts.TickPendingStow(0.6f);
+            Assert.AreEqual("armed", loadouts.ActiveLoadoutKey, "Still mid-sheathe.");
+
+            loadouts.TickPendingStow(0.6f);
+            Assert.IsFalse(loadouts.StowPending);
+            Assert.IsNull(loadouts.ActiveLoadoutKey);
+            StringAssert.StartsWith("base_idle_", FirstFrameName(go, DirectionalAnimator.AnimState.Idle));
+        }
+
+        [Test]
+        public void Drawing_SwapsOnTheCastFrameWithNothingPending()
+        {
+            var config = ConfigWithArmedLoadout();
+            var go = Character(config, out var loadouts);
+
+            Assert.IsTrue(loadouts.ToggleLoadout("armed"));
+            Assert.IsFalse(loadouts.StowPending,
+                "Only the stow is deferred. Deferring the draw too would play the whole " +
+                "equip animation on a character with empty hands.");
+            StringAssert.StartsWith("armed_idle_", FirstFrameName(go, DirectionalAnimator.AnimState.Idle));
+        }
+
+        [Test]
+        public void StowingReportsItsDirectionOnTheCastFrame_NotWhenTheArtLands()
+        {
+            var config = ConfigWithArmedLoadout();
+            Character(config, out var loadouts);
+            Assert.IsTrue(loadouts.ToggleLoadout("armed"));
+
+            Assert.IsTrue(loadouts.ToggleLoadout("armed"));
+            Assert.IsTrue(loadouts.SwappedThisFrame);
+            Assert.IsTrue(loadouts.LastSwapStowed,
+                "PlayerController.ShouldPlayCastReversed reads this in the SAME frame the " +
+                "executor ran, to pick the playback direction. Waiting for the art to land " +
+                "would leave the sheathe playing forwards, which reads as a second draw.");
+        }
+
+        [Test]
+        public void PressingAgainMidSheathe_CancelsTheStowAndKeepsTheWeapon()
+        {
+            var config = ConfigWithArmedLoadout();
+            var go = Character(config, out var loadouts);
+            Assert.IsTrue(loadouts.ToggleLoadout("armed"));
+            Assert.IsTrue(loadouts.ToggleLoadout("armed"));
+            Assert.IsTrue(loadouts.StowPending);
+
+            Assert.IsTrue(loadouts.ToggleLoadout("armed"),
+                "A press mid-sheathe means the player changed their mind, so it must do " +
+                "something rather than queue a second stow.");
+            Assert.IsFalse(loadouts.StowPending);
+            Assert.IsFalse(loadouts.LastSwapStowed,
+                "Calling the stow off is a DRAW, so the equip animation plays forward.");
+
+            loadouts.TickPendingStow(5f);
+            Assert.AreEqual("armed", loadouts.ActiveLoadoutKey,
+                "The cancelled stow must not land later and undress the character.");
+            StringAssert.StartsWith("armed_idle_", FirstFrameName(go, DirectionalAnimator.AnimState.Idle));
+        }
+
+        [Test]
+        public void SetLoadout_CancelsAPendingStow()
+        {
+            var config = ConfigWithArmedLoadout();
+            var go = Character(config, out var loadouts);
+            Assert.IsTrue(loadouts.ToggleLoadout("armed"));
+            Assert.IsTrue(loadouts.ToggleLoadout("armed"));
+            Assert.IsTrue(loadouts.StowPending);
+
+            // What the animation probes do: park the character in a loadout directly. A stow
+            // left armed would fire seconds later and undress what the probe just dressed.
+            Assert.IsFalse(loadouts.SetLoadout("armed"), "Already worn - no change.");
+            Assert.IsFalse(loadouts.StowPending);
+
+            loadouts.TickPendingStow(5f);
+            Assert.AreEqual("armed", loadouts.ActiveLoadoutKey);
+            StringAssert.StartsWith("armed_idle_", FirstFrameName(go, DirectionalAnimator.AnimState.Idle));
+        }
+
+        [Test]
+        public void AnUnscheduledStow_StillLandsOnTheFallbackDelay()
+        {
+            var config = ConfigWithArmedLoadout();
+            Character(config, out var loadouts);
+            Assert.IsTrue(loadouts.ToggleLoadout("armed"));
+            Assert.IsTrue(loadouts.ToggleLoadout("armed"));
+
+            // Nothing called ScheduleStow - a caster with no animator, or a path that never
+            // reaches TriggerCastAnimation. The character must not hang armed forever.
+            loadouts.TickPendingStow(0.36f);
+            Assert.IsFalse(loadouts.StowPending);
+            Assert.IsNull(loadouts.ActiveLoadoutKey);
+        }
+
+        [Test]
+        public void ScheduleStow_DoesNothingWhenNoStowIsPending()
+        {
+            var config = ConfigWithArmedLoadout();
+            var go = Character(config, out var loadouts);
+            Assert.IsTrue(loadouts.ToggleLoadout("armed"));
+
+            // TriggerCastAnimation guards on SwappedThisFrame, but the call itself has to be
+            // inert too: every cast in the game reaches it.
+            loadouts.ScheduleStow(9f);
+            loadouts.TickPendingStow(20f);
+            Assert.AreEqual("armed", loadouts.ActiveLoadoutKey);
+            StringAssert.StartsWith("armed_idle_", FirstFrameName(go, DirectionalAnimator.AnimState.Idle));
         }
 
         [Test]

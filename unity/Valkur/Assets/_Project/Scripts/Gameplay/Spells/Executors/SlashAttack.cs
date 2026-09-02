@@ -25,6 +25,8 @@ namespace Valkur.Gameplay.Spells
         private const float TELEGRAPH_PEAK_ALPHA = 0.30f;
 
         private readonly HashSet<Health> _damaged = new HashSet<Health>();
+        /// <summary>One strike per swing against destructible obstacles. See AdvanceObstacleDamage.</summary>
+        private bool _obstaclesStruck;
         private readonly List<SlashRibbonMesh> _ribbons = new List<SlashRibbonMesh>(5);
 
         private SpellContext _context;
@@ -114,6 +116,7 @@ namespace Valkur.Gameplay.Spells
             _profile = SlashProfile.Build(arcDegrees, radius, lifetime, tint);
             _previousHeadAngle = -_profile.HalfArc - 0.01f;
             _previousReach = 0f;
+            _obstaclesStruck = false;
 
             BuildVisuals();
         }
