@@ -801,6 +801,203 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   placed along the axis by POSITION (so they stand up on screen whichever way the wall runs),
   absolute per-child sizes, a Box emitter as long as the wall, and lights spread along it.
   Only the collider child is rotated.
+- **`refresh_unity(scope="scripts")` does not reimport a `.asset` edited on disk.** Editing
+  spell data with `sed` and refreshing scripts leaves Unity holding the OLD ScriptableObject:
+  measured, `vortex_push` read back `spawnAtMouse=False followCaster=True range=0` from memory
+  while the file on disk plainly said `1 / 0 / 10`. It is silent, and it is worse than the
+  known "a domain reload does NOT reload assets" trap because it fools BOTH probes —
+  `AssetDatabase.LoadAssetAtPath` returns the in-memory object, so an EditMode test asserting
+  on the shipped data measures the stale copy too and passes or fails for the wrong reason.
+  Use `scope="all"` after any data edit, and confirm by reading the file's own text back
+  beside the loaded object.
+- **Two spells that differ in EFFECT should not also differ in DELIVERY.** `vortex_push` rode
+  its caster while `vortex_pull` was thrown out in front, so they were two spells with two
+  control schemes and the actual difference — which way the force points — was the hardest
+  thing to notice. Both are cursor-placed and both drift now; `forceMode` is the whole
+  difference, which is what the spin direction, the debris direction and the streak direction
+  have been saying all along. `followCaster` still works and no shipped spell uses it, so its
+  test builds a synthetic caster rather than asserting on an asset.
+- **`spawnAtMouse` did not read the mouse.** All three executors that honour it resolved the
+  same thing — `castStart + direction * someFixedDistance` — so the flag only chose WHICH
+  constant offset to use. A vortex aimed at a target two units away landed six units past them
+  and one aimed across the room landed in exactly the same place. Nothing failed; the field was
+  internally consistent and simply did not mean what it says, the same shape as `vfxPreset` on
+  a vortex and `animation_map.json`. `SpellTargeting.ResolveGroundTarget` is the single owner
+  now, and two of the three were ALSO dividing `range` by 16 — the Python pixel scale, a fourth
+  sighting. Three constraints hold it up: the cursor comes through `MouseInputManager` (never
+  `Mouse.current`), it is refused for any caster not tagged `Player` because a monster has no
+  pointer and must keep aiming with its facing, and the result is clamped to the spell's own
+  `range` so the reach stays something a player can learn. Author that `range`: leaving it 0
+  hands the cast distance to a constant inside the executor.
+- **A hard-coded `||` beside an authored flag makes the flag unfalsifiable.**
+  `VortexFieldExecutor` read `if (ctx.Spell.spawnAtMouse || isPull)`, so clearing the box in F4
+  changed nothing for half the spells that carry it — the panel showed a control that could not
+  do anything. Worse than a wrong default, because the data and the screen disagree while both
+  look right. Same family as `FindBaseRuleset` excluding every Corner16 pack.
+- **Moving a call one level down breaks a source-scanning test that was RIGHT to break.**
+  `CastOriginContractTests` greps each executor for `ResolveCastStart(`; routing three of them
+  through `SpellTargeting` left the guarantee intact and the grep looking at the wrong file.
+  The fix is to point the fixture at the new owner, never to re-inline the call to satisfy it —
+  listing the executors would demand a call they no longer make while leaving the helper they
+  now all depend on unguarded.
+- **A stationary effect gives itself away in proportion to how long it lives.** At two seconds
+  nobody looked at the vortex long enough to notice it was a spinning decal bolted to one spot;
+  at eight it is the first thing the eye reports. `VortexFieldController.Drift` tracks it across
+  the ground at 1.15 u/s on a heading INTEGRATED from smooth noise — sampling a direction per
+  frame gives a shape that vibrates in place, integrating one gives a curve it commits to and
+  leans out of. Measured over a full life: 9.22 units of path, never more than 3.45 from where
+  it was cast, heading passing through 253-246-310-38-24 degrees. The leash is not optional —
+  8 s at 1.15 u/s is nine units, and without it the spell walks out of the fight.
+- **A rig whose every child shares one velocity is a decal being dragged.** Two things fix it
+  and they are different statements: the flared top LEANS with travel (and the neck does not,
+  because the neck is what is touching the ground), and the torn-up debris LAGS, because ground
+  thrown into the air is no longer attached to the thing that threw it. Measured at 1.15 u/s
+  east: lean at the top 0.34 -> 0.86 units, mean debris x 0.03 -> -0.38. The lag mechanism also
+  serves `followCaster` for free — there the velocity is the PLAYER's, so a running caster tows
+  a plume behind their own vortex.
+- **The cone's surface needs exactly one owner.** The bands draw it, the dust and debris ride
+  it, the discharges crawl along it — so `WallOffset(height01)` is shared by all four. A lean
+  the bands know about and the arcs do not is a bolt hanging in the air beside the shape it is
+  supposed to be attached to, and that is invisible in code and obvious on screen.
+- **Two constants holding the same number in two files is a desync with a delay fuse.**
+  `SPIN_UP_SECONDS` lived in both `VortexFieldController` (which ramps the FORCE) and
+  `VortexFunnelFX` (which ramps the FUNNEL), both at 0.40. Nothing failed while they agreed;
+  raising one for the eight-second field would have started grabbing enemies out of a hole in
+  the ground. It is `VortexFunnelFX.SpinUpSeconds` now, and the controller reads it.
+- **Lengthening a control field is a BALANCE change, not a timing one.** Both vortices went from
+  2 s to 8 s on an unchanged `cooldownDuration: 2`. With `maxInstances: 1` a cooldown shorter
+  than the duration means the player always has one out AND can evict their own to reposition
+  it, so eight seconds of hard crowd control lands as permanent crowd control. Cooldown 12,
+  mana 25. `VortexFieldTests` fails if a cooldown ever drops below its own field's duration.
+- **An effect made only of CONTINUOUS motion stops being read after about a second.** Bands
+  turning, debris circling, streaks running — all at a steady rate — and the eye files the
+  whole thing as one texture. What resets it is an EVENT: `VortexFunnelFX`'s discharges climb
+  the funnel wall, appear, and are gone. The duty cycle is the entire design, and the first
+  interval tried (0.16-0.52 s across three arcs) measured **78 % of frames lit**, which is not
+  lightning but a lamp with a flicker — it forfeits the one thing the layer is for. Shipped at
+  0.45-1.30 s: 30 % duty, six or seven distinct strikes per two-second cast. The arcs also run
+  along the CONE rather than through it, sharing `WallPoint` with the bands, because a bolt
+  across the middle says the column is solid when the whole silhouette says it is hollow.
+- **One opaque layer is what separates "affecting the world" from "lit".** Every other piece of
+  the vortex is additive light; the ground debris is `Sprite-Unlit-Default` and deliberately
+  dark. It cannot be folded into the shared additive material as a tidy-up — a dark chip on an
+  additive surface adds almost nothing, so the layer would vanish with nothing failing.
+  `KiAuraFX` records the same rule for its own ground debris, and `VortexFieldTests` now pins
+  the material contrast in both directions.
+- **A ground-plane layer is squashed by ONE parent, never per item.** A suction streak points
+  along a radius, so squashing each streak individually foreshortens its LENGTH without turning
+  its direction and it slides across the floor instead of lying on it. One `GroundPlane`
+  transform at `(1, 0.34, 1)` with the rotation on the children — the same split the bands use,
+  and the reason the rotation must be a CHILD of the squash rather than share a transform with it.
+- **A funnel that TRACKS walks over people, so its neck has to be a hole.** Measured, the
+  radius at chest height is 1.17 units against a 0.9-wide character, so whoever it crosses is
+  inside it, and eighteen additive bands summing to 3.98 paint them out entirely.
+  `NECK_CLEAR_HEIGHT` fades the lowest fifth. This surfaced through `followCaster`, which
+  parked one specific caster in the neck permanently; both vortices are cursor-placed and
+  drifting now, which turns it from one spell's problem into everyone's.
+- **A snapshot is not a travel range, and it fails the correct implementation.** A test asserting
+  that push debris clears its rim read `|localPosition.x|` on one frame — but a chip at its
+  furthest and a quarter turn round contributes almost nothing on the x axis, which is the only
+  axis the ground squash leaves alone. It reported 3.28 against a 3.8 rim on code that really
+  does reach 4.17. Sample the extreme OVER a run when the quantity is a range rather than a state.
+- **Two spells that are each other reversed must COVER THE SAME GROUND, or one of them is
+  quietly the worse-looking one.** `vortex_push` threw its ground streaks to 1.39x the force
+  radius and its debris to 1.25x while `vortex_pull` worked between the rim and the neck, so
+  the same sixteen streaks and eighteen chips spread over 46 % and 29 % more floor. Three
+  things follow from one constant and all three read as "cheaper": the layer is sparser, it
+  moves faster in world units for an unchanged cycle rate, and a third of it lands outside the
+  circle the ground ring exists to promise. Reported as "pull looks much better animated than
+  push, independent of the colour", which is exactly right. `GROUND_REACH` is now one constant
+  for both directions and the two runs are each other backwards — measured at radius 3.7, span
+  3.40 either way and drift -76.74 against +76.74 milli-units per frame.
+- **Direction is the SIGN OF TRAVEL, never how far out something gets.** The test that was
+  supposed to prove push throws outward compared absolute reach, so it passed only because of
+  the asymmetry above — it was pinning the defect as if it were the signal. Sample the
+  per-frame change instead, and drop the wraps, or a looping layer averages to zero and every
+  direction assertion passes for the wrong reason.
+- **Thickness is a brightness dial too, and it has a texture-edge limit.** Doubling the
+  tornado bands' weight doubled the screen area one band covers — measured x2.00 — so on the
+  additive material the column arrived twice as bright, exactly as raising the band COUNT does;
+  `BAND_AREA_COMPENSATION` halves the per-band alpha to keep the tuned total, and the gather
+  needs the same factor because it draws the same sprites. The second half is geometric: a band
+  reaches `BandRadius + thickness` and the sprite's normalized space stops at 1.0 on the axes,
+  so doubling thickness at `BandRadius = 0.82` would have run to 1.03 and sliced the ring flat
+  at the four cardinal points. What sets the drawn weight is the RATIO `thickness / BandRadius`
+  — the sprite is scaled until its line lands on the wanted world radius — so both numbers had
+  to move together and neither means anything alone.
+- **A single frame cannot measure a quantity that is spread over angles OR over time.** It bit
+  twice in one session, in two disguises: a debris travel range read from one frame (a chip at
+  its furthest but a quarter turn round contributes almost nothing on the x axis), and a mean
+  offset read from one frame (eighteen chips at random angles put about a third of a unit of
+  noise on the mean, against a lag of six tenths — it passed on the draw and failed the moment
+  an unrelated constant moved). Average over the run.
+- **On an additive stack, the band COUNT is a brightness dial.** A pixel receives the SUM of
+  every layer over it, so raising `VortexFunnelFX.BANDS` from 9 to 18 did not make the funnel
+  finer — measured, the summed band alpha went from 3.99 to **7.97**, and a red vortex washes
+  out to white through the middle of its own column, which costs the spell the one thing
+  separating it from the blue one at a glance. Per-band alpha is divided by
+  `BAND_ALPHA_REFERENCE_COUNT`, so more bands buy RESOLUTION (the vertical slice went 0.66 u
+  to 0.33 u) and not light. The same arithmetic applies to any additive rig whose layer count
+  is tunable — `ShieldSphereFX`'s facets, `KiAuraFX`'s tongues.
+- **A sorting order computed from an index must be bounded by a DERIVED constant.** The funnel
+  gives band `i` order `ORDER_BAND + i` so higher bands draw over lower, and the near-side
+  debris has to clear the whole stack. `ORDER_DUST = 72` was right at 9 bands and silently
+  wrong at 18 (the stack reaches 75), which sinks the front-side scraps behind the funnel and
+  costs the rig the only statement it makes about depth. It is `ORDER_BAND + BANDS + 2` now.
+  Same failure shape as `SpriteTintStack`'s hand-maintained `LAYER_COUNT`.
+- **A test that names a child by index stops testing what it says it tests.** `Band8` was the
+  TOP of a nine-band funnel and the WAIST of an eighteen-band one, so the cone-taper assertion
+  would have gone on passing while measuring the wrong band. Name it off the rig's own
+  `BandCount`.
+- **A radial disc cannot draw a FUNNEL either, and a vortex is the third spell to be
+  authored in Python pixels.** `vortex_pull` / `vortex_push` shipped `radius: 17.5` — the
+  number that was right in the build this game was ported from, after `wallWidth` and the
+  totem's `radius / 16`. Measured live against a camera 33.33 x 16.67 world units: the halo
+  drew **32.4 units wide (97 % of the screen)**, the emitter's shape radius came out at
+  **122.5 units**, each particle was **1.75 units** across, and the `Light2D` rendered at an
+  effective **367 units** — eleven screen widths of violet. `Physics2D.OverlapCircleAll` swept
+  a 35-unit circle, so enemies were dragged in from off-screen. Nothing failed; every number
+  was internally consistent and disagreed only with the display. `VortexFunnelFX` replaces
+  `AreaFXRig` here for the same reason `IceWallVisual` replaced it for the wall — four
+  concentric discs can never show the one thing the spell is named after, its ROTATION — and
+  the two spells now author 3.6 / 3.8, measured at 28-29 % of screen width.
+- **Three of those 367 units came from scaling the ROOT, and the light is what pays.**
+  `VortexFieldController` did `AreaFXRig.Attach(transform, palette, radius)` and then
+  `transform.localScale = Vector3.one * radius`, so every child was sized twice and the
+  `Light2D` hanging under it rendered at `authored x lossyScale`. `PuddleController` and
+  `TotemController` still carry the identical two lines; their radii are small enough that
+  it has not surfaced. A rig that wants a world size gives its children ABSOLUTE sizes and
+  leaves its root at identity — `VortexFunnelFX` does, and `VortexFieldTests` pins it.
+- **The silhouette of a funnel says nothing about where the force reaches, so something else
+  has to.** A tornado is narrow where it touches down and flared where it opens — which is
+  the shape a player reads as a vortex, and it is upside down with respect to the physics: the
+  widest part is metres above the ground circle `OverlapCircleAll` actually queries.
+  `VortexFunnelFX` draws a ground ring pinned to that circle through `ElementalSprites.Ring`'s
+  0.78 band (`span = radius / 0.39`) and pulses it in BRIGHTNESS only — a circle that breathes
+  in size is a promise that moves.
+- **A vortex force needs a rim grip, a swirl and a speed clamp, and each is a separate way to
+  look broken.** Every NPC body in the project ships `mass 1, drag 0`, so `AddForce` integrates
+  without bound: measured, the old pull peaked at **39 u/s** and slung a body from +16.6
+  straight through the centre to **-12.6**, out the far side. The three fixes are independent.
+  A linear falloff that reaches 0 at the rim means the spell cannot GRAB — at 95 % of the
+  radius it kept 0.05 of the force and drifted half a unit in two seconds (`RIM_GRIP`).
+  A purely radial aim is what does the slinging (`PULL_SWIRL`). And the tangential term hands
+  the body orbital momentum that nothing removes, so a "pull" captures an enemy into a stable
+  orbit at 2.0 units and never gathers it (`FIELD_DAMPING`). Shipped behaviour, measured:
+  three bodies released around the rim close from **5.92 units apart to 1.61**, all inside a
+  third of the radius by 0.89 s; push spreads them from 6.25 to 16.50.
+- **A force model that reads `Time.deltaTime` cannot be measured.** Driving `ApplyForce`
+  through `Physics2D.Simulate` from `execute_code` gave `Time.deltaTime = 0.0016` — a tenth
+  of a real frame, because nothing is rendering — so the first three tuning passes understated
+  the force tenfold and each "fix" was measuring the harness. `Time.captureDeltaTime` does not
+  help: it takes effect on the NEXT frame, so within one call it reads back unchanged. Pass
+  the delta in as a parameter; the rig's `Tick(deltaTime, ...)` already did.
+- **A workaround outlives the bug it was written for.** `CastFlourishFamilies.Vortex` sized its
+  gather as `radius * 0.11` with a comment saying `radius` is "authored in the legacy pixel
+  scale (17.5)". Once the two spells authored real world units that factor clamped every vortex
+  to the same 1.15 minimum, so the dial stopped working — silently, since the clamp is the
+  correct-looking end of the range. Grep for the units a constant was compensating for whenever
+  those units change.
 - **A flat disc cannot draw a sphere, and the tell is that nothing is ever ENCLOSED.**
   `sphere_magic_shield` was four concentric sprites on `LAYER_VFX`, which draws in front of
   everything — so the character stood behind their own shield, and it read as a decal on the
