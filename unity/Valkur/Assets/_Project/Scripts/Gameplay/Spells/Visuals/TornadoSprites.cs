@@ -26,8 +26,18 @@ namespace Valkur.Gameplay.Spells
 
         private const int Size = 128;
 
-        /// <summary>Normalized radius the band's bright line sits at, for pinning a world size.</summary>
-        public const float BandRadius = 0.82f;
+        /// <summary>
+        /// Normalized radius the band's bright line sits at, for pinning a world size.
+        ///
+        /// <para>It was 0.82 while the bands were half as thick. A band reaches
+        /// <c>BandRadius + thickness</c>, and the texture's normalized space only runs to 1.0 on
+        /// the axes — at 0.82 the thickest doubled band would reach 1.03 and be sliced flat at
+        /// the four cardinal points, which reads as a ring with the corners bitten off. Pulling
+        /// the line inward makes room; the world radius is unaffected because
+        /// <c>VortexFunnelFX.BAND_UNIT_RADIUS</c> is derived from this, so the sprite is simply
+        /// scaled up more to put the same line in the same place.</para>
+        /// </summary>
+        public const float BandRadius = 0.70f;
 
         private static Sprite[] _bands;
         private static Sprite _dust;
@@ -76,7 +86,11 @@ namespace Valkur.Gameplay.Spells
             float Range(float a, float b) => a + (float)rng.NextDouble() * (b - a);
 
             float spanRadians = Range(2.2f, 4.3f);       // 126deg to 246deg of sweep
-            float thickness = Range(0.055f, 0.105f);
+            // DOUBLE the old weight. What decides world thickness is `thickness / BandRadius`
+            // (the sprite is scaled until its line lands on the wanted radius), so both had to
+            // move together: 0.055-0.105 over 0.82 gave 0.067-0.128 of the ring radius, and
+            // 0.094-0.179 over 0.70 gives 0.134-0.256 — twice, at both ends.
+            float thickness = Range(0.094f, 0.179f);
             float leadTaper = Range(0.18f, 0.42f);        // fraction of the span spent fading in
 
             var tex = NewTexture(Size, Size);

@@ -35,6 +35,14 @@ namespace Valkur.Gameplay.Spells
         /// <summary>Extra degrees per second the top of the funnel leads the bottom by.</summary>
         private const float FUNNEL_TWIST = 0.45f;
 
+        /// <summary>
+        /// The gather draws the SAME <c>TornadoSprites</c> bands the field does, so doubling
+        /// their weight doubled the light here too. Same constant, same reason as
+        /// <c>VortexFunnelFX.BAND_AREA_COMPENSATION</c>: leaving one of the two uncompensated
+        /// makes the cast and the field it hands over to disagree on brightness.
+        /// </summary>
+        private const float BAND_AREA_COMPENSATION = 0.5f;
+
         private Transform[] _bandPivots;      // position + squash
         private Transform[] _bandSpinners;    // rotation only
         private SpriteRenderer[] _bandRenderers;
@@ -119,7 +127,7 @@ namespace Valkur.Gameplay.Spells
                 // Densest through the middle of the column: the top is where it disperses and
                 // the very bottom is hidden by the caster's own feet.
                 float body = Mathf.Sin(Mathf.Clamp01(t) * Mathf.PI) * 0.55f + 0.45f;
-                float alpha = reveal * body * (0.42f + 0.30f * punch);
+                float alpha = reveal * body * (0.42f + 0.30f * punch) * BAND_AREA_COMPENSATION;
                 if (released) alpha *= Mathf.Pow(afterglow, 0.8f);
 
                 SetAlpha(_bandRenderers[i], alpha);

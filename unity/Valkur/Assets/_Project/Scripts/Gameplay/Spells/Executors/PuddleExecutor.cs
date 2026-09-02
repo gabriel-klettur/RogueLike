@@ -28,9 +28,11 @@ namespace Valkur.Gameplay.Spells
             float damagePerTick = ctx.Spell.damagePerTick;
             float dist = ctx.Spell.distance > 0 ? ctx.Spell.distance : 2f;
 
-            Vector2 spawnPos = ctx.Spell.spawnAtMouse
-                ? (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * (ctx.Spell.range > 0 ? ctx.Spell.range / 16f : 5f)
-                : (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * dist;
+            // Was `range / 16f` — the Python pixel scale again — behind a flag that never read
+            // the cursor. `root_whip` is the only shipped puddle that sets it, and it authors
+            // no range, so the shipped reach is unchanged; what changed is that it now lands
+            // where the player is pointing.
+            Vector2 spawnPos = SpellTargeting.ResolveGroundTarget(ctx, 5f, dist);
 
             bool rootWhip = string.Equals(ctx.Spell.spellKey, ROOT_WHIP_KEY,
                                           System.StringComparison.OrdinalIgnoreCase);

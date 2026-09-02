@@ -55,9 +55,7 @@ namespace Valkur.Gameplay.Spells
             float tickPeriod = ctx.Spell.tickPeriod > 0 ? ctx.Spell.tickPeriod : 0.5f;
             float dist = ctx.Spell.distance > 0 ? ctx.Spell.distance : 3f;
 
-            Vector2 spawnPos = ctx.Spell.spawnAtMouse
-                ? (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * (ctx.Spell.range > 0 ? ctx.Spell.range / 16f : 5f)
-                : (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * dist;
+            Vector2 spawnPos = SpellTargeting.ResolveGroundTarget(ctx, 5f, dist);
 
             var totemGo = new GameObject("SpellTotem");
             totemGo.transform.position = (Vector3)spawnPos;
