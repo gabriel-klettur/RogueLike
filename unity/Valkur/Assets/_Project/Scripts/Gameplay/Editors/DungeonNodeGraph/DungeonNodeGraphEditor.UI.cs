@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Valkur.Data.Dungeon.Udemy;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Editors.DungeonNodeGraph
 {
@@ -24,11 +25,28 @@ namespace Valkur.Gameplay.Editors.DungeonNodeGraph
         private Text _toast;
         private float _toastUntil;
 
-        private static readonly Color BgPanel = new Color(0.10f, 0.10f, 0.12f, 0.95f);
-        private static readonly Color BgRow = new Color(0.18f, 0.18f, 0.22f, 1f);
-        private static readonly Color BgRowSource = new Color(0.40f, 0.30f, 0.10f, 1f);
-        private static readonly Color BgButton = new Color(0.25f, 0.30f, 0.40f, 1f);
-        private static readonly Color FgText = Color.white;
+        // Chrome comes from the shared theme, not from local constants.
+        //
+        // This editor is deliberately a full-screen SLAB with anchored regions rather than
+        // the floating docked panels every other editor uses — which is a layout decision,
+        // and not one to change by accident while unifying colours. What it had no reason
+        // to keep is its own private palette: five constants that quietly drifted from the
+        // rest (its row background was 0.18 against the kit's 0.17, its panel 0.10/0.95
+        // against 0.09/0.94), so an author retuning the editors' look would have found
+        // every editor obeying except this one.
+        private static readonly Color BgPanel    = UITheme.BG_PANEL;
+        private static readonly Color BgRow      = UITheme.BG_ELEVATED;
+        private static readonly Color BgButton   = UITheme.BTN_NORMAL;
+        private static readonly Color FgText     = UITheme.TEXT_PRIMARY;
+
+        /// <summary>
+        /// The row highlighted as the SOURCE of an in-progress connection. Kept as its own
+        /// value because it is the one colour here carrying a meaning no token has — the
+        /// accent means "selected", and this means "the other end of the edge you are
+        /// drawing". Derived from the accent so the two stay related if the theme moves.
+        /// </summary>
+        private static readonly Color BgRowSource =
+            new Color(UITheme.ACCENT.r * 0.45f, UITheme.ACCENT.g * 0.40f, UITheme.ACCENT.b * 0.26f, 1f);
 
         private void EnsureUI()
         {

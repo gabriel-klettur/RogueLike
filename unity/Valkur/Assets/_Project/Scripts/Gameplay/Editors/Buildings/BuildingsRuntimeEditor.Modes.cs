@@ -56,9 +56,9 @@ namespace Valkur.Gameplay.Buildings
             if (_selectBtnImg) _selectBtnImg.color = _mode == EditorMode.Select ? EditorUIHelpers.BTN_ACTIVE : EditorUIHelpers.BTN_NORMAL;
             if (_placeBtnImg)  _placeBtnImg.color  = _mode == EditorMode.Place  ? EditorUIHelpers.BTN_ACTIVE : EditorUIHelpers.BTN_NORMAL;
             if (_resizeBtnImg) _resizeBtnImg.color = _mode == EditorMode.Resize ? EditorUIHelpers.BTN_ACTIVE : EditorUIHelpers.BTN_NORMAL;
-            if (_deleteBtnImg) _deleteBtnImg.color = _mode == EditorMode.Delete ? EditorUIHelpers.DANGER     : new Color(0.55f, 0.15f, 0.15f, 1f);
+            if (_deleteBtnImg) _deleteBtnImg.color = _mode == EditorMode.Delete ? EditorUIHelpers.DANGER     : UITheme.DANGER_IDLE;
             if (_addBtnImg)    _addBtnImg.color    = _mode == EditorMode.Place  ? EditorUIHelpers.BTN_ACTIVE : EditorUIHelpers.BTN_NORMAL;
-            if (_removeBtnImg) _removeBtnImg.color = _removeMode                ? EditorUIHelpers.DANGER     : new Color(0.55f, 0.15f, 0.15f, 1f);
+            if (_removeBtnImg) _removeBtnImg.color = _removeMode                ? EditorUIHelpers.DANGER     : UITheme.DANGER_IDLE;
             if (_fillBtnImg)   _fillBtnImg.color   = _mode == EditorMode.Fill   ? EditorUIHelpers.BTN_ACTIVE : EditorUIHelpers.BTN_NORMAL;
             if (_eraseBtnImg)  _eraseBtnImg.color  = _mode == EditorMode.Erase  ? EditorUIHelpers.BTN_ACTIVE : EditorUIHelpers.BTN_NORMAL;
             if (_doorBtnImg)   _doorBtnImg.color   = _mode == EditorMode.Door   ? EditorUIHelpers.BTN_ACTIVE : EditorUIHelpers.BTN_NORMAL;

@@ -128,7 +128,7 @@ namespace Valkur.Gameplay.MapEditor
 
                 var btn = AddActionBtn(parent, kind.ToString(), 26f, null);
                 var ol  = btn.gameObject.AddComponent<Outline>();
-                ol.effectColor    = new Color(0f, 0f, 0f, 0f);
+                ol.effectColor    = Color.clear;
                 ol.effectDistance = new Vector2(2f, 2f);
                 state.Outlines[i] = ol;
 

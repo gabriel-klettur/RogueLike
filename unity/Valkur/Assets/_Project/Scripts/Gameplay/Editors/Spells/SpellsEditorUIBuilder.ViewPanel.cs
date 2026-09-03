@@ -233,14 +233,14 @@ namespace Valkur.Gameplay.Spells
             go.AddComponent<LayoutElement>().preferredHeight = 28f;
 
             var img   = go.AddComponent<Image>();
-            img.color = new Color(0.22f, 0.22f, 0.28f, 1f);
+            img.color = UITheme.BTN_HOVER;
 
             var btn = go.AddComponent<Button>();
             var c   = btn.colors;
-            c.normalColor      = new Color(0.22f, 0.22f, 0.28f, 1f);
+            c.normalColor      = UITheme.BTN_HOVER;
             c.highlightedColor = new Color(0.32f, 0.32f, 0.40f, 1f);
-            c.pressedColor     = new Color(0.90f, 0.76f, 0.38f, 1f);
-            c.selectedColor    = new Color(0.22f, 0.22f, 0.28f, 1f);
+            c.pressedColor     = UITheme.ACCENT;
+            c.selectedColor    = UITheme.BTN_HOVER;
             c.fadeDuration     = 0.08f;
             btn.colors         = c;
             btn.targetGraphic  = img;

@@ -1,0 +1,121 @@
+# Raw Color literals still living inside the runtime editors.
+#
+# Measured 2026-09-02 at 459 across the sixteen editors. 79 of those were either exact
+# duplicates of an existing UITheme token or a shared widget that deserved one — the
+# scrollbar track and handle, copied verbatim into five editors, and the resting shade of
+# a destructive button, copied into nineteen sites. Those are gone.
+#
+# What remains is NOT the same problem. Measured, only 37 of the 421 parseable literals
+# matched a token exactly; the rest are one-off semantic colours (outline cyan, drag-ghost
+# tints, category stripes, FSM legend chips) where a blanket rewrite would change pixels
+# nobody asked to change. So this file is a RATCHET, not a to-do list: a count may fall
+# freely and may never rise.
+#
+# Adding a colour to an editor? Put it in UITheme — or TileEditorTheme, for chrome the F8
+# UX panel retunes live — and reference the token. If it genuinely belongs to one widget
+# and nowhere else, raise the number here in the same commit, so the choice gets reviewed
+# instead of absorbed.
+#
+# Format: <count><TAB><path relative to Scripts/Gameplay/Editors/>
+1	_Shared/EditorUIHelpers.Panels.cs
+1	Boss/BossEditorManager.AuthoringModes.cs
+5	Boss/BossEditorManager.CueWidgets.cs
+2	Boss/BossEditorManager.UI.cs
+12	Boss/BossEditorTimelineRenderer.cs
+1	Buildings/BuildingOutlineRenderer.cs
+1	Buildings/BuildingsEditorUIBuilder.Tools.cs
+2	Buildings/BuildingsFillPreviewOverlay.cs
+5	Buildings/BuildingsPerfProbe.GUI.cs
+2	Buildings/BuildingsRuntimeEditor.Colliders.cs
+8	Buildings/BuildingsRuntimeEditor.cs
+2	Buildings/BuildingsRuntimeEditor.Doors.cs
+1	Buildings/BuildingsRuntimeEditor.Erase.cs
+1	Buildings/BuildingsRuntimeEditor.Fill.Modal.cs
+1	Buildings/BuildingsRuntimeEditor.Fill.Preview.cs
+3	Buildings/BuildingsRuntimeEditor.Handles.cs
+8	Buildings/BuildingsRuntimeEditor.UI.cs
+2	Buildings/BuildingsRuntimeEditor.Updates.cs
+3	Camera/CameraEditorUIBuilder.cs
+4	DungeonNodeGraph/DungeonNodeGraphEditor.UI.cs
+2	Entities/EntitiesEditorUIBuilder.Properties.cs
+1	Entities/EntitiesRuntimeEditor.Interaction.cs
+2	Entities/EntitiesRuntimeEditor.PickerDrag.cs
+2	Entities/EntitiesRuntimeEditor.SelectionFx.cs
+2	FSM/FSMEditorUIBuilder.Graph.cs
+1	FSM/FSMRuntimeEditor.Animations.cs
+4	FSM/FSMRuntimeEditor.Entities.cs
+18	FSM/FSMRuntimeEditor.Graph.cs
+5	FSM/FSMRuntimeEditor.Properties.cs
+4	FSM/FSMRuntimeEditor.Sets.cs
+3	General/GeneralEditorManager.UI.cs
+1	Inventory/InventoryEditorUIBuilder.cs
+1	Items/ItemsEditorUIBuilder.cs
+1	Items/ItemsEditorUIBuilder.Panels.cs
+5	Items/ItemsRuntimeEditor.cs
+1	Items/ItemsRuntimeEditor.Properties.cs
+3	Items/ItemsRuntimeEditor.Table.cs
+10	Items/ItemsRuntimeEditor.TableColumns.cs
+1	Items/ItemsRuntimeEditor.TableColumnsConfig.cs
+3	Lighting/LightingEditorUIBuilder.cs
+2	Lighting/LightingEditorUIBuilder.Panels.cs
+5	Map/Backups/MapBackupBrowserUI.Build.cs
+11	Map/Backups/MapBackupBrowserUI.cs
+5	Map/Backups/MapBackupBrowserUI.Delete.cs
+1	Map/Backups/MapBackupBrowserUI.Helpers.cs
+6	Map/MapEditorManager.Overlay.cs
+8	Map/MapEditorUI.Builder.cs
+7	Map/MapEditorUI.cs
+11	Map/MapEditorUI.Helpers.cs
+2	Map/MapEditorUIBuilder.BiomeGen.cs
+3	Map/MapEditorUIBuilder.cs
+3	Map/MapEditorUIBuilder.MapSlots.cs
+1	Map/MapEditorUIBuilder.Portals.cs
+7	Map/MapEditorUIBuilder.Widgets.cs
+4	Particles/ParticleEmitterOutlineRenderer.cs
+1	Particles/ParticlePreviewService.cs
+2	Particles/ParticlesEditorUIBuilder.PresetsPanel.cs
+1	Particles/ParticlesEditorUIBuilder.Properties.cs
+1	Particles/ParticlesEditorUIBuilder.Widgets.cs
+1	Particles/ParticlesRuntimeEditor.BoundsEditing.cs
+6	Particles/ParticlesRuntimeEditor.Outlines.cs
+2	Particles/ParticlesRuntimeEditor.Picker.cs
+2	Particles/ParticlesRuntimeEditor.PickerDrag.cs
+4	Particles/ParticlesRuntimeEditor.Table.cs
+1	Particles/ParticlesRuntimeEditor.TableColumnsConfig.cs
+1	Particles/ParticlesRuntimeEditor.Tutorial.cs
+1	Particles/ParticlesRuntimeEditor.View.cs
+2	Particles/ParticleTableColumns.cs
+1	Spawners/SpawnerEditorManager.Outlines.cs
+2	Spawners/SpawnerEditorManager.PickerDrag.cs
+3	Spawners/SpawnerOutlineRenderer.cs
+2	Spells/SpellPreviewService.cs
+1	Spells/SpellsEditorUIBuilder.Helpers.cs
+1	Spells/SpellsEditorUIBuilder.SpellsPanel.cs
+3	Spells/SpellsEditorUIBuilder.ViewPanel.cs
+31	Spells/SpellsRuntimeEditor.Picker.cs
+2	Spells/SpellsRuntimeEditor.Preview.cs
+1	Spells/SpellsRuntimeEditor.Properties.cs
+5	Spells/SpellsRuntimeEditor.Table.cs
+5	Spells/SpellsRuntimeEditor.TableColumns.cs
+1	Spells/SpellsRuntimeEditor.TableColumnsConfig.cs
+1	Tile/TileEditorBorderOverlay.cs
+2	Tile/TileEditorConstants.cs
+5	Tile/TileEditorGridCursor.cs
+9	Tile/TileEditorGridOverlay.cs
+1	Tile/TileEditorGridOverlay.Rendering.cs
+1	Tile/TileEditorManager.ColliderBake.cs
+1	Tile/TileEditorManager.Visuals.cs
+5	Tile/TileEditorPerfProbe.GUI.cs
+4	Tile/TileEditorUI.Refresh.cs
+2	Tile/TileEditorUI.TilesetView.cs
+3	Tile/TileEditorUIBuilder.CollidersPanel.cs
+1	Tile/TileEditorUIBuilder.LayerJumpsPanel.cs
+1	Tile/TileEditorUIBuilder.LeftPanel.Helpers.cs
+2	Tile/TileEditorUIBuilder.SelectModesPanel.cs
+1	Tile/TileEditorUIBuilder.SizePanel.cs
+5	Tile/TileEditorUIBuilder.UxPanel.cs
+20	Tile/TileEditorUIHelpers.cs
+1	Tile/Wizard/TilesetConfiguratorPanel.Build.cs
+4	Tile/Wizard/TilesetConfiguratorPanel.Refresh.cs
+4	TimeWeather/TimeWeatherEditor.Settings.cs
+20	TimeWeather/TimeWeatherEditorUIBuilder.Panels.cs

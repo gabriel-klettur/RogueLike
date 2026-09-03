@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using TMPro;
 using Valkur.Data;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.TileEditor
 {
@@ -116,7 +117,7 @@ namespace Valkur.Gameplay.TileEditor
         private static Color DotColor(bool connected)
         {
             return connected
-                ? new Color(0.30f, 0.90f, 0.45f, 1f)
+                ? UITheme.SUCCESS
                 : new Color(0.50f, 0.50f, 0.55f, 0.4f);
         }
 

@@ -173,11 +173,11 @@ namespace Valkur.Gameplay.VFX
             go.AddComponent<LayoutElement>().preferredHeight = height;
 
             var img = go.AddComponent<Image>();
-            img.color = new Color(0.55f, 0.15f, 0.15f, 1f);
+            img.color = UITheme.DANGER_IDLE;
 
             var btn = go.AddComponent<Button>();
             var c   = btn.colors;
-            c.normalColor      = new Color(0.55f, 0.15f, 0.15f, 1f);
+            c.normalColor      = UITheme.DANGER_IDLE;
             c.highlightedColor = new Color(0.75f, 0.20f, 0.20f, 1f);
             c.pressedColor     = UITheme.DANGER;
             btn.colors         = c;

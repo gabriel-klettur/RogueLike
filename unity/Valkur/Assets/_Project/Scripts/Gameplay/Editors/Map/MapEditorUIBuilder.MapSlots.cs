@@ -435,7 +435,7 @@ namespace Valkur.Gameplay.MapEditor
                     bool isSel = string.Equals(s, selectedSlot, StringComparison.OrdinalIgnoreCase);
                     o.effectColor = isSel
                         ? SELECTED_OUTLINE_COLOR
-                        : new Color(0f, 0f, 0f, 0f);
+                        : Color.clear;
                     o.effectDistance = isSel
                         ? new Vector2(MAPS_ROW_OUTLINE_PX, MAPS_ROW_OUTLINE_PX)
                         : Vector2.zero;
@@ -476,7 +476,7 @@ namespace Valkur.Gameplay.MapEditor
                 }
 
                 var outline = nameBtn.gameObject.AddComponent<Outline>();
-                outline.effectColor    = new Color(0f, 0f, 0f, 0f);
+                outline.effectColor    = Color.clear;
                 outline.effectDistance = Vector2.zero;
                 rowOutlines.Add((slot, outline));
 

@@ -34,6 +34,9 @@ namespace Valkur.Gameplay.Editors
         public static readonly Color SELECTION_BORDER = UITheme.SELECTION_BORDER;
         public static readonly Color SEPARATOR      = UITheme.SEPARATOR;
         public static readonly Color DANGER         = UITheme.DANGER;
+        public static readonly Color DANGER_IDLE    = UITheme.DANGER_IDLE;
+        public static readonly Color SCROLL_TRACK   = UITheme.SCROLL_TRACK;
+        public static readonly Color SCROLL_HANDLE  = UITheme.SCROLL_HANDLE;
         public static readonly Color SUCCESS        = UITheme.SUCCESS;
 
         public const float PANEL_PAD       = UITheme.PANEL_PAD;

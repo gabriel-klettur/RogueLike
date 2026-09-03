@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using TMPro;
 using Valkur.Gameplay.World;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.TileEditor
 {
@@ -25,7 +26,7 @@ namespace Valkur.Gameplay.TileEditor
             sbRt.offsetMin = new Vector2(-TILES_SCROLLBAR_W, bottomReservedPx);
             sbRt.offsetMax = new Vector2(0f, 0f);
             var sbBg = sbGo.AddComponent<Image>();
-            sbBg.color = new Color(0.08f, 0.08f, 0.10f, 0.85f);
+            sbBg.color = UITheme.SCROLL_TRACK;
             var scrollbar = sbGo.AddComponent<Scrollbar>();
             scrollbar.direction = Scrollbar.Direction.BottomToTop;
 
@@ -50,7 +51,7 @@ namespace Valkur.Gameplay.TileEditor
             sbRt.offsetMin = new Vector2(0f, 0f);
             sbRt.offsetMax = new Vector2(-rightReservedPx, TILES_SCROLLBAR_W);
             var sbBg = sbGo.AddComponent<Image>();
-            sbBg.color = new Color(0.08f, 0.08f, 0.10f, 0.85f);
+            sbBg.color = UITheme.SCROLL_TRACK;
             var scrollbar = sbGo.AddComponent<Scrollbar>();
             scrollbar.direction = Scrollbar.Direction.LeftToRight;
 
@@ -79,13 +80,13 @@ namespace Valkur.Gameplay.TileEditor
             hRt.offsetMin = Vector2.zero;
             hRt.offsetMax = Vector2.zero;
             var hImg = handleGo.AddComponent<Image>();
-            hImg.color = new Color(0.55f, 0.45f, 0.22f, 0.85f);
+            hImg.color = UITheme.SCROLL_HANDLE;
             scrollbar.targetGraphic = hImg;
             scrollbar.handleRect = hRt;
             var sbColors = scrollbar.colors;
-            sbColors.normalColor      = new Color(0.55f, 0.45f, 0.22f, 0.85f);
+            sbColors.normalColor      = UITheme.SCROLL_HANDLE;
             sbColors.highlightedColor = new Color(0.75f, 0.62f, 0.30f, 0.95f);
-            sbColors.pressedColor     = new Color(0.90f, 0.76f, 0.38f, 1f);
+            sbColors.pressedColor     = UITheme.ACCENT;
             scrollbar.colors = sbColors;
         }
 

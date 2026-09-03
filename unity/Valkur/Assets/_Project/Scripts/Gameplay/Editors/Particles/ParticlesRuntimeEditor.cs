@@ -69,6 +69,14 @@ namespace Valkur.Gameplay.VFX
         // Middle-mouse camera pan — shared controller used by every runtime editor.
         private readonly EditorCameraPanController _cameraPan = new EditorCameraPanController();
 
+        // Mouse-wheel zoom, shared with every runtime editor that can pan. An editor that
+        // lets the author move the world camera but not close in on it is the odd one out,
+        // and eight of the eleven panning editors were exactly that. The controller steps
+        // through CameraSetup.ComputeEditorZoomNext, which stays on the PPU ladder
+        // SnapOrthoSize maintains — that is why spreading it does not fall foul of the
+        // "never write orthographicSize for an effect" rule.
+        private readonly EditorCameraZoomController _cameraZoom = new EditorCameraZoomController();
+
         // ── Preview service ──────────────────────────────────────────────────────
         private readonly ParticlePreviewService _previewService = new ParticlePreviewService();
 
@@ -139,6 +147,7 @@ namespace Valkur.Gameplay.VFX
 
             // Middle-mouse pan runs unconditionally.
             _cameraPan.Tick();
+            _cameraZoom.Tick();
             _previewService.Tick();
             TickViewPanelInput();
 

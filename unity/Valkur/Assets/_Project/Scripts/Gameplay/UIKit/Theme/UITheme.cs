@@ -37,6 +37,17 @@ namespace Valkur.UIKit
         public static readonly Color SLOT_HOVER    = new Color(0.22f, 0.22f, 0.28f, 1f);
         public static readonly Color SLOT_SELECTED = new Color(0.90f, 0.76f, 0.38f, 0.65f);
 
+        // ── Scrollbars ──
+        //
+        // The track and its handle were hand-copied, verbatim, into five editors
+        // (Items, Map, Particles, Spells, Tile) — twelve and ten sites. Nothing was
+        // wrong with any single copy; what was wrong is that restyling the scrollbar
+        // meant finding five files, and the track had already drifted: it is 0.85
+        // alpha here while the panel behind it is 0.82, which is a value somebody
+        // meant to match and mistyped.
+        public static readonly Color SCROLL_TRACK  = new Color(0.08f, 0.08f, 0.10f, 0.85f);
+        public static readonly Color SCROLL_HANDLE = new Color(0.55f, 0.45f, 0.22f, 0.85f);
+
         // ── Lines / overlays ──
         public static readonly Color BORDER        = new Color(0.90f, 0.76f, 0.38f, 0.35f);
         /// <summary>
@@ -50,6 +61,17 @@ namespace Valkur.UIKit
 
         // ── State colors ──
         public static readonly Color DANGER        = new Color(0.90f, 0.30f, 0.30f, 1f);
+
+        /// <summary>
+        /// A destructive control at REST — the delete button before it is armed.
+        /// <see cref="DANGER"/> is the same control once it is active.
+        ///
+        /// Copied by hand into nineteen sites across Boss, Buildings and FSM, one of
+        /// which had already named it <c>dangerBase</c> locally. Two shades of "this
+        /// deletes something" is exactly the pair that must not drift apart: the whole
+        /// signal is that the armed one is BRIGHTER than the idle one.
+        /// </summary>
+        public static readonly Color DANGER_IDLE   = new Color(0.55f, 0.15f, 0.15f, 1f);
         public static readonly Color SUCCESS       = new Color(0.30f, 0.90f, 0.45f, 1f);
 
         // ── Layout ──

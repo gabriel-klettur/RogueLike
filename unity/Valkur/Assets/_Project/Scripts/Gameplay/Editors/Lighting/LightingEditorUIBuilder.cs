@@ -101,9 +101,9 @@ namespace Valkur.Gameplay.World
         // Shared danger-button palette (delete / destructive). Defined once so the
         // Modes panel, the per-row Delete buttons, and the AddDangerToolBtn helper
         // never drift apart on a colour tweak.
-        internal static readonly Color DANGER_NORMAL  = new Color(0.55f, 0.15f, 0.15f, 1f);
+        internal static readonly Color DANGER_NORMAL  = UITheme.DANGER_IDLE;
         internal static readonly Color DANGER_HOVER   = new Color(0.70f, 0.20f, 0.20f, 1f);
-        internal static readonly Color DANGER_PRESSED = new Color(0.90f, 0.30f, 0.30f, 1f);
+        internal static readonly Color DANGER_PRESSED = UITheme.DANGER;
         // Cycle "window enabled" / pause-active highlight.
         internal static readonly Color CYCLE_TOGGLE_ON = new Color(0.30f, 0.70f, 0.40f, 1f);
         internal static readonly Color CYCLE_PAUSED    = new Color(0.85f, 0.45f, 0.15f, 1f);

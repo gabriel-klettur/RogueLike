@@ -96,7 +96,7 @@ namespace Valkur.Gameplay.MapEditor
             text.rectTransform.sizeDelta = new Vector2(300f, 0f);
 
             var actions = CreateRow("RowActions", parent, 26f);
-            actions.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
+            actions.GetComponent<Image>().color = Color.clear;
             actions.GetComponent<RectTransform>().sizeDelta = new Vector2(96f, 0f);
             var actionsLayout = actions.AddComponent<LayoutElement>();
             actionsLayout.preferredWidth = 96f;
@@ -126,7 +126,7 @@ namespace Valkur.Gameplay.MapEditor
             input.text = zone.zoneName;
 
             var actions = CreateRow("RenameActions", parent, 26f);
-            actions.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
+            actions.GetComponent<Image>().color = Color.clear;
             actions.GetComponent<RectTransform>().sizeDelta = new Vector2(96f, 0f);
             var actionsLayout = actions.AddComponent<LayoutElement>();
             actionsLayout.preferredWidth = 96f;

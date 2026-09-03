@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Valkur.Core;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.MapEditor.Backups
 {
@@ -32,7 +33,7 @@ namespace Valkur.Gameplay.MapEditor.Backups
         private static readonly Color RowBgActive = new Color(0.30f, 0.25f, 0.06f, 1f);
         private static readonly Color BtnNormal   = new Color(0.22f, 0.24f, 0.30f, 1f);
         private static readonly Color BtnHover    = new Color(0.30f, 0.32f, 0.40f, 1f);
-        private static readonly Color BtnDanger   = new Color(0.55f, 0.15f, 0.15f, 1f);
+        private static readonly Color BtnDanger   = UITheme.DANGER_IDLE;
         private static readonly Color BtnDangerH  = new Color(0.75f, 0.20f, 0.20f, 1f);
         private static readonly Color TextPrimary = new Color(230f/255f, 233f/255f, 240f/255f, 1f);
         private static readonly Color TextDim     = new Color(0.60f, 0.65f, 0.72f, 1f);

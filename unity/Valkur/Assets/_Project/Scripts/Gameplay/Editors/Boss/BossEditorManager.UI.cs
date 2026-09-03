@@ -287,7 +287,7 @@ namespace Valkur.Gameplay.Editors.Boss
                 delBtnLe.preferredWidth  = 22f;
                 delBtnLe.preferredHeight = 22f;
                 var delImg = delBtnGo.AddComponent<Image>();
-                delImg.color = new Color(0.55f, 0.15f, 0.15f, 1f);
+                delImg.color = UITheme.DANGER_IDLE;
                 var delBtn = delBtnGo.AddComponent<Button>();
                 delBtn.targetGraphic = delImg;
                 int capturedPiDel = pi;
@@ -335,7 +335,7 @@ namespace Valkur.Gameplay.Editors.Boss
                         chartDelLe.preferredWidth  = 20f;
                         chartDelLe.preferredHeight = 20f;
                         var chartDelImg = chartDelGo.AddComponent<Image>();
-                        chartDelImg.color = new Color(0.55f, 0.15f, 0.15f, 1f);
+                        chartDelImg.color = UITheme.DANGER_IDLE;
                         var chartDelBtn = chartDelGo.AddComponent<Button>();
                         chartDelBtn.targetGraphic = chartDelImg;
                         var capturedChart = chart;
