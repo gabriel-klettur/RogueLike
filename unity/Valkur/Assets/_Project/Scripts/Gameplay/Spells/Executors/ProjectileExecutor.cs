@@ -8,7 +8,7 @@ namespace Valkur.Gameplay.Spells
     /// <summary>
     /// Spawns a projectile in the cast direction with speed, damage, and lifetime from the spell definition.
     /// Uses VFXManager pool when available for frequently spawned projectiles.
-    /// Python parity: fireball_trail / iceball_trail_strong / etc. particle presets.
+    /// The look is entirely the spell's own preset stack — see ParticleProjectileVisual.
     /// </summary>
     public class ProjectileExecutor : ISpellExecutor
     {
@@ -96,7 +96,7 @@ namespace Valkur.Gameplay.Spells
                     // Apply visual scale to the sprite child only â€” never to the root GO.
                     // Python's spell.scale is a sprite pixel-scale factor (e.g. 0.05 for fireball),
                     // not a world-unit scale. Applying it to the root GO would shrink physics
-                    // colliders and make procedural visuals (FireballVisual) invisible.
+                    // colliders and make procedural visuals (ParticleProjectileVisual) invisible.
                     if (ctx.Spell.scale > 0 && ctx.Spell.scale != 1f)
                         sr.transform.localScale = Vector3.one * ctx.Spell.scale;
                 }
@@ -295,8 +295,8 @@ namespace Valkur.Gameplay.Spells
         /// impact is whatever <c>Projectile.OnExpire</c> spawns from
         /// <c>impactPreset</c>.
         ///
-        /// Strips legacy SpriteRenderer-based rigs (<see cref="FireballVisual"/>,
-        /// <see cref="ElementalProjectileVisual"/>) plus any leftover child
+        /// Strips the legacy SpriteRenderer-based rig (<see cref="ElementalProjectileVisual"/>,
+        /// which <c>BoomerangExecutor</c> still attaches) plus any leftover child
         /// scaffolding (Halo / Glow / Core / HotCore / Ghost*/ FireballLight /
         /// Accent) from earlier prefab configurations or pool reuses.
         /// Idempotent across pool re-spawns.
@@ -312,13 +312,10 @@ namespace Valkur.Gameplay.Spells
 
         private static void StripLegacyVisualRigs(GameObject go)
         {
-            var fireball = go.GetComponent<FireballVisual>();
-            if (fireball != null) Object.Destroy(fireball);
-
             var elemental = go.GetComponent<ElementalProjectileVisual>();
             if (elemental != null) Object.Destroy(elemental);
 
-            // Tear down the SpriteRenderer scaffolding both rigs build as
+            // Tear down the SpriteRenderer scaffolding the legacy rig builds as
             // direct children. We can't blindly destroy every child because
             // ParticleProjectileVisual will parent its own trail GO under us;
             // gate by name so only legacy layers are removed.
@@ -335,7 +332,11 @@ namespace Valkur.Gameplay.Spells
         private static bool IsLegacyVisualChild(string name)
         {
             if (string.IsNullOrEmpty(name)) return false;
-            return name == "Halo"
+            // "Aura" is the container ElementalProjectileVisual builds today; the loose names
+            // below are the same layers as it built them BEFORE that container existed, and a
+            // pooled object can still be carrying either shape.
+            return name == "Aura"
+                || name == "Halo"
                 || name == "Glow"
                 || name == "Core"
                 || name == "HotCore"

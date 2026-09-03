@@ -150,10 +150,20 @@ namespace Valkur.Tests.EditMode.Game.World
         [Test]
         public void TheOldCameraShakeIsGone()
         {
-            string fireball = Read("Gameplay/Spells/Visuals/FireballImpactFX.cs");
-            Assert.IsFalse(fireball.Contains("class CameraShake"),
-                "Its amplitude ratcheted upward for the life of the session and its restore " +
-                "subtracted an offset the brain had already erased.");
+            // The class used to live inside FireballImpactFX.cs, which is gone. Scanning
+            // the whole tree instead of that one file keeps the guarantee alive without
+            // pinning it to a filename: its amplitude ratcheted upward for the life of
+            // the session and its restore subtracted an offset the brain had already
+            // erased, so it must not come back anywhere.
+            var declarations = Directory
+                .GetFiles(ScriptsRoot, "*.cs", SearchOption.AllDirectories)
+                .Where(f => StripComments(File.ReadAllText(f)).Contains("class CameraShake"))
+                .Select(Path.GetFileName)
+                .ToList();
+
+            Assert.IsEmpty(declarations,
+                "CameraFeelDirector is the only shake owner.\n\n  " +
+                string.Join("\n  ", declarations));
 
             var survivors = Directory
                 .GetFiles(ScriptsRoot, "*.cs", SearchOption.AllDirectories)

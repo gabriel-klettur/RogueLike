@@ -320,11 +320,13 @@ namespace Valkur.Gameplay.Spells
                 }
             }
 
-            // Epic impact for any procedural projectile visual (fireball, darkball,
-            // iceball, lightball, lightning, boomerang...). Each visual implements
-            // IProjectileVisual.OnImpact() with its own shockwave + flash + element
-            // burst + light pulse + camera shake. Returns null when the projectile
-            // has no procedural visual attached (legacy sprite-only spells).
+            // Hand the impact to whatever visual is riding this projectile.
+            // ParticleProjectileVisual (every ball spell) only stops its trail here —
+            // the shockwave, flash, burst and smoke are the impactPreset stack spawned
+            // below. ElementalProjectileVisual (boomerang) draws its own impact rig.
+            // Returns null when the projectile has no visual attached at all.
+            // NOTE: nothing on this path produces camera trauma, hit-stop or a light
+            // pulse; a spell that wants those has to ask CameraFeel.Cue itself.
             var projVisual = GetComponent<IProjectileVisual>();
             if (projVisual != null) projVisual.OnImpact(vfxPos);
 

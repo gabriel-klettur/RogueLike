@@ -18,7 +18,7 @@ namespace Valkur.Tests.EditMode.Game.Combat
     ///     setters round-trip through the private backing fields
     ///   * Multiple setter calls don't interfere with each other
     /// PlayMode-only behaviour (FixedUpdate sweep, OnTriggerEnter, AOE damage) is
-    /// covered indirectly through the SpellCaster / FireballVisual integration tests.
+    /// covered indirectly through the SpellCaster / ParticleProjectileVisual integration tests.
     /// </summary>
     public class ProjectileTests
     {

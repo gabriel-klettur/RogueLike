@@ -104,7 +104,7 @@ The Gameplay assembly is subdivided by feature so any single folder stays under 
 | `Spells/Executors/` | `*Executor.cs` (Projectile, Area, Slash, Dash, …) |
 | `Spells/Controllers/` | Aura, Beam, Mine, Puddle, Shield, Summon, Totem, Vortex, Wall, MeteorStrike, Cone, ArcaneFlame |
 | `Spells/Projectiles/` | Projectile, BoomerangProjectile, IProjectileVisual |
-| `Spells/Visuals/` | ElementalProjectileVisual, FireballVisual, FireballImpactFX, LightningBoltFX, MeteorMissileFX, AreaFXRig |
+| `Spells/Visuals/` | ElementalProjectileVisual, LightningBoltFX, MeteorMissileFX, AreaFXRig, IceWallVisual, VortexFunnelFX, ShieldSphereFX, KiAuraFX |
 | `UIKit/` | Reusable runtime UI primitives (own asmdef — leave alone) |
 | `Vendors/` | Shop / vendor logic |
 | `VFX/` | Pooled VFX |

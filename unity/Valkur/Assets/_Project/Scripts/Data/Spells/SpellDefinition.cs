@@ -266,7 +266,7 @@ namespace Valkur.Data
 
         [Header("Visual")]
         [Tooltip("Sprite shown on the in-world projectile / area / mine / boomerang / summon / wall. " +
-                 "Leave null to let the procedural visual (FireballVisual, ElementalProjectileVisual, …) drive the look.")]
+                 "Leave null to let the procedural visual (ParticleProjectileVisual, ElementalProjectileVisual, …) drive the look.")]
         public Sprite sprite;
         public float scale = 1f;
         public float speedMultiplier = 1f;

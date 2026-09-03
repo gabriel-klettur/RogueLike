@@ -13,7 +13,7 @@ namespace Valkur.Editor.Spells
     ///   2. Clears <c>sprite</c> if it points to a PNG under that same folder
     ///      (rescue: <c>sprite</c> drives the in-world projectile / area visual,
     ///      so polluting it with a HUD icon makes the projectile fly the icon
-    ///      around instead of letting <c>FireballVisual</c> / similar render).
+    ///      around instead of letting <c>ParticleProjectileVisual</c> / similar render).
     /// </summary>
     public static class SpellIconAutoAssigner
     {

@@ -12,7 +12,7 @@ header (`Assets/_Project/Scripts/Data/Spells/SpellDefinition.cs`):
 - **`sprite`** — visual of the in-world projectile / area / mine / boomerang /
   summon / wall. Read by `ProjectileExecutor`, `BoomerangExecutor`,
   `MineExecutor`, `PuddleExecutor`, `SummonExecutor`, `WallExecutor`. Leave
-  `null` to let the procedural visual (`FireballVisual`,
+  `null` to let the procedural visual (`ParticleProjectileVisual`,
   `ElementalProjectileVisual`, etc.) drive the look — that is the default for
   fireball/iceball/lightball/darkball/lightning/laser_beam/etc.
 - **`iconSprite`** — square HUD icon shown in the spell bar, drag-preview, and
