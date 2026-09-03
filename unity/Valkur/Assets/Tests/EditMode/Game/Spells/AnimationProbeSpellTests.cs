@@ -351,8 +351,14 @@ namespace Valkur.Tests.EditMode.Game.Spells
                     anim.SetState(state, Valkur.Gameplay.DirectionalAnimator.Direction.East);
                     stateField.SetValue(pc, state);
 
-                    // The window has just expired.
-                    endField.SetValue(pc, Time.time - 0.01f);
+                    // The window has just expired. Clamped above zero because zero is the
+                    // "no window open" sentinel TickCastAnimRevert early-returns on, and in
+                    // Edit Mode Time.time is the time since the last domain reload — a test
+                    // run starts with one, so it is routinely under 0.01 and the naive
+                    // subtraction goes negative. That made the revert no-op and reported
+                    // every state in the enum as a soft lock, at random, depending only on
+                    // how long the editor had been idle before the run.
+                    endField.SetValue(pc, Mathf.Max(float.Epsilon, Time.time - 0.01f));
                     revert.Invoke(pc, null);
 
                     var after = anim.CurrentState;
