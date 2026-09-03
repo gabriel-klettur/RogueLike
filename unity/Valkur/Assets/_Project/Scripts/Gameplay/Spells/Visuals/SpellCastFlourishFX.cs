@@ -142,8 +142,8 @@ namespace Valkur.Gameplay.Spells
         /// <summary>
         /// The colour this spell IS, which is not always the raw <c>particleColor</c>.
         ///
-        /// <para>Two types resolve a tint of their own rather than using the raw field, and
-        /// both apply a default of their own when the swatch is unauthored — so reading
+        /// <para>Three types resolve a tint of their own rather than using the raw field, and
+        /// each applies a default of its own when the swatch is unauthored — so reading
         /// <c>particleColor</c> here would let the gather disagree with the thing it announces.
         /// That is not hypothetical: plain <c>slash</c> leaves the swatch untouched, so the
         /// blade fell back to a pale blue-white while the gather read the same field as
@@ -164,6 +164,7 @@ namespace Valkur.Gameplay.Spells
             {
                 case SpellType.Slash: return SlashExecutor.ResolveTint(spell);
                 case SpellType.Totem: return TotemExecutor.ResolveTint(spell);
+                case SpellType.Boomerang: return BoomerangExecutor.ResolveTint(spell);
                 default: return spell.particleColor;
             }
         }

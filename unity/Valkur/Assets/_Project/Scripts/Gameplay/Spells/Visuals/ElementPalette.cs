@@ -204,21 +204,34 @@ namespace Valkur.Gameplay.Spells
             impactSfxId   = "spell_lightning_impact",
         };
 
-        // Boomerang: green/wood spinning blade with leaf trail.
+        /// <summary>
+        /// Boomerang: a spinning blade lit like a red lightsaber.
+        ///
+        /// <para>The structure is what makes it read as a saber rather than as a red blob, and
+        /// it is the same three-part split a real one has: a near-white HOT CORE, a saturated
+        /// red MID, and a deep crimson BLOOM around both. The accent — the blade silhouette,
+        /// and the only layer on the alpha material — is held hot and pale so it stays the
+        /// bright bar INSIDE the bloom; dropping it to the same red as the glow would dissolve
+        /// the shape into its own light.</para>
+        ///
+        /// <para>Every value is a step brighter than the green it replaced. Luminance is not
+        /// linear in hue — green carries 0.587 of it against red's 0.299 — so the same numbers
+        /// in red land visibly dimmer, and the light gets the same compensation.</para>
+        /// </summary>
         private static ElementPalette Boomerang() => new ElementPalette
         {
             element = SpellElement.Boomerang,
-            hotCore = new Color(0.95f, 1.00f, 0.65f, 1f),
-            core    = new Color(0.55f, 0.85f, 0.30f, 1f),
-            glow    = new Color(0.40f, 0.65f, 0.20f, 0.55f),
-            halo    = new Color(0.25f, 0.45f, 0.10f, 0.20f),
-            accent  = new Color(0.85f, 0.75f, 0.40f, 1f),
-            lightColor = new Color(0.65f, 0.95f, 0.45f, 1f),
+            hotCore = new Color(1.00f, 0.93f, 0.90f, 1f),
+            core    = new Color(1.00f, 0.22f, 0.16f, 1f),
+            glow    = new Color(1.00f, 0.08f, 0.10f, 0.60f),
+            halo    = new Color(0.62f, 0.02f, 0.06f, 0.24f),
+            accent  = new Color(1.00f, 0.72f, 0.70f, 1f),
+            lightColor = new Color(1.00f, 0.20f, 0.16f, 1f),
             coreScale = 0.30f, glowScale = 0.75f, haloScale = 1.20f, hotCoreScale = 0.15f, accentScale = 0.80f,
             ghostCount = 3, ghostSpacing = 0.13f,
             emberInterval = 0.05f, emberLifetime = 0.45f, emberJitter = 0.5f, emberDrag = 1.6f, emberBuoyancy = -0.3f,
             flickerRate = 6f, stretch = 0.20f,
-            lightIntensity = 0.9f, lightOuter = 1.4f, lightInner = 0.2f,
+            lightIntensity = 1.15f, lightOuter = 1.6f, lightInner = 0.2f,
             accentSpinSpeed = 720f,                   // very fast spin
             hotCoreSprite = ElementalSprites.HotCore,
             coreSprite    = ElementalSprites.Core,

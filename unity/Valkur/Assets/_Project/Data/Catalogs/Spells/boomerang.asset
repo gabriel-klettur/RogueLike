@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: Boomerang
   type: 10
   audience: 1
+  usesAttackAnimation: 0
   manaCost: 8
   maxInstances: 1
   allowOverlap: 1
@@ -26,10 +27,10 @@ MonoBehaviour:
   lockCastDirection: 1
   prepareDuration: 0.05
   channelDuration: 0
-  cooldownDuration: 0.8
-  speed: 82.5
-  damage: 18
-  range: 26.25
+  cooldownDuration: 1.5
+  speed: 20
+  damage: 22
+  range: 10
   lifetime: 0
   radius: 0
   hitRadius: 0.75
@@ -39,6 +40,7 @@ MonoBehaviour:
   distance: 0
   knockback: 0
   collisionDamage: 0
+  infinite: 0
   duration: 0
   damagePerTick: 0
   tickPeriod: 0
@@ -48,6 +50,9 @@ MonoBehaviour:
   forceMode: 
   followCaster: 0
   spawnAtMouse: 0
+  statusApplications: []
+  castAnchor: 0
+  castForwardOffset: 0
   meteorCount: 0
   meteorInterval: 0
   meteorAreaRadius: 0
@@ -68,6 +73,9 @@ MonoBehaviour:
   totemKind: 
   coneArc: 0
   coneLength: 0
+  animState: 
+  loadoutAnimKey: 
+  loadoutKey: 
   sprite: {fileID: 0}
   scale: 0.8
   speedMultiplier: 1
@@ -79,9 +87,15 @@ MonoBehaviour:
   particleDispersion: 0
   particleLifespan: 0
   particleSpeed: 0
-  particleColor: {r: 1, g: 1, b: 1, a: 1}
+  particleColor: {r: 1, g: 0.12, b: 0.1, a: 1}
   particleColors: []
   sizeRange: []
   emitRate: 0
   vfxPreset: 
   impactPreset: 
+  vfxPresetLayers: []
+  impactPresetLayers: []
+  castPreset: 
+  castPresetLayers: []
+  gatherOverride:
+    fields: []

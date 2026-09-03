@@ -11,13 +11,31 @@ namespace Valkur.Gameplay.Spells
     /// specific palette, ember/trail emission, dynamic Light2D and motion stretch.
     /// On impact spawns <see cref="ElementalImpactFX"/> with the matching palette.
     ///
-    /// Same architectural rules as <see cref="FireballVisual"/>: fully procedural
-    /// (no asset deps), URP via reflection, sortingLayerID forced everywhere.
+    /// Fully procedural (no asset deps), URP via reflection, sortingLayerID forced
+    /// everywhere.
     /// </summary>
     public class ElementalProjectileVisual : MonoBehaviour, IProjectileVisual
     {
         [SerializeField] private SpellElement element = SpellElement.Dark;
         [SerializeField] private bool playImpactAudio = true;
+
+        /// <summary>
+        /// Draw order inside <see cref="SortingConfig.LAYER_PROJECTILES"/>. These used to be
+        /// offsets from <c>SortingConfig.Z_SKY</c> (600) applied on the ENTITIES layer — the
+        /// same mistake <c>LightningBoltFX</c> made: Z_SKY is a Z depth, not a sorting order,
+        /// and Entities sits below Decorations, WallsTop, ObjectsHigh, Projectiles and VFX, so
+        /// a spell in flight drew UNDER every wall top and every other effect on screen.
+        /// </summary>
+        private const int OrderGhost = 0;
+        private const int OrderHalo = 1;
+        private const int OrderGlow = 2;
+        private const int OrderAccent = 3;
+        private const int OrderCore = 4;
+        private const int OrderHotCore = 5;
+        private const int OrderEmber = 3;
+
+        /// <summary>Speed at which motion stretch and the ghost trail reach full strength.</summary>
+        private const float StretchReferenceSpeed = 12f;
 
         // Layer renderers
         private SpriteRenderer _hotCoreSr;
@@ -37,6 +55,24 @@ namespace Valkur.Gameplay.Spells
         private ElementPalette _palette;
         private float _spinAngle;
 
+        /// <summary>
+        /// Container for every layer that has to face the direction of travel. The rig's owner
+        /// may spin its own transform — a boomerang does, two turns a second — and the trail,
+        /// the motion stretch and the ember spray are all statements about the DIRECTION the
+        /// projectile is going, not about how the blade is currently oriented. Parented to the
+        /// root and given a world rotation each frame, so a spinning owner costs it nothing.
+        /// </summary>
+        private Transform _aura;
+        private Vector3 _travelDir = Vector3.right;
+
+        /// <summary>
+        /// Set when the spawning executor authored a sprite for the projectile itself. The rig
+        /// hides the root renderer by default (it is the prefab's placeholder), which silently
+        /// made <c>SpellDefinition.sprite</c> a control that did nothing for every spell drawn
+        /// by this rig.
+        /// </summary>
+        private bool _keepRootSprite;
+
         // Configurable from spawning code BEFORE first Update, otherwise the default
         // (Dark) is used.
         public void SetElement(SpellElement e)
@@ -49,6 +85,18 @@ namespace Valkur.Gameplay.Spells
                 ClearVisual();
                 BuildVisual();
             }
+        }
+
+        /// <summary>
+        /// Keep the root <see cref="SpriteRenderer"/> visible: the spawner put an authored
+        /// sprite on it and that sprite IS the projectile. Safe to call before or after the rig
+        /// is built.
+        /// </summary>
+        public void KeepRootSprite()
+        {
+            _keepRootSprite = true;
+            var rootSr = GetComponent<SpriteRenderer>();
+            if (rootSr != null) rootSr.enabled = true;
         }
 
         public void OnImpact(Vector3 worldPos)
@@ -103,9 +151,17 @@ namespace Valkur.Gameplay.Spells
             Vector3 pos = transform.position;
             Vector3 delta = pos - _lastPos;
             float speed = delta.magnitude / Mathf.Max(Time.deltaTime, 0.0001f);
-            float speedFactor = Mathf.Clamp01(speed / 12f);
+            float speedFactor = Mathf.Clamp01(speed / StretchReferenceSpeed);
             float stretchX = 1f + speedFactor * _palette.stretch;
             float stretchY = 1f - speedFactor * _palette.stretch * 0.32f;
+
+            // Face the aura along travel. Everything that follows is expressed in ITS local
+            // space — stretch on local X, the ghost trail at negative local X — so a rig whose
+            // owner spins keeps trailing behind itself instead of whirling around itself.
+            if (delta.sqrMagnitude > 1e-8f) _travelDir = delta.normalized;
+            if (_aura != null)
+                _aura.rotation = Quaternion.Euler(0f, 0f,
+                    Mathf.Atan2(_travelDir.y, _travelDir.x) * Mathf.Rad2Deg);
 
             if (_haloSr != null)
                 _haloSr.transform.localScale = new Vector3(_palette.haloScale * stretchX * flickerSlow,
@@ -183,6 +239,7 @@ namespace Valkur.Gameplay.Spells
             }
             _hotCoreSr = _coreSr = _glowSr = _haloSr = _accentSr = null;
             _ghostSrs = null;
+            _aura = null;
             _light2DGo = null;
             _light2DComponent = null;
         }
@@ -190,43 +247,58 @@ namespace Valkur.Gameplay.Spells
         private void BuildVisual()
         {
             _palette = ElementPalette.For(element);
-            int order = SortingConfig.Z_SKY;
 
-            _haloSr   = CreateChild("Halo",    _palette.haloSprite,    _palette.halo,    _palette.haloScale,    order + 2);
-            _glowSr   = CreateChild("Glow",    _palette.glowSprite,    _palette.glow,    _palette.glowScale,    order + 3);
-            _coreSr   = CreateChild("Core",    _palette.coreSprite,    _palette.core,    _palette.coreScale,    order + 5);
-            _hotCoreSr = CreateChild("HotCore", _palette.hotCoreSprite, _palette.hotCore, _palette.hotCoreScale, order + 6);
+            var auraGo = new GameObject("Aura");
+            auraGo.transform.SetParent(transform, false);
+            auraGo.transform.localPosition = Vector3.zero;
+            _aura = auraGo.transform;
 
-            // Element-specific accent (snowflake / bolt / sparkle / wisp)
+            _haloSr    = CreateChild("Halo",    _palette.haloSprite,    _palette.halo,    _palette.haloScale,    OrderHalo);
+            _glowSr    = CreateChild("Glow",    _palette.glowSprite,    _palette.glow,    _palette.glowScale,    OrderGlow);
+            _coreSr    = CreateChild("Core",    _palette.coreSprite,    _palette.core,    _palette.coreScale,    OrderCore);
+            _hotCoreSr = CreateChild("HotCore", _palette.hotCoreSprite, _palette.hotCore, _palette.hotCoreScale, OrderHotCore);
+
+            // Element-specific accent (snowflake / bolt / blade / wisp). Alpha, not additive:
+            // it is the only layer with a SHAPE, and the whole point of a blade or a snowflake
+            // is its silhouette — on additive it dissolves into the glow behind it.
             if (_palette.accentSprite != null)
-                _accentSr = CreateChild("Accent", _palette.accentSprite, _palette.accent, _palette.accentScale, order + 4);
+                _accentSr = CreateChild("Accent", _palette.accentSprite, _palette.accent,
+                                        _palette.accentScale, OrderAccent,
+                                        ElementalSprites.SharedUnlitMaterial);
 
             // Ghost trail
             int ghostCount = _palette.ghostCount;
             _ghostSrs = new SpriteRenderer[ghostCount];
             for (int i = 0; i < ghostCount; i++)
-                _ghostSrs[i] = CreateChild($"Ghost{i}", _palette.glowSprite, _palette.glow, _palette.glowScale, order + 1);
+                _ghostSrs[i] = CreateChild($"Ghost{i}", _palette.glowSprite, _palette.glow, _palette.glowScale, OrderGhost);
 
-            // Hide root placeholder sprite (added by ProjectilePrefabFactory).
+            // Hide the prefab's placeholder sprite — unless the spawner authored a real one.
             var rootSr = GetComponent<SpriteRenderer>();
-            if (rootSr != null) rootSr.enabled = false;
+            if (rootSr != null) rootSr.enabled = _keepRootSprite;
 
             CreateDynamicLight();
         }
 
-        private SpriteRenderer CreateChild(string name, Sprite sprite, Color color, float scale, int order)
+        /// <summary>
+        /// One layer of the rig. Additive by default: on the alpha material the brightest pixel
+        /// a glow can produce is its own colour, so a stack meant to read as a hot centre inside
+        /// a soft bloom could never blow out and a wide faint halo was a net luminance LOSS over
+        /// pale ground. Pass <c>SharedUnlitMaterial</c> for a layer whose silhouette matters.
+        /// </summary>
+        private SpriteRenderer CreateChild(string name, Sprite sprite, Color color, float scale,
+                                           int order, Material material = null)
         {
             var go = new GameObject(name);
-            go.transform.SetParent(transform, false);
+            go.transform.SetParent(_aura != null ? _aura : transform, false);
             go.transform.localPosition = Vector3.zero;
             go.transform.localScale = Vector3.one * scale;
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = sprite;
             sr.color = color;
-            sr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_ENTITIES);
-            sr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
+            sr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_PROJECTILES);
+            sr.sortingLayerName = SortingConfig.LAYER_PROJECTILES;
             sr.sortingOrder = order;
-            sr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
+            sr.sharedMaterial = material != null ? material : ElementalSprites.SharedAdditiveMaterial;
             return sr;
         }
 
@@ -267,14 +339,16 @@ namespace Valkur.Gameplay.Spells
             go.transform.position = transform.position;
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = _palette.emberSprite;
-            sr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_ENTITIES);
-            sr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
-            sr.sortingOrder = SortingConfig.Z_SKY + 4;
-            sr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
+            sr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_PROJECTILES);
+            sr.sortingLayerName = SortingConfig.LAYER_PROJECTILES;
+            sr.sortingOrder = OrderEmber;
+            sr.sharedMaterial = ElementalSprites.SharedAdditiveMaterial;
             sr.color = Color.Lerp(_palette.core, _palette.glow, Random.value);
 
-            // Velocity: backward + jitter (per-element drag/buoyancy)
-            Vector2 back = -(Vector2)transform.right;
+            // Velocity: backward along TRAVEL + jitter (per-element drag/buoyancy). Reading the
+            // root's own right vector instead would spray the trail in a circle on any rig
+            // whose owner spins.
+            Vector2 back = -(Vector2)_travelDir;
             Vector2 jitter = Random.insideUnitCircle * _palette.emberJitter;
             Vector2 vel = back * Random.Range(0.4f, 1.4f) + jitter;
             var ember = go.AddComponent<ElementalEmber>();

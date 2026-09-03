@@ -1109,6 +1109,55 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   the root, because a scaled root also scales any `Light2D` parented under it (that is what
   `WorldLightLoader`'s counter-scale by `1f / lossyScale` exists to undo) and silently renders
   an authored radius at several times its value.
+- **Instantiating a shared prefab accepts EVERY component on it, including the one you are
+  replacing.** `BoomerangExecutor` cloned the ball prefab from `ProjectilePrefabFactory` and
+  never took its `Projectile` off, so an UNINITIALISED one rode along with its serialized
+  defaults — and `Projectile.Update` expires on `range`, whose default is **20**. The boomerang
+  was authored to turn at 26.25, so measured live the blade was deactivated and destroyed 20
+  units out, 0.242 s into the throw: **the return leg had never run once in the spell's life**,
+  and neither had the `lifetime = 3` timer waiting behind it. Its `FixedUpdate` also wrote
+  `velocity = zero * speed` every step and its `Awake` set `freezeRotation = true`, both of which
+  the boomerang only survived because its own component happened to be added later and therefore
+  wrote last — there is no `DefaultExecutionOrder` anywhere in the project, so that was luck.
+  Neither half was wrong alone; the COMPOSITION was, which is the same shape as the spawner
+  coordinate drift and needs the same answer — a test that flies the whole throw.
+  `enabled = false` as well as `Destroy`, because destruction is deferred to end of frame and a
+  merely-destroyed component still runs its Update for the rest of it. Full findings:
+  `.github/BOOMERANG_AUDIT.md`.
+- **A damage radius is not a collision radius, and a curved path has to fit the room it is
+  thrown into.** `BoomerangProjectile` swept walls with `hitRadius` — 0.75, authored generously
+  so a near miss on a moving target still lands — where `Projectile` sweeps its own 0.15
+  collider. Five times the width, so the blade caught on scenery nobody aimed at: measured over
+  24 headings from one spot in the shipped world, **16 turned back early, one after 2.66 units
+  of a 10-unit throw**. Two more angle-dependent faults sat behind it, and neither is in the
+  geometry, which is rotation-invariant by construction: the loop always bowed the same way, so
+  a wall on that side broke one heading while its opposite flew clean; and the bow leaves the
+  aimed corridor by design, so scenery to the SIDE of a throw could stop it. The first answer to
+  that last one was a clamp — measure the room and narrow the loop to fit — and it is the
+  cautionary half of this note: it protected the flight and destroyed the spell, because from
+  where the player actually stands in town **17 of 24 headings came back with less than half
+  their bow, most under a tenth**, i.e. a boomerang flying straight. A curve is the spell's
+  IDENTITY; shrinking it to avoid a bounce trades the thing away to protect the thing. What
+  works is sizing each leg's bow off THAT LEG's length, so a leg cut short by a wall is a small
+  lens instead of a full-width bulge on a three-unit run and the shape is the same at any size.
+  Measured after: 24/24 headings identical in the open; from the player's own spot 0/24 flat,
+  17/24 at full range, 24/24 caught, and the headings that still turn back early are exactly the
+  ones with a wall inside the throw on a straight blade-thin cast — geometry, not a defect.
+- **A rig whose owner SPINS cannot hang its trail off the owner's transform.** Everything in
+  `ElementalProjectileVisual` that says "which way am I going" — the ghost trail at negative
+  local X, the motion stretch on local X, the ember spray at `-transform.right` — was parented
+  to a root the boomerang turns twice a second, so the trail orbited the blade instead of
+  following it. They live under a non-spinning `Aura` child now, given a world rotation from the
+  measured travel delta each frame; the accent (the blade itself) stays on the spinning root.
+  The same file also had `LightningBoltFX`'s bug verbatim — `SortingConfig.Z_SKY (600)` passed
+  as a `sortingOrder` on the **Entities** layer, which is below Decorations, WallsTop,
+  ObjectsHigh, Projectiles and VFX, so every spell it drew rendered under the wall tops.
+- **`AudioCatalog.asset` contains no `spell_*` id at all.** Every `PlaySfxById("spell_…")` in the
+  project is a miss, and the only thing it produces is one warning per id, once. That is why
+  `IceWallAudio`, `ShieldAudio` and `BoomerangAudio` synthesise their one-shots instead — the
+  catalog path stays the better answer the day a recorded set is authored, and these become the
+  fallback. Adding catalog entries with null clips fixes nothing: `PlaySfxById` warns on
+  `entry.clip == null` exactly as it does on a missing id.
 
 ## Player character pipeline (2 directions)
 
