@@ -82,6 +82,7 @@ The Gameplay assembly is subdivided by feature so any single folder stays under 
 | `Combat/Lifecycle/` | TimedDespawn, SpawnStabilizer |
 | `Combat/StatusEffects/` | Status effect implementations (Burn, Poison, Stun, Freeze, Slow) |
 | `Editors/_Shared/` | EditorCameraPanController, EditorUIHelpers (cross-editor) |
+| `Editors/_Shared/Workspace/` | `EditorWorkspaceService` — the single owner of editor layout/session/selection persistence |
 | `Editors/Camera/` | Camera Editor — no hotkey, opened from the General Editor; partials + UIBuilder + UIHoverHelp |
 | `Editors/Buildings/` | Buildings runtime editor (F10) — partials + UIBuilder + Outline + PerfProbe |
 | `Editors/Entities/` | Entities runtime editor — partials + UIBuilder + Outline |
@@ -217,7 +218,8 @@ Use the right agent for the right job. Each agent has a constrained scope and pr
 | `tile-editor` | Anything involving the Tile Editor (F8) |
 | `particles-editor` | Particle presets, `ParticleEmitter`, VFX beauty work, Particles Editor (F1) |
 | `spell-vfx-director` | Spell look & game-feel — slash/projectile/area silhouettes, timing, impact, hit-stop, camera shake |
-| `editor-ux-parity` | Audit / enforce UI/UX parity across in-game runtime editors |
+| `editor-ux-parity` | Audit / enforce UI/UX parity across in-game runtime editors — chrome, gestures, workspace persistence, theme, feedback |
+| `editor-workspace-architect` | The editor workspace persistence LAYER itself (`_Shared/Workspace/`, `DraggablePanel` state, the `GameEditorManager` hook, the store, the contract test). Never edits the sixteen editors |
 | `editor-wiring-auditor` | Audit how a runtime editor is wired into bootstrap, services, hotkeys |
 | `refactor-modularizer` | Split oversized files; extract reusable helpers; remove dead code |
 | `performance-optimizer` | Data-driven FPS / frame-time / GC optimization via Profiler + Recorder API |
@@ -1286,6 +1288,40 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   breath has no such physics, and the same downward hue shift swings it through cyan.
   `FlameConeFX` applies `HUE_COOL` only when the authored hue is inside the warm band, and
   leaves every other swatch's hue exactly where the designer put it.
+- **A spell whose name promises an EVENT has to contain the event.** `firework_launch` was
+  three beats short of one: it flashed at the caster and threw an invisible projectile that
+  expired and did nothing. There was no burst because there was no `impactPreset` and no
+  code path to one, and the executor's own doc comment claimed an `ElementalImpactFX`
+  starburst it had stopped producing whenever `AttachVisual` was rewritten. Every number in
+  it was self-consistent — `damage: 0`, `range: 0`, `lifetime: 0` — and the only place the
+  spell disagreed with itself was on screen, which is why it survived for the life of the
+  project. `FireworkShellController` owns the whole timeline instead: climb, burst at apex,
+  companions, report.
+- **Riding `ProjectileExecutor` means inheriting `Projectile`'s defaults, and `range`
+  defaults to 20.** The firework authored none, so its shell was deactivated 0.44 s into a
+  flight at speed 45 — the same shape as the boomerang, which lost its entire return leg to
+  that same 20. A cosmetic spell wants nothing from `Projectile`: no damage, no target
+  layers, no sweep. Own the flight.
+- **The report of an overhead effect must arrive AFTER its picture.**
+  `FireworkShellController.REPORT_DELAY_PER_UNIT` is 0.020 s per world unit of apex, so the
+  default 6.5-unit shell is heard ~0.13 s (four frames) after it is seen. It costs one float
+  and it is most of what makes a burst read as happening in the sky rather than on the lens.
+  Its sibling is the WHISTLE, which is not decoration either: a rising sweep during the climb
+  is what makes a player look up, so the burst lands on an eye already pointed at it.
+- **A burst metres above the ground cannot light the world with its own `Light2D`.** A point
+  light has a radius; a detonation overhead has to reach the tilemap, the buildings and every
+  entity at once, which means the GLOBAL light. `WeatherGrade` reached that conclusion first
+  and hardcoded its hook to lightning; `SkyFlash` is the same mechanism with the weather taken
+  out, composed into `DayNightCycle.UpdateLighting` beside the strike and ADDING to it. It is
+  ticked from `Update` and never from `UpdateLighting`, which property setters also call — an
+  envelope advanced there runs several times in a frame whenever anything scrubs the clock.
+- **Opaque white is the "nobody authored this" sentinel, and for exactly one spell it is the
+  right answer.** `FireworkPalette.From` routes it (through `KiPalette.IsUnauthored`, so the
+  two cannot drift) to the five-colour festival assortment, because a firework with one hue is
+  a flare. Every other swatch gives a single-hue shell whose stars spread ±0.075 turns around
+  the authored colour — wide enough that a red shell throws orange and magenta, narrow enough
+  that it is still a red shell. The achromatic guard is separate and mandatory: `RGBToHSV`
+  reports hue 0 for grey, and hue 0 is red.
 
 ## Player character pipeline (2 directions)
 
@@ -1678,6 +1714,51 @@ related symptom reappears.
 | Spawners drift by their zone's origin on every restart (save wrote absolute world coords into a zone-relative field) | 2026-08-19 (fixed) | `.github/incidents/SPAWNER_COORDINATE_SPACE_DRIFT.md` |
 
 ## Open work
+
+- **Editor UI/UX unification & persistence** — audited 2026-09-02, layer shipped 2026-09-03.
+  The sixteen editors are 319 files / ~77.6k LOC and drifted: three (Camera, DungeonNodeGraph,
+  General) carry NO chrome at all, `PanelChrome` is missing from six, the tutorial overlay from
+  eight, `EditorCameraZoomController` from ten — and **459 raw `new Color(`** literals sit
+  outside the theme (Map 90, Tile 85, Spells 68). Nothing persisted between sessions except
+  hidden table columns, in three editors, via three copied PlayerPrefs implementations.
+  **Phase 1 is done**: `Valkur.Core.Editors` holds the contracts + DTOs (`EditorWorkspace`,
+  `EditorPanelState`, `EditorSelectionRecord`, `IProvidesWorkspaceState`, `IPanelStateSink`),
+  `JsonEditorWorkspaceStore` writes one document per editor under
+  `persistentDataPath/EditorWorkspace/`, `DraggablePanel` gained `CaptureState`/`ApplyState`
+  plus an `Owner` that namespaces its persistence key, and `EditorWorkspaceService` hooks
+  `GameEditorManager.OpenExclusive` / `NotifyDeactivated` — ONE seam, not sixteen. Pinned by
+  `EditorWorkspaceContractTests` (16 tests). **Items (F7) is the first adopter** (2026-09-03):
+  it implements `IProvidesWorkspaceState` and remembers mode, category tab, search text,
+  hidden columns, the picked catalog item and the selected world drop — and its
+  `TableColumnsConfig` PlayerPrefs entry is gone, the first of the three duplicates to go.
+  **Tile (F8) followed the same day** and earned its place as the hard pilot: it exposed a
+  real defect in the layer — a self-closing editor was captured TWICE per close, and the
+  second pass ran after `Deactivate` had cleared `_state.SelectedCellPos`, writing that null
+  over the good snapshot. `GameEditorManager` now de-duplicates per close. **Phase 3 landed the same day: all 15 registered editors implement
+  `IProvidesWorkspaceState`**, and all three duplicated `PlayerPrefs` column stores (Items,
+  Particles, Spells) are gone. No editor reopens in a destructive mode — Buildings refuses
+  to restore Delete/Erase, Entities Delete, Inventory DeleteItem, Tile its collider and
+  layer-jump paint modes — because opening straight into one is how an author destroys
+  something they only meant to look at. What each editor deliberately does NOT persist is
+  a decision with a reason recorded per editor in the roadmap (Lighting's ambient override,
+  Spawners' instance selection, FSM's set, TimeWeather's world state, DungeonNodeGraph's
+  nodes). **Phase 4 landed 2026-09-03** and corrected the audit that started it. Zoom: every one of
+  the 11 editors that can pan the world can now zoom it (`EditorCameraZoomController` was in
+  3), and it is safe to spread because it steps through `CameraSetup.ComputeEditorZoomNext`,
+  which stays on the PPU ladder `SnapOrthoSize` maintains. Theme: 79 of the 459 raw
+  `new Color(` literals became tokens — including three NEW ones for things copied verbatim
+  across editors (`SCROLL_TRACK` + `SCROLL_HANDLE`, the same scrollbar in five editors, and
+  `DANGER_IDLE`, a destructive button at rest, in nineteen sites). The remaining 387 are
+  held by `EditorRawColorRatchetTests` against `Tests/EditMode/Baselines/editor-raw-colors.txt`:
+  a per-file count that may fall freely and may never rise. A blanket rewrite was rejected on
+  measurement — only 37 of 421 literals matched a token exactly, so the rest would have been
+  guessing at a designer's intent. **Chrome: the audit was wrong.** It counted whether an
+  editor NAMES `DraggablePanel`/`PanelChrome`, but six reach both through
+  `EditorUIHelpers.MakeDropPanel`, so the editors it marked worst were the ones doing it
+  right — 15 of 16 have real chrome, and the one gap is DungeonNodeGraph, a deliberate
+  full-screen slab whose layout is a separate design decision (its private palette, which
+  had drifted from the kit, now comes from `UITheme`). Full audit, architecture, selection
+  policy and acceptance criteria: `.github/EDITOR_UX_AUDIT_AND_ROADMAP.md`.
 
 - **Multi-map Phase B/C** — Phase A (per-slot persistence routing) shipped 2026-08-18: buildings, spawners, lights, particles and authored item drops each own their file per map slot. Still open: built-in parallel worlds (Sky / Hell) and cross-world portals at runtime. See `.github/MAP_EDITOR_MULTIMAP_ROADMAP.md`.
 - **Asset pipeline Phase 2** — finalised `asset_map.csv` schema + the formal naming convention. Bulk reimport already executed; `ValkurAssetPostprocessor` writes Uncompressed platform overrides. Atlas consolidation is **done** (2026-08-18): exactly 9 atlases, all under `_Project/SpriteAtlases/`, one owner (`SpriteAtlasBuilder`).
