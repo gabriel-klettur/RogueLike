@@ -20,7 +20,7 @@ namespace Valkur.Gameplay.VFX
     /// Persistence
     /// ───────────
     /// Hidden column headers are stored in PlayerPrefs as CSV under
-    /// <see cref="PARTICLE_HIDDEN_COLUMNS_PREFS_KEY"/> (shared with Table.cs).
+    /// this editor's workspace document (see ParticlesRuntimeEditor.Workspace.cs).
     ///
     /// UX
     /// ──
@@ -320,7 +320,6 @@ namespace Valkur.Gameplay.VFX
             if (visible) _hiddenParticleColumns.Remove(col.Header);
             else         _hiddenParticleColumns.Add(col.Header);
 
-            SaveParticleColumnPrefs();
             UpdateParticleColumnsCountLabelPopup();
             UpdateParticleColumnsBtnLabel();
 
@@ -336,7 +335,6 @@ namespace Valkur.Gameplay.VFX
                 foreach (var c in ParticleTableColumns.All)
                     _hiddenParticleColumns.Add(c.Header);
             }
-            SaveParticleColumnPrefs();
             BuildPresetsTableHeader();
             RefreshTable();
             RefreshParticleColumnsConfigState();
@@ -347,7 +345,6 @@ namespace Valkur.Gameplay.VFX
             _hiddenParticleColumns.Clear();
             foreach (var h in ParticleTableColumns.DefaultHidden)
                 _hiddenParticleColumns.Add(h);
-            SaveParticleColumnPrefs();
             BuildPresetsTableHeader();
             RefreshTable();
             RefreshParticleColumnsConfigState();

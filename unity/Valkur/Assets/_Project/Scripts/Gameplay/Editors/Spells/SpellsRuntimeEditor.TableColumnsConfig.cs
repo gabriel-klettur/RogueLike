@@ -20,7 +20,7 @@ namespace Valkur.Gameplay.Spells
     /// Persistence
     /// ───────────
     /// Hidden column headers are stored in PlayerPrefs as a comma-separated
-    /// string under <see cref="HIDDEN_COLUMNS_PREFS_KEY"/>, so the choice
+    /// this editor's workspace document (see SpellsRuntimeEditor.Workspace.cs), so the choice
     /// survives Editor restarts and Play / Stop cycles.
     ///
     /// UX
@@ -34,7 +34,6 @@ namespace Valkur.Gameplay.Spells
     /// </summary>
     public partial class SpellsRuntimeEditor
     {
-        private const string HIDDEN_COLUMNS_PREFS_KEY = "valkur.spells.tableCols.hidden";
 
         private const float COLPOP_WIDTH    = 320f;
         private const float COLPOP_HEIGHT   = 460f;
@@ -67,36 +66,22 @@ namespace Valkur.Gameplay.Spells
         // ── Persistence ───────────────────────────────────────────────────────
 
         /// <summary>
-        /// Hydrate <see cref="_hiddenColumns"/> from PlayerPrefs. Called once
-        /// from BuildUI so the user's previous choice is restored on open.
+        /// Seeds the columns that start hidden, so the table opens on a readable subset
+        /// instead of every column at once. Called from BuildUI.
+        ///
+        /// This is the "nobody has chosen yet" state. The workspace restore runs afterwards
+        /// and REPLACES the set whenever a stored value exists — including an EMPTY one,
+        /// which means the author revealed everything on purpose and must not be re-seeded
+        /// back to the defaults on the next open.
+        ///
+        /// There is no save counterpart: a toggle mutates the set, and the workspace layer
+        /// captures it on close through the one seam every close already passes.
         /// </summary>
-        internal void LoadColumnPrefs()
+        internal void SeedDefaultHiddenColumns()
         {
             _hiddenColumns.Clear();
-
-            string blob = PlayerPrefs.GetString(HIDDEN_COLUMNS_PREFS_KEY, null);
-            if (blob == null)
-            {
-                // First run: seed the TypeSpecific defaults so the table opens
-                // with a clean set of columns and the user can reveal them via "Show all".
-                foreach (var h in SpellTableColumns.DefaultHidden)
-                    _hiddenColumns.Add(h);
-                return;
-            }
-            if (string.IsNullOrEmpty(blob)) return;
-            foreach (var h in blob.Split(','))
-            {
-                if (!string.IsNullOrWhiteSpace(h))
-                    _hiddenColumns.Add(h.Trim());
-            }
-        }
-
-        /// <summary>Persist the current hidden-column set so it survives a session.</summary>
-        internal void SaveColumnPrefs()
-        {
-            string blob = string.Join(",", _hiddenColumns);
-            PlayerPrefs.SetString(HIDDEN_COLUMNS_PREFS_KEY, blob);
-            PlayerPrefs.Save();
+            foreach (var h in SpellTableColumns.DefaultHidden)
+                _hiddenColumns.Add(h);
         }
 
         // ── Bar label helper ──────────────────────────────────────────────────
@@ -358,7 +343,6 @@ namespace Valkur.Gameplay.Spells
             if (visible) _hiddenColumns.Remove(col.Header);
             else         _hiddenColumns.Add(col.Header);
 
-            SaveColumnPrefs();
             UpdateColumnsCountLabelPopup();
             RefreshColumnsCountLabel();
 
@@ -373,7 +357,6 @@ namespace Valkur.Gameplay.Spells
             {
                 foreach (var c in SpellTableColumns.All) _hiddenColumns.Add(c.Header);
             }
-            SaveColumnPrefs();
             BuildTableHeader();
             RefreshTable();
             RefreshColumnsConfigState();
@@ -387,7 +370,6 @@ namespace Valkur.Gameplay.Spells
             _hiddenColumns.Clear();
             foreach (var h in SpellTableColumns.DefaultHidden)
                 _hiddenColumns.Add(h);
-            SaveColumnPrefs();
             BuildTableHeader();
             RefreshTable();
             RefreshColumnsConfigState();

@@ -38,9 +38,9 @@ namespace Valkur.Gameplay.VFX
         private const float PTBL_SB_W            = 12f;
         private const float PTBL_CATEGORY_BAND_H =  3f;
 
-        // Hidden columns — persisted in PlayerPrefs.
-        // Prefer string key constant so PlayerPrefs entry is stable across renames.
-        private const string PARTICLE_HIDDEN_COLUMNS_PREFS_KEY = "ParticlesEditor.HiddenColumns";
+        // Hidden columns live in this editor's workspace document — see
+        // ParticlesRuntimeEditor.Workspace.cs. They used to be their own PlayerPrefs entry,
+        // one of three copies of the same code across Items, Particles and Spells.
 
         private readonly HashSet<string> _hiddenParticleColumns
             = new HashSet<string>(System.StringComparer.Ordinal);
@@ -73,32 +73,29 @@ namespace Valkur.Gameplay.VFX
             if (_presetsTableScroll != null)
                 _presetsTableScroll.onValueChanged.AddListener(OnPresetsTableScrolled);
 
-            LoadParticleColumnPrefs();
+            SeedDefaultHiddenParticleColumns();
             BuildPresetsTableHeader();
         }
 
-        // ── Column prefs ──────────────────────────────────────────────────────
+        // ── Column defaults ───────────────────────────────────────────────────
 
-        internal void LoadParticleColumnPrefs()
+        /// <summary>
+        /// Seeds the table with the columns that start hidden, so it opens on a readable
+        /// subset instead of all of them at once.
+        ///
+        /// This is the "nobody has chosen yet" state. The workspace restore runs afterwards
+        /// and REPLACES the set whenever a stored value exists — including an EMPTY stored
+        /// value, which means the author deliberately revealed every column and must not be
+        /// re-seeded back to the defaults on the next open.
+        ///
+        /// There is no save counterpart: a toggle mutates the set and the workspace layer
+        /// captures it on close, through the one seam every close already passes.
+        /// </summary>
+        internal void SeedDefaultHiddenParticleColumns()
         {
             _hiddenParticleColumns.Clear();
-            string blob = PlayerPrefs.GetString(PARTICLE_HIDDEN_COLUMNS_PREFS_KEY, null);
-            if (blob == null)
-            {
-                foreach (var h in ParticleTableColumns.DefaultHidden)
-                    _hiddenParticleColumns.Add(h);
-                return;
-            }
-            if (string.IsNullOrEmpty(blob)) return;
-            foreach (var h in blob.Split(','))
-                if (!string.IsNullOrWhiteSpace(h)) _hiddenParticleColumns.Add(h.Trim());
-        }
-
-        internal void SaveParticleColumnPrefs()
-        {
-            PlayerPrefs.SetString(PARTICLE_HIDDEN_COLUMNS_PREFS_KEY,
-                string.Join(",", _hiddenParticleColumns));
-            PlayerPrefs.Save();
+            foreach (var h in ParticleTableColumns.DefaultHidden)
+                _hiddenParticleColumns.Add(h);
         }
 
         // ── Refresh ───────────────────────────────────────────────────────────

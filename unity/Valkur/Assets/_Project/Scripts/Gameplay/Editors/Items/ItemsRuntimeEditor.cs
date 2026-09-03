@@ -129,6 +129,14 @@ namespace Valkur.Gameplay.Items
         // Middle-mouse camera pan — shared controller used by every runtime editor.
         private readonly EditorCameraPanController _cameraPan = new EditorCameraPanController();
 
+        // Mouse-wheel zoom, shared with every runtime editor that can pan. An editor that
+        // lets the author move the world camera but not close in on it is the odd one out,
+        // and eight of the eleven panning editors were exactly that. The controller steps
+        // through CameraSetup.ComputeEditorZoomNext, which stays on the PPU ladder
+        // SnapOrthoSize maintains — that is why spreading it does not fall foul of the
+        // "never write orthographicSize for an effect" rule.
+        private readonly EditorCameraZoomController _cameraZoom = new EditorCameraZoomController();
+
         // ── IGameEditor ──
         public string EditorName => "Items Editor";
         public bool IsActive => _active;
@@ -172,6 +180,7 @@ namespace Valkur.Gameplay.Items
             // Middle-mouse pan runs unconditionally so dragging the camera works
             // even while hover/drag/hold-focus interactions are in progress.
             _cameraPan.Tick();
+            _cameraZoom.Tick();
 
             HandleKeyboardShortcuts();
             HandleMapInteraction();      // hover/select WorldPickups + delete-mode click
@@ -264,11 +273,10 @@ namespace Valkur.Gameplay.Items
                 onSearchChanged:  OnSearchChanged,
                 onPerfToggle:     () => Toast("PERF overlay — not yet wired."));
 
-            // Load the user's saved column-visibility set BEFORE handing off
-            // the ScrollRects — SetTableScrollRects calls BuildTableHeader
-            // internally, and that pass needs to honour the hidden-columns
-            // set so the first frame already matches the user's choice.
-            LoadColumnPrefs();
+            // No column hydration here any more. The workspace layer restores the hidden
+            // set one frame after Activate and rebuilds the header itself, so the build
+            // pass below starts from "everything visible" and is corrected in place —
+            // see ItemsRuntimeEditor.Workspace.cs.
 
             // Hand off the table ScrollRects so the Table partial can build and refresh.
             SetTableScrollRects(

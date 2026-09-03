@@ -18,6 +18,7 @@ namespace Valkur.Gameplay.TileEditor
         {
             var canvasGo = new GameObject("TileEditorCanvas");
             canvasGo.transform.SetParent(transform);
+            _canvasRoot = canvasGo.transform;
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 300;

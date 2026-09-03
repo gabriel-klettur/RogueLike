@@ -126,6 +126,20 @@ namespace Valkur.Gameplay.TileEditor
             SetVisible(false);
         }
 
+        private Transform _canvasRoot;
+
+        /// <summary>
+        /// Root of every panel this editor builds.
+        ///
+        /// Exposed for the workspace layer, which walks it for
+        /// <see cref="Valkur.UIKit.DraggablePanel"/>s. It is deliberately the CANVAS and
+        /// not the object <see cref="SetVisible"/> toggles: this editor has no single
+        /// visible root — SetVisible flips the menu bar and the layer indicator
+        /// separately, and the panels are dropdowns underneath. Walking anything narrower
+        /// would silently miss panels.
+        /// </summary>
+        public Transform CanvasRoot => _canvasRoot;
+
         public void SetVisible(bool visible)
         {
             if (_refs.MenuBar != null) _refs.MenuBar.SetActive(visible);
