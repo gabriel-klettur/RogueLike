@@ -104,7 +104,7 @@ The Gameplay assembly is subdivided by feature so any single folder stays under 
 | `Spells/Executors/` | `*Executor.cs` (Projectile, Area, Slash, Dash, …) |
 | `Spells/Controllers/` | Aura, Beam, Mine, Puddle, Shield, Summon, Totem, Vortex, Wall, MeteorStrike, Cone, ArcaneFlame |
 | `Spells/Projectiles/` | Projectile, BoomerangProjectile, IProjectileVisual |
-| `Spells/Visuals/` | ElementalProjectileVisual, LightningBoltFX, MeteorMissileFX, AreaFXRig, IceWallVisual, VortexFunnelFX, ShieldSphereFX, KiAuraFX |
+| `Spells/Visuals/` | ElementalProjectileVisual, FlameConeFX, LightningBoltFX, MeteorMissileFX, AreaFXRig, IceWallVisual, VortexFunnelFX, ShieldSphereFX, KiAuraFX |
 | `UIKit/` | Reusable runtime UI primitives (own asmdef — leave alone) |
 | `Vendors/` | Shop / vendor logic |
 | `VFX/` | Pooled VFX |
@@ -1199,6 +1199,93 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   vortex.** `arcane_flame` ran 5 s on a cooldown of 2 with `maxInstances: 1`, so the player
   always had one out and could evict their own to reposition it — permanent area denial. Now
   cooldown 7 against duration 5, with `damagePerTick` 9 → 12 paying back the lost uptime.
+- **A `LineRenderer` cannot draw a cone, and that is the third sighting of the same rule.**
+  `flame_breath` drew its wedge as twelve points — origin, an arc, back to origin — which is a
+  WIRE OUTLINE. A strip can bound a shape and can never fill one, so a breath weapon's entire
+  silhouette was two thin strokes and a curve between them. `IceWallVisual` records it for a
+  line and `VortexFunnelFX` for a column: the rig has to be shaped like the thing it draws.
+  `FlameConeFX` is the filled answer — slices laid along the aim whose cross extent is the
+  cone's real half-width at that distance, a white-hot throat over them, embers, a scorch and a
+  light that reaches as far as the fire. Its slice count is a RESOLUTION dial, not a brightness
+  one (`BODY_ALPHA_BUDGET` is divided by it), and `ORDER_CORE` / `ORDER_MUZZLE` are derived from
+  `ORDER_BODY + SLICES` for the same reason the vortex's `ORDER_DUST` is.
+- **A hand-derived `Quaternion.Euler` for a 2D aim is a coin flip, and this one lost.**
+  `Euler(deg - 90, 90, 0)` is a MIRROR about the 45 degree diagonal. Measured over the eight
+  facings: aiming east emitted north, aiming north emitted east, and 135 and 315 came out
+  exactly REVERSED — six of eight directions sprayed the fire somewhere other than the damage,
+  for the whole life of the spell. Only 45 and 225 were right, which is precisely why nobody
+  caught it: a diagonal test passes. Live, aimed at `+X`, the mean of 35 particles sat at
+  `(-0.04, +0.44)`. `Quaternion.LookRotation(dir, Vector3.forward)` is exact on all eight —
+  world `+Z` is perpendicular to every 2D aim, so the up vector can never degenerate.
+- **A sprite parent may only ever be turned about Z; an emitter parent usually may not be.**
+  A sprite's quad lies in its own XY plane, so a `LookRotation` on it puts every sprite edge-on
+  to the camera and they vanish — invisible rather than wrong-looking, the failure nobody
+  reports. A `ParticleSystem`'s Cone shape emits along its own +Z and needs exactly that
+  `LookRotation`. One transform cannot be both, so `FlameConeFX` carries TWO oriented children
+  under one identity root, plus the usual unrotated ground-squash parent.
+- **`coneLength` was the fifth Python-pixel sighting**, after `wallWidth`, the totem's radius,
+  the vortex's radius and `range` on three executors. Authored 16.25 against an executor that
+  divided by 16, so the breath reached **1.02 world units** on a camera 33.33 wide — three per
+  cent of the screen, stopping short of the caster's own 1.86-unit sprite. The tell is always
+  the same: the executor's fallback for an unauthored field (16.25 WORLD units) was sixteen
+  times anything the asset could produce. `coneLength` is world units now and the asset says 5.5.
+- **Reading `renderer.material` in a teardown ALLOCATES.** Measured: the material count rises
+  by one on the read (5170 → 5171). `ConeBreathController` did it in both `CleanupAndDestroy`
+  and `OnDestroy` — two clones per cast — inside the very method whose comment claimed the
+  per-cast material had been removed. A teardown over shared materials has nothing to destroy
+  and must not touch `.material` to find that out.
+- **Four of a spell's six casting flags reach no gameplay code.** `allowMovement`,
+  `interruptible`, `lockCastDirection` and `allowOverlap` have zero readers outside the F4
+  editor and the inspector — grepped. Only `channelDuration` and `maxInstances` are live, and
+  `maxInstances` only for effects that call `SpellEffectRegistry.Track`, which the cone did not.
+  Same family as `animation_map.json` and the FSM's `Actions`/`Blackboard`: authored,
+  round-tripped, and inert. Do not tune behaviour through them.
+- **A speculative sound id must be gated on `HasSfx`.** `AudioManager.PlaySfxById` warns once
+  per unresolved id BY DESIGN — an explicit id that fails to resolve is a data bug. The cone
+  breath called it blind with `spell_flame_breath_loop`, which has never existed in the
+  catalog, so the first cast of every session pushed a warning into a console this project
+  requires to be clean. The interface documents `HasSfx` for exactly the "play a sound named
+  after this spell, if one was ever authored" case.
+- **Reapplying a status effect every damage tick is churn, never stacking.**
+  `StatusEffectManager.Apply` REPLACES an effect of the same type, so the cone's burn — applied
+  on all ten of its ticks per second per target — did a full remove-and-reapply and fired two
+  events each time, tearing down and rebuilding the `SpriteTintStack` layer ten times a second
+  for no extra damage. Refresh a DoT on its own timer, not on the damage clock.
+- **The cast camera beat has ONE owner and it is `CameraFeelDirector`.** It already decides
+  whether a cast is heavy from `prepareDuration`, `cooldownDuration` and `manaCost` against the
+  profile, and fires `CastHeavy` as a RECOIL — away from the facing. A controller that fires its
+  own doubles the shake and pushes it the other way. What the director cannot know is that a
+  SUSTAINED effect connected, so that is the only beat a channelled spell should raise itself.
+- **A cone tests its targets at their NEAREST POINT, not at their pivot.** An entity's transform
+  sits at its feet, so a pivot test makes a large enemy standing squarely in the fire immune
+  whenever its origin falls a degree outside the arc. `ConeBreathController.InsideCone` uses
+  `Collider2D.ClosestPoint` and asks the RIG for the half-width at that distance
+  (`FlameConeFX.HalfWidthAt`), so the wedge on screen and the wedge that hurts are one number.
+- **A ki aura's palette is the wrong ramp for a FLAME, and the numbers say why.**
+  `KiPalette` derives `Core` near-white on purpose — measured at **saturation 0.25** for the
+  shipped orange, because a ki spine is meant to be almost colourless — and `Edge` at **value
+  0.62**, dark. Running a fire cone's body from one to the other makes it washed out exactly
+  where it is brightest and dim exactly where it has colour: the whole wedge summed to
+  `(2.265, 1.367, 0.745)`, green at 60 % of red, which is cream. `FlameConeFX.FireHue` holds
+  the VALUE at 1 across the whole cone and lets the alpha taper do all the fading — the old
+  ramp darkened the tip twice, once through the colour and once through the alpha, and on an
+  additive surface a dark colour adds nothing. The body never touches the white; the throat
+  layer owns it. After: `(5.283, 1.779, 0.386)`, G/R 0.34, B/R 0.07.
+- **On an additive sprite, the intensity dial is the COLOUR and it may exceed 1.** Measured,
+  `SpriteRenderer.color` reads back an authored `2.400` unchanged, and both `Camera.allowHDR`
+  and the URP asset's `supportsHDR` are on, so the excess survives to the framebuffer. That is
+  the right dial because alpha is COVERAGE — the rule `WeaponSwapFlashFX` records — so
+  reaching for the alpha budget to make fire fiercer WIDENS it into fog instead of hardening
+  it. `FlameConeFX` overdrives the wedge (`BODY_GAIN` 2.65, `THROAT_GAIN` 2.9) and leaves the
+  alpha budget alone, which is also what keeps the "slice count is not a brightness dial" test
+  meaning what it says. The exception is particles: a particle's vertex colour is packed to
+  `Color32` and CLAMPS, so the emitters take `FireHue` without the gain and get their intensity
+  from saturation instead. Two ramps, one hue, and the split is documented at both ends.
+- **Cooling a hue toward red is a statement about black bodies, so it is gated on a WARM
+  swatch.** A flame goes orange to red because that is what hot matter does; a blue or violet
+  breath has no such physics, and the same downward hue shift swings it through cyan.
+  `FlameConeFX` applies `HUE_COOL` only when the authored hue is inside the warm band, and
+  leaves every other swatch's hue exactly where the designer put it.
 
 ## Player character pipeline (2 directions)
 

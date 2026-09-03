@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Flame Breath
   type: 22
   audience: 1
-  manaCost: 12
+  manaCost: 14
   maxInstances: 1
   allowOverlap: 1
   allowMovement: 0
@@ -26,7 +26,7 @@ MonoBehaviour:
   lockCastDirection: 1
   prepareDuration: 0.1
   channelDuration: 0.2
-  cooldownDuration: 1.6
+  cooldownDuration: 3
   speed: 0
   damage: 0
   range: 0
@@ -39,8 +39,8 @@ MonoBehaviour:
   distance: 0
   knockback: 0
   collisionDamage: 0
-  duration: 2
-  damagePerTick: 4
+  duration: 1.5
+  damagePerTick: 6
   tickPeriod: 0.2
   element: fire
   healPerTick: 0
@@ -67,7 +67,7 @@ MonoBehaviour:
   summonDuration: 2
   totemKind: 
   coneArc: 60
-  coneLength: 16.25
+  coneLength: 5.5
   sprite: {fileID: 0}
   scale: 1
   speedMultiplier: 1
@@ -79,7 +79,7 @@ MonoBehaviour:
   particleDispersion: 0
   particleLifespan: 0
   particleSpeed: 0
-  particleColor: {r: 1, g: 1, b: 1, a: 1}
+  particleColor: {r: 1, g: 0.48, b: 0.12, a: 1}
   particleColors: []
   sizeRange: []
   emitRate: 0
