@@ -1302,12 +1302,23 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   flight at speed 45 — the same shape as the boomerang, which lost its entire return leg to
   that same 20. A cosmetic spell wants nothing from `Projectile`: no damage, no target
   layers, no sweep. Own the flight.
-- **The report of an overhead effect must arrive AFTER its picture.**
-  `FireworkShellController.REPORT_DELAY_PER_UNIT` is 0.020 s per world unit of apex, so the
+- **The report of a distant effect must arrive AFTER its picture.**
+  `FireworkShellController.REPORT_DELAY_PER_UNIT` is 0.020 s per world unit travelled, so the
   default 6.5-unit shell is heard ~0.13 s (four frames) after it is seen. It costs one float
-  and it is most of what makes a burst read as happening in the sky rather than on the lens.
-  Its sibling is the WHISTLE, which is not decoration either: a rising sweep during the climb
+  and it is most of what makes a burst read as happening out there rather than on the lens.
+  Its sibling is the WHISTLE, which is not decoration either: a rising sweep during the flight
   is what makes a player look up, so the burst lands on an eye already pointed at it.
+- **`ctx.Direction` is already the cursor bearing, so a spell that ignores it is choosing to.**
+  `PlayerController` resolves it every frame through `PlayerFacingResolver`, which reads the
+  mouse via `MouseInputManager` — every spell cast by the player is handed the aim whether it
+  uses it or not. The firework took `direction.x` alone, as a 35 % lateral nudge on a flight
+  that was always straight up, so aiming moved the burst by a couple of units and could never
+  move it down or behind the caster. It flies the full distance along the bearing now, with a
+  BOW above the straight line scaled by how horizontal the aim is (`ARC_BOW_FRACTION`) — a
+  vertical shot has no straight line to bow away from, and without the bow a firework aimed
+  across the street is a bullet. The two curves are separate on purpose: progress along the
+  line decelerates, the bow is symmetric in raw time, and driving the bow off the eased value
+  skews its peak to the end and reads as a hook.
 - **A burst metres above the ground cannot light the world with its own `Light2D`.** A point
   light has a radius; a detonation overhead has to reach the tilemap, the buildings and every
   entity at once, which means the GLOBAL light. `WeatherGrade` reached that conclusion first
