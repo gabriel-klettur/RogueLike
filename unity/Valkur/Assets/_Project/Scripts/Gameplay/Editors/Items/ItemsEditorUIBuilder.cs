@@ -220,8 +220,8 @@ namespace Valkur.Gameplay.Items
             if (danger)
             {
                 img.color = active
-                    ? new Color(0.90f, 0.30f, 0.30f, 1f)
-                    : new Color(0.55f, 0.15f, 0.15f, 1f);
+                    ? UITheme.DANGER
+                    : UITheme.DANGER_IDLE;
             }
             else
             {
@@ -317,13 +317,13 @@ namespace Valkur.Gameplay.Items
             float height, Action onClick)
         {
             var img        = AddToolBtn(parent, label, sub, height, onClick);
-            var dangerBase = new Color(0.55f, 0.15f, 0.15f, 1f);
+            var dangerBase = UITheme.DANGER_IDLE;
             img.color      = dangerBase;
             var btn        = img.GetComponent<Button>();
             var c          = btn.colors;
             c.normalColor      = dangerBase;
             c.highlightedColor = new Color(0.70f, 0.20f, 0.20f, 1f);
-            c.pressedColor     = new Color(0.90f, 0.30f, 0.30f, 1f);
+            c.pressedColor     = UITheme.DANGER;
             btn.colors         = c;
             return img;
         }

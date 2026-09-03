@@ -28,6 +28,14 @@ namespace Valkur.Gameplay.Spells
         private readonly List<SpellDefinition> _filtered = new List<SpellDefinition>();
 
         /// <summary>
+        /// How much of a spell's preview colour the resting slot background carries. Low on
+        /// purpose: the tile is mostly icon, and the tint is a category cue read across the
+        /// whole grid at once rather than a label on one slot. <c>SetSlotTint</c> derives
+        /// the hover state from it, so raising this brightens hover too.
+        /// </summary>
+        private const float SLOT_TINT_ALPHA = 0.18f;
+
+        /// <summary>
         /// Populate <see cref="_filtered"/> from the catalog, applying
         /// <see cref="_searchFilter"/> (case-insensitive substring on key and displayName).
         /// </summary>
@@ -154,19 +162,23 @@ namespace Valkur.Gameplay.Spells
                 }
                 label.text = TruncateName(spell.displayName ?? key, 9);
 
-                // Faint preview-tint on the slot bg so the catalog reads as a colour-coded grid.
-                var bgImg = btn.GetComponent<Image>();
-                if (bgImg != null)
+                // Preview-tint on the slot bg so the catalog reads as a colour-coded grid.
+                //
+                // Through SetSlotTint, never by writing the Image: the slot is a Button, and
+                // a Button owns its targetGraphic's colour. Written directly, the whole grid
+                // came up correctly coloured and then reverted to one flat SLOT_BG the first
+                // time anything made Unity re-run a state transition — a pointer crossing
+                // the panel, or a single CanvasGroup change, which repaints every slot at
+                // once. It read as the colour-coding fading out on its own after a few
+                // seconds. See EditorUIHelpers.SetSlotTint.
+                if (key == _selectedKey)
                 {
-                    if (key == _selectedKey)
-                    {
-                        bgImg.color = EditorUIHelpers.SLOT_SELECTED;
-                    }
-                    else
-                    {
-                        var tint = preview; tint.a = 0.18f;
-                        bgImg.color = tint;
-                    }
+                    EditorUIHelpers.SetSlotTint(btn, EditorUIHelpers.SLOT_SELECTED);
+                }
+                else
+                {
+                    var tint = preview; tint.a = SLOT_TINT_ALPHA;
+                    EditorUIHelpers.SetSlotTint(btn, tint);
                 }
 
                 // Selection frame. The background tint above is nearly invisible on this

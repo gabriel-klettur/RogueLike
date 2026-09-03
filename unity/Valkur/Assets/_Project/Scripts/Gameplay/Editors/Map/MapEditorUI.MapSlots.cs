@@ -77,7 +77,7 @@ namespace Valkur.Gameplay.MapEditor
                 // No sprites authored yet — hide the layer so the underlying
                 // black click-blocker remains visible without a stale sprite.
                 _refs.MapsLoadingBgImage.sprite = null;
-                _refs.MapsLoadingBgImage.color  = new Color(0f, 0f, 0f, 0f);
+                _refs.MapsLoadingBgImage.color  = Color.clear;
                 return;
             }
             _refs.MapsLoadingBgImage.sprite = sprite;

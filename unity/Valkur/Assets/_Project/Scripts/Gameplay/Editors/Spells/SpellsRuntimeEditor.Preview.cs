@@ -4,6 +4,7 @@ using Valkur.Core;
 using Valkur.Core.Input;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Spells
 {
@@ -36,8 +37,8 @@ namespace Valkur.Gameplay.Spells
         private const float WHEEL_ZOOM_SENSITIVITY = 1f / 120f;
 
         // Highlights for speed buttons: active speed gets BTN_ACTIVE colour.
-        private static readonly Color SPEED_BTN_ACTIVE  = new Color(0.90f, 0.76f, 0.38f, 1f);   // amber
-        private static readonly Color SPEED_BTN_NORMAL  = new Color(0.22f, 0.22f, 0.28f, 1f);
+        private static readonly Color SPEED_BTN_ACTIVE  = UITheme.ACCENT;   // amber
+        private static readonly Color SPEED_BTN_NORMAL  = UITheme.BTN_HOVER;
 
         // ── UI wiring ─────────────────────────────────────────────────────
 

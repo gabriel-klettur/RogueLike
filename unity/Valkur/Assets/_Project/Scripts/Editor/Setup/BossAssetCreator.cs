@@ -55,7 +55,13 @@ namespace Valkur.Editor
                     label           = "Frenzy",
                     autoCastList    = new[] { "fireball", "iceball" },
                     autoCastPeriod  = 2.5f,
-                    activationSfxId = "spell_firework_launch",
+                    // A REAL catalog id, not a plausible-looking one. AudioCatalog.asset holds
+                    // no "spell_*" entry at all, so every id of that shape resolves to nothing
+                    // but one warning — this seeded "spell_firework_launch", which
+                    // BossDefinitionDataIntegrityTests forbids by name. The shipped
+                    // SampleBoss.asset was repaired once and this creator was not, so re-running
+                    // the menu item put the fault straight back and turned that test red.
+                    activationSfxId = "barbol_attack_2",
                 },
                 new BossDefinition.Phase
                 {
@@ -63,7 +69,7 @@ namespace Valkur.Editor
                     label           = "Final Stand",
                     autoCastList    = new[] { "fireball", "iceball", "meteor" },
                     autoCastPeriod  = 1.8f,
-                    activationSfxId = "spell_smoke_emitter",
+                    activationSfxId = "barbol_damage_1",   // see the phase above
                 },
             };
 

@@ -16,5 +16,19 @@ namespace Valkur.Data
         Stun,
         Freeze,
         Slow,
+
+        /// <summary>
+        /// Held in place: movement is refused, everything else is not. APPENDED, never
+        /// inserted -- <see cref="EntityStats.statusImmunities"/> and
+        /// <c>SpellDefinition.statusApplications</c> both serialise this enum as its
+        /// integer, so renumbering the values above would repoint every authored immunity
+        /// and every authored application at the wrong effect without touching a file.
+        ///
+        /// Deliberately NOT a flavour of <see cref="Stun"/>. A stun refuses movement AND
+        /// attacks (<c>PlayerController</c>, <c>NPCAutoCast</c> and <c>AttackState</c> all
+        /// read <c>IsStunned</c>); a root refuses only the feet, which is what makes it a
+        /// zoning tool rather than a shorter stun.
+        /// </summary>
+        Root,
     }
 }

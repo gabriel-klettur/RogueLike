@@ -159,7 +159,7 @@ namespace Valkur.Gameplay.Editors.General
             btnGo.AddComponent<LayoutElement>().preferredWidth = CLOSE_BTN_WIDTH;
 
             var img = btnGo.AddComponent<Image>();
-            img.color = new Color(0f, 0f, 0f, 0f); // transparent — header bg shows through
+            img.color = Color.clear; // transparent — header bg shows through
 
             var btn = btnGo.AddComponent<Button>();
             var c   = btn.colors;

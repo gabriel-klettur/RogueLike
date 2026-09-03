@@ -190,7 +190,7 @@ namespace Valkur.Gameplay.VFX
             hdrGutterRt.pivot            = new Vector2(1f, 0.5f);
             hdrGutterRt.anchoredPosition = Vector2.zero;
             hdrGutterRt.sizeDelta        = new Vector2(PARTICLE_TABLE_SB_W, 0f);
-            hdrGutterGo.AddComponent<Image>().color = new Color(0.08f, 0.08f, 0.10f, 0.85f);
+            hdrGutterGo.AddComponent<Image>().color = UITheme.SCROLL_TRACK;
 
             var hdrSR = hdrScrollGo.AddComponent<ScrollRect>();
             hdrSR.content           = hdrContentRt;
@@ -255,7 +255,7 @@ namespace Valkur.Gameplay.VFX
             vSbRt.pivot            = new Vector2(1f, 1f);
             vSbRt.anchoredPosition = new Vector2(0f, hSbH);
             vSbRt.sizeDelta        = new Vector2(PARTICLE_TABLE_SB_W, -hSbH);
-            vSbGo.AddComponent<Image>().color = new Color(0.08f, 0.08f, 0.10f, 0.85f);
+            vSbGo.AddComponent<Image>().color = UITheme.SCROLL_TRACK;
             var vSb = BuildEditorScrollbarHandle(vSbGo.transform, Scrollbar.Direction.BottomToTop);
             bodySR.verticalScrollbar = vSb;
             bodySR.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
@@ -268,7 +268,7 @@ namespace Valkur.Gameplay.VFX
             hSbRt.pivot            = new Vector2(0f, 0f);
             hSbRt.anchoredPosition = Vector2.zero;
             hSbRt.sizeDelta        = new Vector2(-PARTICLE_TABLE_SB_W, hSbH);
-            hSbGo.AddComponent<Image>().color = new Color(0.08f, 0.08f, 0.10f, 0.85f);
+            hSbGo.AddComponent<Image>().color = UITheme.SCROLL_TRACK;
             var hSb = BuildEditorScrollbarHandle(hSbGo.transform, Scrollbar.Direction.LeftToRight);
             bodySR.horizontalScrollbar = hSb;
             bodySR.horizontalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
@@ -324,15 +324,15 @@ namespace Valkur.Gameplay.VFX
             hRt.anchorMin = Vector2.zero; hRt.anchorMax = Vector2.one;
             hRt.offsetMin = Vector2.zero; hRt.offsetMax = Vector2.zero;
             var hImg   = handle.AddComponent<Image>();
-            hImg.color = new Color(0.55f, 0.45f, 0.22f, 0.85f);
+            hImg.color = UITheme.SCROLL_HANDLE;
 
             sb.targetGraphic = hImg;
             sb.handleRect    = hRt;
 
             var cols = sb.colors;
-            cols.normalColor      = new Color(0.55f, 0.45f, 0.22f, 0.85f);
+            cols.normalColor      = UITheme.SCROLL_HANDLE;
             cols.highlightedColor = new Color(0.75f, 0.62f, 0.30f, 0.95f);
-            cols.pressedColor     = new Color(0.90f, 0.76f, 0.38f, 1f);
+            cols.pressedColor     = UITheme.ACCENT;
             sb.colors = cols;
             return sb;
         }

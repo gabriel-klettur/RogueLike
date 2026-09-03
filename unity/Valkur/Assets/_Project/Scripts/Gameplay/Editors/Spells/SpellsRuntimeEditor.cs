@@ -61,6 +61,14 @@ namespace Valkur.Gameplay.Spells
         // Middle-mouse camera pan — shared controller used by every runtime editor.
         private readonly EditorCameraPanController _cameraPan = new EditorCameraPanController();
 
+        // Mouse-wheel zoom, shared with every runtime editor that can pan. An editor that
+        // lets the author move the world camera but not close in on it is the odd one out,
+        // and eight of the eleven panning editors were exactly that. The controller steps
+        // through CameraSetup.ComputeEditorZoomNext, which stays on the PPU ladder
+        // SnapOrthoSize maintains — that is why spreading it does not fall foul of the
+        // "never write orthographicSize for an effect" rule.
+        private readonly EditorCameraZoomController _cameraZoom = new EditorCameraZoomController();
+
         // Tutorial state (6-step guided walkthrough)
         private int _tutorialStep;
         private static readonly (string title, string body)[] TUTORIAL_STEPS =
@@ -143,6 +151,7 @@ namespace Valkur.Gameplay.Spells
 
             // Middle-mouse camera pan — same UX as every other runtime editor.
             _cameraPan.Tick();
+            _cameraZoom.Tick();
 
             // Drive the live spell preview when the View panel is open.
             if (_openDropdowns.Contains("view"))

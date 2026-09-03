@@ -63,6 +63,16 @@ posible es tirarlo todo. Ese es exactamente el hueco que abre esta hoja de ruta.
 
 ### 2.4 Tres fuentes de tema y 459 colores crudos
 
+> **Actualizado 2026-09-03 (F4):** de los 459, **79 se migraron a tokens** y quedan **387**.
+> Pero el número grande engañaba: medidos contra los tokens existentes, solo **37 de 421**
+> eran duplicados exactos. El resto son colores semánticos de un solo uso (contorno cian,
+> tintes de arrastre, franjas de categoría, chips de leyenda del FSM) donde un reemplazo
+> masivo cambiaría píxeles que nadie pidió cambiar. Lo que sí apareció al mirar los valores
+> repetidos fue **una barra de scroll copiada literalmente en cinco editores** (pista ×12 +
+> asa ×10) y **el rojo en reposo de un botón destructivo copiado en 19 sitios** — tres
+> tokens nuevos (`SCROLL_TRACK`, `SCROLL_HANDLE`, `DANGER_IDLE`) que cubren 41 de esos 79.
+> Los 387 restantes los sujeta un trinquete, no una promesa: ver §6.2.
+
 `UITheme` (tokens, 60 líneas) → `EditorUIHelpers` (fachada que reexporta
 `UITheme`) → `TileEditorTheme` (chrome mutable en runtime, lo que de verdad
 pintan los paneles). Encima, **459 `new Color(` literales** dentro de los
@@ -74,12 +84,32 @@ píxeles no pasen por el tema.
 
 ### 2.5 Huecos duros
 
-- **Camera / DungeonNodeGraph / General**: cero chrome. Ni `DraggablePanel`, ni
-  `MenuBarChrome`, ni `PanelChrome`. Son otra UI dentro del mismo juego.
-- **`EditorCameraZoomController` solo en 3 de 13**: diez editores dejan al autor
-  paneando sin poder acercarse.
+- **Zoom**: `EditorCameraZoomController` solo en 3 de los 11 editores que panean. Ocho
+  dejan al autor mover la cámara del mundo sin poder acercarse. **Cerrado en F4.**
 - **Tutorial ausente en 8**, incluidos los tres más grandes tras Tile.
 - **`PanelResizeHandle` solo en 4**.
+
+### 2.6 Corrección: la columna de chrome de §1 estaba mal medida
+
+La tabla de §1 dice que Camera, DungeonNodeGraph y General no tienen chrome. **Eso es un
+error de medición**, corregido el 2026-09-03. El grep contaba si el editor NOMBRA
+`DraggablePanel` / `PanelChrome` en sus propios ficheros; Camera, General, Boss, Lighting,
+Spawners y Tile no lo nombran porque construyen a través de
+`EditorUIHelpers.MakeDropPanel`, que añade **ambos** componentes. Es decir: los que la
+tabla marcaba peor son los que lo estaban haciendo bien.
+
+Re-medido con la regla transitiva (nombra el tipo **o** llama a la fábrica):
+
+- **15 de 16 tienen chrome real.** El único hueco es **DungeonNodeGraph**.
+- Los nueve con builder propio emparejan `DraggablePanel` + `PanelChrome` +
+  `MenuBarChrome` sin excepción. Ahí no había deriva ninguna.
+
+DungeonNodeGraph es una **losa a pantalla completa con regiones ancladas**, no paneles
+flotantes. Convertirlo a `MakeDropPanel` sería reescribir su layout, que es una decisión
+de diseño y no una corrección de paridad — queda **abierto y explícito**. Lo que sí se
+arregló es su paleta: tenía cinco constantes privadas que habían derivado del kit (su fondo
+de fila 0.18 contra 0.17, su panel 0.10/0.95 contra 0.09/0.94), así que un autor retocando
+el aspecto de los editores habría visto obedecer a todos menos a ese.
 
 ## 3. Diagnóstico
 
@@ -220,12 +250,125 @@ El test de contrato lo escribe `unity-tester`, que ya existe.
 |---|---|---|
 | F0 | Este documento | — |
 | F1 | Capa Workspace + `DraggablePanel.PanelId` + `EditorWorkspaceContractTests`. Sin tocar editores | `editor-workspace-architect` + `unity-tester` |
-| F2 | Dos pilotos: **Items** (plantilla canónica) y **Tile** (15k LOC, el más hostil) | parity |
-| F3 | Los 13 restantes por lotes, consola limpia por lote | parity |
+| F2 | Dos pilotos: **Items** ✅ y **Tile** ✅ — ambos 2026-09-03 | parity |
+| F3 | Los 13 restantes ✅ 2026-09-03 — 15/15 editores registrados adoptados | parity |
 | F4 | Chrome para Camera / DungeonNodeGraph / General; unificar tema (459 colores); zoom en los 10 que no lo tienen | parity + `unity-architect` |
 
 Si Tile entra limpio en F2, la capa aguanta los otros trece. Si no, el fallo es
 de la capa y se arregla en F1 antes de tocar nada más.
+
+## 6.1 Estado por editor
+
+Los 15 editores registrados implementan `IProvidesWorkspaceState`. `General` es el
+lanzador: sin `DraggablePanel` y sin estado propio, no tiene nada que recordar.
+
+| Editor | Estado propio que recuerda | Selección viva | Columnas migradas |
+|---|---|---|---|
+| Items | modo, pestaña, búsqueda, ítem del catálogo | drop del mundo (`DropId`) | ✅ |
+| Tile | herramienta, capa, pincel, AUTO, tile, terreno, sub-modo, tag de colisión, capa de salto, 5 toggles de vista | celda | n/a |
+| Particles | modo, preset, búsqueda, pestaña, panel de spells | emisor (`StableGuid`) | ✅ |
+| Spells | spell, búsqueda, filtro de audiencia | — (edita catálogo) | ✅ |
+| Buildings | modo, plantilla, búsqueda, pestaña, pincel de colisión | edificio (`InstanceId`) | n/a |
+| Map | restricción de edición por zona | zona (por nombre) | n/a |
+| Entities | modo, categoría, búsqueda, entidad | — | n/a |
+| Lighting | modo, búsqueda, preset | — | n/a |
+| Spawners | modo, búsqueda | — (ver nota) | n/a |
+| Inventory | modo, categoría, dos búsquedas, entidad | — | n/a |
+| FSM | búsqueda, zoom del grafo | — (ver nota) | n/a |
+| Camera | cue en edición | — | n/a |
+| Boss | jefe, fase | — | n/a |
+| TimeWeather | — (solo layout, ver nota) | — | n/a |
+| DungeonNodeGraph | grafo abierto | — | n/a |
+
+**Ningún editor reabre en un modo destructivo.** Buildings no restaura Delete ni Erase,
+Entities no restaura Delete, Inventory no restaura DeleteItem, Tile no restaura sus modos
+de pintado de colisión ni de saltos. Abrir un editor directamente en un modo que borra es
+como se destruye algo que solo se iba a mirar.
+
+**Lo que se decide NO persistir, y por qué** — cada caso es una decisión, no un hueco:
+
+| Editor | No persiste | Razón |
+|---|---|---|
+| Tile | modos de colisión y saltos, portapapeles, zoom de cámara | reset de seguridad autorado; semántica de portapapeles del sistema; escalera de `SnapOrthoSize` |
+| Lighting | `_ambientEnabled` / `_pointLightsEnabled` | override de diagnóstico sobre el ciclo vivo: restaurarlo dejaría el mundo a oscuras sin explicación |
+| Spawners | instancia seleccionada | sus coordenadas son el objeto de `SPAWNER_COORDINATE_SPACE_DRIFT`; resolverla por esa vía apuntaría la siguiente edición a otro spawner |
+| FSM | set y estado seleccionados | un estado solo existe dentro de un set (clave compuesta que un renombrado invalida), y elegir mal el set es editar los jefes en vez de los melee |
+| Boss | chart y cue | un índice de cue es una posición en una línea de tiempo que el autor está editando |
+| Map | `NextZoneIndex` | contador derivado del disco; restaurarlo acuñaría un nombre que colisiona |
+| TimeWeather | todo | la hora y el clima son estado del MUNDO, con dueños propios (`DayNightCycle`, `WeatherManager`) — restaurarlos sobrescribiría el mundo que el autor cargó |
+| DungeonNodeGraph | los nodos | son el documento, que ya se guarda en disco; una segunda copia discreparía |
+
+Lo que el piloto de Items dejó fijado para los demás:
+
+- **La clave de la bolsa de sesión es un literal, nunca `nameof()`.** Es una clave en
+  disco: renombrar el campo C# no puede huerfanizar en silencio el valor guardado.
+- **Se guarda la CLAVE de la pestaña, no el int al que mapea.** La clave (`"equipment"`)
+  es el vocabulario que comparten la UI y el autor; el int es un id interno que un
+  refactor del catálogo puede renumerar, y renumerado restauraría otra pestaña sin fallar.
+- **Restaurar la pestaña llama a `SetActive(key)` y NO toca `_categoryFilter`.** El
+  `TabChanged` que dispara es quien lo actualiza — escribir ambos crea dos dueños de un
+  mismo hecho.
+- **`SetTextWithoutNotify` al restaurar la búsqueda**, o el restore reentra en el callback
+  y refresca dos veces por un cambio que no hubo.
+- **Solo se recuerda un drop VIVO y PERSISTENTE** (con `DropId`). Guardar el id de un drop
+  de runtime garantizaría un registro irresoluble, y la política existe para que lo
+  irresoluble sea la excepción.
+- **Un encabezado de columna que el esquema ya no tiene se descarta al restaurar**, o la
+  etiqueta de conteo miente y el popup no ofrece casilla para volver a mostrarla.
+- **Una entrada ausente significa "no hay nada guardado", no "todo visible".**
+
+### Lo que el piloto de Tile añadió
+
+**Encontró un fallo real en la capa, que es para lo que estaba.**
+`TileEditorManager.Deactivate()` limpia `SelectedCellPos` y **después** llama a
+`NotifyDeactivated`. Un cierre llega al manager por dos caminos y en un editor que se
+autocierra **disparan los dos**: el llamante captura antes de `Deactivate`, y el editor
+notifica después. La segunda captura escribía ese null encima de la selección que la
+primera había grabado bien. `GameEditorManager` ahora deduplica por cierre
+(`_capturedOnClose`), y `EditorWorkspaceCaptureDedupTests` lo fija con un editor falso que
+reproduce exactamente esa forma.
+
+**Tres cosas NO se persisten en Tile, cada una por decisión:**
+
+- **`CurrentColliderMode` / `CurrentLayerJumpMode`** — `HandleToggle` los resetea a `None`
+  en cada activación. Es una decisión de seguridad: abrir F8 directamente en un modo de
+  pintado destructivo es como se pinta colisión sobre un mapa que solo se iba a mirar.
+  Restaurarlos anularía ese reset deliberado.
+- **El portapapeles** — `TileEditorState` lo documenta con semántica de portapapeles del
+  sistema, perdido al cerrar. Persistirlo además exigiría serializar referencias a tiles,
+  que son assets, no datos.
+- **El zoom de cámara** — `EditorCameraZoomController` no guarda nivel que leer, y escribir
+  `orthographicSize` de vuelta choca con la escalera de `SnapOrthoSize`: mantiene el ortho
+  en peldaños donde un texel de arte son píxeles enteros de pantalla, y un valor restaurado
+  entre peldaños hace que todos los tiles de la pantalla reptén.
+
+**Y dos reglas nuevas para los trece restantes:**
+
+- **`WorkspaceRoot` es el CANVAS, no lo que `SetVisible` conmuta.** Tile no tiene raíz
+  visible única: `SetVisible` conmuta la barra de menú y el indicador de capa por separado,
+  y los ocho paneles son desplegables por debajo. Recorrer algo más estrecho se salta
+  paneles en silencio — un fallo que parece "la persistencia va a ratos", no un bug.
+- **Un índice de lista nunca es un id.** Tile guarda `(categoría, nombre)` y **no**
+  `SelectedCatalogIndex`: el índice es una posición que un re-import reordena, y fallaría
+  seleccionando otro tile sin avisar. Misma familia que la regla del `PanelId`.
+
+## 6.2 F4 — el trinquete del tema
+
+Los 387 colores crudos que quedan están fijados por
+`EditorRawColorRatchetTests` contra
+`Tests/EditMode/Baselines/editor-raw-colors.txt`: un recuento por fichero que **puede bajar
+libremente y no puede subir nunca**. Un fichero nuevo con colores crudos y no listado
+también falla, porque si no, la vía de escape sería crear un fichero.
+
+Es la misma forma que las dos únicas convenciones que han aguantado en este repo
+(`DomainReloadStaticResetTests`, `FSMBuiltInTransitionRegistryTests`): el test escanea el
+código y falla cuando alguien añade algo sin declararlo. La alternativa —reescribir los 387
+de golpe— se descartó con datos: solo 37 de 421 coincidían exactamente con un token, así
+que el resto habría sido adivinar la intención de un diseñador.
+
+`Tile/TileEditorTheme.cs` es la única exclusión, y un tercer test falla si ese fichero
+desaparece — de otro modo la exclusión dejaría de excluir nada en silencio y quien lo
+sustituyera quedaría sin guardia.
 
 ## 7. Criterios de aceptación
 

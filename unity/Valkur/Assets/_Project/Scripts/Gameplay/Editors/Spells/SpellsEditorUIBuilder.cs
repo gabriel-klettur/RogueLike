@@ -202,8 +202,8 @@ namespace Valkur.Gameplay.Spells
             if (danger)
             {
                 img.color = active
-                    ? new Color(0.90f, 0.30f, 0.30f, 1f)
-                    : new Color(0.55f, 0.15f, 0.15f, 1f);
+                    ? UITheme.DANGER
+                    : UITheme.DANGER_IDLE;
             }
             else
             {

@@ -49,7 +49,7 @@ namespace Valkur.Gameplay.Spells
             // ── Table view wiring ────────────────────────────────────────────
             // Load hidden columns from PlayerPrefs so the user's previous choice
             // is restored immediately (before the table is built the first time).
-            LoadColumnPrefs();
+            SeedDefaultHiddenColumns();
 
             // Hand off the two table ScrollRects so the Table partial can build
             // and refresh without needing access to the UIRefs struct directly.

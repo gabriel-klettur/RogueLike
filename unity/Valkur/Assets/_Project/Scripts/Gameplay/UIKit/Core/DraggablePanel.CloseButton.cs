@@ -23,7 +23,6 @@ namespace Valkur.UIKit
         private const string CLOSE_BUTTON_NAME   = "PanelCloseButton";
         private const float  CLOSE_BUTTON_SIZE   = 16f;
         private const float  CLOSE_BUTTON_MARGIN = 4f;
-        private const string PREFS_PREFIX      = "Valkur.Panel.Closed.";
 
         /// <summary>
         /// Set false BEFORE the first frame for a panel that must not be closable — a modal,
@@ -51,26 +50,31 @@ namespace Valkur.UIKit
         private string ResolvedKey =>
             string.IsNullOrEmpty(PersistenceKey) ? gameObject.name : PersistenceKey;
 
-        /// <summary>Whether this panel was left closed in a previous session.</summary>
-        public bool WasClosedLastSession =>
-            PlayerPrefs.GetInt(PREFS_PREFIX + ResolvedKey, 0) == 1;
+        /// <summary>
+        /// Whether this panel was left closed in a previous session.
+        ///
+        /// Answered by <see cref="StateSink"/> rather than read from PlayerPrefs directly,
+        /// so panel visibility has exactly ONE owner with two interchangeable backends —
+        /// see <c>DraggablePanel.State.cs</c>. The key is <see cref="WorkspacePanelId"/>,
+        /// which namespaces by owning editor; with no owner set it is the bare
+        /// <see cref="ResolvedKey"/>, i.e. the historical behaviour unchanged.
+        /// </summary>
+        public bool WasClosedLastSession => StateSink.IsClosed(WorkspacePanelId);
 
-        private void RememberClosed(bool closed)
-        {
-            PlayerPrefs.SetInt(PREFS_PREFIX + ResolvedKey, closed ? 1 : 0);
-            PlayerPrefs.Save();
-        }
+        private void RememberClosed(bool closed) => StateSink.SetClosed(WorkspacePanelId, closed);
 
         /// <summary>
         /// Clear every remembered panel state. Exposed for a "reset layout" action and for
         /// tests, which must not inherit whatever the last play session left behind.
+        ///
+        /// Takes RESOLVED keys — bare panel keys while no owner is set, and
+        /// <c>"Editor/Panel"</c> once the workspace service has stamped one.
         /// </summary>
         public static void ForgetAllPanelStates(params string[] keys)
         {
             if (keys == null) return;
             foreach (var k in keys)
-                if (!string.IsNullOrEmpty(k)) PlayerPrefs.DeleteKey(PREFS_PREFIX + k);
-            PlayerPrefs.Save();
+                if (!string.IsNullOrEmpty(k)) StateSink.Forget(k);
         }
 
         /// <summary>

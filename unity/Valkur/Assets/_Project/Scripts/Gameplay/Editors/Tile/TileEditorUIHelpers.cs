@@ -44,7 +44,7 @@ namespace Valkur.Gameplay.TileEditor
         public static readonly Color VIS_ON          = new Color(0.40f, 0.88f, 0.40f, 1f);
         public static readonly Color VIS_OFF         = new Color(0.50f, 0.50f, 0.50f, 0.45f);
         public static readonly Color CYAN_ACCENT     = new Color(0.30f, 0.85f, 0.90f, 1f);
-        public static readonly Color GREEN_ACCENT    = new Color(0.30f, 0.90f, 0.45f, 1f);
+        public static readonly Color GREEN_ACCENT    = UITheme.SUCCESS;
 
         // Colliders panel — bright red fill+border applied over collision tiles
         // (the underlying tile is invisible, so this is the only visible cue).
@@ -89,7 +89,7 @@ namespace Valkur.Gameplay.TileEditor
         public const float MENUBAR_PAD_H = 10f;
         public static readonly Color MENUBAR_BG       = new Color(0.07f, 0.07f, 0.09f, 0.97f);
         public static readonly Color MENU_BTN_NORMAL  = new Color(0.07f, 0.07f, 0.09f, 0f);
-        public static readonly Color MENU_BTN_HOVER   = new Color(0.22f, 0.22f, 0.28f, 1f);
+        public static readonly Color MENU_BTN_HOVER   = UITheme.BTN_HOVER;
         public static readonly Color MENU_BTN_OPEN    = new Color(0.90f, 0.76f, 0.38f, 0.18f);
         public static readonly Color DROPDOWN_BG      = new Color(0.09f, 0.09f, 0.12f, 0.97f);
         public static readonly Color DROPDOWN_BORDER  = new Color(0.90f, 0.76f, 0.38f, 0.25f);

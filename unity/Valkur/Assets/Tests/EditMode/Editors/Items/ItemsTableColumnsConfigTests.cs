@@ -7,6 +7,7 @@ using UnityEngine.UI;
 using TMPro;
 using Valkur.Data;
 using Valkur.UIKit;
+using Valkur.Core.Editors;
 using Valkur.Gameplay.Items;
 
 namespace Valkur.Tests.EditMode.Editors.Items
@@ -17,7 +18,8 @@ namespace Valkur.Tests.EditMode.Editors.Items
     ///   • the columns popup builds lazily on first open;
     ///   • toggling a column hides it from header AND every row;
     ///   • All / None / Reset bulk actions work;
-    ///   • the choice round-trips through PlayerPrefs;
+    ///   • the choice round-trips through the editor's WORKSPACE document
+    ///     (it used to live in its own PlayerPrefs entry — see below);
     ///   • <see cref="ItemsRuntimeEditor.IsColumnVisible"/> reports the
     ///     correct state for every column even after partial-hide ops.
     ///
@@ -28,8 +30,6 @@ namespace Valkur.Tests.EditMode.Editors.Items
     [TestFixture]
     public class ItemsTableColumnsConfigTests
     {
-        private const string PREFS_KEY = "Valkur.ItemsEditor.HiddenColumns";
-
         private readonly List<GameObject> _scene = new List<GameObject>();
         private readonly List<Object> _runtimeAssets = new List<Object>();
 
@@ -37,10 +37,6 @@ namespace Valkur.Tests.EditMode.Editors.Items
         public void SetUp()
         {
             LogAssert.ignoreFailingMessages = true;
-            // Wipe any leftover prefs from previous runs so each test starts from
-            // a known baseline (every column visible).
-            PlayerPrefs.DeleteKey(PREFS_KEY);
-            PlayerPrefs.Save();
         }
 
         [TearDown]
@@ -51,9 +47,6 @@ namespace Valkur.Tests.EditMode.Editors.Items
             foreach (var a in _runtimeAssets) if (a != null) Object.DestroyImmediate(a);
             _runtimeAssets.Clear();
             ClearSingletonInstance<ItemsRuntimeEditor>();
-
-            PlayerPrefs.DeleteKey(PREFS_KEY);
-            PlayerPrefs.Save();
         }
 
         // ── Reflection helpers (mirror existing Items test fixtures) ──────────
@@ -273,33 +266,36 @@ namespace Valkur.Tests.EditMode.Editors.Items
         }
 
         [Test]
-        public void HiddenColumns_PersistToPlayerPrefs_OnToggle()
+        public void HiddenColumns_AreCapturedIntoTheWorkspace()
         {
             var ed = CreateActiveEditor();
-            var damage = FindCol("damage");
-            var weight = FindCol("weight");
 
-            Invoke(ed, "OnColumnVisibilityToggled", damage, false);
-            Invoke(ed, "OnColumnVisibilityToggled", weight, false);
+            Invoke(ed, "OnColumnVisibilityToggled", FindCol("damage"), false);
+            Invoke(ed, "OnColumnVisibilityToggled", FindCol("weight"), false);
 
-            string blob = PlayerPrefs.GetString(PREFS_KEY, "");
-            StringAssert.Contains("damage", blob, "Prefs blob must include 'damage'.");
-            StringAssert.Contains("weight", blob, "Prefs blob must include 'weight'.");
+            // A toggle writes nothing on its own — the workspace layer captures the set
+            // when the editor closes, through GameEditorManager. That is the single seam;
+            // a save call at toggle time would put one preference in two places.
+            var ws = new EditorWorkspace { editorName = ed.EditorName };
+            ed.CaptureWorkspace(ws);
+
+            string blob = ws.GetString("hiddenColumns", "");
+            StringAssert.Contains("damage", blob, "Captured set must include 'damage'.");
+            StringAssert.Contains("weight", blob, "Captured set must include 'weight'.");
         }
 
         [Test]
-        public void HiddenColumns_RehydrateFromPlayerPrefs_OnActivate()
+        public void HiddenColumns_RehydrateFromTheWorkspace_OnRestore()
         {
-            // Pre-seed prefs with a hidden set, then create a fresh editor —
-            // it should pick them up via LoadColumnPrefs() during BuildUI.
-            PlayerPrefs.SetString(PREFS_KEY, "damage,weight,critChance");
-            PlayerPrefs.Save();
-
             var ed = CreateActiveEditor();
-            var hidden = GetHiddenSet(ed);
 
+            var ws = new EditorWorkspace { editorName = ed.EditorName };
+            ws.SetString("hiddenColumns", "damage,weight,critChance");
+            ed.RestoreWorkspace(ws);
+
+            var hidden = GetHiddenSet(ed);
             Assert.AreEqual(3, hidden.Count,
-                "Three pre-seeded columns must be reloaded into the hidden set.");
+                "Three stored columns must be restored into the hidden set.");
             Assert.IsTrue(hidden.Contains("damage"));
             Assert.IsTrue(hidden.Contains("weight"));
             Assert.IsTrue(hidden.Contains("critChance"));
@@ -308,7 +304,37 @@ namespace Valkur.Tests.EditMode.Editors.Items
             Assert.IsFalse(ed.IsColumnVisible(FindCol("weight")));
             Assert.IsFalse(ed.IsColumnVisible(FindCol("critChance")));
             Assert.IsTrue(ed.IsColumnVisible(FindCol("itemId")),
-                "Columns NOT in the prefs blob must remain visible.");
+                "Columns not named in the stored set must remain visible.");
+        }
+
+        [Test]
+        public void RestoringAColumnHeaderTheSchemaNoLongerHas_IsDropped()
+        {
+            var ed = CreateActiveEditor();
+
+            var ws = new EditorWorkspace { editorName = ed.EditorName };
+            ws.SetString("hiddenColumns", "damage,columnRenamedInAFutureRefactor");
+            ed.RestoreWorkspace(ws);
+
+            var hidden = GetHiddenSet(ed);
+            Assert.AreEqual(1, hidden.Count,
+                "A header no longer in the schema must be dropped, or the count label " +
+                "lies and the popup offers no checkbox to un-hide it.");
+            Assert.IsTrue(hidden.Contains("damage"));
+        }
+
+        [Test]
+        public void RestoringAWorkspaceWithNoColumnEntry_LeavesTheCurrentSetAlone()
+        {
+            var ed = CreateActiveEditor();
+            Invoke(ed, "OnColumnVisibilityToggled", FindCol("damage"), false);
+
+            // A workspace written before this editor stored columns, or by a build that
+            // did not have them. Restore must tolerate every value being absent.
+            ed.RestoreWorkspace(new EditorWorkspace { editorName = ed.EditorName });
+
+            Assert.IsTrue(GetHiddenSet(ed).Contains("damage"),
+                "An absent entry means 'nothing stored', not 'everything visible'.");
         }
 
         [Test]
@@ -344,9 +370,11 @@ namespace Valkur.Tests.EditMode.Editors.Items
 
             Assert.AreEqual(0, GetHiddenSet(ed).Count,
                 "Reset must clear the hidden set.");
-            string blob = PlayerPrefs.GetString(PREFS_KEY, "");
-            Assert.IsTrue(string.IsNullOrEmpty(blob),
-                "Reset must persist an empty prefs blob.");
+
+            var ws = new EditorWorkspace { editorName = ed.EditorName };
+            ed.CaptureWorkspace(ws);
+            Assert.IsTrue(string.IsNullOrEmpty(ws.GetString("hiddenColumns", "")),
+                "A reset editor must capture an empty set, not keep the old one.");
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────

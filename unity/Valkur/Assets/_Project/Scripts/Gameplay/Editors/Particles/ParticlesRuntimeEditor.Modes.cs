@@ -31,7 +31,7 @@ namespace Valkur.Gameplay.VFX
             if (_ui.PlaceBtnImg != null)
                 _ui.PlaceBtnImg.color = _mode == EditorMode.Place ? UITheme.BTN_ACTIVE : UITheme.BTN_NORMAL;
             if (_ui.DeleteBtnImg != null)
-                _ui.DeleteBtnImg.color = _mode == EditorMode.Delete ? UITheme.DANGER : new Color(0.55f, 0.15f, 0.15f, 1f);
+                _ui.DeleteBtnImg.color = _mode == EditorMode.Delete ? UITheme.DANGER : UITheme.DANGER_IDLE;
         }
 
         // ── Add / Remove (Python particles_add_remove_panel parity) ──

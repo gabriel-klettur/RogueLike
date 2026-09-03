@@ -407,6 +407,11 @@ namespace Valkur.Gameplay.World
                 SyncClockFromElapsed();
             }
 
+            // Ticked HERE and not inside UpdateLighting: that method is also reached from
+            // property setters, so an envelope advanced there would run several times in a
+            // frame whenever anything scrubbed the clock.
+            SkyFlash.Tick(Time.deltaTime);
+
             // UpdateLighting is cheap enough to call every frame — keeps pause-then-scrub
             // and Inspector edits in sync without needing dirty flags.
             UpdateLighting();
@@ -535,6 +540,17 @@ namespace Valkur.Gameplay.World
             {
                 targetColor     = Color.Lerp(targetColor, Weather.WeatherGrade.FlashColor, flash * 0.85f);
                 targetIntensity = Mathf.Min(2f, targetIntensity + flash * Weather.WeatherGrade.FlashLightBoost);
+            }
+
+            // Anything else that goes off OVERHEAD — a firework shell today — reaches the
+            // world through the same seam, for the same reason. It ADDS to the strike rather
+            // than replacing it: a firework fired during a storm should be brighter than
+            // either alone, and the shared Min(2f, ...) ceiling below bounds the sum.
+            float sky = SkyFlash.Flash01;
+            if (sky > 0.0001f)
+            {
+                targetColor     = Color.Lerp(targetColor, SkyFlash.FlashColor, sky * 0.65f);
+                targetIntensity = Mathf.Min(2f, targetIntensity + sky * SkyFlash.MaxLightBoost);
             }
 
             PublishScreenGrade(targetVignetteAlpha);

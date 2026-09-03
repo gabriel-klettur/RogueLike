@@ -298,7 +298,7 @@ namespace Valkur.Gameplay.MapEditor
             var addZoneBtn = AddActionBtn(t, "Add Zone",  BTN_H, onBeginAdd);
             refs.AddZoneBtnImage   = addZoneBtn.GetComponent<Image>();
             var addOutline         = addZoneBtn.gameObject.AddComponent<Outline>();
-            addOutline.effectColor    = new Color(0f, 0f, 0f, 0f);   // invisible until mode active
+            addOutline.effectColor    = Color.clear;   // invisible until mode active
             addOutline.effectDistance = new Vector2(2f, 2f);
             refs.AddZoneBtnOutline = addOutline;
 
@@ -312,7 +312,7 @@ namespace Valkur.Gameplay.MapEditor
                 () => portalCallbacks.OnBeginPlace?.Invoke());
             refs.PlacePortalBtnImage   = placePortalBtn.GetComponent<Image>();
             var placeOutline           = placePortalBtn.gameObject.AddComponent<Outline>();
-            placeOutline.effectColor    = new Color(0f, 0f, 0f, 0f);
+            placeOutline.effectColor    = Color.clear;
             placeOutline.effectDistance = new Vector2(2f, 2f);
             refs.PlacePortalBtnOutline = placeOutline;
 

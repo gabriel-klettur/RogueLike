@@ -77,6 +77,14 @@ namespace Valkur.Gameplay.Spawners
 
         // Middle-mouse camera pan — shared controller used by every runtime editor.
         private readonly EditorCameraPanController _cameraPan = new EditorCameraPanController();
+
+        // Mouse-wheel zoom, shared with every runtime editor that can pan. An editor that
+        // lets the author move the world camera but not close in on it is the odd one out,
+        // and eight of the eleven panning editors were exactly that. The controller steps
+        // through CameraSetup.ComputeEditorZoomNext, which stays on the PPU ladder
+        // SnapOrthoSize maintains — that is why spreading it does not fall foul of the
+        // "never write orthographicSize for an effect" rule.
+        private readonly EditorCameraZoomController _cameraZoom = new EditorCameraZoomController();
         private readonly UndoStack _undo = new UndoStack(64);
 
         // ── UI ───────────────────────────────────────────────────────────────────
@@ -169,6 +177,7 @@ namespace Valkur.Gameplay.Spawners
             // Middle-mouse pan runs unconditionally so dragging the camera works
             // even while interacting with the picker / properties panels.
             _cameraPan.Tick();
+            _cameraZoom.Tick();
 
             // Ctrl+S, matching Buildings (F10), Tile (F6) and Lighting (Ctrl+F3). This editor
             // was the only one without it, and without any automatic save either — its single

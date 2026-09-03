@@ -203,7 +203,7 @@ namespace Valkur.Gameplay.VFX
             {
                 // Service not ready yet: show dark bg, texture will be assigned on next RefreshPicker.
                 raw.texture = null;
-                raw.color   = new Color(0f, 0f, 0f, 0f);
+                raw.color   = Color.clear;
             }
 
             // Selection highlight. The background tint other pickers rely on is

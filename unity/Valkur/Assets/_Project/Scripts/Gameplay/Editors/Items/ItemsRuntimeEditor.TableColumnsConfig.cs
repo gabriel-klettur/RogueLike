@@ -21,9 +21,14 @@ namespace Valkur.Gameplay.Items
     ///
     /// Persistence
     /// ───────────
-    /// Hidden column headers are stored in PlayerPrefs as a comma-separated
-    /// string under <see cref="HIDDEN_COLUMNS_PREFS_KEY"/>, so the choice
-    /// survives Editor restarts and Play / Stop cycles.
+    /// The hidden set lives in this editor's workspace document, captured and
+    /// restored by <c>ItemsRuntimeEditor.Workspace.cs</c> alongside the mode,
+    /// the category tab and the search text.
+    ///
+    /// It used to be its own PlayerPrefs entry — one of three copies of the
+    /// same code, in Items, Particles and Spells. Two owners of one author
+    /// preference is the failure this project keeps re-learning, so the
+    /// workspace is now the only place a column choice is written.
     ///
     /// UX
     /// ──
@@ -36,8 +41,6 @@ namespace Valkur.Gameplay.Items
     /// </summary>
     public partial class ItemsRuntimeEditor
     {
-        private const string HIDDEN_COLUMNS_PREFS_KEY = "Valkur.ItemsEditor.HiddenColumns";
-
         private const float COLPOP_WIDTH      = 320f;
         private const float COLPOP_HEIGHT     = 460f;
         private const float COLPOP_HEADER_H   =  28f;
@@ -66,30 +69,15 @@ namespace Valkur.Gameplay.Items
         }
 
         // ── Persistence ───────────────────────────────────────────────────────
-
-        /// <summary>
-        /// Hydrate <see cref="_hiddenColumns"/> from PlayerPrefs. Called once
-        /// from Activate so the user's previous choice is restored on open.
-        /// </summary>
-        internal void LoadColumnPrefs()
-        {
-            _hiddenColumns.Clear();
-            string blob = PlayerPrefs.GetString(HIDDEN_COLUMNS_PREFS_KEY, "");
-            if (string.IsNullOrEmpty(blob)) return;
-            foreach (var h in blob.Split(','))
-            {
-                if (!string.IsNullOrWhiteSpace(h))
-                    _hiddenColumns.Add(h.Trim());
-            }
-        }
-
-        /// <summary>Persist the current hidden-column set so it survives a session.</summary>
-        internal void SaveColumnPrefs()
-        {
-            string blob = string.Join(",", _hiddenColumns);
-            PlayerPrefs.SetString(HIDDEN_COLUMNS_PREFS_KEY, blob);
-            PlayerPrefs.Save();
-        }
+        //
+        // There is no save call here on purpose. A toggle mutates _hiddenColumns and
+        // nothing else; the workspace layer captures that set when the editor closes,
+        // through GameEditorManager — the one seam every close already passes. Writing
+        // here as well would put the same preference in two places, and the two would
+        // disagree the first time a close was captured after a toggle was not.
+        //
+        // The restore direction lives in ItemsRuntimeEditor.Workspace.cs, which also
+        // drops headers no longer present in the schema before applying them.
 
         // ── Bar label helper ──────────────────────────────────────────────────
 
@@ -359,7 +347,6 @@ namespace Valkur.Gameplay.Items
             if (visible) _hiddenColumns.Remove(col.Header);
             else         _hiddenColumns.Add(col.Header);
 
-            SaveColumnPrefs();
             UpdateColumnsCountLabel();
             RefreshColumnsCountLabel();
 
@@ -375,7 +362,6 @@ namespace Valkur.Gameplay.Items
             {
                 foreach (var c in ItemTableColumns.All) _hiddenColumns.Add(c.Header);
             }
-            SaveColumnPrefs();
             BuildTableHeader();
             RefreshTable();
             RefreshColumnsConfigState();

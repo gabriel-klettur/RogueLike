@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using TMPro;
 using Valkur.Gameplay.World;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.TileEditor
 {
@@ -111,7 +112,7 @@ namespace Valkur.Gameplay.TileEditor
 
         // Gold-ish — shown only while the user is mid-drag in Rect mode.
         private static readonly Color TILESET_RECT_PREVIEW_COLOR =
-            new Color(0.90f, 0.76f, 0.38f, 0.45f);
+            UITheme.ACCENT_DIM;
         // Green — matches the GREEN persistent-selection overlay used on the
         // map (TileEditorGridOverlay) so the two surfaces feel like part of
         // the same selection model.

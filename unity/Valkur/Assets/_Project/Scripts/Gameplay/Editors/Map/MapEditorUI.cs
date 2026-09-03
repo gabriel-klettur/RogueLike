@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Valkur.Gameplay.World;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.MapEditor
 {
@@ -156,9 +157,9 @@ namespace Valkur.Gameplay.MapEditor
             if (!active)
             {
                 if (_refs.AddZoneBtnOutline != null)
-                    _refs.AddZoneBtnOutline.effectColor = new Color(0f, 0f, 0f, 0f);
+                    _refs.AddZoneBtnOutline.effectColor = Color.clear;
                 if (_refs.AddZoneBtnImage != null)
-                    _refs.AddZoneBtnImage.color = new Color(0.16f, 0.16f, 0.21f, 1f); // BTN_NORMAL
+                    _refs.AddZoneBtnImage.color = UITheme.BTN_NORMAL; // BTN_NORMAL
             }
         }
 
@@ -176,7 +177,7 @@ namespace Valkur.Gameplay.MapEditor
                     new Color(1f, 0.85f, 0f, Mathf.Lerp(0.15f, 1f, pulseAdd));
                 if (_refs.AddZoneBtnImage != null)
                     _refs.AddZoneBtnImage.color = Color.Lerp(
-                        new Color(0.16f, 0.16f, 0.21f, 1f),
+                        UITheme.BTN_NORMAL,
                         new Color(0.30f, 0.25f, 0.06f, 1f),
                         pulseAdd * 0.45f);
             }
@@ -191,7 +192,7 @@ namespace Valkur.Gameplay.MapEditor
                     new Color(0.30f, 0.85f, 0.95f, Mathf.Lerp(0.15f, 1f, pulsePortal));
                 if (_refs.PlacePortalBtnImage != null)
                     _refs.PlacePortalBtnImage.color = Color.Lerp(
-                        new Color(0.16f, 0.16f, 0.21f, 1f),
+                        UITheme.BTN_NORMAL,
                         new Color(0.06f, 0.20f, 0.30f, 1f),
                         pulsePortal * 0.45f);
             }
@@ -228,6 +229,22 @@ namespace Valkur.Gameplay.MapEditor
         /// after Unity domain reloads / hot-reloads while in Play Mode by falling
         /// back to the actual canvas component in this UI's children.
         /// </summary>
+        /// <summary>
+        /// Root of every panel this editor builds, for the workspace layer to walk.
+        ///
+        /// Goes through <see cref="ResolveCanvas"/> rather than reading the field, because
+        /// that field is documented as losable across a hot-reload and the resolver
+        /// re-binds it from this UI's children.
+        /// </summary>
+        public Transform CanvasRoot
+        {
+            get
+            {
+                var canvas = ResolveCanvas();
+                return canvas != null ? canvas.transform : _canvasRoot;
+            }
+        }
+
         private Canvas ResolveCanvas()
         {
             // Unity's overloaded == treats destroyed objects as null.
@@ -447,9 +464,9 @@ namespace Valkur.Gameplay.MapEditor
             if (!active)
             {
                 if (_refs.PlacePortalBtnOutline != null)
-                    _refs.PlacePortalBtnOutline.effectColor = new Color(0f, 0f, 0f, 0f);
+                    _refs.PlacePortalBtnOutline.effectColor = Color.clear;
                 if (_refs.PlacePortalBtnImage != null)
-                    _refs.PlacePortalBtnImage.color = new Color(0.16f, 0.16f, 0.21f, 1f);
+                    _refs.PlacePortalBtnImage.color = UITheme.BTN_NORMAL;
             }
         }
 
