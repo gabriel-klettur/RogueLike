@@ -48,7 +48,6 @@ COLLECTION	Valkur.Gameplay.Items.ItemTableColumns._rarityNames
 COLLECTION	Valkur.Gameplay.Save.SaveFileManager.ReservedSaveNames
 COLLECTION	Valkur.Gameplay.Save.SaveMigrationChain._steps
 COLLECTION	Valkur.Gameplay.SpawnStabilizer._overlapBuffer
-COLLECTION	Valkur.Gameplay.Spells.FireworkLaunchExecutor.FireworkColors
 COLLECTION	Valkur.Gameplay.Spells.Projectile._explosionHits
 COLLECTION	Valkur.Gameplay.Spells.Projectile._sweepHits
 COLLECTION	Valkur.Gameplay.Spells.SpellCaster.Executors

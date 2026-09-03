@@ -19,20 +19,25 @@ MonoBehaviour:
     kind: firework
     loops: 0
     emitRate: 10
-    count: 12
+    count: 48
     burstIntervalSeconds: 0
-    speed: 22.5
-    gravity: 0
-    drag: 0
+    speed: 7.5
+    gravity: 2.2
+    drag: 1.1
     direction: {x: 0, y: -1}
-    lifespan: 1
-    sizeMin: 0.0625
-    sizeMax: 0.125
+    lifespan: 1.3
+    sizeMin: 0.22
+    sizeMax: 0.4
     colors:
-    - {r: 1, g: 1, b: 1, a: 1}
-    color: {r: 1, g: 1, b: 1, a: 1}
-    additive: 0
-    radius: 0.75
+    - {r: 1, g: 0.3, b: 0.2, a: 1}
+    - {r: 1, g: 0.85, b: 0.2, a: 1}
+    - {r: 0.4, g: 1, b: 0.3, a: 1}
+    - {r: 1, g: 0.45, b: 1, a: 1}
+    - {r: 0.3, g: 0.85, b: 1, a: 1}
+    color: {r: 1, g: 0.85, b: 0.35, a: 1}
+    additive: 1
+    worldSpace: 1
+    radius: 0.35
     arcRangeDegrees: 45
     segments: 10
     lightningOffset: 0.3125

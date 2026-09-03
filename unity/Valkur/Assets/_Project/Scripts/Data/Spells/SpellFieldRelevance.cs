@@ -95,11 +95,24 @@ namespace Valkur.Data
             { SpellType.ChainLightning, Set("damage", "range", "radius", "particleColor", "vfxPreset") },
             { SpellType.Aura,       Set("duration", "radius", "healPerTick", "tickPeriod", "vfxPreset", "particleColor") },
             { SpellType.ArcaneFlame, Set("duration", "radius", "damagePerTick", "tickPeriod", "vfxPreset", "particleColor") },
-            { SpellType.FireworkLaunch, Set("particleColor", "vfxPreset", "impactPreset") },
+            // range is the APEX HEIGHT, speed the CLIMB SPEED and radius the BURST RADIUS,
+            // all in world units — FireworkLaunchExecutor reads exactly these three plus the
+            // swatch. No vfxPreset: the shell is drawn by FireworkShellController and
+            // FireworkBurstFX off that swatch, so a preset spawned on top of it would be an
+            // uncoordinated extra layer, the same reason VortexField carries none. It used to
+            // list vfxPreset and impactPreset and NOT the three numbers that actually aim the
+            // spell, so the panel showed two dead controls and hid every live one.
+            { SpellType.FireworkLaunch, Set("range", "speed", "radius", "particleColor") },
             { SpellType.SphereMagicShield, Set("duration", "radius", "particleColor", "vfxPreset") },
+            // No vfxPreset: PuddleExecutor has never read it. It was used as a BEHAVIOUR
+            // SWITCH (the string "root_whip", a preset that never existed), which left a
+            // permanently unresolved reference in the catalog and a control in F4 that
+            // could not do anything. The discriminator is the spell key, and the root
+            // field draws itself, so a preset spawned on top would be an uncoordinated
+            // extra layer — the same reason VortexField and FireworkLaunch carry none.
             { SpellType.Puddle,     Set("duration", "radius", "range", "distance", "damagePerTick",
                                         "tickPeriod", "element", "particleColor", "sprite",
-                                        "spawnAtMouse", "vfxPreset") },
+                                        "spawnAtMouse") },
             { SpellType.Mine,       Set("damage", "armingTime", "triggerRadius", "explosionRadius",
                                         "explosionDamage", "ttl", "infinite", "scale", "sprite",
                                         "impactPreset", "particleColor") },

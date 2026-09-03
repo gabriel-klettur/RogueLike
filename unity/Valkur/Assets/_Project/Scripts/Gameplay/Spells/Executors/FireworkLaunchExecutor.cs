@@ -1,123 +1,63 @@
-﻿using UnityEngine;
-using Valkur.Core;
-using Valkur.Gameplay.VFX;
+using UnityEngine;
 
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
-    /// Launches a firework projectile (Fire-element procedural trail). At cast time
-    /// emits a colorful spark fountain at the caster (launch flash). Mirrors Python's
-    /// FireworkLaunchResolver. Reuses ProjectileExecutor for physics; the projectile
-    /// carries an <see cref="ElementalProjectileVisual"/> in <c>Fire</c> mode so impact
-    /// produces a fiery starburst via <see cref="ElementalImpactFX"/>.
+    /// Launches a firework shell: it arcs from the caster's hand toward whatever they are
+    /// aiming at, opens into a chrysanthemum of coloured stars, and its report arrives a few
+    /// frames late.
+    ///
+    /// <para>The executor's whole job is to turn authored data into three numbers and hand
+    /// them to <see cref="FireworkShellController"/>, which owns the timeline. It is
+    /// deliberately not a projectile any more — see that class for why riding
+    /// <c>ProjectileExecutor</c> cost this spell its entire second half.</para>
+    ///
+    /// <para>WHAT THE FIELDS MEAN HERE. <c>range</c> is the FLIGHT DISTANCE in world units,
+    /// <c>speed</c> is the FLIGHT SPEED in world units per second, and <c>radius</c> is the
+    /// burst radius in world units. All three are read straight through with no divisor: this
+    /// spell is a cosmetic one and had no reason to be, but five other spells in this project
+    /// shipped authored in the Python pixel scale and silently divided by 16 somewhere, so the
+    /// absence of a divide is worth saying out loud.</para>
     /// </summary>
     public class FireworkLaunchExecutor : ISpellExecutor
     {
-        private static readonly ProjectileExecutor _projExecutor = new ProjectileExecutor();
-
-        // Multi-color firework palette (red, gold, green, magenta, cyan)
-        private static readonly Color[] FireworkColors =
-        {
-            new Color(1.00f, 0.30f, 0.20f, 1f),
-            new Color(1.00f, 0.85f, 0.20f, 1f),
-            new Color(0.40f, 1.00f, 0.30f, 1f),
-            new Color(1.00f, 0.45f, 1.00f, 1f),
-            new Color(0.30f, 0.85f, 1.00f, 1f),
-        };
-
         public void Execute(SpellContext ctx)
         {
-            _projExecutor.Execute(ctx);
+            if (ctx.Spell == null) return;
 
-            // Launch flash shares the projectile's Fireball-derived muzzle point.
-            SpawnLaunchBurst(ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell));
+            // The canonical launch point every caster-emitted spell uses: hand height plus the
+            // spell's own forward clearance.
+            Vector3 origin = ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell);
 
-            var audio = ServiceLocator.Get<IAudioService>();
-            if (audio != null) audio.PlaySfxById("spell_firework_launch");
+            // ctx.Direction is the cursor bearing for a player — PlayerController resolves it
+            // through PlayerFacingResolver, which reads the mouse via MouseInputManager. Handing
+            // it straight to the shell is what makes this spell aim like every other one; the
+            // version before it used only the x component, as a 35% lateral nudge on a climb
+            // that was always straight up, so aiming barely moved the burst and never moved it
+            // down or behind.
 
+            var palette = FireworkPalette.From(ctx.Spell.particleColor);
+
+            FireworkShellController.Launch(
+                origin,
+                ctx.Direction,
+                palette,
+                flightDistance: Resolve(ctx.Spell.range, FireworkShellController.DEFAULT_FLIGHT_DISTANCE),
+                flightSpeed: Resolve(ctx.Spell.speed, FireworkShellController.DEFAULT_FLIGHT_SPEED),
+                burstRadius: Resolve(ctx.Spell.radius, FireworkShellController.DEFAULT_BURST_RADIUS));
+
+            // No PlaySfxById here on purpose. It used to ask the catalog for
+            // "spell_firework_launch", an id AudioCatalog.asset has never contained — the call
+            // produced one warning per session and no sound, and BossDefinitionDataIntegrityTests
+            // already forbids that id for the same reason. FireworkAudio synthesises the four
+            // one-shots instead, and the controller plays them on the beats they belong to.
         }
 
-        private static void SpawnLaunchBurst(Vector3 pos)
-        {
-            ElementalSprites.EnsureAll();
-            const int sparkCount = 18;
-            for (int i = 0; i < sparkCount; i++)
-            {
-                var go = new GameObject("FireworkSpark");
-                go.transform.position = pos;
-                var sr = go.AddComponent<SpriteRenderer>();
-                sr.sprite = ElementalSprites.SparkleStar;
-                sr.color = FireworkColors[Random.Range(0, FireworkColors.Length)];
-                sr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_VFX);
-                sr.sortingLayerName = SortingConfig.LAYER_VFX;
-                sr.sortingOrder = 50;
-                sr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
-
-                float ang = (i / (float)sparkCount) * Mathf.PI * 2f + Random.Range(-0.1f, 0.1f);
-                Vector2 vel = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * Random.Range(2.5f, 4.5f);
-
-                var spark = go.AddComponent<FireworkSpark>();
-                spark.Init(vel, Random.Range(0.45f, 0.70f), Random.Range(0.18f, 0.30f));
-            }
-
-            // Central flash on Light2D (if URP)
-            var l2dType = ElementalProjectileVisual.GetLight2DType();
-            if (l2dType != null)
-            {
-                var lgo = new GameObject("FireworkFlash");
-                lgo.transform.position = pos;
-                try
-                {
-                    var l = lgo.AddComponent(l2dType);
-                    var lt = ElementalProjectileVisual.GetLight2DLightTypeProp();
-                    if (lt != null) lt.SetValue(l, System.Enum.ToObject(lt.PropertyType, 3));
-                    ElementalProjectileVisual.GetLight2DColorProp()?.SetValue(l, new Color(1f, 0.85f, 0.4f, 1f));
-                    ElementalProjectileVisual.GetLight2DIntensityProp()?.SetValue(l, 2.5f);
-                    ElementalProjectileVisual.GetLight2DOuterProp()?.SetValue(l, 2.4f);
-                    ElementalProjectileVisual.GetLight2DInnerProp()?.SetValue(l, 0.4f);
-                    ElementalProjectileVisual.GetLight2DFalloffProp()?.SetValue(l, 0.85f);
-                }
-                catch { }
-                Object.Destroy(lgo, 0.20f);
-            }
-        }
-    }
-
-    /// <summary>Multi-color firework spark with drag, gravity, fade, scale-down.</summary>
-    internal class FireworkSpark : MonoBehaviour
-    {
-        private Vector2 _vel;
-        private float _life, _age, _scale;
-        private SpriteRenderer _sr;
-
-        public void Init(Vector2 velocity, float lifetime, float scale)
-        {
-            _vel = velocity;
-            _life = Mathf.Max(0.05f, lifetime);
-            _scale = scale;
-            transform.localScale = Vector3.one * scale;
-            _sr = GetComponent<SpriteRenderer>();
-        }
-
-        private void Update()
-        {
-            float dt = Time.deltaTime;
-            _age += dt;
-            float t = _age / _life;
-            if (t >= 1f) { Destroy(gameObject); return; }
-
-            _vel *= 1f - 1.6f * dt;
-            _vel.y -= 4f * dt;     // gravity
-            transform.position += (Vector3)(_vel * dt);
-
-            transform.localScale = Vector3.one * _scale * (1f - 0.5f * t);
-            transform.Rotate(0f, 0f, 360f * dt);
-            if (_sr != null)
-            {
-                var c = _sr.color;
-                c.a = (1f - t);
-                _sr.color = c;
-            }
-        }
+        /// <summary>
+        /// An unauthored numeric field reads 0, which is never a meaningful distance, speed or
+        /// radius — so 0 means "use the system default" and every other value is literal.
+        /// </summary>
+        private static float Resolve(float authored, float fallback)
+            => authored > 0f ? authored : fallback;
     }
 }
