@@ -1,6 +1,6 @@
 ---
 name: editor-ux-parity
-description: Audits and enforces UI/UX parity across Valkur's in-game runtime editors (Tile F8, Buildings F10, Items F7, Particles F1, Spells F4, Entities F5, FSM F12, Inventory F6, Spawners F3, Lighting Ctrl+F3, Map F11). Compares a target editor against the canonical pattern and applies fixes so all editors share the same chrome, hotkey conventions, panel docking, mode toolbar, status text, tutorial overlay, undo/redo, camera-pan UX, and IAllowsPlayerMovement contract.
+description: Audits and enforces UI/UX parity across Valkur's in-game runtime editors (Tile F8, Buildings F10, Items F7, Particles F1, Spells F4, Entities F5, FSM F12, Inventory F6, Spawners F3, Lighting Ctrl+F3, Map F11). Compares a target editor against the canonical pattern and applies fixes so all editors share the same chrome, hotkey conventions, panel docking, mode toolbar, status text, tutorial overlay, undo/redo, camera-pan UX, and IAllowsPlayerMovement contract. Also enforces workspace persistence (PanelId, IProvidesWorkspaceState, no per-editor PlayerPrefs), single-source theming (zero raw new Color) and author-facing feedback.
 tools: Read, Grep, Glob, Edit, Write, Bash
 model: sonnet
 ---
@@ -80,10 +80,68 @@ Every well-formed runtime editor follows this contract. When auditing, walk thro
 - No magic constants — palette, sizes, colors come from the shared theme.
 - The Unity MCP console must be clean after your changes.
 
+### 11. Workspace persistence (`_Shared/Workspace/`)
+
+Every editor's UI must come back the way the author left it. The layer is owned by
+`editor-workspace-architect`; this agent's job is that each editor **uses** it correctly.
+
+- Every `DraggablePanel` the editor builds sets a **stable `PanelId`** — a literal
+  const string, never a generated name, never the GameObject name (renaming the
+  GameObject would silently orphan the saved entry).
+- Editors with state beyond panel geometry implement
+  `IProvidesWorkspaceState { void Capture(EditorWorkspace w); void Restore(EditorWorkspace w); }`
+  and round-trip: active mode, active tab/category, search text, hidden table
+  columns, camera zoom, active layer, brush size.
+- **No editor writes `PlayerPrefs` or its own JSON.** The three legacy
+  `TableColumnsConfig` implementations (Items / Particles / Spells) are the migration
+  backlog — when you touch one of those editors, move it onto the layer and delete
+  the duplicate.
+- **Selection is saved as `(type, stable id)` plus the map slot / zone it was taken
+  in** — never a list index, never a scene reference. An index points at a different
+  object the moment the list reorders, and fails silently.
+- **A selection that does not resolve leaves the editor empty.** Never fall back to
+  "the closest match" or "the first one": selecting the wrong object is worse than
+  selecting nothing, because the author's next action edits something they did not
+  choose.
+- **A selection that does not resolve is not a warning.** It is the expected outcome
+  after a map-slot or zone change. Report it through `SetStatus`, never
+  `Debug.LogWarning` — the console must stay clean (cardinal rule).
+- `Restore` must tolerate every value being absent or stale. Validate each field
+  against its own live domain (does that category still exist? is that layer index
+  still in range?) and fall back to the editor's default, silently.
+
+### 12. Theme — one source, zero raw colors
+
+- **Zero `new Color(` / `new Color32(` literals** in an editor's own files. Measured
+  2026-09-02 there were **459** across the sixteen editors (Map 90, Tile 85,
+  Spells 68, Buildings 40). Every one is a pixel the theme cannot reach.
+- The chain is `UITheme` (tokens) → `EditorUIHelpers` (facade) →
+  `TileEditorTheme` (the runtime-mutable chrome the panels actually paint).
+  Chrome colors read `TileEditorTheme`; everything else reads `UITheme` /
+  `EditorUIHelpers`. Adding a fourth source is a regression.
+- A color that genuinely has no token yet gets **added to `UITheme`**, not inlined.
+- `PanelChrome` on every floating panel and `MenuBarChrome` on the menu bar, so a
+  live theme tweak repaints this editor too. Missing on Boss, Lighting, Spawners,
+  Camera, DungeonNodeGraph, General as of 2026-09-02.
+
+### 13. Feedback & affordance
+
+- Every `[SerializeField]` carries `[Tooltip("…")]` (already in §10) **and** every
+  interactive control the author can click carries a hover hint via `UIHoverHelp`
+  where the editor has one.
+- **Empty states are legible.** A picker with nothing to show says why ("no hay
+  plantillas en esta categoría"), never renders a blank grid.
+- **Every failure the author can cause surfaces in `StatusText`**, not only in the
+  console. A refused save, an unresolvable id, an out-of-range value: the author is
+  looking at the panel, not at the Unity console — and in a build there is no console.
+- **Destructive actions confirm** through `UIConfirmDialog`, and the confirm text
+  names what is about to be lost ("borrar 12 emisores en esta zona"), never a bare
+  "¿estás seguro?".
+
 ## How to audit a target editor
 
 1. **Locate** the target editor's partials and UI builder.
-2. **Walk the 10 sections** above; for each, write down:
+2. **Walk the 13 sections** above; for each, write down:
    - ✅ matches canonical pattern, or
    - ⚠️ deviates — explain what's different, why it's a problem, exact file:line citation, and the precise Edit needed.
 3. **Apply the Edits** that are unambiguous (missing `[Tooltip]`, wrong color constant, missing `IAllowsPlayerMovement`, missing `_cameraPan.Tick()`, missing tutorial entry, etc.).
