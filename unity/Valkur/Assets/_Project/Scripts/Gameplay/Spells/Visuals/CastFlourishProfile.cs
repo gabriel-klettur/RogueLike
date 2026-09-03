@@ -161,6 +161,19 @@ namespace Valkur.Gameplay.Spells
         /// that has to go somewhere.</para>
         /// </summary>
         public static CastFlourishProfile Build(SpellDefinition spell)
+            => CastGatherOverrides.Apply(BuildFamily(spell),
+                                         spell != null ? spell.gatherOverride : null);
+
+        /// <summary>
+        /// The gesture this spell's TYPE alone dictates, before anything it pins itself.
+        ///
+        /// <para>Separate from <see cref="Build"/> so the Spells Editor can show what a knob
+        /// would read if it were released — an unpinned row states the family's number rather
+        /// than a blank, which is what makes the checkbox a decision instead of a guess. A
+        /// caller that wants the flourish as it will actually play wants
+        /// <see cref="Build"/>.</para>
+        /// </summary>
+        internal static CastFlourishProfile BuildFamily(SpellDefinition spell)
         {
             if (spell == null) return CastFlourishFamilies.Hurl(null);
 

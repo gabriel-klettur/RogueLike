@@ -51,8 +51,8 @@ namespace Valkur.Gameplay.Spells
 
         private void BuildFunnel()
         {
+            if (!CastFlourishPieces.IsOn(_profile, CastFlourishPieces.Funnel)) return;
             int count = _profile.FunnelBands;
-            if (count <= 0) return;
 
             TornadoSprites.EnsureAll();
 

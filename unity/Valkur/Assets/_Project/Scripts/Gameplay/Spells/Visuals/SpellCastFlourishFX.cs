@@ -197,7 +197,12 @@ namespace Valkur.Gameplay.Spells
             // A ward blooms out of the whole caster; a bolt is held in front of them. Which of
             // the two a family is decides where every mote converges and where the glow sits.
             fx._anchor = profile.HandAnchored ? fx._handOffset : bodyOffset;
-            fx._bodyTint = SpriteTintStack.Attach(caster.gameObject);
+            // Never attached rather than attached-and-unused: UpdateBody and OnDestroy are both
+            // already null-guarded, and Attach can already return null for a caster with no body
+            // renderer, so the absent path is pre-exercised. "Off" must never mean skipping the
+            // OnDestroy Clear, or an interrupted cast leaves the character lit for the session.
+            fx._bodyTint = CastFlourishPieces.IsOn(profile, CastFlourishPieces.BodyTint)
+                ? SpriteTintStack.Attach(caster.gameObject) : null;
             fx.BuildRig();
             return fx;
         }
@@ -222,7 +227,7 @@ namespace Valkur.Gameplay.Spells
             // Every piece a family switched off is simply never built. A renderer held at
             // alpha 0 for the whole cast still costs a draw call, and it has to be kept at
             // zero by every branch that touches it — a missed branch is a stray glow.
-            if (_profile.Sigil != SigilMotion.None)
+            if (CastFlourishPieces.IsOn(_profile, CastFlourishPieces.Sigil))
             {
                 _sigilOuter = CreateSprite("SigilOuter", ElementalSprites.Ring, _palette.core,
                     70, SortingConfig.LAYER_FLOOR_DECALS);
@@ -230,26 +235,39 @@ namespace Valkur.Gameplay.Spells
                     71, SortingConfig.LAYER_FLOOR_DECALS);
             }
 
-            _aura = CreateSprite("Aura", ElementalSprites.Halo, _palette.halo, ORDER_AURA,
-                SortingConfig.LAYER_VFX);
-            _aura.transform.localScale = new Vector3(_bodySize.x * 3.2f, _bodySize.y * 2.1f, 1f);
+            // Zero drive means the family lights no halo over the body. The gather term is
+            // drive-INDEPENDENT (Update: 0.35 x halo.a), so before this guard a spell asking
+            // for no aura still got one for the whole wind-up.
+            if (CastFlourishPieces.IsOn(_profile, CastFlourishPieces.Aura))
+            {
+                _aura = CreateSprite("Aura", ElementalSprites.Halo, _palette.halo, ORDER_AURA,
+                    SortingConfig.LAYER_VFX);
+                _aura.transform.localScale = new Vector3(_bodySize.x * 3.2f, _bodySize.y * 2.1f, 1f);
+            }
 
-            if (_profile.Lance != LanceAim.None)
+            if (CastFlourishPieces.IsOn(_profile, CastFlourishPieces.Lance))
                 _lance = CreateSprite("Lance", ElementalSprites.Glow, _palette.core, ORDER_LANCE,
                     SortingConfig.LAYER_VFX);
 
-            if (_profile.Burst != BurstOrigin.None)
+            if (CastFlourishPieces.IsOn(_profile, CastFlourishPieces.Burst))
                 _burst = CreateSprite("Burst", ElementalSprites.Ring, _palette.core, ORDER_BURST,
                     SortingConfig.LAYER_VFX);
 
-            _hand = CreateSprite("Hand", ElementalSprites.Glow, _palette.core, ORDER_HAND,
-                SortingConfig.LAYER_VFX);
-            _handHot = CreateSprite("HandCore", ElementalSprites.HotCore, _palette.hotCore,
-                ORDER_HAND_HOT, SortingConfig.LAYER_VFX);
+            // The glow and its hot core are one piece and switch together. HandAnchored is NOT
+            // part of it: that flag chooses the anchor every mote and the lance ride, so
+            // sweeping it off with the hand would silently relocate the whole gather.
+            if (CastFlourishPieces.IsOn(_profile, CastFlourishPieces.Hand))
+            {
+                _hand = CreateSprite("Hand", ElementalSprites.Glow, _palette.core, ORDER_HAND,
+                    SortingConfig.LAYER_VFX);
+                _handHot = CreateSprite("HandCore", ElementalSprites.HotCore, _palette.hotCore,
+                    ORDER_HAND_HOT, SortingConfig.LAYER_VFX);
+            }
 
             BuildFunnel();
             BuildMotes();
-            BuildLight();
+            // Strict > 0 also refuses a negative, which would drive a negative intensity.
+            if (CastFlourishPieces.IsOn(_profile, CastFlourishPieces.Light)) BuildLight();
         }
 
         private void BuildLight()

@@ -309,6 +309,13 @@ namespace Valkur.Data
         [Tooltip("Extra cast presets layered on top of castPreset, in draw order.")]
         public List<string> castPresetLayers;
 
+        [Header("Cast Gather")]
+        [Tooltip("Per-knob overrides for the cast flourish — the gesture the caster makes " +
+                 "while the spell leaves them. Empty means the spell takes every value from " +
+                 "its family (Hurl for a projectile, Edge for a slash, and so on). Authored " +
+                 "from the Spells Editor's Gather tab.")]
+        public CastGatherOverride gatherOverride = new CastGatherOverride();
+
         /// <summary>
         /// Every trail preset this spell wants, primary first. Never returns null.
         /// </summary>

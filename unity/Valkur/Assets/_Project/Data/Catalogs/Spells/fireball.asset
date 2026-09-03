@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: Bola de Fuego
   type: 0
   audience: 5
+  usesAttackAnimation: 0
   manaCost: 1
   maxInstances: 20
   allowOverlap: 1
@@ -39,6 +40,7 @@ MonoBehaviour:
   distance: 0
   knockback: 0
   collisionDamage: 0
+  infinite: 0
   duration: 0
   damagePerTick: 0
   tickPeriod: 0
@@ -48,6 +50,9 @@ MonoBehaviour:
   forceMode: 
   followCaster: 0
   spawnAtMouse: 0
+  statusApplications: []
+  castAnchor: 0
+  castForwardOffset: 0
   meteorCount: 0
   meteorInterval: 0
   meteorAreaRadius: 0
@@ -68,6 +73,9 @@ MonoBehaviour:
   totemKind: 
   coneArc: 0
   coneLength: 0
+  animState: 
+  loadoutAnimKey: 
+  loadoutKey: 
   sprite: {fileID: 0}
   scale: 0.05
   speedMultiplier: 1
@@ -98,3 +106,8 @@ MonoBehaviour:
   castPresetLayers:
   - fireball_cast_ring
   - fireball_cast_sparks
+  gatherOverride:
+    fields:
+    - name: Sigil
+      number: 0
+      text: None

@@ -18,7 +18,11 @@ namespace Valkur.Gameplay.Spells
     {
         private void BuildMotes()
         {
-            int count = Mathf.Max(1, _profile.MoteCount);
+            // Zero means the family draws no motes at all, the same sentinel BuildFunnel uses
+            // for its bands. It used to be clamped UP to one, so a spell asking for none got a
+            // single stray spark and there was no way to switch the piece off.
+            if (!CastFlourishPieces.IsOn(_profile, CastFlourishPieces.Motes)) return;
+            int count = _profile.MoteCount;
 
             _moteTransforms = new Transform[count];
             _moteRenderers = new SpriteRenderer[count];
@@ -86,6 +90,12 @@ namespace Valkur.Gameplay.Spells
 
         private void UpdateMotes(float gather, float sinceRelease, float afterglow)
         {
+            // This is the only Update in the rig that dereferences its array unguarded, so the
+            // clamp above was the single thing keeping it alive. The two edits have no compiler
+            // relationship and MUST land together: removing the clamp alone turns a harmless
+            // no-op into an exception every frame for the whole cast.
+            if (_moteTransforms == null) return;
+
             bool released = sinceRelease > 0f;
 
             for (int i = 0; i < _moteTransforms.Length; i++)
