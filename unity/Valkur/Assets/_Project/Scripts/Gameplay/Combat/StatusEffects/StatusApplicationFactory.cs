@@ -58,6 +58,10 @@ namespace Valkur.Gameplay.Combat
                     return new FreezeEffect(app.duration, applier);
                 case StatusEffectKind.Slow:
                     return new SlowEffect(app.duration, app.magnitude > 0f ? app.magnitude : 0.5f, applier);
+                case StatusEffectKind.Root:
+                    // No magnitude: a hold is binary. Anything an author types there is
+                    // ignored rather than silently meaning something.
+                    return new RootEffect(app.duration, applier);
                 default:
                     return null;
             }

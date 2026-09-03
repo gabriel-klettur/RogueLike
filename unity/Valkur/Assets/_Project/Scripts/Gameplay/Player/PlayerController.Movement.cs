@@ -127,6 +127,16 @@ namespace Valkur.Gameplay
                 return;
             }
 
+            // A root holds the feet and nothing else, so it returns HERE — after Update has
+            // already run ReadInput, UpdateFacingDirection and PollCombatActions for the
+            // frame. Folding it into the isStunned branch above would have cost the player
+            // their attacks and their aim, which is what separates the two effects.
+            if (_statusEffects != null && _statusEffects.IsRooted)
+            {
+                _rb.velocity = Vector2.zero;
+                return;
+            }
+
             // Dash overrides normal movement
             if (_dashAbility != null && _dashAbility.IsDashing)
                 return;

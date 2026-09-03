@@ -48,6 +48,14 @@ namespace Valkur.Gameplay.Combat
         /// darken the character toward the aura's colour if it were driven hard.
         /// </summary>
         Charge = 11,
+
+        /// <summary>
+        /// The body held by roots. A STATE, not a punch, so it is gentle for the same
+        /// reason <see cref="Charge"/> is: this layer MULTIPLIES, and driving it hard reads
+        /// as the entity being dimmed rather than as something green wrapped around its
+        /// legs. The rig's own tendrils are what carry the colour.
+        /// </summary>
+        Root = 12,
     }
 
     /// <summary>

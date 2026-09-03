@@ -55,6 +55,16 @@ namespace Valkur.Gameplay.FSM
             }
         }
 
+        /// <summary>True while this entity's feet are held by a root.</summary>
+        public bool IsRooted
+        {
+            get
+            {
+                var s = Status;
+                return s != null && s.IsRooted;
+            }
+        }
+
         /// <summary>True while a knockback impulse should still be carrying the body.</summary>
         public bool KnockbackActive
         {
@@ -87,7 +97,10 @@ namespace Valkur.Gameplay.FSM
         {
             if (Rb == null) return;
             if (KnockbackActive) return;
-            Rb.velocity = IsStunned ? Vector2.zero : velocity;
+            // Root joins stun here and nowhere else: it refuses the feet, so the FSM may
+            // go on chasing and swinging while the body does not move. AttackState and
+            // NPCAutoCast read IsStunned only, on purpose.
+            Rb.velocity = (IsStunned || IsRooted) ? Vector2.zero : velocity;
         }
 
         /// <summary>Convenience for the many states that stop the body on Enter/Exit.</summary>

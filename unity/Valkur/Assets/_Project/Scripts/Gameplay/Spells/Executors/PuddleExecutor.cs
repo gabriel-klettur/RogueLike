@@ -6,43 +6,62 @@ using Valkur.Gameplay.VFX;
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
-    /// Creates a ground puddle that damages enemies standing in it with DoT.
-    /// Mirrors Python's PuddleResolver with tick-based damage and optional burn status.
+    /// Creates a persistent ground field that damages whatever stands in it and applies the
+    /// spell's authored status effects.
+    ///
+    /// <para><b>radius is WORLD UNITS.</b> It used to be divided by 16 here — the Python
+    /// pixel scale this game was ported from, the same one that shipped <c>wallWidth</c>,
+    /// the totem radius, the vortex radius, <c>range</c> on three executors and
+    /// <c>coneLength</c>. This was the last executor still carrying it. The tell was always
+    /// the same: the fallback for an unauthored field (4 WORLD units) was sixteen times
+    /// anything the asset could produce. Both shipped puddles were re-authored in world
+    /// units in the same change; there is no compatibility shim, because a silent factor of
+    /// sixteen is worse than a value that is obviously wrong.</para>
     /// </summary>
     public class PuddleExecutor : ISpellExecutor
     {
         /// <summary>
-        /// The one puddle that is not a puddle. It used to be recognised by its
+        /// The one field that is not a puddle. It used to be recognised by its
         /// <c>vfxPreset</c> reading "root_whip" — a preset that has never existed, because
-        /// the field was being used as a behaviour switch rather than as a reference. That
-        /// left a permanently unresolved preset reference in the catalog, indistinguishable
-        /// from a real typo. The spell key is the discriminator that was always meant.
+        /// the field was being used as a behaviour switch rather than as a reference. The
+        /// spell key is the discriminator that was always meant.
         /// </summary>
         private const string ROOT_WHIP_KEY = "root_whip";
 
         public void Execute(SpellContext ctx)
         {
-            float radius = ctx.Spell.radius > 0 ? ctx.Spell.radius / 16f : 4f;
+            float radius = ctx.Spell.radius > 0 ? ctx.Spell.radius : 4f;
             float duration = ctx.Spell.duration > 0 ? ctx.Spell.duration : 6f;
             float tickPeriod = ctx.Spell.tickPeriod > 0 ? ctx.Spell.tickPeriod : 0.25f;
             float damagePerTick = ctx.Spell.damagePerTick;
             float dist = ctx.Spell.distance > 0 ? ctx.Spell.distance : 2f;
 
-            // Was `range / 16f` — the Python pixel scale again — behind a flag that never read
-            // the cursor. `root_whip` is the only shipped puddle that sets it, and it authors
-            // no range, so the shipped reach is unchanged; what changed is that it now lands
-            // where the player is pointing.
             Vector2 spawnPos = SpellTargeting.ResolveGroundTarget(ctx, 5f, dist);
 
             bool rootWhip = string.Equals(ctx.Spell.spellKey, ROOT_WHIP_KEY,
                                           System.StringComparison.OrdinalIgnoreCase);
 
-            var puddleGo = new GameObject("SpellPuddle");
+            var puddleGo = new GameObject(rootWhip ? "SpellRootField" : "SpellPuddle");
             puddleGo.transform.position = (Vector3)spawnPos;
 
-            if (!rootWhip)
+            IGroundFieldVisual ownVisual = null;
+
+            if (rootWhip)
             {
-                // Default puddle visual: round splat decal + orange area indicator.
+                // Its own rig, in Spells/Visuals/ with every other one. It used to be a
+                // nested class in THIS file emitting a stretched-billboard particle at zero
+                // velocity — measured, maxVelocity 0 across every live particle, which
+                // makes the stretch axis undefined and Unity ignores particle rotation in
+                // that render mode entirely. Three authored parameters (lengthScale,
+                // startRotation, rotationOverLifetime) were inert, and nothing rose out of
+                // the ground.
+                ownVisual = RootWhipFX.Attach(puddleGo.transform, radius,
+                                              ResolveSwatch(ctx.Spell));
+                RootWhipAudio.PlaySproutAt(spawnPos);
+            }
+            else
+            {
+                // Default puddle visual: round splat decal under the shared disc rig.
                 var sr = puddleGo.AddComponent<SpriteRenderer>();
                 if (ctx.Spell.sprite != null)
                 {
@@ -60,22 +79,15 @@ namespace Valkur.Gameplay.Spells
                 sr.sortingOrder = 5;
                 puddleGo.transform.localScale = Vector3.one * (radius * 0.5f);
             }
-            else
-            {
-                // Root Whip — tendrils rising from the ground in a circular area.
-                Color tendrilColor = ctx.Spell.particleColor != Color.clear
-                    ? ctx.Spell.particleColor
-                    : new Color(0.30f, 0.55f, 0.20f, 1f);
-                RootWhipFX.AttachTo(puddleGo, radius, tendrilColor);
-            }
 
             var controller = puddleGo.AddComponent<PuddleController>();
             controller.Initialize(duration, radius, Mathf.RoundToInt(damagePerTick), tickPeriod,
                 ctx.TargetLayers, ctx.Spell.element, ctx.Caster != null ? ctx.Caster.gameObject : null,
-                ProjectileExecutor.ResolveElement(ctx.Spell), ctx.Spell.statusApplications);
+                ProjectileExecutor.ResolveElement(ctx.Spell), ctx.Spell.statusApplications,
+                ownVisual);
 
-            // Default puddle gets an orange ground halo for visibility; root whip
-            // is already busy enough with rising tendrils — skip the halo there.
+            // The root field draws its own ground ring, pinned to the damage radius; a
+            // second orange halo over it would be a second, contradictory promise.
             if (!rootWhip && VFXManager.Instance != null)
             {
                 Color col = ctx.Spell.particleColor != Color.clear
@@ -84,11 +96,22 @@ namespace Valkur.Gameplay.Spells
                 VFXManager.Instance.SpawnAreaIndicator((Vector3)spawnPos, col, radius, 0.4f);
             }
 
-        
-            // Free-standing world object: nothing else can end it. The registry
-            // enforces maxInstances and clears it on a zone change.
+            // Free-standing world object: nothing else can end it. The registry enforces
+            // maxInstances and clears it on a zone change.
             SpellEffectRegistry.Track(puddleGo, ctx.Spell, ctx.Caster != null ? ctx.Caster.gameObject : null);
-}
+        }
+
+        /// <summary>
+        /// The spell's own colour, with the project-wide "nobody authored this" sentinel
+        /// handled. <see cref="RootPalette"/> tests opaque white, matching
+        /// <c>KiPalette.IsUnauthored</c> and <c>SpellCastFlourishFX</c>; the older
+        /// <c>Color.clear</c> test that used to stand here was unreachable, because no
+        /// shipped spell has an alpha-zero swatch.
+        /// </summary>
+        private static Color ResolveSwatch(SpellDefinition spell)
+        {
+            return spell.particleColor;
+        }
 
         private static Sprite CreatePuddleSprite()
         {
@@ -108,110 +131,6 @@ namespace Valkur.Gameplay.Spells
             tex.SetPixels(pixels);
             tex.Apply();
             return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 16f);
-        }
-    }
-
-    /// <summary>
-    /// Particle-based "roots whipping out of the ground" visual for spells that
-    /// flag <c>vfxPreset == "root_whip"</c>. Attaches a single ParticleSystem to
-    /// the puddle GO that emits short-lived vertical tendrils inside a circle of
-    /// the given radius. Tendrils grow fast, sway, then fade — looks like a
-    /// patch of writhing roots when emitted continuously.
-    /// </summary>
-    internal static class RootWhipFX
-    {
-        public static void AttachTo(GameObject host, float radius, Color color)
-        {
-            ElementalSprites.EnsureAll();
-            var ps = host.AddComponent<ParticleSystem>();
-            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-
-            var main = ps.main;
-            main.playOnAwake = false;
-            main.loop = true;
-            main.duration = 1f;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(0.55f, 0.95f);
-            // Particles don't translate via main.startSpeed — sizeOverLifetime grows
-            // them upward via an axis-stretched billboard so they read as rooting.
-            main.startSpeed = 0f;
-            // X-size is tendril thickness; Y is overridden via a 3D start scale.
-            main.startSize = new ParticleSystem.MinMaxCurve(radius * 0.18f, radius * 0.30f);
-            main.startSize3D = false;
-            main.startColor = color;
-            // Slight side-tilt so each tendril leans differently.
-            main.startRotation = new ParticleSystem.MinMaxCurve(-0.4f, 0.4f);
-            main.gravityModifier = 0f;
-            main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.maxParticles = 80;
-
-            var emission = ps.emission;
-            emission.rateOverTime = 16f;     // continuous, dense enough for a "field"
-
-            var shape = ps.shape;
-            shape.shapeType = ParticleSystemShapeType.Circle;
-            shape.radius = Mathf.Max(0.05f, radius * 0.85f);
-            shape.radiusThickness = 1f;
-            shape.randomDirectionAmount = 0f;
-
-            // Size grows fast (root bursting up), holds, then collapses back.
-            var size = ps.sizeOverLifetime;
-            size.enabled = true;
-            size.size = new ParticleSystem.MinMaxCurve(
-                1f,
-                new AnimationCurve(
-                    new Keyframe(0f,    0.10f),
-                    new Keyframe(0.20f, 1.20f),
-                    new Keyframe(0.65f, 1.00f),
-                    new Keyframe(1f,    0.20f)));
-
-            // Rotate slightly during life — the tendril visibly sways.
-            var rot = ps.rotationOverLifetime;
-            rot.enabled = true;
-            rot.z = new ParticleSystem.MinMaxCurve(-1.2f, 1.2f);
-
-            // Fade alpha at the start (sprout) and end (retract).
-            var col = ps.colorOverLifetime;
-            col.enabled = true;
-            var grad = new Gradient();
-            // Earthy colour ramp: dark soil → spell colour → fade out.
-            var dark = new Color(color.r * 0.45f, color.g * 0.45f, color.b * 0.30f, 1f);
-            grad.SetKeys(
-                new[] {
-                    new GradientColorKey(dark,   0f),
-                    new GradientColorKey(color,  0.40f),
-                    new GradientColorKey(color,  0.85f)
-                },
-                new[] {
-                    new GradientAlphaKey(0f,   0f),
-                    new GradientAlphaKey(1f,   0.20f),
-                    new GradientAlphaKey(1f,   0.75f),
-                    new GradientAlphaKey(0f,   1f)
-                });
-            col.color = new ParticleSystem.MinMaxGradient(grad);
-
-            var renderer = host.GetComponent<ParticleSystemRenderer>();
-            if (renderer != null)
-            {
-                renderer.sortingLayerName = Valkur.Core.SortingConfig.LAYER_VFX;
-                renderer.sortingOrder = 8;
-                // Stretch billboard so each particle is taller than wide — sells the
-                // vertical tendril shape regardless of camera angle.
-                renderer.renderMode = ParticleSystemRenderMode.Stretch;
-                renderer.lengthScale = 3.5f;     // taller
-                renderer.velocityScale = 0f;     // no velocity-based stretch
-                var sprite = ElementalSprites.Wisp != null
-                    ? ElementalSprites.Wisp
-                    : ElementalSprites.Glow;
-                if (sprite != null)
-                {
-                    // Shared per (texture, blend) instead of one material per puddle,
-                    // none of which were ever destroyed.
-                    renderer.sharedMaterial =
-                        Valkur.Gameplay.VFX.ParticleMaterialCache.Get(sprite.texture, additive: false);
-                }
-            }
-
-            ps.Play();
         }
     }
 }

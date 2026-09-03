@@ -100,6 +100,14 @@ namespace Valkur.Gameplay.Combat
         /// <summary>Returns true if the entity is currently stunned.</summary>
         public bool IsStunned => HasEffect<StunEffect>();
 
+        /// <summary>
+        /// Returns true while the entity's feet are held. Read by the two owners of
+        /// <c>Rigidbody2D.velocity</c> — <c>PlayerController.FixedUpdate</c> and
+        /// <c>FSMComponents.SetVelocity</c> — and deliberately NOT by the combat paths that
+        /// read <see cref="IsStunned"/>: a rooted entity can still swing and still cast.
+        /// </summary>
+        public bool IsRooted => HasEffect<RootEffect>();
+
         /// <summary>Remove all active status effects.</summary>
         public void ClearAll()
         {
