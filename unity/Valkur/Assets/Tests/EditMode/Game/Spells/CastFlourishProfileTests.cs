@@ -42,7 +42,7 @@ namespace Valkur.Tests.EditMode.Game.Spells
             Assert.AreEqual("Surge", For(SpellType.Dash).FamilyName);
             Assert.AreEqual("Vanish", For(SpellType.Teleport).FamilyName);
             Assert.AreEqual("Channel", For(SpellType.Beam).FamilyName);
-            Assert.AreEqual("Channel", For(SpellType.ArcaneFlame).FamilyName);
+            Assert.AreEqual("Conjure", For(SpellType.ArcaneFlame).FamilyName);
         }
 
         [Test]

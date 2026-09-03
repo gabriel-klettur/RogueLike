@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
-using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.Spells
 {
@@ -49,7 +48,6 @@ namespace Valkur.Gameplay.Spells
         private float _bodyIntensity;
         private float _coreIntensity;
         private float _lightFlickerOffset;
-        private bool _dayNightSubscribed;
 
         /// <summary>
         /// URP's 2D path never converts <c>Light2D.color</c>, so in Linear space an
@@ -129,45 +127,22 @@ namespace Valkur.Gameplay.Spells
             if (_lightCore != null) _lightCore.intensity = 0f;
         }
 
-        // ── Day / night gate ────────────────────────────────────────────────────
+        // ── Why this light is NOT gated on the day/night cycle ─────────────────
         //
-        // Route chosen deliberately. WorldLightLoader.RegisterDerivedLight would join the
-        // gate, the flicker and the viewport cull for free, but it needs a preset KEY from
-        // LightPresetCatalog — and the four that ship are Candle, Lamp, Magic and Torch,
-        // none of them arcane purple. It also takes over activeSelf on the owner and
-        // requires a matching RemoveLight, which would fight the dissipation ramp. For a
-        // transient effect with a bespoke colour, subscribing directly is the right half.
+        // It used to be, through DayNightCycle.OnLightsEnabledChanged, matching what
+        // WorldLightLoader does to every torch and lamp — SetActive(false) on the whole
+        // light object during the daylight window. That is right for a WORLD FIXTURE, which
+        // is a thing that exists all day and should only be seen to burn at night, and it
+        // made the arcane flame the only one of the eleven spell controllers carrying a
+        // Light2D that went dark at noon. A spell is not a fixture: it lives five seconds,
+        // the player casts it in whatever hour they are in, and the half of the rig that
+        // says "this ground is dangerous" cannot be absent for most of the session.
+        //
+        // Keeping it lit costs nothing at noon either. The BODY is on the multiply blend
+        // style, and multiplying into an ambient buffer that is already at full daylight
+        // changes very little; what still reads is the additive CORE, which is exactly the
+        // half that should. Dropping the subscription also removes a static-delegate
+        // lifetime (Domain Reload is OFF) that had to be unwound on all five exit paths.
 
-        private void SubscribeDayNight()
-        {
-            if (_dayNightSubscribed) return;
-            DayNightCycle.OnLightsEnabledChanged += OnLightsEnabledChanged;
-            _dayNightSubscribed = true;
-
-            // The event may not fire again for minutes, so seed from the live state.
-            if (DayNightCycle.HasInstance)
-                OnLightsEnabledChanged(DayNightCycle.Instance.LightsEnabledNow);
-        }
-
-        private void UnsubscribeDayNight()
-        {
-            if (!_dayNightSubscribed) return;
-            // OnLightsEnabledChanged is a STATIC System.Action and Domain Reload is OFF:
-            // failing to unsubscribe leaves a zombie delegate pointing at a destroyed
-            // component, which is why the cycle nulls all four of its delegates on
-            // SubsystemRegistration.
-            DayNightCycle.OnLightsEnabledChanged -= OnLightsEnabledChanged;
-            _dayNightSubscribed = false;
-        }
-
-        /// <summary>
-        /// The gate is BINARY, not a dim — <c>WorldLightLoader</c> does
-        /// <c>go.SetActive(enabled)</c> on every point light. Matching that is what makes
-        /// this light behave like every other light in the game during the daylight window.
-        /// </summary>
-        private void OnLightsEnabledChanged(bool enabled)
-        {
-            if (_lightGo != null) _lightGo.SetActive(enabled);
-        }
     }
 }

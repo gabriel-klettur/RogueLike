@@ -178,6 +178,13 @@ namespace Valkur.Gameplay.Spells
                 case SpellType.Summon:
                 case SpellType.Smoke:
                 case SpellType.SmokeEmitter:
+                // ArcaneFlame is a ground zone THROWN out in front of the caster and burned
+                // into the floor, which is the Conjure gesture (the circle expands while
+                // motes fall out of the sky — power being laid down). It sat under Channel
+                // for as long as its executor placed it on a private constant and it read
+                // as something the caster was holding open; it is aimed and placed now, the
+                // same shape as the puddle two lines above.
+                case SpellType.ArcaneFlame:
                     return CastFlourishFamilies.Conjure(spell);
 
                 case SpellType.Meteor:
@@ -199,7 +206,6 @@ namespace Valkur.Gameplay.Spells
 
                 case SpellType.Beam:
                 case SpellType.ConeBreath:
-                case SpellType.ArcaneFlame:
                     return CastFlourishFamilies.Channel(spell);
 
                 case SpellType.VortexField:

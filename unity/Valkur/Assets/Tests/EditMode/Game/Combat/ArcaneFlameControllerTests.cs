@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
@@ -147,21 +149,39 @@ namespace Valkur.Tests.EditMode.Game.Combat
                     "so no wall, tree or building can hide where the fire hurts.");
             }
 
-            foreach (var name in new[] { "Halo", "Glow", "Core", "HotCore", "Accent" })
+            foreach (var name in GroundBeds)
             {
                 var sr = FindSprite(flame.gameObject, name);
                 Assert.AreEqual(vfxId, sr.sortingLayerID,
-                    $"'{name}' is part of the additive volume and must be on " +
-                    $"{SortingConfig.LAYER_VFX} so entities standing in the fire no longer " +
+                    $"'{name}' is the light the fire casts on the ground it burns, and must be " +
+                    $"on {SortingConfig.LAYER_VFX} so entities standing in the fire no longer " +
                     "occlude it.");
             }
 
-            var motesRenderer = FindComponent<ParticleSystemRenderer>(flame.gameObject, "Motes");
-            var hazeRenderer = FindComponent<ParticleSystemRenderer>(flame.gameObject, "HazeParticles");
-            Assert.AreEqual(vfxId, motesRenderer.sortingLayerID,
-                $"Motes must render on {SortingConfig.LAYER_VFX}, above entities.");
-            Assert.AreEqual(vfxId, hazeRenderer.sortingLayerID,
-                $"HazeParticles must render on {SortingConfig.LAYER_VFX}, above entities.");
+            foreach (var ps in Emitters(flame))
+            {
+                var psr = ps.GetComponent<ParticleSystemRenderer>();
+                Assert.AreEqual(vfxId, psr.sortingLayerID,
+                    $"'{ps.gameObject.name}' must render on {SortingConfig.LAYER_VFX}, above entities.");
+            }
+        }
+
+        /// <summary>
+        /// The two additive beds under the fire. They replaced the halo / glow / core /
+        /// hot-core / accent stack, which drew a magic circle where the flames should be.
+        /// </summary>
+        private static readonly string[] GroundBeds = { "GroundGlow", "GroundHot" };
+
+        /// <summary>
+        /// Every emitter, found rather than named. How many layers the fire is built from is a
+        /// tuning decision — naming them here would make adding a sixth silently exempt from
+        /// the budget rule below.
+        /// </summary>
+        private static ParticleSystem[] Emitters(ArcaneFlameController flame)
+        {
+            var found = flame.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            Assert.Greater(found.Length, 0, "the fire is particles — the rig must build some.");
+            return found;
         }
 
         // ── 4. The glow actually glows ───────────────────────────────────────────────────
@@ -171,7 +191,7 @@ namespace Valkur.Tests.EditMode.Game.Combat
         {
             var flame = CreateFlame(2.5f);
 
-            foreach (var name in new[] { "Halo", "Glow", "Core", "HotCore", "Accent" })
+            foreach (var name in GroundBeds)
             {
                 var sr = FindSprite(flame.gameObject, name);
                 var shader = sr.sharedMaterial != null ? sr.sharedMaterial.shader : null;
@@ -185,23 +205,141 @@ namespace Valkur.Tests.EditMode.Game.Combat
             }
         }
 
-        // ── 5. The motes are not white squares ───────────────────────────────────────────
+        // ── 5. The flames are not white squares ──────────────────────────────────────────
 
         [Test]
         public void ParticleRenderers_CarryTexturedMaterial_NotUntexturedSquares()
         {
             var flame = CreateFlame(2.5f);
 
-            var motesRenderer = FindComponent<ParticleSystemRenderer>(flame.gameObject, "Motes");
-            var hazeRenderer = FindComponent<ParticleSystemRenderer>(flame.gameObject, "HazeParticles");
+            foreach (var ps in Emitters(flame))
+            {
+                var psr = ps.GetComponent<ParticleSystemRenderer>();
+                Assert.IsTrue(psr.sharedMaterial != null, ps.gameObject.name + " renderer has no material.");
+                Assert.IsTrue(psr.sharedMaterial.mainTexture != null,
+                    ps.gameObject.name + " must carry a texture — an untextured shared material " +
+                    "draws hard white squares, and a shared static lets an unrelated aura " +
+                    "silently retexture it.");
+            }
+        }
 
-            Assert.IsTrue(motesRenderer.sharedMaterial != null, "Motes renderer has no material.");
-            Assert.IsTrue(motesRenderer.sharedMaterial.mainTexture != null,
-                "Motes must carry a texture — an untextured shared material draws hard white " +
-                "squares, and a shared static lets an unrelated aura silently retexture it.");
-            Assert.IsTrue(hazeRenderer.sharedMaterial != null, "HazeParticles renderer has no material.");
-            Assert.IsTrue(hazeRenderer.sharedMaterial.mainTexture != null,
-                "HazeParticles must carry a texture — same untextured-square failure mode.");
+        /// <summary>
+        /// The flame layers are the shipped torch's recipe, and the four-stop ramp is the part
+        /// that makes fire look like it is COOLING as it rises. Drop either middle stop and it
+        /// becomes a coloured smear that fades out — which is what a two-stop gradient draws.
+        /// </summary>
+        [Test]
+        public void FlameLayers_UseTheTorchsFourStopRamp()
+        {
+            var flame = CreateFlame(2.5f);
+
+            foreach (var name in FlameLayers)
+            {
+                var ps = FindComponent<ParticleSystem>(flame.gameObject, name);
+                Assert.IsTrue(ps.colorOverLifetime.enabled, name + " has no colour ramp at all.");
+
+                var grad = ps.colorOverLifetime.color.gradient;
+                Assert.IsNotNull(grad, name + " must ramp through a Gradient, not a flat colour.");
+                Assert.GreaterOrEqual(grad.colorKeys.Length, 4,
+                    name + " ramps through " + grad.colorKeys.Length + " colours; PP_torch_flame " +
+                    "uses four and the middle two are what read as cooling.");
+
+                // Hot to cool, measured on value: the first key must out-shine the last.
+                float h, s, v0, v1;
+                Color.RGBToHSV(grad.colorKeys[0].color, out h, out s, out v0);
+                Color.RGBToHSV(grad.colorKeys[grad.colorKeys.Length - 1].color, out h, out s, out v1);
+                Assert.Greater(v0, v1 + 0.3f,
+                    name + " starts at value " + v0 + " and ends at " + v1 + " — a flame has to " +
+                    "get darker as it rises or it is a light, not a fire.");
+            }
+        }
+
+        /// <summary>
+        /// Flames stay knee-high on a ~2.5 u character: a particle rises `velocity x lifetime`
+        /// and is at most `size` across. That is why this rig needs no depth split — nothing in
+        /// it is tall enough to paint out a body standing in the fire, which is the problem
+        /// VortexFunnelFX had to answer with NECK_CLEAR_HEIGHT.
+        /// </summary>
+        [Test]
+        public void FlamesStayLowEnoughNotToPaintOutAnEntityStandingInThem()
+        {
+            var flame = CreateFlame(2.5f);
+
+            foreach (var name in FlameLayers)
+            {
+                var ps = FindComponent<ParticleSystem>(flame.gameObject, name);
+                float rise = ps.velocityOverLifetime.y.constantMax * ps.main.startLifetime.constantMax;
+                float top = rise + ps.main.startSizeY.constantMax * 0.5f;
+                Assert.LessOrEqual(top, 1.6f,
+                    name + " reaches " + top.ToString("F2") + " u against a 2.5 u character — at " +
+                    "that height the fire covers whoever stands in it.");
+            }
+        }
+
+        /// <summary>
+        /// The silhouette comes from the QUAD and the softness from the TEXTURE, and both
+        /// halves are load-bearing. A radially symmetric texture keeps every edge soft — the
+        /// first rebuild used hard-edged tongue cut-outs and photographed as a scatter of
+        /// violet cones — while the stretched quad is what makes a soft blob read as a flame
+        /// instead of a bubble, which is what the round version photographed as.
+        /// </summary>
+        [Test]
+        public void FlameLayers_AreSoftTexturesOnUprightQuads()
+        {
+            var flame = CreateFlame(2.5f);
+
+            foreach (var name in FlameLayers)
+            {
+                var ps = FindComponent<ParticleSystem>(flame.gameObject, name);
+                var main = ps.main;
+
+                var tex = ps.GetComponent<ParticleSystemRenderer>().sharedMaterial.mainTexture;
+                Assert.IsNotNull(tex, name + " has no texture.");
+                Assert.AreEqual(tex.width, tex.height,
+                    name + " draws a " + tex.width + "x" + tex.height + " texture. The falloff has " +
+                    "to be radially symmetric — the shape is the quad's job, not the texture's.");
+
+                Assert.IsTrue(main.startSize3D,
+                    name + " draws square quads, so every particle is a bubble. Fire is vertical.");
+                Assert.Greater(main.startSizeY.constantMin, main.startSizeX.constantMax * 1.5f,
+                    name + " is only " + main.startSizeY.constantMin + " tall against " +
+                    main.startSizeX.constantMax + " wide at worst — not upright enough to read " +
+                    "as a lick.");
+
+                // A stretched quad that turns stops pointing up, so neither rotation dial may
+                // be opened. The waver is the noise module displacing the lick, not spinning it.
+                Assert.Less(Mathf.Abs(main.startRotation.constantMax), 0.35f,
+                    name + " starts up to " + main.startRotation.constantMax + " rad off vertical.");
+                Assert.IsFalse(ps.rotationOverLifetime.enabled,
+                    name + " spins its licks over their lifetime, which lies them on their side.");
+            }
+        }
+
+        /// <summary>The two layers that are the fire itself, as opposed to its embers or smoke.</summary>
+        private static readonly string[] FlameLayers = { "FlameBody", "FlameCore" };
+
+        /// <summary>
+        /// The fire must not promise ground that does not hurt. The emission disc plus the
+        /// noise module's measured reach (~3.67 x strength x lifetime) has to land inside the
+        /// damage radius the boundary ring draws.
+        /// </summary>
+        [Test]
+        public void TheFireStaysInsideTheCircleThatDamages()
+        {
+            const float radius = 2.5f;
+            var flame = CreateFlame(radius);
+
+            foreach (var ps in Emitters(flame))
+            {
+                var noise = ps.noise;
+                float wander = noise.enabled
+                    ? 3.67f * noise.strengthX.constant * ps.main.startLifetime.constantMax
+                    : 0f;
+                float reach = ps.shape.radius + wander;
+                Assert.LessOrEqual(reach, radius + 0.05f,
+                    ps.gameObject.name + " reaches " + reach.ToString("F2") + " u from the centre " +
+                    "of a " + radius + " u damage circle, so it draws fire on ground that is safe.");
+            }
         }
 
         // ── 6. Particle budget ───────────────────────────────────────────────────────────
@@ -210,25 +348,50 @@ namespace Valkur.Tests.EditMode.Game.Combat
         public void ParticleBudget_StaysInsideAuraTrailBand_AndPoolsAreNotOversized()
         {
             var flame = CreateFlame(2.5f);
+            // AT SUSTAIN, because emission is what the envelope drives. Straight after
+            // Initialize every rate reads 0 — that is the ignition ramp seated before the
+            // first render, and a budget measured there is a budget measured on an unlit fire.
+            Sustain(flame);
 
-            var motes = FindComponent<ParticleSystem>(flame.gameObject, "Motes");
-            var haze = FindComponent<ParticleSystem>(flame.gameObject, "HazeParticles");
+            float totalSteady = 0f;
+            foreach (var ps in Emitters(flame))
+            {
+                float steady = ps.emission.rateOverTime.constant * ps.main.startLifetime.constantMax;
+                totalSteady += steady;
+                Assert.LessOrEqual(ps.main.maxParticles, steady * 2.5f + 12f,
+                    $"{ps.gameObject.name} maxParticles ({ps.main.maxParticles}) reserves far more " +
+                    $"than its steady-state count ({steady:F1}) — the old rig reserved 400 for ~22.");
+            }
 
-            float motesSteady = motes.emission.rateOverTime.constant * motes.main.startLifetime.constant;
-            float hazeSteady = haze.emission.rateOverTime.constant * haze.main.startLifetime.constant;
-            float totalSteady = motesSteady + hazeSteady;
-
-            Assert.LessOrEqual(totalSteady, 60f,
+            // ABOVE the skill's "player aura / trail <= 60" band and below its "signature
+            // spell <= 120", deliberately. Photographed at 49.9 and again at 59.1, the licks
+            // stopped overlapping and the patch read as scattered wisps rather than as ground
+            // on fire. What pays for it: maxInstances is 1, the field lives five seconds on a
+            // seven second cooldown, and there is never a second one on screen.
+            Assert.LessOrEqual(totalSteady, 90f,
                 $"Combined steady-state live particle count (rate x lifetime = {totalSteady:F1}) " +
-                "must stay inside the 'player aura / trail <= 60' band from " +
-                "vfx-authoring SKILL.md.");
+                "is past what this rig is allowed. The bands are in vfx-authoring SKILL.md; " +
+                "this one sits between 'player aura' and 'signature spell' on purpose.");
+        }
 
-            Assert.LessOrEqual(motes.main.maxParticles, motesSteady * 2.5f,
-                $"Motes maxParticles ({motes.main.maxParticles}) reserves far more than its " +
-                $"steady-state count ({motesSteady:F1}) — the old rig reserved 400 for ~22.");
-            Assert.LessOrEqual(haze.main.maxParticles, hazeSteady * 2.5f,
-                $"HazeParticles maxParticles ({haze.main.maxParticles}) reserves far more than " +
-                $"its steady-state count ({hazeSteady:F1}).");
+        /// <summary>
+        /// A bigger patch of fire has MORE flames, not taller ones, and it still has to stay
+        /// affordable. The density scale is clamped for exactly this: without the cap, a radius
+        /// left in the old pixel scale would have walked the rig straight out of its budget.
+        /// </summary>
+        [TestCase(1.0f)]
+        [TestCase(6.0f)]
+        public void ParticleBudget_SurvivesAnyAuthoredRadius(float radius)
+        {
+            var flame = CreateFlame(radius);
+            Sustain(flame);
+
+            float totalSteady = 0f;
+            foreach (var ps in Emitters(flame))
+                totalSteady += ps.emission.rateOverTime.constant * ps.main.startLifetime.constantMax;
+
+            Assert.LessOrEqual(totalSteady, 140f,
+                $"At radius {radius} the rig asks for {totalSteady:F1} live particles.");
         }
 
         // ── 7. The light is built to the project's recipe ───────────────────────────────
@@ -278,6 +441,94 @@ namespace Valkur.Tests.EditMode.Game.Combat
             Assert.IsTrue(dissipates.BeginDissipate(0.28f),
                 "BeginDissipate must return true on a live, active instance — the registry " +
                 "relies on that to skip its own Destroy and let the effect own its close.");
+        }
+
+        // ── 9. The per-frame envelope ──────────────────────────────────────────────────
+        //
+        // The two tests below are the only ones here that reach past the public surface. What
+        // they measure only exists once the controller has run a frame, and EditMode never
+        // ticks a MonoBehaviour on its own — so the alternative is a PlayMode fixture for two
+        // assertions, or leaving both behaviours unguarded. The fields and methods they touch
+        // are the controller's own, in one file each, and named in its doc comments.
+
+        private const BindingFlags Inner = BindingFlags.NonPublic | BindingFlags.Instance;
+
+        /// <summary>Run the rig forward to full burn: past the ignition ramp, no pulse.</summary>
+        private static void Sustain(ArcaneFlameController flame)
+            => Tick(flame, age: 2f, remaining: 3f, pulse: 0f);
+
+        /// <summary>Drive one frame of the rig at a chosen age, remaining life and pulse.</summary>
+        private static void Tick(ArcaneFlameController flame, float age, float remaining, float pulse)
+        {
+            var t = typeof(ArcaneFlameController);
+            t.GetField("_age", Inner).SetValue(flame, age);
+            t.GetField("_remaining", Inner).SetValue(flame, remaining);
+            t.GetField("_pulsePhase", Inner).SetValue(flame, pulse);
+            t.GetMethod("AnimateVisuals", Inner).Invoke(flame, new object[] { 0.016f });
+        }
+
+        /// <summary>Summed alpha of the additive volume — what a pixel at the centre receives.</summary>
+        private static float AdditiveAlphaSum(GameObject root)
+        {
+            float sum = 0f;
+            foreach (Transform child in root.transform)
+            {
+                var sr = child.GetComponent<SpriteRenderer>();
+                if (sr == null || sr.sharedMaterial == null) continue;
+                if (!sr.sharedMaterial.shader.name.Contains("Additive")) continue;
+                sum += sr.color.a;
+            }
+            return sum;
+        }
+
+        [Test]
+        public void AConnectingTickBrightensTheVolume_NotOnlyTheLight()
+        {
+            var flame = CreateFlame(2.5f);
+
+            Tick(flame, age: 2f, remaining: 3f, pulse: 0f);
+            float calm = AdditiveAlphaSum(flame.gameObject);
+
+            Tick(flame, age: 2f, remaining: 3f, pulse: 1f);
+            float hit = AdditiveAlphaSum(flame.gameObject);
+
+            // The pulse used to move SCALE alone: measured, this sum came back identical at
+            // 2.274 before and after a tick, so a hit changed nothing on the volume and read
+            // only on the Light2D — which in daylight is the half that reads least.
+            Assert.Greater(hit, calm + 0.05f,
+                "a connecting tick must brighten the additive volume (calm " + calm +
+                " -> hit " + hit + ")");
+
+            // And it must stay a punctuation mark. Additive layers STACK toward white, so the
+            // same dial that makes the hit readable washes the arcane colour out of the centre
+            // if it is turned up — the failure recorded for VortexFunnelFX's band count.
+            Assert.Less(hit, 3f,
+                "summed additive alpha " + hit + " blows the centre out to flat white, which " +
+                "costs the spell the one thing separating it from the blue vortex at a glance");
+        }
+
+        [Test]
+        public void BoundaryRingsAreRecycled_NotRebuiltEveryTick()
+        {
+            var flame = CreateFlame(2.5f);
+            var t = typeof(ArcaneFlameController);
+            var spawn = t.GetMethod("SpawnBoundaryRing", Inner);
+            var animate = t.GetMethod("AnimateBoundaryRings", Inner);
+
+            int Rings() => flame.GetComponentsInChildren<SpriteRenderer>(includeInactive: true)
+                .Count(sr => sr.gameObject.name == "BoundaryRing");
+
+            spawn.Invoke(flame, null);
+            Assert.AreEqual(1, Rings(), "the first connecting tick must draw a boundary ring");
+
+            // Expire it, then ask for another. One ring is spawned per connecting tick — about
+            // eight over a cast — and the old path minted a GameObject + SpriteRenderer for
+            // each and destroyed it 0.34 s later.
+            animate.Invoke(flame, new object[] { 5f });
+            spawn.Invoke(flame, null);
+
+            Assert.AreEqual(1, Rings(),
+                "an expired boundary ring must be parked and reused, not destroyed and rebuilt");
         }
     }
 }

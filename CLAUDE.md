@@ -1158,6 +1158,47 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   catalog path stays the better answer the day a recorded set is authored, and these become the
   fallback. Adding catalog entries with null clips fixes nothing: `PlaySfxById` warns on
   `entry.clip == null` exactly as it does on a missing id.
+- **A spell's light is not a world fixture, so it must not be gated on the day/night cycle.**
+  `ArcaneFlameController` subscribed to `DayNightCycle.OnLightsEnabledChanged` and did
+  `SetActive(false)` on its whole light object during the daylight window — copying what
+  `WorldLightLoader` does to every torch, which is right for a thing that exists all day and
+  should only be seen to burn at night. It made the arcane flame the only one of the eleven
+  spell controllers carrying a `Light2D` that went dark at noon, i.e. for most of a session,
+  and the light is the half of that rig that says the ground is dangerous. Keeping it lit is
+  free at noon: the BODY is on multiply and multiplying into an already-full ambient buffer
+  changes little, while the additive CORE is exactly the half that should still read. It also
+  retires a static-delegate lifetime (Domain Reload is OFF) that had to be unwound on all five
+  exit paths.
+- **On an additive stack a pulse that moves only SCALE is invisible.** A connecting tick grew
+  the arcane flame's core by 42 % and its `Light2D` from 1.229 to 1.904 — and the summed
+  additive alpha at the centre measured **2.274 before and after**, identical, because alpha is
+  what that material adds. So the one moment the hazard exists for produced no change on the
+  volume, and in daylight (where the light reads least) almost none at all. Alpha is COVERAGE
+  there, which makes it the brightness dial: `PulseAlphaGain` 0.28 takes the sum to ~2.55, and
+  the same arithmetic that caps `VortexFunnelFX`'s band count caps this — above ~3 the centre
+  is flat white and a violet spell stops being distinguishable from a blue one.
+- **`arcane_flame` was the fifth spell authored in Python pixels, and the last one aimed by a
+  private constant.** `radius: 40` ÷ 16 in the executor, after `wallWidth`, the totem, the
+  vortex and the puddle; the shipped definition authors `2.5` world units now and the divide
+  is gone. It also carried `spawnAtMouse: 0` / `range: 0` while `ArcaneFlameExecutor` placed the
+  zone at a hard `ThrowDistance = 2f`, so it was the only ground-placed spell in the project
+  that could not be aimed — the two fields that say where a spell lands were inert on it.
+  `SpellTargeting.ResolveGroundTarget` now owns FOUR executors (puddle, totem, vortex field,
+  arcane flame), and `CastOriginContractTests` lists the helper rather than those executors,
+  which is why removing one from `CasterEmissionCallsites` is the correct fix and re-inlining
+  `ResolveCastStart` to satisfy the grep is not. `PuddleExecutor` still divides by 16 — it is
+  the last one.
+- **A spell's `element` and `particleColor` are load-bearing even when nothing looks broken.**
+  `arcane_flame` shipped `element` BLANK, so its element came from `MapSpellKeyToElement`, the
+  legacy switch whose own comment tells new spells not to grow it; and `particleColor` opaque
+  white, which is the project's "nobody authored this" sentinel — the cast flourish therefore
+  kept the Arcane palette by luck rather than by choice. Both are authored now (`Arcane`, and a
+  violet swatch), and `ArcaneFlameSpellDataTests` pins them along with the world-unit radius,
+  the aiming fields and the cooldown rule below.
+- **A persistent ground hazard needs a cooldown longer than its own field, the same as a
+  vortex.** `arcane_flame` ran 5 s on a cooldown of 2 with `maxInstances: 1`, so the player
+  always had one out and could evict their own to reposition it — permanent area denial. Now
+  cooldown 7 against duration 5, with `damagePerTick` 9 → 12 paying back the lost uptime.
 
 ## Player character pipeline (2 directions)
 

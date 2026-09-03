@@ -59,7 +59,6 @@ namespace Valkur.Tests.EditMode.Game.Combat
         {
             "Gameplay/Spells/Controllers/ConeBreathController.cs",
             "Gameplay/Spells/Controllers/LaserBeamController.cs",
-            "Gameplay/Spells/Executors/ArcaneFlameExecutor.cs",
             "Gameplay/Spells/Executors/AreaExecutor.cs",
             "Gameplay/Spells/Executors/AuraExecutor.cs",
             "Gameplay/Spells/Executors/BoomerangExecutor.cs",
@@ -75,10 +74,11 @@ namespace Valkur.Tests.EditMode.Game.Combat
             "Gameplay/Spells/Executors/SummonExecutor.cs",
             "Gameplay/Spells/Executors/WallExecutor.cs",
 
-            // The three ground-PLACED spells resolve their origin one level down, in
-            // SpellTargeting, which is the single owner of where an aimed spell lands. Listing
-            // the executors instead would demand a call they no longer make while letting the
-            // helper they now depend on drift unguarded.
+            // The four ground-PLACED spells (puddle, totem, vortex field, arcane flame)
+            // resolve their origin one level down, in SpellTargeting, which is the single
+            // owner of where an aimed spell lands. Listing the executors instead would demand
+            // a call they no longer make while letting the helper they now depend on drift
+            // unguarded.
             "Gameplay/Spells/Core/SpellTargeting.cs",
         };
 

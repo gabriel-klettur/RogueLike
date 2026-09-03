@@ -9,13 +9,13 @@ namespace Valkur.Gameplay.Spells
     /// <summary>
     /// Persistent arcane flame zone: a hole burned in the floor that light pours out of.
     ///
-    /// Composition, bottom to top: a scorch stain and a rotating rune ring painted on
-    /// <see cref="SortingConfig.LAYER_FLOOR_DECALS"/>, and above them — on
-    /// <see cref="SortingConfig.LAYER_VFX"/>, where entities standing in the fire no
-    /// longer occlude it — an ADDITIVE volume (haze / halo / glow / core / hot core /
-    /// star accent) plus two particle systems. A Point <c>Light2D</c> built to the same
-    /// body-plus-additive-core recipe every torch in the world uses makes the ground
-    /// genuinely violet.
+    /// Composition, bottom to top: a scorch stain on
+    /// <see cref="SortingConfig.LAYER_FLOOR_DECALS"/>, then on
+    /// <see cref="SortingConfig.LAYER_VFX"/> — where entities standing in the fire no
+    /// longer occlude it — two additive ground beds, the two boundary rings, a haze, and the
+    /// FIRE: five particle systems drawing flame tongues, their hot roots, embers and smoke.
+    /// A Point <c>Light2D</c> built to the same body-plus-additive-core recipe every torch in
+    /// the world uses makes the ground genuinely violet.
     ///
     /// Three invariants this file exists to hold:
     ///
@@ -45,13 +45,13 @@ namespace Valkur.Gameplay.Spells
         // handed the texture size as pixelsPerUnit), so a child's localScale IS its
         // world DIAMETER and `scale * 0.5` is its world radius.
         internal const float RingCrestNormalized = 0.78f;   // ElementalSprites.RingPx
-        internal const float ScorchRadiusMul  = 0.98f;
-        internal const float HazeRadiusMul    = 1.16f;
-        internal const float HaloRadiusMul    = 0.96f;
-        internal const float GlowRadiusMul    = 0.62f;
-        internal const float CoreRadiusMul    = 0.30f;
-        internal const float HotCoreRadiusMul = 0.13f;
-        internal const float AccentRadiusMul  = 0.34f;
+        internal const float ScorchRadiusMul     = 0.98f;
+        internal const float HazeRadiusMul       = 1.10f;
+        // The two beds are the light the fire casts on the ground it is burning. They replaced
+        // the halo / glow / core / hot-core / accent stack, which was five concentric discs
+        // drawing a magic circle where the fire itself should be.
+        internal const float GroundGlowRadiusMul = 0.96f;
+        internal const float GroundHotRadiusMul  = 0.62f;
 
         // ── Runtime state ───────────────────────────────────────────────────────
         private float _remaining;
@@ -81,8 +81,17 @@ namespace Valkur.Gameplay.Spells
         private readonly HashSet<Health> _tickVictims = new HashSet<Health>();
         private readonly Collider2D[] _overlapBuffer = new Collider2D[64];
 
+        /// <param name="tint">
+        /// The spell's authored <c>particleColor</c>. The ELEMENT chooses the palette's shape —
+        /// which field is the hot core, how dim the halo is — and this moves its HUE, so a
+        /// designer recolouring the swatch in F4 recolours the fire without touching the spread
+        /// that makes it read as a hot centre inside a soft bloom. Null keeps the element's own
+        /// colours, and so does the opaque-white sentinel, which <c>RecolouredTo</c> refuses on
+        /// its own.
+        /// </param>
         public void Initialize(float duration, float radius, int damagePerTick, float tickPeriod,
-            LayerMask targetLayers, GameObject caster = null, SpellElement? element = null)
+            LayerMask targetLayers, GameObject caster = null, SpellElement? element = null,
+            Color? tint = null)
         {
             _remaining = Mathf.Max(0.1f, duration);
             _radius = Mathf.Max(0.25f, radius);
@@ -100,6 +109,7 @@ namespace Valkur.Gameplay.Spells
             // producing the all-zero `default(ElementPalette)`, whose scales are 0 and
             // whose sprites are null — that renders nothing at all rather than throwing.
             _palette = ElementPalette.For(_element ?? SpellElement.Arcane);
+            if (tint.HasValue) _palette = _palette.RecolouredTo(tint.Value);
 
             _flickA = Random.Range(0f, 100f);
             _flickB = Random.Range(0f, 100f);
@@ -110,7 +120,6 @@ namespace Valkur.Gameplay.Spells
 
             BuildVisual();
             AttachLight();
-            SubscribeDayNight();
 
             // Seat the envelope BEFORE the first render. BuildVisual paints every layer at
             // its authored alpha and Update does not run until the next frame — so without
@@ -147,7 +156,7 @@ namespace Valkur.Gameplay.Spells
             {
                 // Do not delete live particles mid-air — let the stopped emitters run
                 // their remaining motes out. Their own colorOverLifetime fades them.
-                _tail = Mathf.Max(0f, MoteLifetime - _dissipateSeconds);
+                _tail = Mathf.Max(0f, LongestParticleLifetime - _dissipateSeconds);
                 HideSpriteLayers();
                 if (_tail <= 0f) Destroy(gameObject);
                 return;
@@ -242,7 +251,7 @@ namespace Valkur.Gameplay.Spells
             // OnDestroy is the ONLY callback reached on all five exit paths (duration end,
             // registry eviction, zone change, caster death, scene unload). OnDisable is
             // not a substitute — it also fires on a plain SetActive(false).
-            UnsubscribeDayNight();
+            //
             // Must run here, not on the dissipation timeline: on four of the five paths
             // there IS no dissipation timeline, and a mark left behind is permanent.
             ClearAllMarks();

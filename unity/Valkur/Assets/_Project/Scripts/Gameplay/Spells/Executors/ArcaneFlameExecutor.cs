@@ -14,22 +14,42 @@ namespace Valkur.Gameplay.Spells
     /// its own build. Every cast leaked a texture that never drew a pixel. It also wrote
     /// <c>localScale = radius * 0.4f</c>, which the controller overwrote on the next line,
     /// so the number looked like it configured the zone's size and configured nothing.</para>
+    ///
+    /// <para>Two more, removed later. It resolved its own landing point from a private
+    /// constant, so it was the only ground-placed spell in the project that could not be
+    /// aimed — <c>spawnAtMouse</c> and <c>range</c> on its definition meant nothing, and
+    /// clearing or setting them changed nothing on screen. And it divided <c>radius</c> by
+    /// 16, the Python pixel scale this game was ported from: the fifth sighting after
+    /// <c>wallWidth</c>, the totem, the vortex and the puddle. Both are gone —
+    /// <see cref="SpellTargeting.ResolveGroundTarget"/> owns the first and the shipped
+    /// definition authors world units for the second.</para>
     /// </summary>
     public class ArcaneFlameExecutor : ISpellExecutor
     {
-        /// <summary>How far in front of the caster the zone lands, in world units.</summary>
-        private const float ThrowDistance = 2f;
+        /// <summary>
+        /// Cast reach when the definition authors no <c>range</c>. Also the clamp on the
+        /// cursor, so the spell keeps a distance the player can learn.
+        /// </summary>
+        private const float FallbackCastRange = 6f;
+
+        /// <summary>
+        /// Where a NON-aimed flame sits, when the definition authors no <c>distance</c>.
+        /// This is the constant the executor used to apply unconditionally.
+        /// </summary>
+        private const float PlacedFallbackDistance = 2f;
+
+        /// <summary>Zone radius in WORLD UNITS when the definition authors none.</summary>
+        private const float FallbackRadius = 2.5f;
 
         public void Execute(SpellContext ctx)
         {
             float duration = ctx.Spell.duration > 0 ? ctx.Spell.duration : 5f;
-            // radius is authored in PIXELS on the SpellDefinition; the world is 16 PPU.
-            float radius = ctx.Spell.radius > 0 ? ctx.Spell.radius / 16f : 8f;
+            float radius = ctx.Spell.radius > 0 ? ctx.Spell.radius : FallbackRadius;
             float damagePerTick = ctx.Spell.damagePerTick > 0 ? ctx.Spell.damagePerTick : 5f;
             float tickPeriod = ctx.Spell.tickPeriod > 0 ? ctx.Spell.tickPeriod : 0.5f;
 
-            Vector2 pos = (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell)
-                          + ctx.Direction * ThrowDistance;
+            Vector2 pos = SpellTargeting.ResolveGroundTarget(
+                ctx, FallbackCastRange, PlacedFallbackDistance);
 
             var flameGo = new GameObject("ArcaneFlame");
             flameGo.transform.position = (Vector3)pos;
@@ -40,7 +60,12 @@ namespace Valkur.Gameplay.Spells
             var controller = flameGo.AddComponent<ArcaneFlameController>();
             GameObject casterGo = ctx.Caster != null ? ctx.Caster.gameObject : null;
             controller.Initialize(duration, radius, Mathf.RoundToInt(damagePerTick), tickPeriod,
-                ctx.TargetLayers, casterGo, ProjectileExecutor.ResolveElement(ctx.Spell));
+                ctx.TargetLayers, casterGo, ProjectileExecutor.ResolveElement(ctx.Spell),
+                // The authored swatch is what the fire is coloured with. It reaches the F4
+                // panel through SpellFieldRelevance, so a designer changing it there changes
+                // the flames — which is the whole reason that field stopped being the
+                // opaque-white "nobody authored this" sentinel.
+                ctx.Spell.particleColor);
 
             // Optional authored layer ON TOP of the controller's own rig. The shipped
             // arcane_flame deliberately authors no vfxPreset — the controller owns the
