@@ -15,6 +15,72 @@ namespace Valkur.Gameplay.Editors
         public static TextMeshProUGUI MakeTitleBar(Transform parent, string title, float height = 36f)
             => UILabel.MakeTitleBar(parent, title, height);
 
+        /// <summary>
+        /// Paints a picker slot's background colour so it SURVIVES.
+        ///
+        /// <para>WHY THIS EXISTS. A slot is a <see cref="Button"/>, and a Button is a
+        /// <c>Selectable</c> whose transition mode is ColorTint with the slot background as
+        /// its <c>targetGraphic</c>. Unity therefore OWNS that Image's colour: every state
+        /// transition it runs writes <c>colors.normalColor</c> straight over whatever the
+        /// caller assigned, and it runs one on far more than a click — a pointer entering or
+        /// leaving, the object being enabled, the parent changing, and any
+        /// <c>OnCanvasGroupChanged</c>, which one CanvasGroup toggle anywhere up the panel
+        /// fires on every Selectable underneath it at once.</para>
+        ///
+        /// <para>So <c>slot.GetComponent&lt;Image&gt;().color = tint</c> is not a way to
+        /// colour a slot; it is a way to colour it UNTIL SOMETHING HAPPENS. It shows the
+        /// author exactly what they asked for and then silently reverts the whole grid to
+        /// one flat <see cref="SLOT_BG"/> seconds later, which is what made the Spells
+        /// picker's colour-coded catalog look like a bug that fixed itself.</para>
+        ///
+        /// <para>The tint goes into the ColorBlock instead, so Unity repaints TO it rather
+        /// than over it, and hover and press are derived from it so a coloured slot still
+        /// answers the pointer.</para>
+        /// </summary>
+        /// <param name="slot">The slot button. Null is a no-op.</param>
+        /// <param name="tint">Resting colour, alpha included — a low alpha lets the panel
+        /// behind show through exactly as writing the Image directly used to.</param>
+        /// <param name="pressed">Colour while held. Defaults to <see cref="SLOT_SELECTED"/>.</param>
+        public static void SetSlotTint(Button slot, Color tint, Color? pressed = null)
+        {
+            if (slot == null) return;
+
+            var bg = slot.targetGraphic as Image;
+            if (bg == null) bg = slot.GetComponent<Image>();
+            // Still written directly: the Image carries the colour for the frames before
+            // Unity's first transition, and the ColorBlock below carries it after.
+            if (bg != null) bg.color = tint;
+
+            var c = slot.colors;
+            c.normalColor = tint;
+            // Selected, not highlighted: clicking a slot leaves it focused in the
+            // EventSystem, and a selectedColor left at the theme default would wipe the
+            // tint off exactly the one slot the author is looking at.
+            c.selectedColor = tint;
+            c.highlightedColor = Hovered(tint);
+            c.pressedColor = pressed ?? SLOT_SELECTED;
+            Color dimmed = tint;
+            dimmed.a = tint.a * 0.4f;
+            c.disabledColor = dimmed;
+            slot.colors = c;
+        }
+
+        /// <summary>
+        /// Hover state for a tinted slot: the same hue, lifted towards white and made more
+        /// opaque. Both halves are needed — a category tint can be dark (the vortex is
+        /// nearly black) so brightness alone barely moves, and it can be nearly
+        /// transparent so opacity alone barely shows.
+        /// </summary>
+        private static Color Hovered(Color tint)
+        {
+            // Lerp then overwrite the alpha, rather than a Color constructor: the editor
+            // raw-colour ratchet counts constructors, and it is right to — a derived state
+            // is not a new colour in the palette, it is the same one moved.
+            Color hover = Color.Lerp(tint, Color.white, 0.22f);
+            hover.a = Mathf.Clamp01(Mathf.Max(tint.a * 1.9f, 0.34f));
+            return hover;
+        }
+
         /// <summary>Default frame thickness, in pixels, for <see cref="MakeSelectionBorder"/>.</summary>
         public const float SELECTION_BORDER_THICKNESS = 4f;
 
