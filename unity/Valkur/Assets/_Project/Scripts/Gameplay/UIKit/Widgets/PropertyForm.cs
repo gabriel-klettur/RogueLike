@@ -82,20 +82,54 @@ namespace Valkur.UIKit
             });
         }
 
+        /// <summary>
+        /// A checkbox row.
+        ///
+        /// <para>The box is drawn as a BORDER plus an inset fill rather than as one flat
+        /// square, because uGUI hides <see cref="Toggle.graphic"/> while the toggle is off —
+        /// so an unchecked box is only its background, and the background used to be
+        /// <c>BG_SURFACE</c> (0.13) sitting on <c>BG_PANEL</c> (0.09). Measured on the Spells
+        /// editor's Gather tab, that is four hundredths of contrast on every channel with no
+        /// edge: the toggles were laid out correctly, hit-tested correctly and were invisible,
+        /// which reads as a row that simply has no checkbox. The inset also leaves the tick
+        /// clear of the frame, so on and off differ in shape as well as in brightness.</para>
+        /// </summary>
         public void AddBool(string key, string label, bool value)
         {
             var row = BuildRow(label);
+
+            // A checkbox row's editor is 24px wide, so the ~140px an input row spends on its
+            // field is slack here. Letting the label take it is what keeps a long one on a
+            // single line inside a row whose height is fixed at 24 — the Spells editor's
+            // Gather tab prints "Departure · ThrowForward (family)" and wrapped to two lines
+            // against the shared 120px cap, with the second line clipped out of the row.
+            var rowLabel = row.transform.GetChild(0).GetComponent<LayoutElement>();
+            if (rowLabel != null) rowLabel.flexibleWidth = 1f;
+
             var tGo = UIFactory.CreateUI("Toggle", row.transform);
             tGo.AddComponent<LayoutElement>().preferredWidth = 24f;
-            var tImg = tGo.AddComponent<Image>();
-            tImg.color = UITheme.BG_SURFACE;
+
+            var border = tGo.AddComponent<Image>();
+            border.color = UITheme.BORDER;
             var toggle = tGo.AddComponent<Toggle>();
-            toggle.targetGraphic = tImg;
+            toggle.targetGraphic = border;
+
+            var fill = UIFactory.CreateUI("Fill", tGo.transform);
+            UIFactory.StretchFill(fill);
+            var frt = (RectTransform)fill.transform;
+            frt.offsetMin = new Vector2(1f, 1f);
+            frt.offsetMax = new Vector2(-1f, -1f);
+            fill.AddComponent<Image>().color = UITheme.BG_SURFACE;
+
             var check = UIFactory.CreateUI("Check", tGo.transform);
             UIFactory.StretchFill(check);
+            var crt = (RectTransform)check.transform;
+            crt.offsetMin = new Vector2(5f, 5f);
+            crt.offsetMax = new Vector2(-5f, -5f);
             var ci = check.AddComponent<Image>();
             ci.color = UITheme.ACCENT;
             toggle.graphic = ci;
+
             toggle.isOn = value;
             toggle.onValueChanged.AddListener(v => ValueChanged?.Invoke(key, v));
             _fields[key] = toggle;

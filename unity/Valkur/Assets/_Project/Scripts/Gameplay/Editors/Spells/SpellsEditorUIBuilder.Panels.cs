@@ -146,8 +146,54 @@ namespace Valkur.Gameplay.Spells
             tab2Vlg.childControlWidth = true; tab2Vlg.childControlHeight = true;
             tab2Vlg.spacing = 6f; tab2Vlg.padding = new RectOffset(8, 8, 8, 8);
 
+            // Gather tab — the cast flourish. A header naming the resolved family, a button
+            // row, then a scrolling form of one row per knob. Its own PropertyForm rather
+            // than a section inside tab1 because its keys address CastFlourishProfile, not
+            // SpellDefinition, and sharing a form would put two meanings on one ValueChanged.
+            var tab3 = CreateUI("GatherTab", t);
+            var tab3Le = tab3.AddComponent<LayoutElement>();
+            tab3Le.flexibleHeight = 1f;
+            var tab3Vlg = tab3.AddComponent<VerticalLayoutGroup>();
+            tab3Vlg.childForceExpandWidth = true;
+            tab3Vlg.childForceExpandHeight = false;
+            tab3Vlg.childControlWidth = true; tab3Vlg.childControlHeight = true;
+            tab3Vlg.spacing = 4f; tab3Vlg.padding = new RectOffset(6, 6, 6, 4);
+
+            var famGo = CreateUI("GatherFamily", tab3.transform);
+            famGo.AddComponent<LayoutElement>().preferredHeight = 34f;
+            var famTmp = famGo.AddComponent<TextMeshProUGUI>();
+            famTmp.text                = "(no spell selected)";
+            famTmp.fontSize            = 11f;
+            famTmp.alignment           = TextAlignmentOptions.TopLeft;
+            famTmp.color               = TEXT_MUTED;
+            famTmp.enableWordWrapping  = true;
+            refs.GatherFamilyTmp = famTmp;
+
+            // Buttons are added by the editor, which owns what they do.
+            var gatherBtnRow = CreateUI("GatherButtons", tab3.transform);
+            var gatherBtnLe = gatherBtnRow.AddComponent<LayoutElement>();
+            gatherBtnLe.preferredHeight = 26f;
+            // Explicitly rigid. A LayoutGroup is itself an ILayoutElement, and one with
+            // childForceExpandHeight reports flexibleHeight = 1 — which a LayoutElement
+            // leaving the field at -1 does not override. Measured before this line: the row
+            // asked for 26, advertised flexible 1, and the parent split the leftover space
+            // with the scroll view, so two 24px buttons rendered 246px tall.
+            gatherBtnLe.flexibleHeight = 0f;
+            var gatherBtnLayout = gatherBtnRow.AddComponent<HorizontalLayoutGroup>();
+            gatherBtnLayout.spacing = 4f;
+            gatherBtnLayout.childForceExpandWidth = true;
+            gatherBtnLayout.childForceExpandHeight = false;
+            gatherBtnLayout.childControlWidth = true; gatherBtnLayout.childControlHeight = true;
+            refs.PropsGatherRoot = (RectTransform)gatherBtnRow.transform;
+
+            var (gScroll, gContent) = EditorUIHelpers.MakeScrollView(tab3.transform, "GatherScroll");
+            EnsureFlexibleHeight(gScroll.gameObject);
+            EditorUIHelpers.AddVerticalScrollbar(gScroll);
+            refs.PropsGatherForm = PropertyForm.Create(gContent, "GatherForm");
+
             tab1.transform.SetAsLastSibling();
             tab2.transform.SetAsLastSibling();
+            tab3.transform.SetAsLastSibling();
 
             refs.PropsAssetsRoot = (RectTransform)tab2.transform;
 
@@ -196,6 +242,7 @@ namespace Valkur.Gameplay.Spells
             tabs.transform.SetSiblingIndex(0);
             tabs.AddTab("props",  "Properties",        tab1);
             tabs.AddTab("assets", "Assets / Particles", tab2);
+            tabs.AddTab("gather", "Gather",            tab3);
             refs.PropsTabStrip = tabs;
 
             refs.PropsDropdown.SetActive(false);

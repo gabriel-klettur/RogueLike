@@ -52,6 +52,13 @@ namespace Valkur.Gameplay.Spells
                 Debug.LogWarning($"[SpellPreview] Executor '{executor.GetType().Name}' threw for spell '{_spell.spellKey}': {ex.Message}");
             }
 
+            // The flourish on the caster, in the same order SpellCaster.ExecuteSpell fires it
+            // — executor first, gesture second. Without this the preview showed the spell's
+            // EFFECT and none of the cast that produced it, so the whole gather was invisible
+            // to the one panel built for tuning it. AbsorbNewSceneRoots below is what pulls
+            // the rig onto the preview layer: it parents itself to nothing, by design.
+            SpellCastFlourishFX.Play(_spell, _casterTransform, _direction);
+
             SetLayerRecursive(_stageRoot, layer);
             AbsorbNewSceneRoots();
         }

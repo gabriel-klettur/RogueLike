@@ -82,6 +82,11 @@ namespace Valkur.Gameplay.Spells
             public Image            AssetPreviewImage;
             public TextMeshProUGUI  AssetNameTmp;
 
+            // Properties panel — Gather tab (cast flourish knobs)
+            public PropertyForm     PropsGatherForm;
+            public RectTransform    PropsGatherRoot;
+            public TextMeshProUGUI  GatherFamilyTmp;
+
             // View panel — live preview surface
             public RawImage         ViewRawImage;
             public RectTransform    ViewPreviewArea;

@@ -280,6 +280,29 @@ namespace Valkur.Gameplay.Spells
 
         public RenderTexture GetPreviewTexture() => _initialized ? _rt : null;
 
+        /// <summary>
+        /// Tear the stage down and fire the current spell again from the top, without
+        /// waiting out the cycle and the idle gap.
+        ///
+        /// <para>Exists for the Gather tab: a flourish is half a second long inside a cycle
+        /// that is at least a second and a bit, so tuning a knob and waiting for the loop to
+        /// come round means watching the change land two beats after the edit. Same teardown
+        /// as <see cref="SetSelectedSpell"/> minus the caster rebuild, because the spell has
+        /// not changed and its executor's components are still the right ones.</para>
+        /// </summary>
+        public void Restart()
+        {
+            if (!_initialized || _spell == null) return;
+            ClearStage();
+            _loopState = LoopState.Idle;
+            _loopTimer = 0f;
+            DisposeAllFrames();
+            // Any transport but Live parks on a captured frame, so a restart nobody can see
+            // reads as the button doing nothing.
+            _transport         = TransportMode.Live;
+            _slowPlaybackAccum = 0f;
+        }
+
         public void SetSelectedSpell(SpellDefinition spell)
         {
             if (!_initialized) return;

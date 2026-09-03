@@ -42,6 +42,12 @@ namespace Valkur.Gameplay.Spells
             // Update Assets / Particles tab refs.
             UpdateAssetsTab();
 
+            // The Gather tab reads the same selection and the same catalog, so it refreshes
+            // on the same beat. Kept as one call rather than a second subscription because a
+            // selection change that repainted one tab and not the other would leave the panel
+            // describing two different spells.
+            RefreshGatherForm();
+
             if (string.IsNullOrEmpty(_selectedKey) || _catalog == null) return;
             if (!_catalog.TryGet(_selectedKey, out var s) || s == null) return;
 
@@ -72,6 +78,14 @@ namespace Valkur.Gameplay.Spells
             form.AddBool  ("allowMovement", "Allow Movement", s.allowMovement);
             form.AddBool  ("interruptible", "Interruptible",  s.interruptible);
             form.AddBool  ("automatic",     "Automatic",      s.automatic);
+            form.AddFloat ("automaticCastPunish", "Auto-cast Punish", s.automaticCastPunish);
+            form.AddBool  ("lockCastDirection",   "Lock Direction",   s.lockCastDirection);
+
+            // ── Telegraph ──
+            // Drawn by the caster rather than by any executor, so it applies to every spell.
+            AddSectionHeader(form, "── Telegraph ──");
+            form.AddColor("telegraphColor", "Telegraph Color", s.telegraphColor);
+            form.AddFloat("telegraphAlpha", "Telegraph Alpha", s.telegraphAlpha);
 
             // ── Cast Origin ──
             // Where the effect is born on the caster's body, and how far in front.
@@ -150,11 +164,29 @@ namespace Valkur.Gameplay.Spells
                 ("tickPeriod",    () => form.AddFloat("tickPeriod",    "Tick Period",   s.tickPeriod)),
                 ("element",       () => form.AddText ("element",       "Element",       s.element ?? "")));
 
+            // ── Animation ──
+            // Which animation the caster plays, and which loadout the spell swaps to. All
+            // three are narrow — one spell type each — so AddSection hides them everywhere
+            // else rather than showing three inert rows on every spell in the game.
+            AddSection(form, s, "── Animation ──",
+                ("animState",      () => form.AddText("animState",      "Anim State",      s.animState ?? "")),
+                ("loadoutKey",     () => form.AddText("loadoutKey",     "Loadout Key",     s.loadoutKey ?? "")),
+                ("loadoutAnimKey", () => form.AddText("loadoutAnimKey", "Loadout Anim",    s.loadoutAnimKey ?? "")));
+
             // ── Placement / VFX ──
+            // particleColor is the spell's own swatch. It reaches further than its name
+            // suggests: SpellCastFlourishFX retints the whole element palette through it, so
+            // it decides what colour the CAST looks, not just the trail. It was relevant for
+            // 24 of the 28 types and had no row at all — the half of that fix that widened
+            // SpellFieldRelevance landed, the half that shows a control did not.
             AddSection(form, s, "── VFX ──",
-                ("spawnAtMouse", () => form.AddBool("spawnAtMouse", "Spawn At Mouse", s.spawnAtMouse)),
-                ("vfxPreset",    () => form.AddText("vfxPreset",    "VFX Preset",     s.vfxPreset ?? "")),
-                ("impactPreset", () => form.AddText("impactPreset", "Impact Preset",  s.impactPreset ?? "")));
+                ("spawnAtMouse",  () => form.AddBool ("spawnAtMouse",  "Spawn At Mouse", s.spawnAtMouse)),
+                ("particleColor", () => form.AddColor("particleColor", "Particle Color", s.particleColor)),
+                ("scale",         () => form.AddFloat("scale",         "Sprite Scale",   s.scale)),
+                ("vfxPreset",     () => form.AddText ("vfxPreset",     "VFX Preset",     s.vfxPreset ?? "")),
+                ("impactPreset",  () => form.AddText ("impactPreset",  "Impact Preset",  s.impactPreset ?? "")));
+
+            AddStatusApplicationRows(form, s);
         }
 
         /// <summary>
@@ -188,8 +220,15 @@ namespace Valkur.Gameplay.Spells
             // Build the Browse... button once.
             if (!_assetsTabBuilt && _uiRefs.PropsAssetsRoot != null)
             {
+                // Two targets, one browser. iconSprite drives the spell bar, the
+                // drag-preview and the picker; it was previewed here and assignable
+                // nowhere, so the only way to change a spell's HUD icon was the Inspector.
                 _browseSpriteBtn = EditorUIHelpers.MakeButton(
-                    _uiRefs.PropsAssetsRoot, "Browse…", OpenSpriteBrowser, 28f);
+                    _uiRefs.PropsAssetsRoot, "Browse world sprite…",
+                    () => OpenSpriteBrowser("sprite"), 28f);
+                EditorUIHelpers.MakeButton(
+                    _uiRefs.PropsAssetsRoot, "Browse HUD icon…",
+                    () => OpenSpriteBrowser("iconSprite"), 28f);
                 _assetsTabBuilt = true;
             }
 
@@ -227,6 +266,10 @@ namespace Valkur.Gameplay.Spells
                 Toast("No spell selected.");
                 return;
             }
+
+            // The status block addresses array ELEMENTS, so its keys are not field names and
+            // must be taken before the reflection lookup below rejects them.
+            if (IsStatusKey(key)) { OnStatusValueChanged(s, key, val); return; }
 
             var fi = typeof(SpellDefinition).GetField(key,
                 BindingFlags.Public | BindingFlags.Instance);
@@ -388,13 +431,27 @@ namespace Valkur.Gameplay.Spells
             {
                 return val?.ToString() ?? string.Empty;
             }
+            // PropertyForm.AddColor emits the normalised "#RRGGBBAA" string, so without this
+            // branch a colour row falls through to the reference-type case below, hands a
+            // string to a Color field and throws — caught upstream and reduced to a warning,
+            // which reads as a control that is there, accepts an edit and writes nothing.
+            if (targetType == typeof(Color))
+            {
+                if (val is Color c) return c;
+                if (val is string s)
+                {
+                    string hex = s.StartsWith("#", StringComparison.Ordinal) ? s : "#" + s;
+                    if (ColorUtility.TryParseHtmlString(hex, out var parsed)) return parsed;
+                    throw new FormatException($"'{s}' is not a colour.");
+                }
+            }
             // Reference types (e.g. Sprite) — assign as-is.
             return val;
         }
 
         // ── Sprite browser modal ──
 
-        private void OpenSpriteBrowser()
+        private void OpenSpriteBrowser(string fieldName)
         {
             if (_catalog == null) return;
             if (string.IsNullOrEmpty(_selectedKey))
@@ -446,7 +503,8 @@ namespace Valkur.Gameplay.Spells
                 }
             }
             grid.SetEntries(entries);
-            if (s.sprite != null) grid.SelectById(s.sprite.name);
+            var current = fieldName == "iconSprite" ? s.iconSprite : s.sprite;
+            if (current != null) grid.SelectById(current.name);
 
             var rowGo = EditorUIHelpers.CreateUI("Row", card.transform);
             rowGo.AddComponent<LayoutElement>().preferredHeight = 32f;
@@ -462,12 +520,12 @@ namespace Valkur.Gameplay.Spells
                 var newSprite = entry?.Data as Sprite;
                 if (modal != null) Destroy(modal);
 
-                var fi = typeof(SpellDefinition).GetField("sprite",
+                var fi = typeof(SpellDefinition).GetField(fieldName,
                     BindingFlags.Public | BindingFlags.Instance);
                 if (fi == null) return;
-                var oldSprite = s.sprite;
+                var oldSprite = fi.GetValue(s) as Sprite;
                 if (oldSprite == newSprite) return;
-                ApplyFieldChange(s, fi, oldSprite, newSprite, "sprite");
+                ApplyFieldChange(s, fi, oldSprite, newSprite, fieldName);
                 UpdateAssetsTab();
             };
         }
