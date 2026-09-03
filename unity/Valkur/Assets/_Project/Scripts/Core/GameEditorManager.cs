@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Core.Editors;
 
 namespace Valkur.Core
 {
@@ -77,11 +78,13 @@ namespace Valkur.Core
 
             if (_activeEditor != null && _activeEditor != target)
             {
+                CaptureWorkspace(_activeEditor);
                 _activeEditor.Deactivate();
             }
 
             _activeEditor = target;
             target.Activate();
+            RestoreWorkspace(target);
             OnEditorStateChanged?.Invoke(true);
         }
 
@@ -94,6 +97,7 @@ namespace Valkur.Core
 
             if (_activeEditor == target && target.IsActive)
             {
+                CaptureWorkspace(target);
                 target.Deactivate();
                 _activeEditor = null;
                 OnEditorStateChanged?.Invoke(false);
@@ -111,6 +115,7 @@ namespace Valkur.Core
         {
             if (_activeEditor != null)
             {
+                CaptureWorkspace(_activeEditor);
                 _activeEditor.Deactivate();
                 _activeEditor = null;
                 OnEditorStateChanged?.Invoke(false);
@@ -121,9 +126,53 @@ namespace Valkur.Core
         {
             if (_activeEditor == editor)
             {
+                // An editor that closed itself reaches the manager only here, so this is
+                // the capture point for that path. Deduplicated against the pre-Deactivate
+                // capture — see CaptureWorkspace.
+                CaptureWorkspace(editor);
                 _activeEditor = null;
                 OnEditorStateChanged?.Invoke(false);
             }
+        }
+
+        // ── Workspace persistence ───────────────────────────────────────────────
+        //
+        // This manager is the ONE seam every editor open and close already passes through,
+        // which is why the workspace layer hooks here and nowhere else. Core may reference
+        // nothing, so the service is resolved through ServiceLocator and every call no-ops
+        // when it is absent — that is what keeps this manager working in the many tests
+        // that never install the layer.
+
+        /// <summary>
+        /// The editor whose workspace was captured for the close currently in progress.
+        ///
+        /// A close reaches this manager along two paths — the caller capturing before it
+        /// calls <c>Deactivate</c>, and the editor itself calling
+        /// <see cref="NotifyDeactivated"/> after it already deactivated — and BOTH fire for
+        /// an editor that closes itself. A second capture is not harmless: an editor is
+        /// free to clear its own transient state in Deactivate, and the Tile Editor does
+        /// exactly that (<c>_state.SelectedCellPos = null</c>). Capturing again afterwards
+        /// writes that null over the selection the first pass had correctly recorded.
+        /// </summary>
+        private IGameEditor _capturedOnClose;
+
+        private void RestoreWorkspace(IGameEditor editor)
+        {
+            if (editor == null) return;
+
+            // Opening the same editor again re-arms its capture.
+            if (ReferenceEquals(_capturedOnClose, editor)) _capturedOnClose = null;
+
+            ServiceLocator.Get<IEditorWorkspaceService>()?.RestoreOnOpen(editor);
+        }
+
+        private void CaptureWorkspace(IGameEditor editor)
+        {
+            if (editor == null) return;
+            if (ReferenceEquals(_capturedOnClose, editor)) return;
+
+            _capturedOnClose = editor;
+            ServiceLocator.Get<IEditorWorkspaceService>()?.CaptureOnClose(editor);
         }
     }
 }

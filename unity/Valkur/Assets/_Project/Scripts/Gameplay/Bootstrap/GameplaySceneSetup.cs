@@ -133,6 +133,13 @@ namespace Valkur.Gameplay
             // of implicit: create the manager before ANY editor (including Tile) can run.
             GameEditorManager.EnsureInstance();
 
+            // Right after the manager and before any editor, for the same reason: the
+            // workspace service installs itself as DraggablePanel's state sink, and a panel
+            // built before that install would answer its "was I left closed?" question from
+            // the old PlayerPrefs backend and then be recorded there too — two owners of one
+            // bit, which is the failure this layer exists to remove.
+            Valkur.Gameplay.Editors.Workspace.EditorWorkspaceService.EnsureInstance();
+
             BuildWorldGrid();
             Report("Building grid"); yield return null;
 
