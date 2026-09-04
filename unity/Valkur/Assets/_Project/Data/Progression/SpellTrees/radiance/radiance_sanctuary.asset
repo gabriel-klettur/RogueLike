@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbb63fb46c808444da70b8310a8cfbee, type: 3}
+  m_Name: radiance_sanctuary
+  m_EditorClassIdentifier: 
+  nodeId: radiance_sanctuary
+  spell: {fileID: 11400000, guid: d1e942a06ffe89a4198de10ab4085dc6, type: 2}
+  pointCost: 3
+  levelRequirement: 17
+  prerequisites:
+  - {fileID: 11400000, guid: da2d3ef3b4fd1c54d813207df42ca127, type: 2}
+  role: 3
+  displayNameOverride: 
+  description: 
+  iconOverride: {fileID: 0}
+  modifiers:
+  - stat: 0
+    op: 0
+    value: 25
+  row: 7
+  column: 0

@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbb63fb46c808444da70b8310a8cfbee, type: 3}
+  m_Name: cryomancy_blizzard
+  m_EditorClassIdentifier: 
+  nodeId: cryomancy_blizzard
+  spell: {fileID: 11400000, guid: f19a48917b46a604d84a54a2df569191, type: 2}
+  pointCost: 3
+  levelRequirement: 22
+  prerequisites:
+  - {fileID: 11400000, guid: dd07762557c3fd24b9a5cc87547a7080, type: 2}
+  role: 1
+  displayNameOverride: 
+  description: 
+  iconOverride: {fileID: 0}
+  modifiers:
+  - stat: 10
+    op: 1
+    value: 0.08
+  row: 6
+  column: 0

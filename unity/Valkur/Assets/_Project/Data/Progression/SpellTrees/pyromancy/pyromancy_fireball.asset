@@ -17,6 +17,7 @@ MonoBehaviour:
   pointCost: 1
   levelRequirement: 0
   prerequisites: []
+  role: 0
   displayNameOverride: 
   description: 
   iconOverride: {fileID: 0}

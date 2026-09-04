@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbb63fb46c808444da70b8310a8cfbee, type: 3}
+  m_Name: cryomancy_ice_lance
+  m_EditorClassIdentifier: 
+  nodeId: cryomancy_ice_lance
+  spell: {fileID: 11400000, guid: 5ac667f09594157449ca3b2ee4a3acc0, type: 2}
+  pointCost: 2
+  levelRequirement: 10
+  prerequisites:
+  - {fileID: 11400000, guid: eb96e98b7368eec4c8bdcb07d7fb173e, type: 2}
+  role: 0
+  displayNameOverride: 
+  description: 
+  iconOverride: {fileID: 0}
+  modifiers:
+  - stat: 10
+    op: 1
+    value: 0.04
+  row: 3
+  column: 0

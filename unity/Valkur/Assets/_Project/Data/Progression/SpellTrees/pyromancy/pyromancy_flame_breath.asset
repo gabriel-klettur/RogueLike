@@ -18,6 +18,7 @@ MonoBehaviour:
   levelRequirement: 10
   prerequisites:
   - {fileID: 11400000, guid: 84f994ea581352b4abee75c8018bab62, type: 2}
+  role: 0
   displayNameOverride: 
   description: 
   iconOverride: {fileID: 0}

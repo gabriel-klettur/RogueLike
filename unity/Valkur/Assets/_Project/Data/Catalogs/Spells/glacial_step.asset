@@ -1,0 +1,117 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9d8be0c389cb214c8a4442bd8ce5ffa, type: 3}
+  m_Name: glacial_step
+  m_EditorClassIdentifier: 
+  spellKey: glacial_step
+  displayName: Glacial Step
+  type: 4
+  audience: 1
+  usesAttackAnimation: 0
+  manaCost: 18
+  maxInstances: 0
+  allowOverlap: 1
+  allowMovement: 0
+  interruptible: 0
+  automatic: 0
+  automaticCastPunish: 1
+  lockCastDirection: 1
+  prepareDuration: 0
+  channelDuration: 0
+  cooldownDuration: 9
+  speed: 0
+  damage: 10
+  range: 7
+  lifetime: 0
+  radius: 1.9
+  hitRadius: 0
+  arcRangeDegrees: 0
+  hitArcDegrees: 0
+  length: 0
+  distance: 7
+  knockback: 0
+  collisionDamage: 0
+  infinite: 0
+  duration: 3
+  damagePerTick: 0
+  tickPeriod: 0
+  element: Ice
+  healPerTick: 0
+  force: 0
+  forceMode: 
+  followCaster: 0
+  spawnAtMouse: 1
+  statusApplications:
+  - type: 4
+    duration: 2.5
+    magnitude: 0.6
+    chance: 1
+  castAnchor: 0
+  castForwardOffset: 0
+  meteorCount: 0
+  meteorInterval: 0
+  meteorAreaRadius: 0
+  meteorImpactRadius: 0
+  armingTime: 0
+  triggerRadius: 0
+  explosionRadius: 0
+  explosionDamage: 0
+  ttl: 0
+  wallWidth: 0
+  wallHeight: 0
+  wallHP: 0
+  blockProjectiles: 0
+  blockUnits: 0
+  summonTemplate: 
+  summonCount: 1
+  summonDuration: 0
+  totemKind: 
+  coneArc: 0
+  coneLength: 0
+  animState: 
+  loadoutAnimKey: 
+  loadoutKey: 
+  statModifiers: []
+  buffKey: 
+  pierceCount: 0
+  pierceDamageFalloff: 0
+  homingStrength: 0
+  homingRange: 0
+  projectileCount: 1
+  spreadDegrees: 0
+  chargeMaxSeconds: 0
+  chargeMinFraction: 0.45
+  chargeDamageMultiplier: 1
+  chargeScaleMultiplier: 1
+  sprite: {fileID: 0}
+  scale: 1
+  speedMultiplier: 1
+  offset: 0
+  iconSprite: {fileID: 0}
+  telegraphColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.3}
+  telegraphAlpha: 80
+  particleCount: 0
+  particleDispersion: 0
+  particleLifespan: 0
+  particleSpeed: 0
+  particleColor: {r: 0.55, g: 0.85, b: 1, a: 1}
+  particleColors: []
+  sizeRange: []
+  emitRate: 0
+  vfxPreset: 
+  impactPreset: 
+  vfxPresetLayers: []
+  impactPresetLayers: []
+  castPreset: 
+  castPresetLayers: []
+  gatherOverride:
+    fields: []

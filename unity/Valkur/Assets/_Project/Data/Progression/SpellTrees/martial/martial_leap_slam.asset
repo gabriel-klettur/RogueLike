@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbb63fb46c808444da70b8310a8cfbee, type: 3}
+  m_Name: martial_leap_slam
+  m_EditorClassIdentifier: 
+  nodeId: martial_leap_slam
+  spell: {fileID: 11400000, guid: dfdfb3989a0d29e478cc60fe733df25b, type: 2}
+  pointCost: 3
+  levelRequirement: 20
+  prerequisites:
+  - {fileID: 11400000, guid: 785cbddecdf566f4ba4a8d02295853b4, type: 2}
+  role: 4
+  displayNameOverride: 
+  description: 
+  iconOverride: {fileID: 0}
+  modifiers:
+  - stat: 5
+    op: 0
+    value: 0.1
+  row: 7
+  column: 0

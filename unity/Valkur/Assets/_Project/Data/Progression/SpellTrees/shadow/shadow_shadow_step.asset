@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbb63fb46c808444da70b8310a8cfbee, type: 3}
+  m_Name: shadow_shadow_step
+  m_EditorClassIdentifier: 
+  nodeId: shadow_shadow_step
+  spell: {fileID: 11400000, guid: f00918514a28a884d94e10b2028013da, type: 2}
+  pointCost: 2
+  levelRequirement: 10
+  prerequisites:
+  - {fileID: 11400000, guid: 33d174cbfac4b8143a687aefe9d2d969, type: 2}
+  role: 4
+  displayNameOverride: 
+  description: 
+  iconOverride: {fileID: 0}
+  modifiers:
+  - stat: 3
+    op: 1
+    value: 0.03
+  row: 4
+  column: 0
