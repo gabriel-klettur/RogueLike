@@ -571,6 +571,43 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   every subsequent `execute_code` running against the STALE assembly. After any C# change,
   confirm the new code is actually loaded — `typeof(X).GetMethod("NewThing") != null` through
   `execute_code` — before trusting a measurement or a green console.
+- **A number can be real, internally consistent, and about something other than what you
+  asked.** Three sightings in one day, three different mechanisms, one shape — which is why
+  this is a named pattern here rather than three anecdotes. `Time.deltaTime` read **0.0016**
+  under `execute_code` because nothing was rendering, so three rounds of vortex force tuning
+  measured the harness and each "fix" was a correction to it. A test job reported
+  **`completed 13281` against `total 7148`**, which is structurally impossible for one pass
+  and was two concurrent runners crossing each other's log windows — twelve red tests that
+  were all `Unhandled log message` from OTHER fixtures, not one assertion about the code under
+  test. And a spawner round trip saved perfectly and loaded 150 tiles away for months because
+  each half was internally consistent and only the composition was wrong.
+  **The defence is a structural check that is independent of the value**: `completed > total`
+  cannot happen in a single pass whatever the tests say, exactly as the `HEAD`-vs-working-tree
+  schema diff finds fields no shipped-data test happens to cover. Reach for one of those
+  BEFORE reading the failures — without it, the twelve red tests above cost twenty minutes of
+  investigating TileEditor code that was fine.
+- **Reflection sees SYMBOLS, not FILES, so it cannot confirm a comment-only edit is loaded.**
+  The rule above about confirming the new code is loaded — `typeof(X).GetMethod("NewThing")
+  != null` — proves a symbol arrived and says nothing about whether the FILE Unity compiled is
+  the file on disk. A change that only touches comments, whitespace or a doc block is invisible
+  to it, and every type-loaded probe comes back green on a stale assembly. That is not
+  hypothetical: it is what stood between a measured suite result and a merge to the default
+  branch. The probe that can see it compares timestamps —
+  `File.GetLastWriteTimeUtc(typeof(X).Assembly.Location) >= newest .cs under Scripts/` — and it
+  is cheap enough to run beside the reflection check rather than instead of it.
+- **A lost acknowledgement on a WRITE leaves you unable to know whether it happened, and no
+  read-side probe on this bridge can tell you.** The MCP link drops often under load —
+  `disconnected while awaiting command_result` and `TimeoutError` arrived nine times in one
+  session — and retrying is correct for a READ like `get_test_job`, where a lost reply costs
+  nothing. It is not correct for a WRITE. A `run_tests` whose response was lost may have
+  started a Unity-side runner anyway, and retrying then starts a SECOND one in the same editor;
+  the two runs' log output crosses into each other's assertion windows and the suite comes back
+  red on tests that are fine. `clear_stuck` is NOT the remedy, and believing it is makes this
+  worse: it reports on the MCP job registry, while the orphan lives in Unity's own TestRunner,
+  so it answers "No running job to clear" with a runner live. **The job registry and the Unity
+  runner are two different sources of truth and only one is visible from here.** What
+  definitively clears an orphaned runner is restarting the Editor. The same reasoning applies
+  to every mutating MCP call, not only to tests.
 
 - **A world swap is not a tile repaint.** `WorldGridBuilder.ClearWorld` calls
   `ClearAllTiles` on the tilemaps and destroys NOTHING else, so every placed building, light,
