@@ -226,9 +226,25 @@ namespace Valkur.Tests.EditMode.Game.Data
         [Test]
         public void StartingKit_IsSmall_AndEveryKeyResolves()
         {
-            Assert.LessOrEqual(_catalog.alwaysKnownSpellKeys.Length, 4,
+            // Raised 4 -> 5 deliberately, and this note is the reviewed exception the ratchet
+            // convention asks for rather than a silent bump.
+            //
+            // Three of the five are not CONTENT, they are the CONTROLS: fireball, slash and
+            // laser_beam are what the left, right and middle mouse buttons cast. Before they
+            // were innate, SyncSpellBook replaced the book with the two the character knew and
+            // all three buttons silently did nothing from level 0 — measured on a spawned
+            // player, KnowsSpell("fireball") == False. That is indistinguishable from the game
+            // having stopped responding to the mouse, which is the exact failure SyncSpellBook's
+            // own comment says slot 0 is spared from; it spares the spell BAR slot while
+            // ReplaceSpellBook clears the BOOK underneath it.
+            //
+            // The cap still means what it says. What it guards is the grimoire being bypassed,
+            // and a mouse button is not a purchase. If a SIXTH key appears, ask which control
+            // needs it before raising this again.
+            Assert.LessOrEqual(_catalog.alwaysKnownSpellKeys.Length, 5,
                 "The starting kit is the only content the grimoire cannot charge for. Keep " +
-                "it the size of a tutorial.");
+                "it the size of a tutorial. Three of the five are the mouse buttons; a new " +
+                "entry needs a reason of that weight.");
         }
     }
 }

@@ -38,3 +38,6 @@ MonoBehaviour:
   alwaysKnownSpellKeys:
   - slash_regular
   - weapon_toggle
+  - fireball
+  - slash
+  - laser_beam
