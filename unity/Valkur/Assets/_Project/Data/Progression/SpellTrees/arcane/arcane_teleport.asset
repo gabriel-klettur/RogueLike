@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbb63fb46c808444da70b8310a8cfbee, type: 3}
+  m_Name: arcane_teleport
+  m_EditorClassIdentifier: 
+  nodeId: arcane_teleport
+  spell: {fileID: 11400000, guid: 3e1114bfb94f27e42b623f8b8730a19b, type: 2}
+  pointCost: 2
+  levelRequirement: 8
+  prerequisites:
+  - {fileID: 11400000, guid: 27b53287247bfc44481c8fbefefe3fbe, type: 2}
+  displayNameOverride: 
+  description: 
+  iconOverride: {fileID: 0}
+  modifiers:
+  - stat: 3
+    op: 1
+    value: 0.03
+  row: 3
+  column: 0

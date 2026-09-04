@@ -43,7 +43,7 @@ namespace Valkur.Gameplay.Spells
             bool passes      = false; // conservative default
 
             boom.Initialize(ctx.Caster, ctx.Direction, speed, returnSpd,
-                            ctx.Spell.damage, range, hitRadius, passes,
+                            SpellPower.Scale(ctx.Spell.damage, ctx.Caster), range, hitRadius, passes,
                             ctx.TargetLayers, ResolveTint(ctx.Spell));
             // Damage typing for Health.resistances, independent of the hardcoded
             // SpellElement.Boomerang palette below (which only drives the visual).

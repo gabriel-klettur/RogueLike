@@ -119,7 +119,7 @@ namespace Valkur.Gameplay.Spells
         {
             if (ctx.TargetLayers.value == 0) return;
 
-            int damage = Mathf.RoundToInt(ctx.Spell.damage);
+            int damage = SpellPower.ScaleToInt(ctx.Spell.damage, ctx.Caster);
             if (damage <= 0) return;
 
             var struck = Physics2D.OverlapCircleAll(impact, splash, ctx.TargetLayers);
@@ -152,7 +152,7 @@ namespace Valkur.Gameplay.Spells
             }
 
             Vector2 origin = castPos;
-            int baseDamage = Mathf.RoundToInt(ctx.Spell.damage);
+            int baseDamage = SpellPower.ScaleToInt(ctx.Spell.damage, ctx.Caster);
 
             for (int link = 0; link < MAX_CHAIN_LINKS; link++)
             {

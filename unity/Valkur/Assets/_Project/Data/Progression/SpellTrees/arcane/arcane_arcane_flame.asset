@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbb63fb46c808444da70b8310a8cfbee, type: 3}
+  m_Name: arcane_arcane_flame
+  m_EditorClassIdentifier: 
+  nodeId: arcane_arcane_flame
+  spell: {fileID: 11400000, guid: c3093f6af04244a44993d03c86641519, type: 2}
+  pointCost: 2
+  levelRequirement: 15
+  prerequisites:
+  - {fileID: 11400000, guid: 3bdcc0dd02f9c304c93fea024b1a6f84, type: 2}
+  displayNameOverride: 
+  description: 
+  iconOverride: {fileID: 0}
+  modifiers:
+  - stat: 12
+    op: 0
+    value: 0.04
+  row: 5
+  column: 0

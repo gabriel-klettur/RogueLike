@@ -107,17 +107,61 @@ namespace Valkur.Gameplay.Inventory
                 _hunger.Feed(Mathf.RoundToInt(item.hunger));
 
             // Timed stat buff
-            if (item.duration > 0 && !string.IsNullOrEmpty(item.buffStat))
-                StartCoroutine(ApplyTimedBuff(item.buffStat, item.buffValue, item.duration));
+            ApplyTimedBuff(item);
         }
 
-        private IEnumerator ApplyTimedBuff(string stat, float value, float duration)
+        /// <summary>
+        /// Hands the item's timed modifiers to <see cref="TimedBuffSource"/>, which owns the
+        /// Buff stat layer.
+        ///
+        /// This used to be a coroutine that logged twice and changed nothing — an honest
+        /// placeholder waiting for a stat component that did not exist yet. The buff key is
+        /// the ITEM ID, so drinking a second flask of the same potion refreshes its timer
+        /// instead of stacking a duplicate, and two different potions stack normally.
+        /// </summary>
+        private void ApplyTimedBuff(ItemDefinition item)
         {
-            // Loose stat-buff routing. Extend when dedicated stat components exist.
-            Debug.Log($"[ItemConsumer] Buff +{value} to '{stat}' for {duration}s on {gameObject.name}");
-            // TODO: integrate with a StatComponent when implemented.
-            yield return new WaitForSeconds(duration);
-            Debug.Log($"[ItemConsumer] Buff '{stat}' expired on {gameObject.name}");
+            if (item == null || item.duration <= 0f) return;
+
+            var buffs = GetComponent<TimedBuffSource>();
+            if (buffs == null) return;   // monsters and test rigs have no stat store
+
+            _buffScratch.Clear();
+            if (item.buffModifiers != null && item.buffModifiers.Length > 0)
+                _buffScratch.AddRange(item.buffModifiers);
+
+            // Legacy string field. Kept working where it can be understood rather than
+            // silently ignored, and warned about exactly once per item where it cannot.
+            if (!string.IsNullOrWhiteSpace(item.buffStat))
+            {
+                if (Valkur.Data.StatCatalog.TryParse(item.buffStat, out var stat))
+                {
+                    _buffScratch.Add(Valkur.Data.StatModifier.Flat(stat, item.buffValue));
+                }
+                else if (_warnedLegacyBuffStats.Add(item.itemId ?? item.buffStat))
+                {
+                    Debug.LogWarning($"[ItemConsumer] Item '{item.displayName}' has legacy " +
+                                     $"buffStat '{item.buffStat}', which names no StatKind. " +
+                                     "Author buffModifiers instead — this half of the item " +
+                                     "does nothing.");
+                }
+            }
+
+            if (_buffScratch.Count == 0) return;
+
+            string key = !string.IsNullOrEmpty(item.itemId) ? item.itemId : item.displayName;
+            buffs.Apply(key, _buffScratch, item.duration);
         }
+
+        private readonly System.Collections.Generic.List<Valkur.Data.StatModifier> _buffScratch =
+            new System.Collections.Generic.List<Valkur.Data.StatModifier>(4);
+
+        // Static so the warning is once per SESSION rather than once per consumer, and
+        // reset with the domain because Domain Reload is off.
+        private static readonly System.Collections.Generic.HashSet<string> _warnedLegacyBuffStats =
+            new System.Collections.Generic.HashSet<string>();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetLegacyBuffWarnings() => _warnedLegacyBuffStats.Clear();
     }
 }

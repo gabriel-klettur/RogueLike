@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36d1094d9ba7ed546a6bd9f0b160891f, type: 3}
+  m_Name: barbarian_skill_tree
+  m_EditorClassIdentifier: 
+  displayName: Path of Fury
+  classKey: barbarian
+  flavour: Every problem is a matter of how hard you hit it.
+  nodes:
+  - {fileID: 11400000, guid: 4b807f08159257740a7205424262527c, type: 2}
+  - {fileID: 11400000, guid: bb6377a91b5c650429ea9651c94eff52, type: 2}
+  - {fileID: 11400000, guid: 2390daf1ddc706341a7c1fcb86230b6b, type: 2}
+  - {fileID: 11400000, guid: c9a6d904b2a88c14f8dfc58f5bdb366f, type: 2}
+  - {fileID: 11400000, guid: c2fa0dacd85e10b469ea73fe59696dff, type: 2}
+  - {fileID: 11400000, guid: f0260a92b7f9ba44aaa3d42da9e2e13e, type: 2}
+  - {fileID: 11400000, guid: 1260df7c87191fb4ba0d666d7c64cfed, type: 2}

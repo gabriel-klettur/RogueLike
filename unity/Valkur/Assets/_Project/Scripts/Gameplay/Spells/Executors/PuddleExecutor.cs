@@ -33,7 +33,7 @@ namespace Valkur.Gameplay.Spells
             float radius = ctx.Spell.radius > 0 ? ctx.Spell.radius : 4f;
             float duration = ctx.Spell.duration > 0 ? ctx.Spell.duration : 6f;
             float tickPeriod = ctx.Spell.tickPeriod > 0 ? ctx.Spell.tickPeriod : 0.25f;
-            float damagePerTick = ctx.Spell.damagePerTick;
+            float damagePerTick = SpellPower.Scale(ctx.Spell.damagePerTick, ctx.Caster);
             float dist = ctx.Spell.distance > 0 ? ctx.Spell.distance : 2f;
 
             Vector2 spawnPos = SpellTargeting.ResolveGroundTarget(ctx, 5f, dist);

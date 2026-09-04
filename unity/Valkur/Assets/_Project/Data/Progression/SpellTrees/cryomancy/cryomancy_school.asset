@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8770dafe3e2eea64d90791fb3fe76644, type: 3}
+  m_Name: cryomancy_school
+  m_EditorClassIdentifier: 
+  displayName: Cryomancy
+  schoolKey: cryomancy
+  flavour: Not colder. Slower, until nothing moves at all.
+  accent: {r: 0.45, g: 0.78, b: 1, a: 1}
+  classAffinities:
+  - mague
+  - elven
+  offAffinityCostMultiplier: 2
+  nodes:
+  - {fileID: 11400000, guid: dae9199816534f74ba3c8ce83697d794, type: 2}
+  - {fileID: 11400000, guid: bb417c45dbb8cc44d9b4ee8ac49dd8e4, type: 2}

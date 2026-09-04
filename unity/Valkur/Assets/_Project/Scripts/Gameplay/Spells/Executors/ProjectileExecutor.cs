@@ -64,7 +64,7 @@ namespace Valkur.Gameplay.Spells
                 proj.Initialize(
                     ctx.Direction,
                     ctx.Spell.speed,
-                    ctx.Spell.damage,
+                    SpellPower.Scale(ctx.Spell.damage, ctx.Caster),
                     ctx.Spell.lifetime > 0 ? ctx.Spell.lifetime : 3f,
                     ctx.Spell.range > 0 ? ctx.Spell.range : 20f,
                     ctx.TargetLayers
@@ -83,8 +83,9 @@ namespace Valkur.Gameplay.Spells
                     proj.SetAcceleration(ctx.Spell.distance);
                 // AOE explosion on impact.
                 if (ctx.Spell.explosionRadius > 0f)
-                    proj.SetExplosion(ctx.Spell.explosionRadius,
-                        ctx.Spell.explosionDamage > 0f ? ctx.Spell.explosionDamage : ctx.Spell.damage);
+                    proj.SetExplosion(ctx.Spell.explosionRadius, SpellPower.Scale(
+                        ctx.Spell.explosionDamage > 0f ? ctx.Spell.explosionDamage : ctx.Spell.damage,
+                        ctx.Caster));
             }
 
             if (ctx.Spell.sprite != null)

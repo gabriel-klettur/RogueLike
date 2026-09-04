@@ -48,6 +48,12 @@ namespace Valkur.Gameplay.Spells
         // was a steady source of Gen0 GC pressure during combat.
         private readonly List<string> _spellBookTickBuffer = new List<string>();
 
+        // Staging dictionary for ReplaceSpellBook. Hoisted rather than allocated per call
+        // because a respec, a save load and every single grimoire purchase all go through
+        // that path.
+        private readonly Dictionary<string, SpellDefinition> _spellBookReplaceBuffer =
+            new Dictionary<string, SpellDefinition>();
+
         private static readonly Dictionary<SpellType, ISpellExecutor> Executors = new Dictionary<SpellType, ISpellExecutor>
         {
             { SpellType.Projectile,       new ProjectileExecutor() },
@@ -184,7 +190,7 @@ namespace Valkur.Gameplay.Spells
             if (spell == null) return false;
             if (_cooldownTimers[slotIndex] > 0f) return false;
 
-            int manaCost = Mathf.Max(0, Mathf.RoundToInt(spell.manaCost));
+            int manaCost = ResolveManaCost(spell);
             if (manaCost > 0)
             {
                 var mana = ResolveMana();

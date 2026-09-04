@@ -101,6 +101,15 @@ namespace Valkur.Gameplay
             InitSpiritDeathFlow(go);
             ApplyPlayerClassInitialMarker(go, def.playerKey);
 
+            // The single reader of the interact key: works a registered interactable if one
+            // is in range, and otherwise opens a conversation. Without it
+            // InputService.Gameplay.Interact has no reader at all, which is the state the
+            // project shipped in.
+            if (go.GetComponent<Interaction.PlayerInteractionController>() == null)
+                go.AddComponent<Interaction.PlayerInteractionController>();
+
+            InitPlayerProgression(go, def);
+
             // Register the player BEFORE building HUDs so any UI singleton's
             // Start() (e.g. InventoryUI) sees a populated EntityRegistry.Player
             // on its first ResolvePlayerRefs call. Otherwise the UI starts in
@@ -176,6 +185,7 @@ namespace Valkur.Gameplay
 
             ConfigureMonsterAutoCast(go, def);
             ConfigureBoss(go, def);
+            ConfigureChat(go, def);
 
             // Minimap dot (monster = red) — uses reflection to avoid Gameplay→UI circular dependency
             ConfigureMinimapDot(go, "Monster", new Color(0.9f, 0.2f, 0.2f, 1f));
@@ -226,6 +236,37 @@ namespace Valkur.Gameplay
         {
             var controller = go.GetComponent<PlayerController>();
             if (controller != null) controller.SetMoveSpeed(speed);
+        }
+
+        /// <summary>
+        /// Installs the whole progression stack and hands it the class definition.
+        ///
+        /// It runs LAST on purpose, after Health, Mana, MeleeCombat and the spell book
+        /// exist. PlayerStats refuses to push into a component whose Initialize has not
+        /// run — otherwise the spawn order, not the class definition, would decide the
+        /// character's hit points — and PlayerProgression's spell sync keeps the
+        /// definitions already registered in the book, so it needs that book populated.
+        ///
+        /// Every one of these is AddComponent-ed rather than serialized on the prefab,
+        /// which is why ProgressionCatalog is loaded from Resources by path: a
+        /// [SerializeField] on a component built this way has no way to be filled, which
+        /// is exactly how ChatSystem's catalog stayed null for the life of the project.
+        /// </summary>
+        private static void InitPlayerProgression(GameObject go, PlayerDefinition def)
+        {
+            if (go.GetComponent<PlayerStats>() == null)
+                go.AddComponent<PlayerStats>();
+
+            if (go.GetComponent<TimedBuffSource>() == null)
+                go.AddComponent<TimedBuffSource>();
+
+            if (go.GetComponent<EquipmentStatSource>() == null)
+                go.AddComponent<EquipmentStatSource>();
+
+            var progression = go.GetComponent<PlayerProgression>();
+            if (progression == null) progression = go.AddComponent<PlayerProgression>();
+
+            progression.Configure(def);
         }
 
         private static void InitPlayerCombat(GameObject go, PlayerDefinition def)

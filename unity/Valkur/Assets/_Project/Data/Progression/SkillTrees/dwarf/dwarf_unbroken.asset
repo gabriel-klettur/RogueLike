@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9daf39b310f62e64eafddc1b747855a0, type: 3}
+  m_Name: dwarf_unbroken
+  m_EditorClassIdentifier: 
+  skillId: dwarf_unbroken
+  displayName: Unbroken
+  description: What the mountain gives back.
+  icon: {fileID: 0}
+  pointCost: 3
+  maxRank: 1
+  levelRequirement: 20
+  levelPerRank: 0
+  prerequisites:
+  - {fileID: 11400000, guid: 997e3f19d4984fe4fb32aecec46f9e7e, type: 2}
+  - {fileID: 11400000, guid: c9406d680bdac1349adf4847cee2b341, type: 2}
+  modifiersPerRank:
+  - stat: 0
+    op: 0
+    value: 80
+  - stat: 7
+    op: 0
+    value: 5
+  - stat: 4
+    op: 2
+    value: 0.15
+  passiveAuras: []
+  row: 2
+  column: 1

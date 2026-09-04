@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbb63fb46c808444da70b8310a8cfbee, type: 3}
+  m_Name: arcane_laser_beam_blue
+  m_EditorClassIdentifier: 
+  nodeId: arcane_laser_beam_blue
+  spell: {fileID: 11400000, guid: 34914f6a383f38e4bb1ed6da1d515752, type: 2}
+  pointCost: 1
+  levelRequirement: 4
+  prerequisites:
+  - {fileID: 11400000, guid: fdf3d0409a9fc97429033a9246cdf510, type: 2}
+  displayNameOverride: 
+  description: 
+  iconOverride: {fileID: 0}
+  modifiers: []
+  row: 1
+  column: 0

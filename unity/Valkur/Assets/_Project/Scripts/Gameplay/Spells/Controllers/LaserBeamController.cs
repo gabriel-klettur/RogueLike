@@ -238,7 +238,10 @@ namespace Valkur.Gameplay.Spells
             // range <= 0 means "use system default".
             float range = ResolveBeamRange(_ctx.Spell);
             float beamHalfWidth = DEFAULT_BEAM_WIDTH * (_ctx.Spell.scale > 0 ? _ctx.Spell.scale : 1f);
-            int dmg = Mathf.Max(1, Mathf.RoundToInt(_ctx.Spell.damage > 0 ? _ctx.Spell.damage : 1f));
+            // Captured once at the start of the channel rather than per tick: the beam
+            // is one continuous cast, so a buff landing mid-beam belongs to the NEXT one.
+            int dmg = Mathf.Max(1, SpellPower.ScaleToInt(
+                _ctx.Spell.damage > 0 ? _ctx.Spell.damage : 1f, _ctx.Caster));
 
             var mana = GetComponent<Mana>();
 

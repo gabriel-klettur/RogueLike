@@ -90,6 +90,35 @@ namespace Valkur.Gameplay
 
         public float RegenPerSecond => regenPerSecond;
 
+        /// <summary>
+        /// Sets the pool to an ABSOLUTE size. The idempotent sibling of
+        /// <see cref="IncreaseMaxMana"/>, and the seam
+        /// <see cref="Valkur.Gameplay.PlayerStats"/> pushes through — see
+        /// <c>Health.SetMaxHp</c> for why a recompute may never go through a delta API.
+        /// </summary>
+        public void SetMaxMana(int newMax)
+        {
+            newMax = Mathf.Max(0, newMax);
+            if (newMax == maxMana) return;
+
+            int delta = newMax - maxMana;
+            maxMana = newMax;
+            _currentMana = delta > 0
+                ? _currentMana + delta
+                : Mathf.Min(_currentMana, maxMana);
+
+            OnManaChanged?.Invoke(_currentMana, maxMana);
+        }
+
+        /// <summary>
+        /// Sets the regeneration rate to an ABSOLUTE value. Idempotent sibling of
+        /// <see cref="AddRegenBonus"/>, which stacks and therefore cannot be re-applied.
+        /// </summary>
+        public void SetRegenPerSecond(float value)
+        {
+            regenPerSecond = Mathf.Max(0f, value);
+        }
+
         private void Awake()
         {
             _currentMana = maxMana;

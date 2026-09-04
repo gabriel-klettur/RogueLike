@@ -631,6 +631,12 @@ namespace Valkur.Gameplay
             // The seven energy-charge auras — see DevConsole.Commands.Charge.cs.
             RegisterChargeCommands();
 
+            // Stats, talents, grimoire — see DevConsole.Commands.Progression.cs.
+            RegisterProgressionCommands();
+
+            // Which provider answers NPC chat — see DevConsole.Commands.Chat.cs.
+            RegisterChatCommands();
+
             // Doorway authoring — see DevConsole.Commands.Doors.cs. Registered LAST and in a
             // category of its own on purpose: CmdHelp only emits a category header when the
             // category changes while walking declaration order, so a new command dropped into

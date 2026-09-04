@@ -51,7 +51,8 @@ namespace Valkur.Gameplay.Spells
         {
             float duration = ctx.Spell.duration > 0 ? ctx.Spell.duration : 10f;
             float radius = ctx.Spell.radius > 0 ? ctx.Spell.radius / 16f : 13.75f;
-            float healPerTick = ctx.Spell.healPerTick > 0 ? ctx.Spell.healPerTick : 6f;
+            float healPerTick = SpellPower.Scale(
+                ctx.Spell.healPerTick > 0 ? ctx.Spell.healPerTick : 6f, ctx.Caster);
             float tickPeriod = ctx.Spell.tickPeriod > 0 ? ctx.Spell.tickPeriod : 0.5f;
             float dist = ctx.Spell.distance > 0 ? ctx.Spell.distance : 3f;
 

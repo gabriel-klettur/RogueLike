@@ -17,7 +17,9 @@ namespace Valkur.Gameplay.Spells
             float armingTime = ctx.Spell.armingTime > 0 ? ctx.Spell.armingTime : 0.5f;
             float triggerRadius = ctx.Spell.triggerRadius > 0 ? ctx.Spell.triggerRadius / 16f : 3.75f;
             float explosionRadius = ctx.Spell.explosionRadius > 0 ? ctx.Spell.explosionRadius / 16f : 8.75f;
-            float explosionDamage = ctx.Spell.explosionDamage > 0 ? ctx.Spell.explosionDamage : ctx.Spell.damage;
+            float explosionDamage = SpellPower.Scale(
+                ctx.Spell.explosionDamage > 0 ? ctx.Spell.explosionDamage : ctx.Spell.damage,
+                ctx.Caster);
             // A mine's ttl is a cleanup timer, not a clock it animates against:
             // MineController animates from absolute Time.time and already owns a real
             // exit — proximity detonation. Infinite here just means "the trap waits".

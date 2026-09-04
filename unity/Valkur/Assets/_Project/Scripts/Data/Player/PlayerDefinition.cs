@@ -26,11 +26,46 @@ namespace Valkur.Data
         [Header("Combat")]
         public float basicSpeed;
         public int basicAttack;
+
+        [Tooltip("Flat damage subtracted from every incoming blow. Seeds " +
+                 "StatKind.Defense and is pushed to Health.SetDefense — the same seam " +
+                 "monsters have always used. It was authored and read by nothing until " +
+                 "the stat layer existed, so the player fought with 0 defense whatever " +
+                 "this said.")]
         public int basicArmor;
+
         public float basicDeathTimerDuration;
         public float damageStopProbability;
         public float manaRegenPerSecond;
         public int dashCharges;
+
+        [Header("Melee")]
+        [Tooltip("Reach of a melee swing in world units. Seeds StatKind.MeleeRange. " +
+                 "0 falls back to the historical hard-coded 1.5 so an unauthored class " +
+                 "keeps the reach every melee range was tuned against.")]
+        public float meleeRange = 1.5f;
+
+        [Tooltip("Seconds between swings. Seeds StatKind.MeleeCooldown. 0 falls back to " +
+                 "the historical hard-coded 0.5.")]
+        public float meleeCooldown = 0.5f;
+
+        [Header("Critical strikes")]
+        [Tooltip("Base probability 0..1 that a blow crits, before any talent or item.")]
+        [Range(0f, 1f)] public float baseCritChance = 0.05f;
+
+        [Tooltip("Base damage multiplier on a critical strike.")]
+        [Min(1f)] public float baseCritMultiplier = 1.5f;
+
+        [Header("Resistances / Immunities")]
+        [Tooltip("Per-element damage multipliers, consulted by Health.MitigateDamage. " +
+                 "An element with no entry defaults to 1.0. Mirrors the field monsters " +
+                 "carry on EntityStats — before this existed the player was the only " +
+                 "entity in the game that could not resist anything.")]
+        public ElementResistance[] resistances = System.Array.Empty<ElementResistance>();
+
+        [Tooltip("Status effect kinds this class refuses outright. Mirrors the monster " +
+                 "field of the same name.")]
+        public StatusEffectKind[] statusImmunities = System.Array.Empty<StatusEffectKind>();
 
         [Header("Interaction")]
         public float dragDropRange;

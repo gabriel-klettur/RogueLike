@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8770dafe3e2eea64d90791fb3fe76644, type: 3}
+  m_Name: verdant_school
+  m_EditorClassIdentifier: 
+  displayName: Verdant Rites
+  schoolKey: verdant
+  flavour: Ask the ground for help. It usually agrees.
+  accent: {r: 0.45, g: 0.85, b: 0.4, a: 1}
+  classAffinities:
+  - elven
+  - dwarf
+  offAffinityCostMultiplier: 2
+  nodes:
+  - {fileID: 11400000, guid: 894fab3d578f80c4f968d1753d68ab01, type: 2}
+  - {fileID: 11400000, guid: f07fac04c8391234cbdfb21e10c5b3cf, type: 2}
+  - {fileID: 11400000, guid: 91a3e8ea25d3ef3438b7846c2ad7b7c3, type: 2}

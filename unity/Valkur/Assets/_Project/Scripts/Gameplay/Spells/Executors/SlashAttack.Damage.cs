@@ -36,14 +36,32 @@ namespace Valkur.Gameplay.Spells
         private void AdvanceObstacleDamage(float eased)
         {
             if (_obstaclesStruck || eased < 0.5f) return;
-            if (DestructibleObstacleRegistry.Count == 0) { _obstaclesStruck = true; return; }
+
+            bool anyObstacles = DestructibleObstacleRegistry.Count > 0;
+            bool anySeams = Valkur.Gameplay.World.HarvestSwingRegistry.Count > 0;
+            if (!anyObstacles && !anySeams) { _obstaclesStruck = true; return; }
 
             _obstaclesStruck = true;
-            DestructibleObstacleRegistry.DamageInArc(
-                transform.position, _profile.Radius, _direction, _profile.ArcDegrees,
-                Mathf.Max(1, Mathf.RoundToInt(_context.Spell.damage)),
-                _context.Caster != null ? _context.Caster.gameObject : null,
-                ProjectileExecutor.ResolveElement(_context.Spell));
+
+            int damage = SpellPower.ScaleToInt(_context.Spell.damage, _context.Caster);
+            if (damage <= 0) damage = 1;
+            var attacker = _context.Caster != null ? _context.Caster.gameObject : null;
+            var element = ProjectileExecutor.ResolveElement(_context.Spell);
+
+            if (anyObstacles)
+                DestructibleObstacleRegistry.DamageInArc(
+                    transform.position, _profile.Radius, _direction, _profile.ArcDegrees,
+                    damage, attacker, element);
+
+            // Harvest seams are reached the same way and for the same reason, but through a
+            // registry of their own. They deliberately do NOT implement IDestructibleObstacle:
+            // Projectile resolves that interface directly off the collider's parents, so a
+            // seam that implemented it could be emptied by any stray fireball that clipped it.
+            // See HarvestSwingRegistry.
+            if (anySeams)
+                Valkur.Gameplay.World.HarvestSwingRegistry.WorkInArc(
+                    transform.position, _profile.Radius, _direction, _profile.ArcDegrees,
+                    damage, attacker, element);
         }
 
         /// <summary>Leading edge crosses the arc; each target is hit as it is passed.</summary>
@@ -153,7 +171,7 @@ namespace Valkur.Gameplay.Spells
         private void Strike(Health health, Vector2 bodyPoint)
         {
             int before = health.CurrentHp;
-            int damage = Mathf.Max(1, Mathf.RoundToInt(_context.Spell.damage));
+            int damage = Mathf.Max(1, SpellPower.ScaleToInt(_context.Spell.damage, _context.Caster));
             GameObject casterGo = _context.Caster.gameObject;
             health.TakeDamage(damage, casterGo, ProjectileExecutor.ResolveElement(_context.Spell));
             if (health.CurrentHp == before) return;

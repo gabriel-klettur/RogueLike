@@ -86,19 +86,6 @@ namespace Valkur.Gameplay
             Debug.Log("[GameplaySceneSetup] PermadeathSaveCleanupSystem created.");
         }
 
-        // LevelUpSkillPointSystem grants skill points to the levelled
-        // entity's LearnedSkills on each level-up. Sibling to
-        // LevelUpRestoreSystem; both can safely coexist on the same event.
-        // Skipped silently for NPCs without a LearnedSkills component.
-        private void EnsureLevelUpSkillPointSystem()
-        {
-            if (FindObjectOfType<LevelUpSkillPointSystem>() != null) return;
-            var go = new GameObject("LevelUpSkillPointSystem");
-            go.AddComponent<LevelUpSkillPointSystem>();
-            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
-            Debug.Log("[GameplaySceneSetup] LevelUpSkillPointSystem created.");
-        }
-
         // XpFeedbackSystem closes the visual juice loop: floating "+N XP"
         // above the player and "LEVEL UP!" toast on level-up. Audio is
         // already covered by CombatAudioSystem.OnLevelUp, so this only
@@ -110,19 +97,6 @@ namespace Valkur.Gameplay
             go.AddComponent<XpFeedbackSystem>();
             go.transform.SetParent(GetSceneContainer("[Systems]"), false);
             Debug.Log("[GameplaySceneSetup] XpFeedbackSystem created.");
-        }
-
-        // LevelUpStatScalingSystem permanently grows MaxHp/MaxMana on each
-        // level-up via a LevelStatCurve. Spawned without a curve assigned
-        // = silent no-op, so adding the bootstrap call is safe even before
-        // designers wire the SO. Idempotent.
-        private void EnsureLevelUpStatScalingSystem()
-        {
-            if (FindObjectOfType<LevelUpStatScalingSystem>() != null) return;
-            var go = new GameObject("LevelUpStatScalingSystem");
-            go.AddComponent<LevelUpStatScalingSystem>();
-            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
-            Debug.Log("[GameplaySceneSetup] LevelUpStatScalingSystem created (no curve assigned — system idle until set).");
         }
 
         // XpLossOnDeathSystem applies an XP penalty when the player revives

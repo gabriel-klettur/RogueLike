@@ -886,8 +886,12 @@ namespace Valkur.Gameplay
             {
                 foreach (var (action, spellKey, legacyKey) in gp.EnumerateSpellBindings())
                 {
+                    // The legacy half goes through KeyboardInputManager, NOT raw
+                    // UnityEngine.Input. Disabling the Gameplay action map silences the
+                    // action; nothing silenced the fallback, so every letter typed into the
+                    // chat that happens to be bound to a spell cast it.
                     bool fired = (action != null && action.WasPerformedThisFrame())
-                              || UnityEngine.Input.GetKeyDown(legacyKey);
+                              || KeyboardInputManager.WasKeyCodePressedThisFrame(legacyKey);
                     if (fired)
                     {
                         if (_spellCaster.TryCastByKey(spellKey, _facingDirection))

@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6365bbdf4f1dc4c41bd85265d8fcee98, type: 3}
+  m_Name: ProgressionCatalog
+  m_EditorClassIdentifier: 
+  xpCurve: {fileID: 11400000, guid: 3ab3784b3cd158644bc8435f84e63629, type: 2}
+  levelStatCurve: {fileID: 11400000, guid: c12c72a716d6dc647bf28a576abcf768, type: 2}
+  skillTrees:
+  - {fileID: 11400000, guid: 8377c5e00f0b10b4cbef7cea463ee9dc, type: 2}
+  - {fileID: 11400000, guid: bab47d41b4e573540b0fa4a632dc9fe6, type: 2}
+  - {fileID: 11400000, guid: 626cefc89a13fe443aaf1174de711a74, type: 2}
+  - {fileID: 11400000, guid: a4702f4fc49e85c43951af16fa58cf9e, type: 2}
+  - {fileID: 11400000, guid: cdbedb6a156fdea4387c29f660edf08c, type: 2}
+  spellTrees:
+  - {fileID: 11400000, guid: d53b4f12eaf09c94180ebc6dc5d0875e, type: 2}
+  - {fileID: 11400000, guid: e4c97eebe0db270449cf3b53d96ee89f, type: 2}
+  - {fileID: 11400000, guid: 725b41e24f7969c4482a30ec06e12b72, type: 2}
+  - {fileID: 11400000, guid: f43582dcd6f92e4469afd51b7c834b32, type: 2}
+  - {fileID: 11400000, guid: d40e669a234ed394a9aea11fafabb54c, type: 2}
+  - {fileID: 11400000, guid: ffcfabda89cf1bc44a92601631ddf7a1, type: 2}
+  - {fileID: 11400000, guid: e11d3e553d37bb54caee8f119ddb707b, type: 2}
+  - {fileID: 11400000, guid: 5eb2927448707ca4ea27a17739fce7b5, type: 2}
+  - {fileID: 11400000, guid: 38be182905160a44699c598e81aabca5, type: 2}
+  skillPointsPerLevel: 1
+  arcanePointsPerGrant: 1
+  arcanePointLevelInterval: 2
+  startingSkillPoints: 0
+  startingArcanePoints: 1
+  alwaysKnownSpellKeys:
+  - slash_regular
+  - weapon_toggle

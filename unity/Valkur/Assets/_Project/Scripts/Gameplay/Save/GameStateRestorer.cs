@@ -30,9 +30,15 @@ namespace Valkur.Gameplay.Save
             }
 
             RestorePosition(player, data.player);
+            // Progression FIRST among the stat-bearing restores. It rebuilds the Level,
+            // Skill and Grimoire stat layers, and PlayerStats pushes the resolved max HP
+            // and max mana into Health and Mana as it does — so restoring those two before
+            // it would have their saved values immediately overwritten by the recompute.
+            RestoreProgression(player, data.player);
             RestoreHealth(player, data.player);
             RestoreMana(player, data.player);
             RestoreExperience(player, data.player);
+            RestoreCoins(player, data.player);
             RestoreInventory(player, data.player);
             RestoreVisualLayer(player, data.player);
 
@@ -40,6 +46,7 @@ namespace Valkur.Gameplay.Save
                       $"HP={data.player.hp}/{data.player.maxHp}, " +
                       $"Mana={data.player.mana}/{data.player.maxMana}, " +
                       $"XP={data.player.experience}, Lv={data.player.level}, " +
+                      $"Coins={data.player.coins}, " +
                       $"VisualLayer={data.player.visualLayer}");
         }
 
@@ -76,6 +83,45 @@ namespace Valkur.Gameplay.Save
             // OnManaConsumed subscribers (spell-cost SFX, etc.) don't fire
             // a fake consume event on game load.
             mana.Initialize(maxMana, curMana, 2f);
+        }
+
+        /// <summary>
+        /// Puts the coin balance back.
+        ///
+        /// <para>Coins were collected by pickups and by selling to vendors, and then thrown
+        /// away on every load: nothing in the save pipeline mentioned CurrencyWallet, and
+        /// its Awake resets the balance to <c>startingCoins</c> each session. A player could
+        /// sell an inventory to Gatita and have the money gone by the next launch.</para>
+        ///
+        /// <para>A negative balance means the save predates this field. Restoring 0 for
+        /// those would look exactly like the bug, so they are left at whatever the wallet
+        /// started with.</para>
+        /// </summary>
+        private static void RestoreCoins(GameObject player, PlayerSaveData psd)
+        {
+            if (psd.coins < 0) return;
+
+            var wallet = player.GetComponent<CurrencyWallet>();
+            if (wallet != null) wallet.SetBalance(psd.coins);
+        }
+
+        /// <summary>
+        /// Rehydrates talents, grimoire and both point balances, then rebuilds every stat
+        /// layer that depends on them and re-syncs the spell book to what the character
+        /// knows.
+        ///
+        /// A save written before progression existed carries an EMPTY document rather than
+        /// null (JsonUtility runs field initialisers first). PlayerProgression treats that
+        /// case as a migration rather than as data — see RestoreFrom — because reading it
+        /// literally would zero both point balances and destroy the grant the character was
+        /// given moments earlier at spawn.
+        /// </summary>
+        private static void RestoreProgression(GameObject player, PlayerSaveData psd)
+        {
+            var progression = player.GetComponent<PlayerProgression>();
+            if (progression == null) return;
+
+            progression.RestoreFrom(psd.progression, Mathf.Max(1, psd.level));
         }
 
         private static void RestoreExperience(GameObject player, PlayerSaveData psd)

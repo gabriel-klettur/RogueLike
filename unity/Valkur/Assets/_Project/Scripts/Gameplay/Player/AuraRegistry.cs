@@ -6,7 +6,7 @@ namespace Valkur.Gameplay
 {
     /// <summary>
     /// Static registry of passive-aura handlers. Each aura is a handler
-    /// (Action&lt;GameObject, float&gt;) keyed by an aura id; <see cref="SkillEffectApplicator"/>
+    /// (Action&lt;GameObject, float&gt;) keyed by an aura id; <see cref="PlayerProgression"/>
     /// looks up the id when a <see cref="Valkur.Data.SkillEffectKind.PassiveAura"/>
     /// effect fires and invokes the handler against the entity that
     /// learned the skill.

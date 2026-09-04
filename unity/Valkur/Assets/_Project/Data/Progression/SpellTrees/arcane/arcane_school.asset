@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8770dafe3e2eea64d90791fb3fe76644, type: 3}
+  m_Name: arcane_school
+  m_EditorClassIdentifier: 
+  displayName: Arcana
+  schoolKey: arcane
+  flavour: The school that studies the other schools.
+  accent: {r: 0.7, g: 0.45, b: 1, a: 1}
+  classAffinities:
+  - mague
+  - elven
+  offAffinityCostMultiplier: 2
+  nodes:
+  - {fileID: 11400000, guid: fdf3d0409a9fc97429033a9246cdf510, type: 2}
+  - {fileID: 11400000, guid: 27b53287247bfc44481c8fbefefe3fbe, type: 2}
+  - {fileID: 11400000, guid: 508cfe28132645d4bb9eacbcb3bf2a9a, type: 2}
+  - {fileID: 11400000, guid: 3bdcc0dd02f9c304c93fea024b1a6f84, type: 2}
+  - {fileID: 11400000, guid: 9456fc17e6456104a921cf6a4f29597d, type: 2}
+  - {fileID: 11400000, guid: 6b78a041809341b409e90ec1b297d7cd, type: 2}
+  - {fileID: 11400000, guid: dcf5ec88b6640a843a56b7b0c49b6c87, type: 2}
+  - {fileID: 11400000, guid: 1939d991cd7359745bbd49331e956c93, type: 2}

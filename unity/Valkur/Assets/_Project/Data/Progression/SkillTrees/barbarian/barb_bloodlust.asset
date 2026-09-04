@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9daf39b310f62e64eafddc1b747855a0, type: 3}
+  m_Name: barb_bloodlust
+  m_EditorClassIdentifier: 
+  skillId: barb_bloodlust
+  displayName: Bloodlust
+  description: Openings you did not notice you were looking for.
+  icon: {fileID: 0}
+  pointCost: 1
+  maxRank: 5
+  levelRequirement: 0
+  levelPerRank: 0
+  prerequisites: []
+  modifiersPerRank:
+  - stat: 8
+    op: 0
+    value: 0.03
+  passiveAuras: []
+  row: 0
+  column: 1

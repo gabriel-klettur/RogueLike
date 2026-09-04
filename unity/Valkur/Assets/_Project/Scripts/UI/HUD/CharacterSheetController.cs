@@ -111,6 +111,16 @@ namespace Valkur.UI.HUD
         {
             _tabs.Clear();
 
+            // CHARACTER comes first because it is the tab that answers "what am I right
+            // now". The two progression tabs are decisions the player makes ABOUT that
+            // answer, so they read better after it.
+            _tabs.Add(new SheetTab
+            {
+                Label = "CHARACTER",
+                Show  = () => EnsurePanel<CharacterStatsHUD>("CharacterStatsHUD").Open(),
+                Hide  = () => EnsurePanel<CharacterStatsHUD>("CharacterStatsHUD").Close(),
+            });
+
             _tabs.Add(new SheetTab
             {
                 Label = "SKILLS",
@@ -120,7 +130,18 @@ namespace Valkur.UI.HUD
 
             _tabs.Add(new SheetTab
             {
-                Label = "STATS",
+                Label = "GRIMOIRE",
+                Show  = () => EnsurePanel<SpellTreeHUD>("SpellTreeHUD").Open(),
+                Hide  = () => EnsurePanel<SpellTreeHUD>("SpellTreeHUD").Close(),
+            });
+
+            // Lifetime PROFILE statistics — runs played, achievements, kill counts. It is
+            // deliberately not called "stats" any more: it never described the character,
+            // and while it was the only tab with that name nothing on screen said how much
+            // damage the player dealt.
+            _tabs.Add(new SheetTab
+            {
+                Label = "RECORDS",
                 Show  = () => EnsurePanel<StatisticsHUD>("StatisticsHUD").Open(),
                 Hide  = () => EnsurePanel<StatisticsHUD>("StatisticsHUD").Close(),
             });

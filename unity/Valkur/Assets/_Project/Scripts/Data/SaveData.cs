@@ -61,11 +61,68 @@ namespace Valkur.Data
         public int level;
         public InventoryData inventory;
 
+        /// <summary>
+        /// Coins in the player's <c>CurrencyWallet</c>.
+        ///
+        /// <para>Absent from every save written before this field existed, and -1 is how that
+        /// is told apart from a player who is genuinely broke. JsonUtility runs field
+        /// initialisers before overwriting what the JSON carries, so a legacy save arrives
+        /// here as -1 and the restorer leaves the wallet alone; a save written since arrives
+        /// as a real balance, zero included.</para>
+        ///
+        /// <para>A plain <c>0</c> default would have been silently destructive in the other
+        /// direction: every legacy save would restore as "you have no money", which is
+        /// indistinguishable from the bug this field fixes.</para>
+        /// </summary>
+        public int coins = -1;
+
         // Current visual layer index (0=Ground, 4=WallsBottom, 8=OverheadDetails)
         // for the per-visual-layer collisions pipeline (M1.5 foundation, M2 runtime).
         // Default 0 ensures legacy saves load with the player on Ground — JsonUtility
         // tolerates missing fields, so pre-feature saves never see a regression.
         public int visualLayer = 0;
+
+        /// <summary>
+        /// Talents and grimoire. Never null — JsonUtility runs field initialisers before
+        /// applying the JSON, so a save written before progression existed arrives here as
+        /// an EMPTY document rather than as null, and restores as "a character who has
+        /// spent nothing", which is exactly what such a save describes.
+        /// </summary>
+        public ProgressionSaveData progression = new ProgressionSaveData();
+    }
+
+    /// <summary>
+    /// The persisted half of a character's progression.
+    ///
+    /// It lives in <c>Valkur.Data</c> rather than as a nested type on the two runtime
+    /// components because the save layer may not reference <c>Valkur.Gameplay</c>, and
+    /// because one shared document is the only way the two halves cannot drift into
+    /// different on-disk shapes.
+    ///
+    /// Ranks are a list PARALLEL to <see cref="skillIds"/> rather than a list of pairs:
+    /// JsonUtility serializes a list of primitives and refuses a dictionary, and a flat
+    /// list survives every serializer this project has used.
+    /// </summary>
+    [Serializable]
+    public class ProgressionSaveData
+    {
+        public List<string> skillIds = new List<string>();
+        public List<int> skillRanks = new List<int>();
+        public int skillPoints;
+        public int skillPointsSpent;
+
+        public List<string> grimoireNodeIds = new List<string>();
+        public int arcanePoints;
+        public int arcanePointsSpent;
+
+        /// <summary>True when this document says nothing — a legacy save, or a character
+        /// who has genuinely spent nothing. The two are indistinguishable and should be
+        /// treated the same way.</summary>
+        public bool IsEmpty =>
+            (skillIds == null || skillIds.Count == 0) &&
+            (grimoireNodeIds == null || grimoireNodeIds.Count == 0) &&
+            skillPoints == 0 && arcanePoints == 0 &&
+            skillPointsSpent == 0 && arcanePointsSpent == 0;
     }
 
     /// <summary>

@@ -269,6 +269,35 @@ namespace Valkur.Gameplay
             OnHpChanged?.Invoke(currentHp, maxHp);
         }
 
+        /// <summary>
+        /// Sets the max HP to an ABSOLUTE value, granting the difference when it rises and
+        /// clamping current HP when it falls.
+        ///
+        /// This is the seam <see cref="Valkur.Gameplay.PlayerStats"/> pushes through, and it
+        /// exists because <see cref="IncreaseMaxHp"/> cannot be called from a recompute:
+        /// that one takes a DELTA, so re-resolving the same layers twice — which happens
+        /// every time any unrelated buff expires — would grant the bonus again and heal the
+        /// player a little each time. An absolute setter is idempotent by construction, and
+        /// idempotence is the whole contract a layered stat store rests on.
+        ///
+        /// Dead entities are refused: raising the cap on a corpse would resurrect it as far
+        /// as <see cref="IsDead"/> is concerned while every death system has already run.
+        /// </summary>
+        public void SetMaxHp(int newMax)
+        {
+            newMax = Mathf.Max(1, newMax);
+            if (newMax == maxHp) return;
+            if (IsDead) { maxHp = newMax; return; }
+
+            int delta = newMax - maxHp;
+            maxHp = newMax;
+            currentHp = delta > 0
+                ? currentHp + delta            // a bigger pool arrives full of the new room
+                : Mathf.Min(currentHp, maxHp);  // a smaller one just clips what no longer fits
+
+            OnHpChanged?.Invoke(currentHp, maxHp);
+        }
+
         public void SetInvincible(bool invincible)
         {
             _invincible = invincible;
