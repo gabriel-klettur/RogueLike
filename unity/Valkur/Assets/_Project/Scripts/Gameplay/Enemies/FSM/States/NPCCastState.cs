@@ -89,7 +89,7 @@ namespace Valkur.Gameplay.FSM
         private static void FacePlayer(FSMComponents c, StateMachine fsm)
         {
             if (c?.Animator == null) return;
-            var player = EntityRegistry.Player;
+            var player = FactionTargeting.EnemyOf(fsm.Owner);
             if (player == null) return;
             Vector2 toPlayer = (Vector2)player.transform.position - (Vector2)fsm.Owner.transform.position;
             if (toPlayer.sqrMagnitude < 0.0001f) return;
@@ -104,7 +104,7 @@ namespace Valkur.Gameplay.FSM
         // ignore that aggression.
         private static void ReturnToHostileState(StateMachine fsm)
         {
-            var player = EntityRegistry.Player;
+            var player = FactionTargeting.EnemyOf(fsm.Owner);
             if (player == null)
             {
                 fsm.ChangeState(new ChaseState());

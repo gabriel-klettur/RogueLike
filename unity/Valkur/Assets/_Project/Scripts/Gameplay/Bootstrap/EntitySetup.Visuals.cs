@@ -190,7 +190,11 @@ namespace Valkur.Gameplay
         private static System.Reflection.MethodInfo _configureMethod;
         private static bool _minimapReflectionFailed;
 
-        private static void ConfigureMinimapDot(GameObject go, string dotTypeName, Color color)
+        /// <summary>Minimap dot for an entity. Internal rather than private because
+        /// AlliedSummonService re-colours a summon's dot green after ConfigureMonster
+        /// has already painted it red -- a player who cannot find their own summon in a
+        /// fight has a companion in name only.</summary>
+        internal static void ConfigureMinimapDot(GameObject go, string dotTypeName, Color color)
         {
             if (_minimapReflectionFailed) return;
 

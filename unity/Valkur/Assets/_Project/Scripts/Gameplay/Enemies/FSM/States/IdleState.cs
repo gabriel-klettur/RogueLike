@@ -28,7 +28,7 @@ namespace Valkur.Gameplay.FSM
             }
 
             float aggroRange = fsm.GetContextFloat("aggro_range", 5f);
-            var player = EntityRegistry.Player;
+            var player = FactionTargeting.EnemyOf(fsm.Owner);
             if (player == null) return;
 
             // Spirit-form players are invisible to NPC perception.

@@ -258,7 +258,7 @@ namespace Valkur.Gameplay.FSM
 
         private static float ResolveDistanceToPlayer(StateMachine fsm)
         {
-            var player = EntityRegistry.Player;
+            var player = FactionTargeting.EnemyOf(fsm.Owner);
             if (player == null || fsm.Owner == null) return float.MaxValue;
             return Vector2.Distance(fsm.Owner.transform.position, player.transform.position);
         }
@@ -280,7 +280,7 @@ namespace Valkur.Gameplay.FSM
 
         private static bool ResolveHasTarget(StateMachine fsm)
         {
-            var player = EntityRegistry.Player;
+            var player = FactionTargeting.EnemyOf(fsm.Owner);
             if (player == null) return false;
 
             var health = player.GetComponent<Health>();

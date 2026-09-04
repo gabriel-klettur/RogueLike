@@ -36,7 +36,7 @@ namespace Valkur.Gameplay.FSM
 
             // Check aggro
             float aggroRange = fsm.GetContextFloat("aggro_range", 5f);
-            var player = EntityRegistry.Player;
+            var player = FactionTargeting.EnemyOf(fsm.Owner);
             if (player != null)
             {
                 var playerHealth = player.GetComponent<Health>();

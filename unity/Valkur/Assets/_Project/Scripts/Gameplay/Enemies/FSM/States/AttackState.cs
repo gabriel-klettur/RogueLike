@@ -89,7 +89,7 @@ namespace Valkur.Gameplay.FSM
             if (!fsm.GetContextBool("use_attack_telegraph")) return;
             if (_windupDuration < MinWindupToTelegraph) return;
 
-            var player = EntityRegistry.Player;
+            var player = FactionTargeting.EnemyOf(fsm.Owner);
             if (player == null || fsm.Owner == null) return;
 
             Vector2 dir = ((Vector2)player.transform.position - (Vector2)fsm.Owner.transform.position).normalized;
@@ -154,7 +154,7 @@ namespace Valkur.Gameplay.FSM
 
         private static float DistanceToPlayer(StateMachine fsm)
         {
-            var player = EntityRegistry.Player;
+            var player = FactionTargeting.EnemyOf(fsm.Owner);
             if (player == null || fsm.Owner == null) return 0f;
             return Vector2.Distance(fsm.Owner.transform.position, player.transform.position);
         }
@@ -179,7 +179,7 @@ namespace Valkur.Gameplay.FSM
 
             // Spirit-form players are intangible — abandon the attack and
             // fall back to Patrol so the NPC stops swinging at empty air.
-            var playerForSpiritCheck = EntityRegistry.Player;
+            var playerForSpiritCheck = FactionTargeting.EnemyOf(fsm.Owner);
             if (playerForSpiritCheck != null)
             {
                 var spirit = playerForSpiritCheck.GetComponent<PlayerSpiritState>();
@@ -207,7 +207,7 @@ namespace Valkur.Gameplay.FSM
                 // nothing in the FSM at all.
                 if (c != null && !c.IsStunned && c.Combat != null)
                 {
-                    var player = EntityRegistry.Player;
+                    var player = FactionTargeting.EnemyOf(fsm.Owner);
                     if (player != null)
                     {
                         Vector2 dir = ((Vector2)player.transform.position - (Vector2)fsm.Owner.transform.position).normalized;
@@ -225,7 +225,7 @@ namespace Valkur.Gameplay.FSM
             if (_timer >= _attackDuration)
             {
                 // Check if player still in range
-                var player2 = EntityRegistry.Player;
+                var player2 = FactionTargeting.EnemyOf(fsm.Owner);
                 if (player2 != null)
                 {
                     float meleeRange = fsm.GetContextFloat("melee_range", 1.5f);
@@ -247,7 +247,7 @@ namespace Valkur.Gameplay.FSM
         private static void FacePlayer(StateMachine fsm, FSMComponents c, int variant)
         {
             if (c?.Animator == null) return;
-            var player = EntityRegistry.Player;
+            var player = FactionTargeting.EnemyOf(fsm.Owner);
             if (player == null) return;
             Vector2 toPlayer = (Vector2)player.transform.position - (Vector2)fsm.Owner.transform.position;
             if (toPlayer.sqrMagnitude < 0.0001f) return;
