@@ -103,13 +103,17 @@ namespace Valkur.Gameplay.Chat.Providers
         /// Lowercases, strips diacritics, turns every non-alphanumeric run into a single
         /// space and wraps the result in spaces.
         ///
+        /// <para>Internal rather than private because <see cref="ExpressionClassifier"/>
+        /// matches keywords the same way and a second copy of this would be two normalisers
+        /// drifting apart — one accepting "cuánto" and the other not, with nothing failing.</para>
+        ///
         /// The diacritic pass is why "¿Cuánto?" and "cuanto" match the same keyword.
         /// The space-wrapping is what makes the match a WORD match: plain substring
         /// matching on a two-letter needle like "hi" fires inside "this" and "machine", and
         /// "vale" inside a name, so an NPC would answer a greeting to someone asking about
         /// the weather. Costs one allocation per line the player types.
         /// </summary>
-        private static string Normalize(string text)
+        internal static string Normalize(string text)
         {
             string lowered = text.ToLowerInvariant().Normalize(NormalizationForm.FormD);
 
@@ -143,7 +147,7 @@ namespace Valkur.Gameplay.Chat.Providers
         /// whole phrase). <paramref name="haystack"/> must already be space-wrapped by
         /// <see cref="Normalize"/>.
         /// </summary>
-        private static bool ContainsAny(string haystack, string[] needles)
+        internal static bool ContainsAny(string haystack, string[] needles)
         {
             foreach (string needle in needles)
             {

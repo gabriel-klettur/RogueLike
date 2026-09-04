@@ -50,8 +50,16 @@ namespace Valkur.Gameplay.Chat.Providers
         /// </summary>
         public Task<ChatReply> GenerateReplyAsync(ChatRequest request, CancellationToken cancellationToken)
         {
-            return Task.FromResult(
-                ChatReply.Spoken(Compose(request.Persona, request.Memory, request.PlayerText)));
+            string spoken = Compose(request.Persona, request.Memory, request.PlayerText);
+
+            // The face is read off the line that was just chosen, not off the pool it came
+            // from. A negotiation phrase is not always a haggling FACE — the same pool holds
+            // a wink and a flat refusal — so the words are the better evidence, and the
+            // player's intent only stands in when they gave nothing away.
+            var expression = ExpressionClassifier.Classify(
+                spoken, DialogueIntentClassifier.Classify(request.PlayerText));
+
+            return Task.FromResult(ChatReply.Spoken(spoken, expression));
         }
 
         private string Compose(NPCPersonaDefinition persona, NPCMemory memory, string playerText)

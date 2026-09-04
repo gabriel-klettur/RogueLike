@@ -123,7 +123,35 @@ namespace Valkur.Gameplay.Chat.Providers
                 sb.AppendLine(sharedRules.Trim());
             }
 
+            AppendExpressionRule(sb, persona);
+
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// The instruction that makes the model declare which face it is pulling.
+        ///
+        /// <para>LAST IN THE PROMPT, after even the shared rules, for the same reason those
+        /// come after the character sketch: it is the most mechanical instruction here and
+        /// the one whose FORMAT has to survive, and a model follows the instruction it saw
+        /// most recently more reliably than one buried above a page of lore. Getting it wrong
+        /// costs nothing — an untagged reply is classified from its words instead — but
+        /// getting it right is what makes the face the character's own choice rather than a
+        /// keyword match.</para>
+        ///
+        /// <para>Skipped entirely for a character with no drawings, and for one whose only
+        /// art is the single fallback portrait. Both would be paying tokens to teach a
+        /// distinction that reaches no pixel.</para>
+        /// </summary>
+        private static void AppendExpressionRule(StringBuilder sb, NPCPersonaDefinition persona)
+        {
+            if (persona == null || !persona.HasFaces) return;
+
+            string rule = ExpressionTag.BuildInstruction(persona);
+            if (string.IsNullOrEmpty(rule)) return;
+
+            sb.AppendLine();
+            sb.AppendLine(rule);
         }
 
         /// <summary>

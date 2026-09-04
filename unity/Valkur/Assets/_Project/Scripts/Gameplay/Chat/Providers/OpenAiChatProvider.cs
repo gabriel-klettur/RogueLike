@@ -77,10 +77,25 @@ namespace Valkur.Gameplay.Chat.Providers
             {
                 ChatReply reply = await RequestAsync(request, apiKey, cancellationToken);
 
+                // The face rides the text channel as a leading [tag], so it is taken off
+                // HERE — before the emptiness check, because a turn that is nothing but a
+                // tag has said nothing, and before the reply leaves the provider, because
+                // ChatSystem records what comes back to memory and to the session log
+                // verbatim.
+                bool tagged = ExpressionTag.TryStrip(reply.Text, out FacialExpression face, out string spoken);
+                if (!tagged)
+                {
+                    // The model skipped it, or it is a model that never learned to. Reading
+                    // the words is what the offline provider does and it is the floor under
+                    // this one too, so an untagged turn still gets a face.
+                    face = ExpressionClassifier.Classify(
+                        spoken, DialogueIntentClassifier.Classify(request.PlayerText));
+                }
+
                 // A reply with only an action and no words is legal — the model chose to act
                 // rather than speak — and the game supplies the sentence for it.
-                if (!string.IsNullOrWhiteSpace(reply.Text) || reply.Proposal.IsSomething)
-                    return new ChatReply(reply.Text?.Trim() ?? "", reply.Proposal);
+                if (!string.IsNullOrWhiteSpace(spoken) || reply.Proposal.IsSomething)
+                    return new ChatReply(spoken?.Trim() ?? "", reply.Proposal, face);
 
                 // A 200 with nothing usable in it is a content filter or a truncated
                 // reasoning turn. Neither is worth a warning per message, and both are

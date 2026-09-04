@@ -1,3 +1,5 @@
+using Valkur.Data;
+
 namespace Valkur.Gameplay.Chat.Providers
 {
     /// <summary>Which way goods and coins move in a proposed trade.</summary>
@@ -58,7 +60,8 @@ namespace Valkur.Gameplay.Chat.Providers
     /// <para>A struct rather than a bare string for the same reason <see cref="ChatRequest"/>
     /// is one on the way in. A reply is no longer only text, and the next thing it grows —
     /// a quest offered, a mood shift, an emote — should not be another signature change
-    /// rippling through every implementor and every test fake.</para>
+    /// rippling through every implementor and every test fake. The emote arrived: see
+    /// <see cref="Expression"/>.</para>
     /// </summary>
     public readonly struct ChatReply
     {
@@ -68,13 +71,37 @@ namespace Valkur.Gameplay.Chat.Providers
         /// <summary>What the character offered to do, if anything.</summary>
         public TradeProposal Proposal { get; }
 
-        public ChatReply(string text, TradeProposal proposal = default)
+        /// <summary>
+        /// The face the character is making as it says this.
+        ///
+        /// <para>Always a real value — <see cref="FacialExpression.Neutral"/> is the default
+        /// and is a face every character has, so a provider that says nothing about the
+        /// expression still produces a showable portrait rather than a hole.</para>
+        ///
+        /// <para>It belongs to the REPLY rather than to the character because it is a
+        /// property of this particular utterance. A persistent mood is a different thing and
+        /// does not live here.</para>
+        /// </summary>
+        public FacialExpression Expression { get; }
+
+        public ChatReply(string text, TradeProposal proposal = default,
+                         FacialExpression expression = FacialExpression.Neutral)
         {
             Text = text;
             Proposal = proposal;
+            Expression = expression;
         }
 
         /// <summary>A plain spoken reply with no action attached.</summary>
-        public static ChatReply Spoken(string text) => new ChatReply(text, TradeProposal.None);
+        public static ChatReply Spoken(string text) =>
+            new ChatReply(text, TradeProposal.None, FacialExpression.Neutral);
+
+        /// <summary>A plain spoken reply delivered with a particular face.</summary>
+        public static ChatReply Spoken(string text, FacialExpression expression) =>
+            new ChatReply(text, TradeProposal.None, expression);
+
+        /// <summary>This reply with a different face and everything else unchanged.</summary>
+        public ChatReply WithExpression(FacialExpression expression) =>
+            new ChatReply(Text, Proposal, expression);
     }
 }
