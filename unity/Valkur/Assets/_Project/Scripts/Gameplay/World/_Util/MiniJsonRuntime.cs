@@ -121,15 +121,24 @@ namespace Valkur.Gameplay.World
             private const string WORD_BREAK = "{}[],:\"";
             private StringReader _json;
 
+            // Set the first time the input stops being JSON. Every container checks it after
+            // each child and unwinds, and Parse returns null when it is set — so a caller
+            // cannot tell "the file said null" from "the file was garbage" (neither could the
+            // original MiniJSON), but it CAN rely on Deserialize returning, which it could not.
+            private bool _failed;
+
             private Parser(string jsonString) { _json = new StringReader(jsonString); }
 
             public static object Parse(string jsonString)
             {
                 using var instance = new Parser(jsonString);
-                return instance.ParseValue();
+                object result = instance.ParseValue();
+                return instance._failed ? null : result;
             }
 
             public void Dispose() { _json?.Dispose(); _json = null; }
+
+            private bool AtEnd => _json.Peek() == -1;
 
             private char PeekChar
             {
@@ -140,14 +149,29 @@ namespace Valkur.Gameplay.World
                 }
             }
 
-            private char NextChar => (char)_json.Read();
+            /// <summary>
+            /// '\0' at the end of the input. The previous version cast <c>Read()</c>'s -1 to
+            /// <c>'\uFFFF'</c>, which is not a quote and not a backslash, so an unterminated
+            /// string appended it to a StringBuilder forever — measured at 20 seconds of
+            /// wall clock and then OutOfMemory, on the input <c>{ this is not valid json</c>.
+            /// Eighteen loaders parse hand-editable files through this class; any one of
+            /// them corrupted by a stray keystroke used to freeze the game that way.
+            /// </summary>
+            private char NextChar
+            {
+                get
+                {
+                    int c = _json.Read();
+                    return c == -1 ? '\0' : (char)c;
+                }
+            }
 
             private string NextWord
             {
                 get
                 {
                     var sb = new System.Text.StringBuilder();
-                    while (!IsWordBreak(PeekChar) && PeekChar != '\0')
+                    while (!AtEnd && !IsWordBreak(PeekChar))
                         sb.Append(NextChar);
                     return sb.ToString();
                 }
@@ -156,9 +180,16 @@ namespace Valkur.Gameplay.World
             private static bool IsWordBreak(char c) =>
                 char.IsWhiteSpace(c) || WORD_BREAK.IndexOf(c) != -1;
 
+            private object Fail()
+            {
+                _failed = true;
+                return null;
+            }
+
             private object ParseValue()
             {
                 EatWhitespace();
+                if (AtEnd) return Fail();
                 switch (PeekChar)
                 {
                     case '{': return ParseObject();
@@ -175,12 +206,20 @@ namespace Valkur.Gameplay.World
                 while (true)
                 {
                     EatWhitespace();
+                    if (AtEnd) { Fail(); return null; }           // unterminated object
                     if (PeekChar == '}') { _json.Read(); return dict; }
                     if (PeekChar == ',') { _json.Read(); continue; }
+
                     string key = ParseString();
+                    if (key == null) { Fail(); return null; }     // key was not a string
+
                     EatWhitespace();
-                    if (PeekChar == ':') _json.Read();
-                    dict[key] = ParseValue();
+                    if (PeekChar != ':') { Fail(); return null; }
+                    _json.Read();
+
+                    object value = ParseValue();
+                    if (_failed) return null;
+                    dict[key] = value;
                 }
             }
 
@@ -191,22 +230,34 @@ namespace Valkur.Gameplay.World
                 while (true)
                 {
                     EatWhitespace();
+                    if (AtEnd) { Fail(); return null; }           // unterminated array
                     if (PeekChar == ']') { _json.Read(); return list; }
                     if (PeekChar == ',') { _json.Read(); continue; }
-                    list.Add(ParseValue());
+
+                    object value = ParseValue();
+                    if (_failed) return null;
+                    list.Add(value);
                 }
             }
 
+            /// <summary>
+            /// Null when the next thing is not a string — the caller decides whether that is
+            /// a failure (an object key) or a real null value would have gone through
+            /// <see cref="ParseByToken"/> instead.
+            /// </summary>
             private string ParseString()
             {
+                if (PeekChar != '"') return null;
                 var sb = new System.Text.StringBuilder();
                 _json.Read(); // skip opening quote
                 while (true)
                 {
+                    if (AtEnd) { Fail(); return null; }           // unterminated string
                     char c = NextChar;
                     if (c == '"') return sb.ToString();
                     if (c == '\\')
                     {
+                        if (AtEnd) { Fail(); return null; }
                         char esc = NextChar;
                         switch (esc)
                         {
@@ -218,8 +269,20 @@ namespace Valkur.Gameplay.World
                             case 't': sb.Append('\t'); break;
                             case 'u':
                                 var hex = new char[4];
-                                for (int i = 0; i < 4; i++) hex[i] = NextChar;
-                                sb.Append((char)System.Convert.ToInt32(new string(hex), 16));
+                                for (int i = 0; i < 4; i++)
+                                {
+                                    if (AtEnd) { Fail(); return null; }
+                                    hex[i] = NextChar;
+                                }
+                                if (!int.TryParse(new string(hex), System.Globalization.NumberStyles.HexNumber,
+                                        System.Globalization.CultureInfo.InvariantCulture, out int code))
+                                { Fail(); return null; }
+                                sb.Append((char)code);
+                                break;
+                            default:
+                                // An escape this parser does not know. The old code silently
+                                // dropped the character; keep that leniency rather than fail a
+                                // file that has loaded for months.
                                 break;
                         }
                     }
@@ -230,8 +293,13 @@ namespace Valkur.Gameplay.World
                 }
             }
 
-            private static object ParseByToken(string token)
+            private object ParseByToken(string token)
             {
+                // An empty word means the next character was a structural one in a place
+                // that needed a value (`{"a":}`, `[,]`, `:` at top level). Returning it as a
+                // string, as the old code did, is what let the enclosing loop spin without
+                // consuming anything.
+                if (token.Length == 0) return Fail();
                 if (token == "null") return null;
                 if (token == "true") return true;
                 if (token == "false") return false;
@@ -241,12 +309,12 @@ namespace Valkur.Gameplay.World
                 if (double.TryParse(token, System.Globalization.NumberStyles.Any,
                     System.Globalization.CultureInfo.InvariantCulture, out double d))
                     return d;
-                return token;
+                return token;   // bare word: kept as a string, as before
             }
 
             private void EatWhitespace()
             {
-                while (char.IsWhiteSpace(PeekChar)) _json.Read();
+                while (!AtEnd && char.IsWhiteSpace(PeekChar)) _json.Read();
             }
         }
     }

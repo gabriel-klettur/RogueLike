@@ -111,8 +111,10 @@ namespace Valkur.Editor
 
             while (index < json.Length && json[index] != '}')
             {
+                int before = index;
                 SkipWhitespace(json, ref index);
                 string key = ParseString(json, ref index);
+                if (key == null) return null;                  // key was not a string
                 SkipWhitespace(json, ref index);
                 if (index < json.Length && json[index] == ':') index++;
                 SkipWhitespace(json, ref index);
@@ -120,6 +122,10 @@ namespace Valkur.Editor
                 dict[key] = value;
                 SkipWhitespace(json, ref index);
                 if (index < json.Length && json[index] == ',') index++;
+                // No progress means the input is not JSON. Without this guard a value the
+                // number parser cannot consume (`[x`) is re-read forever — the runtime twin
+                // of this class hung for 20 s and died of OutOfMemory on exactly that shape.
+                if (index == before) return null;
             }
             if (index < json.Length) index++; // skip }
             return dict;
@@ -133,9 +139,11 @@ namespace Valkur.Editor
 
             while (index < json.Length && json[index] != ']')
             {
+                int before = index;
                 list.Add(ParseValue(json, ref index));
                 SkipWhitespace(json, ref index);
                 if (index < json.Length && json[index] == ',') index++;
+                if (index == before) return null;              // no progress: not JSON
             }
             if (index < json.Length) index++; // skip ]
             return list;
