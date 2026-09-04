@@ -661,8 +661,14 @@ namespace Valkur.Tests.EditMode.Game.Chat
             // CloseXButton and LangButton are the two free-floating corner controls and are
             // last for that reason — sibling order is draw order, and nothing in the layout
             // arranges them, so they must be drawn over the rows they overlap.
+            //
+            // Portrait is last of all, and for the same reason one step further: it is also
+            // free-floating (ignoreLayout), but unlike the corner buttons it occupies a
+            // gutter every OTHER row was shortened to make, so it overlaps more of the panel
+            // than either of them. Built earlier it would render underneath the conversation
+            // it sits beside.
             CollectionAssert.AreEqual(
-                new[] { "MsgRow", "ScrollArea", "InputRow", "TradeButton", "TradeConfirmRow", "ResetButton", "CloseButton", "ResizeGrip", "CloseXButton", "LangButton" }, names,
+                new[] { "MsgRow", "ScrollArea", "InputRow", "TradeButton", "TradeConfirmRow", "ResetButton", "CloseButton", "ResizeGrip", "CloseXButton", "LangButton", "Portrait" }, names,
                 "Panel row order defines the whole visual layout - reordering rearranges the panel.");
         }
 
