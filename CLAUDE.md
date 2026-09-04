@@ -1868,6 +1868,103 @@ Valkur > Chat > Wire Entities To Personas      -> MonsterDefinition.chatPersona 
   escape hatch. Neither uses `Undo.RecordObject`, for the reason the building-template note
   in the gotchas records.
 
+## Facial expressions in chat
+
+A character's face changes with what it says. Gatita is the first with the art; the layer is
+built so a second character needs drawings and nothing else.
+
+```text
+Art/**/<character>/facial/<any>_<expression>.png   the convention, per character
+Valkur > Chat > Import Facial Expressions          -> NPCPersonaDefinition.faces
+FacialExpression (Valkur.Data)                     the closed, shared vocabulary
+FacialExpressionFallback.Chain                     what a missing drawing shows instead
+ExpressionTag        [happy] ...                   what the model declares
+ExpressionClassifier                               the floor under it, offline
+ChatSystem.CurrentExpression                       the single owner
+ChatUI.Portrait                                    the gutter down the left of the panel
+```
+
+- **The vocabulary is GLOBAL and the art is PER CHARACTER.** Nine values, extensible by
+  appending — never renumbering, because the enum is the wire format between the model and
+  the panel and a reordered one silently changes which face an unchanged prompt produces.
+  Defining it from whatever one character happens to have drawn breaks the second character
+  that arrives, so what lets four drawings answer nine values is `FacialExpressionFallback`,
+  the same job `EntityAnimationBinder` does for an animation state with no frames: show the
+  nearest thing that exists, in the wrong INTENSITY rather than the wrong EMOTION. Which is
+  why `Angry` falls straight to `Neutral` and never through `Sad` — a smaller version of
+  cross is blank-faced, and sad is a different claim about the character that the player
+  would read as one. `Neutral` is 0 so `default` is a face every character has.
+- **The face rides the TEXT channel as a leading `[tag]`, not a tool call.** The provider
+  already gives the model one tool, `propose_trade`, and a tool means "I want to DO
+  something" — a model given a second one returns turns that are a tool call and no words at
+  all, which for an emote is backwards: the face is a property of the sentence, so it has to
+  ride the channel the sentence is already on. The tag costs about three tokens and degrades
+  to nothing. It is stripped IN THE PROVIDER, before the reply is returned, because
+  `ChatSystem` records what comes back to memory and to the session log verbatim — a
+  surviving tag would become part of what the character is remembered to have said, and then
+  what the do-not-repeat check compares against. An unknown word in brackets is deliberately
+  NOT stripped: a character may open with a bracketed aside, and swallowing it would eat
+  words a human authored.
+- **`ExpressionClassifier` is the floor, and the default provider is offline.** It is the
+  mirror of `DialogueIntentClassifier` — that one reads what the PLAYER typed to choose a
+  reply, this one reads what the CHARACTER said to choose a face — and it answers whenever
+  there is no model and whenever a model skips its tag. Both share
+  `DialogueIntentClassifier.Normalize` / `.ContainsAny` (opened from private to internal for
+  it) rather than keeping a second normaliser, or one would accept an accented spelling and
+  the other not, with nothing failing. Ordered first-match, and the ORDER is the design: the
+  warm set is tested before the pensive one, because a question mark is the commonest
+  character in friendly dialogue and scoring it makes almost every line pensive. Emoji are
+  checked FIRST and before normalisation, which turns every non-alphanumeric run into a space
+  and would erase them; they are the only signal that works whatever language the reply is in.
+- **The one moment worth more than the other eight is `Thinking`.** `GenerateReply` is
+  fire-and-forget and a remote call is seconds long, so before this the player typed and the
+  panel went silent with nothing on screen saying anyone was listening. An offline provider
+  completes its await synchronously, so the wait face never renders a frame for it and no
+  branch on the provider is needed.
+- **The portrait FLOATS in a gutter made by layout padding.** The panel is a
+  `VerticalLayoutGroup` and it overwrites the RectTransform of every child it owns — the
+  `LangButton` once came out 504x0 that way — so the portrait is `ignoreLayout` and anchored
+  to the top-left exactly like the corner controls, and the space is reserved by widening the
+  group's LEFT padding. Every existing row then shortens by itself, with no row re-parented
+  and no second layout group. `PANEL_MIN_W` is deliberately NOT raised: a per-character
+  minimum would be static mutable state on a class where Domain Reload is off, and it would
+  clamp a size the player saved on a portrait-less NPC upward the moment they talked to
+  Gatita. At the minimum width the conversation gives up the space instead, the same trade
+  `SCROLL_MIN_H` makes for the trade row. The gutter does not exist at all for a character
+  with no art — reserving it anyway puts an empty rectangle beside five of the six
+  conversations in the game, which reads as a portrait that failed to load.
+- **`NPCPersonaDefinition.portrait` was authored, inert, and its tooltip lied.** Zero readers
+  in the whole project, while the tooltip claimed "the panel falls back to the NPC's own world
+  sprite" — code that never existed. It is now the last link of the fallback chain, which is
+  the one job it can hold without adding a second mechanism.
+- **`friendshipScore` and `moods.triggersUp` / `moods.triggersDown` are STILL inert, on
+  purpose.** Nothing in production writes the score (only tests), so `PersonaPromptBuilder`
+  has always read 0; the triggers are imported and read by nobody. Expressions were
+  deliberately NOT built on that — a face resting on a layer nothing drives is a face that
+  never changes, and wiring it would have turned a bounded job into "also fix the relationship
+  layer". A persistent mood is a different thing from the face on one utterance and does not
+  belong on `ChatReply`.
+- **`faces` / `face` / `faceparade` exist for the same reason `SpellType.AnimationProbe`
+  does.** A drawing reachable only by saying the right thing to a language model is a drawing
+  nobody ever checks: an author cannot confirm the import, cannot compare two expressions, and
+  cannot tell "never chosen" from "missing". `faces` reports which expressions have art of
+  their OWN versus which resolve through the chain, so a half-worked import is a line of text
+  rather than an afternoon. The override is a HOLD, not a one-shot, because a conversation
+  writes the face on every reply and would take it straight back from the author looking at it.
+- **The nine drawings are aligned by SILHOUETTE cross-correlation, onto one shared canvas.**
+  `tools/atlas/wave6/build_gatita_faces.py`. Not by the artist's grid — measured, the cells
+  disagree by 29 px horizontally and 57 vertically and two faces run into their own cell edge
+  — and not by the snout, whose pink mask picks up blush, ear interiors and the tongue and
+  whose centroid wandered 36 px. What does hold is that the ears, crown and head outline are
+  the same drawing in all nine, so the alpha masks lock: NCC 0.87-0.96 with unambiguous peaks
+  and corrections of at most 23 px. One shared canvas because these swap IN PLACE in the same
+  rect — nine crops trimmed to their own alpha make the head jump every time the expression
+  changes. The source sheet lives in `staging/npc/`, not under `Assets/`.
+- **The swap is a crossfade over two stacked Images, never a cut**, for the reason
+  `WeaponSwapFlashFX` exists. And two expressions can share one drawing through the chain
+  (laugh and happy on a character that only drew happy), so dissolving a sprite into itself is
+  refused — it is a flicker with no cause the player can see.
+
 ## Player stats and progression
 
 Everything numeric about the player composes in ONE place, and everything the player
