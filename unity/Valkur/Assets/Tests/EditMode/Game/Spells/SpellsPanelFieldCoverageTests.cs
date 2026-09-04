@@ -46,6 +46,7 @@ namespace Valkur.Tests.EditMode.Game.Spells
             { "sprite",     "assigned from the Assets tab's sprite browser, which needs thumbnails a text row cannot show" },
             { "iconSprite", "assigned from the Assets tab's icon browser, same reason" },
             { "statusApplications", "a variable-length array: rendered by AddStatusApplicationRows with its own keys" },
+            { "statModifiers", "a variable-length array: rendered by AddStatModifierRows with its own keys" },
         };
 
         /// <summary>Every field name the Properties panel emits a row for.</summary>
