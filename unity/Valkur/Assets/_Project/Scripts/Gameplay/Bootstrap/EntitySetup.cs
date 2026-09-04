@@ -281,6 +281,16 @@ namespace Valkur.Gameplay
             var dash = go.GetComponent<DashAbility>();
             if (dash == null) dash = go.AddComponent<DashAbility>();
             dash.SetTargetLayers(1 << NPCLayer);
+
+            // Click-to-target. The selector adds its own MouseTargetDetector if the HUD
+            // has not built one yet, so the mask is set here rather than left to whichever
+            // of the two runs first — a detector with mask 0 sees nothing at all.
+            var detector = go.GetComponent<MouseTargetDetector>();
+            if (detector == null) detector = go.AddComponent<MouseTargetDetector>();
+            detector.SetDetectableLayers(1 << NPCLayer);
+
+            if (go.GetComponent<PlayerTargetSelector>() == null)
+                go.AddComponent<PlayerTargetSelector>();
         }
 
         /// <summary>
