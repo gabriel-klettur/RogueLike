@@ -13,27 +13,56 @@ namespace Valkur.Gameplay.Spells
     {
         public void Execute(SpellContext ctx)
         {
-            float duration    = ctx.Spell.duration    > 0 ? ctx.Spell.duration              : 6f;
-            float radius      = ctx.Spell.radius      > 0 ? ctx.Spell.radius / 16f          : 1.5f;
-            float healPerTick = SpellPower.Scale(
-                ctx.Spell.healPerTick > 0 ? ctx.Spell.healPerTick : 20f, ctx.Caster);
-            float tickPeriod  = ctx.Spell.tickPeriod  > 0 ? ctx.Spell.tickPeriod            : 0.5f;
+            float duration    = ctx.Spell.duration    > 0 ? ctx.Spell.duration : 6f;
+            // WORLD UNITS. This used to divide by 16 -- the sixth sighting of the Python
+            // pixel scale in this project, after wallWidth, the totem's radius, the vortex's
+            // radius, coneLength and arcane_flame's radius. It survived because the value was
+            // then DISCARDED by InitializeHealing ("reserved for future logic"), so the wrong
+            // number was never read: shipped healing_aura authors 0.625 and resolved to a
+            // gameplay radius of 0.039 world units, under a fortieth of a tile.
+            float radius      = ctx.Spell.radius      > 0 ? ctx.Spell.radius : 1.5f;
+            float tickPeriod  = ctx.Spell.tickPeriod  > 0 ? ctx.Spell.tickPeriod : 0.5f;
 
             // Ensure a minimum on-screen footprint so the rune is always readable.
             float visualRadius = Mathf.Max(radius, 1.25f);
 
-            var auraGo = new GameObject("SpellAura_Healing");
+            // damagePerTick is the discriminator, not a new SpellType. An aura is a circle
+            // that ticks on whatever is inside it; whether that tick heals or hurts is the
+            // only difference, and a second enum value would have forced a second executor,
+            // a second flourish family entry and a second row in every table that lists them.
+            bool damaging = ctx.Spell.damagePerTick > 0f;
+
+            var auraGo = new GameObject(damaging ? "SpellAura_Static" : "SpellAura_Healing");
             auraGo.transform.SetParent(ctx.Caster, false);
             auraGo.transform.localPosition = Vector3.zero;
 
             var controller = auraGo.AddComponent<AuraController>();
-            controller.InitializeHealing(
-                duration:     duration,
-                gameRadius:   radius,
-                visualRadius: visualRadius,
-                healPerTick:  Mathf.RoundToInt(healPerTick),
-                tickPeriod:   tickPeriod,
-                caster:       ctx.Caster);
+
+            if (damaging)
+            {
+                controller.InitializeDamaging(
+                    duration:      duration,
+                    gameRadius:    radius,
+                    visualRadius:  visualRadius,
+                    damagePerTick: Mathf.RoundToInt(SpellPower.Scale(ctx.Spell.damagePerTick, ctx.Caster)),
+                    tickPeriod:    tickPeriod,
+                    caster:        ctx.Caster,
+                    targetLayers:  ctx.TargetLayers,
+                    statuses:      ctx.Spell.statusApplications,
+                    tint:          ctx.Spell.particleColor);
+            }
+            else
+            {
+                float healPerTick = SpellPower.Scale(
+                    ctx.Spell.healPerTick > 0 ? ctx.Spell.healPerTick : 20f, ctx.Caster);
+                controller.InitializeHealing(
+                    duration:     duration,
+                    gameRadius:   radius,
+                    visualRadius: visualRadius,
+                    healPerTick:  Mathf.RoundToInt(healPerTick),
+                    tickPeriod:   tickPeriod,
+                    caster:       ctx.Caster);
+            }
 
             // Keep data-driven preset support (extra particles on top of procedural FX).
             if (VFXManager.Instance != null && !string.IsNullOrEmpty(ctx.Spell.vfxPreset))
