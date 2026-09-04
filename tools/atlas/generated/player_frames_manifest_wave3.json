@@ -1,6 +1,6 @@
 {
   "generator": "tools/atlas/wave3/build_player_frames.py",
-  "generatedFrom": "_slices5 + slices5 (dwarf) + slices5 (dwarf) + slices5 (dwarf) + slices5 (dwarf) + slices5 (dwarf)",
+  "generatedFrom": "_slices5 + slices5 (dwarf) + slices5 (dwarf) + slices5 (dwarf) + slices5 (dwarf) + slices5 (dwarf) + slices (dwarf) + slices (dwarf) + _slices (dwarf) + _slices (dwarf) + _slices (dwarf) + _slices (dwarf) + _slices (dwarf) + _slices (dwarf) + slices (dwarf) + slices (dwarf) + slices (dwarf)",
   "targetBodyPx": 115,
   "players": [
     {
@@ -9,6 +9,7 @@
         {
           "state": "idle",
           "framesPerDirection": 6,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/idle/dwarf_idle_e0.png",
             "Assets/_Project/Art/Characters/dwarf/idle/dwarf_idle_e1.png",
@@ -63,6 +64,7 @@
         {
           "state": "walk",
           "framesPerDirection": 8,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/walking/dwarf_walking_e0.png",
             "Assets/_Project/Art/Characters/dwarf/walking/dwarf_walking_e1.png",
@@ -133,6 +135,7 @@
         {
           "state": "chase",
           "framesPerDirection": 8,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/running/dwarf_running_e0.png",
             "Assets/_Project/Art/Characters/dwarf/running/dwarf_running_e1.png",
@@ -203,6 +206,7 @@
         {
           "state": "cast",
           "framesPerDirection": 8,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/spellcasting_1/dwarf_spellcasting_1_e0.png",
             "Assets/_Project/Art/Characters/dwarf/spellcasting_1/dwarf_spellcasting_1_e1.png",
@@ -273,6 +277,7 @@
         {
           "state": "attack",
           "framesPerDirection": 6,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/punch/dwarf_punch_e0.png",
             "Assets/_Project/Art/Characters/dwarf/punch/dwarf_punch_e1.png",
@@ -327,6 +332,7 @@
         {
           "state": "damage",
           "framesPerDirection": 4,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/hit_reaction/dwarf_hit_reaction_e0.png",
             "Assets/_Project/Art/Characters/dwarf/hit_reaction/dwarf_hit_reaction_e1.png",
@@ -365,6 +371,7 @@
         {
           "state": "death",
           "framesPerDirection": 7,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/die/dwarf_die_e0.png",
             "Assets/_Project/Art/Characters/dwarf/die/dwarf_die_e1.png",
@@ -427,6 +434,7 @@
         {
           "state": "recover",
           "framesPerDirection": 8,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/knockdown_recovery/dwarf_knockdown_recovery_e0.png",
             "Assets/_Project/Art/Characters/dwarf/knockdown_recovery/dwarf_knockdown_recovery_e1.png",
@@ -499,6 +507,7 @@
         {
           "key": "punch",
           "framesPerDirection": 6,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/punch/dwarf_punch_e0.png",
             "Assets/_Project/Art/Characters/dwarf/punch/dwarf_punch_e1.png",
@@ -559,6 +568,7 @@
         {
           "key": "kick",
           "framesPerDirection": 8,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/kick/dwarf_kick_e0.png",
             "Assets/_Project/Art/Characters/dwarf/kick/dwarf_kick_e1.png",
@@ -635,6 +645,7 @@
         {
           "key": "charge",
           "framesPerDirection": 8,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/charging_sprint/dwarf_charging_sprint_e0.png",
             "Assets/_Project/Art/Characters/dwarf/charging_sprint/dwarf_charging_sprint_e1.png",
@@ -708,6 +719,7 @@
         {
           "key": "armed_slash",
           "framesPerDirection": 8,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/armed_attack_1/dwarf_armed_attack_1_e0.png",
             "Assets/_Project/Art/Characters/dwarf/armed_attack_1/dwarf_armed_attack_1_e1.png",
@@ -779,12 +791,244 @@
           ],
           "animationSpeedMultiplier": 1.0,
           "holdLastFrame": false
+        },
+        {
+          "key": "chop",
+          "framesPerDirection": 8,
+          "pivotY": 0.092593,
+          "sprites": [
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e0.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e1.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e2.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e3.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e4.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e5.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e6.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e7.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e0.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e1.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e2.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e3.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e4.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e5.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e6.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e7.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e0.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e1.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e2.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e3.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e4.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e5.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e6.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e7.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e0.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e1.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e2.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e3.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e4.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e5.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e6.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e7.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e0.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e1.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e2.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e3.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e4.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e5.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e6.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_e7.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w0.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w1.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w2.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w3.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w4.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w5.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w6.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w7.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w0.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w1.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w2.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w3.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w4.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w5.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w6.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w7.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w0.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w1.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w2.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w3.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w4.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w5.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w6.png",
+            "Assets/_Project/Art/Characters/dwarf/chop/dwarf_chop_w7.png"
+          ],
+          "spellKeys": [
+            "harvest_chop",
+            "anim_chop"
+          ],
+          "animationSpeedMultiplier": 1.0,
+          "holdLastFrame": false
+        },
+        {
+          "key": "fish",
+          "framesPerDirection": 8,
+          "pivotY": 0.010695,
+          "sprites": [
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e0.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e1.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e2.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e3.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e4.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e5.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e6.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e7.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e0.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e1.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e2.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e3.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e4.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e5.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e6.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e7.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e0.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e1.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e2.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e3.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e4.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e5.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e6.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e7.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e0.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e1.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e2.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e3.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e4.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e5.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e6.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e7.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e0.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e1.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e2.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e3.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e4.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e5.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e6.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_e7.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w0.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w1.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w2.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w3.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w4.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w5.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w6.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w7.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w0.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w1.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w2.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w3.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w4.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w5.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w6.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w7.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w0.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w1.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w2.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w3.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w4.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w5.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w6.png",
+            "Assets/_Project/Art/Characters/dwarf/fish/dwarf_fish_w7.png"
+          ],
+          "spellKeys": [
+            "harvest_fish",
+            "anim_fish"
+          ],
+          "animationSpeedMultiplier": 1.0,
+          "holdLastFrame": false
+        },
+        {
+          "key": "mine",
+          "framesPerDirection": 8,
+          "pivotY": 0.087719,
+          "sprites": [
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e0.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e1.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e2.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e3.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e4.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e5.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e6.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e7.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e0.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e1.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e2.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e3.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e4.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e5.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e6.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e7.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e0.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e1.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e2.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e3.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e4.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e5.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e6.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e7.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e0.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e1.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e2.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e3.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e4.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e5.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e6.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e7.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e0.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e1.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e2.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e3.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e4.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e5.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e6.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_e7.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w0.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w1.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w2.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w3.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w4.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w5.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w6.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w7.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w0.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w1.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w2.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w3.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w4.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w5.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w6.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w7.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w0.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w1.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w2.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w3.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w4.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w5.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w6.png",
+            "Assets/_Project/Art/Characters/dwarf/mine/dwarf_mine_w7.png"
+          ],
+          "spellKeys": [
+            "harvest_mine",
+            "anim_mine"
+          ],
+          "animationSpeedMultiplier": 1.0,
+          "holdLastFrame": false
         }
       ],
       "castVariants": [
         {
           "key": "spell_1",
           "framesPerDirection": 8,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/spellcasting_1/dwarf_spellcasting_1_e0.png",
             "Assets/_Project/Art/Characters/dwarf/spellcasting_1/dwarf_spellcasting_1_e1.png",
@@ -861,6 +1105,7 @@
         {
           "key": "spell_2",
           "framesPerDirection": 8,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/spellcasting_2/dwarf_spellcasting_2_e0.png",
             "Assets/_Project/Art/Characters/dwarf/spellcasting_2/dwarf_spellcasting_2_e1.png",
@@ -937,6 +1182,7 @@
         {
           "key": "spell_3",
           "framesPerDirection": 8,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/spellcasting_3/dwarf_spellcasting_3_e0.png",
             "Assets/_Project/Art/Characters/dwarf/spellcasting_3/dwarf_spellcasting_3_e1.png",
@@ -1013,6 +1259,7 @@
         {
           "key": "spell_4",
           "framesPerDirection": 8,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/spellcasting_4/dwarf_spellcasting_4_e0.png",
             "Assets/_Project/Art/Characters/dwarf/spellcasting_4/dwarf_spellcasting_4_e1.png",
@@ -1089,6 +1336,7 @@
         {
           "key": "spell_5",
           "framesPerDirection": 8,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/spellcasting_5/dwarf_spellcasting_5_e0.png",
             "Assets/_Project/Art/Characters/dwarf/spellcasting_5/dwarf_spellcasting_5_e1.png",
@@ -1165,6 +1413,7 @@
         {
           "key": "armed_equip",
           "framesPerDirection": 8,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/armed_equip/dwarf_armed_equip_e0.png",
             "Assets/_Project/Art/Characters/dwarf/armed_equip/dwarf_armed_equip_e1.png",
@@ -1241,6 +1490,7 @@
         {
           "key": "armed_slash",
           "framesPerDirection": 8,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/armed_attack_1/dwarf_armed_attack_1_e0.png",
             "Assets/_Project/Art/Characters/dwarf/armed_attack_1/dwarf_armed_attack_1_e1.png",
@@ -1320,6 +1570,7 @@
         {
           "key": "charge",
           "framesPerDirection": 8,
+          "pivotY": 0.0,
           "sprites": [
             "Assets/_Project/Art/Characters/dwarf/charging_sprint/dwarf_charging_sprint_e0.png",
             "Assets/_Project/Art/Characters/dwarf/charging_sprint/dwarf_charging_sprint_e1.png",
@@ -1401,6 +1652,7 @@
             {
               "state": "idle",
               "framesPerDirection": 6,
+              "pivotY": 0.0,
               "sprites": [
                 "Assets/_Project/Art/Characters/dwarf/armed_idle/dwarf_armed_idle_e0.png",
                 "Assets/_Project/Art/Characters/dwarf/armed_idle/dwarf_armed_idle_e1.png",
@@ -1455,6 +1707,7 @@
             {
               "state": "walk",
               "framesPerDirection": 8,
+              "pivotY": 0.0,
               "sprites": [
                 "Assets/_Project/Art/Characters/dwarf/armed_walking/dwarf_armed_walking_e0.png",
                 "Assets/_Project/Art/Characters/dwarf/armed_walking/dwarf_armed_walking_e1.png",
@@ -1525,6 +1778,7 @@
             {
               "state": "chase",
               "framesPerDirection": 8,
+              "pivotY": 0.0,
               "sprites": [
                 "Assets/_Project/Art/Characters/dwarf/armed_running/dwarf_armed_running_e0.png",
                 "Assets/_Project/Art/Characters/dwarf/armed_running/dwarf_armed_running_e1.png",
@@ -1595,6 +1849,7 @@
             {
               "state": "attack",
               "framesPerDirection": 8,
+              "pivotY": 0.0,
               "sprites": [
                 "Assets/_Project/Art/Characters/dwarf/armed_attack_1/dwarf_armed_attack_1_e0.png",
                 "Assets/_Project/Art/Characters/dwarf/armed_attack_1/dwarf_armed_attack_1_e1.png",

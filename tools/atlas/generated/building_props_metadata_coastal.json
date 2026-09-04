@@ -1,0 +1,783 @@
+{
+  "generator": "tools/atlas/wave7/classify_coastal.py",
+  "sheets": [
+    "dock_crane",
+    "dock_pier_large",
+    "dock_pier_small",
+    "fisherman_hut",
+    "fishing_boat_wooden",
+    "fishing_station_props_sheet",
+    "fishing_trawler_steel",
+    "fishing_trawler_wooden",
+    "fishmonger_house_dock",
+    "lighthouse_large",
+    "lighthouse_small",
+    "rowboat_beached",
+    "sea_rocks_props_sheet",
+    "shore_fauna_props_sheet",
+    "shore_fishing_props_sheet",
+    "tidepool_debris_props_sheet"
+  ],
+  "items": [
+    {
+      "sheet": "shore_fishing_props_sheet",
+      "index": 0,
+      "name": "fishing_net_pile",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3
+    },
+    {
+      "sheet": "shore_fishing_props_sheet",
+      "index": 1,
+      "name": "fish_crates_barrel",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "shore_fishing_props_sheet",
+      "index": 2,
+      "name": "rope_coils",
+      "category": "props",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.6
+    },
+    {
+      "sheet": "shore_fishing_props_sheet",
+      "index": 3,
+      "name": "fish_baskets_traps",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "shore_fishing_props_sheet",
+      "index": 4,
+      "name": "shore_water_buckets",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "shore_fishing_props_sheet",
+      "index": 5,
+      "name": "driftwood_bundle",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 0.9
+    },
+    {
+      "sheet": "shore_fishing_props_sheet",
+      "index": 6,
+      "name": "tidepool_rocks",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.3
+    },
+    {
+      "sheet": "shore_fishing_props_sheet",
+      "index": 7,
+      "name": "seashell_scatter",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.5
+    },
+    {
+      "sheet": "shore_fishing_props_sheet",
+      "index": 8,
+      "name": "seaweed_pile",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 0.9
+    },
+    {
+      "sheet": "shore_fishing_props_sheet",
+      "index": 9,
+      "name": "wicker_fish_trap",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "shore_fishing_props_sheet",
+      "index": 10,
+      "name": "fish_signpost",
+      "category": "signs",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "shore_fishing_props_sheet",
+      "index": 11,
+      "name": "shore_campfire",
+      "category": "lights",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0,
+      "light_preset": "Torch",
+      "light_offset_y": 0.3
+    },
+    {
+      "sheet": "shore_fishing_props_sheet",
+      "index": 12,
+      "name": "ship_anchor",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "shore_fishing_props_sheet",
+      "index": 13,
+      "name": "fishing_tackle_box",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 0.8
+    },
+    {
+      "sheet": "shore_fishing_props_sheet",
+      "index": 14,
+      "name": "net_float_buoys",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 0.9
+    },
+    {
+      "sheet": "shore_fishing_props_sheet",
+      "index": 15,
+      "name": "driftwood_planks",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.7
+    },
+    {
+      "sheet": "fishing_station_props_sheet",
+      "index": 0,
+      "name": "fish_drying_rack",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "fishing_station_props_sheet",
+      "index": 1,
+      "name": "fish_hanging_bundle",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "fishing_station_props_sheet",
+      "index": 2,
+      "name": "fish_crate_open",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 0.9
+    },
+    {
+      "sheet": "fishing_station_props_sheet",
+      "index": 3,
+      "name": "fish_crates_stacked",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.6
+    },
+    {
+      "sheet": "fishing_station_props_sheet",
+      "index": 4,
+      "name": "fish_basket_large",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "fishing_station_props_sheet",
+      "index": 5,
+      "name": "salt_sacks",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "fishing_station_props_sheet",
+      "index": 6,
+      "name": "net_drying_stand",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "fishing_station_props_sheet",
+      "index": 7,
+      "name": "net_roll_floats",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "fishing_station_props_sheet",
+      "index": 8,
+      "name": "fishing_rods_leaning",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 1.8
+    },
+    {
+      "sheet": "fishing_station_props_sheet",
+      "index": 9,
+      "name": "fishing_tackle_set",
+      "category": "props",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.8
+    },
+    {
+      "sheet": "fishing_station_props_sheet",
+      "index": 10,
+      "name": "fish_cleaning_table",
+      "category": "market",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.6
+    },
+    {
+      "sheet": "fishing_station_props_sheet",
+      "index": 11,
+      "name": "fish_cutting_board",
+      "category": "props",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.7
+    },
+    {
+      "sheet": "fishing_station_props_sheet",
+      "index": 12,
+      "name": "dock_winch_hoist",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 2.2
+    },
+    {
+      "sheet": "fishing_station_props_sheet",
+      "index": 13,
+      "name": "harbour_buoys",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 0.9
+    },
+    {
+      "sheet": "fishing_station_props_sheet",
+      "index": 14,
+      "name": "lobster_trap",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "fishing_station_props_sheet",
+      "index": 15,
+      "name": "fish_salting_barrel",
+      "category": "props",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "tidepool_debris_props_sheet",
+      "index": 0,
+      "name": "tidepool_rocks_large",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.4
+    },
+    {
+      "sheet": "tidepool_debris_props_sheet",
+      "index": 1,
+      "name": "shore_pebbles",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.7
+    },
+    {
+      "sheet": "tidepool_debris_props_sheet",
+      "index": 2,
+      "name": "seashells_sand",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.5
+    },
+    {
+      "sheet": "tidepool_debris_props_sheet",
+      "index": 3,
+      "name": "conch_shell",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.7
+    },
+    {
+      "sheet": "tidepool_debris_props_sheet",
+      "index": 4,
+      "name": "starfish_shells",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.5
+    },
+    {
+      "sheet": "tidepool_debris_props_sheet",
+      "index": 5,
+      "name": "kelp_strand",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.5
+    },
+    {
+      "sheet": "tidepool_debris_props_sheet",
+      "index": 6,
+      "name": "seaweed_clump",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 0.8
+    },
+    {
+      "sheet": "tidepool_debris_props_sheet",
+      "index": 7,
+      "name": "driftwood_root",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "tidepool_debris_props_sheet",
+      "index": 8,
+      "name": "driftwood_branches",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.7
+    },
+    {
+      "sheet": "tidepool_debris_props_sheet",
+      "index": 9,
+      "name": "fish_skeleton",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.5
+    },
+    {
+      "sheet": "tidepool_debris_props_sheet",
+      "index": 10,
+      "name": "shore_bone_pile",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.6
+    },
+    {
+      "sheet": "tidepool_debris_props_sheet",
+      "index": 11,
+      "name": "sand_crab_holes",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.4
+    },
+    {
+      "sheet": "tidepool_debris_props_sheet",
+      "index": 12,
+      "name": "bird_tracks_sand",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.4
+    },
+    {
+      "sheet": "tidepool_debris_props_sheet",
+      "index": 13,
+      "name": "tidepool_small",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.9
+    },
+    {
+      "sheet": "tidepool_debris_props_sheet",
+      "index": 14,
+      "name": "sand_dune_small",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "tidepool_debris_props_sheet",
+      "index": 15,
+      "name": "shore_flotsam",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.6
+    },
+    {
+      "sheet": "shore_fauna_props_sheet",
+      "index": 0,
+      "name": "crab_single",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.5
+    },
+    {
+      "sheet": "shore_fauna_props_sheet",
+      "index": 1,
+      "name": "crab_large",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.7
+    },
+    {
+      "sheet": "shore_fauna_props_sheet",
+      "index": 2,
+      "name": "crab_pair",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.6
+    },
+    {
+      "sheet": "shore_fauna_props_sheet",
+      "index": 3,
+      "name": "crab_burrow",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.6
+    },
+    {
+      "sheet": "shore_fauna_props_sheet",
+      "index": 4,
+      "name": "seagull_standing",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.1
+    },
+    {
+      "sheet": "shore_fauna_props_sheet",
+      "index": 5,
+      "name": "seagull_walking",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.3,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "shore_fauna_props_sheet",
+      "index": 6,
+      "name": "seagull_feeding",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.3,
+      "target_height_tiles": 0.9
+    },
+    {
+      "sheet": "shore_fauna_props_sheet",
+      "index": 7,
+      "name": "seagull_resting",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.7
+    },
+    {
+      "sheet": "shore_fauna_props_sheet",
+      "index": 8,
+      "name": "sandpiper_single",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.7
+    },
+    {
+      "sheet": "shore_fauna_props_sheet",
+      "index": 9,
+      "name": "sandpiper_pair",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.6
+    },
+    {
+      "sheet": "shore_fauna_props_sheet",
+      "index": 10,
+      "name": "fish_jumping",
+      "category": "water",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.0
+    },
+    {
+      "sheet": "shore_fauna_props_sheet",
+      "index": 11,
+      "name": "fish_splash",
+      "category": "water",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.8
+    },
+    {
+      "sheet": "shore_fauna_props_sheet",
+      "index": 12,
+      "name": "fish_shoal_shallows",
+      "category": "water",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 1.2
+    },
+    {
+      "sheet": "shore_fauna_props_sheet",
+      "index": 13,
+      "name": "sea_snail",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.5
+    },
+    {
+      "sheet": "shore_fauna_props_sheet",
+      "index": 14,
+      "name": "shore_bird_tracks",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.4
+    },
+    {
+      "sheet": "shore_fauna_props_sheet",
+      "index": 15,
+      "name": "sand_ripples",
+      "category": "nature",
+      "solid": false,
+      "split_ratio": 0.0,
+      "target_height_tiles": 0.5
+    },
+    {
+      "sheet": "sea_rocks_props_sheet",
+      "index": 0,
+      "name": "sea_stack_tall",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 6.0
+    },
+    {
+      "sheet": "sea_rocks_props_sheet",
+      "index": 1,
+      "name": "sea_stack_twin",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.0
+    },
+    {
+      "sheet": "sea_rocks_props_sheet",
+      "index": 2,
+      "name": "sea_arch",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.0
+    },
+    {
+      "sheet": "sea_rocks_props_sheet",
+      "index": 3,
+      "name": "rock_spire_cluster",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 3.0
+    },
+    {
+      "sheet": "sea_rocks_props_sheet",
+      "index": 4,
+      "name": "rock_platform_flat",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.45,
+      "target_height_tiles": 2.0
+    },
+    {
+      "sheet": "sea_rocks_props_sheet",
+      "index": 5,
+      "name": "sea_stack_medium",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.5
+    },
+    {
+      "sheet": "sea_rocks_props_sheet",
+      "index": 6,
+      "name": "sea_stack_slim",
+      "category": "nature",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 4.0
+    },
+    {
+      "sheet": "fishing_boat_wooden",
+      "index": 0,
+      "name": "fishing_boat_wooden",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 4.0,
+      "light_preset": "Lamp",
+      "light_offset_y": 0.62
+    },
+    {
+      "sheet": "fishing_trawler_wooden",
+      "index": 0,
+      "name": "fishing_trawler_wooden",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 5.5,
+      "light_preset": "Lamp",
+      "light_offset_y": 0.55
+    },
+    {
+      "sheet": "fishing_trawler_steel",
+      "index": 0,
+      "name": "fishing_trawler_steel",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 5.0,
+      "light_preset": "Lamp",
+      "light_offset_y": 0.5
+    },
+    {
+      "sheet": "rowboat_beached",
+      "index": 0,
+      "name": "rowboat_beached",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 2.5
+    },
+    {
+      "sheet": "dock_pier_small",
+      "index": 0,
+      "name": "dock_pier_small",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 3.0,
+      "light_preset": "Lamp",
+      "light_offset_y": 0.72
+    },
+    {
+      "sheet": "dock_pier_large",
+      "index": 0,
+      "name": "dock_pier_large",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.6,
+      "target_height_tiles": 4.0,
+      "light_preset": "Lamp",
+      "light_offset_y": 0.6
+    },
+    {
+      "sheet": "dock_crane",
+      "index": 0,
+      "name": "dock_crane",
+      "category": "water",
+      "solid": true,
+      "split_ratio": 0.8,
+      "target_height_tiles": 4.5,
+      "light_preset": "Lamp",
+      "light_offset_y": 0.7
+    },
+    {
+      "sheet": "fisherman_hut",
+      "index": 0,
+      "name": "fisherman_hut",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.0,
+      "light_preset": "Lamp",
+      "light_offset_y": 0.45
+    },
+    {
+      "sheet": "fishmonger_house_dock",
+      "index": 0,
+      "name": "fishmonger_house_dock",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 5.5,
+      "light_preset": "Lamp",
+      "light_offset_y": 0.5
+    },
+    {
+      "sheet": "lighthouse_small",
+      "index": 0,
+      "name": "lighthouse_small",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 7.0,
+      "light_preset": "Lamp",
+      "light_offset_y": 0.85
+    },
+    {
+      "sheet": "lighthouse_large",
+      "index": 0,
+      "name": "lighthouse_large",
+      "category": "houses",
+      "solid": true,
+      "split_ratio": 0.85,
+      "target_height_tiles": 10.0,
+      "light_preset": "Lamp",
+      "light_offset_y": 0.88
+    }
+  ]
+}

@@ -94,6 +94,7 @@ import argparse
 import json
 import os
 import re
+import statistics
 import sys
 
 import numpy as np
@@ -188,6 +189,20 @@ STATE_NAME_OVERRIDE: dict[str, str] = {
     "knight_running_armed":       "armed_running",
     "knight_attack_1_armed":      "armed_attack_1",
     "knight_equipment_daw_armed": "armed_equip",
+    # The sheet is named for the profession and the animation for the ACTION, and
+    # shipping both names for one concept leaves nothing connecting them: the
+    # variant key, the AttackVariant reservation and the `anim_*` probe all say
+    # `mine`, while the folder would have said `mining`. AnimationProbeSpellTests
+    # enumerates the FOLDERS and demands `anim_<folder>`, so the mismatch is a red
+    # suite rather than a stylistic quibble.
+    "knight_mining": "mine",
+    # The sheet is named for the PROFESSION and the animation is named for the ACTION.
+    # `chop` is what the variant is called, what PlayWorkSwing asks for by key, and what the
+    # harvest prompt's verb says, so shipping the folder as `lumberjack` would leave one
+    # concept with two names and nothing to connect them.
+    "knight_lumberjack":          "chop",
+    # Same split: the sheet is named for the activity, the animation for the action.
+    "knight_fishing":             "fish",
 }
 
 
@@ -202,6 +217,67 @@ REFERENCE_FRAME: dict[str, int] = {
     # visibly oversized.
     "elf_spellcasting_5": 5,
 }
+
+# Sheets whose row ground line is the MEDIAN of its frames' foot lines rather than
+# the MAX.
+#
+# The ground of a row is normally the lowest place any frame stands, and a max is
+# the right statistic for that: one frame planting a boot lower than the rest
+# really does mean the floor is there. A max is also the statistic a single bad
+# measurement poisons, and `foot_line` has exactly one blind spot -- a wide, low
+# weapon. A pickaxe or an axe swung down to the rock lies almost horizontal, and
+# its head plus handle span enough columns to clear FOOT_WIDTH_FRACTION. The row
+# then anchors on the tool instead of on the boots, and since nothing is reserved
+# below the ground line the whole STATE floats by the difference.
+#
+# Measured across the dwarf's staged sheets, per frame, at the shipped 0.15:
+#   knight_mining      578 580 580 578 590 626 599 579   max - median = 46
+#   knight_lumberjack  582 582 583 583 624 623 583       max - median = 41
+#   knight_kick        529 531 531 524 528 530 529 531   max - median =  2
+#   knight_charging_sprint / knight_attack_1_armed       max - median =  3 / 0
+# Every combat sheet agrees with itself to within 3px; only the two sheets whose
+# tool ends up on the floor disagree, and they disagree by a sixth of the body.
+#
+# Declared per sheet rather than fixed globally for the reason REFERENCE_FRAME is:
+# raising FOOT_WIDTH_FRACTION until a horizontal pickaxe stops counting would
+# re-cut all 314 frames of three characters to fix two sheets, and at 0.60 it
+# starts losing the boots instead (knight_idle's foot line jumps 70px).
+MEDIAN_GROUND_SHEETS: set[str] = {
+    "knight_mining",
+    "knight_fishing",
+    "knight_lumberjack",
+}
+
+
+# Sheets whose canvas RESERVES the space their tool needs below the ground line,
+# instead of letting the bottom edge shear it off.
+#
+# The canvas normally ends exactly at the ground line, and the comment in
+# ``build_state`` explains why: ValkurAssetPostprocessor forces a (0.5, 0) pivot on
+# everything under Art/Characters/, and a pivot only lands on the feet if the feet
+# ARE the bottom row. That comment then assumes what gets clipped is "the handful of
+# pixels a cape tip or a trailing weapon draws below the boot line", and offers a
+# diagnostic: a large number there would mean the ground line is wrong.
+#
+# The assumption holds for a cape and breaks for a tool. Measured across the dwarf's
+# twenty-one staged sheets, the clip is 0-4px everywhere -- and 20px on both harvest
+# sheets, where the axe and the pickaxe swing THROUGH the boot line into the wood.
+# So the diagnostic points at the wrong culprit here: the ground line is right (it is
+# the median of the boots) and the CONTRACT is too tight. What is lost is a third of
+# the blade, sheared flat, in the three frames the animation exists for.
+#
+# Declared per sheet rather than applied to everything, because 0-4px of cape tip is
+# genuinely drawn into the floor in a top-down view and reserving for it would give
+# all twenty-one states a non-zero pivot -- re-cutting every character sprite in the
+# project to fix two sheets. A sheet listed here gets a canvas `overhang` rows taller
+# and a pivot of `overhang / height` instead of 0; a sheet not listed is byte-identical
+# to before.
+RESERVE_OVERHANG_SHEETS: set[str] = {
+    "knight_lumberjack",
+    "knight_fishing",
+    "knight_mining",
+}
+
 
 SCALE_OVERRIDE: dict[str, float] = {
     # This sheet opens ALREADY AIRBORNE -- frame 0 is the crouch-and-leap, not a
@@ -290,6 +366,22 @@ PLAYERS = {
             # authored implementation). Last in the list so `punch` stays index 0, the
             # fallback a picker lands on.
             ("armed_slash", "knight_attack_1_armed", ["slash_regular"]),
+            # The lumberjack swing, for harvesting rather than combat. Reserved so it is
+            # never borrowed by another action and never rotated past: PlayWorkSwing asks
+            # for it by key, and a reserved variant leaves NextVariant's pool, which are
+            # two different guarantees and both are needed. Last in the list so `punch`
+            # stays index 0, the fallback a picker lands on.
+            ("chop", "knight_lumberjack", ["harvest_chop", "anim_chop"]),
+            # The fishing cast. Reserved the same way, so it is never rotated past and never
+            # borrowed: a rod swung as a punch would be worse than no animation at all.
+            ("fish", "knight_fishing", ["harvest_fish", "anim_fish"]),
+            # The pickaxe swing, for working a seam. Same shape as `chop` and reserved
+            # for the same two reasons -- asked for by key, and out of NextVariant's
+            # rotation so a chopping session cannot borrow it. Which of the two a swing
+            # plays is DATA: DestructionProfile.swingAnimationKey names it, so a tree asks
+            # for "harvest_chop" and a mine for "harvest_mine" without either the animator
+            # or the harvest code knowing which is which.
+            ("mine", "knight_mining", ["harvest_mine", "anim_mine"]),
         ],
         # Five casting animations, rotated per cast. spellcasting_1 doubles as the base
         # `cast` slot so the character still casts with real art if the variants are lost.
@@ -706,8 +798,20 @@ def build_state(slices_root: str, stem: str):
 
     # One ground line per row; one anchor column per cell.
     ground = {}
-    for f in frames:
-        ground[f["row"]] = max(ground.get(f["row"], 0), f["y0"] + f["feet"])
+    if stem in MEDIAN_GROUND_SHEETS:
+        by_row: dict[int, list[int]] = {}
+        for f in frames:
+            by_row.setdefault(f["row"], []).append(f["y0"] + f["feet"])
+        for row, lines in by_row.items():
+            ground[row] = int(statistics.median(lines))
+            outliers = [v - ground[row] for v in lines if v - ground[row] > 6]
+            if outliers:
+                print(f"  note: {stem} row {row} ground taken as median "
+                      f"{ground[row]}; {len(outliers)} frame(s) measured up to "
+                      f"{max(outliers)}px lower (tool on the floor, not a boot)")
+    else:
+        for f in frames:
+            ground[f["row"]] = max(ground.get(f["row"], 0), f["y0"] + f["feet"])
     for f in frames:
         f["anchor_x"] = (f["col"] + 0.5) * cell_w
         f["anchor_y"] = ground[f["row"]]
@@ -728,7 +832,11 @@ def build_state(slices_root: str, stem: str):
     # large number there would mean the ground line, not the debris, is wrong.
     overhang = max(0, max(f["y0"] + f["patch"].shape[0] - f["anchor_y"] for f in frames))
 
-    canvas_w, canvas_h = left + right, up
+    # Reserve the tool's swing below the ground line for the sheets that declare it.
+    # Only the canvas grows: the paste offset still measures from `up`, so the ground
+    # line stays exactly where it was and every frame lands where it did before.
+    reserved = overhang if stem in RESERVE_OVERHANG_SHEETS else 0
+    canvas_w, canvas_h = left + right, up + reserved
     out = []
     for f in sorted(frames, key=lambda x: x["index"]):
         canvas = np.zeros((canvas_h, canvas_w, 4), dtype=np.uint8)
@@ -763,7 +871,7 @@ def build_state(slices_root: str, stem: str):
     ref_index = REFERENCE_FRAME.get(stem, 0)
     ref = min(frames, key=lambda f: abs(f["index"] - ref_index))
     reference_body = ref["feet"] - ref["body"][1]
-    return out, reference_body, (rows, cols), overhang
+    return out, reference_body, (rows, cols), overhang, reserved
 
 
 def resample(canvas: np.ndarray, scale: float) -> Image.Image:
@@ -852,6 +960,9 @@ def main() -> int:
         # One sheet can fill a state slot AND a variant (the default attack does
         # both), so build each distinct stem once and reuse the written sprites.
         built: dict[str, list[str]] = {}
+        # Normalised pivot Y per staged stem. Non-zero only for the sheets that reserve
+        # space below the ground line; every other state keeps 0 and imports unchanged.
+        pivot_y_by_stem: dict[str, float] = {}
         # Each state owns a subfolder under the character. Recorded here because
         # `built` holds only the sprite-name templates, and the manifest path
         # needs the folder too.
@@ -862,7 +973,7 @@ def main() -> int:
         for slot, stem in sheets_for(player).items():
             if stem in built:
                 continue
-            canvases, body, (rows, cols), overhang = build_state(args.slices_root, stem)
+            canvases, body, (rows, cols), overhang, reserved = build_state(args.slices_root, stem)
             scale = (TARGET_BODY_PX / body) * SCALE_OVERRIDE.get(stem, 1.0)
             # Drop the source character prefix and the staging suffixes: the
             # staged name carries a frame count (`_8f`) and sometimes an alternate
@@ -891,14 +1002,25 @@ def main() -> int:
                 names.append(f"{player_key}_{state_name}")
             built[stem] = [f"{player_key}_{state_name}_{{facing}}{i}"
                            for i in range(len(canvases))]
-            clipped = round(overhang * scale)
+            # A reserved sheet keeps its tool: the rows below the ground line are IN the
+            # canvas, so the pivot has to move up off the bottom edge by exactly that
+            # much or the character would stand `reserved` pixels in the air. Computed
+            # from the RESAMPLED canvas rather than from source pixels, because rounding
+            # the two independently puts the feet half a pixel off at some scales.
+            out_w, out_h = resample(canvases[0], scale).size
+            reserved_out = round(reserved * scale)
+            pivot_y = (reserved_out / out_h) if reserved_out > 0 else 0.0
+            pivot_y_by_stem[stem] = pivot_y
+            clipped = round(overhang * scale) - reserved_out
             authored = "west" if source_facing == "w" else "east"
             mirrored = "east" if source_facing == "w" else "west"
             print(f"  {stem:38s} {cols}x{rows} grid, {len(canvases)} frames x2 "
                   f"(authored {authored} + mirrored {mirrored}), body {body}px -> "
                   f"{round(body * scale)}px (x{scale:.3f}), frame "
-                  f"{resample(canvases[0], scale).size}"
-                  + (f", clipped {clipped}px below the ground line" if clipped else ""))
+                  f"{(out_w, out_h)}"
+                  + (f", reserved {reserved_out}px below the ground line "
+                     f"(pivot y {pivot_y:.4f})" if reserved_out else "")
+                  + (f", clipped {clipped}px below the ground line" if clipped > 0 else ""))
 
         def bucket_list(stem: str) -> list[str]:
             """framesPerDirection * 8 sprite names, in S,SE,E,NE,N,NW,W,SW order."""
@@ -915,12 +1037,20 @@ def main() -> int:
             entry["states"].append({
                 "state": slot,
                 "framesPerDirection": len(built[stem]),
+                # Normalised sprite pivot Y. 0 means the feet ARE the bottom row, which
+                # is true of every sheet that reserves nothing and keeps those imports
+                # byte-identical. It lives in the MANIFEST rather than in a .meta because
+                # this builder rewrites the manifest per player, so a pivot stored beside
+                # the texture would be silently dropped the next time anyone rebuilds an
+                # unrelated sheet.
+                "pivotY": round(pivot_y_by_stem.get(stem, 0.0), 6),
                 "sprites": bucket_list(stem),
             })
         for key, stem, spells, pacing in declared(player, "variants"):
             entry["attackVariants"].append({
                 "key": key,
                 "framesPerDirection": len(built[stem]),
+                "pivotY": round(pivot_y_by_stem.get(stem, 0.0), 6),
                 "sprites": bucket_list(stem),
                 "spellKeys": spells,
                 "animationSpeedMultiplier": pacing.get("speed", 1.0),
@@ -931,6 +1061,7 @@ def main() -> int:
             entry["castVariants"].append({
                 "key": key,
                 "framesPerDirection": len(built[stem]),
+                "pivotY": round(pivot_y_by_stem.get(stem, 0.0), 6),
                 "sprites": bucket_list(stem),
                 "spellKeys": spells,
                 "animationSpeedMultiplier": pacing.get("speed", 1.0),
@@ -943,6 +1074,7 @@ def main() -> int:
                 "states": [{
                     "state": slot,
                     "framesPerDirection": len(built[stem]),
+                    "pivotY": round(pivot_y_by_stem.get(stem, 0.0), 6),
                     "sprites": bucket_list(stem),
                 } for slot, stem in states.items()],
             })

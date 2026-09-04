@@ -1,0 +1,21 @@
+{
+  "knight_mining": {
+    "params": {
+      "row_tolerance": 3.0
+    },
+    "_why_row_tolerance": "This is ONE row of eight poses, and the default clustering splits it into two. slice_prop_sheet groups boxes into rows by their vertical centres with a tolerance of row_tolerance x the median box height, then emits them row by row, left to right. build_player_frames takes the cell index from that emission order, so a bogus second row silently PERMUTES the animation: measured on this sheet, the crouched strike was emitted last and landed in cell 7 while frames drawn to its right took cells 5 and 6. The cause is that these poses differ enormously in HEIGHT rather than in position - frame 3 holds the pickaxe overhead (box y 79-579, centre 329) while frame 5 is crouched over the strike (box y 398-628, centre 513). Those centres are 184px apart against a default tolerance of 165, so the crouches cluster as their own row. Raising it to 3.0 states what is true of every character sheet in this pipeline: one row, and the vertical spread is the animation rather than a layout.",
+    "_note": "Horizontal spacing is fixed separately by tools/atlas/wave3/normalize_sheet_grid.py, because build_player_frames assumes an even grid and this sheet's authored gaps run from 78px down to 18px."
+  },
+  "knight_lumberjack": {
+    "params": {
+      "row_tolerance": 3.0
+    },
+    "_why_row_tolerance": "Same sheet shape and the same defect: an overhead axe and a crouched follow-through differ in box height by more than the row tolerance allows, and the build reported frame 7 landing in cell 6."
+  },
+  "knight_fishing": {
+    "params": {
+      "row_tolerance": 3.0
+    },
+    "_why_row_tolerance": "Same sheet shape as the other two harvest sheets: a rod held overhead and a low follow-through differ in box height by more than the default row tolerance allows, so the clustering splits one row of eight poses into two and the emission order -- which build_player_frames reads the cell index from -- silently permutes the cast."
+  }
+}
