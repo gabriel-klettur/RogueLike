@@ -21,6 +21,14 @@ namespace Valkur.Gameplay.Spells
     /// <para>Being breakable at all is new too: nothing in the project could reduce the
     /// <c>Health</c> this component has always carried. See
     /// <see cref="IDestructibleObstacle"/> for why a layer mask could not have done it.</para>
+    ///
+    /// <para>TWO RIGS, CHOSEN BY ELEMENT. <see cref="Setup.Element"/> was captured here and
+    /// read by no line in the project, so <c>arcane_barrier</c> — authored Arcane, with a
+    /// violet swatch — drew a blue ice wall down to its cracking-ice sound. It now picks the
+    /// drawing and the four one-shots: Ice keeps <see cref="IceWallVisual"/>, everything else
+    /// gets <see cref="ArcaneBarrierVisual"/>. A Fire wall would want a third rig rather than
+    /// the woven one recoloured orange — see <see cref="IWallVisual"/> for why — but the woven
+    /// one at least takes the spell's own colour, and the ice one structurally cannot.</para>
     /// </summary>
     public class WallController : MonoBehaviour, IDestructibleObstacle, ISpellEffectDissipates
     {
@@ -39,12 +47,15 @@ namespace Valkur.Gameplay.Spells
             public float Height;
             public Vector2 Axis;
             public SpellElement? Element;
+            /// <summary>The spell's <c>particleColor</c>. Drives the whole woven palette.</summary>
+            public Color Swatch;
         }
 
         private enum Phase { Alive, Ending }
 
         private Setup _setup;
-        private IceWallVisual _visual;
+        private IWallVisual _visual;
+        private bool _woven;
         private Phase _phase = Phase.Alive;
         private float _remainingTime;
         private int _lastHp = -1;
@@ -57,22 +68,34 @@ namespace Valkur.Gameplay.Spells
             _remainingTime = setup.Duration;
             _colliderFullLength = setup.Collider != null ? setup.Collider.size.x : setup.Length;
 
-            _visual = IceWallVisual.Build(transform, new IceWallVisual.Config
-            {
-                Length = setup.Length,
-                Height = setup.Height,
-                Axis = setup.Axis,
-                // Time-derived so no two walls are the same formation, but still one fixed
-                // seed per wall, so the layout never changes under the player mid-life.
-                Seed = Mathf.Abs(Time.frameCount * 73856093 ^ (int)(Time.time * 1000f)),
-            });
+            // Time-derived so no two walls are the same formation, but still one fixed seed
+            // per wall, so the layout never changes under the player mid-life.
+            int seed = Mathf.Abs(Time.frameCount * 73856093 ^ (int)(Time.time * 1000f));
+
+            _woven = setup.Element != SpellElement.Ice;
+            _visual = _woven
+                ? ArcaneBarrierVisual.Build(transform, new ArcaneBarrierVisual.Config
+                {
+                    Length = setup.Length,
+                    Height = setup.Height,
+                    Axis = setup.Axis,
+                    Seed = seed,
+                    Swatch = setup.Swatch,
+                })
+                : (IWallVisual)IceWallVisual.Build(transform, new IceWallVisual.Config
+                {
+                    Length = setup.Length,
+                    Height = setup.Height,
+                    Axis = setup.Axis,
+                    Seed = seed,
+                });
 
             if (setup.Health != null) _lastHp = setup.Health.CurrentHp;
 
             DestructibleObstacleRegistry.Register(this);
             _registered = true;
 
-            PlayOneShot(IceWallAudio.Create());
+            PlayOneShot(_woven ? ArcaneBarrierAudio.Create() : IceWallAudio.Create());
             CameraFeel.Cue(CameraFeelCue.CastHeavy, _setup.Axis);
         }
 
@@ -89,6 +112,11 @@ namespace Valkur.Gameplay.Spells
                 Length = 6f,
                 Height = 1.8f,
                 Axis = Vector2.right,
+                // NOT default(Color): that is transparent black, and on the additive material
+                // the woven rig is built from, black adds nothing at all — the barrier would
+                // be invisible rather than merely uncoloured. White is the project's
+                // "unauthored" sentinel and resolves to the arcane violet fallback.
+                Swatch = Color.white,
             });
 
         private void OnDestroy()
@@ -112,7 +140,8 @@ namespace Valkur.Gameplay.Spells
             if (_setup.Health != null && _setup.Health.IsDead) { BeginShatter(); return; }
 
             _remainingTime -= deltaTime;
-            if (_remainingTime <= 0f) BeginMelt(MeltSeconds, IceWallAudio.Melt());
+            if (_remainingTime <= 0f)
+                BeginMelt(MeltSeconds, _woven ? ArcaneBarrierAudio.Melt() : IceWallAudio.Melt());
         }
 
         // ── IDestructibleObstacle ───────────────────────────────────────────────────
@@ -134,7 +163,7 @@ namespace Valkur.Gameplay.Spells
             _lastHp = _setup.Health.CurrentHp;
 
             _visual?.Hit(contactPoint);
-            PlayOneShot(IceWallAudio.Hit(), 0.7f);
+            PlayOneShot(_woven ? ArcaneBarrierAudio.Hit() : IceWallAudio.Hit(), 0.7f);
             CameraFeel.Cue(CameraFeelCue.ImpactLight, Vector2.zero);
 
             RefreshDamageState();
@@ -166,7 +195,7 @@ namespace Valkur.Gameplay.Spells
         {
             if (_phase == Phase.Ending) return;
             _visual?.Shatter();
-            PlayOneShot(IceWallAudio.Shatter());
+            PlayOneShot(_woven ? ArcaneBarrierAudio.Shatter() : IceWallAudio.Shatter());
             CameraFeel.Cue(CameraFeelCue.ImpactHeavy, Vector2.zero);
             BeginMelt(ShatterFadeSeconds, null);
         }

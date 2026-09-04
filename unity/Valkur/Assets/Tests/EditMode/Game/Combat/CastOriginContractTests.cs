@@ -72,13 +72,13 @@ namespace Valkur.Tests.EditMode.Game.Combat
             "Gameplay/Spells/Executors/SmokeEmitterExecutor.cs",
             "Gameplay/Spells/Executors/SmokeExecutor.cs",
             "Gameplay/Spells/Executors/SummonExecutor.cs",
-            "Gameplay/Spells/Executors/WallExecutor.cs",
 
-            // The four ground-PLACED spells (puddle, totem, vortex field, arcane flame)
-            // resolve their origin one level down, in SpellTargeting, which is the single
-            // owner of where an aimed spell lands. Listing the executors instead would demand
-            // a call they no longer make while letting the helper they now depend on drift
-            // unguarded.
+            // The five ground-PLACED spells (puddle, totem, vortex field, arcane flame and now
+            // the wall) resolve their origin one level down, in SpellTargeting, which is the
+            // single owner of where an aimed spell lands. Listing the executors instead would
+            // demand a call they no longer make while letting the helper they now depend on
+            // drift unguarded. WallExecutor moved here when arcane_barrier's authored
+            // spawnAtMouse turned out to reach no code.
             "Gameplay/Spells/Core/SpellTargeting.cs",
         };
 

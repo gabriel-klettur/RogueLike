@@ -63,7 +63,7 @@ MonoBehaviour:
   explosionDamage: 0
   ttl: 0
   wallWidth: 4.5
-  wallHeight: 0.35
+  wallHeight: 2.4
   wallHP: 80
   blockProjectiles: 1
   blockUnits: 0

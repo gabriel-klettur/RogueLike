@@ -14,6 +14,15 @@ namespace Valkur.Gameplay.Spells
     /// file were thirty times larger than anything the asset could produce, which is what
     /// gave the mistake away.</para>
     ///
+    /// <para>AIMING. <c>spawnAtMouse</c> was authored, serialised, shown in the F4 editor and
+    /// read by nobody here: this executor placed the barrier at a fixed <c>distance</c> along
+    /// the caster's facing whatever the flag said, so <c>arcane_barrier</c> shipped with the
+    /// box ticked and no way to aim. That is the same defect the puddle, totem, vortex field
+    /// and arcane flame each carried, and it has the same single owner —
+    /// <see cref="SpellTargeting.ResolveGroundTarget"/>, which also clamps the cursor to the
+    /// spell's own <c>range</c> and falls back to the facing for a monster, which has no
+    /// pointer. <c>wall_ice</c> authors the flag off and is untouched.</para>
+    ///
     /// <para>The barrier stands on the Building layer because that is the layer Player(8),
     /// NPC(9) and Projectile(10) all collide with in the Physics2D matrix — it blocks the
     /// caster too, which is deliberate, and <c>PathFinder.IsWalkable</c> masks on
@@ -25,6 +34,9 @@ namespace Valkur.Gameplay.Spells
         private const float DefaultLengthWu = 6f;
         private const float DefaultHeightWu = 1.8f;
         private const float DefaultDistanceWu = 3f;
+
+        /// <summary>Cast reach for an AIMED barrier whose definition authors no range.</summary>
+        private const float DefaultRangeWu = 6f;
         private const float DefaultHp = 100f;
         private const float DefaultDurationSeconds = 6f;
 
@@ -33,16 +45,13 @@ namespace Valkur.Gameplay.Spells
             float length = ctx.Spell.wallWidth > 0 ? ctx.Spell.wallWidth : DefaultLengthWu;
             float height = ctx.Spell.wallHeight > 0 ? ctx.Spell.wallHeight : DefaultHeightWu;
             float hp = ctx.Spell.wallHP > 0 ? ctx.Spell.wallHP : DefaultHp;
-            float distance = ctx.Spell.distance > 0 ? ctx.Spell.distance : DefaultDistanceWu;
-
             // The wall's real exit is its HP reaching zero; the timer is a backstop.
             float duration = ctx.Spell.infinite
                 ? float.PositiveInfinity
                 : (ctx.Spell.duration > 0 ? ctx.Spell.duration : DefaultDurationSeconds);
 
             Vector2 direction = ctx.Direction.sqrMagnitude > 1e-4f ? ctx.Direction.normalized : Vector2.right;
-            Vector2 spawnPos = (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, direction, ctx.Spell)
-                               + direction * distance;
+            Vector2 spawnPos = SpellTargeting.ResolveGroundTarget(ctx, DefaultRangeWu, DefaultDistanceWu);
 
             // Perpendicular to the cast: the barrier stands ACROSS the line of fire.
             Vector2 axis = new Vector2(-direction.y, direction.x);
@@ -67,6 +76,10 @@ namespace Valkur.Gameplay.Spells
                 Height = height,
                 Axis = axis,
                 Element = ProjectileExecutor.ResolveElement(ctx.Spell),
+                // The barrier's whole palette. It used to reach nothing at all: the element was
+                // captured into this same struct and never read by a single line, so a spell
+                // authored Arcane with a violet swatch rendered as an ice wall.
+                Swatch = ctx.Spell.particleColor,
             });
 
             // Free-standing world object: nothing else can end it. The registry enforces

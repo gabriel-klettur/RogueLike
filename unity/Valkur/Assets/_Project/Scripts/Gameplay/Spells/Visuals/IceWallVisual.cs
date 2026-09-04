@@ -22,7 +22,7 @@ namespace Valkur.Gameplay.Spells
     /// child carries an absolute world size, and the only rotated thing in the hierarchy is
     /// the collider box.</para>
     /// </summary>
-    internal sealed partial class IceWallVisual
+    internal sealed partial class IceWallVisual : IWallVisual
     {
         /// <summary>Target gap between crystal centres. Sets how many shards a length gets.</summary>
         private const float ShardSpacing = 0.52f;
