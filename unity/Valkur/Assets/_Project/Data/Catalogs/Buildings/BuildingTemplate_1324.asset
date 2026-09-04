@@ -18,6 +18,7 @@ MonoBehaviour:
   solid: 1
   splitRatio: 0.85
   colliderScope: CG
+  interactable: 0
   originalScale: {x: 196, y: 224}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
@@ -26,3 +27,4 @@ MonoBehaviour:
   doorOffsetNormalized: {x: 0.5, y: 0.06}
   doorSizeNormalized: {x: 0.18, y: 0.12}
   sourceImagePath: assets/buildings/nature/tree_volcanic_charred_4.png
+  destruction: {fileID: 11400000, guid: 2a861c4d7ddb6904cb9b0f9af29df5b0, type: 2}

@@ -18,6 +18,7 @@ MonoBehaviour:
   solid: 0
   splitRatio: 0.3
   colliderScope: CG
+  interactable: 0
   originalScale: {x: 67, y: 58}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
@@ -26,3 +27,4 @@ MonoBehaviour:
   doorOffsetNormalized: {x: 0.5, y: 0.06}
   doorSizeNormalized: {x: 0.18, y: 0.12}
   sourceImagePath: assets/buildings/water/footbridge_wooden.png
+  destruction: {fileID: 0}

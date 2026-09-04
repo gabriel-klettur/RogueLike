@@ -18,6 +18,7 @@ MonoBehaviour:
   solid: 1
   splitRatio: 0.8
   colliderScope: CG
+  interactable: 0
   originalScale: {x: 68, y: 102}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
@@ -26,3 +27,4 @@ MonoBehaviour:
   doorOffsetNormalized: {x: 0.5, y: 0.06}
   doorSizeNormalized: {x: 0.18, y: 0.12}
   sourceImagePath: assets/buildings/quest/bounty_board_wanted.png
+  destruction: {fileID: 0}
