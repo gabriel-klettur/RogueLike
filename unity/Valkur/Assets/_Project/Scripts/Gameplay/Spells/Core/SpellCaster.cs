@@ -82,6 +82,7 @@ namespace Valkur.Gameplay.Spells
             { SpellType.WeaponLoadout,    new WeaponLoadoutExecutor() },
             { SpellType.AnimationProbe,   new AnimationProbeExecutor() },
             { SpellType.EnergyCharge,     new EnergyChargeExecutor() },
+            { SpellType.Buff,             new BuffExecutor() },
         };
 
         public CastPhase CurrentPhase => _phase;

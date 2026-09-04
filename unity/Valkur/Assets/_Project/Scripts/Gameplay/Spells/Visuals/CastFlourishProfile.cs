@@ -209,6 +209,11 @@ namespace Valkur.Gameplay.Spells
                 case SpellType.Aura:
                 case SpellType.Shield:
                 case SpellType.SphereMagicShield:
+                // A timed self-buff is the Ward gesture by definition: the power orbits the
+                // body and never leaves it. Left out of this switch it would fall through to
+                // the Hurl default and throw motes FORWARD at nothing, which is the one
+                // gesture that actively contradicts what the spell does.
+                case SpellType.Buff:
                     return CastFlourishFamilies.Ward(spell);
 
                 case SpellType.Dash:
