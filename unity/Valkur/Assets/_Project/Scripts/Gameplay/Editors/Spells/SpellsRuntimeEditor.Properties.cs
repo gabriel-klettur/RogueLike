@@ -186,6 +186,33 @@ namespace Valkur.Gameplay.Spells
                 ("vfxPreset",     () => form.AddText ("vfxPreset",     "VFX Preset",     s.vfxPreset ?? "")),
                 ("impactPreset",  () => form.AddText ("impactPreset",  "Impact Preset",  s.impactPreset ?? "")));
 
+            // ── Projectile mechanics ──
+            // Three independent behaviours on the same executor rather than three new spell
+            // types, which is what lets any of the twelve existing projectiles be given one
+            // later without new code. AddSection hides the whole block from every other type.
+            AddSection(form, s, "── Projectile Mechanics ──",
+                ("pierceCount",         () => form.AddInt  ("pierceCount",         "Pierce Count",      s.pierceCount)),
+                ("pierceDamageFalloff", () => form.AddFloat("pierceDamageFalloff", "Pierce Falloff",    s.pierceDamageFalloff)),
+                ("homingStrength",      () => form.AddFloat("homingStrength",      "Homing (deg/s)",    s.homingStrength)),
+                ("homingRange",         () => form.AddFloat("homingRange",         "Homing Range",      s.homingRange)),
+                ("projectileCount",     () => form.AddInt  ("projectileCount",     "Shots Per Cast",    s.projectileCount)),
+                ("spreadDegrees",       () => form.AddFloat("spreadDegrees",       "Spread (deg)",      s.spreadDegrees)));
+
+            // ── Charge ──
+            // chargeMaxSeconds is the discriminator: 0 means the spell is not chargeable and
+            // fires the instant it is cast, which is how every other spell behaves.
+            AddSection(form, s, "── Charge ──",
+                ("chargeMaxSeconds",       () => form.AddFloat("chargeMaxSeconds",       "Full Charge (s)",  s.chargeMaxSeconds)),
+                ("chargeMinFraction",      () => form.AddFloat("chargeMinFraction",      "Snap Fraction",    s.chargeMinFraction)),
+                ("chargeDamageMultiplier", () => form.AddFloat("chargeDamageMultiplier", "Damage x at Full", s.chargeDamageMultiplier)),
+                ("chargeScaleMultiplier",  () => form.AddFloat("chargeScaleMultiplier",  "Size x at Full",   s.chargeScaleMultiplier)));
+
+            // ── Buff ──
+            // The array itself is a block of its own below; this is the refresh key beside it.
+            AddSection(form, s, "── Buff ──",
+                ("buffKey", () => form.AddText("buffKey", "Buff Key (refresh)", s.buffKey ?? "")));
+
+            AddStatModifierRows(form, s);
             AddStatusApplicationRows(form, s);
         }
 
@@ -270,6 +297,9 @@ namespace Valkur.Gameplay.Spells
             // The status block addresses array ELEMENTS, so its keys are not field names and
             // must be taken before the reflection lookup below rejects them.
             if (IsStatusKey(key)) { OnStatusValueChanged(s, key, val); return; }
+            // Same reason as the line above: these keys address array ELEMENTS, so they are
+            // not field names and the reflection lookup below would reject them.
+            if (IsStatModKey(key)) { OnStatModValueChanged(s, key, val); return; }
 
             var fi = typeof(SpellDefinition).GetField(key,
                 BindingFlags.Public | BindingFlags.Instance);
