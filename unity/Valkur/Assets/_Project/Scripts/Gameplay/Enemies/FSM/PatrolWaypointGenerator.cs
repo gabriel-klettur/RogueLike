@@ -6,7 +6,7 @@ namespace Valkur.Gameplay.FSM
     /// <summary>
     /// Generates patrol waypoints from a patrol type string.
     /// Mirrors Python's build_patrol_route() in behaviour_loader.py.
-    /// Supports: line, ping_pong, circle, square, zigzag, figure_eight.
+    /// Supports: stroll, line, ping_pong, circle, square, zigzag, figure_eight.
     /// </summary>
     public static class PatrolWaypointGenerator
     {
@@ -14,7 +14,7 @@ namespace Valkur.Gameplay.FSM
         /// Generate waypoints for the given patrol type around a spawn position.
         /// </summary>
         /// <param name="origin">World-space spawn position.</param>
-        /// <param name="patrolType">Patrol pattern ID (line, circle, square, zigzag, figure_eight).</param>
+        /// <param name="patrolType">Patrol pattern ID (stroll, line, circle, square, zigzag, figure_eight).</param>
         /// <returns>Array of world-space waypoints.</returns>
         public static Vector2[] Generate(Vector2 origin, string patrolType)
         {
@@ -23,6 +23,9 @@ namespace Valkur.Gameplay.FSM
 
             switch (patrolType.ToLowerInvariant())
             {
+                case "stroll":
+                    return GenerateStroll(origin, STROLL_HALF_WIDTH);
+
                 case "line":
                 case "ping_pong":
                     return GenerateLine(origin, 5f);
@@ -47,6 +50,40 @@ namespace Valkur.Gameplay.FSM
         private static Vector2[] DefaultLine(Vector2 origin)
         {
             return new[] { origin, origin + new Vector2(5f, 0f) };
+        }
+
+        /// <summary>
+        /// How far either side of the spawn a <c>stroll</c> reaches, in world units.
+        ///
+        /// Sized against the pacing window rather than picked: a shopkeeper walks at 0.8 u/s
+        /// and the authored Idle-to-Patrol cycle gives her five seconds, so 1.25 either way
+        /// is a 2.5-unit crossing she completes in about three seconds — she arrives, pauses,
+        /// and is sent back to Idle, instead of being interrupted mid-stride every time.
+        /// </summary>
+        private const float STROLL_HALF_WIDTH = 1.25f;
+
+        /// <summary>
+        /// A short pace either side of where the entity stands, for someone who belongs at a
+        /// spot rather than covering ground.
+        ///
+        /// Centred on the origin, unlike every other pattern here, which starts AT the spawn
+        /// and extends away from it. That difference is the whole point: a vendor patrolling
+        /// a 5-unit <c>line</c> spends most of the session an average of 2.5 units east of
+        /// their own stall, so the player looks for them where they were placed and finds
+        /// empty ground. Centred, the stall stays the middle of the walk.
+        ///
+        /// HORIZONTAL on purpose too. Art drawn as a single front-facing view — Gatita's is —
+        /// has no back to show, and <c>DirectionalAnimator</c> never flips, so a character
+        /// walking north reads as moon-walking towards the camera. Strafing left and right in
+        /// front of a counter is exactly what that art can portray honestly.
+        /// </summary>
+        private static Vector2[] GenerateStroll(Vector2 origin, float halfWidth)
+        {
+            return new[]
+            {
+                origin + new Vector2(-halfWidth, 0f),
+                origin + new Vector2(halfWidth, 0f),
+            };
         }
 
         private static Vector2[] GenerateLine(Vector2 origin, float lengthTiles)

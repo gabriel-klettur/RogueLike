@@ -307,6 +307,41 @@ namespace Valkur.Data
     }
 
     /// <summary>
+    /// How fast ONE state plays, for an entity whose states are not all paced alike.
+    ///
+    /// The entity-wide <see cref="AnimationScaleConfig.animationSpeedMultiplier"/> cannot say
+    /// this: it moves every state at once, so slowing an idle to a drowsy breath would slow
+    /// the walk with it and the character would appear to wade. A per-VARIANT multiplier
+    /// cannot say it either — <c>DirectionalAnimator.PacingOf</c> answers the neutral default
+    /// for variant -1, and idle/walk/chase have no variants at all, so there was no way to
+    /// pace them separately before this.
+    ///
+    /// Keyed by a STRING for the same two reasons <see cref="LoadoutStateSheets"/> is: the
+    /// seven base slots are already enumerated positionally in four places, and
+    /// <c>AnimState</c> lives in <c>Valkur.Gameplay</c>, which <c>Valkur.Data</c> may not
+    /// reference. The names match the frame manifest's — <c>idle</c>, <c>walk</c>,
+    /// <c>chase</c>, <c>cast</c>, <c>attack</c>, <c>damage</c>, <c>death</c>,
+    /// <c>recover</c>.
+    ///
+    /// Carries a speed and nothing else on purpose. A per-state <c>holdLastFrame</c> would be
+    /// authorable, round-trip, and reach no code — <c>DeathState</c> already owns the one
+    /// state that stops on its last frame — and this project has paid for authored-but-inert
+    /// fields more than once.
+    /// </summary>
+    [Serializable]
+    public class StatePacing
+    {
+        [Tooltip("Which state this paces: idle, walk, chase, cast, attack, damage, death " +
+                 "or recover.")]
+        public string state;
+
+        [Tooltip("Scales this state's playback speed. 1 = the entity's normal frame rate; " +
+                 "below 1 is slower. Multiplies with the entity-wide multiplier rather than " +
+                 "replacing it.")]
+        [Min(0.05f)] public float animationSpeedMultiplier = 1f;
+    }
+
+    /// <summary>
     /// A named alternative look for the SAME character — the dwarf with his sword drawn.
     ///
     /// An OVERRIDE LIST, not a second <see cref="EntityAssetConfig"/>. The armed dwarf has
@@ -399,6 +434,28 @@ namespace Valkur.Data
         // Unlike attackVariants these carry no combat data — a spell's damage lives on its
         // SpellDefinition — so this is purely which animation plays.
         public List<CastVariant> castVariants = new List<CastVariant>();
+
+        [Header("Per-State Pacing")]
+        // Empty for every entity that plays all its states at one speed, which is nearly all
+        // of them. Gatita is the case it exists for: her idle is a slow breath and her walk
+        // is a normal stride, and the entity-wide multiplier can only move both together.
+        public List<StatePacing> statePacing = new List<StatePacing>();
+
+        /// <summary>
+        /// The authored speed for <paramref name="state"/>, or 1 when this entity paces that
+        /// state normally — which is the answer for every state of nearly every entity.
+        /// </summary>
+        public float StateSpeedMultiplier(string state)
+        {
+            if (statePacing == null || string.IsNullOrEmpty(state)) return 1f;
+            for (int i = 0; i < statePacing.Count; i++)
+            {
+                if (statePacing[i] != null &&
+                    string.Equals(statePacing[i].state, state, StringComparison.OrdinalIgnoreCase))
+                    return Mathf.Max(0.05f, statePacing[i].animationSpeedMultiplier);
+            }
+            return 1f;
+        }
 
         [Header("Loadouts")]
         // Alternative LOOKS for this same character, each overriding only the states it has

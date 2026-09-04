@@ -1,0 +1,47 @@
+{
+  "character": "gatita",
+  "states": [
+    {
+      "state": "idle",
+      "source": "gatita_idle_3.png",
+      "frames": [
+        "gatita_idle_0.png",
+        "gatita_idle_1.png",
+        "gatita_idle_2.png",
+        "gatita_idle_3.png",
+        "gatita_idle_4.png",
+        "gatita_idle_5.png"
+      ],
+      "canvas": [
+        200,
+        260
+      ],
+      "scale": 0.42781,
+      "medianBodyPx": 561.0,
+      "targetBodyPx": 240,
+      "pixelsPerUnit": 64
+    },
+    {
+      "state": "walk",
+      "source": "gatita_walking.png",
+      "frames": [
+        "gatita_walk_0.png",
+        "gatita_walk_1.png",
+        "gatita_walk_2.png",
+        "gatita_walk_3.png",
+        "gatita_walk_4.png",
+        "gatita_walk_5.png",
+        "gatita_walk_6.png",
+        "gatita_walk_7.png"
+      ],
+      "canvas": [
+        173,
+        256
+      ],
+      "scale": 0.50526,
+      "medianBodyPx": 475.0,
+      "targetBodyPx": 240,
+      "pixelsPerUnit": 64
+    }
+  ]
+}

@@ -144,6 +144,13 @@ namespace Valkur.Gameplay
         /// </summary>
         private VariantPacing[][] _variantPacingByState;
 
+        /// <summary>
+        /// Per-state playback multiplier, indexed by <see cref="AnimState"/>. Null until an
+        /// asset authors one, which is the state nearly every entity stays in — the lookup
+        /// answers 1 for a null table, so nothing has to allocate to play normally.
+        /// </summary>
+        private float[] _stateSpeed;
+
         /// <summary>How one variant is paced. A struct so an uninstalled table costs nothing
         /// and a missing row reads as the neutral 1x, non-holding default.</summary>
         public struct VariantPacing
@@ -351,6 +358,36 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>
+        /// Re-pace ONE variant at runtime, so an action can make its animation last exactly as
+        /// long as the beat it is playing for.
+        ///
+        /// <para>Per VARIANT rather than through
+        /// <see cref="SetAnimationSpeedMultiplier"/>, which is entity-wide: a harvest swing
+        /// that sped the whole character up would have to put it back afterwards, and this
+        /// project has already paid for a save-and-restore on shared state once
+        /// (<c>SetInvincible</c>, one bool with three owners). A RESERVED variant has exactly
+        /// one caller by construction — that is what the reservation buys — so there is no
+        /// second owner to fight over its pacing.</para>
+        ///
+        /// <para>Refuses an unreserved variant for that reason: re-pacing a variant that
+        /// <c>NextVariant</c> also hands out would leave an unrelated punch playing at
+        /// whatever speed the last chop needed.</para>
+        /// </summary>
+        public bool TrySetVariantSpeed(AnimState state, int index, float speedMultiplier)
+        {
+            int i = (int)state;
+            if (_variantPacingByState == null || i < 0 || i >= _variantPacingByState.Length)
+                return false;
+
+            var table = _variantPacingByState[i];
+            if (table == null || index < 0 || index >= table.Length) return false;
+            if (!IsVariantReserved(state, index)) return false;
+
+            table[index].SpeedMultiplier = Mathf.Max(MinAnimationSpeedMultiplier, speedMultiplier);
+            return true;
+        }
+
+        /// <summary>
         /// Copies every variant table from <paramref name="source"/> — the sets, the spell
         /// reservations and the pacing — plus the recover set.
         ///
@@ -480,18 +517,57 @@ namespace Valkur.Gameplay
         /// The interval one frame of <paramref name="variant"/> of <paramref name="state"/>
         /// runs for — the entity's rate, divided again by the variant's own multiplier.
         ///
-        /// Two multipliers rather than one because they answer different questions: the
-        /// entity's says how fast THIS CREATURE moves, and is tuned once per monster; the
-        /// variant's says how long THIS ANIMATION may take, and exists because an action can
-        /// be shorter than the art drawn for it. The dash is the case that forced it — the
-        /// body teleports in a single physics step and its wake lasts 0.14 s, against eight
-        /// charge frames that read for 1.2 s at the normal rate.
+        /// Three multipliers rather than one because they answer different questions, and
+        /// they COMPOSE rather than override for that reason — a slow idle on a fast creature
+        /// is both. The entity's says how fast THIS CREATURE moves and is tuned once per
+        /// monster; the state's says how this creature paces THIS ACTIVITY, and exists because
+        /// a drowsy breath and a normal stride belong to the same character; the variant's
+        /// says how long THIS ANIMATION may take, and exists because an action can be shorter
+        /// than the art drawn for it. The dash is the case that forced the last one — the body
+        /// teleports in a single physics step and its wake lasts 0.14 s, against eight charge
+        /// frames that read for 1.2 s at the normal rate.
         /// </summary>
         private float FrameIntervalFor(AnimState state, int variant)
         {
             float variantSpeed = PacingOf(state, variant).SpeedMultiplier;
             if (variantSpeed <= 0f) variantSpeed = 1f;
-            return EffectiveFrameInterval / variantSpeed;
+            return EffectiveFrameInterval / (StateSpeedOf(state) * variantSpeed);
+        }
+
+        /// <summary>
+        /// How this entity paces <paramref name="state"/> as a whole — 1 unless the asset
+        /// authored something else, which nearly none do.
+        ///
+        /// Deliberately NOT folded into <see cref="PacingOf"/>: that answers "how is this
+        /// VARIANT paced", it is public, and a caller sizing an action's window reads it to
+        /// decide how long ONE animation runs. Making it silently also report a state-wide
+        /// dial would change what an existing reader is told without changing its call.
+        /// </summary>
+        public float StateSpeedOf(AnimState state)
+        {
+            int i = (int)state;
+            if (_stateSpeed == null || i < 0 || i >= _stateSpeed.Length) return 1f;
+            float speed = _stateSpeed[i];
+            return speed > 0f ? speed : 1f;
+        }
+
+        /// <summary>
+        /// Sets how <paramref name="state"/> is paced for this entity. Bound once from
+        /// <c>EntityAssetConfig.statePacing</c>; a state never set plays at the entity's rate.
+        /// </summary>
+        public void SetStateSpeed(AnimState state, float speedMultiplier)
+        {
+            int stateCount = Enum.GetValues(typeof(AnimState)).Length;
+            if (_stateSpeed == null || _stateSpeed.Length != stateCount)
+            {
+                _stateSpeed = new float[stateCount];
+                for (int i = 0; i < stateCount; i++) _stateSpeed[i] = 1f;
+            }
+
+            int index = (int)state;
+            if (index < 0 || index >= stateCount) return;
+
+            _stateSpeed[index] = Mathf.Max(MinAnimationSpeedMultiplier, speedMultiplier);
         }
 
         /// <summary>
