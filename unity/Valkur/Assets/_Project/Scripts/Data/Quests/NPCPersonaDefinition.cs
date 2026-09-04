@@ -40,12 +40,49 @@ namespace Valkur.Data
                  "one shows.")]
         public List<FacialSprite> faces = new List<FacialSprite>();
 
+        [Tooltip("What this character looks like LISTENING — shown while the player is " +
+                 "typing, one per expression. Filled by the same importer from files named " +
+                 "'<anything>_listening_<expression>.png'. Optional: a character with none " +
+                 "keeps its talking face while it listens, which is what every persona but " +
+                 "Gatita does today.")]
+        public List<FacialSprite> listeningFaces = new List<FacialSprite>();
+
         /// <summary>One drawing, and the expression it is the drawing OF.</summary>
         [Serializable]
         public struct FacialSprite
         {
             public FacialExpression expression;
             public Sprite sprite;
+        }
+
+        /// <summary>True when this character has any listening art at all.</summary>
+        public bool HasListeningFaces => listeningFaces != null && listeningFaces.Count > 0;
+
+        /// <summary>
+        /// The listening drawing for <paramref name="wanted"/>, or the ordinary face when
+        /// this character has none.
+        ///
+        /// <para>The fallback is to the TALKING face of the same expression, not to the
+        /// listening Neutral. Listening is a second axis over the same vocabulary, so the
+        /// nearest thing to "listening, amused" on a character who only drew one of them is
+        /// "amused" — the emotion is the part the player is reading, and swapping it for a
+        /// blank attentive stare loses exactly the information the portrait carries. A
+        /// character with no listening art therefore behaves as it did before this existed:
+        /// its face simply does not change while the player types.</para>
+        /// </summary>
+        public Sprite ResolveListeningFace(FacialExpression wanted)
+        {
+            if (listeningFaces != null)
+            {
+                foreach (FacialExpression candidate in FacialExpressionFallback.Chain(wanted))
+                {
+                    foreach (FacialSprite entry in listeningFaces)
+                    {
+                        if (entry.expression == candidate && entry.sprite != null) return entry.sprite;
+                    }
+                }
+            }
+            return ResolveFace(wanted);
         }
 
         /// <summary>
@@ -132,6 +169,66 @@ namespace Valkur.Data
         [Tooltip("Pre-written dialogue lines for non-LLM mode. Cycled on interaction.")]
         [TextArea(1, 2)]
         public List<string> dialogueLines = new List<string>();
+
+        [Header("Reactions")]
+        [Tooltip("What this character says when it is FEELING something — one or more lines " +
+                 "per expression. The ordinary dialogue above is what it says unprompted; " +
+                 "these are what it says because the player was rude, or because it is the " +
+                 "small hours and it is tired. Optional: a character with none simply keeps " +
+                 "its repertoire and shows fewer faces.")]
+        public List<ReactionLine> reactions = new List<ReactionLine>();
+
+        /// <summary>
+        /// One thing to say, and the face it is said WITH.
+        ///
+        /// <para>Keyed by <see cref="FacialExpression"/> rather than by an intent or a mood
+        /// string for two reasons. The vocabulary is already closed, shared and drawn, so a
+        /// reaction cannot name a feeling the portrait has no way to show. And
+        /// <see cref="FacialExpression"/> lives in <c>Valkur.Data</c> while
+        /// <c>DialogueIntent</c> lives in <c>Valkur.Gameplay</c> — keying on the intent
+        /// would require the forbidden Data-to-Gameplay reference, the same constraint that
+        /// makes <c>SpellDefinition.previewAnimState</c> a string.</para>
+        ///
+        /// <para>An authored reaction STATES its own face; nothing re-reads the words to
+        /// guess at one. That is the whole point: the classifier is a floor for text nobody
+        /// labelled, and re-classifying a line that was written for a feeling would let it
+        /// disagree with the drawing it was paired with.</para>
+        /// </summary>
+        [Serializable]
+        public struct ReactionLine
+        {
+            public FacialExpression expression;
+
+            [TextArea(1, 2)]
+            public string line;
+        }
+
+        /// <summary>
+        /// The reactions authored for <paramref name="expression"/>, appended to
+        /// <paramref name="into"/>. Never allocates when the character has none, which is
+        /// the case for every persona but Gatita today.
+        /// </summary>
+        public void CollectReactions(FacialExpression expression, List<string> into)
+        {
+            if (reactions == null || into == null) return;
+            foreach (ReactionLine entry in reactions)
+            {
+                if (entry.expression == expression && !string.IsNullOrWhiteSpace(entry.line))
+                    into.Add(entry.line);
+            }
+        }
+
+        /// <summary>True when this character has something to say for that feeling.</summary>
+        public bool HasReaction(FacialExpression expression)
+        {
+            if (reactions == null) return false;
+            foreach (ReactionLine entry in reactions)
+            {
+                if (entry.expression == expression && !string.IsNullOrWhiteSpace(entry.line))
+                    return true;
+            }
+            return false;
+        }
 
         public float GetDiscountLimit(string itemKey)
         {

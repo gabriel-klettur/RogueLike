@@ -115,14 +115,24 @@ namespace Valkur.Tests.EditMode.Game.Data
         private static bool IsInInternalWhitelist(string relPath) =>
             InternalConventionWhitelistPrefixes.Any(p => relPath.StartsWith(p, StringComparison.OrdinalIgnoreCase));
 
+        // Walked ONCE per fixture run. Seven tests each enumerated the whole Assets tree
+        // (~40-250 ms apiece, ~1.3 s in total) for a listing that does not change between
+        // them. Cached lazily rather than in OneTimeSetUp so a single test can still run alone.
+        private static string[] _allFilesCache;
+        private static string[] _allFoldersCache;
+
         private static IEnumerable<string> EnumerateAssets()
         {
-            return Directory.EnumerateFiles(AssetsPath, "*", SearchOption.AllDirectories);
+            if (_allFilesCache == null)
+                _allFilesCache = Directory.GetFiles(AssetsPath, "*", SearchOption.AllDirectories);
+            return _allFilesCache;
         }
 
         private static IEnumerable<string> EnumerateAssetFolders()
         {
-            return Directory.EnumerateDirectories(AssetsPath, "*", SearchOption.AllDirectories);
+            if (_allFoldersCache == null)
+                _allFoldersCache = Directory.GetDirectories(AssetsPath, "*", SearchOption.AllDirectories);
+            return _allFoldersCache;
         }
 
         // ── Hard rules (must stay at zero) ──────────────────────────────────

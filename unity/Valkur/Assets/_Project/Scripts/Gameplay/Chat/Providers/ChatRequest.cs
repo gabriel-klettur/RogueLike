@@ -139,13 +139,31 @@ namespace Valkur.Gameplay.Chat.Providers
         /// <summary>Shop and purse facts. Default for a character who does not trade.</summary>
         public ChatTradeContext Trade { get; }
 
+        /// <summary>
+        /// What the world is doing — the hour and the weather — for a character whose mood
+        /// can be moved by it.
+        ///
+        /// <para>Passed IN rather than read from the live singletons inside the provider,
+        /// exactly as <see cref="Trade"/> is. A provider that reaches for
+        /// <c>DayNightCycle.Instance</c> itself cannot be asked what it would say at
+        /// midnight without a scene that is actually at midnight, so the one branch that
+        /// only fires in the small hours is the one branch no test can reach.</para>
+        ///
+        /// <para>The default is a clear afternoon with no cycle at all, which suggests no
+        /// face — so a caller that knows nothing about the world silently changes nothing,
+        /// which is the correct behaviour for every existing test fake.</para>
+        /// </summary>
+        public ChatMoodContext Mood { get; }
+
         public ChatRequest(NPCPersonaDefinition persona, NPCMemory memory,
-                           string playerText, ChatTradeContext trade = default)
+                           string playerText, ChatTradeContext trade = default,
+                           ChatMoodContext mood = default)
         {
             Persona = persona;
             Memory = memory;
             PlayerText = playerText;
             Trade = trade;
+            Mood = mood;
         }
     }
 }

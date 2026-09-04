@@ -59,6 +59,8 @@ namespace Valkur.Gameplay.Spells
                 _uiRefs.SpellsTableHeaderContent,
                 _uiRefs.SpellsTableBodyContent);
 
+            BindTreeRefs(_uiRefs.SpellsTreeContent);
+
             // Wire the "Columns" button → column-visibility popup.
             if (_uiRefs.SpellsColumnsCfgBtn != null)
                 _uiRefs.SpellsColumnsCfgBtn.onClick.AddListener(OpenColumnsConfigPopup);

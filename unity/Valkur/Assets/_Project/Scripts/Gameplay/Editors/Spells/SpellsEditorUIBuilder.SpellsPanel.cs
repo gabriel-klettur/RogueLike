@@ -13,10 +13,11 @@ namespace Valkur.Gameplay.Spells
     {
         // ── Spells Panel (picker — Grid / Table) ──────────────────────────────────
         // Layout top-to-bottom inside the panel content VLG:
-        //   1. Tab strip (26 px) — "Grid" | "Table"
+        //   1. Tab strip (26 px) — "Grid" | "Table" | "Tree"
         //   2. Search box (26 px)
         //   3a. Grid container (flex) — 4-col icon grid (Grid tab, default)
         //   3b. Table container (flex) — sticky header + scrollable rows (Table tab)
+        //   3c. Tree container (flex) — indented grimoire outline (Tree tab)
         //   4. Status label (20 px)
 
         private const float SPELL_TABLE_HEADER_STRIP_H = 24f;
@@ -74,19 +75,107 @@ namespace Valkur.Gameplay.Spells
             BuildTableHeader(tableContainerGo.transform, ref refs);
             BuildTableBody(tableContainerGo.transform, ref refs);
 
+            // ── 3c. Tree container ────────────────────────────────────────────
+            var treeContainerGo = CreateUI("TreeContainer", t);
+            EnsureFlexibleHeight(treeContainerGo);
+            // The layout group is what SIZES the scroll surface inside. Without it the
+            // container never lays its child out and the view renders at the RectTransform
+            // default — measured live at 88 x 100 px inside a 312 px panel, which put the
+            // cost column off the right-hand edge of every row. Grid and Table each carry
+            // the same three lines for the same reason.
+            var treeVlg = treeContainerGo.AddComponent<VerticalLayoutGroup>();
+            treeVlg.spacing                = 2f;
+            treeVlg.childForceExpandWidth  = true;
+            treeVlg.childForceExpandHeight = false;
+            treeVlg.childControlWidth      = true;
+            treeVlg.childControlHeight     = true;
+
+            // School sub-tabs. Empty here: the schools come from the ProgressionCatalog,
+            // which this static builder has no access to, so SpellsRuntimeEditor fills the
+            // strip once it has resolved the catalogue. Wrapped at four columns because a
+            // single row would divide 300 px between eleven tabs.
+            refs.SpellsTreeSchoolTabs = TabStrip.CreateWrapped(
+                treeContainerGo.transform, "SpellsTreeSchoolTabs", columns: 4, rowHeight: 22f);
+
+            BuildTreeBody(treeContainerGo.transform, ref refs);
+
             // ── 4. Status label ───────────────────────────────────────────────
             refs.StatusText      = EditorUIHelpers.MakeStatusText(t);
             refs.StatusText.text = "0 spells";
 
             // AddTab activates the first tab and deactivates all content GameObjects,
-            // so the initial state is Grid visible, Table hidden.
+            // so the initial state is Grid visible and the other two hidden.
             tabStrip.AddTab("grid",  "Grid",  gridContainerGo);
             tabStrip.AddTab("table", "Table", tableContainerGo);
+            tabStrip.AddTab("tree",  "Tree",  treeContainerGo);
             tabStrip.transform.SetSiblingIndex(0);
+            refs.SpellsViewTabs = tabStrip;
 
             BuildResizeHandle(refs.SpellsDropdown);
 
             refs.SpellsDropdown.SetActive(false);
+        }
+
+        /// <summary>
+        /// The Tree view's scroll surface: one vertical list, no horizontal axis.
+        ///
+        /// <para>Unlike the table body next door this needs no horizontal scrollbar — the
+        /// outline is exactly as wide as the panel and gets its structure from indentation, so
+        /// a horizontal axis would only ever be a way to lose the labels off-screen.</para>
+        /// </summary>
+        private static void BuildTreeBody(Transform parent, ref UIRefs refs)
+        {
+            var scrollGo = CreateUI("SpellsTreeScroll", parent);
+            EnsureFlexibleHeight(scrollGo);
+            scrollGo.AddComponent<RectMask2D>();
+            scrollGo.AddComponent<Image>().color = UITheme.BG_SURFACE;
+
+            var viewport = CreateUI("Viewport", scrollGo.transform);
+            UIFactory.StretchFill(viewport);
+            var viewportRt = viewport.GetComponent<RectTransform>();
+            viewportRt.offsetMin = Vector2.zero;
+            viewportRt.offsetMax = new Vector2(-SPELL_TABLE_SB_W, 0f);
+
+            var content   = CreateUI("Content", viewport.transform);
+            var contentRt = content.GetComponent<RectTransform>();
+            contentRt.anchorMin        = new Vector2(0f, 1f);
+            contentRt.anchorMax        = new Vector2(1f, 1f);
+            contentRt.pivot            = new Vector2(0f, 1f);
+            contentRt.anchoredPosition = Vector2.zero;
+            contentRt.sizeDelta        = Vector2.zero;
+
+            var vlg = content.AddComponent<VerticalLayoutGroup>();
+            vlg.spacing                = 0f;
+            vlg.padding                = new RectOffset(0, 0, 0, 0);
+            vlg.childForceExpandWidth  = true;
+            vlg.childForceExpandHeight = false;
+            vlg.childControlWidth      = true;
+            vlg.childControlHeight     = true;
+            content.AddComponent<ContentSizeFitter>().verticalFit =
+                ContentSizeFitter.FitMode.PreferredSize;
+
+            var sr = scrollGo.AddComponent<ScrollRect>();
+            sr.content           = contentRt;
+            sr.viewport          = viewportRt;
+            sr.horizontal        = false;
+            sr.vertical          = true;
+            sr.scrollSensitivity = 20f;
+            sr.movementType      = ScrollRect.MovementType.Clamped;
+
+            var sbGo = CreateUI("VScrollbar", scrollGo.transform);
+            var sbRt = sbGo.GetComponent<RectTransform>();
+            sbRt.anchorMin        = new Vector2(1f, 0f);
+            sbRt.anchorMax        = new Vector2(1f, 1f);
+            sbRt.pivot            = new Vector2(1f, 1f);
+            sbRt.anchoredPosition = Vector2.zero;
+            sbRt.sizeDelta        = new Vector2(SPELL_TABLE_SB_W, 0f);
+            sbGo.AddComponent<Image>().color = UITheme.SCROLL_TRACK;
+            sr.verticalScrollbar = BuildSpellScrollbarHandle(sbGo.transform,
+                Scrollbar.Direction.BottomToTop);
+            sr.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+
+            refs.SpellsTreeScroll  = sr;
+            refs.SpellsTreeContent = contentRt;
         }
 
         private static void BuildTableHeader(Transform parent, ref UIRefs refs)

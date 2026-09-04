@@ -31,7 +31,9 @@ namespace Valkur.Data
         /// <summary>Openly amused. Bigger than <see cref="Happy"/> — mouth open, laughing.</summary>
         Laugh = 2,
 
-        /// <summary>Weighing something. Also what is shown while a reply is being fetched.</summary>
+        /// <summary>Weighing something. Also what is shown while a reply is being fetched.
+        /// Distinct from <see cref="Worry"/>: deliberating over something, not uneasy
+        /// about it.</summary>
         Thinking = 3,
 
         /// <summary>Cross. Brows down, mouth flat.</summary>
@@ -48,6 +50,10 @@ namespace Valkur.Data
 
         /// <summary>Complicity. One eye shut, closed smile.</summary>
         Wink = 8,
+
+        /// <summary>Uneasy. Brows flat and slightly furrowed, small closed mouth — concern
+        /// about something, not sadness about it.</summary>
+        Worry = 9,
     }
 
     /// <summary>
@@ -85,6 +91,7 @@ namespace Valkur.Data
                 { FacialExpression.Sad,      new[] { FacialExpression.Sad, FacialExpression.Thinking, FacialExpression.Neutral } },
                 { FacialExpression.Tired,    new[] { FacialExpression.Tired, FacialExpression.Thinking, FacialExpression.Neutral } },
                 { FacialExpression.Angry,    new[] { FacialExpression.Angry, FacialExpression.Neutral } },
+                { FacialExpression.Worry,    new[] { FacialExpression.Worry, FacialExpression.Thinking, FacialExpression.Neutral } },
             };
 
         /// <summary>

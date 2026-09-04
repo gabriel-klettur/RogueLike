@@ -407,8 +407,13 @@ namespace Valkur.Gameplay.Enemies.FSM
 
             for (int i = 0; i < 2; i++)
             {
+                // Image carries [RequireComponent(typeof(CanvasRenderer))], so Unity adds
+                // the renderer the moment Image is added; naming it here as well asked for
+                // a SECOND one and logged "Can't add component 'CanvasRenderer' ... already
+                // added" for every wing of every global edge — an error the FSM tests only
+                // survived because they run under LogAssert.ignoreFailingMessages.
                 var wingGo = new GameObject("ArrowWing_" + i,
-                    typeof(RectTransform), typeof(Image), typeof(CanvasRenderer));
+                    typeof(RectTransform), typeof(Image));
                 wingGo.transform.SetParent(_graphContent, false);
 
                 var rt = wingGo.GetComponent<RectTransform>();

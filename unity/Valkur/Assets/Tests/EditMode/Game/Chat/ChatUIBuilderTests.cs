@@ -42,13 +42,30 @@ namespace Valkur.Tests.EditMode.Game.Chat
         {
             "valkur.chat.panel.width",
             "valkur.chat.panel.height",
+            LayoutVersionPrefKey,
         };
+
+        /// <summary>
+        /// Which arrangement the remembered size was measured on. Cleared with the size for
+        /// the same reason, and STAMPED by the two restore tests below: a size saved against
+        /// an older layout is deliberately discarded, so a test that sets a size without
+        /// saying which layout it belongs to would be exercising the discard path while
+        /// claiming to exercise the restore one.
+        /// </summary>
+        private const string LayoutVersionPrefKey = "valkur.chat.panel.layout";
+
+        /// <summary>Must track <c>ChatUI.PANEL_LAYOUT_VERSION</c>.</summary>
+        private const int CurrentLayoutVersion = 4;
+
+        private const string LANGUAGE_PREF_KEY = "valkur.chat.language";
 
         private static void ClearPanelSizePrefs()
         {
             for (int i = 0; i < PanelSizePrefKeys.Length; i++)
                 PlayerPrefs.DeleteKey(PanelSizePrefKeys[i]);
         }
+
+        private string _savedLanguage;
 
         [SetUp]
         public void SetUp()
@@ -57,6 +74,15 @@ namespace Valkur.Tests.EditMode.Game.Chat
             LogAssert.ignoreFailingMessages = true;
 
             ClearPanelSizePrefs();
+
+            // The panel's captions are a function of a GLOBAL, PERSISTED preference now, so
+            // asserting "Enviar" and "ES" is asserting machine state unless the fixture pins
+            // it. It bit exactly that way: these three tests went red because the language
+            // had been left on English by something else entirely, and they would then have
+            // stayed red on this machine only, for a reason nothing in their names mentions.
+            // Same rule the panel-size prefs above are already cleared for.
+            _savedLanguage = PlayerPrefs.GetString(LANGUAGE_PREF_KEY, ChatLanguage.SPANISH);
+            ChatLanguage.Set(ChatLanguage.SPANISH);
 
             // Defensive: a leaked ChatUI from another fixture would make the singleton
             // duplicate-guard call Destroy() (illegal in EditMode) from inside our Awake.
@@ -80,6 +106,8 @@ namespace Valkur.Tests.EditMode.Game.Chat
         [TearDown]
         public void TearDown()
         {
+            ChatLanguage.Set(_savedLanguage);
+
             if (_hostGo != null) UnityEngine.Object.DestroyImmediate(_hostGo);
             _hostGo = null;
             _ui = null;
@@ -91,6 +119,17 @@ namespace Valkur.Tests.EditMode.Game.Chat
             // Leaving a size behind would hand it to the NEXT fixture that builds a panel.
             ClearPanelSizePrefs();
             LogAssert.ignoreFailingMessages = false;
+        }
+
+        /// <summary>
+        /// One of ChatUI's private layout constants, read rather than duplicated: a literal
+        /// copied into a test passes forever after the production value moves.
+        /// </summary>
+        private static float Const(string name)
+        {
+            var fi = typeof(ChatUI).GetField(name, BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(fi, $"ChatUI.{name} was renamed or removed.");
+            return (float)fi.GetValue(null);
         }
 
         /// <summary>Nulls SingletonMonoBehaviour&lt;T&gt;'s private static _instance slot.</summary>
@@ -212,7 +251,7 @@ namespace Valkur.Tests.EditMode.Game.Chat
             Assert.AreEqual(CanvasScaler.ScaleMode.ScaleWithScreenSize, scaler.uiScaleMode,
                 "Constant-pixel scaling would make the chat panel tiny on high-DPI displays.");
             Assert.AreEqual(new Vector2(1600f, 800f), scaler.referenceResolution,
-                "Reference resolution is the design baseline the 520x250 panel size was authored against.");
+                "Reference resolution is the design baseline the panel size is authored against.");
         }
 
         // -------------------------------------------------------------------------
@@ -273,9 +312,10 @@ namespace Valkur.Tests.EditMode.Game.Chat
 
             Assert.IsNotNull(closeX.GetComponent<Image>(), "The X needs an Image to be hit-tested.");
             Assert.IsNotNull(closeX.GetComponent<Button>(),
-                "Escape, the backdrop and the Cerrar strip all close this panel, and none of " +
-                "them is the control a player LOOKS for — a window with no X in its corner " +
-                "reads as one you are stuck in.");
+                "Escape and the backdrop also close this panel, and neither is the control " +
+                "a player LOOKS for — a window with no X in its corner reads as one you are " +
+                "stuck in. Since the full-width Cerrar strip was removed this is the only " +
+                "close control that is VISIBLE, so it carries the whole affordance.");
 
             var element = closeX.GetComponent<LayoutElement>();
             Assert.IsTrue(element != null && element.ignoreLayout,
@@ -415,6 +455,10 @@ namespace Valkur.Tests.EditMode.Game.Chat
         private void AssertRowsFitAtMinimumSize(bool withTradeRows)
         {
             var vlg = Panel.GetComponent<VerticalLayoutGroup>();
+            // TradeButton floats in the left gutter and is ignoreLayout, so it contributes
+            // no height at all — which is the point of the column: the chrome costs the
+            // conversation nothing vertically whether or not the character sells anything.
+            // TradeConfirmRow is still a row, because an offer is content rather than chrome.
             Child(Panel, "TradeButton").SetActive(withTradeRows);
             Child(Panel, "TradeConfirmRow").SetActive(withTradeRows);
 
@@ -455,7 +499,7 @@ namespace Valkur.Tests.EditMode.Game.Chat
         {
             var grip = Child(Panel, "ResizeGrip").GetComponent<Valkur.UIKit.PanelResizeHandle>();
 
-            Assert.AreEqual(new Vector2(320f, 244f), grip.MinSize,
+            Assert.AreEqual(new Vector2(470f, 244f), grip.MinSize,
                 "PANEL_MIN_W/PANEL_MIN_H sat in ChatUI.cs unread since the Python port. They " +
                 "are the floor the panel was always meant to refuse to shrink past, and this " +
                 "is the call that finally makes them mean something.");
@@ -572,15 +616,18 @@ namespace Valkur.Tests.EditMode.Game.Chat
                 "The pivot must match the anchor, otherwise the panel drifts half off-screen.");
             Assert.AreEqual(new Vector2(20f, 20f), rt.anchoredPosition,
                 "The panel sits 20px in from the bottom-left corner.");
-            Assert.AreEqual(new Vector2(520f, 250f), rt.sizeDelta,
+            Assert.AreEqual(new Vector2(700f, 312f), rt.sizeDelta,
                 "With nothing remembered, the panel must open at the documented default " +
-                "PANEL_DEFAULT_W x PANEL_DEFAULT_H (520x250). The fixture clears the size " +
-                "prefs, so this is the DEFAULT path, not the restore path.");
+                "PANEL_DEFAULT_W x PANEL_DEFAULT_H (700x312): the ported 520x250 raised by a " +
+                "quarter, then 48px wider so that widening the portrait column took its space " +
+                "from the panel rather than from the conversation. The fixture clears the " +
+                "size prefs, so this is the DEFAULT path, not the restore path.");
         }
 
         [Test]
         public void BuildUI_Panel_OpensAtTheSizeThePlayerLeftIt()
         {
+            PlayerPrefs.SetInt(LayoutVersionPrefKey, CurrentLayoutVersion);
             PlayerPrefs.SetFloat("valkur.chat.panel.width", 640f);
             PlayerPrefs.SetFloat("valkur.chat.panel.height", 300f);
 
@@ -595,19 +642,21 @@ namespace Valkur.Tests.EditMode.Game.Chat
         [Test]
         public void BuildUI_Panel_RefusesARememberedSizeBelowItsOwnFloor()
         {
+            PlayerPrefs.SetInt(LayoutVersionPrefKey, CurrentLayoutVersion);
             PlayerPrefs.SetFloat("valkur.chat.panel.width", 10f);
             PlayerPrefs.SetFloat("valkur.chat.panel.height", 10f);
 
             Rebuild();
 
             var size = Panel.GetComponent<RectTransform>().sizeDelta;
-            Assert.GreaterOrEqual(size.x, 320f, "PANEL_MIN_W is the floor.");
+            Assert.GreaterOrEqual(size.x, 470f, "PANEL_MIN_W is the floor.");
             Assert.GreaterOrEqual(size.y, 244f, "PANEL_MIN_H is the floor.");
         }
 
         [Test]
         public void BuildUI_Panel_RefusesARememberedSizeLargerThanTheWindow()
         {
+            PlayerPrefs.SetInt(LayoutVersionPrefKey, CurrentLayoutVersion);
             PlayerPrefs.SetFloat("valkur.chat.panel.width", 9000f);
             PlayerPrefs.SetFloat("valkur.chat.panel.height", 9000f);
 
@@ -641,34 +690,29 @@ namespace Valkur.Tests.EditMode.Game.Chat
             var names = new List<string>();
             foreach (Transform child in Panel.transform) names.Add(child.name);
 
-            // The first five rows are laid out by the VerticalLayoutGroup in this exact order;
-            // LangButton is deliberately last and free-floating in the top-right corner.
+            // Read top to bottom: the title, the conversation, the offer on the table, and
+            // the box you answer in. That is the whole vertical stack — every control now
+            // floats, either in the top-right corner or in the left gutter.
             //
-            // TradeButton sits between the input row and Close: it is the only way into a
-            // vendor's shop, since NPCInteractable.Interact() has no other caller. It is
-            // built inactive and OnChatOpened shows it only when the character being talked
-            // to actually sells something, so a conversation with Felipondor still presents
-            // the four rows this test's earliest revision expected.
+            // TradeConfirmRow sits directly UNDER the conversation and above the input,
+            // where the offer it is confirming was just spoken. It is built inactive and
+            // appears only while a trade is on the table.
             //
-            // TradeConfirmRow sits directly under the input, where the offer it is confirming
-            // was just spoken. It is built inactive and appears only while the character has
-            // a trade on the table.
+            // There is no Cerrar row. Escape, the backdrop and the corner X all close the
+            // panel, and a full-width red bar cost a row of the conversation to say what an
+            // X says by being an X.
             //
-            // ResetButton follows, deliberately at the bottom next to Close and away from the
-            // conversation: it is the only control in this panel that destroys player data,
-            // and it takes two clicks.
+            // TradeButton and ResetButton are free-floating in the LEFT gutter — under the
+            // face and at the foot of the column — and CloseXButton and LangButton in the
+            // top-right corner. All four are ignoreLayout, and they come after the rows
+            // because sibling order is draw order and nothing in the layout arranges them.
             //
-            // CloseXButton and LangButton are the two free-floating corner controls and are
-            // last for that reason — sibling order is draw order, and nothing in the layout
-            // arranges them, so they must be drawn over the rows they overlap.
-            //
-            // Portrait is last of all, and for the same reason one step further: it is also
-            // free-floating (ignoreLayout), but unlike the corner buttons it occupies a
-            // gutter every OTHER row was shortened to make, so it overlaps more of the panel
-            // than either of them. Built earlier it would render underneath the conversation
-            // it sits beside.
+            // Portrait is last of all, and for the same reason one step further: unlike the
+            // corner buttons it occupies a gutter every OTHER row was shortened to make, so
+            // it overlaps more of the panel than any of them. Built earlier it would render
+            // underneath the conversation it sits beside.
             CollectionAssert.AreEqual(
-                new[] { "MsgRow", "ScrollArea", "InputRow", "TradeButton", "TradeConfirmRow", "ResetButton", "CloseButton", "ResizeGrip", "CloseXButton", "LangButton", "Portrait" }, names,
+                new[] { "MsgRow", "ScrollArea", "TradeConfirmRow", "InputRow", "TradeButton", "ResetButton", "ResizeGrip", "CloseXButton", "LangButton", "Portrait" }, names,
                 "Panel row order defines the whole visual layout - reordering rearranges the panel.");
         }
 
@@ -796,19 +840,64 @@ namespace Valkur.Tests.EditMode.Game.Chat
         // -------------------------------------------------------------------------
 
         [Test]
-        public void BuildUI_CloseButton_HasSeparateImageAndLabelObjects()
+        public void BuildUI_HasNoFullWidthCloseStrip()
         {
-            var close = Child(Panel, "CloseButton");
+            foreach (Transform child in Panel.transform)
+                Assert.AreNotEqual("CloseButton", child.name,
+                    "The full-width Cerrar strip is deliberately gone. Escape, the backdrop " +
+                    "and the corner X all close this panel; the strip cost a row of the " +
+                    "conversation to say what an X says by being an X.");
+        }
 
-            Assert.IsNotNull(close.GetComponent<Image>(), "CloseButton needs an Image background.");
-            Assert.IsNotNull(close.GetComponent<Button>(), "CloseButton needs a Button component.");
-            Assert.IsNull(close.GetComponent<TextMeshProUGUI>(),
-                "Image + TextMeshProUGUI on the same GameObject throws a NullReferenceException in Unity 2022.3.");
+        [Test]
+        public void BuildUI_GutterButtons_FloatWithSeparateImageAndLabelObjects()
+        {
+            foreach (var name in new[] { "TradeButton", "ResetButton" })
+            {
+                var go = Child(Panel, name);
 
-            var label = Child(close, "Text").GetComponent<TextMeshProUGUI>();
-            Assert.IsTrue(label != null, "The CloseButton label must be a TMP child.");
-            StringAssert.Contains("ESC", label.text,
-                "The close caption advertises the ESC shortcut - dropping it hides the keyboard affordance.");
+                Assert.IsNotNull(go.GetComponent<Image>(), name + " needs an Image background.");
+                Assert.IsNotNull(go.GetComponent<Button>(), name + " needs a Button component.");
+                Assert.IsNull(go.GetComponent<TextMeshProUGUI>(),
+                    "Image + TextMeshProUGUI on the same GameObject throws a NullReferenceException in Unity 2022.3.");
+
+                var element = go.GetComponent<LayoutElement>();
+                Assert.IsTrue(element != null && element.ignoreLayout,
+                    name + " lives in the LEFT GUTTER, which is space made by the layout " +
+                    "group's padding rather than a row. Without ignoreLayout the group " +
+                    "claims the rect and hands it the full panel width at the bottom of the " +
+                    "stack — which is exactly what happened to the LangButton.");
+
+                var rt = (RectTransform)go.transform;
+                Assert.AreEqual(0f, rt.anchorMin.x,
+                    name + " anchors to the panel's LEFT edge, where the gutter is.");
+                Assert.AreEqual(Const("GUTTER_BUTTON_WIDTH"), rt.sizeDelta.x,
+                    name + " shares the portrait's width so the gutter reads as one column.");
+
+                Assert.IsTrue(Child(go, "Text").GetComponent<TextMeshProUGUI>() != null,
+                    "The " + name + " label must be a TMP child.");
+            }
+        }
+
+        [Test]
+        public void BuildUI_ResetButton_SitsInTheBottomLeftCornerAndDoesNotElideItsLabel()
+        {
+            var reset = Child(Panel, "ResetButton");
+            var rt = (RectTransform)reset.transform;
+
+            Assert.AreEqual(Vector2.zero, rt.anchorMin, "Reset anchors to the bottom-left corner.");
+            Assert.AreEqual(Vector2.zero, rt.pivot,
+                "The pivot must match the anchor or the button hangs off the panel's edge.");
+
+            var label = Child(reset, "Text").GetComponent<TextMeshProUGUI>();
+            Assert.IsTrue(label.enableWordWrapping,
+                "A control that DELETES player memory must never be the one whose label is " +
+                "cut to 'Reiniciar m...'. Both captions fit on one line in the widened " +
+                "column — measured at 81px and 110px against a 126px box — so this does not " +
+                "bite today; it is what makes a longer caption overflow VISIBLY tomorrow " +
+                "instead of losing its own end.");
+            Assert.AreNotEqual(TextOverflowModes.Ellipsis, label.overflowMode,
+                "Wrapping and eliding are alternatives; eliding here would defeat the wrap.");
         }
 
         [Test]
@@ -942,7 +1031,8 @@ namespace Valkur.Tests.EditMode.Game.Chat
             }
 
             foreach (var name in new[] { "Backdrop", "ChatPanel", "ScrollArea", "Content",
-                                         "InputRow", "InputField", "SendButton", "CloseButton",
+                                         "InputRow", "InputField", "SendButton",
+                                         "TradeButton", "ResetButton", "CloseXButton",
                                          "LangButton", "LangLabel", "Text Area", "Placeholder" })
             {
                 Assert.IsTrue(counts.ContainsKey(name), "Node '" + name + "' disappeared from the hierarchy.");
@@ -964,7 +1054,7 @@ namespace Valkur.Tests.EditMode.Game.Chat
                 "SetUp clears the ChatSystem singleton; a live one here means another "
                 + "fixture leaked it and the null-guard paths below would not be exercised.");
 
-            var closeBtn = Child(Panel, "CloseButton").GetComponent<Button>();
+            var closeBtn = Child(Panel, "CloseXButton").GetComponent<Button>();
             var backdropBtn = Backdrop.GetComponent<Button>();
 
             Assert.DoesNotThrow(() => closeBtn.onClick.Invoke(),

@@ -51,6 +51,34 @@ The **only legitimate exceptions** to the rule are:
 
 If you need a key the existing helpers don't expose (e.g. `KeyboardInputManager.WasF2PressedThisFrame()` for F2-rename), add the helper rather than a new direct read.
 
+### War / Peace stance
+
+`Valkur.Core.PlayerStance` decides whether a combat binding does anything at all. **Peace is a
+SAFE POSTURE, not a second key layout** — combat is unavailable, not remapped. It exists because
+nothing in the damage path reads a faction (`Projectile` and `MeleeCombat` contain no such check,
+`EntitySetup` gives every NPC a `Health`), and left click both locks a target AND casts the
+primary spell, so clicking a vendor to talk to her threw a fireball at her and she could be killed
+by trying to trade. The freed-up keyboard is the consequence, not the reason.
+
+- **Consulted at the READER, never at the action map.** `InputBlocker`'s own comment records why:
+  half the project reads through `MouseInputManager` / `KeyboardInputManager`, which OR the legacy
+  backend, so `Map.Disable` silences bound actions and leaves every helper-polling callsite
+  untouched. A map-based stance leaks exactly there, silently.
+- **One gate, one place.** The entire war surface — LMB/RMB/MMB and the 24 spell hotkeys — lives
+  in `PollCombatActions`. `MeleeCombat` reads no input at all.
+- **The dash is NOT combat** and was extracted into `PollTraversal`, which runs on both sides of
+  the gate. Nothing auto-switches, so a Peace stance that also removed the dash would have no
+  recovery from being jumped.
+- **Tab is the control; the HUD chip is the indicator.** Tab is safe against uGUI's legacy
+  `StandaloneInputModule` because only a focused `TMP_InputField` consumes it, and a focused field
+  means chat or the console is up — which is when `InputBlocker` is set and `KeyboardInputManager`
+  refuses every key but Escape / backquote / Enter. Impossible by construction, not avoided by care.
+- **The F4 Spells Editor's redirected click is deliberately NOT gated.** It is reached from
+  `PollRedirectedPrimaryCast` inside the editor-suspended branch, above the gate, so it never
+  arrives. That is by construction rather than by intent — `StanceGateTests` pins it, because the
+  obvious tidy-up is hoisting the check to the top of `Update`.
+- Defaults to **War**, so nothing behaves differently until the player asks.
+
 The legacy axes in `ProjectSettings/InputManager.asset` (`Horizontal`, `Vertical`, `Fire1`, `Mouse X`, etc.) are kept as Unity defaults but are **inert** — no gameplay code reads them via `GetAxis`/`GetButton`. The remaining `UnityEngine.Input.*` calls inside the helper files (and the three callers `PlayerController.Movement.cs` / `InventoryUI.cs` / `TileEditorInputHandler.cs`) are deliberate OR-gates: they re-read the legacy backend whenever the new InputSystem may have dropped events. Don't "clean these up" — they exist to survive the recurring Unity 2022.3 Editor InputSystem event-drop bug.
 
 ## Unity assemblies & dependency rule
@@ -438,6 +466,30 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   `AssetDatabase.LoadAssetAtPath` while `File.ReadAllText` on the same `.asset` shows the real
   value. Use `EditorUtility.SetDirty` alone for data an operator re-runs rather than undoes.
   `BuildingTemplateOriginalScaleBackfill` still carries the same latent hazard.
+- **A script can exist, compile, match its own guid, and STILL not be bound to its class —
+  and every asset of that type then loads as null, silently.** Measured on `SkillTree.cs`:
+  the file was present, its `.meta` guid matched what the assets referenced, it declared one
+  top-level `public sealed class SkillTree : ScriptableObject`, it was the only type of that
+  name in the domain, and `System.Type.GetType("Valkur.Data.SkillTree, Valkur.Data")` resolved
+  — while `MonoScript.GetClass()` for that same file returned **NULL**. Consequences, all
+  silent: `FindAssets("t:SkillTree")` returned 0, `LoadAllAssetsAtPath` returned one object and
+  that object was null, all five `*_skill_tree.asset` loaded as null while their 35 `SkillNode`
+  siblings and all 80 spell-tree assets were fine, and `ProgressionCatalog.skillTrees` held five
+  entries and five nulls. Every playable class had lost its talents with nothing logged and
+  perfect YAML on disk (`classKey: dwarf`, seven nodes). The tell that separates it from the
+  deleted-script case is that `AssetDatabase.GUIDToAssetPath` SUCCEEDS —
+  `ResourcesScriptIntegrityTests` checks exactly that and therefore cannot see this;
+  `ShippedScriptBindingTests` asks the next question, `GetClass() != null`, over the 51 distinct
+  script guids the 5,783 shipped assets reference.
+  **ORDER MATTERS IN THE FIX AND THE OBVIOUS ORDER FAILS.** Force-reimport the `.cs` FIRST — that
+  rebuilds the file-to-class binding — and only then the `.asset` files, which reconstructs the
+  cached nulls. Reimporting the assets first changed nothing at all (measured: `nullLoads` stayed
+  5/5), because the type still could not be constructed; reimporting only the `.cs` fixed
+  `GetClass()` and `FindAssets` (0 → 5) and left the already-loaded nulls in memory. Both halves,
+  in that order. And never `ForceReserializeAssets`, which flushes the bad memory state onto the
+  good file — this state is one `AssetDatabase.SaveAssets()` away from becoming the
+  216-deleted-building-templates incident, and `SaveAssets` writes everything dirty, not just
+  what you edited.
 - **A domain reload does NOT reload assets.** Recompiling reloads managed assemblies; the
   native `ScriptableObject`/`Texture` objects survive it with their in-memory values intact.
   Neither `AssetDatabase.ImportAsset(..., ForceUpdate | ForceSynchronousImport)` nor
@@ -605,10 +657,113 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   red on tests that are fine. `clear_stuck` is NOT the remedy, and believing it is makes this
   worse: it reports on the MCP job registry, while the orphan lives in Unity's own TestRunner,
   so it answers "No running job to clear" with a runner live. **The job registry and the Unity
-  runner are two different sources of truth and only one is visible from here.** What
-  definitively clears an orphaned runner is restarting the Editor. The same reasoning applies
-  to every mutating MCP call, not only to tests.
+  runner are two different sources of truth.** What
+  definitively clears an orphaned runner is restarting the Editor.
 
+  **The Unity-side runner IS readable from here, and this note used to say it was not.** The
+  probe is `Resources.FindObjectsOfTypeAll(` +
+  `UnityEditor.TestTools.TestRunner.TestRun.TestJobDataHolder)` through `execute_code`: its
+  `TestRuns` list carries one entry per run with `guid`, `startTime` and `isRunning`, so
+  "is a runner live, and is there more than one" is answerable BEFORE deciding whether a retry
+  is safe — which is the whole decision this note exists for. Two details are load-bearing.
+  Do NOT reach the holder through `ScriptableSingleton.instance`: that CREATES the asset on
+  access, turning the probe into a write. And reflect its members with
+  `BindingFlags.FlattenHierarchy`, without which inherited statics do not resolve and the probe
+  reports a confident, wrong nothing — measured, it answered "no holder" with a run live.
+
+  The same reasoning applies
+  to every mutating MCP call, not only to tests. **A refusal is not proof the write did not
+  land, either**: `run_tests` answered `no_unity_session; please retry` — an explicit "I never
+  reached Unity" — and had started a runner anyway, which only surfaced because the retry came
+  back `tests_running`. That second refusal is the thing that saved it; had the registry been a
+  moment slower there would have been two runners crossing each other's log windows. Treat an
+  error on a mutating call as UNKNOWN, not as "did not happen".
+
+- **Gating a poll silently strands whatever that poll was HOLDING.** Three things in
+  `PollCombatActions` are held rather than fired — a left-held primary beam, the middle-click
+  laser, and a charging spell — and each is ended by a line inside that same method: the release
+  check, the button-up branch, the charge poll. So the moment the Peace stance stops calling it,
+  the ending never arrives and a player who holds the laser and hits Tab keeps channelling it, in
+  a stance whose entire promise is that they cannot attack. `PlayerController.OnStanceChanged`
+  cuts all three off the TRANSITION rather than beside the gate, because a poll would re-run them
+  every frame of a stance meant to be doing nothing. The charge is the subtle one: `ChargingKey`
+  makes the spell loop return early, so a charge left set would refuse every spell on the way back
+  to War until that same key was pressed and released again.
+- **A table that builds every row on open is a freeze, and the freeze scales with the
+  catalog, not with any bug.** `ItemsRuntimeEditor.Activate()` measured **3,480 ms**, all of it
+  in `RefreshTable`: 38 columns x 180 items = 6,840 live uGUI widgets, each a perfectly
+  reasonable ~0.48 ms. There was nothing to optimise in a cell — the cost was volume, for a
+  viewport that shows ~20 rows. That one method was the 3.5 s hitch on F7 AND 52 % of the
+  entire EditMode suite (178 s of 343 s inside 37 tests), because every Items fixture calls
+  `Activate()` before injecting its own three-item catalog. The body is VIRTUALISED now
+  (`ItemsRuntimeEditor.Table.cs`): rows are placed by index at absolute positions, the content
+  rect is sized to `rows x TABLE_ROW_H` by `RefreshTable`, and `UpdateVisibleRows` realises
+  the viewport window plus four rows of overscan and drops the rest — 413 ms, 13 rows, and the
+  whole EditMode suite went from 343 s to 126 s. Two
+  constraints hold it up. The body carries NO `VerticalLayoutGroup` and NO `ContentSizeFitter`,
+  on purpose: a layout group stacks whatever rows exist from the top and puts row 150 where
+  row 0 belongs, and the fitter shrinks the content to the realised window and makes the rest
+  unreachable — `ItemsTableVirtualizationTests` pins both, because both are the obvious thing
+  to "add back". And uGUI performs no layout in Edit Mode, so a viewport can report zero
+  height; the fallback is a fixed window (`TABLE_FALLBACK_VISIBLE_ROWS`), never "all rows".
+  **How it was found is the part to reuse.** Four plausible hypotheses were each disproved by
+  one measurement before the real one surfaced: "editor fixtures are cheap" (two cheap ones
+  had been sampled; `Editors` was 60 % of the suite), "`BuildGrid`/`Resources.LoadAll` in
+  `[SetUp]`" (0.9 ms and 3.2 ms — Unity caches `Resources`), "a fixed ~8.5 s per run"
+  (`Buildings`: 372 tests in 1.5 s), and "quadratic layout rebuilds" (1.2x, 55 ms). What
+  worked was bisecting the suite by NAMESPACE with `run_tests(test_names=[prefix])` and reading
+  only `durationSeconds` — the per-test detail payload for 7,221 tests does not survive the
+  bridge — until one group stood out, then timing `Activate()`'s callees with a Stopwatch
+  through `execute_code`. Measure the group, then the method, then the callee; never the guess.
+  **The whole suite was then mapped this way (2026-09-04), and the map is the reference for
+  "is this group slow": every group sits at 4-25 ms/test — `Buildings` 4, `World` 8, `Input`/
+  `VFX`/`AI`/`Save`/`Terrain`/`Core` 8, `TileEditor` 12, `Data`/`Player`/`Spells` 13, `Chat`/
+  `Combat`/`UI` 15, `MapEditor` 17, `Particles` 24 — and anything above ~100 ms/test was one
+  of five things: the two bugs above; `EntitiesCatalogAuthoringTests` paying `DeleteAsset` +
+  `CreateFolder` + `Refresh` per test for seven pure string tests (now once per fixture,
+  33 ms instead of 250); `AssetConventionsTests` enumerating the whole `Assets/` tree seven
+  times (now cached); and genuine work that is the point of the test — real
+  `AssetDatabase.CreateAsset` in the catalog-authoring and `MonsterFramesImporter` fixtures
+  (270-600 ms each), the deliberate 200-rewrite race in `AtomicWriteConcurrencyTests`, and
+  the source-tree guards (`InputCentralizationGuard`, `ShippedScriptBinding`,
+  `ResourcesScriptIntegrity`, `TileSeamPolicy`, ~1 s each, one test apiece). The one
+  remaining lever is the four `MainMenu*` fixtures, ~45 tests at 200-230 ms because each
+  builds the whole menu (`BuildOptionsSubmenu` alone is 81 ms) and they test transitions
+  between its panels — ~9 s, 7 % of the suite, left alone because sharing one menu across
+  tests is the order-dependent-flake shape this file already records twice.**
+- **A hand-rolled parser with `while (true)` and no end-of-input check is a hang waiting for
+  the first corrupted file.** `MiniJsonRuntime.Parser.NextChar` cast `StringReader.Read()`'s -1
+  to `'￿'` — not a quote, not a backslash — so `ParseString` on an unterminated string
+  appended it to a StringBuilder forever, and `ParseObject` / `ParseArray` spun on
+  `while (true)` with nothing guaranteeing progress, so `[1,` was `list.Add("")` until memory
+  ran out. Measured: `Deserialize("{ this is not valid json")` took **20.3 s and died of
+  OutOfMemory**. Eighteen loaders parse hand-editable `StreamingAssets` files through that
+  class — maps, buildings, zones, spawners, particles, FSM — so any of them corrupted by a
+  stray keystroke froze the game the same way. The only symptom for months was ONE FSM test
+  (`SaveSets_RefusesWrite_AfterMalformedSetsJson`) quietly costing 20 s of every suite run,
+  passing, with the OOM swallowed by `LogAssert.ignoreFailingMessages`. The parser now
+  carries a `_failed` flag, an explicit `AtEnd`, a string parser that requires its opening
+  quote and fails at EOF, containers that fail at EOF or when a child fails, and an empty
+  token that fails instead of being returned as a value the enclosing loop never consumes.
+  The Editor twin (`Valkur.Editor.MiniJson`, index-based) had the same family through a
+  number parser that consumed nothing; it got a "no progress → null" guard in both loops.
+  `MiniJsonMalformedInputTests` pins seventeen broken inputs under a 250 ms hang guard AND the
+  leniencies the old code had (trailing garbage, bare words, trailing commas), so the fix
+  cannot quietly turn a months-old file into one that stops loading. Two lessons travel:
+  a `while (true)` in a parser needs a visible reason it makes progress, and a test that
+  passes in 20 s is a bug report nobody filed — read the per-test durations, not the count.
+- **A probe that flips global Editor state and throws before restoring it has changed the
+  Editor for every test that follows.** An `execute_code` timing probe set
+  `Debug.unityLogger.logEnabled = false` (to keep log capture out of a Stopwatch), then hit a
+  `TargetInvocationException` on the next line — with no `try/finally`, the restore never ran.
+  Nothing announced it. The next run of a group whose tests use `LogAssert.Expect(LogType.Warning,
+  ...)` came back red with "Expected log did not appear", on tests that were fine, in fixtures
+  that had nothing to do with the probe — the mechanism is invisible from the failure. Same
+  family as the static-event and `SetInvincible` traps: a global toggled from a place that does
+  not own it. Rules that follow: any probe that changes `Debug.unityLogger`, `LogAssert`,
+  `EditorApplication`, `Time`, or a `ScriptableSingleton` restores it in `finally`, every time;
+  and a red `LogAssert.Expect` after a session of probes is a reason to check
+  `Debug.unityLogger.logEnabled` BEFORE reading the test.
 - **A world swap is not a tile repaint.** `WorldGridBuilder.ClearWorld` calls
   `ClearAllTiles` on the tilemaps and destroys NOTHING else, so every placed building, light,
   spawner and particle emitter — and each building's per-cell `BoxCollider2D` — survived into

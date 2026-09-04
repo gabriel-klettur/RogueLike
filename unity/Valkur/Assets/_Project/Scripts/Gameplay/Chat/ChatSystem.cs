@@ -5,6 +5,7 @@ using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Chat.Providers;
+using Valkur.Gameplay.FSM;
 using Valkur.Gameplay.NPC;
 
 namespace Valkur.Gameplay.Chat
@@ -82,6 +83,11 @@ namespace Valkur.Gameplay.Chat
         // ── State ──
         private bool _chatOpen;
         private GameObject _chatTarget;
+
+        // Held separately from _chatTarget because CloseChat nulls that BEFORE it can be
+        // used to find whoever needs releasing, and because the character may have been
+        // destroyed under us — a Unity null still compares true here and is simply skipped.
+        private FSMMonsterBrain _pausedBrain;
         private NPCPersonaDefinition _activePersona;
         private ChatBubble _targetBubble;
         private ChatBubble _playerBubble;
@@ -318,8 +324,44 @@ namespace Valkur.Gameplay.Chat
 
             NPCMemoryStore.Save(_activeMemory);
 
+            HoldStillForConversation(target);
+
             OnChatOpened?.Invoke();
             Debug.Log($"[ChatSystem] Chat opened with {npcName} (visit #{_activeMemory.visitCount})");
+        }
+
+        /// <summary>
+        /// Stops the character walking off in the middle of the conversation.
+        ///
+        /// <para>Gatita is the case that forced it: she is a stroller, so she was answering
+        /// questions while pacing out of range of the panel that was quoting her. The hold
+        /// is released by <see cref="ReleaseConversationHold"/> in <c>CloseChat</c>, which
+        /// is the single close seam every exit runs through — Escape, Enter, walking away
+        /// and the interaction controller dropping its session all end there.</para>
+        ///
+        /// <para>Null on every axis by design. A hand-placed NPC with no brain, a vendor who
+        /// never moves and a persona attached to something that is not a creature at all are
+        /// all legitimate, and none of them should have to opt out of a hold that means
+        /// nothing to them.</para>
+        /// </summary>
+        private void HoldStillForConversation(GameObject target)
+        {
+            // A previous hold that never got released — the character was destroyed, or a
+            // second chat opened without the first closing. Freed before taking a new one,
+            // or the old one is frozen for the rest of the session.
+            ReleaseConversationHold();
+
+            if (target == null) return;
+
+            _pausedBrain = target.GetComponent<FSMMonsterBrain>();
+            if (_pausedBrain != null) _pausedBrain.SetConversationPaused(true);
+        }
+
+        /// <summary>Hands the character back its own movement. Safe to call twice.</summary>
+        private void ReleaseConversationHold()
+        {
+            if (_pausedBrain != null) _pausedBrain.SetConversationPaused(false);
+            _pausedBrain = null;
         }
 
         /// <summary>

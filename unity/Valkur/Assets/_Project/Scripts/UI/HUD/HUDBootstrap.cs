@@ -101,6 +101,16 @@ namespace Valkur.UI.HUD
                 if (uiContainer != null) vignetteGo.transform.SetParent(uiContainer.transform, false);
             }
 
+            // War / Peace chip, top-left, under the clock. Read-only report of
+            // Valkur.Core.PlayerStance plus a click to flip it; the actual control is Tab,
+            // read by PlayerStanceToggle on the player.
+            if (FindObjectOfType<StanceHUD>() == null)
+            {
+                var stanceGo = new GameObject("StanceHUD");
+                stanceGo.AddComponent<StanceHUD>();
+                if (uiContainer != null) stanceGo.transform.SetParent(uiContainer.transform, false);
+            }
+
             // Top-right minimap. Instantiates MinimapManager on the same
             // GameObject and wraps it in a runtime-built panel + heading arrow
             // + zone-name banner consistent with the other HUD widgets.

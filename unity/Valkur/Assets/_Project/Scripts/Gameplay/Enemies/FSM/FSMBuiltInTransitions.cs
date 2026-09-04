@@ -122,6 +122,12 @@ namespace Valkur.Gameplay.Enemies.FSM
                 "up the instant you round a corner. A player in spirit form is invisible here.",
                 DirStates + "IdleState.cs"),
 
+            // ── StrollState ───────────────────────────────────────────────────────────────
+            // Its ONLY coded edge. A stroller never acquires a target, which is what makes
+            // it peaceful without help from the set's allowed-state whitelist.
+            new FSMBuiltInEdge("StrollState", "UnconsciousState", "dead",
+                "Health.IsDead, checked first thing in Execute.", DirStates + "StrollState.cs"),
+
             // ── PatrolState ──────────────────────────────────────────────────────────────
             new FSMBuiltInEdge("PatrolState", "UnconsciousState", "dead",
                 "Health.IsDead, checked first thing in Execute.", DirStates + "PatrolState.cs"),

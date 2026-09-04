@@ -25,10 +25,10 @@ namespace Valkur.Gameplay.Chat.Providers
     /// pensive.</para>
     /// </summary>
     [Valkur.Core.SelfHealingStatic(
-        "Eight immutable keyword tables built once from string literals, plus eight const " +
+        "Nine immutable keyword tables built once from string literals, plus nine const " +
         "emoji strings. Nothing writes to them after the static initialiser, they hold no " +
         "Unity object and no decision made during a session, so they cannot go stale across " +
-        "a Play-mode boundary. Declared on the class rather than eight times on the fields, " +
+        "a Play-mode boundary. Declared on the class rather than once per field, " +
         "since every static here is of that one kind — the same shape and the same reason as " +
         "DialogueIntentClassifier, whose tables this one sits beside.")]
     public static class ExpressionClassifier
@@ -46,6 +46,7 @@ namespace Valkur.Gameplay.Chat.Providers
         private const string WinkEmoji = "\U0001F609";
         private const string PlayEmoji = "\U0001F61C\U0001F61B\U0001F61D\U0001F92A";
         private const string ThinkEmoji = "\U0001F914\U0001F928";
+        private const string WorryEmoji = "\U0001F61F\U0001F630\U0001F625\U0001F628";
 
         private static readonly string[] LaughWords =
         {
@@ -98,6 +99,14 @@ namespace Valkur.Gameplay.Chat.Providers
             "delighted", "my pleasure",
         };
 
+        private static readonly string[] WorryWords =
+        {
+            "me preocupa", "preocupada", "preocupado", "ten cuidado", "mucho cuidado",
+            "no me gusta nada", "peligro", "espero que no", "ay madre",
+            "que susto", "no vayas", "es arriesgado", "me temo",
+            "worried", "be careful", "dangerous", "i am afraid", "risky",
+        };
+
         private static readonly string[] ThinkingWords =
         {
             "dejame ver", "a ver", "veamos", "mmm", "hmm", "no se", "quiza", "quizas",
@@ -126,6 +135,7 @@ namespace Valkur.Gameplay.Chat.Providers
             if (ContainsAnyChar(npcText, TiredEmoji)) return FacialExpression.Tired;
             if (ContainsAnyChar(npcText, WinkEmoji)) return FacialExpression.Wink;
             if (ContainsAnyChar(npcText, PlayEmoji)) return FacialExpression.Playful;
+            if (ContainsAnyChar(npcText, WorryEmoji)) return FacialExpression.Worry;
             if (ContainsAnyChar(npcText, ThinkEmoji)) return FacialExpression.Thinking;
             if (ContainsAnyChar(npcText, HappyEmoji)) return FacialExpression.Happy;
 
@@ -138,6 +148,7 @@ namespace Valkur.Gameplay.Chat.Providers
             if (DialogueIntentClassifier.ContainsAny(normalized, WinkWords)) return FacialExpression.Wink;
             if (DialogueIntentClassifier.ContainsAny(normalized, PlayfulWords)) return FacialExpression.Playful;
             if (DialogueIntentClassifier.ContainsAny(normalized, HappyWords)) return FacialExpression.Happy;
+            if (DialogueIntentClassifier.ContainsAny(normalized, WorryWords)) return FacialExpression.Worry;
             if (DialogueIntentClassifier.ContainsAny(normalized, ThinkingWords)) return FacialExpression.Thinking;
 
             return FromIntent(playerIntent);
@@ -146,7 +157,14 @@ namespace Valkur.Gameplay.Chat.Providers
         /// <summary>
         /// The face implied by what the player was doing, for a reply whose own words gave
         /// nothing away. <see cref="FacialExpression.Neutral"/> for the majority.
+        ///
+        /// <para>Public because <c>OfflineDialogueProvider</c> asks the same question one
+        /// step EARLIER — it needs the feeling before it has chosen a line, so it can offer
+        /// the character a reaction written for that feeling. Two copies of this table would
+        /// be a face and the words that go with it disagreeing about what just happened.</para>
         /// </summary>
+        public static FacialExpression FaceForIntent(DialogueIntent intent) => FromIntent(intent);
+
         private static FacialExpression FromIntent(DialogueIntent intent)
         {
             switch (intent)
@@ -155,6 +173,16 @@ namespace Valkur.Gameplay.Chat.Providers
                 case DialogueIntent.Greeting: return FacialExpression.Happy;
                 case DialogueIntent.Farewell: return FacialExpression.Happy;
                 case DialogueIntent.Trade: return FacialExpression.Thinking;
+
+                // How the player TREATED the character. These are not weak priors in the
+                // way the four above are — being called a thief is not a topic, it is a
+                // thing done to you — but they are still overridden by the character's own
+                // words, because a line that plainly laughs was written to laugh.
+                case DialogueIntent.Insult: return FacialExpression.Angry;
+                case DialogueIntent.Flirt: return FacialExpression.Playful;
+                case DialogueIntent.Danger: return FacialExpression.Worry;
+                case DialogueIntent.Distress: return FacialExpression.Sad;
+
                 default: return FacialExpression.Neutral;
             }
         }

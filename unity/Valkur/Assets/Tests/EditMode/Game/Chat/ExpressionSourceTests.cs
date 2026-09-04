@@ -76,6 +76,7 @@ namespace Valkur.Tests.EditMode.Game.Chat
         [TestCase("Lo siento, no me queda borsch.", FacialExpression.Sad)]
         [TestCase("Dejame ver que tengo por aqui...", FacialExpression.Thinking)]
         [TestCase("Llevo cansada desde el amanecer.", FacialExpression.Tired)]
+        [TestCase("Ten mucho cuidado ahi fuera, me preocupa.", FacialExpression.Worry)]
         [TestCase("El cielo esta despejado hoy.", FacialExpression.Neutral)]
         public void Classify_ReadsSpanish(string line, FacialExpression expected)
         {
@@ -87,6 +88,7 @@ namespace Valkur.Tests.EditMode.Game.Chat
         [TestCase("Between you and me, I can do better.", FacialExpression.Wink)]
         [TestCase("Enough. Get out.", FacialExpression.Angry)]
         [TestCase("Let me think about it.", FacialExpression.Thinking)]
+        [TestCase("Be careful out there.", FacialExpression.Worry)]
         public void Classify_ReadsEnglishToo(string line, FacialExpression expected)
         {
             Assert.AreEqual(expected, ExpressionClassifier.Classify(line),
@@ -151,6 +153,7 @@ namespace Valkur.Tests.EditMode.Game.Chat
                 { FacialExpression.Wink, "\U0001F609" },
                 { FacialExpression.Playful, "\U0001F61C\U0001F61B\U0001F61D\U0001F92A" },
                 { FacialExpression.Thinking, "\U0001F914\U0001F928" },
+                { FacialExpression.Worry, "\U0001F61F\U0001F630\U0001F625\U0001F628" },
                 { FacialExpression.Happy, "\U0001F60A\U0001F642\U0001F60D\U0001F495\U0001F338" },
             };
 

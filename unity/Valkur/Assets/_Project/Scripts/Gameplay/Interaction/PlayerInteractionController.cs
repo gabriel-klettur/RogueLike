@@ -151,8 +151,17 @@ namespace Valkur.Gameplay.Interaction
         public IPlayerInteractable PointedTarget => _pointedTarget;
 
         private bool PointedTargetStillValid(Vector2 position)
+            => IsReachable(_pointedTarget, position);
+
+        /// <summary>
+        /// Whether <paramref name="target"/> is still something the player could act on from
+        /// <paramref name="position"/>. ONE predicate, shared by the pointed target's
+        /// per-frame validity check and by <see cref="TryInteractWith"/>, so a gesture can
+        /// never reach something the badge would have dropped a frame later.
+        /// </summary>
+        private bool IsReachable(IPlayerInteractable target, Vector2 position)
         {
-            var target = _pointedTarget;
+            if (target == null) return false;
 
             // Unregistered is checked FIRST because it is the exit the object cannot report:
             // a felled tree is still a live C# object answering every other question.
@@ -162,6 +171,43 @@ namespace Valkur.Gameplay.Interaction
             Vector2 surface = target.InteractionBounds.ClosestPoint(position);
             float radius = target.InteractionRadius;
             return (surface - position).sqrMagnitude <= radius * radius;
+        }
+
+        /// <summary>
+        /// Act on a target the player singled out with a GESTURE instead of with the key —
+        /// today, a double click on an NPC. Returns whether the interaction actually started.
+        ///
+        /// <para>It goes through this component rather than calling
+        /// <see cref="IPlayerInteractable.BeginInteraction"/> directly because everything that
+        /// makes a press safe lives here and nowhere else: the editor/input-block suppression,
+        /// the reachability rule, and the session bookkeeping that is the only thing able to
+        /// stop a shift once it starts. A gesture that reached past all three would be a
+        /// second, quieter interact key with none of its guarantees.</para>
+        ///
+        /// <para>The target is also POINTED AT before it is acted on, so the badge names the
+        /// thing that is about to happen. Without that the player would read one name over the
+        /// nearest villager and open a conversation with a different one — the exact
+        /// disagreement <see cref="NPCConversationInteractable"/> exists to prevent.</para>
+        /// </summary>
+        public bool TryInteractWith(IPlayerInteractable target)
+        {
+            if (target == null || IsSuppressed()) return false;
+
+            Vector2 position = transform.position;
+            if (!IsReachable(target, position)) return false;
+            if (!target.CanInteract(gameObject)) return false;
+
+            // Ended BEFORE the pointed target is set: EndSession clears it, so the other order
+            // would point at the new target and immediately forget it.
+            if (_session != null) EndSession();
+
+            _pointedTarget = target;
+            SetTarget(target);
+
+            _session = target;
+            _sessionAnchor = position;
+            _session.BeginInteraction(gameObject);
+            return true;
         }
 
         // Session --------------------------------------------------------------------

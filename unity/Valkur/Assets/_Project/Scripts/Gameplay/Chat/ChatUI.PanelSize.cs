@@ -24,6 +24,17 @@ namespace Valkur.Gameplay.Chat
         /// </summary>
         private static Vector2 ResolveStartingPanelSize()
         {
+            // A size saved against a DIFFERENT arrangement of the rows is not a preference,
+            // it is a measurement of a panel that no longer exists. Discarded once, on the
+            // first open after the layout changed; from then on the player's own drag wins
+            // again exactly as before.
+            if (PlayerPrefs.GetInt(PREF_LAYOUT_VERSION, 1) != PANEL_LAYOUT_VERSION)
+            {
+                PlayerPrefs.SetInt(PREF_LAYOUT_VERSION, PANEL_LAYOUT_VERSION);
+                PlayerPrefs.Save();
+                return ClampPanelSize(new Vector2(PANEL_DEFAULT_W, PANEL_DEFAULT_H));
+            }
+
             var size = new Vector2(
                 PlayerPrefs.GetFloat(PREF_PANEL_WIDTH, PANEL_DEFAULT_W),
                 PlayerPrefs.GetFloat(PREF_PANEL_HEIGHT, PANEL_DEFAULT_H));
@@ -78,6 +89,10 @@ namespace Valkur.Gameplay.Chat
         {
             PlayerPrefs.SetFloat(PREF_PANEL_WIDTH, size.x);
             PlayerPrefs.SetFloat(PREF_PANEL_HEIGHT, size.y);
+            // Stamped with the drag, so a size and the layout it was measured on are always
+            // written together. Writing it only in the restore path would leave a player who
+            // never reopens the panel carrying a version that describes someone else's size.
+            PlayerPrefs.SetInt(PREF_LAYOUT_VERSION, PANEL_LAYOUT_VERSION);
             PlayerPrefs.Save();
         }
     }
