@@ -636,6 +636,7 @@ namespace Valkur.Gameplay
 
             // Which provider answers NPC chat — see DevConsole.Commands.Chat.cs.
             RegisterChatCommands();
+            RegisterFaceCommands();
 
             // Doorway authoring — see DevConsole.Commands.Doors.cs. Registered LAST and in a
             // category of its own on purpose: CmdHelp only emits a category header when the
