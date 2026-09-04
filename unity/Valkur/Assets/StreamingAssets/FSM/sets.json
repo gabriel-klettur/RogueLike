@@ -527,29 +527,18 @@
     {
       "blackboard": {},
       "id": "NPC_Stroller",
-      "initial": "IdleState",
-      "label": "Passive NPC that paces (never fights)",
+      "initial": "StrollState",
+      "label": "Passive NPC that wanders (never fights)",
       "states": [
         {
           "class": "",
           "h": 60,
-          "id": "IdleState",
-          "label": "Idle",
+          "id": "StrollState",
+          "label": "Stroll",
           "props": {},
           "terminal": false,
           "w": 120,
           "x": 80,
-          "y": 80
-        },
-        {
-          "class": "",
-          "h": 60,
-          "id": "PatrolState",
-          "label": "Patrol",
-          "props": {},
-          "terminal": false,
-          "w": 120,
-          "x": 300,
           "y": 80
         },
         {
@@ -588,32 +577,7 @@
           "y": 220
         }
       ],
-      "transitions": [
-        {
-          "actions": [],
-          "cooldown_frames": 240,
-          "event": "",
-          "from": "IdleState",
-          "guard": "",
-          "id": "t_stroller_idle_patrol",
-          "label": "after 4s idle",
-          "priority": 100,
-          "to": "PatrolState",
-          "when": ""
-        },
-        {
-          "actions": [],
-          "cooldown_frames": 300,
-          "event": "",
-          "from": "PatrolState",
-          "guard": "",
-          "id": "t_stroller_patrol_idle",
-          "label": "after 5s pacing",
-          "priority": 100,
-          "to": "IdleState",
-          "when": ""
-        }
-      ]
+      "transitions": []
     }
   ],
   "version": 1

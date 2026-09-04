@@ -3,7 +3,8 @@
     "Monster_Default",
     "Monster_Caster",
     "Monster_Boss",
-    "NPC_Passive"
+    "NPC_Passive",
+    "NPC_Stroller"
   ],
   "STATES_BY_SET": {
     "Monster_Boss": [
@@ -45,6 +46,12 @@
       "UnconsciousState",
       "DeathState",
       "DamageState"
+    ],
+    "NPC_Stroller": [
+      "StrollState",
+      "UnconsciousState",
+      "DeathState",
+      "DamageState"
     ]
   },
   "TRANSITIONS_BY_SET": {
@@ -64,6 +71,7 @@
       "t_attack_flee",
       "t_any_alert"
     ],
-    "NPC_Passive": []
+    "NPC_Passive": [],
+    "NPC_Stroller": []
   }
 }

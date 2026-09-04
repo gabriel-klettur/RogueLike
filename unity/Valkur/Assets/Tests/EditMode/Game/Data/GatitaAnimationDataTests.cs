@@ -180,8 +180,12 @@ namespace Valkur.Tests.EditMode.Game.Data
         public void PatrolType_IsTheShortCentredStroll()
         {
             Assert.AreEqual("stroll", Definition().patrolType,
-                "Empty leaves FSMMonsterBrain skipping waypoint generation entirely, so " +
-                "PatrolState finds none and just stops — she would enter Walk and stand still.");
+                "The waypoints are no longer a PATH — StrollState picks its own bearing for " +
+                "every bout — but they are still the only thing that remembers where she " +
+                "was SPAWNED by the time the state runs, and it takes their midpoint as the " +
+                "centre of her wander. Empty leaves FSMMonsterBrain skipping waypoint " +
+                "generation entirely, and the leash then centres on wherever she happened " +
+                "to be standing when the state was first entered.");
         }
 
         [Test]
@@ -199,36 +203,49 @@ namespace Valkur.Tests.EditMode.Game.Data
             Assert.AreEqual(origin.y, mid.y, 0.0001f);
 
             Assert.AreEqual(points[0].y, points[1].y, 0.0001f,
-                "Horizontal on purpose: her art has no back, so walking north would read " +
-                "as moon-walking towards the camera.");
+                "Horizontal, and it no longer decides how she WALKS — StrollState picks its " +
+                "own bearings and biases them away from north itself, because her art has no " +
+                "back. What the symmetry still buys is that averaging the points lands on " +
+                "the spawn, which is what ResolveHome does with them.");
 
             float span = Vector2.Distance(points[0], points[1]);
             Assert.That(span, Is.InRange(1.5f, 3.5f),
-                "At 0.8 u/s she has to cross it inside the five-second pacing window, or " +
-                "she is interrupted mid-stride every single time.");
+                "A short pace rather than a route. It sized the old five-second patrol " +
+                "window; it now only has to stay small enough that a midpoint taken from it " +
+                "means 'her stall' rather than 'somewhere on her beat'.");
         }
 
         // ---- The FSM lets her, and lets nobody else -------------------------
 
         [Test]
-        public void ShippedFsm_GivesGatitaAPacingSetOfHerOwn()
+        public void ShippedFsm_GivesGatitaAWanderingSetOfHerOwn()
         {
             var sets = ReadFsm("sets.json");
             var stroller = FindSet(sets, "NPC_Stroller");
 
             var states = StateIds(stroller);
-            CollectionAssert.Contains(states, "PatrolState",
-                "Without PatrolState in the set's whitelist the transition is refused and " +
-                "she never leaves Idle.");
+            CollectionAssert.Contains(states, "StrollState",
+                "StrollState owns the whole idle-walk-idle rhythm internally. A set that " +
+                "does not whitelist it cannot enter it at all.");
+            Assert.AreEqual("StrollState", stroller["initial"] as string,
+                "It is also the set's INITIAL state, and that is not decoration: nothing " +
+                "else in the set can reach it, because no state class calls " +
+                "ChangeState(new StrollState()).");
+
             CollectionAssert.DoesNotContain(states, "ChaseState",
                 "The whitelist is the ONLY thing that makes a faction peaceful — no state " +
                 "class reads stats.faction. A vendor who could enter ChaseState would hunt " +
-                "the player the moment anyone raised her aggroRange.");
+                "the player the moment anyone raised her aggroRange. (StrollState never " +
+                "acquires a target either, so here the whitelist is belt AND braces.)");
 
             var transitions = stroller["transitions"] as List<object>;
-            Assert.AreEqual(2, transitions.Count,
-                "Idle to Patrol and back. Nothing in the state classes moves Idle to Patrol " +
-                "— the authored edges are the only thing that makes her alternate.");
+            Assert.AreEqual(0, transitions.Count,
+                "This set USED to author Idle-to-Patrol at 240 frames and back at 300, and " +
+                "that pair is exactly what made her read as a guard walking a beat: a " +
+                "transition's cooldown_frames is ONE constant, so there is nowhere in the " +
+                "authored FSM to say 'hold idle for between one and five breaths'. The " +
+                "rhythm moved into the state, which can. Re-adding an authored edge here " +
+                "would interrupt it mid-bout.");
         }
 
         [Test]
@@ -250,10 +267,14 @@ namespace Valkur.Tests.EditMode.Game.Data
             CollectionAssert.DoesNotContain(byEid.Keys, "vendor_cheff_gatita",
                 "A monsterKey under by_eid is not an override, it is a no-op.");
 
-            var passive = FindSet(ReadFsm("sets.json"), "NPC_Passive");
-            CollectionAssert.DoesNotContain(StateIds(passive), "PatrolState",
+            var passive = StateIds(FindSet(ReadFsm("sets.json"), "NPC_Passive"));
+            CollectionAssert.DoesNotContain(passive, "PatrolState",
                 "The other six passive NPCs share NPC_Passive and have no walk art. " +
                 "Teaching that set to patrol would slide them around on a static pose.");
+            CollectionAssert.DoesNotContain(passive, "StrollState",
+                "Same reason, and it has to be said separately now: the pacing state was " +
+                "renamed, and a check that only names the old one stops covering anything " +
+                "the day the new one is added to the wrong set.");
 
             foreach (var pair in byArchetype)
             {

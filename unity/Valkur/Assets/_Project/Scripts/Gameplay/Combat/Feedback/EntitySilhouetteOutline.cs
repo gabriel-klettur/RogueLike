@@ -21,9 +21,31 @@ namespace Valkur.Gameplay.Combat
     /// scale, and a target destroyed mid-frame would take the rig with it. Unparented,
     /// <c>localScale</c> IS <c>lossyScale</c> and the offsets are plain world units.
     /// </summary>
+    /// <para>WHY IT DECLARES AN EXECUTION ORDER. The whole rig rests on drawing exactly one order BEHIND the body, and the body's order
+    /// is written by <c>YSortEntity.LateUpdate</c> — so reading it from our own LateUpdate is
+    /// a race with undefined ordering. Losing that race is not a subtle artefact: read one
+    /// frame stale while the entity is walking UP the screen, its order DROPS underneath us,
+    /// and eight solid copies of the sprite end up in FRONT of it. The character flashes
+    /// entirely yellow for that frame.</para>
+    ///
+    /// <para>It went unseen until Gatita started wandering. Her old stroll was a purely
+    /// horizontal rail, so her Y never changed and her order never moved; a race you cannot
+    /// lose is a race nobody sees. <c>YSortEntity</c> also skips its write below 0.01 units of
+    /// Y, so the order moves in JUMPS rather than every frame, which is why the flash is
+    /// occasional rather than constant.</para>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(EXECUTION_ORDER)]
     public class EntitySilhouetteOutline : MonoBehaviour
     {
+        /// <summary>
+        /// Late enough to read the body's sorting order AFTER <c>YSortEntity</c> has written
+        /// it. Any positive value works, because <c>YSortEntity</c> declares none and is
+        /// therefore at 0; the exact number carries no other meaning. Two other components
+        /// declare an order (<c>CameraFeelDirector</c> at -100 and <c>CameraPixelSnap</c> at
+        /// int.MaxValue) and neither sits between the two that matter here.
+        /// </summary>
+        private const int EXECUTION_ORDER = 100;
+
         private static Material s_material;
 
         // 8 directions (cardinal + diagonal) give a ring with no visible corner gaps.
@@ -140,6 +162,11 @@ namespace Valkur.Gameplay.Combat
             // order whenever it walks, so this is re-read every frame rather than
             // captured once.
             int layerId       = _target.sortingLayerID;
+
+            // One behind, and it is exact rather than a margin BECAUSE of the execution order
+            // declared on this class: a margin would be a guess at how far the body's order
+            // can move in a frame, and it would push the outline behind whatever else shares
+            // the layer. See the class summary for what losing the race looks like.
             int order         = _target.sortingOrder - 1;
 
             for (int i = 0; i < _copies.Length; i++)

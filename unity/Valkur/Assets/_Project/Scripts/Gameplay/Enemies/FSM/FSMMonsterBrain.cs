@@ -28,6 +28,49 @@ namespace Valkur.Gameplay.FSM
         public MonsterDefinition Definition => definition;
         public string CurrentStateName => _fsm?.CurrentState?.GetType().Name.Replace("State", "") ?? "";
 
+        /// <summary>True while a conversation is holding this character still.</summary>
+        public bool ConversationPaused => _conversationPaused;
+
+        /// <summary>
+        /// Holds this character still for the duration of a conversation, and hands it back
+        /// afterwards exactly where it was.
+        ///
+        /// <para>THE PAUSE IS THE TICK, NOT THE VELOCITY. Stun and Root refuse the feet
+        /// inside <see cref="FSMComponents.SetVelocity"/> and deliberately let the machine
+        /// keep running, which is right for them — a rooted monster should still swing. It
+        /// is wrong here: a stroller whose Execute still runs goes on counting down its
+        /// dwell, picks new headings against walls, and flips itself between its idle and
+        /// walk phases while standing in front of you. Freezing the update instead means the
+        /// phase she was in is the phase she resumes, so the conversation costs her nothing.
+        /// </para>
+        ///
+        /// <para>Two things must still be done BY HAND on the way in, because the states
+        /// re-assert them every tick and a frozen state asserts nothing. The body keeps its
+        /// <c>Rigidbody2D.velocity</c> unless someone zeroes it, so an unstopped NPC coasts
+        /// away mid-sentence; and <c>DirectionalAnimator</c> advances its own frames, so the
+        /// walk cycle plays on in place — a character moonwalking through her own dialogue.
+        /// Nothing has to be restored on the way out: <c>StrollState.DriveWalk</c> and every
+        /// other state write both again on their next tick.</para>
+        ///
+        /// <para>ONE OWNER, WHICH IS WHAT MAKES A PLAIN BOOL SAFE HERE. <c>ChatSystem</c> is
+        /// the only caller, exactly as <c>VulnerableEffect</c> is the only writer of
+        /// <c>Health.SetVulnerability</c>. A second writer would reintroduce the
+        /// <c>SetInvincible</c> defect — three independent owners of one bool, where whoever
+        /// clears it switches off whatever the others were holding — and would then need
+        /// save-and-restore rather than a set.</para>
+        /// </summary>
+        public void SetConversationPaused(bool paused)
+        {
+            if (_conversationPaused == paused) return;
+            _conversationPaused = paused;
+            if (!paused) return;
+
+            _fsm?.GetContext<FSMComponents>(FSMComponents.KEY)?.StopMovement();
+
+            if (_animator != null)
+                _animator.SetState(DirectionalAnimator.AnimState.Idle, _animator.CurrentDirection);
+        }
+
         private void Awake()
         {
             _health = GetComponent<Health>();
@@ -229,6 +272,10 @@ namespace Valkur.Gameplay.FSM
 
         private float _pendingDt;
 
+        // Instance state on a MonoBehaviour, so Domain Reload being off costs nothing here:
+        // it dies with the character rather than outliving a Play session.
+        private bool _conversationPaused;
+
         private void Update()
         {
             // Accumulate EVERY frame, not just the ones that tick. The FSM used to be
@@ -238,6 +285,16 @@ namespace Valkur.Gameplay.FSM
             // whenever the camera looked away — behaviour you could not reproduce
             // because it depended on where the player was looking.
             _pendingDt += Time.deltaTime;
+
+            // Discarded rather than accumulated. A conversation lasts minutes and the
+            // catch-up clamp is half a second, so resuming from a banked debt would still
+            // teleport her half a second's walk sideways the instant the panel closes —
+            // which is the one frame the player is looking straight at her.
+            if (_conversationPaused)
+            {
+                _pendingDt = 0f;
+                return;
+            }
 
             if (_culling != null && !_culling.ShouldUpdate)
                 return;
@@ -286,6 +343,10 @@ namespace Valkur.Gameplay.FSM
             var animState = newState switch
             {
                 IdleState => DirectionalAnimator.AnimState.Idle,
+                // A stroller alternates Idle and Walk from inside its own Execute, so what
+                // it enters ON is the resting half. Listed rather than left to the silent
+                // `_ =>` default, which answers the same thing for a different reason.
+                StrollState => DirectionalAnimator.AnimState.Idle,
                 PatrolState => DirectionalAnimator.AnimState.Walk,
                 ChaseState => DirectionalAnimator.AnimState.Chase,
                 AlertChaseState => DirectionalAnimator.AnimState.Chase,
