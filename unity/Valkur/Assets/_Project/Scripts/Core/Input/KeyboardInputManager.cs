@@ -79,6 +79,24 @@ namespace Valkur.Core.Input
             return UnityEngine.Input.GetKeyDown(legacyKey);
         }
 
+        /// <summary>
+        /// Legacy-backend-only HELD check, the sustained twin of
+        /// <see cref="WasKeyCodePressedThisFrame"/> and blocked by the same modal rule.
+        ///
+        /// <para>Needed by hold-to-charge, which is the first thing in this project to care
+        /// whether a spell key is still down rather than only whether it went down. It goes
+        /// through this helper for the reason CLAUDE.md gives in as many words: a raw
+        /// <c>UnityEngine.Input.GetKey</c> at the callsite answers while a modal panel has
+        /// focus, and that is exactly how typing in the chat used to cast a spell per
+        /// letter.</para>
+        /// </summary>
+        public static bool IsKeyCodeHeld(KeyCode legacyKey)
+        {
+            if (InputBlocker.IsGameplayBlocked && !InputBlocker.IsAlwaysAllowedKey(legacyKey))
+                return false;
+            return UnityEngine.Input.GetKey(legacyKey);
+        }
+
         public static bool WasKeyReleasedThisFrame(Key newKey, KeyCode legacyKey)
         {
             if (InputBlocker.IsGameplayBlocked &&

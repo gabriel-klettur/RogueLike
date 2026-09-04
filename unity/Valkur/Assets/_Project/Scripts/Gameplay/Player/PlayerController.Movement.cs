@@ -884,6 +884,29 @@ namespace Valkur.Gameplay
             var gp = InputService.Instance?.Gameplay;
             if (_spellCaster != null && gp != null)
             {
+                // A charge in progress owns the whole poll: nothing else may be cast while
+                // the key is down, and letting go is what fires it. Checked BEFORE the loop
+                // so a player holding one spell cannot start another with a second key.
+                string charging = _spellCaster.ChargingKey;
+                if (!string.IsNullOrEmpty(charging))
+                {
+                    bool stillHeld = false;
+                    foreach (var (action, spellKey, legacyKey) in gp.EnumerateSpellBindings())
+                    {
+                        if (spellKey != charging) continue;
+                        stillHeld = (action != null && action.IsPressed())
+                                 || KeyboardInputManager.IsKeyCodeHeld(legacyKey);
+                        break;
+                    }
+
+                    if (!stillHeld)
+                    {
+                        if (_spellCaster.ReleaseCharge(_facingDirection))
+                            TriggerCastAnimation(charging);
+                    }
+                    return;   // charging or releasing, either way the frame is spent
+                }
+
                 foreach (var (action, spellKey, legacyKey) in gp.EnumerateSpellBindings())
                 {
                     // The legacy half goes through KeyboardInputManager, NOT raw
@@ -894,6 +917,13 @@ namespace Valkur.Gameplay
                               || KeyboardInputManager.WasKeyCodePressedThisFrame(legacyKey);
                     if (fired)
                     {
+                        // A chargeable spell starts building instead of firing. The animation
+                        // is deliberately NOT triggered here: the cast pose belongs to the
+                        // release, and playing it on the press would show the character
+                        // finishing a spell they have not thrown yet.
+                        if (_spellCaster.BeginCharge(spellKey, _facingDirection))
+                            break;
+
                         if (_spellCaster.TryCastByKey(spellKey, _facingDirection))
                             TriggerCastAnimation(spellKey);
                         break; // only one spell per frame

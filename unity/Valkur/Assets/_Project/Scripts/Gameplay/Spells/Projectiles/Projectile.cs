@@ -65,6 +65,47 @@ namespace Valkur.Gameplay.Spells
         private float _explosionRadius;
         private float _explosionDamage;
 
+        // ── Piercing ─────────────────────────────────────────────────────────
+        // Bodies this shot may still pass THROUGH. 0 (the default) stops at the first
+        // target, which is how every projectile in this game has always behaved.
+        //
+        // Obstacles are deliberately NOT counted here: a wall stops a piercing shot dead,
+        // because the alternative is a spell that shoots through the level.
+        private int _pierceRemaining;
+        private float _pierceFalloff;
+        // Colliders already pierced. The sweep runs every FixedUpdate and a target the
+        // projectile is currently INSIDE keeps being returned, so without this list one
+        // enemy would consume the whole pierce budget in three frames.
+        private readonly System.Collections.Generic.List<Collider2D> _pierced =
+            new System.Collections.Generic.List<Collider2D>(8);
+
+        // ── Homing ───────────────────────────────────────────────────────────
+        // Turn rate in degrees/second toward the acquired target. 0 (the default) flies
+        // straight. Both this and _homingRange must be non-zero: a shot with a turn rate
+        // and no acquisition radius finds nothing and flies straight, which looks like the
+        // field not working rather than like a spell that missed.
+        private float _homingStrength;
+        private float _homingRange;
+        private Transform _homingTarget;
+        // Borrowed from PhysicsScratch rather than declared here. Three buffers written in
+        // one batch all took the obvious `static readonly` shape and all three failed the
+        // Domain-Reload ratchet; the shared home is what makes the wrong shape unavailable.
+        // The two sibling buffers below are grandfathered in the baseline and left alone.
+        // Re-acquisition cadence. Every frame would be a physics query per projectile per
+        // frame for a spell that fires several at once; a fifth of a second is far below
+        // the time it takes a target to travel out of a 6-unit radius.
+        private const float ACQUIRE_INTERVAL = 0.2f;
+        private float _acquireTimer;
+
+        /// <summary>Raised each time this shot pierces a body, at the contact point. The
+        /// pierce is an EVENT and the visual has to say so, or the falloff is a number the
+        /// player can never see.</summary>
+        public event System.Action<Vector3, int> OnPierced;
+
+        /// <summary>Fired when this shot first locks onto a target. A homing shot that
+        /// acquires silently reads as one that happens to be flying the same way.</summary>
+        public event System.Action<Transform> OnHomingAcquired;
+
         // Reused buffer for swept collision queries (no per-frame allocations)
         private static readonly RaycastHit2D[] _sweepHits = new RaycastHit2D[8];
         // Reused buffer for explosion overlap queries
@@ -105,6 +146,36 @@ namespace Valkur.Gameplay.Spells
 
         /// <summary>Enable AOE explosion on impact that damages all targets within radius.</summary>
         public void SetExplosion(float radius, float dmg) { _explosionRadius = radius; _explosionDamage = dmg; }
+
+        /// <summary>
+        /// How many bodies this shot passes through before it stops, and how much damage it
+        /// sheds per body. Both default to 0, which is the historical behaviour.
+        /// </summary>
+        public void SetPiercing(int count, float falloff)
+        {
+            _pierceRemaining = Mathf.Max(0, count);
+            _pierceFalloff = Mathf.Clamp01(falloff);
+            _pierced.Clear();
+        }
+
+        /// <summary>
+        /// Turn rate and acquisition radius for a seeking shot. Zero on either disables
+        /// homing entirely — see the field comment for why both are required.
+        /// </summary>
+        public void SetHoming(float degreesPerSecond, float acquireRange)
+        {
+            _homingStrength = Mathf.Max(0f, degreesPerSecond);
+            _homingRange = Mathf.Max(0f, acquireRange);
+            _homingTarget = null;
+            _acquireTimer = 0f;
+        }
+
+        /// <summary>Current seek target, or null. Read by the visual so the rig can show a lock.</summary>
+        public Transform HomingTarget => _homingTarget;
+
+        /// <summary>Bodies this shot can still pass through. Read by the visual so the core
+        /// can dim as the budget is spent.</summary>
+        public int PierceRemaining => _pierceRemaining;
 
         /// <summary>
         /// Bind the caster so the projectile never damages it or any of its
@@ -156,6 +227,10 @@ namespace Valkur.Gameplay.Spells
         {
             if (_expired) return;
 
+            // Steer BEFORE the sweep, so the sweep is cast along the heading the shot is
+            // actually taking this step rather than the one it had last step.
+            SteerTowardTarget(Time.fixedDeltaTime);
+
             // Apply acceleration before computing the step this frame.
             if (_acceleration > 0f)
                 speed += _acceleration * Time.fixedDeltaTime;
@@ -186,6 +261,7 @@ namespace Valkur.Gameplay.Spells
                 if (hit.collider == null) continue;
                 if (hit.collider.transform.IsChildOf(transform)) continue; // ignore self
                 if (IsCasterCollider(hit.collider)) continue;              // ignore caster + caster-children
+                if (_pierced.Count > 0 && _pierced.Contains(hit.collider)) continue; // already went through it
                 // Skip "start-inside" overlaps. Physics2D.queriesStartInColliders is enabled
                 // project-wide, so a sweep that begins overlapping a collider returns it with
                 // distance == 0. Without this guard, a fireball spawned at/near the caster's
@@ -238,6 +314,23 @@ namespace Valkur.Gameplay.Spells
                     health.TakeDamage(dealt, casterGo, _element);
                     ReportHit(health.gameObject, dealt);
                     StatusApplicationFactory.ApplyAll(_statusApplications, health.gameObject, casterGo);
+
+                    // A piercing shot survives a BODY and never an obstacle. Returning here
+                    // is the whole mechanic: everything below this block is the expire path.
+                    if (_pierceRemaining > 0)
+                    {
+                        ContinueThrough(other);
+                        return;
+                    }
+                }
+                else if (_pierceRemaining > 0 && health != null)
+                {
+                    // A corpse must not consume the budget, and must not stop the shot
+                    // either — otherwise a piercing lance is cancelled by whatever died
+                    // in front of it a moment ago.
+                    _pierced.Add(other);
+                    _impactVfxPos = null;
+                    return;
                 }
             }
             else
@@ -258,6 +351,112 @@ namespace Valkur.Gameplay.Spells
             }
 
             Expire();
+        }
+
+        // ── Piercing and homing ──────────────────────────────────────────────
+
+        /// <summary>
+        /// Spend one pierce and keep flying. The falloff is applied AFTER the body that
+        /// triggered it has already been damaged, so the first target always takes the full
+        /// authored value and only the ones behind it are discounted.
+        /// </summary>
+        private void ContinueThrough(Collider2D victim)
+        {
+            _pierced.Add(victim);
+            _pierceRemaining--;
+
+            if (_pierceFalloff > 0f)
+                damage = Mathf.Max(1f, damage * (1f - _pierceFalloff));
+
+            Vector3 contact = _impactVfxPos ?? transform.position;
+            OnPierced?.Invoke(contact, _pierceRemaining);
+
+            // Clear the override so the eventual real impact resolves its own contact
+            // point instead of reusing the last body this shot went through.
+            _impactVfxPos = null;
+        }
+
+        /// <summary>
+        /// Turn the heading toward the acquired target by at most
+        /// <c>_homingStrength * deltaTime</c> degrees.
+        ///
+        /// <para>The clamp is the entire design. Rotating straight to the bearing would be a
+        /// shot that cannot be dodged and does not read as seeking — what the eye recognises
+        /// as hunting is the LAG, a curve the projectile visibly has to work through. At the
+        /// shipped 220 deg/s a shard takes about a sixth of a second to reverse 45 degrees,
+        /// which is long enough to see and short enough to land.</para>
+        /// </summary>
+        private void SteerTowardTarget(float deltaTime)
+        {
+            if (_homingStrength <= 0f || _homingRange <= 0f) return;
+
+            _acquireTimer -= deltaTime;
+            if (_homingTarget == null || !_homingTarget.gameObject.activeInHierarchy || _acquireTimer <= 0f)
+            {
+                _acquireTimer = ACQUIRE_INTERVAL;
+                AcquireTarget();
+            }
+            if (_homingTarget == null) return;
+
+            Vector2 toTarget = (Vector2)_homingTarget.position - (Vector2)transform.position;
+            if (toTarget.sqrMagnitude < 0.0001f) return;
+
+            float maxTurn = _homingStrength * deltaTime;
+            Vector2 desired = toTarget.normalized;
+            float signed = Vector2.SignedAngle(_direction, desired);
+            float applied = Mathf.Clamp(signed, -maxTurn, maxTurn);
+
+            _direction = (Vector2)(Quaternion.Euler(0f, 0f, applied) * _direction);
+            _direction.Normalize();
+
+            float angle = Mathf.Atan2(_direction.y, _direction.x) * Mathf.Rad2Deg;
+            transform.rotation = Quaternion.Euler(0f, 0f, angle);
+        }
+
+        /// <summary>
+        /// Nearest living target inside the acquisition radius, preferring one the shot is
+        /// already roughly pointed at. Purely nearest would make a seeking shot turn around
+        /// for something behind the caster, which reads as the spell malfunctioning.
+        /// </summary>
+        private void AcquireTarget()
+        {
+            Transform previous = _homingTarget;
+            _homingTarget = null;
+
+            bool prevHitTriggers = Physics2D.queriesHitTriggers;
+            Physics2D.queriesHitTriggers = true;
+            int count = Physics2D.OverlapCircleNonAlloc(
+                transform.position, _homingRange, Combat.PhysicsScratch.HomingAcquire, targetLayers);
+            Physics2D.queriesHitTriggers = prevHitTriggers;
+
+            float bestScore = float.PositiveInfinity;
+            for (int i = 0; i < count; i++)
+            {
+                var col = Combat.PhysicsScratch.HomingAcquire[i];
+                if (col == null) continue;
+                if (IsCasterCollider(col)) continue;
+                if (_pierced.Count > 0 && _pierced.Contains(col)) continue;
+
+                var health = col.GetComponent<Health>() ?? col.GetComponentInParent<Health>();
+                if (health == null || health.IsDead) continue;
+
+                Vector2 to = (Vector2)col.transform.position - (Vector2)transform.position;
+                float dist = to.magnitude;
+                if (dist < 0.0001f) continue;
+
+                // Behind-the-shot penalty: dot runs +1 straight ahead to -1 straight back,
+                // so this adds up to a full radius of virtual distance to a target the shot
+                // would have to turn around for.
+                float dot = Vector2.Dot(_direction, to / dist);
+                float score = dist + (1f - dot) * 0.5f * _homingRange;
+                if (score >= bestScore) continue;
+
+                bestScore = score;
+                _homingTarget = health.transform;
+            }
+
+            if (_homingTarget != null && _homingTarget != previous)
+                OnHomingAcquired?.Invoke(_homingTarget);
         }
 
         private void Update()
@@ -376,6 +575,18 @@ namespace Valkur.Gameplay.Spells
                             // shooter doesn't inherit a stale ignore-target.
             _element = null;
             _statusApplications = null; // pool reuse: never inherit the last spell's statuses
+            // Pool reuse: a shot that inherited a pierce budget would fly through the next
+            // caster's target, and one that inherited a subscriber would drive a rig
+            // belonging to a projectile that finished several casts ago.
+            _pierceRemaining = 0;
+            _pierceFalloff = 0f;
+            _pierced.Clear();
+            _homingStrength = 0f;
+            _homingRange = 0f;
+            _homingTarget = null;
+            _acquireTimer = 0f;
+            OnPierced = null;
+            OnHomingAcquired = null;
             if (_rb != null) _rb.velocity = Vector2.zero;
         }
 
