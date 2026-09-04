@@ -17,6 +17,7 @@ namespace Valkur.Gameplay.Chat
             if (!_chatOpen) return;
             _chatOpen = false;
             _chatTarget = null;
+            ReleaseConversationHold();
             _activePersona = null;
             _pendingChunks.Clear();
             ResetExpression();
@@ -56,10 +57,17 @@ namespace Valkur.Gameplay.Chat
 
         private void Update()
         {
+            TickWaitEscalation();
+
             // Drain scheduled chunks
             if (_pendingChunks.Count > 0 && Time.time >= _nextChunkTime)
             {
                 var chunk = _pendingChunks.Dequeue();
+
+                // She has the floor from here, so the axis flips before the face is written
+                // — otherwise the reply's own expression renders one frame on the LISTENING
+                // axis, which is the same handover glitch in the other direction.
+                EndAwaitingReply();
                 SetExpression(chunk.expression);
                 ShowTargetBubble(chunk.text, NPC_BUBBLE_TTL_MS);
                 AddChunkToHistory(chunk.sender, chunk.text);
@@ -92,16 +100,26 @@ namespace Valkur.Gameplay.Chat
             string npcName = _activePersona.displayName ?? "NPC";
 
             // The wait is the one moment the panel had nothing at all to say. A remote call
-            // is seconds long and this method is fire-and-forget, so without a face here the
-            // player types, the panel goes silent and nothing on screen says anyone is
-            // listening. An offline provider completes its await synchronously, so this
-            // never renders a frame for it — no branch on the provider is needed.
-            SetExpression(FacialExpression.Thinking);
+            // is seconds long and this method is fire-and-forget, so without something here
+            // the player types, the panel goes silent and nothing on screen says anyone is
+            // listening.
+            //
+            // It used to answer that with SetExpression(Thinking), and that was wrong twice.
+            // The claim in the old comment — that an offline provider completes
+            // synchronously so the face never renders — was true of the AWAIT and false of
+            // the result: ScheduleReplyChunks holds the first bubble back half a second, so
+            // every message in the game, "hola, ¿qué tal?" included, showed the deliberating
+            // face for 500 ms against a 140 ms portrait fade. And it conflated two different
+            // things under one drawing: a character weighing your question, and the program
+            // being busy. Waiting is LISTENING — she is still taking in what you said — and
+            // only becomes thinking if it lasts.
+            BeginAwaitingReply();
 
             try
             {
                 var request = new ChatRequest(
-                    _activePersona, _activeMemory, playerText, BuildTradeContext());
+                    _activePersona, _activeMemory, playerText, BuildTradeContext(),
+                    ChatMoodContext.FromLive());
 
                 ChatReply reply = await _provider.GenerateReplyAsync(request, token);
 
@@ -128,6 +146,7 @@ namespace Valkur.Gameplay.Chat
             catch (System.OperationCanceledException)
             {
                 // Chat was closed while the provider was working — silently discard.
+                EndAwaitingReply();
             }
             catch (System.Exception ex)
             {
@@ -137,6 +156,7 @@ namespace Valkur.Gameplay.Chat
                 // conversation, and it would be what the next session refuses to repeat.
                 // The face goes back to neutral rather than staying on Thinking, which would
                 // leave the character visibly stuck mid-thought forever.
+                EndAwaitingReply();
                 ScheduleReplyChunks(npcName, "...", FacialExpression.Neutral);
             }
         }
@@ -186,7 +206,11 @@ namespace Valkur.Gameplay.Chat
                     expression = expression,
                 });
 
-            _nextChunkTime = Time.time + 0.5f; // Short initial delay
+            // The ordinary short beat before she starts speaking, raised to whatever the
+            // dwell demands when she is visibly mid-thought. Max rather than a sum: a slow
+            // model has already spent the dwell thinking and must not be charged for it
+            // twice, and an offline reply never escalated so EarliestReplyTime is 0.
+            _nextChunkTime = Mathf.Max(Time.time + 0.5f, EarliestReplyTime);
         }
 
         /// <summary>

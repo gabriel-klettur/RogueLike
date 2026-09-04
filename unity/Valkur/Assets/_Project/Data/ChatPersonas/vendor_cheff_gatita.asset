@@ -24,8 +24,6 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 4d980e1187464ec4280e5119ffb5da71, type: 3}
   - expression: 2
     sprite: {fileID: 21300000, guid: e8c38d2dadc3d5b438ca7b4bb80719fd, type: 3}
-  - expression: 3
-    sprite: {fileID: 21300000, guid: fb533c6280c26574face80cde3161d8b, type: 3}
   - expression: 4
     sprite: {fileID: 21300000, guid: 5b7ca9d7b53db084f8741964ed933ad4, type: 3}
   - expression: 5
@@ -36,6 +34,29 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: f5434b146c09a524caee4a9b7277794a, type: 3}
   - expression: 8
     sprite: {fileID: 21300000, guid: 5db0dce5ea79a864db4f8939860e6796, type: 3}
+  - expression: 9
+    sprite: {fileID: 21300000, guid: fb533c6280c26574face80cde3161d8b, type: 3}
+  - expression: 3
+    sprite: {fileID: 21300000, guid: d7e6a990473e5d44baf921922e1ebe14, type: 3}
+  listeningFaces:
+  - expression: 0
+    sprite: {fileID: 21300000, guid: b84ba91ef6a93c64292b1f26985170b0, type: 3}
+  - expression: 1
+    sprite: {fileID: 21300000, guid: 597e6f8b8e984e543b66762200933df1, type: 3}
+  - expression: 2
+    sprite: {fileID: 21300000, guid: 45a9df49762235b4cb51890e7bae347e, type: 3}
+  - expression: 3
+    sprite: {fileID: 21300000, guid: 76b8841496e7bd145a374745712201e1, type: 3}
+  - expression: 4
+    sprite: {fileID: 21300000, guid: 458c1a26dfb15a1428eccdd13e7453f4, type: 3}
+  - expression: 5
+    sprite: {fileID: 21300000, guid: 62050e2a13ca0d249aeee4f08810089a, type: 3}
+  - expression: 6
+    sprite: {fileID: 21300000, guid: d658efc12c85b4c46bd8d2749dd1d913, type: 3}
+  - expression: 8
+    sprite: {fileID: 21300000, guid: b91b18061c9e75b4ba1b04ed3e2c2f3a, type: 3}
+  - expression: 9
+    sprite: {fileID: 21300000, guid: f80a6976ef3574c40a496924a3e3a823, type: 3}
   chatRange: 2
   greeting: "\xA1Hola, tesoro! Soy la Gatita del mercado, lista para darte lo mejor
     de mi huerta y cocina \U0001F642\u2728"
@@ -62,3 +83,32 @@ MonoBehaviour:
   - Con pancita feliz, todo sale mejor
   - "Tengo remolacha fresca para un borsch que enamora, coraz\xF3n."
   - "Varenyky calentitos en minutos; yo amaso, t\xFA disfrutas."
+  reactions:
+  - expression: 4
+    line: "Eso no me lo repites en mi puesto, \xBFme oyes?"
+  - expression: 4
+    line: "A m\xED me llamas lo que quieras menos eso. Mis cuentas est\xE1n m\xE1s
+      limpias que mis cazuelas."
+  - expression: 5
+    line: Ay, tesoro, con esa labia se me va a pasar el punto de la masa.
+  - expression: 5
+    line: "Gu\xE1rdate el piropo para el postre, coraz\xF3n."
+  - expression: 6
+    line: "Ay, mi vida... si\xE9ntate. Un plato caliente no arregla el mundo, pero
+      ayuda."
+  - expression: 6
+    line: "Cu\xE1nto lo siento, coraz\xF3n. Hoy el borsch lo pongo yo."
+  - expression: 9
+    line: "\xBFOtra vez ah\xED fuera? No me gusta nada, tesoro. Vuelve antes de que
+      oscurezca."
+  - expression: 9
+    line: "Mmm... eso que cuentas me quita el hambre, y mira que es dif\xEDcil."
+  - expression: 7
+    line: "Mmm... llevo desde antes del alba con la masa, coraz\xF3n."
+  - expression: 7
+    line: A estas horas hasta la remolacha duerme, tesoro.
+  - expression: 3
+    line: "A ver... d\xE9jame echar cuentas, que la libreta la tengo manchada de
+      remolacha."
+  - expression: 3
+    line: "Mmm, depende de lo que te lleves, coraz\xF3n."

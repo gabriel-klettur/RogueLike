@@ -36,6 +36,7 @@ namespace Valkur.Editor.Chat
         private const string PERSONA_DIR = "Assets/_Project/Data/ChatPersonas";
         private const string ART_ROOT = "Assets/_Project/Art";
         private const string FACIAL_FOLDER = "facial";
+        private const string LISTENING_MARKER = "listening";
 
         [MenuItem("Valkur/Chat/Import Facial Expressions")]
         public static void Import() => Run(overwrite: false);
@@ -76,8 +77,9 @@ namespace Valkur.Editor.Chat
 
             foreach (string folder in folders)
             {
-                var faces = ReadFaces(folder, report);
-                if (faces.Count == 0) continue;
+                var faces = ReadFaces(folder, listening: false, report);
+                var listening = ReadFaces(folder, listening: true, report);
+                if (faces.Count == 0 && listening.Count == 0) continue;
 
                 // The character a folder belongs to is its PARENT folder's name —
                 // ".../gatita_chanchita/facial" is Gatita's. Matched against the persona's
@@ -100,7 +102,7 @@ namespace Valkur.Editor.Chat
                     continue;
                 }
 
-                if (ApplyTo(matches[0], faces, overwrite, report)) wired++;
+                if (ApplyTo(matches[0], faces, listening, overwrite, report)) wired++;
             }
 
             AssetDatabase.SaveAssets();
@@ -172,7 +174,8 @@ namespace Valkur.Editor.Chat
         /// ends in. A file whose trailing token names no expression is reported and skipped —
         /// silently ignoring it is how a typo becomes a face that never appears.
         /// </summary>
-        private static Dictionary<FacialExpression, Sprite> ReadFaces(string folder, StringBuilder report)
+        private static Dictionary<FacialExpression, Sprite> ReadFaces(
+            string folder, bool listening, StringBuilder report)
         {
             var faces = new Dictionary<FacialExpression, Sprite>();
 
@@ -183,6 +186,13 @@ namespace Valkur.Editor.Chat
                 if (sprite == null) continue;
 
                 string stem = Path.GetFileNameWithoutExtension(path);
+
+                // Two sets share one folder and one trailing token, so the LISTENING marker
+                // is what tells them apart. Without it both land in the same dictionary and
+                // one silently loses to the other's DUP check — which set wins would then
+                // depend on the order FindAssets happened to return them in.
+                if (IsListening(stem) != listening) continue;
+
                 int underscore = stem.LastIndexOf('_');
                 string token = underscore >= 0 ? stem.Substring(underscore + 1) : stem;
 
@@ -204,21 +214,82 @@ namespace Valkur.Editor.Chat
             return faces;
         }
 
+        /// <summary>
+        /// True for a file naming a LISTENING pose — <c>&lt;anything&gt;_listening_&lt;expression&gt;</c>.
+        ///
+        /// Matched on the segment before the expression rather than anywhere in the name, so
+        /// a character folder or prefix that happens to contain the word does not reclassify
+        /// every one of its talking faces.
+        /// </summary>
+        private static bool IsListening(string stem)
+        {
+            int last = stem.LastIndexOf('_');
+            if (last <= 0) return false;
+
+            int previous = stem.LastIndexOf('_', last - 1);
+            string segment = previous >= 0
+                ? stem.Substring(previous + 1, last - previous - 1)
+                : stem.Substring(0, last);
+
+            return string.Equals(segment, LISTENING_MARKER, System.StringComparison.OrdinalIgnoreCase);
+        }
+
         // ── Writing ─────────────────────────────────────────────────────────
 
         private static bool ApplyTo(
             NPCPersonaDefinition persona, Dictionary<FacialExpression, Sprite> faces,
-            bool overwrite, StringBuilder report)
+            Dictionary<FacialExpression, Sprite> listening, bool overwrite, StringBuilder report)
         {
             if (persona.faces == null) persona.faces = new List<NPCPersonaDefinition.FacialSprite>();
-            if (overwrite) persona.faces.Clear();
+            if (persona.listeningFaces == null)
+                persona.listeningFaces = new List<NPCPersonaDefinition.FacialSprite>();
 
-            int added = 0, kept = 0;
-
-            foreach (var pair in faces.OrderBy(p => p.Key))
+            if (overwrite)
             {
-                int existing = persona.faces.FindIndex(f => f.expression == pair.Key);
-                if (existing >= 0 && persona.faces[existing].sprite != null)
+                persona.faces.Clear();
+                persona.listeningFaces.Clear();
+            }
+
+            int added = Merge(persona.faces, faces, out int kept);
+            added += Merge(persona.listeningFaces, listening, out int keptListening);
+            kept += keptListening;
+
+            // The fallback portrait is what a persona shows when the chain runs out, and the
+            // neutral face is the only honest default for it. Only filled when empty, for the
+            // same reason every other field here is.
+            if (persona.portrait == null && faces.TryGetValue(FacialExpression.Neutral, out Sprite neutral))
+                persona.portrait = neutral;
+
+            if (added == 0 && kept == faces.Count + listening.Count)
+            {
+                report.AppendLine($"  ok   {persona.displayName} — already had all {kept}.");
+                return false;
+            }
+
+            EditorUtility.SetDirty(persona);
+            report.AppendLine($"  WIRE {persona.displayName} — {added} added" +
+                              (kept > 0 ? $", {kept} left as authored" : "") + ".");
+            return true;
+        }
+
+        /// <summary>
+        /// Folds <paramref name="found"/> into <paramref name="into"/> under the
+        /// creation-defaults contract: an entry already pointing at a sprite is left alone.
+        ///
+        /// Shared by the talking and listening lists rather than written twice, so the two
+        /// cannot drift into different rules about what a re-import is allowed to overwrite.
+        /// </summary>
+        private static int Merge(
+            List<NPCPersonaDefinition.FacialSprite> into,
+            Dictionary<FacialExpression, Sprite> found, out int kept)
+        {
+            int added = 0;
+            kept = 0;
+
+            foreach (var pair in found.OrderBy(p => p.Key))
+            {
+                int existing = into.FindIndex(f => f.expression == pair.Key);
+                if (existing >= 0 && into[existing].sprite != null)
                 {
                     kept++;
                     continue;
@@ -230,27 +301,11 @@ namespace Valkur.Editor.Chat
                     sprite = pair.Value,
                 };
 
-                if (existing >= 0) persona.faces[existing] = entry;
-                else persona.faces.Add(entry);
+                if (existing >= 0) into[existing] = entry;
+                else into.Add(entry);
                 added++;
             }
-
-            // The fallback portrait is what a persona shows when the chain runs out, and the
-            // neutral face is the only honest default for it. Only filled when empty, for the
-            // same reason every other field here is.
-            if (persona.portrait == null && faces.TryGetValue(FacialExpression.Neutral, out Sprite neutral))
-                persona.portrait = neutral;
-
-            if (added == 0 && kept == faces.Count)
-            {
-                report.AppendLine($"  ok   {persona.displayName} — already had all {kept}.");
-                return false;
-            }
-
-            EditorUtility.SetDirty(persona);
-            report.AppendLine($"  WIRE {persona.displayName} — {added} added" +
-                              (kept > 0 ? $", {kept} left as authored" : "") + ".");
-            return true;
+            return added;
         }
 
         private static string ToAssetPath(string absolute)

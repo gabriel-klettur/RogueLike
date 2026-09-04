@@ -19,6 +19,12 @@ drawing in all nine — only the features inside change — so each face's alpha
 is cross-correlated against the neutral one and shifted by the integer peak.
 Measured NCC 0.87-0.96 with unambiguous peaks; the corrections are at most 23 px.
 
+WHAT IS NOT IN THIS SHEET. `gatita_face_thinking.png` was drawn separately and is not
+produced here — the 3x3 grid holds nine faces and cell 3 is the uneasy one, which
+ships as `worry`. Re-running this writes the nine below and leaves the thinking face
+alone; it must stay on the same 370x395 canvas as the rest or the head jumps when the
+panel swaps to it.
+
 The sheet has no `.meta`: Unity has never imported it, so nothing references it and
 the cut is free to define the naming. Pivot is CENTRE, unlike Gatita's world
 sprites (bottom-centre, PPU 64) — a portrait is placed by its middle, a body stands
@@ -51,7 +57,7 @@ COL_BANDS = [(52, 394), (434, 774), (841, 1183)]
 #   neutral  wide open eyes, closed calm mouth, no blush
 #   happy    eyes closed in arcs, open smile, tongue, blush
 #   laugh    one eye winking, mouth wide open, blush
-#   thinking brows flat and slightly furrowed, small closed mouth
+#   worry    brows flat and slightly furrowed, small closed mouth
 #   angry    brows angled down to the centre, eyes narrowed, mouth flat
 #   playful  wide eyes, tongue out
 #   sad      inner brows raised, eyes turned away, mouth downturned
@@ -59,7 +65,7 @@ COL_BANDS = [(52, 394), (434, 774), (841, 1183)]
 #   wink     one eye winking, closed smile, blush
 NAMES = [
     "neutral", "happy", "laugh",
-    "thinking", "angry", "playful",
+    "worry", "angry", "playful",
     "sad", "tired", "wink",
 ]
 

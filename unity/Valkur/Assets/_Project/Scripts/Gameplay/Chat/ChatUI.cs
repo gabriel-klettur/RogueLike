@@ -24,7 +24,19 @@ namespace Valkur.Gameplay.Chat
     /// </summary>
     public partial class ChatUI : SingletonMonoBehaviour<ChatUI>
     {
-        private const float PANEL_MIN_W = 320f;
+        /// <summary>
+        /// Narrowest the panel may be dragged, in pixels.
+        ///
+        /// <para>Raised from the ported 320 when the gutter became UNCONDITIONAL, and again
+        /// from 420 when it grew by half. While it was reserved only for a character with a
+        /// face, refusing to raise this was the right call — it would have clamped a size the
+        /// player saved on a portrait-less NPC upward the moment they talked to Gatita. Now
+        /// every conversation spends 144 px on the column before a word of dialogue is
+        /// placed, so a floor that ignores it is a floor that leaves 168 px for the
+        /// conversation. Tracks <see cref="PORTRAIT_GUTTER"/>: the two moved together, and a
+        /// wider column with an unchanged floor is a floor that means something different.</para>
+        /// </summary>
+        private const float PANEL_MIN_W = 470f;
 
         /// <summary>
         /// Shortest the panel may be dragged, in pixels.
@@ -77,16 +89,22 @@ namespace Valkur.Gameplay.Chat
         /// they talked to Gatita. At the minimum width the conversation gives up the space
         /// instead — the same trade <see cref="SCROLL_MIN_H"/> makes for the trade row.</para>
         /// </summary>
-        private const float PORTRAIT_GUTTER = 96f;
+        private const float PORTRAIT_GUTTER = 144f;
 
         /// <summary>
         /// Drawn size of the portrait frame. Height leads: the expression lives in the eyes
-        /// and mouth, which are about a third of a face, so 94 px of face is roughly 30 px of
+        /// and mouth, which are about a third of a face, so 141 px of face is roughly 47 px of
         /// the part the player is actually reading. The width follows the source art's
-        /// 370:395, and <c>preserveAspect</c> keeps a differently-shaped drawing honest.
+        /// 370:395 (132/141 = 0.936 against 0.937), and <c>preserveAspect</c> keeps a
+        /// differently-shaped drawing honest.
+        ///
+        /// <para>Raised by half from 88x94. The faces are drawn at 370x395 and were being
+        /// rendered at under a quarter of that, which is the resolution at which the
+        /// difference between two expressions stops being legible — and the expression is the
+        /// entire reason the portrait is on screen rather than a name.</para>
         /// </summary>
-        private const float PORTRAIT_SIZE_W = 88f;
-        private const float PORTRAIT_SIZE_H = 94f;
+        private const float PORTRAIT_SIZE_W = 132f;
+        private const float PORTRAIT_SIZE_H = 141f;
 
         /// <summary>Border of frame left visible around the face.</summary>
         private const float PORTRAIT_INSET = 3f;
@@ -102,8 +120,23 @@ namespace Valkur.Gameplay.Chat
         /// being IN something rather than floating on the panel.</summary>
         private static readonly Color PORTRAIT_FRAME_COLOR = new Color(0.05f, 0.05f, 0.08f, 0.95f);
 
-        private const float PANEL_DEFAULT_W = 520f;
-        private const float PANEL_DEFAULT_H = 250f;
+        /// <summary>
+        /// The size a player who has never dragged the grip opens the panel at — the ported
+        /// 520x250 raised by a quarter.
+        ///
+        /// <para>A bigger default is only half the change, and the missing half is why a
+        /// number like this normally does nothing: the restore path prefers whatever the
+        /// player last dragged the panel to, so anyone who had ever touched the grip would
+        /// keep the old size forever and read the change as not having happened. That is what
+        /// <see cref="PREF_LAYOUT_VERSION"/> is for.</para>
+        ///
+        /// <para>The width moved 650 to 700 when the gutter grew by half. The 48 px the column
+        /// took are given back to the panel rather than to the conversation's cost: widening
+        /// the face is not a reason to narrow the dialogue, and leaving the panel alone would
+        /// have made every line wrap sooner as a side effect of a change about the face.</para>
+        /// </summary>
+        private const float PANEL_DEFAULT_W = 700f;
+        private const float PANEL_DEFAULT_H = 312f;
 
         /// <summary>
         /// Width of the Send button. Small on purpose: the message field is the control the
@@ -166,6 +199,60 @@ namespace Valkur.Gameplay.Chat
         private const string PREF_PANEL_HEIGHT = "valkur.chat.panel.height";
 
         /// <summary>
+        /// Which arrangement of the panel the remembered size belongs to.
+        ///
+        /// <para>A saved size is only meaningful against the layout it was dragged on. When
+        /// the rows are rearranged — three stacked action strips becoming one footer row, the
+        /// default growing a quarter — a size from the old arrangement is not a preference to
+        /// honour, it is a measurement of a panel that no longer exists. Restoring it hands
+        /// the player the OLD size and makes a deliberate change look like one that failed to
+        /// ship, which is worse than the size being reset: they can drag it back in one
+        /// gesture, and they cannot discover a default they never see.</para>
+        ///
+        /// <para>Bump <see cref="PANEL_LAYOUT_VERSION"/> whenever the row structure or the
+        /// default size changes, and never for a colour or a label.</para>
+        /// </summary>
+        private const string PREF_LAYOUT_VERSION = "valkur.chat.panel.layout";
+
+        /// <summary>See <see cref="PREF_LAYOUT_VERSION"/>. 4 = gutter widened by half, 700x312.</summary>
+        private const int PANEL_LAYOUT_VERSION = 4;
+
+        /// <summary>
+        /// Space the panel keeps between its rows. Wider than the ported 4 because the panel
+        /// is now a quarter larger in both directions: keeping the old gap would have spent
+        /// the whole increase on the conversation and left the chrome looking cramped inside
+        /// a roomier window, which is the shape that reads as "stretched" rather than
+        /// "bigger".
+        /// </summary>
+        private const float PANEL_SPACING = 6f;
+
+        /// <summary>
+        /// Width of the buttons that live in the left gutter. The portrait's width exactly,
+        /// so the face and the controls under it share one edge and the gutter reads as a
+        /// column rather than as three things that happen to be on the left.
+        /// </summary>
+        private const float GUTTER_BUTTON_WIDTH = PORTRAIT_SIZE_W;
+
+        /// <summary>Height of the gutter's Comerciar button.</summary>
+        private const float GUTTER_TRADE_HEIGHT = 28f;
+
+        /// <summary>
+        /// Height of the gutter's Reiniciar button. The same as Comerciar's, so the two
+        /// controls in the column are one shape.
+        ///
+        /// <para>It used to be 34 to hold a wrapped second line, which the 88 px column
+        /// forced. Measured at the widened 132: the idle caption needs 81 px and the armed
+        /// one 110, against a 126 px text box — both fit on one line, so the extra height was
+        /// reserving room for a wrap that can no longer happen. The label still WRAPS rather
+        /// than elides, because a control that deletes player memory should overflow visibly
+        /// rather than silently lose the end of its own caption.</para>
+        /// </summary>
+        private const float GUTTER_RESET_HEIGHT = 28f;
+
+        /// <summary>Gap between the portrait and the button under it.</summary>
+        private const float GUTTER_GAP = 6f;
+
+        /// <summary>
         /// How much of each end of the title row the corner controls occupy.
         ///
         /// DERIVED rather than typed, so moving or resizing either button cannot leave the
@@ -184,8 +271,27 @@ namespace Valkur.Gameplay.Chat
         private ScrollRect _scrollRect;
         private RectTransform _contentRect;
         private TMP_InputField _inputField;
+
+        /// <summary>
+        /// Tells the character whether the player is mid-sentence.
+        ///
+        /// <para>Keyed on the field HAVING TEXT rather than on it having focus. Focus is the
+        /// wrong question twice over: the field is focused for the whole conversation —
+        /// <c>ActivateInputField</c> is called on open and again after every send — so a
+        /// focus test would say she is listening while she is the one talking, and it would
+        /// never turn off. Text present is exactly "there is a sentence being composed", and
+        /// it clears itself on submit, which is the same instant her reply starts.</para>
+        /// </summary>
+        private void OnInputTextChanged(string text)
+        {
+            if (ChatSystem.Instance == null) return;
+            ChatSystem.Instance.SetPlayerTyping(!string.IsNullOrEmpty(text));
+        }
         private TextMeshProUGUI _titleText;
         private TextMeshProUGUI _langButtonText;
+        private TextMeshProUGUI _placeholderText;
+        private TextMeshProUGUI _sendButtonText;
+        private TextMeshProUGUI _tradeButtonText;
         private GameObject _tradeButton;
         private GameObject _resetButton;
         private GameObject _tradeConfirmRow;
@@ -198,7 +304,7 @@ namespace Valkur.Gameplay.Chat
         /// </summary>
         private VerticalLayoutGroup _panelLayout;
 
-        /// <summary>Idle label of the Reset button.</summary>
+        /// <summary>Idle label of the Reset button. Wraps to two lines in the gutter.</summary>
         private const string RESET_LABEL_IDLE = "Reiniciar memoria";
 
         /// <summary>Armed label. The second click is the one that deletes.</summary>
@@ -230,6 +336,8 @@ namespace Valkur.Gameplay.Chat
                 chatSystem.OnHistoryReset += RebuildMessageRows;
                 chatSystem.OnTradeOfferChanged += OnTradeOfferChanged;
                 chatSystem.OnExpressionChanged += OnExpressionChanged;
+                chatSystem.OnListeningChanged += OnListeningChanged;
+                ChatLanguage.OnChanged += ApplyLanguageToChrome;
             }
         }
 
@@ -245,6 +353,8 @@ namespace Valkur.Gameplay.Chat
                 chatSystem.OnHistoryReset -= RebuildMessageRows;
                 chatSystem.OnTradeOfferChanged -= OnTradeOfferChanged;
                 chatSystem.OnExpressionChanged -= OnExpressionChanged;
+                chatSystem.OnListeningChanged -= OnListeningChanged;
+                ChatLanguage.OnChanged -= ApplyLanguageToChrome;
             }
         }
 
@@ -304,12 +414,11 @@ namespace Valkur.Gameplay.Chat
             // row out twice on the frame a conversation opens.
             ConfigurePortraitFor(chatSystem.ActivePersona);
 
-            // Sync language button to the persisted preference.
-            if (_langButtonText != null)
-            {
-                string lang = chatSystem.ActiveMemory?.preferredLanguage ?? "es";
-                _langButtonText.text = lang.ToUpperInvariant();
-            }
+            // The panel follows the GLOBAL preference; the conversation's own memory is
+            // brought into line with it rather than the other way round, so a language the
+            // player chose with one character is the language the next one opens in.
+            ApplyLanguageToChrome(ChatLanguage.Current);
+            SyncActiveMemoryLanguage();
 
             // Only a character who actually sells something gets a Trade button.
             if (_tradeButton != null)
@@ -454,21 +563,54 @@ namespace Valkur.Gameplay.Chat
         // ── Language toggle ──
 
         /// <summary>
-        /// Cycles the preferred language between "es" and "en" and persists.
-        /// Called by the lang button built in ChatUI.Builder.cs.
+        /// Cycles the panel between Spanish and English.
+        ///
+        /// <para>It used to require <c>ActiveMemory</c> and early-return without it, which
+        /// made the button dead for the whole window between opening a panel and the memory
+        /// arriving — and permanently dead for any conversation with no memory at all. The
+        /// preference belongs to the player, so it is stored globally now and the per-NPC
+        /// field is written alongside it, purely so <c>OpenAiChatProvider</c> keeps reading
+        /// the value it always read.</para>
         /// </summary>
         private void ToggleLang()
         {
-            var chatSystem = ChatSystem.Instance;
-            if (chatSystem?.ActiveMemory == null) return;
+            ChatLanguage.Toggle();
+            SyncActiveMemoryLanguage();
+        }
 
-            NPCMemory mem = chatSystem.ActiveMemory;
-            mem.preferredLanguage = mem.preferredLanguage == "es" ? "en" : "es";
+        /// <summary>
+        /// Copies the global preference onto the open conversation's memory and saves it.
+        ///
+        /// <para>The prompt builder reads <c>NPCMemory.preferredLanguage</c> and nothing
+        /// else, so this is what keeps a language chosen in the panel reaching the model.
+        /// Null-safe: a conversation with no memory simply has nothing to sync, and the
+        /// panel is still in the right language because the panel reads the global.</para>
+        /// </summary>
+        private void SyncActiveMemoryLanguage()
+        {
+            NPCMemory mem = ChatSystem.Instance?.ActiveMemory;
+            if (mem == null || mem.preferredLanguage == ChatLanguage.Current) return;
 
-            if (_langButtonText != null)
-                _langButtonText.text = mem.preferredLanguage.ToUpperInvariant();
-
+            mem.preferredLanguage = ChatLanguage.Current;
             NPCMemoryStore.Save(mem);
+        }
+
+        /// <summary>
+        /// Re-labels every caption the panel owns. Bound to
+        /// <c>ChatLanguage.OnChanged</c>, so a language switched from anywhere reaches an
+        /// open panel rather than waiting for it to be reopened.
+        ///
+        /// <para>What it deliberately does NOT touch is the conversation itself. Those lines
+        /// are authored Spanish from the persona archive and there is no English set to swap
+        /// to; re-labelling them would mean inventing dialogue. English moves the chrome and
+        /// the model's instruction, and leaves what the character actually said alone.</para>
+        /// </summary>
+        private void ApplyLanguageToChrome(string language)
+        {
+            if (_langButtonText != null) _langButtonText.text = ChatLanguage.Label;
+            if (_placeholderText != null) _placeholderText.text = ChatLanguage.InputPlaceholder;
+            if (_sendButtonText != null) _sendButtonText.text = ChatLanguage.Send;
+            if (_tradeButtonText != null) _tradeButtonText.text = ChatLanguage.Trade;
         }
 
         // ── UI Construction ──

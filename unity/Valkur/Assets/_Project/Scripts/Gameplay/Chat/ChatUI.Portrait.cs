@@ -16,12 +16,17 @@ namespace Valkur.Gameplay.Chat
     /// existing row then gets shorter by itself, with no row re-parented and no second
     /// layout group.</para>
     ///
-    /// <para>THE GUTTER IS NOT ALWAYS THERE. A character with no face art keeps the panel
-    /// exactly as it was — reserving the space anyway would put an empty rectangle beside
-    /// five of the six conversations in the game, which reads as a portrait that failed to
-    /// load. <see cref="PANEL_MIN_W"/> is deliberately NOT raised to make room: at the
-    /// minimum width the conversation gives up the space instead, which is the same trade
-    /// <see cref="SCROLL_MIN_H"/> makes when the trade confirmation row appears.</para>
+    /// <para>THE GUTTER IS ALWAYS THERE NOW, and it did not use to be. While it held only a
+    /// face, reserving it for a character without one put an empty rectangle beside five of
+    /// the six conversations in the game, which reads as a portrait that failed to load —
+    /// so it was reserved per conversation. It is a COLUMN now: Comerciar sits under the
+    /// face and Reiniciar at its foot, so there is no conversation in which the strip is
+    /// empty and nothing left for the old rule to protect against. Making it unconditional
+    /// also retires the hazard that rule created — a size the player saved on a
+    /// portrait-less NPC no longer describes a differently-shaped panel.</para>
+    ///
+    /// <para>The FACE is still per conversation: a character with no art shows no frame, and
+    /// the button under it moves up to take the top of the column.</para>
     ///
     /// <para>THE SWAP IS A CROSSFADE, not a cut. A sprite replaced in one frame reads as a
     /// glitch rather than as a change of expression — the same reason
@@ -46,7 +51,7 @@ namespace Valkur.Gameplay.Chat
         /// <summary>What the front image is currently showing, so a repeat is not re-faded.</summary>
         private FacialExpression _portraitShowing = FacialExpression.Neutral;
 
-        /// <summary>True while the gutter is reserved and the portrait is on screen.</summary>
+        /// <summary>True while a FACE is on screen. The gutter itself is unconditional.</summary>
         private bool _portraitActive;
 
         // ── Build ───────────────────────────────────────────────────────────
@@ -123,13 +128,17 @@ namespace Valkur.Gameplay.Chat
             _portraitActive = persona != null && persona.HasFaces;
 
             if (_portraitRoot != null) _portraitRoot.SetActive(_portraitActive);
+
+            // Unconditional: the gutter is a column of controls that every conversation has,
+            // and only the face inside it is optional. It is still set here rather than once
+            // in the builder because this is the method that knows what the column contains.
             if (_panelLayout != null)
             {
-                _panelLayout.padding.left = _portraitActive
-                    ? (int)(PANEL_PADDING + PORTRAIT_GUTTER)
-                    : (int)PANEL_PADDING;
+                _panelLayout.padding.left = (int)(PANEL_PADDING + PORTRAIT_GUTTER);
                 LayoutRebuilder.MarkLayoutForRebuild((RectTransform)_panel.transform);
             }
+
+            PlaceTradeButtonInGutter();
 
             if (!_portraitActive) return;
 
@@ -140,13 +149,34 @@ namespace Valkur.Gameplay.Chat
             SeatPortrait(persona, opening);
         }
 
+        /// <summary>
+        /// Seats Comerciar under the face, or at the top of the column when this character
+        /// has none.
+        ///
+        /// <para>ONE owner for that Y. Deciding it in the builder would have to guess, and
+        /// deciding it beside the SetActive in <c>OnChatOpened</c> would put half the gutter's
+        /// arrangement in each of two places — the failure this panel has already paid for
+        /// twice with free-floating children that silently overlapped.</para>
+        /// </summary>
+        private void PlaceTradeButtonInGutter()
+        {
+            if (_tradeButton == null) return;
+
+            float top = _portraitActive
+                ? PANEL_PADDING + PORTRAIT_SIZE_H + GUTTER_GAP
+                : PANEL_PADDING;
+
+            ((RectTransform)_tradeButton.transform).anchoredPosition =
+                new Vector2(PANEL_PADDING, -top);
+        }
+
         /// <summary>Puts a face up with no transition. Opening a panel is not a change of mood.</summary>
         private void SeatPortrait(NPCPersonaDefinition persona, FacialExpression expression)
         {
             _portraitShowing = expression;
             _portraitFadeElapsed = PORTRAIT_FADE_SEC;
 
-            _portraitFront.sprite = persona != null ? persona.ResolveFace(expression) : null;
+            _portraitFront.sprite = ResolvePortrait(persona, expression);
             _portraitFront.color = new Color(1f, 1f, 1f, _portraitFront.sprite != null ? 1f : 0f);
             _portraitBack.sprite = null;
             _portraitBack.color = new Color(1f, 1f, 1f, 0f);
@@ -161,7 +191,7 @@ namespace Valkur.Gameplay.Chat
             if (!_portraitActive || _portraitFront == null) return;
 
             var persona = ChatSystem.Instance != null ? ChatSystem.Instance.ActivePersona : null;
-            Sprite next = persona != null ? persona.ResolveFace(expression) : null;
+            Sprite next = ResolvePortrait(persona, expression);
 
             // Two different expressions can share one drawing through the fallback chain —
             // laugh and happy on a character that only drew happy. Dissolving a sprite into
@@ -180,6 +210,36 @@ namespace Valkur.Gameplay.Chat
 
             _portraitShowing = expression;
             _portraitFadeElapsed = 0f;
+        }
+
+        /// <summary>
+        /// The drawing for <paramref name="expression"/> on whichever axis the conversation
+        /// is currently on — listening while the player types, talking otherwise.
+        ///
+        /// <para>The single place the two sets are chosen between, so a new caller cannot
+        /// render one axis while the rest of the panel is on the other.</para>
+        /// </summary>
+        private static Sprite ResolvePortrait(NPCPersonaDefinition persona, FacialExpression expression)
+        {
+            if (persona == null) return null;
+
+            bool listening = ChatSystem.Instance != null && ChatSystem.Instance.Listening;
+            return listening ? persona.ResolveListeningFace(expression) : persona.ResolveFace(expression);
+        }
+
+        /// <summary>
+        /// Swaps the portrait when the player starts or stops typing, reusing the expression
+        /// crossfade so starting to type is the same visual event as changing mood.
+        ///
+        /// <para>Bound to <c>ChatSystem.OnListeningChanged</c>. It re-runs the ordinary
+        /// change path against the CURRENT expression rather than seating the sprite
+        /// directly, which is what makes the "two expressions can share one drawing" guard
+        /// apply here too — on a character with no listening art at all, every one of these
+        /// resolves to the sprite already up and nothing fades.</para>
+        /// </summary>
+        private void OnListeningChanged(bool listening)
+        {
+            OnExpressionChanged(_portraitShowing);
         }
 
         /// <summary>
@@ -203,7 +263,7 @@ namespace Valkur.Gameplay.Chat
         /// <summary>What the portrait is showing. Read by the tests and the probe commands.</summary>
         internal FacialExpression PortraitExpression => _portraitShowing;
 
-        /// <summary>True when the gutter is reserved for this conversation.</summary>
+        /// <summary>True when this character's FACE is on screen. The gutter always is.</summary>
         internal bool PortraitVisible => _portraitActive;
     }
 }

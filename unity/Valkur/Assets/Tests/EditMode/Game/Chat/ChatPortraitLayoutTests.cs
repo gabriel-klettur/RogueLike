@@ -168,18 +168,28 @@ namespace Valkur.Tests.EditMode.Game.Chat
         // ── The gutter ──────────────────────────────────────────────────────
 
         [Test]
-        public void Gutter_IsNotReservedForACharacterWithNoFaceArt()
+        public void Gutter_IsStillReservedForACharacterWithNoFaceArt_ButShowsNoFrame()
         {
             var persona = ScriptableObject.CreateInstance<NPCPersonaDefinition>();
             _fixtureAssets.Add(persona);
 
             ConfigurePortraitFor(persona);
 
-            Assert.AreEqual((int)Const("PANEL_PADDING"), PanelLayout().padding.left,
-                "Five of the six chat-capable characters in this game have no facial art. " +
-                "An empty rectangle beside their conversations reads as a portrait that " +
-                "failed to load, not as one that was never drawn.");
-            Assert.IsFalse(FindPortrait().activeSelf);
+            // This assertion is the REVERSE of what it used to be, and the reversal is the
+            // point. While the gutter held only a face, reserving it for a character without
+            // one put an empty rectangle beside five of the six conversations in the game,
+            // which reads as a portrait that failed to load. It is a COLUMN now — Comerciar
+            // under the face, Reiniciar at its foot — so there is no conversation in which
+            // it is empty, and nothing left for the old rule to protect against.
+            Assert.AreEqual(
+                (int)(Const("PANEL_PADDING") + Const("PORTRAIT_GUTTER")),
+                PanelLayout().padding.left,
+                "The gutter is unconditional now: it carries the controls, not just a face.");
+
+            Assert.IsFalse(FindPortrait().activeSelf,
+                "The FACE is still per conversation. A character with no art must show no " +
+                "frame — an empty picture frame is exactly the failed-to-load read the old " +
+                "rule existed to avoid, and it is the half of it that still applies.");
         }
 
         [Test]
@@ -200,7 +210,7 @@ namespace Valkur.Tests.EditMode.Game.Chat
         }
 
         [Test]
-        public void Gutter_IsReleasedAgainWhenTheNextCharacterHasNoArt()
+        public void Face_IsTakenDownAgainWhenTheNextCharacterHasNoArt()
         {
             var withArt = ScriptableObject.CreateInstance<NPCPersonaDefinition>();
             withArt.portrait = MakeSprite("Face");
@@ -211,9 +221,44 @@ namespace Valkur.Tests.EditMode.Game.Chat
             ConfigurePortraitFor(withArt);
             ConfigurePortraitFor(without);
 
-            Assert.AreEqual((int)Const("PANEL_PADDING"), PanelLayout().padding.left,
-                "The panel is reused across conversations. A gutter that is reserved and " +
-                "never released leaves every later chat indented by 96 px with nothing in it.");
+            Assert.IsFalse(FindPortrait().activeSelf,
+                "The panel is reused across conversations. A face left up from the previous " +
+                "one puts the wrong character's head beside this one's words.");
+
+            Assert.AreEqual(
+                (int)(Const("PANEL_PADDING") + Const("PORTRAIT_GUTTER")),
+                PanelLayout().padding.left,
+                "The gutter itself does NOT come and go — it holds the controls either way, " +
+                "and a column that appeared and vanished between conversations would move " +
+                "every row sideways as the player walked from one villager to the next.");
+        }
+
+        [Test]
+        public void TradeButton_MovesUpTheColumnWhenThereIsNoFace()
+        {
+            var withArt = ScriptableObject.CreateInstance<NPCPersonaDefinition>();
+            withArt.portrait = MakeSprite("Face");
+            var without = ScriptableObject.CreateInstance<NPCPersonaDefinition>();
+            _fixtureAssets.Add(withArt);
+            _fixtureAssets.Add(without);
+
+            var trade = (RectTransform)FindPortrait().transform.parent.Find("TradeButton");
+            Assert.IsNotNull(trade, "TradeButton lives in the gutter, beside the portrait.");
+
+            ConfigurePortraitFor(withArt);
+            float underFace = trade.anchoredPosition.y;
+
+            ConfigurePortraitFor(without);
+            float atTop = trade.anchoredPosition.y;
+
+            // Anchored to the panel's TOP edge, so both are negative and "higher" is nearer 0.
+            Assert.Greater(atTop, underFace,
+                "With no face to sit under, the button takes the top of the column. Leaving " +
+                "it where the portrait would have been opens a 94px hole above the only way " +
+                "into a vendor's counter — and five of the six vendors have no art.");
+            Assert.AreEqual(-Const("PANEL_PADDING"), atTop, 0.01f,
+                "At the top of the column it clears the panel edge by the same padding " +
+                "every other floating child uses.");
         }
 
         [Test]
@@ -224,11 +269,18 @@ namespace Valkur.Tests.EditMode.Game.Chat
 
             Assert.Greater(minW - gutter, 0f,
                 "At its minimum the panel still has to hold a conversation beside the face.");
-            Assert.AreEqual(320f, minW,
-                "PANEL_MIN_W must stay where it was. Raising it for the portrait would clamp " +
-                "a size the player saved on a portrait-less NPC upward the moment they " +
-                "talked to Gatita, and a per-character minimum would be static mutable state " +
-                "on a class where Domain Reload is off.");
+            Assert.AreEqual(470f, minW,
+                "PANEL_MIN_W tracks PORTRAIT_GUTTER now, and the reason is that the gutter " +
+                "is UNCONDITIONAL: every conversation spends it before a word of dialogue is " +
+                "placed. While the gutter came and went per character, refusing to raise " +
+                "this was right — it would have clamped a size the player saved on a " +
+                "portrait-less NPC upward the moment they talked to Gatita, and a " +
+                "per-character minimum would be static mutable state on a class where " +
+                "Domain Reload is off. Neither hazard exists once the column is always there.");
+
+            Assert.Less(gutter, minW * 0.5f,
+                "A gutter worth half the minimum panel would leave the conversation with " +
+                "less room than the face beside it.");
         }
 
         // ── Reflection helpers ──────────────────────────────────────────────

@@ -21,6 +21,19 @@ namespace Valkur.Gameplay.Chat.Providers
         Trade,
         SmallTalk,
         Joke,
+
+        // The four below are about how the player TREATED the character rather than about
+        // what they wanted from it. They exist because a face needs a cause: without them
+        // an NPC has no way to be insulted, flattered, alarmed or moved, and six of the
+        // ten drawn expressions can never appear no matter what the player types.
+        /// <summary>The player was rude to this character.</summary>
+        Insult,
+        /// <summary>The player flattered or teased this character.</summary>
+        Flirt,
+        /// <summary>The player reported something frightening happening out there.</summary>
+        Danger,
+        /// <summary>The player shared bad news or their own unhappiness.</summary>
+        Distress,
     }
 
     /// <summary>
@@ -36,16 +49,50 @@ namespace Valkur.Gameplay.Chat.Providers
     /// the NPC says back always comes from its own authored persona.</para>
     /// </summary>
     [Valkur.Core.SelfHealingStatic(
-        "Five immutable keyword tables built once from string literals. Nothing writes to " +
+        "Nine immutable keyword tables built once from string literals. Nothing writes to " +
         "them after the static initialiser, they hold no Unity object and no decision made " +
         "during a session, so they cannot go stale across a Play-mode boundary. Declared on " +
-        "the class rather than five times on the fields, since every static here is of that " +
+        "the class rather than once per field, since every static here is of that " +
         "one kind.")]
     public static class DialogueIntentClassifier
     {
         // Ordered by specificity: a line can hit several sets, and the first match wins.
         // Trade before Greeting, because "hola, ¿cuánto vale esto?" is a customer, not a
         // passer-by, and answering it with small talk is the more annoying failure.
+        // Written WITHOUT accents on purpose: Normalize strips diacritics before matching,
+        // so an accented needle here could never fire. Matching is whole-word, so short
+        // entries are safe.
+        private static readonly string[] InsultWords =
+        {
+            "ladrona", "ladron", "estafadora", "estafador", "estafa", "timo", "tramposa",
+            "tramposo", "asquerosa", "fea", "inutil", "idiota", "estupida", "estupido",
+            "bruja", "callate", "basura", "no sirves", "me estas robando",
+            "thief", "scam", "cheat", "ugly", "stupid", "idiot", "shut up", "useless",
+        };
+
+        private static readonly string[] DangerWords =
+        {
+            "peligro", "peligroso", "monstruo", "monstruos", "bandidos", "lobos",
+            "me atacaron", "nos atacaron", "ataque", "guerra", "dragon", "muertos",
+            "no vayas", "ten cuidado", "hay algo ahi fuera",
+            "danger", "monsters", "bandits", "attacked", "war", "beware",
+        };
+
+        private static readonly string[] DistressWords =
+        {
+            "estoy triste", "me siento mal", "estoy solo", "estoy sola", "perdi",
+            "se murio", "murio", "necesito ayuda", "no tengo nada", "estoy arruinado",
+            "estoy herido", "estoy herida", "me duele", "lo he perdido todo",
+            "i am sad", "i lost", "died", "i need help", "i am alone", "it hurts",
+        };
+
+        private static readonly string[] FlirtWords =
+        {
+            "guapa", "guapo", "bonita", "hermosa", "linda", "preciosa", "me gustas",
+            "te quiero", "eres adorable", "que ojos", "mi amor", "bombon", "encantadora",
+            "beautiful", "pretty", "cute", "i like you", "gorgeous", "darling",
+        };
+
         private static readonly string[] TradeWords =
         {
             "cuanto", "precio", "vale", "cuesta", "comprar", "vender", "venta", "descuento",
@@ -89,6 +136,16 @@ namespace Valkur.Gameplay.Chat.Providers
             if (string.IsNullOrWhiteSpace(playerText)) return DialogueIntent.Unknown;
 
             string normalized = Normalize(playerText);
+
+            // The four emotional intents are tested FIRST, and deliberately ahead of Trade.
+            // Their keyword sets are narrow and distinctive while the trade set is broad and
+            // ordinary, so a collision is far likelier to be a real insult inside a haggle
+            // than a real haggle inside an insult — and of the two, answering "cuanto vale,
+            // ladrona" with a price and a smile is the worse failure.
+            if (ContainsAny(normalized, InsultWords)) return DialogueIntent.Insult;
+            if (ContainsAny(normalized, DangerWords)) return DialogueIntent.Danger;
+            if (ContainsAny(normalized, DistressWords)) return DialogueIntent.Distress;
+            if (ContainsAny(normalized, FlirtWords)) return DialogueIntent.Flirt;
 
             if (ContainsAny(normalized, TradeWords)) return DialogueIntent.Trade;
             if (ContainsAny(normalized, FarewellWords)) return DialogueIntent.Farewell;
