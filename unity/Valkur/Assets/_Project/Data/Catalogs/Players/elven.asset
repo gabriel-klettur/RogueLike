@@ -1582,6 +1582,7 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+    statePacing: []
     loadouts: []
     scaleConfig:
       scaleIdle: 0

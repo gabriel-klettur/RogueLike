@@ -4,6 +4,7 @@ using UnityEngine.Rendering.Universal;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Chat;
+using Valkur.Gameplay.Chat.Providers;
 using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.Buildings;
 using Valkur.Gameplay.Spawners;
@@ -19,6 +20,13 @@ namespace Valkur.Gameplay
 {
     public partial class GameplaySceneSetup
     {
+        /// <summary>
+        /// Where the LLM settings asset lives. A SUBFOLDER, like every other Resources.Load
+        /// in this project — an empty path is a full-tree scan of every asset under
+        /// Resources/ and logs a missing-script error for each one it cannot resolve.
+        /// </summary>
+        private const string CHAT_LLM_SETTINGS_RESOURCE_PATH = "Chat/ChatLlmSettings";
+
         private void EnsureTileEditor()
         {
             if (TileEditorManager.Instance != null) return;
@@ -255,6 +263,13 @@ namespace Valkur.Gameplay
         private void EnsureChatSystem()
         {
             if (FindObjectOfType<ChatSystem>() != null) return;
+
+            // BEFORE the ChatSystem, because its OnSingletonAwake resolves IChatProvider
+            // from the ServiceLocator and falls back to offline when nothing is registered.
+            // Registering afterwards would leave every conversation on the offline provider
+            // for the life of the session, with nothing to show it had happened.
+            EnsureChatProvider();
+
             var go = new GameObject("ChatSystem");
             go.AddComponent<ChatSystem>();
             go.transform.SetParent(GetSceneContainer("[Systems]"), false);
@@ -267,6 +282,35 @@ namespace Valkur.Gameplay
                 uiGo.transform.SetParent(GetSceneContainer("[UI]"), false);
                 Debug.Log("[GameplaySceneSetup] ChatUI created.");
             }
+        }
+
+        /// <summary>
+        /// Chooses who answers an NPC line, and registers it for <c>ChatSystem</c> to find.
+        ///
+        /// Always registers SOMETHING: with no settings asset, no key or no network, the
+        /// offline provider answers from the persona's authored lines. The language model is
+        /// an upgrade layered on top of a game that already talks, never a dependency.
+        /// </summary>
+        private void EnsureChatProvider()
+        {
+            if (ServiceLocator.TryGet<IChatProvider>(out _)) return;
+
+            var offline = new OfflineDialogueProvider();
+            var settings = Resources.Load<ChatLlmSettings>(CHAT_LLM_SETTINGS_RESOURCE_PATH);
+
+            if (settings == null)
+            {
+                ServiceLocator.Register<IChatProvider>(offline);
+                Debug.Log("[GameplaySceneSetup] Chat provider: offline (no ChatLlmSettings asset).");
+                return;
+            }
+
+            var provider = new OpenAiChatProvider(settings, offline);
+            ServiceLocator.Register<IChatProvider>(provider);
+
+            // Says whether a key resolved, never what it resolved to.
+            Debug.Log($"[GameplaySceneSetup] Chat provider: {provider.ProviderName} " +
+                      $"(mode={settings.mode}, online={provider.IsOnline}).");
         }
 
         private void EnsureVendorEconomyService()

@@ -278,10 +278,8 @@ namespace Valkur.Gameplay
             EnsurePermadeathSaveCleanupSystem();
             Report("Initializing permadeath"); yield return null;
 
-            EnsureLevelUpSkillPointSystem();
             Report("Initializing skill points per level"); yield return null;
 
-            EnsureLevelUpStatScalingSystem();
             Report("Initializing per-level stat scaling"); yield return null;
 
             EnsureXpFeedbackSystem();
@@ -325,6 +323,13 @@ namespace Valkur.Gameplay
             // "Spawning building instances", "Linking building colliders" all
             // report themselves. RunSafely preserves the original try/catch
             // exception-safety semantics around the loader.
+            // Before the loader, never after: every building asks the ServiceLocator for this
+            // as it spawns, so a service registered later is found by nothing and every felled
+            // tree quietly comes back whole.
+            try { EnsureWorldDamageService(); }
+            catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] WorldDamageService failed: {ex.Message}"); }
+            Report("Restoring world damage"); yield return null;
+
             yield return RunSafely(EnsureBuildingLoaderProgressively(), "BuildingLoader");
 
             try { EnsureSpawnerInstanceLoader(); }

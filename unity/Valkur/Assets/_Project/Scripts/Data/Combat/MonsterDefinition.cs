@@ -83,6 +83,23 @@ namespace Valkur.Data
                  "of whether a table is assigned here).")]
         public LootTable lootTable;
 
+        [Header("Chat / Vendor")]
+        [Tooltip("Assign to make this entity chat-capable. EntitySetup.ConfigureChat adds " +
+                 "NPCInteractable + NPCChatIdentity when this is set, and ChatSystem reads the " +
+                 "persona straight off that component — no name matching, so renaming an entity " +
+                 "can no longer silently unhook its dialogue. Null (every hostile) = the entity " +
+                 "cannot be talked to and pays for nothing. This is the OWNER of 'who is this " +
+                 "character'; ChatAssignmentCatalog remains as the by-name fallback for entities " +
+                 "configured by hand rather than spawned from a definition.")]
+        public NPCPersonaDefinition chatPersona;
+
+        [Tooltip("Assign to make this entity a vendor. EntitySetup.ConfigureChat adds VendorNPC " +
+                 "and hands it this config; the shop is opened from the chat panel's Trade button, " +
+                 "which is the only caller of NPCInteractable.Interact(). Null = not a vendor. " +
+                 "A vendor should normally also carry a chatPersona — VendorConfigDefinition has " +
+                 "its own 'persona' field, and the two must name the same character.")]
+        public VendorConfigDefinition vendorConfig;
+
         [Header("Assets")]
         public EntityAssetConfig assetConfig;
 

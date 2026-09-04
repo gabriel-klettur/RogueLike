@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -63,6 +63,22 @@ namespace Valkur.Gameplay.World
             }
 
             Debug.Log($"[BuildingCollisionLoader] Applied collision grids to {applied}/{buildings.Length} buildings.");
+        }
+
+        /// <summary>
+        /// Drop every painted collision cell a building owns, making it walkable.
+        ///
+        /// <para>Exists for destruction: a felled tree that only hides its sprite leaves the
+        /// forest solid and invisible, because the colliders are child objects of the
+        /// building and outlive any renderer change. Static and public so
+        /// <c>BuildingDurability</c> can reach it without holding a loader reference — the
+        /// tiles belong to the building, not to the loader that painted them.</para>
+        /// </summary>
+        public static void ClearColliders(BuildingObject bObj)
+        {
+            if (bObj == null) return;
+            ClearCollisionTiles(bObj);
+            RestoreDefaultColliderState(bObj);
         }
 
         /// <summary>

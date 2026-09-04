@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0386b5d6c08627a428e4f1067210b32c, type: 3}
+  m_Name: SpawnerTemplate_fish_school_water
+  m_EditorClassIdentifier: 
+  templateId: fish_school_water
+  spawnerType: 0
+  spawnerShape: 0
+  spawnRadius: 4
+  randomSpawnRadius: 0
+  defendSpawn: 1
+  defendLeash: 1
+  visibleInGame: 0
+  triggerType: 0
+  triggerRadius: 10
+  autoStart: 1
+  spawnMode: 0
+  cooldownSeconds: 0.5
+  proximityInitialOnly: 1
+  betweenWavesCooldownSeconds: 5
+  advanceOn: 0
+  maxActive: 3
+  persistent: 0
+  restartOnDone: 0
+  restartCooldownSeconds: 0
+  waves:
+  - spawns:
+    - kind: building
+      entityId: 1382
+      count: 1
+      spreadRadius: 3
+      spreadFallbackMax: 8
+      minDistance: 48
+  - spawns:
+    - kind: building
+      entityId: 1392
+      count: 1
+      spreadRadius: 3
+      spreadFallbackMax: 8
+      minDistance: 48
+  - spawns:
+    - kind: building
+      entityId: 1387
+      count: 1
+      spreadRadius: 3
+      spreadFallbackMax: 8
+      minDistance: 48
+  damageable: 0
+  maxHp: 1000
+  flashOnHit: 1
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
+  flashDurationSeconds: 0.08
+  hpResetOnEnter: set_to_max
