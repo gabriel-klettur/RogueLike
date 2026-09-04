@@ -56,6 +56,28 @@ namespace Valkur.Gameplay.Combat
         /// legs. The rig's own tendrils are what carry the colour.
         /// </summary>
         Root = 12,
+
+        /// <summary>
+        /// The body carrying a sustained self-buff. A STATE, so it is gentle for the same
+        /// reason <see cref="Charge"/> and <see cref="Root"/> are: this layer MULTIPLIES, and
+        /// driving it hard reads as the character being dimmed rather than as power sitting
+        /// on them. The buff rig's own additive layers carry the brightness.
+        /// </summary>
+        Buff = 13,
+
+        /// <summary>
+        /// A target that takes more damage than it should. Owned by <c>VulnerableEffect</c>
+        /// for the length of the curse. Deliberately weak: the sigil over the target is what
+        /// does the talking, and a strongly tinted enemy stops reading as the creature it is.
+        /// </summary>
+        Vulnerable = 14,
+
+        /// <summary>
+        /// A target claimed by <c>ThrallMarkEffect</c>. Held for the mark's whole window and
+        /// TIGHTENS as the bearer weakens — the one coupling that turns the mark from
+        /// decoration into information about whether the bet is about to pay.
+        /// </summary>
+        Marked = 15,
     }
 
     /// <summary>

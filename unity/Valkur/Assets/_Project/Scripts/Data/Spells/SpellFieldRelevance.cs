@@ -61,9 +61,18 @@ namespace Valkur.Data
         private static readonly Dictionary<SpellType, HashSet<string>> ByType =
             new Dictionary<SpellType, HashSet<string>>
         {
+            // The six mechanics fields and the four charge dials are all read by
+            // ProjectileExecutor / Projectile, so all ten belong here. hitRadius joins them:
+            // it was missing while the executor has always been free to use it, and the four
+            // new projectile spells author it.
             { SpellType.Projectile, Set("damage", "speed", "range", "lifetime", "scale", "sprite",
                                         "particleColor", "explosionRadius", "explosionDamage",
-                                        "distance", "vfxPreset", "impactPreset") },
+                                        "distance", "hitRadius", "vfxPreset", "impactPreset",
+                                        "pierceCount", "pierceDamageFalloff",
+                                        "homingStrength", "homingRange",
+                                        "projectileCount", "spreadDegrees",
+                                        "chargeMaxSeconds", "chargeMinFraction",
+                                        "chargeDamageMultiplier", "chargeScaleMultiplier") },
             { SpellType.Slash,      Set("damage", "hitRadius", "range", "arcRangeDegrees",
                                         "lifetime", "particleColor", "vfxPreset", "impactPreset") },
             { SpellType.Area,       Set("damage", "radius", "particleColor", "vfxPreset", "impactPreset") },
@@ -93,7 +102,10 @@ namespace Valkur.Data
                                         "meteorAreaRadius", "meteorImpactRadius", "impactPreset", "particleColor") },
             { SpellType.Lightning,  Set("damage", "range", "radius", "particleColor", "vfxPreset") },
             { SpellType.ChainLightning, Set("damage", "range", "radius", "particleColor", "vfxPreset") },
-            { SpellType.Aura,       Set("duration", "radius", "healPerTick", "tickPeriod", "vfxPreset", "particleColor") },
+            // damagePerTick is the DISCRIMINATOR between a healing aura and a damaging one,
+            // so hiding it would hide the control that chooses which spell this is.
+            { SpellType.Aura,       Set("duration", "radius", "healPerTick", "damagePerTick",
+                                        "tickPeriod", "vfxPreset", "particleColor") },
             { SpellType.ArcaneFlame, Set("duration", "radius", "damagePerTick", "tickPeriod", "vfxPreset", "particleColor") },
             // range is the APEX HEIGHT, speed the CLIMB SPEED and radius the BURST RADIUS,
             // all in world units — FireworkLaunchExecutor reads exactly these three plus the
@@ -103,16 +115,21 @@ namespace Valkur.Data
             // list vfxPreset and impactPreset and NOT the three numbers that actually aim the
             // spell, so the panel showed two dead controls and hid every live one.
             { SpellType.FireworkLaunch, Set("range", "speed", "radius", "particleColor") },
-            { SpellType.SphereMagicShield, Set("duration", "radius", "particleColor", "vfxPreset") },
+            // wallHP is reused as the ABSORB POOL: how much damage the shell turns away
+            // before it breaks. Zero keeps the historical pure-timer shield.
+            { SpellType.SphereMagicShield, Set("duration", "radius", "wallHP",
+                                               "particleColor", "vfxPreset") },
             // No vfxPreset: PuddleExecutor has never read it. It was used as a BEHAVIOUR
             // SWITCH (the string "root_whip", a preset that never existed), which left a
             // permanently unresolved reference in the catalog and a control in F4 that
             // could not do anything. The discriminator is the spell key, and the root
             // field draws itself, so a preset spawned on top would be an uncoordinated
             // extra layer — the same reason VortexField and FireworkLaunch carry none.
+            // ttl and followCaster turn a standing pool into a TRAIL: the emitter rides the
+            // caster for `duration` and each patch it drops lives `ttl`.
             { SpellType.Puddle,     Set("duration", "radius", "range", "distance", "damagePerTick",
                                         "tickPeriod", "element", "particleColor", "sprite",
-                                        "spawnAtMouse") },
+                                        "spawnAtMouse", "ttl", "followCaster") },
             { SpellType.Mine,       Set("damage", "armingTime", "triggerRadius", "explosionRadius",
                                         "explosionDamage", "ttl", "infinite", "scale", "sprite",
                                         "impactPreset", "particleColor") },
@@ -130,6 +147,12 @@ namespace Valkur.Data
             // `particleColor` is the one swatch the whole aura palette is derived from, so
             // those two are the entire authoring surface for a charge.
             { SpellType.EnergyCharge, Set("duration", "infinite", "radius", "scale", "particleColor") },
+            // A buff has no geometry at all: what it does is entirely statModifiers, and how
+            // long it does it for is duration. buffKey is the refresh key, which a designer
+            // needs to see in order to make two spells deliberately replace each other.
+            // particleColor drives BuffAuraFX's whole palette, so it is as load-bearing here
+            // as it is on a charge.
+            { SpellType.Buff,       Set("duration", "statModifiers", "buffKey", "particleColor") },
         };
 
         /// <summary>

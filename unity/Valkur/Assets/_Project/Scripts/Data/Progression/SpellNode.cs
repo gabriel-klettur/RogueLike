@@ -40,6 +40,13 @@ namespace Valkur.Data
                  "Empty = a root node of the school.")]
         public SpellNode[] prerequisites = Array.Empty<SpellNode>();
 
+        [Header("Classification")]
+        [Tooltip("What this spell is FOR, independent of the school that teaches it. Drives " +
+                 "the grimoire's role filter. The grimoire is organised by SCHOOL because " +
+                 "that is what scales to a hundred spells; this tag is what stops FUNCTION " +
+                 "becoming unfindable as it does.")]
+        public SpellRole role = SpellRole.Damage;
+
         [Header("Presentation")]
         [Tooltip("Overrides the spell's own displayName in the grimoire view. Leave empty " +
                  "to use the spell's name, which is what a node teaching a spell should do.")]
@@ -79,7 +86,7 @@ namespace Valkur.Data
         {
             var sb = new System.Text.StringBuilder();
             if (spell != null)
-                sb.Append($"Unlocks {ResolveDisplayName()}");
+                sb.Append($"Unlocks {ResolveDisplayName()} ({role})");
 
             if (modifiers != null)
             {
