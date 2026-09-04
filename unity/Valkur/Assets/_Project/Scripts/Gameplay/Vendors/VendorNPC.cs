@@ -99,6 +99,48 @@ namespace Valkur.Gameplay.NPC
             return string.Concat(char.ToUpperInvariant(parts[0][0]), char.ToUpperInvariant(parts[1][0]));
         }
 
+        /// <summary>
+        /// Hands this vendor its configuration after the component was added at spawn.
+        ///
+        /// Both the config and the shop list are <c>[SerializeField] private</c>, which is
+        /// right for a vendor authored in a scene and unreachable for one that
+        /// <c>EntitySetup</c> builds from a <c>MonsterDefinition</c> — and building them
+        /// that way is the only path any entity in this game takes. It also re-applies the
+        /// minimap marker, because <c>Awake</c> has already run by the time the caller can
+        /// reach this method and derived its caption from a config that was still null.
+        ///
+        /// The shop list is seeded from <c>inventorySeed</c> ONLY when it is empty, so a
+        /// vendor whose stock was authored by hand keeps it.
+        /// </summary>
+        public void Configure(VendorConfigDefinition config)
+        {
+            if (config == null) return;
+            vendorConfig = config;
+
+            if (shopInventory.Count == 0 && config.inventorySeed != null)
+            {
+                foreach (var slot in config.inventorySeed)
+                {
+                    if (slot.item == null) continue;
+                    shopInventory.Add(new ShopEntry
+                    {
+                        item = slot.item,
+                        stock = Mathf.Max(1, slot.quantity),
+                        priceOverride = 0,
+                    });
+                }
+            }
+
+            EntitySetup.ConfigureMinimapMarker(
+                gameObject,
+                color: new Color(1.0f, 0.85f, 0.3f, 1f),
+                shape: EntitySetup.MinimapMarkerShape.Square,
+                pixelSize: 4,
+                pulse: true,
+                pulsePeriod: 1.4f,
+                label: DeriveRoleInitials(vendorConfig));
+        }
+
         private void OnEnable()
         {
             _interactable.OnInteract += HandleInteract;
@@ -208,6 +250,11 @@ namespace Valkur.Gameplay.NPC
                     entry.stock--;
                     shopInventory[i] = entry;
                     playerInventory.AddItem(item);
+
+                    // Hooked HERE, at the single point a purchase actually succeeds, rather
+                    // than at the Buy button — a trade agreed in conversation goes through
+                    // this same method and must look the same as one made at the counter.
+                    TradeFlourishFX.Spent(Valkur.Core.EntityRegistry.PlayerTransform, price);
                     return true;
                 }
             }
@@ -223,6 +270,8 @@ namespace Valkur.Gameplay.NPC
             int price = GetSellPrice(item);
             playerInventory.RemoveItem(item);
             wallet.Add(price);
+
+            TradeFlourishFX.Earned(Valkur.Core.EntityRegistry.PlayerTransform, price);
             return true;
         }
 

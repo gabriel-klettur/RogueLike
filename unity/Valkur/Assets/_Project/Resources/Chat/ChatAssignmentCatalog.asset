@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db18b3b6fc052ef4ebf628932c9deffc, type: 3}
+  m_Name: ChatAssignmentCatalog
+  m_EditorClassIdentifier: 
+  assignments:
+  - entityName: Abigail
+    persona: {fileID: 11400000, guid: a9c00fdc221709242a6252d6435c84b2, type: 2}
+  - entityName: Felipondor
+    persona: {fileID: 11400000, guid: 425a9094c19c35c40bedee64181ba2ba, type: 2}
+  - entityName: Gatita
+    persona: {fileID: 11400000, guid: aa4e40d436c11324bb8bf79cd20592ac, type: 2}
+  - entityName: Pavel
+    persona: {fileID: 11400000, guid: a9cc28ba18c4e4f4796dd32b0004a7fd, type: 2}
+  - entityName: Roberto
+    persona: {fileID: 11400000, guid: 3a9f895aee49e8a41af2b2f699f846b4, type: 2}
+  - entityName: Smith
+    persona: {fileID: 11400000, guid: f086736a59fc319429be8ccbbaf31315, type: 2}
+  - entityName: Valeria
+    persona: {fileID: 11400000, guid: 438eae9efcfd85f48ba4339308f8260f, type: 2}

@@ -25,16 +25,18 @@ namespace Valkur.Gameplay.Chat.Providers
         string ProviderName { get; }
 
         /// <summary>
-        /// Generates a reply asynchronously. Receives the persona and the
-        /// player's running memory (visitCount, ephemeral history, language
-        /// preference) as context for personalized replies. Implementation
-        /// decides whether and how to use them — offline provider can simply
-        /// ignore memory.
+        /// Generates a reply asynchronously.
+        ///
+        /// The result carries what the character SAYS and, optionally, a
+        /// <see cref="TradeProposal"/> — an offer the game then validates against the live
+        /// shop before anything moves. A provider that cannot propose trades returns
+        /// <see cref="ChatReply.Spoken"/>.
+        ///
+        /// <see cref="ChatRequest"/> carries the persona, the player's running memory
+        /// (visitCount, ephemeral history, language preference) and what the game knows
+        /// about trading with this character. An implementation decides which of those it
+        /// uses — the offline provider ignores most of it.
         /// </summary>
-        Task<string> GenerateReplyAsync(
-            NPCPersonaDefinition persona,
-            NPCMemory memory,
-            string playerText,
-            CancellationToken cancellationToken);
+        Task<ChatReply> GenerateReplyAsync(ChatRequest request, CancellationToken cancellationToken);
     }
 }

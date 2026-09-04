@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ae7595914ecbad4f89c6d774a9e8c5b, type: 3}
+  m_Name: vendor_alchemist_valeria
+  m_EditorClassIdentifier: 
+  vendorKey: vendor_alchemist_valeria
+  economyGroup: {fileID: 0}
+  persona: {fileID: 11400000, guid: 438eae9efcfd85f48ba4339308f8260f, type: 2}
+  inventorySeed:
+  - item: {fileID: 11400000, guid: 8a363782ca1a7a24a8c153036fddbdc1, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: 3adefc811a7987e43a999f5250f6200d, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: e9732f7c84f224940829ff4ce58cc89f, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: 55b74ccbb1a9b8942a666117378fe30c, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: 215d40ac2f115d0439d0f8c5ec400df6, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: 9bdf969c9eda0a54aa25650c73ed6ed8, type: 2}
+    quantity: 10
+  priceOverrides: []

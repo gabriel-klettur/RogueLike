@@ -27,6 +27,26 @@ namespace Valkur.Gameplay.NPC
         public event Action<NPCInteractable> OnPlayerEnterRange;
         public event Action<NPCInteractable> OnPlayerExitRange;
 
+        /// <summary>
+        /// Names this NPC and sets how close the player must be to interact.
+        ///
+        /// Needed because both fields are <c>[SerializeField] private</c> — correct for a
+        /// component authored in a scene, and impossible to fill for one added at spawn by
+        /// <c>EntitySetup</c>, which is the only way any entity in this game comes into
+        /// existence. Before this existed nothing added the component at all, so every
+        /// entity in the world reported itself as un-interactable and the chat system had
+        /// no reachable target.
+        ///
+        /// A non-positive <paramref name="range"/> leaves the authored default alone,
+        /// so a definition that never filled in a chat range does not collapse the
+        /// interaction radius to zero.
+        /// </summary>
+        public void Configure(string name, float range)
+        {
+            if (!string.IsNullOrWhiteSpace(name)) npcName = name;
+            if (range > 0f) interactionRange = range;
+        }
+
         private void Update()
         {
             if (_playerTransform == null)

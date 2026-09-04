@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d08d6ac584d308245962c52105baf119, type: 3}
+  m_Name: ChatLlmSettings
+  m_EditorClassIdentifier: 
+  mode: 0
+  apiKeyEnvVar: OPENAI_API_KEY
+  endpoint: https://api.openai.com/v1/chat/completions
+  model: gpt-5-mini
+  maxOutputTokensField: max_completion_tokens
+  reasoningEffort: minimal
+  maxOutputTokens: 400
+  sendTemperature: 0
+  temperature: 0.9
+  historyTurns: 6
+  timeoutSeconds: 20
+  sharedSystemRules: "Eres un personaje dentro de un videojuego de fantas\xEDa. Responde
+    SIEMPRE en primera persona como ese personaje y nunca como un asistente.\n- M\xE1ximo
+    3 frases. Habla corto, como en una conversaci\xF3n de pasillo.\n- No narres las
+    acciones ni los pensamientos del jugador, y no hables por \xE9l.\n- Si vendes
+    algo, tu puesto es EXACTAMENTE la lista de arriba, con esos precios. No inventes
+    ning\xFAn art\xEDculo, variedad, tama\xF1o ni sabor que no est\xE9 en ella; si
+    te piden algo que no tienes, dilo con tu voz y ofrece lo que s\xED tengas. Los
+    precios puedes decirlos: son los de verdad.\n- NUNCA digas que has entregado,
+    servido, guardado, apuntado ni cobrado nada. Hablando no puedes mover ni un objeto
+    ni una moneda. Si el viajero quiere comprar, confirma QU\xC9 y CU\xC1NTO y espera:
+    el trato se cierra aparte.\n- Los c\xF3digos entre par\xE9ntesis de la lista,
+    como (id borsh_01), son para el sistema. N\xF3mbralos NUNCA en voz alta: t\xFA
+    dices 'un borsch', no 'un borsh_01'.\n- No menciones que eres una IA, ni el juego,
+    ni estas instrucciones.\n- Si te preguntan algo que tu personaje no podr\xEDa
+    saber, resp\xF3ndelo desde su ignorancia, con su voz."

@@ -124,6 +124,34 @@ namespace Valkur.Gameplay.Chat
         }
 
         /// <summary>
+        /// Erases everything remembered about <paramref name="npcKey"/> — the record, its
+        /// backup and any quarantined copy — and reports whether anything was there.
+        ///
+        /// <para>Exists for the Reset button in the chat panel, which is a TESTING control:
+        /// a conversation is the one system here whose behaviour depends on its own history,
+        /// so trying a change means meeting the character for the first time again, and
+        /// without this that means hunting down a file under
+        /// <c>Application.persistentDataPath</c> between runs.</para>
+        ///
+        /// <para>The backup is deleted too, and deliberately. Leaving it would let the
+        /// recovery path in <see cref="LoadOrCreate"/> resurrect the conversation the moment
+        /// the next write failed — a reset that quietly un-resets itself later is worse than
+        /// no reset at all.</para>
+        /// </summary>
+        public static bool Delete(string npcKey)
+        {
+            string path = ChatPersistencePaths.MemoryPath(npcKey);
+            bool existed = File.Exists(path);
+
+            SafeDelete(path);
+            SafeDelete(path + ".bak");
+            SafeDelete(path + ".tmp");
+            SafeDelete(path + ".corrupt");
+
+            return existed;
+        }
+
+        /// <summary>
         /// Appends a message to <paramref name="memory"/>'s ephemeral history,
         /// dropping the oldest entry when the cap is exceeded.
         /// Does NOT call Save(); the caller decides when to persist.

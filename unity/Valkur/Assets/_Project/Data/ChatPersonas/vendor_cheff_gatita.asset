@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed9538361f26fd349acf74087eae2155, type: 3}
+  m_Name: vendor_cheff_gatita
+  m_EditorClassIdentifier: 
+  personaId: vendor_cheff_gatita
+  displayName: Gatita
+  role: vendor
+  profile: {fileID: 11400000, guid: c22eb39dfcf17664fb39a497888789e6, type: 2}
+  portrait: {fileID: 0}
+  chatRange: 2
+  greeting: "\xA1Hola, tesoro! Soy la Gatita del mercado, lista para darte lo mejor
+    de mi huerta y cocina \U0001F642\u2728"
+  tone: coqueta, juguetona, amable, hospitalaria
+  maxSentences: 3
+  verbosity: medium
+  useEmoji: 1
+  allowedItemTypes:
+  - food
+  discountLimits:
+  - itemKey: food_apple
+    maxDiscount: 0.1
+  - itemKey: food_bread
+    maxDiscount: 0.08
+  - itemKey: default
+    maxDiscount: 0.05
+  dialogueLines:
+  - Mis varenyky no vuelan, pero desaparecen del plato en un suspiro.
+  - "Con un buen borsch, hasta el clima se porta mejor. \U0001F609"
+  - "\xBFHas probado el varenyky con ar\xE1ndanos? Yo los hago los domingos."
+  - Tengo remolachas frescas; hoy sale borsch que enamora.
+  - Si te llevas canasta, te hago precio de vecina
+  - "Trae el frasco limpio y te relleno el borsch con cari\xF1o"
+  - Con pancita feliz, todo sale mejor
+  - "Tengo remolacha fresca para un borsch que enamora, coraz\xF3n."
+  - "Varenyky calentitos en minutos; yo amaso, t\xFA disfrutas."

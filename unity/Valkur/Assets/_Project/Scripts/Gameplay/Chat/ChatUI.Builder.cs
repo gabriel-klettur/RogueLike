@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Chat
 {
@@ -51,7 +52,7 @@ namespace Valkur.Gameplay.Chat
             panelRt.anchorMax = new Vector2(0f, 0f);
             panelRt.pivot = new Vector2(0f, 0f);
             panelRt.anchoredPosition = new Vector2(20f, 20f);
-            panelRt.sizeDelta = new Vector2(PANEL_DEFAULT_W, PANEL_DEFAULT_H);
+            panelRt.sizeDelta = ResolveStartingPanelSize();
 
             var panelImg = _panel.AddComponent<Image>();
             panelImg.color = new Color(0.08f, 0.08f, 0.12f, 0.92f);
@@ -68,13 +69,20 @@ namespace Valkur.Gameplay.Chat
             var titleLe = titleGo.AddComponent<LayoutElement>();
             titleLe.preferredHeight = 28f;
 
+            // Kept clear of the two floating corner buttons. The row is owned by the panel's
+            // VerticalLayoutGroup, which overwrites its RectTransform every rebuild, so the
+            // inset goes on the TEXT's margin rather than on offsetMax — the same trap the
+            // LangButton note below records. Without it a long persona name runs under the
+            // close button and the player reads a name that is missing its last two letters.
+            _titleText.margin = new Vector4(CORNER_STRIP_WIDTH, 0f, CORNER_STRIP_WIDTH, 0f);
+
             // Scroll area
             var scrollGo = new GameObject("ScrollArea");
             scrollGo.transform.SetParent(_panel.transform, false);
             var scrollRt = scrollGo.AddComponent<RectTransform>();
             var scrollLe = scrollGo.AddComponent<LayoutElement>();
             scrollLe.flexibleHeight = 1f;
-            scrollLe.minHeight = 80f;
+            scrollLe.minHeight = SCROLL_MIN_H;
 
             var scrollImg = scrollGo.AddComponent<Image>();
             scrollImg.color = new Color(0.05f, 0.05f, 0.08f, 0.6f);
@@ -112,9 +120,27 @@ namespace Valkur.Gameplay.Chat
             var irLe = inputRow.AddComponent<LayoutElement>();
             irLe.preferredHeight = 32f;
 
+            // Explicitly NOT flexible, and this line is load-bearing. Unity resolves each
+            // layout property from the highest-PRIORITY component that supplies it, per
+            // property: the LayoutElement below wins the preferred height at 32, but it leaves
+            // flexibleHeight unset (-1), so the value taken is the HorizontalLayoutGroup's own
+            // — and a group with childForceExpandHeight reports flexibleHeight 1. The row was
+            // therefore competing with the conversation for every spare pixel and winning a
+            // share of it: measured at a 340-tall panel, 80 px of input box against a
+            // 32 px preference. It also overflowed the panel at the DEFAULT size, which is
+            // why the last message line was clipped mid-word.
+            irLe.flexibleHeight = 0f;
+
             var irHlg = inputRow.AddComponent<HorizontalLayoutGroup>();
             irHlg.spacing = 4f;
             irHlg.childForceExpandHeight = true;
+
+            // childForceExpandWidth defaults to TRUE, which hands every child an equal share
+            // of the leftover width regardless of what it asked for — so the Send button
+            // ignored its 60 px preferred width and grew to half the row, dwarfing the field
+            // it belongs to. Off, the field's flexibleWidth takes the slack and the button
+            // stays the size it declares.
+            irHlg.childForceExpandWidth = false;
 
             // Input field
             var inputGo = new GameObject("InputField");
@@ -170,7 +196,8 @@ namespace Valkur.Gameplay.Chat
             var sendImg = sendGo.AddComponent<Image>();
             sendImg.color = new Color(0.2f, 0.5f, 0.3f, 1f);
             var sendLe = sendGo.AddComponent<LayoutElement>();
-            sendLe.preferredWidth = 60f;
+            sendLe.preferredWidth = SEND_BUTTON_WIDTH;
+            sendLe.flexibleWidth = 0f;   // never absorb slack — the message field gets it all
 
             var sendTxtGo = new GameObject("Text");
             sendTxtGo.transform.SetParent(sendGo.transform, false);
@@ -181,12 +208,115 @@ namespace Valkur.Gameplay.Chat
             stRt.offsetMax = Vector2.zero;
             var stTmp = sendTxtGo.AddComponent<TextMeshProUGUI>();
             stTmp.text = "Enviar";
-            stTmp.fontSize = 14;
+            stTmp.fontSize = 12;
             stTmp.color = Color.white;
             stTmp.alignment = TextAlignmentOptions.Center;
 
             var sendBtn = sendGo.AddComponent<Button>();
             sendBtn.onClick.AddListener(SubmitInput);
+
+            // Trade button — shown only while talking to a character who sells something.
+            // The shop has no other way in: NPCInteractable.Interact(), which VendorNPC
+            // subscribes to, had no caller anywhere in the project, so every vendor's
+            // stock was authored and unreachable. A vendor is a character first, so the
+            // way to their counter is through a conversation rather than a second key.
+            _tradeButton = new GameObject("TradeButton");
+            _tradeButton.transform.SetParent(_panel.transform, false);
+            var tradeLe = _tradeButton.AddComponent<LayoutElement>();
+            tradeLe.preferredHeight = 24f;
+            var tradeBg = _tradeButton.AddComponent<Image>();
+            tradeBg.color = new Color(0.18f, 0.38f, 0.5f, 1f);
+
+            var tradeTxtGo = new GameObject("Text");
+            tradeTxtGo.transform.SetParent(_tradeButton.transform, false);
+            var tradeRt = tradeTxtGo.AddComponent<RectTransform>();
+            tradeRt.anchorMin = Vector2.zero;
+            tradeRt.anchorMax = Vector2.one;
+            tradeRt.offsetMin = Vector2.zero;
+            tradeRt.offsetMax = Vector2.zero;
+            var tradeTmp = tradeTxtGo.AddComponent<TextMeshProUGUI>();
+            tradeTmp.text = "Comerciar";
+            tradeTmp.fontSize = 12;
+            tradeTmp.color = Color.white;
+            tradeTmp.alignment = TextAlignmentOptions.Center;
+
+            var tradeBtn = _tradeButton.AddComponent<Button>();
+            tradeBtn.onClick.AddListener(OnTradeClicked);
+            _tradeButton.SetActive(false);
+
+            // Trade confirmation row. Hidden unless the character has an offer on the table.
+            //
+            // A row rather than a modal: the offer is part of the conversation and reads as
+            // one, and a dialog over the panel would hide the sentence that explains what is
+            // being bought. Two explicit buttons rather than typing "si", because the reply
+            // to a confirmation must not itself be sent to a language model to interpret —
+            // that is the one place a misread spends real money.
+            _tradeConfirmRow = new GameObject("TradeConfirmRow");
+            _tradeConfirmRow.transform.SetParent(_panel.transform, false);
+            var confirmLe = _tradeConfirmRow.AddComponent<LayoutElement>();
+            confirmLe.preferredHeight = 28f;
+
+            // Same reason as the input row above: this row also carries a
+            // HorizontalLayoutGroup, so without this it inherits that group's flexibleHeight
+            // and swells whenever a trade is on the table — measured at 100 px against its
+            // 28 px preference, at the exact moment the player is reading an offer.
+            confirmLe.flexibleHeight = 0f;
+            var confirmBg = _tradeConfirmRow.AddComponent<Image>();
+            confirmBg.color = new Color(0.16f, 0.13f, 0.06f, 1f);
+
+            var confirmHlg = _tradeConfirmRow.AddComponent<HorizontalLayoutGroup>();
+            confirmHlg.spacing = 4f;
+            confirmHlg.padding = new RectOffset(6, 6, 3, 3);
+            confirmHlg.childForceExpandWidth = false;
+            confirmHlg.childForceExpandHeight = true;
+
+            var offerGo = new GameObject("OfferLabel");
+            offerGo.transform.SetParent(_tradeConfirmRow.transform, false);
+            offerGo.AddComponent<RectTransform>();
+            var offerLe = offerGo.AddComponent<LayoutElement>();
+            offerLe.flexibleWidth = 1f;
+            _tradeOfferText = offerGo.AddComponent<TextMeshProUGUI>();
+            _tradeOfferText.fontSize = 12;
+            _tradeOfferText.color = new Color(1f, 0.88f, 0.55f);
+            _tradeOfferText.alignment = TextAlignmentOptions.Left;
+            _tradeOfferText.enableWordWrapping = false;
+            _tradeOfferText.overflowMode = TextOverflowModes.Ellipsis;
+
+            var acceptBtn = CreateInlineButton(_tradeConfirmRow.transform, "Aceptar",
+                new Color(0.20f, 0.50f, 0.24f, 1f), 64f);
+            acceptBtn.onClick.AddListener(OnTradeAccepted);
+
+            var declineBtn = CreateInlineButton(_tradeConfirmRow.transform, "No",
+                new Color(0.42f, 0.20f, 0.20f, 1f), 40f);
+            declineBtn.onClick.AddListener(OnTradeDeclined);
+
+            _tradeConfirmRow.SetActive(false);
+
+            // Reset button — a testing control, so it is small, sits beside Close rather
+            // than above the conversation, and asks before it destroys anything. It is the
+            // only control in this panel that deletes player data.
+            _resetButton = new GameObject("ResetButton");
+            _resetButton.transform.SetParent(_panel.transform, false);
+            var resetLe = _resetButton.AddComponent<LayoutElement>();
+            resetLe.preferredHeight = 20f;
+            var resetBg = _resetButton.AddComponent<Image>();
+            resetBg.color = new Color(0.32f, 0.24f, 0.10f, 1f);
+
+            var resetTxtGo = new GameObject("Text");
+            resetTxtGo.transform.SetParent(_resetButton.transform, false);
+            var resetRt = resetTxtGo.AddComponent<RectTransform>();
+            resetRt.anchorMin = Vector2.zero;
+            resetRt.anchorMax = Vector2.one;
+            resetRt.offsetMin = Vector2.zero;
+            resetRt.offsetMax = Vector2.zero;
+            _resetButtonText = resetTxtGo.AddComponent<TextMeshProUGUI>();
+            _resetButtonText.text = RESET_LABEL_IDLE;
+            _resetButtonText.fontSize = 11;
+            _resetButtonText.color = new Color(0.95f, 0.85f, 0.6f);
+            _resetButtonText.alignment = TextAlignmentOptions.Center;
+
+            var resetBtn = _resetButton.AddComponent<Button>();
+            resetBtn.onClick.AddListener(OnResetClicked);
 
             // Close button
             var closeGo = new GameObject("CloseButton");
@@ -212,16 +342,114 @@ namespace Valkur.Gameplay.Chat
             var closeBtn = closeGo.AddComponent<Button>();
             closeBtn.onClick.AddListener(() => ChatSystem.Instance?.CloseChat());
 
+            // ── Resize grip (top-right corner of panel) ───────────────────────
+            //
+            // TOP-right, not the bottom-right every editor uses, because the panel's pivot is
+            // bottom-left: it is pinned near the bottom of the screen, so its bottom edge
+            // cannot move and a bottom grip could only ever change the width. It grows up and
+            // to the right, into the empty part of the screen.
+            //
+            // The same PanelResizeHandle the four resizable editors use (F1/F4/F7/F8), so
+            // there is one drag-to-resize implementation in the project rather than a second
+            // one that would drift — MusicPlayerHUD already rolled its own and it resizes by
+            // localScale instead of sizeDelta.
+            var gripGo = new GameObject("ResizeGrip");
+            gripGo.transform.SetParent(_panel.transform, false);
+            var gripRt = gripGo.AddComponent<RectTransform>();
+
+            gripGo.AddComponent<LayoutElement>().ignoreLayout = true;
+            gripRt.anchorMin = new Vector2(1f, 1f);
+            gripRt.anchorMax = new Vector2(1f, 1f);
+            gripRt.pivot = new Vector2(1f, 1f);
+            gripRt.anchoredPosition = Vector2.zero;
+            gripRt.sizeDelta = new Vector2(RESIZE_GRIP_SIZE, RESIZE_GRIP_SIZE);
+
+            // The graphic is what makes the grip hit-testable at all — without a Graphic, uGUI
+            // raycasts nothing and the handle would be invisible AND inert, for one reason.
+            // Its corner is set from the same enum as the handle's so the glyph cannot end up
+            // advertising a drag in a direction the handle does not perform.
+            var gripGraphic = gripGo.AddComponent<TriangleHandleGraphic>();
+            gripGraphic.color = new Color(0.55f, 0.58f, 0.68f, 0.85f);
+            gripGraphic.Corner = ResizeGripCorner.TopRight;
+
+            var grip = gripGo.AddComponent<PanelResizeHandle>();
+            grip.Target = panelRt;
+            grip.Corner = ResizeGripCorner.TopRight;
+
+            // The floor is the pair of constants that had sat in this file unread since it was
+            // ported: they are what the panel was always meant to refuse to shrink past. The
+            // ceiling is the live viewport, resolved on every rebuild.
+            grip.MinSize = new Vector2(PANEL_MIN_W, PANEL_MIN_H);
+            grip.MaxSize = MaxPanelSize();
+            grip.Resized += PersistPanelSize;
+
+            // ── Close "X" (top-right corner of panel) ─────────────────────────
+            //
+            // The full-width "Cerrar (ESC)" strip below already closes the panel, and so do
+            // Escape and a click on the backdrop. None of them is the control a player LOOKS
+            // for: a window with no X in its corner reads as one you are stuck in, which is
+            // why the shop grew the same button. It is also the only close control that is
+            // visible without reading — the strip is a label, and a player mid-conversation
+            // scans for a shape.
+            var closeXGo = new GameObject("CloseXButton");
+            closeXGo.transform.SetParent(_panel.transform, false);
+            var closeXRt = closeXGo.AddComponent<RectTransform>();
+
+            // ignoreLayout for the reason spelled out on the LangButton below: a child of the
+            // panel is owned by its VerticalLayoutGroup, which overwrites these anchors.
+            closeXGo.AddComponent<LayoutElement>().ignoreLayout = true;
+            closeXRt.anchorMin = new Vector2(1f, 1f);
+            closeXRt.anchorMax = new Vector2(1f, 1f);
+            closeXRt.pivot = new Vector2(1f, 1f);
+            // Left of the resize grip, which owns the corner itself.
+            closeXRt.anchoredPosition = new Vector2(-(RESIZE_GRIP_SIZE + CORNER_GAP), -CORNER_MARGIN);
+            closeXRt.sizeDelta = new Vector2(CLOSE_X_SIZE, CORNER_BUTTON_HEIGHT);
+
+            var closeXImg = closeXGo.AddComponent<Image>();
+            closeXImg.color = new Color(0.45f, 0.14f, 0.14f, 1f);
+
+            // Image and TMP on separate objects — both on one GameObject is a NullReference.
+            var closeXLabelGo = new GameObject("CloseXLabel");
+            closeXLabelGo.transform.SetParent(closeXGo.transform, false);
+            var closeXLabelRt = closeXLabelGo.AddComponent<RectTransform>();
+            closeXLabelRt.anchorMin = Vector2.zero;
+            closeXLabelRt.anchorMax = Vector2.one;
+            closeXLabelRt.offsetMin = Vector2.zero;
+            closeXLabelRt.offsetMax = Vector2.zero;
+            var closeXTmp = closeXLabelGo.AddComponent<TextMeshProUGUI>();
+            closeXTmp.text = "X";
+            closeXTmp.fontSize = 14;
+            closeXTmp.color = Color.white;
+            closeXTmp.alignment = TextAlignmentOptions.Center;
+
+            var closeXBtn = closeXGo.AddComponent<Button>();
+            closeXBtn.onClick.AddListener(() => ChatSystem.Instance?.CloseChat());
+
             // ── Language toggle button (top-right corner of panel) ────────────
-            // Built outside the VerticalLayoutGroup so it floats as an overlay.
             var langBtnGo = new GameObject("LangButton");
             langBtnGo.transform.SetParent(_panel.transform, false);
             var langRt = langBtnGo.AddComponent<RectTransform>();
+
+            // ignoreLayout is what actually makes it float. It is a CHILD of the panel, so
+            // the panel's VerticalLayoutGroup owns it and overwrites the anchors set below —
+            // measured live, it came out 504x0 at the bottom of the stack, an invisible
+            // full-width strip lying across the Close button and eating its clicks, with the
+            // "ES" label overflowing out of a zero-height rect. The comment here used to
+            // claim it was "built outside the VerticalLayoutGroup", which was never true of
+            // anything parented to the panel.
+            var langLayout = langBtnGo.AddComponent<LayoutElement>();
+            langLayout.ignoreLayout = true;
             langRt.anchorMin = new Vector2(1f, 1f);
             langRt.anchorMax = new Vector2(1f, 1f);
             langRt.pivot = new Vector2(1f, 1f);
-            langRt.anchoredPosition = new Vector2(-6f, -6f);
-            langRt.sizeDelta = new Vector2(42f, 22f);
+
+            // Shifted left to clear the close button, which now owns the corner itself. Two
+            // free-floating children of the same corner do not collide in layout — nothing
+            // arranges them — so an overlap is silent and costs whichever draws first its
+            // clicks, exactly as the LangButton once did to the Cerrar strip.
+            langRt.anchoredPosition = new Vector2(
+                -(RESIZE_GRIP_SIZE + CORNER_GAP + CLOSE_X_SIZE + CORNER_GAP), -CORNER_MARGIN);
+            langRt.sizeDelta = new Vector2(LANG_BUTTON_WIDTH, CORNER_BUTTON_HEIGHT);
 
             var langImg = langBtnGo.AddComponent<Image>();
             langImg.color = new Color(0.18f, 0.25f, 0.45f, 1f);
@@ -244,9 +472,39 @@ namespace Valkur.Gameplay.Chat
             langBtn.onClick.AddListener(ToggleLang);
         }
 
+        /// <summary>A fixed-width button inside a horizontal row.</summary>
+        private static Button CreateInlineButton(Transform parent, string label, Color color, float width)
+        {
+            var go = new GameObject(label + "Button");
+            go.transform.SetParent(parent, false);
+            go.AddComponent<RectTransform>();
+
+            var element = go.AddComponent<LayoutElement>();
+            element.preferredWidth = width;
+            element.flexibleWidth = 0f;
+
+            go.AddComponent<Image>().color = color;
+
+            var textGo = new GameObject("Text");
+            textGo.transform.SetParent(go.transform, false);
+            var textRt = textGo.AddComponent<RectTransform>();
+            textRt.anchorMin = Vector2.zero;
+            textRt.anchorMax = Vector2.one;
+            textRt.offsetMin = Vector2.zero;
+            textRt.offsetMax = Vector2.zero;
+
+            var tmp = textGo.AddComponent<TextMeshProUGUI>();
+            tmp.text = label;
+            tmp.fontSize = 12;
+            tmp.color = Color.white;
+            tmp.alignment = TextAlignmentOptions.Center;
+
+            return go.AddComponent<Button>();
+        }
+
         private void AppendMessageRow(string sender, string text)
         {
-            bool isPlayer = sender == "Player";
+            bool isPlayer = sender == ChatSystem.PLAYER_SENDER;
             Color senderColor = isPlayer ? Color.cyan : new Color(1f, 0.8f, 0.4f);
             string formatted = $"<color=#{ColorUtility.ToHtmlStringRGB(senderColor)}>{sender}</color>: {text}";
 

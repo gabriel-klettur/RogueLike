@@ -45,9 +45,10 @@ namespace Valkur.Tests.EditMode.Game.Chat
         /// </summary>
         private static string Ask(IChatProvider provider, NPCPersonaDefinition persona)
         {
-            var task = provider.GenerateReplyAsync(persona, null, "test", CancellationToken.None);
+            var task = provider.GenerateReplyAsync(
+                new ChatRequest(persona, null, "test"), CancellationToken.None);
             task.Wait();
-            return task.Result;
+            return task.Result.Text;
         }
 
         // ── tests ─────────────────────────────────────────────────────────────

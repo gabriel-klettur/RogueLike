@@ -20,6 +20,17 @@ namespace Valkur.Data
         [Tooltip("NPC role: vendor, generic, quest_giver.")]
         public string role = "generic";
 
+        [Tooltip("The narrative half of this character — background, speech, boundaries, lore. " +
+                 "Split into its own asset because it is long prose read only by the prompt " +
+                 "builder, while everything on THIS asset is consulted whenever a conversation " +
+                 "opens. Null is legal: a persona with no profile still greets, still cycles its " +
+                 "dialogue lines, and still trades. It just has less to say to a language model.")]
+        public PersonaProfileDefinition profile;
+
+        [Tooltip("Face shown in the chat panel's header. Optional — the panel falls back to the " +
+                 "NPC's own world sprite, and to no portrait at all if there is none.")]
+        public Sprite portrait;
+
         [Tooltip("Chat range in world units. Python default: 10.")]
         public float chatRange = 10f;
 

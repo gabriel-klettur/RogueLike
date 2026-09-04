@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ae7595914ecbad4f89c6d774a9e8c5b, type: 3}
+  m_Name: vendor_lumberjack_pavel
+  m_EditorClassIdentifier: 
+  vendorKey: vendor_lumberjack_pavel
+  economyGroup: {fileID: 0}
+  persona: {fileID: 11400000, guid: a9cc28ba18c4e4f4796dd32b0004a7fd, type: 2}
+  inventorySeed:
+  - item: {fileID: 11400000, guid: db7fc73739160f14389efe2cb34f5cff, type: 2}
+    quantity: 2
+  - item: {fileID: 11400000, guid: 9574081d77e93fa40a069f70aa1f6f12, type: 2}
+    quantity: 2
+  - item: {fileID: 11400000, guid: ab846e48168c5894591f66ad640cae3c, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: f686de6067a84a546963c073ca87d1f0, type: 2}
+    quantity: 2
+  - item: {fileID: 11400000, guid: 3e0435fc01a3b4e48bba77418d1ef7d6, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: e80716326d345864e91312f82e5b7405, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: 4b75f3c1953ad1e4a8a2ea8e1e56b905, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: fdcdbbbdd058b7643b99769759638c29, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: b494b404995953148afe118bdfb9cbb2, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: fd092e5e0ec2c7f4bb3cdcd6d61797d0, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: 713d63b89df36134dabe9bfa880abd7e, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: 2cecc1a30ed33634bbe9150ad43e819b, type: 2}
+    quantity: 10
+  priceOverrides: []

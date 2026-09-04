@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Persona",
+  "type": "object",
+  "required": ["name", "tone", "background", "goals", "style"],
+  "properties": {
+    "name": {"type": "string"},
+    "origin": {"type": "string"},
+    "tone": {"type": "string"},
+    "background": {"type": "string"},
+    "goals": {"type": "array", "items": {"type": "string"}},
+    "humor": {
+      "type": "object",
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "frequency": {"type": "string", "enum": ["never", "rarely", "sometimes", "often"]},
+        "topics": {"type": "array", "items": {"type": "string"}},
+        "style": {"type": "string"},
+        "examples": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "style": {
+      "type": "object",
+      "required": ["emoji", "verbosity", "sentences_max"],
+      "properties": {
+        "emoji": {"type": "boolean"},
+        "verbosity": {"type": "string", "enum": ["short", "medium", "long"]},
+        "sentences_max": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": true
+    },
+    "traits": {
+      "type": "object",
+      "properties": {
+        "positive": {"type": "array", "items": {"type": "string"}},
+        "negative": {"type": "array", "items": {"type": "string"}},
+        "quirks": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "speech": {
+      "type": "object",
+      "properties": {
+        "register": {"type": "string", "enum": ["formal", "neutral", "casual"]},
+        "slang": {"type": "array", "items": {"type": "string"}},
+        "emoji_palette": {"type": "array", "items": {"type": "string"}},
+        "filler_words": {"type": "array", "items": {"type": "string"}},
+        "catchphrases": {"type": "array", "items": {"type": "string"}},
+        "punctuation": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "boundaries": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "knowledge": {
+      "type": "object",
+      "properties": {
+        "domain": {"type": "array", "items": {"type": "string"}},
+        "product_catalog": {"type": "array", "items": {"type": "string"}},
+        "taboo_topics": {"type": "array", "items": {"type": "string"}},
+        "local_lore": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "moods": {
+      "type": "object",
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "baseline": {"type": "string", "enum": ["alegre", "neutral", "serio"]},
+        "triggers_up": {"type": "array", "items": {"type": "string"}},
+        "triggers_down": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "negotiation": {
+      "type": "object",
+      "properties": {
+        "style": {"type": "string", "enum": ["dura", "equilibrada", "generosa"]},
+        "discount_limits": {"type": "object", "additionalProperties": {"type": "number"}},
+        "phrases": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "smalltalk": {
+      "type": "object",
+      "properties": {
+        "topics_preferred": {"type": "array", "items": {"type": "string"}},
+        "topics_avoid": {"type": "array", "items": {"type": "string"}},
+        "examples": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

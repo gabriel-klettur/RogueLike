@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -59,7 +60,7 @@ namespace Valkur.Tests.EditMode.Game.Chat
         // ChatSystem's private constants, mirrored here so the tests state the
         // contract explicitly instead of silently tracking whatever the code does.
         private const int MaxHistory = 10;
-        private const int ReplyChunkWords = 8;
+        private const int MaxBubbleWords = 22;
 
         private readonly List<GameObject> _scene = new List<GameObject>();
         private readonly List<ScriptableObject> _assets = new List<ScriptableObject>();
@@ -176,22 +177,25 @@ namespace Valkur.Tests.EditMode.Game.Chat
             public string ReplyToReturn = "ok";
             public Exception FaultWith;
 
-            public Task<string> GenerateReplyAsync(
-                NPCPersonaDefinition persona,
-                NPCMemory memory,
-                string playerText,
-                CancellationToken cancellationToken)
+            /// <summary>Trade facts of the last request — the purse the NPC was told about.</summary>
+            public ChatTradeContext LastTrade;
+
+            /// <summary>Trade the fake offers alongside its words. None by default.</summary>
+            public TradeProposal ProposalToReturn = TradeProposal.None;
+
+            public Task<ChatReply> GenerateReplyAsync(ChatRequest request, CancellationToken cancellationToken)
             {
                 CallCount++;
-                LastPersona = persona;
-                LastMemory = memory;
-                LastPlayerText = playerText;
+                LastPersona = request.Persona;
+                LastMemory = request.Memory;
+                LastPlayerText = request.PlayerText;
+                LastTrade = request.Trade;
                 Tokens.Add(cancellationToken);
 
                 if (FaultWith != null)
-                    return Task.FromException<string>(FaultWith);
+                    return Task.FromException<ChatReply>(FaultWith);
 
-                return Task.FromResult(ReplyToReturn);
+                return Task.FromResult(new ChatReply(ReplyToReturn, ProposalToReturn));
             }
         }
 
@@ -246,8 +250,14 @@ namespace Valkur.Tests.EditMode.Game.Chat
             var chat = go.AddComponent<ChatSystem>();
             InvokeMethod(chat, "Awake");
 
-            if (catalog != null)
-                SetFieldValue(chat, "_catalog", catalog);
+            // Awake resolves a catalog from Resources/Chat when none was assigned, which is
+            // what makes the shipped one reachable at all (ChatSystem is AddComponent-ed
+            // onto a bare GameObject, so its [SerializeField] can never be wired). That is
+            // right in the game and wrong here: a fixture asking for NO catalog would
+            // silently acquire the real one and start resolving real personas — an NPC this
+            // fixture names "Gatita" picked up the shipped persona and its 2-unit chat range
+            // in place of the default 10. Passing null now MEANS null.
+            SetFieldValue(chat, "_catalog", catalog);
 
             return chat;
         }
@@ -459,12 +469,13 @@ namespace Valkur.Tests.EditMode.Game.Chat
         // ── Reply chunking ───────────────────────────────────────────────────
 
         [Test]
-        public void SubmitPlayerMessage_LongReply_SplitsIntoEightWordChunks()
+        public void SubmitPlayerMessage_LongUnpunctuatedReply_IsSplitAtTheBubbleBudget()
         {
             var chat = OpenReadyChat(out var fake, out _);
 
-            // 20 words -> 8 + 8 + 4 = three chunks.
-            var words = new string[20];
+            // 50 words with no punctuation at all: one "sentence" too long for a bubble,
+            // which is the only case a reply is ever cut mid-phrase.
+            var words = new string[50];
             for (int i = 0; i < words.Length; i++) words[i] = "w" + i;
             fake.ReplyToReturn = string.Join(" ", words);
 
@@ -472,11 +483,36 @@ namespace Valkur.Tests.EditMode.Game.Chat
 
             var chunks = PendingChunkTexts(chat);
             Assert.AreEqual(3, chunks.Count,
-                $"A 20-word reply must be split into ceil(20/{ReplyChunkWords}) = 3 chunks.");
-            Assert.AreEqual(string.Join(" ", words, 0, ReplyChunkWords), chunks[0],
-                "The first chunk must be the first 8 words in order, with single-space joins.");
-            Assert.AreEqual(string.Join(" ", words, 16, 4), chunks[2],
-                "The trailing chunk must contain the remaining 4 words — no word may be dropped.");
+                $"50 words at a {MaxBubbleWords}-word budget is 22 + 22 + 6 = three bubbles.");
+            Assert.AreEqual(string.Join(" ", words, 0, MaxBubbleWords), chunks[0],
+                "The first bubble must be the first words in order, with single-space joins.");
+            Assert.AreEqual(string.Join(" ", words, 44, 6), chunks[2],
+                "The trailing bubble must carry the rest — no word may be dropped.");
+        }
+
+        [Test]
+        public void SubmitPlayerMessage_MultiSentenceReply_KeepsEachSentenceWhole()
+        {
+            var chat = OpenReadyChat(out var fake, out _);
+
+            // The shape a model actually returns, and the one the old eight-word cut got
+            // wrong: it produced five bubbles from this, one of them "de remolacha— lista
+            // para cocinar y regalarte un".
+            fake.ReplyToReturn =
+                "¡Ay, mi vida! Estoy estupenda, tarareo y con la libreta manchada de " +
+                "remolacha, lista para cocinar. Con pancita feliz, todo sale mejor.";
+
+            chat.SubmitPlayerMessage("que tal estas?");
+
+            var chunks = PendingChunkTexts(chat);
+            Assert.LessOrEqual(chunks.Count, 2,
+                "Whole sentences are packed up to the bubble budget, so this is one or two " +
+                "bubbles — not five, and not fifteen seconds of delivery.");
+            foreach (string chunk in chunks)
+            {
+                Assert.IsFalse(chunk.EndsWith("de") || chunk.EndsWith("y") || chunk.EndsWith("un"),
+                    $"A bubble must not end mid-phrase: '{chunk}'");
+            }
         }
 
         [Test]
@@ -730,9 +766,19 @@ namespace Valkur.Tests.EditMode.Game.Chat
             chat.CloseChat();
             chat.OpenChat(npc);
 
-            Assert.IsEmpty(chat.History,
-                "hasGreeted is persisted, so the second conversation must start with an empty " +
-                "history instead of replaying the greeting.");
+            // The second conversation is NOT blank: OpenChat replays what was persisted, so
+            // the panel opens on the exchange the player left. What "skips the greeting"
+            // means is that the greeting is not SAID again — it is recalled, and the record
+            // still holds exactly one copy of it. Asserting an empty history here was
+            // asserting the absence of continuity, which is the defect the memory layer was
+            // written for and never delivered.
+            int greetings = chat.ActiveMemory.ephemeralHistory
+                .Count(m => m.content == "Bienvenido, viajero.");
+            Assert.AreEqual(1, greetings,
+                "hasGreeted is persisted, so the greeting must be spoken once ever — recalled " +
+                "on later visits, never re-emitted.");
+            Assert.AreEqual(1, chat.History.Count(m => m.text == "Bienvenido, viajero."),
+                "And the recall must show it once, not once per visit.");
             Assert.AreEqual(2, chat.ActiveMemory.visitCount,
                 "visitCount must survive the close/open round-trip through disk.");
         }
@@ -789,12 +835,18 @@ namespace Valkur.Tests.EditMode.Game.Chat
 
             chat.SubmitPlayerMessage("hola");
 
+            // Two entries, not one: the player's line, and the reply the provider produced
+            // for it. The reply is recorded the moment it arrives rather than when the panel
+            // finishes drip-feeding it as bubbles — a record of what was said must not
+            // depend on Update() having ticked, and in Edit Mode it never does.
             var history = chat.ActiveMemory.ephemeralHistory;
-            Assert.AreEqual(1, history.Count,
-                "The player line must be mirrored into the NPC's ephemeral memory.");
+            Assert.AreEqual(2, history.Count,
+                "The player line and the NPC's reply must both be mirrored into memory.");
             Assert.AreEqual("user", history[0].role,
                 "Player lines must be tagged 'user' — the role drives LLM prompt construction.");
             Assert.AreEqual("hola", history[0].content, "The stored content must be verbatim.");
+            Assert.AreEqual("assistant", history[1].role,
+                "And the reply must be tagged 'assistant'.");
         }
 
         [Test]

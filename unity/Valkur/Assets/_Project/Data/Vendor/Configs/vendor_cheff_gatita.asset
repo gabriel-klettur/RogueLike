@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ae7595914ecbad4f89c6d774a9e8c5b, type: 3}
+  m_Name: vendor_cheff_gatita
+  m_EditorClassIdentifier: 
+  vendorKey: vendor_cheff_gatita
+  economyGroup: {fileID: 0}
+  persona: {fileID: 11400000, guid: aa4e40d436c11324bb8bf79cd20592ac, type: 2}
+  inventorySeed:
+  - item: {fileID: 11400000, guid: 0110c836c416fe54cb80f6aeaa3a7d48, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: 9374513c70d4439488cf4d09514cf472, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: bf95efcdf6b50f247a87d5bdecc9dd0b, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: b90f3e266510f8f458499a58444e7388, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: e3cb028dd08c91c4caea1c6f9497afd3, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: 61e07e545e2146d46a8e555e22918b19, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: f29dae2f820213041973211792bd3952, type: 2}
+    quantity: 10
+  - item: {fileID: 11400000, guid: d9e5a0f950fb285429267258b2131203, type: 2}
+    quantity: 10
+  priceOverrides: []
