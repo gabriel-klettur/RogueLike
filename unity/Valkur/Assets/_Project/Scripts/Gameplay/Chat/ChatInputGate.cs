@@ -5,8 +5,19 @@ using Valkur.Core.Input;
 namespace Valkur.Gameplay.Chat
 {
     /// <summary>
-    /// Disables the Gameplay input action map whenever the chat panel or the
-    /// dev console is open. Re-enables when both are closed.
+    /// The single owner of "a text panel has the keyboard, so nothing else may have it".
+    /// Engaged whenever the chat panel or the dev console is open, released when both close.
+    ///
+    /// <para>THERE ARE THREE INPUT PATHS AND ALL THREE MUST BE SHUT, which is the whole
+    /// reason this class is not two lines long. (1) The bound actions, closed by disabling
+    /// the Gameplay map. (2) The helper polls -- <c>MouseInputManager</c> /
+    /// <c>KeyboardInputManager</c> / <c>EditorHotkeyBindings</c> read the legacy backend to
+    /// survive the 2022.3 event-drop bug, so they bypass the map entirely and are closed by
+    /// <see cref="InputBlocker"/>. (3) uGUI's own <c>StandaloneInputModule</c>, which reads
+    /// the legacy InputManager axes and answers to neither of the first two; it is closed by
+    /// <c>sendNavigationEvents</c>. Shutting only the first two is the state this project
+    /// shipped in, and it leaves Enter able to press whichever HUD button the player last
+    /// clicked.</para>
     ///
     /// Maps to Python's <c>register_blocker</c> UI-rect mechanism, but tighter:
     /// we disable the entire Gameplay map at the InputSystem level so no movement,
@@ -112,6 +123,7 @@ namespace Valkur.Gameplay.Chat
             // permanently freeze player input. Also clear the central
             // blocker so the helpers stop suppressing reads.
             InputBlocker.SetBlocked(false);
+            SetNavigationEvents(true);
             if (_gameplayDisabled) EnableGameplay();
 
             if (_boundChat != null)
@@ -153,6 +165,16 @@ namespace Valkur.Gameplay.Chat
                 _consoleOpen = consoleOpenNow;
                 Refresh();
             }
+            else if (_chatOpen || _consoleOpen)
+            {
+                // Re-assert while blocked. The flags above have not changed, so Refresh is
+                // not called -- but PersistentEventSystem can adopt a DIFFERENT EventSystem
+                // mid-conversation (it does exactly that on sceneLoaded), and a fresh one
+                // arrives with sendNavigationEvents defaulted back to true. Cheap: one
+                // reference compare and one bool compare per frame, and only while a panel
+                // is actually up.
+                SetNavigationEvents(false);
+            }
         }
 
         // ── Event handlers ───────────────────────────────────────────────────
@@ -173,9 +195,66 @@ namespace Valkur.Gameplay.Chat
             // otherwise bypass the action-map disable.
             InputBlocker.SetBlocked(shouldBlock);
 
+            // uGUI is the THIRD input path and neither of the two above reaches it.
+            // Unity's StandaloneInputModule reads the legacy InputManager axes directly
+            // -- measured live with the chat open: submit=Submit, horiz=Horizontal,
+            // vert=Vertical, module enabled, while IsGameplayBlocked was already true and
+            // the Gameplay map already disabled. Those axes are the ones CLAUDE.md calls
+            // inert because no GAMEPLAY code reads them; Unity's own module does, so
+            // InputBlocker cannot touch them by construction.
+            //
+            // What that buys an attacker of the design: click any HUD button once and it
+            // stays as currentSelectedGameObject, after which Enter or Space re-activates
+            // it -- and Enter is on InputBlocker.IsAlwaysAllowedKey precisely so the chat
+            // can be sent. So typing a message could fire the last button the player
+            // touched. Arrow keys could also walk the selection onto a different one.
+            SetNavigationEvents(!shouldBlock);
+
             if (shouldBlock == _gameplayDisabled) return;
             if (shouldBlock) DisableGameplay();
             else             EnableGameplay();
+        }
+
+        /// <summary>
+        /// Turns uGUI's move / submit / cancel events on or off.
+        ///
+        /// <para>NOT by clearing <c>currentSelectedGameObject</c>, which is the obvious move
+        /// and breaks the thing it is protecting: the chat's own <c>TMP_InputField</c> has to
+        /// STAY selected to receive a single keystroke, so deselecting locks the player out of
+        /// the conversation they just opened.</para>
+        ///
+        /// <para><c>sendNavigationEvents</c> is the exact seam instead. In
+        /// <c>StandaloneInputModule.Process</c> it guards only the move and submit branches;
+        /// <c>SendUpdateEventToSelectedObject</c> -- which is what actually drives
+        /// <c>TMP_InputField</c>'s typing -- runs before the guard and is untouched. So
+        /// letters still reach the field, Enter still submits through the field's own
+        /// handler, and no keystroke can reach a Button. Pointer events are unaffected, so
+        /// the chat's own Send and Trade buttons stay clickable.</para>
+        /// </summary>
+        private void SetNavigationEvents(bool enabled)
+            => SetNavigationEvents(UnityEngine.EventSystems.EventSystem.current, enabled);
+
+        /// <summary>
+        /// The half that does the work, taking its target explicitly.
+        ///
+        /// <para>Split out for the reason <c>SnowSplatMap</c> pairs EnsureBuilt with
+        /// ReleaseBuffer: in Edit Mode a component added by a test never receives OnEnable, so
+        /// it never lands in the EventSystem's internal list and Unity REFUSES the assignment
+        /// with "Failed setting EventSystem.current to unknown EventSystem" — an error, not a
+        /// silent no-op, so it also fails the test that logged it. Play Mode reaches this
+        /// through the overload above; a test hands it an instance.</para>
+        ///
+        /// <para>Internal rather than private so the test assembly can drive it without
+        /// reflection over a signature that reflection cannot type-check.</para>
+        /// </summary>
+        internal static void SetNavigationEvents(UnityEngine.EventSystems.EventSystem es,
+                                                 bool enabled)
+        {
+            // Resolved per call rather than cached: PersistentEventSystem adopts the scene's
+            // own EventSystem on load and disables the one it minted at boot, so a reference
+            // captured once would end up configuring a dead object.
+            if (es == null) return;
+            if (es.sendNavigationEvents != enabled) es.sendNavigationEvents = enabled;
         }
 
         private void DisableGameplay()
