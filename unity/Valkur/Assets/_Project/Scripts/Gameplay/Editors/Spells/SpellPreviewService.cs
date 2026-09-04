@@ -457,6 +457,14 @@ namespace Valkur.Gameplay.Spells
             _rangeRulerGo    = null;
             _rangeRulerLine  = null;
             _rangeRulerLabel = null;
+            // The camera lets go FIRST. Releasing a RenderTexture that a live camera still
+            // holds as its targetTexture logs "Releasing render texture that is set as
+            // Camera.targetTexture!" — two per Spells-editor test fixture, into a console this
+            // project requires to be clean. Nulling the field is enough, and it does not
+            // depend on the destroy order below: in EditMode SafeDestroy is DestroyImmediate,
+            // in Play Mode it is deferred to end of frame, so the camera outlives the release
+            // either way round.
+            if (_camera != null) _camera.targetTexture = null;
             if (_rt != null) { _rt.Release(); SafeDestroy.Of(_rt); _rt = null; }
             if (_camera != null) { SafeDestroy.Of(_camera.gameObject); _camera = null; }
             if (_stageRoot != null) { SafeDestroy.Of(_stageRoot); _stageRoot = null; }

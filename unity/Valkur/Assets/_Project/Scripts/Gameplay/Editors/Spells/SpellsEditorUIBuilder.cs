@@ -67,6 +67,12 @@ namespace Valkur.Gameplay.Spells
             // Spells panel — Grid view
             public RectTransform    PickerContent;
 
+            // Spells panel — Tree view
+            public TabStrip         SpellsViewTabs;
+            public TabStrip         SpellsTreeSchoolTabs;
+            public ScrollRect       SpellsTreeScroll;
+            public RectTransform    SpellsTreeContent;
+
             // Spells panel — Table view
             public ScrollRect       SpellsTableHeaderScroll;
             public RectTransform    SpellsTableHeaderContent;

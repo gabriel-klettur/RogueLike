@@ -90,7 +90,7 @@ namespace Valkur.Gameplay.Spells
         }
 
         /// <summary>
-        /// Dispatch to the active view (Grid or Table). Call this from any
+        /// Dispatch to the active view (Grid, Table or Tree). Call this from any
         /// code path that wants to refresh the picker without caring about
         /// which view is currently shown — search, add/remove, activate.
         /// </summary>
@@ -99,6 +99,7 @@ namespace Valkur.Gameplay.Spells
             ApplySpellFilter();
             RefreshPicker();
             RefreshTable();
+            RefreshTree();
         }
 
         // ── Grid view ─────────────────────────────────────────────────────────
@@ -277,6 +278,10 @@ namespace Valkur.Gameplay.Spells
         {
             _selectedKey = key;
             RefreshPicker();
+            // The outline draws the selection too, so it has to repaint with the grid — and
+            // it is safe to rebuild from inside a row's own click, because RefreshTree
+            // detaches before destroying.
+            RefreshTree();
             RefreshPropertiesForm();
             // Live-preview: if the View panel is open, update the looped cast.
             NotifyPreviewSelectionChanged();

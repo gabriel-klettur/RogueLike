@@ -98,6 +98,8 @@
 5	Spells/SpellsRuntimeEditor.Table.cs
 5	Spells/SpellsRuntimeEditor.TableColumns.cs
 1	Spells/SpellsRuntimeEditor.TableColumnsConfig.cs
+3	Spells/SpellsRuntimeEditor.Tree.cs
+1	Spells/SpellsRuntimeEditor.TreeView.cs
 1	Tile/TileEditorBorderOverlay.cs
 2	Tile/TileEditorConstants.cs
 5	Tile/TileEditorGridCursor.cs

@@ -20,6 +20,9 @@ namespace Valkur.Gameplay.Spells
         private const string WS_SEARCH         = "search";
         private const string WS_AUDIENCE       = "audienceFilter";
         private const string WS_HIDDEN_COLS    = "hiddenColumns";
+        private const string WS_VIEW_TAB       = "viewTab";
+        private const string WS_COLLAPSED      = "collapsedSchools";
+        private const string WS_TREE_SCHOOL    = "treeSchool";
 
         public Transform WorkspaceRoot => _root != null ? _root.transform : null;
 
@@ -31,6 +34,15 @@ namespace Valkur.Gameplay.Spells
             ws.SetString(WS_SEARCH, _searchFilter ?? string.Empty);
             ws.SetString(WS_AUDIENCE, _audienceFilterKey ?? "all");
             ws.SetString(WS_HIDDEN_COLS, string.Join(",", _hiddenColumns));
+
+            // Which of Grid / Table / Tree the author left open, and which sections of the
+            // outline they had folded away. Both are pure view state: restoring them cannot
+            // put the editor into a destructive mode, which is the one thing the workspace
+            // layer refuses to bring back.
+            if (_uiRefs.SpellsViewTabs != null)
+                ws.SetString(WS_VIEW_TAB, _uiRefs.SpellsViewTabs.ActiveKey ?? "grid");
+            ws.SetString(WS_COLLAPSED, string.Join(",", _collapsedSchools));
+            ws.SetString(WS_TREE_SCHOOL, _treeSchoolFilter ?? TREE_SCHOOL_ALL);
         }
 
         public void RestoreWorkspace(EditorWorkspace ws)
@@ -49,8 +61,31 @@ namespace Valkur.Gameplay.Spells
                 if (_uiRefs.SearchBox != null) _uiRefs.SearchBox.SetTextWithoutNotify(search);
             }
 
+            string collapsed = ws.GetString(WS_COLLAPSED, null);
+            if (!string.IsNullOrEmpty(collapsed))
+            {
+                _collapsedSchools.Clear();
+                foreach (var key in collapsed.Split(','))
+                    if (!string.IsNullOrEmpty(key)) _collapsedSchools.Add(key);
+            }
+
+            string treeSchool = ws.GetString(WS_TREE_SCHOOL, null);
+            if (!string.IsNullOrEmpty(treeSchool))
+            {
+                _treeSchoolFilter = treeSchool;
+                // SetActive raises TabChanged, which refreshes on its own; the assignment
+                // above is what makes the strip and the model agree if the key no longer
+                // exists (a school removed since the workspace was written).
+                _uiRefs.SpellsTreeSchoolTabs?.SetActive(treeSchool);
+            }
+
             RefreshPicker();
             RefreshTable();
+            RefreshTree();
+
+            string viewTab = ws.GetString(WS_VIEW_TAB, null);
+            if (!string.IsNullOrEmpty(viewTab) && _uiRefs.SpellsViewTabs != null)
+                _uiRefs.SpellsViewTabs.SetActive(viewTab);
 
             RestoreSelectedSpell(ws);
         }
