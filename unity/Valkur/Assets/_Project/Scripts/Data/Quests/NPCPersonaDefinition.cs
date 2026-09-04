@@ -27,9 +27,70 @@ namespace Valkur.Data
                  "dialogue lines, and still trades. It just has less to say to a language model.")]
         public PersonaProfileDefinition profile;
 
-        [Tooltip("Face shown in the chat panel's header. Optional — the panel falls back to the " +
-                 "NPC's own world sprite, and to no portrait at all if there is none.")]
+        [Tooltip("Last-resort face for the chat portrait, used when 'faces' has no drawing " +
+                 "that the requested expression can fall back to. Optional: a persona with " +
+                 "neither this nor 'faces' shows no portrait, and the panel keeps its full " +
+                 "width instead of reserving an empty gutter.")]
         public Sprite portrait;
+
+        [Tooltip("One drawing per facial expression. Filled by " +
+                 "'Valkur > Chat > Import Facial Expressions', which reads the character's " +
+                 "own facial/ folder; an entry set by hand is never overwritten. Not every " +
+                 "expression needs art — FacialExpressionFallback decides what a missing " +
+                 "one shows.")]
+        public List<FacialSprite> faces = new List<FacialSprite>();
+
+        /// <summary>One drawing, and the expression it is the drawing OF.</summary>
+        [Serializable]
+        public struct FacialSprite
+        {
+            public FacialExpression expression;
+            public Sprite sprite;
+        }
+
+        /// <summary>
+        /// True when this character has at least one face to show.
+        ///
+        /// Read by the panel to decide whether to reserve the portrait gutter at all, and by
+        /// the prompt builder to decide whether asking a model for an expression is worth the
+        /// tokens. A lone <see cref="portrait"/> counts: it is a face, it just never changes.
+        /// </summary>
+        public bool HasFaces => (faces != null && faces.Count > 0) || portrait != null;
+
+        /// <summary>
+        /// The sprite to show for <paramref name="wanted"/>, walking
+        /// <see cref="FacialExpressionFallback"/> and ending on <see cref="portrait"/>.
+        /// Null only when this character has no face art at all.
+        /// </summary>
+        public Sprite ResolveFace(FacialExpression wanted)
+        {
+            if (faces != null)
+            {
+                foreach (FacialExpression candidate in FacialExpressionFallback.Chain(wanted))
+                {
+                    foreach (FacialSprite entry in faces)
+                    {
+                        if (entry.expression == candidate && entry.sprite != null) return entry.sprite;
+                    }
+                }
+            }
+            return portrait;
+        }
+
+        /// <summary>
+        /// True when <paramref name="expression"/> has a drawing of its OWN, rather than
+        /// resolving through the fallback chain. The probe commands report this so an author
+        /// can see which faces are really there.
+        /// </summary>
+        public bool HasOwnFace(FacialExpression expression)
+        {
+            if (faces == null) return false;
+            foreach (FacialSprite entry in faces)
+            {
+                if (entry.expression == expression && entry.sprite != null) return true;
+            }
+            return false;
+        }
 
         [Tooltip("Chat range in world units. Python default: 10.")]
         public float chatRange = 10f;
