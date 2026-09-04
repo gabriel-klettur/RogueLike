@@ -967,9 +967,11 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
 - **Three of those 367 units came from scaling the ROOT, and the light is what pays.**
   `VortexFieldController` did `AreaFXRig.Attach(transform, palette, radius)` and then
   `transform.localScale = Vector3.one * radius`, so every child was sized twice and the
-  `Light2D` hanging under it rendered at `authored x lossyScale`. `PuddleController` and
-  `TotemController` still carry the identical two lines; their radii are small enough that
-  it has not surfaced. A rig that wants a world size gives its children ABSOLUTE sizes and
+  `Light2D` hanging under it rendered at `authored x lossyScale`. **All three sites are clean now** —
+  `VortexFieldController` when this note was written, `TotemController` and
+  `PuddleController` in the 27-spell expansion. The note stays because the pair is what a
+  rig-plus-radius API invites, and `AreaFXRig.Attach` still takes a radius, so the next
+  controller written against it reintroduces it in two lines. A rig that wants a world size gives its children ABSOLUTE sizes and
   leaves its root at identity — `VortexFunnelFX` does, and `VortexFieldTests` pins it.
 - **The silhouette of a funnel says nothing about where the force reaches, so something else
   has to.** A tornado is narrow where it touches down and flared where it opens — which is
@@ -1436,6 +1438,103 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   dependency); the service is not. The precedent for a resizable gameplay panel is
   `MusicPlayerHUD`: PlayerPrefs floats under `valkur.<widget>.<field>`, written on drag END
   rather than per frame, since that is a file write.
+
+- **`AuraExecutor` divided `radius` by 16 — the SIXTH Python-pixel sighting**, after
+  `wallWidth`, the totem's radius, the vortex's radius, `coneLength` and `arcane_flame`'s
+  radius. What kept it alive for the life of the project is that the wrong number was never
+  READ: `InitializeHealing` took `gameRadius` and immediately discarded it with
+  `_ = gameRadius; // reserved for future "heal nearby allies" logic`. Shipped `healing_aura`
+  authors 0.625, which resolved to a gameplay radius of **0.039 world units** — under a
+  fortieth of a tile — and nothing anywhere consulted it. A dead field cannot be wrong on
+  screen, which is exactly why the divide survived five rounds of the same bug being found
+  elsewhere. Grep for a discarded parameter whenever a unit conversion looks suspicious: the
+  conversion is the tell, the discard is the reason nobody noticed.
+- **`TotemController` healed exactly one entity: `_owner`.** It measured the distance from the
+  totem to its caster and healed only them, so `healing_totem` was a stationary self-heal with
+  a decorative pole — and the ring it drew on the ground promised an area that no code
+  consulted. Same family as `animation_map.json`: authored, drawn, round-tripped and inert.
+  It now sweeps the Player layer with `OverlapCircleNonAlloc`; "friendly" is answered by that
+  layer plus the caster rather than by a faction system, because a second allegiance model
+  beside `AlliedUnit` is two models that will eventually disagree. The same method also
+  carried the `AreaFXRig.Attach(...)` + `transform.localScale = radius` pair that rendered the
+  vortex's `Light2D` at an effective 367 units. `PuddleController` carried it too and was
+  fixed in the same pass, which retires the last site.
+- **No state class reads `stats.faction`, so a summon spawned through the monster pipeline
+  hunts the player who cast it.** The faction string is authored on every shipped entity and
+  read by exactly one line in the project (`FSMMonsterBrain` pushes it into the FSM context,
+  where no shipped set tests it). What actually decided allegiance was that all twenty target
+  lookups across Idle/Patrol/Chase/AlertChase/Attack/Flee/NPCCast/FSMTransition asked
+  `EntityRegistry.Player` directly. They now go through `FactionTargeting.EnemyOf(seeker)`,
+  which answers `EntityRegistry.Player` unchanged when no `AlliedUnit` is alive — an empty-list
+  count check — and otherwise lets a monster retarget to a nearer ally and an ally hunt the
+  nearest non-allied monster. The alternative, a dedicated `Monster_Ally` FSM set, forks the
+  state classes; one helper plus a mechanical substitution also buys monster-versus-monster
+  fights, boss adds and charmed enemies. **A green monster suite does not validate this**: no
+  existing test puts an ally on the field, so the whole suite only exercises the ally-ABSENT
+  path. `FactionTargetingTests` asserts the composition, which is the half that can be false
+  while both halves read correctly — the same shape as `SPAWNER_COORDINATE_SPACE_DRIFT`.
+- **A note about a trap does not stop the trap; removing the wrong shape does.** CLAUDE.md
+  already said, verbatim, that a `static readonly` array cache cannot be reset in a form
+  `DomainReloadStaticResetTests` recognises — and three new `private static readonly
+  Collider2D[]` scratch buffers were written in a single batch anyway (homing acquisition, the
+  damaging aura, the healing totem), all three failing the ratchet, because that declaration is
+  simply what a `NonAlloc` query looks like and nobody reads a warning about a trap they do not
+  know they are approaching. `Gameplay/Combat/PhysicsScratch.cs` now owns those buffers behind
+  one reset hook, so a new area sweep BORROWS one instead of declaring it. The buffers are named
+  per purpose rather than shared generically, and that is not tidiness: one buffer handed to
+  every caller is correct for sequential queries and silently wrong for nested ones — a sweep
+  whose loop body triggers a second sweep has its own results overwritten mid-iteration, with no
+  exception and no log. `Projectile._sweepHits` and `_explosionHits` stay where they are,
+  grandfathered in `unreset-statics.txt`; note that adding a THIRD line there was the easy move
+  and the wrong one, because a ratchet that accepts new entries is a list.
+- **A registry must not hand out its backing list, and membership is not eligibility.**
+  `AlliedUnit.Live` returned `_live` itself while three paths mutated it, so
+  `for (i = 0; i < allies.Count; i++)` re-read `Count` each iteration against something a loop
+  body could shrink — indices shift, an entry is SKIPPED, nothing throws, and a monster ignores
+  an ally standing in front of it. Same shape as the boomerang: neither half wrong alone. It
+  snapshots now, returning a shared `Array.Empty` when nothing is out so the case that is
+  virtually always true allocates nothing. The second half is subtler and bit on the first fix:
+  pruning INACTIVE entries as well as destroyed ones made re-enabling an ally impossible outside
+  Play Mode, because nothing calls `OnEnable` there and nothing put it back. Destroyed leaves
+  the registry; deactivated stays in it and is filtered by whoever asks. `OnDisable` must not
+  unregister either, or the Play-mode path disagrees with the Edit-mode one.
+- **A charge fraction must resolve to 1, never 0, for a spell that does not charge.**
+  `SpellContext` is a struct, so a newly added `ChargeFraction` defaults to 0 on every one of
+  the ~70 casts that know nothing about charging — and an executor multiplying by it raw would
+  have made every projectile in the game deal its MINIMUM damage, silently, and only in the
+  spells nobody thought to re-test. `ChargeMath.Resolve/DamageMultiplier/ScaleMultiplier` are
+  the single answer and return a neutral 1 for `IsChargeable == false`. Damage and scale are
+  deliberately separate curves (2.6x against 2.0x on `charged_bolt`): one curve for both costs
+  the spell the "small and sharp versus big and slow" reading that makes charging a decision.
+- **`Health.SetVulnerability` has ONE owner and that is what makes clearing it safe.**
+  `SetInvincible` has three independent writers (god mode, the F4 editor, the shield) and
+  therefore has to be saved and restored — a defect that shipped twice. The vulnerability
+  multiplier is written only by `VulnerableEffect`, and `StatusEffectManager.Apply` replaces an
+  effect of the same type before applying a new one, so `OnApply`/`OnRemove` pair exactly.
+  Adding a second writer reintroduces the save/restore problem. It is also applied LAST, after
+  defense: applying it before armour would let armour eat the amplification, so a +30% curse
+  would read as +30% on a soft target and near-nothing on the armoured one it exists to open.
+- **A spell that claims a DEATH should mark the living target, not raise a corpse.** A
+  corpse-raiser has to hook `Health.OnDeath`, find a body `deathDisappearTime` may already have
+  despawned, and reconstruct its `MonsterDefinition` from something that no longer exists — a
+  death registry, kept in sync, holding data about entities that are gone. `ThrallMarkEffect`
+  inverts it: the mark is carried BY the creature, so at the moment of death every fact is
+  still on a live GameObject, and being a `StatusEffect` gives it duration, refresh, immunity
+  and cleanup for free. Two details are load-bearing. The definition is captured at APPLY time,
+  because `DeathState.Enter` calls `Object.Destroy` on the owner the instant the FSM reaches it
+  and a `Destroy` cannot be cancelled — so the raising spawns a FRESH creature from the same
+  definition rather than reanimating the body, which sidesteps the race entirely. And C#
+  snapshots an event's invocation list when it is raised, so the handler still runs even if
+  something else clears the target's status effects from inside its own `OnDeath`.
+- **An absorb shield is a different tool from a timed one, and the difference is legibility.**
+  Invincibility for five seconds is a state the player can only wait out; "one more hit" is a
+  resource they can spend. `ShieldController` takes an `AbsorbPool` (reusing `wallHP`, which
+  already had the better name for "how much punishment this conjured matter takes"), drains it
+  on `Health.OnDamageBlocked`, and breaks on the frame of the blow that empties it rather than
+  on its own clock. The ripple strength is scaled by the BITE the hit takes out of what is
+  LEFT, not by raw damage, so the same blow rings the shell harder as the pool empties and the
+  last hit before the break is the loudest — which is the whole of how a player reads the
+  remaining pool without a bar on screen. Zero keeps the historical pure-timer shield.
 
 ## Player character pipeline (2 directions)
 
@@ -2167,6 +2266,7 @@ related symptom reappears.
   `Maps/Interiors/house_interior_small.overlay.json`. Still open: interiors are bare rooms
   (no furniture, NPCs, loot or lighting), one file per doorway, no nesting, and no press-to-
   enter until the `E` double-binding is resolved. See `.github/BUILDING_DOORS_ROADMAP.md`.
+- **Spell expansion — 27 new spells (46 → 73)** — designed AND implemented 2026-09-04; 71 grimoire nodes across the nine schools (was 44), plus the two innate spells. Full brief, per-spell data sheet, VFX specification and build order: `.github/SPELL_EXPANSION_27_ROADMAP.md`. The spells go into the nine EXISTING schools rather than new functional categories, because at the stated 100-spell target nine schools give ~11 nodes a tab while seven functional ones would give damage ~45; the cost of that is that FUNCTION becomes invisible, paid for by a `SpellNode.role` tag plus a grimoire filter. Three cost estimates were corrected by measurement while writing it, and each was a live defect in its own right (all three are FIXED now; they are kept here because the SHAPE of each is the thing worth recognising again): **`SummonExecutor` produces no creature** (a GameObject with a SpriteRenderer, a `CircleCollider2D`, `Health.Initialize(50)` and a despawn timer — no FSM brain, no `MeleeCombat`, no target acquisition, and a procedurally generated white circle for a sprite, so `summon_barbol` is a green blob that stands still); **`TotemController.HealTick()` heals only `_owner`**, with no radius sweep and no notion of an ally, so `healing_totem` is a stationary self-heal with a decorative pole; and **`SpellType.Trap` (8) and `SpellType.Shield` (9) are not in the dispatch table** and fall through to `ProjectileExecutor` with a warning, so neither value may be authored against. Eleven of the 27 are pure data today; the rest ride on eight systems, of which `BuffExecutor` (a `StatModifier[]` into the existing `TimedBuffSource`) has the highest leverage — it turns the whole support category into data for the run to 100 — and allied summon is the largest, because **no state class reads `stats.faction`** and the only thing that makes a faction peaceful today is the FSM set's allowed-state whitelist. `raise_thrall` is cast on a LIVING enemy and raises it if it dies while marked: the hook then lands while the entity still exists, which is strictly cheaper than a corpse registry and is also the better spell, since the player is betting before the kill. **What actually made summoning work was `FactionTargeting.EnemyOf`** — twenty FSM call sites moved off `EntityRegistry.Player`, so an ally hunts the nearest hostile and a monster can retarget to a nearer ally; the faction STRING remains inert. Deferred deliberately: `guardian_light`'s per-facet cracking, `animState` on all 27, icons, and a mastery-budget pass over the enlarged grimoire — all four are listed in Part 5 of the roadmap.
 - **Boss music tracks** — the wiring is done (`BossDefinition.Phase.musicTrackId` → `BossConfigurator.ApplyPhaseMusic` → `IAudioService.PlayMusicByTrackId`, with `BossPhaseAudio` as the inspector-authored alternative). What remains is **data**: no boss-specific track exists in `AudioCatalog.asset` yet, so `SampleBoss.asset` leaves `musicTrackId` empty.
 
 The **`Valkur.Infrastructure.Persistence.Profile`** layer (run history, kill stats, achievements, profile counters, statistics HUD) lives behind `IProfileDb` (`JsonProfileDb` today; SQLite ready as a drop-in once row counts justify it) — see `.github/SQLITE_MIGRATION_AUDIT.md`.
