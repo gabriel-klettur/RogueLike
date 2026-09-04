@@ -31,6 +31,30 @@ namespace Valkur.Tests.EditMode.Editors.Entities
         private EntitiesRuntimeEditor _ed;
         private MonsterCatalog  _catalog;
 
+        /// <summary>
+        /// The scratch FOLDER is made once per fixture, not once per test. Measured: the
+        /// per-test DeleteAsset + CreateFolder in SetUp and DeleteAsset + Refresh in TearDown
+        /// put a 240 ms floor under every test here — including seven Slugify cases that
+        /// never touch a file — and this fixture alone was 7.4 s of the Entities group.
+        /// Isolation is kept where it matters: TearDown deletes every asset a test wrote
+        /// into the folder, so RefusesADuplicateKey still sees an empty disk.
+        /// </summary>
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
+        {
+            if (AssetDatabase.IsValidFolder(ScratchTemplateDir))
+                AssetDatabase.DeleteAsset(ScratchTemplateDir);
+            AssetDatabase.CreateFolder(ScratchParent, ScratchFolderName);
+        }
+
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
+        {
+            if (AssetDatabase.IsValidFolder(ScratchTemplateDir))
+                AssetDatabase.DeleteAsset(ScratchTemplateDir);
+            AssetDatabase.Refresh();
+        }
+
         [SetUp]
         public void SetUp()
         {
@@ -40,9 +64,11 @@ namespace Valkur.Tests.EditMode.Editors.Entities
             // TearDown runs, and that is where the last picker refresh lands.
             UnityEngine.TestTools.LogAssert.ignoreFailingMessages = true;
 
-            if (AssetDatabase.IsValidFolder(ScratchTemplateDir))
-                AssetDatabase.DeleteAsset(ScratchTemplateDir);
-            AssetDatabase.CreateFolder(ScratchParent, ScratchFolderName);
+            // The folder outlives the test; anything left inside it from a previous test
+            // would be a leak of the kind OneTimeSetUp above explains, so it is asserted
+            // empty rather than silently cleaned twice.
+            Assert.AreEqual(0, AssetDatabase.FindAssets("", new[] { ScratchTemplateDir }).Length,
+                "Scratch folder not empty at SetUp — a previous test's TearDown missed an asset.");
 
             _editorGo = new GameObject("EntitiesCatalogAuthoringUnderTest");
             _ed = _editorGo.AddComponent<EntitiesRuntimeEditor>();
@@ -73,9 +99,15 @@ namespace Valkur.Tests.EditMode.Editors.Entities
             if (_editorGo != null) Object.DestroyImmediate(_editorGo);
             if (_catalog  != null) Object.DestroyImmediate(_catalog);
 
-            if (AssetDatabase.IsValidFolder(ScratchTemplateDir))
-                AssetDatabase.DeleteAsset(ScratchTemplateDir);
-            AssetDatabase.Refresh();
+            // Delete only what this test wrote. DeleteAsset updates the database
+            // synchronously, so no Refresh is needed here — the one Refresh happens in
+            // OneTimeTearDown.
+            foreach (var guid in AssetDatabase.FindAssets("", new[] { ScratchTemplateDir }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!string.IsNullOrEmpty(path) && !AssetDatabase.IsValidFolder(path))
+                    AssetDatabase.DeleteAsset(path);
+            }
         }
 
         // ── Reflection helpers ───────────────────────────────────────────────────
