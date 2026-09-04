@@ -81,15 +81,24 @@ namespace Valkur.Gameplay.Inventory
 
         private void Update()
         {
-            // OR new-system action with legacy KeyCode fallback (Tab and I).
+            // OR new-system action with legacy KeyCode fallback (I only).
             // Same pattern as InputCompat / EditorHotkeyBindings — protects
             // against the recurring Unity 2022.3 Editor InputSystem drop-out.
             bool toggleNew = _toggleAction != null && _toggleAction.WasPerformedThisFrame();
             // Through KeyboardInputManager so a modal panel's input block reaches these:
             // raw reads answered while the chat had focus, so typing 'i' opened the
             // inventory mid-sentence and 'q' threw an item on the ground.
-            bool toggleLegacy = Valkur.Core.Input.KeyboardInputManager.WasKeyCodePressedThisFrame(KeyCode.Tab) ||
-                                Valkur.Core.Input.KeyboardInputManager.WasKeyCodePressedThisFrame(KeyCode.I);
+            //
+            // TAB WAS REMOVED, and it is the reason this comment is longer than the code.
+            // It was a LEGACY KeyCode read with no matching entry in the input asset, so
+            // the asset was not the source of truth for it and a binding audit over
+            // ValkurInputActions could not see it at all — which is exactly how
+            // PlayerStanceToggle came within one commit of shipping Tab as a second
+            // meaning for the same physical key, the third time this project has bound one
+            // key to two features (`e` on Interact + SpellSlash, `p` on Pause +
+            // SpellMeteorShower, which threw meteors when the player paused). Tab now
+            // belongs to the War/Peace stance; the inventory keeps `I` and the HUD icon.
+            bool toggleLegacy = Valkur.Core.Input.KeyboardInputManager.WasKeyCodePressedThisFrame(KeyCode.I);
             if (toggleNew || toggleLegacy)
                 SetVisible(!_visible);
 

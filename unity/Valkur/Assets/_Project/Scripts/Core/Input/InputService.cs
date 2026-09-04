@@ -175,6 +175,19 @@ namespace Valkur.Core.Input
             public InputAction Inventory { get; }
             public InputAction Pause     { get; }
 
+            /// <summary>
+            /// Flips <see cref="Valkur.Core.PlayerStance"/>. Read by
+            /// <c>PlayerStanceToggle</c> and by nothing else. Tab is safe here even though
+            /// uGUI runs the legacy <c>StandaloneInputModule</c>: only a focused
+            /// <c>TMP_InputField</c> consumes Tab, and a focused field in Valkur means chat
+            /// or the console is up, which is exactly when
+            /// <see cref="InputBlocker.IsGameplayBlocked"/> is set and
+            /// <see cref="KeyboardInputManager"/> refuses every key that is not Escape,
+            /// backquote or Enter. So the conflict is impossible by construction rather than
+            /// avoided by care.
+            /// </summary>
+            public InputAction ToggleStance { get; }
+
             // 23 named spells (Python parity, see PlayerController spell list)
             public InputAction SpellDarkball         { get; }
             public InputAction SpellIceball          { get; }
@@ -214,6 +227,7 @@ namespace Valkur.Core.Input
                 Interact        = map.FindAction("Interact",        throwIfNotFound: true);
                 Inventory       = map.FindAction("Inventory",       throwIfNotFound: true);
                 Pause           = map.FindAction("Pause",           throwIfNotFound: true);
+                ToggleStance    = map.FindAction("ToggleStance",    throwIfNotFound: true);
 
                 SpellDarkball          = map.FindAction("SpellDarkball",          throwIfNotFound: true);
                 SpellIceball           = map.FindAction("SpellIceball",           throwIfNotFound: true);

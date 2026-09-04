@@ -15,7 +15,9 @@ namespace Valkur.UI.HUD
         // (which is anchored top-left with margin 24, size 110 × ~154 → bottom
         // edge at y ≈ -178). 8 px breathing gap below that edge.
         private const float SpellCooldownPanelX      = 24f;
-        private const float SpellCooldownPanelY      = -186f;
+        // Moved down from -186 to clear the StanceHUD chip, which now occupies
+        // y from -186 to -212 in the same left column. The clock above it ends at -178.
+        private const float SpellCooldownPanelY      = -220f;
         private const float SpellCooldownPanelWidth  = 240f;
         private const float SpellCooldownRowSpacing  = 4f;
 

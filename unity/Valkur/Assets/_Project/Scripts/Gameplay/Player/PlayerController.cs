@@ -130,10 +130,16 @@ namespace Valkur.Gameplay
         private void OnEnable()
         {
             EnableGameplayMap();
+            PlayerStance.OnChanged += OnStanceChanged;
         }
 
-        // OnDisable / OnDestroy intentionally do nothing: the Gameplay map is
-        // owned by InputService and the player no longer creates per-instance
-        // actions, so there's nothing to dispose.
+        // The Gameplay map itself is owned by InputService and the player creates no
+        // per-instance actions, so there is nothing to dispose there -- but the stance is a
+        // STATIC event and Domain Reload is off, so failing to unhook here leaves a delegate
+        // pointing at a destroyed player for the rest of the session.
+        private void OnDisable()
+        {
+            PlayerStance.OnChanged -= OnStanceChanged;
+        }
     }
 }

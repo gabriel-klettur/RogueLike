@@ -108,6 +108,27 @@ namespace Valkur.Gameplay
             // fire fireball, right-click doesn't slash, etc.
             if (IsPlayerCombatSuspended()) return;
 
+            // Traversal first, and OUTSIDE the stance gate. Everything below this line is
+            // combat; the dash is not, and Peace must not take it away.
+            PollTraversal();
+
+            // Peace is the third owner of "no combat right now", after the stun check above
+            // and IsPlayerCombatSuspended. They COMPOSE as a chain of early returns rather
+            // than one of them writing a flag the others read -- which is the arrangement
+            // SetInvincible got wrong twice in this project, each owner clearing what another
+            // was holding. Consulted HERE, at the reader, and never by disabling the action
+            // map: InputBlocker's own comment records that Map.Disable silences bound actions
+            // and leaves every MouseInputManager / KeyboardInputManager callsite untouched,
+            // so a map-based stance would leak through the legacy OR-gate in silence.
+            //
+            // The F4 Spells Editor's redirected left click is deliberately NOT gated: it is
+            // reached from PollRedirectedPrimaryCast inside the inputSuspended branch far
+            // above, so it never arrives here. That is by construction rather than by
+            // intent, which is exactly why StanceGateTests pins it -- the obvious tidy-up is
+            // to hoist this check to the top of Update, and that would silently break
+            // authoring a spell while in Peace.
+            if (PlayerStance.IsPeace) return;
+
             PollCombatActions();
         }
 
@@ -370,6 +391,40 @@ namespace Valkur.Gameplay
 
             if (MouseInputManager.IsLeftMouseButtonPressed())
                 CastHeldPrimary(key, PrimaryCastIgnoresManaCost(active));
+        }
+
+        /// <summary>
+        /// Cut anything still in flight when the player drops into Peace.
+        ///
+        /// <para>This is the hole the PollTraversal split opens, and it is silent without a
+        /// handler. Three things in this file are HELD rather than fired: a left-held primary
+        /// beam, the middle-click laser, and a charging spell. Every one of them is ended by a
+        /// line that lives inside <see cref="PollCombatActions"/> -- the release check, the
+        /// button-up branch, the charge poll -- so the moment that method stops being called
+        /// the ending never arrives. A player who holds the laser and hits Tab would keep
+        /// channelling it, in a stance whose whole promise is that they cannot attack.</para>
+        ///
+        /// <para>Driven off the transition rather than polled beside the gate, because a poll
+        /// would re-run these three every frame of a stance that is meant to be doing nothing
+        /// at all.</para>
+        /// </summary>
+        private void OnStanceChanged(Stance stance)
+        {
+            if (stance != Stance.Peace) return;
+
+            StopLeftHeldBeam();
+
+            if (_spellCaster == null) return;
+
+            var beam = _spellCaster.GetComponent<LaserBeamController>();
+            if (beam != null) beam.Stop();
+
+            // A charge that is never released holds the spell poll hostage on the way back:
+            // the loop returns early for as long as ChargingKey is set, so re-entering War
+            // with one still held would refuse every other spell until that key is pressed
+            // and let go again.
+            if (!string.IsNullOrEmpty(_spellCaster.ChargingKey))
+                _spellCaster.CancelCharge();
         }
 
         private void StopLeftHeldBeam()
@@ -753,6 +808,86 @@ namespace Valkur.Gameplay
             return eventSystem != null && eventSystem.IsPointerOverGameObject();
         }
 
+        /// <summary>
+        /// Traversal — the dash, and nothing else. Split out of
+        /// <see cref="PollCombatActions"/> so it survives Peace stance: a dash is how the
+        /// player gets out of the way, and a stance that takes it away is a stance that gets
+        /// them killed. The method name always claimed the separation; the code did not have it.
+        ///
+        /// <para>Both guards below are duplicated from <see cref="PollCombatActions"/> ON
+        /// PURPOSE, to keep War behaviour byte-identical. The pointer guard in particular is
+        /// load-bearing: before the split, a dash pressed with the cursor over the HUD did
+        /// nothing, because the mouse check sat above it. Whether a keyboard action should
+        /// care where the cursor is, is a real question and a separate change — introducing
+        /// the answer here would surface as "the dash changed" with nothing pointing back at
+        /// the stance work.</para>
+        /// </summary>
+        private void PollTraversal()
+        {
+            bool isDashing = _dashAbility != null && _dashAbility.IsDashing;
+            if (isDashing) return;
+
+            if (IsPointerOverInteractiveUI()) return;
+
+            // Dash — fired by any of:
+            //   • Space  (canonical InputService.Gameplay.Dash action)
+            //   • RightShift  (legacy Python-parity fallback)
+            //   • LeftCtrl   (per user request)
+            //   • RightCtrl  (per user request)
+            //
+            // Ctrl-as-dash is safe during gameplay because no gameplay system
+            // reads Ctrl-modified input — every IsCtrlHeld() callsite outside
+            // this file lives in a runtime editor (Tile / Buildings / Items /
+            // Lighting / Boss), and those editors gate gameplay via
+            // InputBlocker.IsGameplayBlocked, which short-circuits this entire
+            // method. So Ctrl+S, Ctrl+Z, Ctrl-drag, etc. in
+            // editors do NOT also fire a dash, and during pure gameplay there
+            // are no Ctrl combos for the dash to interfere with.
+            //
+            // Direction always tracks the MOUSE CURSOR — _facingDirection is
+            // already updated to point at the mouse world position whenever
+            // the cursor is inside the viewport (see PlayerFacingResolver),
+            // so reusing it gives the user "dash toward where the mouse is"
+            // for every trigger uniformly. When the cursor is offscreen the
+            // resolver falls back to movement direction, which is the only
+            // sensible alternative.
+            //
+            // The Ctrl press detection reads BOTH input backends directly
+            // (legacy UnityEngine.Input.GetKeyDown + Keyboard.current.*Ctrl
+            // wasPressedThisFrame) instead of going through
+            // KeyboardInputManager. The InputActions asset binds leftCtrl to
+            // the "CtrlModifier" action which the new InputSystem can flag as
+            // "consumed" in some scenarios, masking subsequent reads. The
+            // direct OR-fallback survives that and matches the same pattern
+            // the rest of the file uses for arrow keys.
+            var dashAction = DashAction;
+            bool dashNew = dashAction != null && dashAction.WasPerformedThisFrame();
+            bool dashLegacy = KeyboardInputManager.WasKeyPressedThisFrame(Key.RightShift, KeyCode.RightShift);
+
+            // Route through KeyboardInputManager so the InputCentralizationGuard
+            // test passes — direct Keyboard.current reads outside the helper class
+            // are forbidden (see CLAUDE.md "Input pipeline" section).
+            bool leftCtrlPressed  = KeyboardInputManager.WasKeyPressedThisFrame(Key.LeftCtrl,  KeyCode.LeftControl);
+            bool rightCtrlPressed = KeyboardInputManager.WasKeyPressedThisFrame(Key.RightCtrl, KeyCode.RightControl);
+            bool dashCtrl = leftCtrlPressed || rightCtrlPressed;
+
+            // Single source of truth: the spell-based dash is the only path.
+            // The legacy DashAbility fallback was removed because it has zero
+            // visuals (no ghost trail, no particle wake, no light streak), so
+            // when the user pressed dash twice quickly the spell would be on
+            // cooldown and the silent DashAbility would fire instead — making
+            // the second dash *look* like an instant teleport even though the
+            // entity was actually moving via velocity. Now a cooldown-blocked
+            // dash simply does nothing, matching the UX of every other spell
+            // on cooldown. _dashAbility is still kept on the player so its
+            // IsDashing flag can gate other systems if needed.
+            if ((dashNew || dashLegacy || dashCtrl) && _spellCaster != null)
+            {
+                if (_spellCaster.TryCastByKey("dash", _facingDirection))
+                    TriggerCastAnimation("dash");
+            }
+        }
+
         private void PollCombatActions()
         {
             bool isDashing = _dashAbility != null && _dashAbility.IsDashing;
@@ -817,64 +952,6 @@ namespace Valkur.Gameplay
             {
                 var beam = _spellCaster != null ? _spellCaster.GetComponent<LaserBeamController>() : null;
                 if (beam != null) beam.Stop();
-            }
-
-            // Dash — fired by any of:
-            //   • Space  (canonical InputService.Gameplay.Dash action)
-            //   • RightShift  (legacy Python-parity fallback)
-            //   • LeftCtrl   (per user request)
-            //   • RightCtrl  (per user request)
-            //
-            // Ctrl-as-dash is safe during gameplay because no gameplay system
-            // reads Ctrl-modified input — every IsCtrlHeld() callsite outside
-            // this file lives in a runtime editor (Tile / Buildings / Items /
-            // Lighting / Boss), and those editors gate gameplay via
-            // InputBlocker.IsGameplayBlocked, which short-circuits this entire
-            // PollCombatActions method. So Ctrl+S, Ctrl+Z, Ctrl-drag, etc. in
-            // editors do NOT also fire a dash, and during pure gameplay there
-            // are no Ctrl combos for the dash to interfere with.
-            //
-            // Direction always tracks the MOUSE CURSOR — _facingDirection is
-            // already updated to point at the mouse world position whenever
-            // the cursor is inside the viewport (see PlayerFacingResolver),
-            // so reusing it gives the user "dash toward where the mouse is"
-            // for every trigger uniformly. When the cursor is offscreen the
-            // resolver falls back to movement direction, which is the only
-            // sensible alternative.
-            //
-            // The Ctrl press detection reads BOTH input backends directly
-            // (legacy UnityEngine.Input.GetKeyDown + Keyboard.current.*Ctrl
-            // wasPressedThisFrame) instead of going through
-            // KeyboardInputManager. The InputActions asset binds leftCtrl to
-            // the "CtrlModifier" action which the new InputSystem can flag as
-            // "consumed" in some scenarios, masking subsequent reads. The
-            // direct OR-fallback survives that and matches the same pattern
-            // the rest of the file uses for arrow keys.
-            var dashAction = DashAction;
-            bool dashNew = dashAction != null && dashAction.WasPerformedThisFrame();
-            bool dashLegacy = KeyboardInputManager.WasKeyPressedThisFrame(Key.RightShift, KeyCode.RightShift);
-
-            // Route through KeyboardInputManager so the InputCentralizationGuard
-            // test passes — direct Keyboard.current reads outside the helper class
-            // are forbidden (see CLAUDE.md "Input pipeline" section).
-            bool leftCtrlPressed  = KeyboardInputManager.WasKeyPressedThisFrame(Key.LeftCtrl,  KeyCode.LeftControl);
-            bool rightCtrlPressed = KeyboardInputManager.WasKeyPressedThisFrame(Key.RightCtrl, KeyCode.RightControl);
-            bool dashCtrl = leftCtrlPressed || rightCtrlPressed;
-
-            // Single source of truth: the spell-based dash is the only path.
-            // The legacy DashAbility fallback was removed because it has zero
-            // visuals (no ghost trail, no particle wake, no light streak), so
-            // when the user pressed dash twice quickly the spell would be on
-            // cooldown and the silent DashAbility would fire instead — making
-            // the second dash *look* like an instant teleport even though the
-            // entity was actually moving via velocity. Now a cooldown-blocked
-            // dash simply does nothing, matching the UX of every other spell
-            // on cooldown. _dashAbility is still kept on the player so its
-            // IsDashing flag can gate other systems if needed.
-            if ((dashNew || dashLegacy || dashCtrl) && _spellCaster != null)
-            {
-                if (_spellCaster.TryCastByKey("dash", _facingDirection))
-                    TriggerCastAnimation("dash");
             }
 
             // All 23 spell key bindings (1-0, q, e, r, t, f, g, c, v, x, p, l, u, m).

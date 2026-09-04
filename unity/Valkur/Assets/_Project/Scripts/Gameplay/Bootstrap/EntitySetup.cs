@@ -291,6 +291,11 @@ namespace Valkur.Gameplay
 
             if (go.GetComponent<PlayerTargetSelector>() == null)
                 go.AddComponent<PlayerTargetSelector>();
+
+            // The single reader of the stance key. On the player rather than on a system
+            // object because it is a player gesture, and it dies with them.
+            if (go.GetComponent<PlayerStanceToggle>() == null)
+                go.AddComponent<PlayerStanceToggle>();
         }
 
         /// <summary>
