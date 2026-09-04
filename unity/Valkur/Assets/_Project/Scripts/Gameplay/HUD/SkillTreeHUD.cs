@@ -33,6 +33,7 @@ namespace Valkur.Gameplay.HUD
         private Canvas _canvas;
         private GameObject _root;
         private GameObject _listContainer;
+        private Text _headerLabel;
 
         // Open/closed state — toggled by F4 in normal play (designer
         // wires the input binding) but exposed publicly for tests.
@@ -46,7 +47,7 @@ namespace Valkur.Gameplay.HUD
             skills = ls;
             playerLevel = level;
             if (skills != null)
-                skills.OnSkillLearned += OnSkillLearned;
+                skills.OnLoadoutChanged += OnLoadoutChanged;
             if (IsOpen) Refresh();
         }
 
@@ -85,7 +86,7 @@ namespace Valkur.Gameplay.HUD
 
         private void UnbindCurrent()
         {
-            if (skills != null) skills.OnSkillLearned -= OnSkillLearned;
+            if (skills != null) skills.OnLoadoutChanged -= OnLoadoutChanged;
         }
 
         private void AutoResolveSkills()
@@ -96,7 +97,7 @@ namespace Valkur.Gameplay.HUD
                               player.GetComponent<Experience>()?.Level ?? 1);
         }
 
-        private void OnSkillLearned(string _) => Refresh();
+        private void OnLoadoutChanged() => Refresh();
 
         // Test seam — produces the textual representation of the tree
         // without rendering. Each node becomes one line.
@@ -120,9 +121,19 @@ namespace Valkur.Gameplay.HUD
         private string StatusFor(SkillNode node)
         {
             if (node == null) return "?";
-            if (skills.IsLearned(node.skillId)) return "Learned";
-            if (skills.CanLearn(node, playerLevel, out string reason)) return "Available";
-            return "Locked: " + reason;
+
+            int rank = skills.RankOf(node.skillId);
+            int maxRank = Mathf.Max(1, node.maxRank);
+
+            // The rank is stated on every MULTI-rank row, learned or not: a five-rank node
+            // that says only "Learned" hides the single most important thing about it, which
+            // is how much of it the player actually owns. A single-rank node has no such
+            // information to carry, so it keeps the plain word.
+            string held = maxRank > 1 ? $"[{rank}/{maxRank}] " : string.Empty;
+
+            if (rank >= maxRank) return maxRank > 1 ? held + "Maxed" : "Learned";
+            if (skills.CanLearn(node, playerLevel, out string reason)) return held + "Available";
+            return held + "Locked: " + reason;
         }
 
         private void Refresh()
@@ -133,8 +144,27 @@ namespace Valkur.Gameplay.HUD
             for (int i = _listContainer.transform.childCount - 1; i >= 0; i--)
                 Object.Destroy(_listContainer.transform.GetChild(i).gameObject);
 
-            // Repopulate.
-            foreach (var node in skills.Tree.Nodes)
+            // The points balance belongs in the header, not in a row: it is the one number
+            // that governs every row at once, and a player deciding where to spend reads it
+            // before anything else.
+            if (_headerLabel != null)
+            {
+                string treeName = string.IsNullOrWhiteSpace(skills.Tree.displayName)
+                    ? "Skill Tree" : skills.Tree.displayName;
+                _headerLabel.text = $"{treeName}   —   {skills.AvailablePoints} point(s) available";
+            }
+
+            // Repopulate, ordered by the authored layout so the panel reads as the tree the
+            // designer drew rather than as whatever order the array happens to be in.
+            var ordered = new List<SkillNode>(skills.Tree.Nodes);
+            ordered.Sort((a, b) =>
+            {
+                if (a == null || b == null) return 0;
+                int byRow = a.row.CompareTo(b.row);
+                return byRow != 0 ? byRow : a.column.CompareTo(b.column);
+            });
+
+            foreach (var node in ordered)
             {
                 if (node == null) continue;
                 BuildRow(node);
@@ -163,7 +193,13 @@ namespace Valkur.Gameplay.HUD
             label.alignment = TextAnchor.MiddleLeft;
             label.color = Color.white;
             label.fontSize = 14;
-            label.text = $"{node.displayName} (cost {node.pointCost}) — {StatusFor(node)}";
+            // The effect line is GENERATED from the node's modifiers rather than read from
+            // its description, so a retune can never leave the panel lying about what a
+            // talent does. See SkillNode.DescribeRank.
+            string effect = node.DescribeRank(Mathf.Max(1, skills.RankOf(node.skillId) + 1));
+            label.text = string.IsNullOrEmpty(effect)
+                ? $"{node.displayName} (cost {node.pointCost}) — {StatusFor(node)}"
+                : $"{node.displayName} (cost {node.pointCost}) — {StatusFor(node)}  ·  {effect}";
 
             // Learn button only when CanLearn — otherwise display-only.
             if (skills.CanLearn(node, playerLevel, out _))
@@ -235,6 +271,7 @@ namespace Valkur.Gameplay.HUD
             hdrLabel.fontSize = 18;
             hdrLabel.fontStyle = FontStyle.Bold;
             hdrLabel.text = "Skill Tree";
+            _headerLabel = hdrLabel;
 
             // List container with VerticalLayoutGroup.
             _listContainer = new GameObject("List");

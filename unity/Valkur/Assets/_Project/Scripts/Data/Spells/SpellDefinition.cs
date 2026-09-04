@@ -49,6 +49,14 @@ namespace Valkur.Data
         // nothing else, which is why it has no damage, no radius of effect and no targets.
         // APPENDED for the same reason as WeaponLoadout above.
         EnergyCharge,     // 27
+        // A timed stat change on the caster: statModifiers into TimedBuffSource, keyed so a
+        // recast REFRESHES rather than stacks. It is the seam that makes the whole support
+        // category pure data -- every future "+X for Y seconds" spell costs one asset and no
+        // code. APPENDED for the same reason as WeaponLoadout above.
+        //
+        // NOTE it must also be listed in CastFlourishProfile's switch (under Ward), or a
+        // self-buff falls through to the Hurl default and throws motes forward at nothing.
+        Buff,             // 28
     }
 
     /// <summary>
@@ -263,6 +271,76 @@ namespace Valkur.Data
                  "A key the character does not declare is refused and logged rather than " +
                  "read as \"unequip\".")]
         public string loadoutKey;
+
+        [Header("Buff")]
+        [Tooltip("SpellType.Buff only: the stat changes granted for `duration` seconds. They " +
+                 "land in PlayerStats' Buff layer through TimedBuffSource, so removal is exact " +
+                 "by construction and no source ever writes another source's contribution.")]
+        public StatModifier[] statModifiers = System.Array.Empty<StatModifier>();
+
+        [Tooltip("Refresh key for the buff. Blank falls back to spellKey, which is what a " +
+                 "single-spell buff wants. Two spells sharing a key REPLACE each other; a " +
+                 "designer who wants them to stack authors distinct keys.")]
+        public string buffKey;
+
+        [Header("Projectile Mechanics")]
+        [Tooltip("Enemies this shot passes THROUGH before it despawns. 0 (the default every " +
+                 "asset authored before this field existed reads) stops at the first hit, " +
+                 "which is how every projectile in the game has always behaved.")]
+        [Min(0)] public int pierceCount;
+
+        [Tooltip("Fraction of damage lost per body pierced. 0.20 means the second target " +
+                 "takes 80% and the third 64%. Ignored when pierceCount is 0.")]
+        [Range(0f, 1f)] public float pierceDamageFalloff;
+
+        [Tooltip("Turn rate toward an acquired target, in degrees per second. 0 (the default) " +
+                 "flies straight, which is what every existing projectile does.")]
+        [Min(0f)] public float homingStrength;
+
+        [Tooltip("Acquisition radius in WORLD UNITS. A shot with homingStrength but no " +
+                 "homingRange acquires nothing and flies straight, so both must be authored.")]
+        [Min(0f)] public float homingRange;
+
+        [Tooltip("Shots fired per cast, spread across spreadDegrees. 1 (the default) is a " +
+                 "single shot. Each shot carries the full `damage` value -- a volley's " +
+                 "balance lives in its per-shot damage, not in a division here.")]
+        [Min(1)] public int projectileCount = 1;
+
+        [Tooltip("Total fan angle across projectileCount shots, in degrees. Ignored when " +
+                 "projectileCount is 1.")]
+        [Min(0f)] public float spreadDegrees;
+
+        [Header("Charge")]
+        [Tooltip("Seconds of holding the cast key to reach full charge. 0 (the default) means " +
+                 "the spell is NOT chargeable and fires the instant it is cast, which is how " +
+                 "every existing spell behaves.")]
+        [Min(0f)] public float chargeMaxSeconds;
+
+        [Tooltip("Fraction of the charged values delivered by a shot released immediately. " +
+                 "0.45 means a snap cast lands at 45% and a full hold at 100%.")]
+        [Range(0f, 1f)] public float chargeMinFraction = 0.45f;
+
+        [Tooltip("Damage multiplier at FULL charge, applied on top of `damage`. 2.6 means a " +
+                 "fully charged shot hits for 2.6x the authored value.")]
+        [Min(0f)] public float chargeDamageMultiplier = 1f;
+
+        [Tooltip("Visual and hit-radius multiplier at FULL charge.")]
+        [Min(0f)] public float chargeScaleMultiplier = 1f;
+
+        /// <summary>
+        /// True when this spell wants the hold-to-charge path. A single place to ask, so the
+        /// caster, the executor and the editor cannot disagree about what counts as
+        /// chargeable.
+        /// </summary>
+        public bool IsChargeable => chargeMaxSeconds > 0f;
+
+        /// <summary>
+        /// The refresh key a buff should use: the authored one, or the spell key when the
+        /// author left it blank. Resolving it here rather than at each call site is what
+        /// stops one caller keying on the spell and another on the empty string.
+        /// </summary>
+        public string ResolveBuffKey()
+            => string.IsNullOrWhiteSpace(buffKey) ? spellKey : buffKey;
 
         [Header("Visual")]
         [Tooltip("Sprite shown on the in-world projectile / area / mine / boomerang / summon / wall. " +

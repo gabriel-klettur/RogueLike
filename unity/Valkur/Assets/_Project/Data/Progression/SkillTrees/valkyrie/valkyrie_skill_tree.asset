@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36d1094d9ba7ed546a6bd9f0b160891f, type: 3}
+  m_Name: valkyrie_skill_tree
+  m_EditorClassIdentifier: 
+  displayName: Path of the Chooser
+  classKey: valkyrie
+  flavour: Half a warrior and half a spell, and neither half apologises.
+  nodes:
+  - {fileID: 11400000, guid: 686e07cd58aa5774d930e2c313c43569, type: 2}
+  - {fileID: 11400000, guid: 6b018bfad11733b4ca3d91c8baded4c6, type: 2}
+  - {fileID: 11400000, guid: 3d30622df363c994bbffc280e8f3d865, type: 2}
+  - {fileID: 11400000, guid: 3eb31fe81f2c7244899ad1fa6c99fb4a, type: 2}
+  - {fileID: 11400000, guid: 2958f2db2040c9e46bc3e3f2cd86a249, type: 2}
+  - {fileID: 11400000, guid: 0668cf6eb8041554c91ac8afd4d1c804, type: 2}
+  - {fileID: 11400000, guid: 16c0f85764508a14099c06723266784c, type: 2}

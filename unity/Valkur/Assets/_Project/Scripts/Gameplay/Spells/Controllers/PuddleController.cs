@@ -107,7 +107,11 @@ namespace Valkur.Gameplay.Spells
             // one; a real PoisonPuddle/WaterPuddle belongs in AreaPalette when it exists.
             var palette = AreaPalette.LavaPuddle();
             _rig = AreaFXRig.Attach(transform, palette, _radius);
-            transform.localScale = Vector3.one * Mathf.Max(0.5f, _radius);
+            // The root stays at IDENTITY. AreaFXRig.Attach has already sized every child by
+            // this radius, so scaling the root sized them TWICE -- and, worse, scaled the
+            // Light2D hanging under it, which renders at `authored x lossyScale`. That is the
+            // exact pair of lines that made the vortex's light reach an effective 367 world
+            // units, and this was the last place in the project still carrying it.
 
             var sr = GetComponent<SpriteRenderer>();
             if (sr != null) sr.enabled = false;

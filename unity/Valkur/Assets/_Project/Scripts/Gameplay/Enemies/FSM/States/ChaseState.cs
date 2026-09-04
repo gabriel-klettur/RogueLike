@@ -40,7 +40,7 @@ namespace Valkur.Gameplay.FSM
                 return;
             }
 
-            var player = EntityRegistry.Player;
+            var player = FactionTargeting.EnemyOf(fsm.Owner);
             if (player == null)
             {
                 fsm.ChangeState(new PatrolState());

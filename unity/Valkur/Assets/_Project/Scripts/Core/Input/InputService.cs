@@ -261,7 +261,7 @@ namespace Valkur.Core.Input
                 yield return (SpellVortexPush,        "vortex_push",         UnityEngine.KeyCode.Alpha9);
                 yield return (SpellFlameBreath,       "flame_breath",        UnityEngine.KeyCode.Alpha0);
                 yield return (SpellTeleport,          "teleport",            UnityEngine.KeyCode.Q);
-                yield return (SpellSlash,             "slash",               UnityEngine.KeyCode.E);
+                yield return (SpellSlash,             "slash",               UnityEngine.KeyCode.Z);
                 yield return (SpellLightning,         "lightning",           UnityEngine.KeyCode.R);
                 yield return (SpellSphereMagicShield, "sphere_magic_shield", UnityEngine.KeyCode.T);
                 yield return (SpellSmoke,             "smoke",               UnityEngine.KeyCode.F);
@@ -269,7 +269,7 @@ namespace Valkur.Core.Input
                 yield return (SpellArcaneFlame,       "arcane_flame",        UnityEngine.KeyCode.C);
                 yield return (SpellFireworkLaunch,    "firework_launch",     UnityEngine.KeyCode.V);
                 yield return (SpellHealingAura,       "healing_aura",        UnityEngine.KeyCode.X);
-                yield return (SpellMeteorShower,      "meteor_shower",       UnityEngine.KeyCode.P);
+                yield return (SpellMeteorShower,      "meteor_shower",       UnityEngine.KeyCode.O);
                 yield return (SpellHealingTotem,      "healing_totem",       UnityEngine.KeyCode.L);
                 yield return (SpellSummonBarbol,      "summon_barbol",       UnityEngine.KeyCode.U);
                 yield return (SpellWallIce,           "wall_ice",            UnityEngine.KeyCode.M);

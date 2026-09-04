@@ -256,9 +256,30 @@ namespace Valkur.Gameplay.Spawners
             _state = SpawnerState.Active;
         }
 
+        /// <summary>
+        /// Spawn one wave entry, dispatched on <see cref="WaveSpawnEntry.kind"/>.
+        ///
+        /// <para>That field shipped authored, round-tripped to disk and READ BY NOTHING: this
+        /// method went straight to the monster spawner whatever it said, so a designer could
+        /// set "npc" or anything else and get a monster. It is the same shape as
+        /// <c>animation_map.json</c> and the FSM's <c>Actions</c>/<c>Blackboard</c> — data that
+        /// looks live and is inert. Giving it a real dispatch is what lets the Spawner Editor
+        /// place something that is not a monster.</para>
+        ///
+        /// <para>Anything unrecognised, empty included, keeps the monster path, so every one of
+        /// the shipped templates behaves exactly as before.</para>
+        /// </summary>
         private void SpawnWaveEntry(WaveSpawnEntry entry)
         {
-            if (_monsterSpawner == null || string.IsNullOrEmpty(entry.entityId)) return;
+            if (string.IsNullOrEmpty(entry.entityId)) return;
+
+            if (string.Equals(entry.kind, "building", System.StringComparison.OrdinalIgnoreCase))
+            {
+                SpawnBuildingEntry(entry);
+                return;
+            }
+
+            if (_monsterSpawner == null) return;
 
             var monsterDef = _monsterSpawner.GetDefinition(entry.entityId);
             if (monsterDef == null)
@@ -276,6 +297,82 @@ namespace Valkur.Gameplay.Spawners
                 if (go != null)
                     _activeEntities.Add(go);
             }
+        }
+
+        /// <summary>
+        /// Place BUILDINGS rather than entities — a shoal of fish, a crop, anything that is a
+        /// placed object the player can work rather than something that walks.
+        ///
+        /// <para>It goes through <c>BuildingLoader.SpawnAtWorldPosition</c>, the same entry the
+        /// Map Editor's biome generator uses, so the spawned object gets its collision scope,
+        /// its Y-sort, its light and — the part that matters here — its
+        /// <c>BuildingDurability</c> and <c>HarvestNode</c>, because those are attached by the
+        /// loader for any template that declares a DestructionProfile. A fish shoal is
+        /// therefore harvestable for exactly the same reason a tree is, with no code of its
+        /// own.</para>
+        ///
+        /// <para>Instance ids are drawn from a high private range. The authored world numbers
+        /// its buildings from 1 upward in buildings_instances.json, and the harvest save keys
+        /// on (slot, zone, instanceId) — so a spawned shoal colliding with an authored id would
+        /// make felling a tree mark a shoal as fished, and neither file would look wrong.</para>
+        /// </summary>
+        private void SpawnBuildingEntry(WaveSpawnEntry entry)
+        {
+            if (!int.TryParse(entry.entityId, out int templateId))
+            {
+                Debug.LogWarning($"[SpawnerInstance] Wave entry kind='building' needs a numeric " +
+                                 $"template id in entityId, got '{entry.entityId}' " +
+                                 $"(spawner '{_instanceId}').");
+                return;
+            }
+
+            var loader = ResolveBuildingLoader();
+            if (loader == null)
+            {
+                Debug.LogWarning($"[SpawnerInstance] No BuildingLoader in the scene; spawner " +
+                                 $"'{_instanceId}' cannot place template {templateId}.");
+                return;
+            }
+
+            for (int i = 0; i < entry.count; i++)
+            {
+                Vector2 offset = entry.spreadRadius > 0
+                    ? Random.insideUnitCircle * entry.spreadRadius
+                    : Vector2.zero;
+                offset = ClampToSpawnArea(offset);
+
+                var placed = loader.SpawnAtWorldPosition(
+                    templateId, _zone, (Vector2)transform.position + offset, NextSpawnedInstanceId());
+                if (placed != null) _activeEntities.Add(placed.gameObject);
+            }
+        }
+
+        /// <summary>
+        /// The first instance id a SPAWNED building may take. Comfortably above anything the
+        /// authored world uses — buildings_instances.json ships 302 records numbered from 1 —
+        /// and low enough to stay readable in a save file.
+        /// </summary>
+        private const int SPAWNED_BUILDING_ID_BASE = 900000;
+
+        // Domain Reload is OFF, so a counter left mid-run would keep climbing into the next
+        // Play session. Assigning the base back is a plain stsfld, the only reset shape
+        // DomainReloadStaticResetTests recognises.
+        private static int s_nextSpawnedBuildingId = SPAWNED_BUILDING_ID_BASE;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetSpawnedBuildingIds() => s_nextSpawnedBuildingId = SPAWNED_BUILDING_ID_BASE;
+
+        private static int NextSpawnedInstanceId() => s_nextSpawnedBuildingId++;
+
+        // Resolved lazily and cached: BuildingLoader is not in the ServiceLocator, and the
+        // spawner may well run before it would have been registered anyway.
+        private World.BuildingLoader _buildingLoader;
+
+        private World.BuildingLoader ResolveBuildingLoader()
+        {
+            if (_buildingLoader != null) return _buildingLoader;
+            _buildingLoader = Object.FindObjectOfType<World.BuildingLoader>();
+            return _buildingLoader;
         }
 
         /// <summary>

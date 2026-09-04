@@ -1,0 +1,16 @@
+{
+  "friendship_score": 0,
+  "ephemeral_history": [
+    {
+      "role": "user",
+      "content": "hi gatita how are you today?"
+    },
+    {
+      "role": "assistant",
+      "content": "Hello, darling! I’m bustling at the market, ready with fresh produce and cozy soups. What would you like today? 🙂"
+    }
+  ],
+  "preferred_language": "en",
+  "has_greeted": true,
+  "visit_count": 1
+}

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
 
@@ -72,6 +72,14 @@ namespace Valkur.Gameplay.World
         // Child renderers created by Apply()
         private SpriteRenderer _bottomRenderer;
         private SpriteRenderer _topRenderer;
+
+        // What the building looked like before it was destroyed, so a regrow can put it back.
+        // Captured on the first remains swap only: a second swap would snapshot the STUMP and
+        // make the regrow a no-op that looks like a bug in the regrow clock.
+        private bool   _hasPristineSnapshot;
+        private Sprite _pristineFootprintSprite;
+        private Vector3 _pristineLocalScale = Vector3.one;
+        private float  _pristineSplitRatioOverride = -1f;
         private BoxCollider2D  _collider;
 
         // Full (un-split) sprite last applied by Apply(). Used by the gameplay hover
@@ -91,6 +99,17 @@ namespace Valkur.Gameplay.World
 
         /// <summary>Full (un-split) sprite last applied, or null before <see cref="Apply"/>.</summary>
         public Sprite SourceSprite => _sourceSprite;
+
+        /// <summary>
+        /// The lower half of the sprite — the part drawn UNDER the player, and the part a
+        /// blow actually lands on. A tree's trunk, a house's ground floor.
+        /// </summary>
+        public SpriteRenderer FootprintRenderer => _bottomRenderer;
+
+        /// <summary>
+        /// The upper half, drawn OVER the player on WallsTop. A tree's canopy, a roof.
+        /// </summary>
+        public SpriteRenderer CanopyRenderer => _topRenderer;
 
         /// <summary>
         /// Whether this placement is interactable: the per-instance override when set,

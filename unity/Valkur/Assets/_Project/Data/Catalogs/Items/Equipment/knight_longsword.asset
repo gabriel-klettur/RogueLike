@@ -51,3 +51,5 @@ MonoBehaviour:
   buffStat: 
   buffValue: 0
   duration: 0
+  toolClass: 3
+  toolTier: 1

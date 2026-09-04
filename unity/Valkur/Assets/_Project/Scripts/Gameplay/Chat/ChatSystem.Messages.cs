@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
+using Valkur.Gameplay.Chat.Providers;
+using Valkur.Gameplay.NPC;
 
 namespace Valkur.Gameplay.Chat
 {
@@ -16,6 +19,11 @@ namespace Valkur.Gameplay.Chat
             _chatTarget = null;
             _activePersona = null;
             _pendingChunks.Clear();
+            ResetExpression();
+
+            // An offer belongs to the conversation it was made in. Leaving one on the table
+            // would let the next chat's Confirm button spend coins on the last chat's deal.
+            ClearPendingTrade(notify: true);
 
             // Persist memory and close log session.
             if (_activeMemory != null)
@@ -38,8 +46,7 @@ namespace Valkur.Gameplay.Chat
         {
             if (!_chatOpen || string.IsNullOrWhiteSpace(text)) return;
 
-            string playerName = "Player";
-            AddMessage(playerName, text);
+            AddMessage(PLAYER_SENDER, text);
 
             ShowPlayerBubble(text, PLAYER_BUBBLE_TTL_MS, Color.cyan);
 
@@ -53,8 +60,9 @@ namespace Valkur.Gameplay.Chat
             if (_pendingChunks.Count > 0 && Time.time >= _nextChunkTime)
             {
                 var chunk = _pendingChunks.Dequeue();
+                SetExpression(chunk.expression);
                 ShowTargetBubble(chunk.text, NPC_BUBBLE_TTL_MS);
-                AddMessage(chunk.sender, chunk.text);
+                AddChunkToHistory(chunk.sender, chunk.text);
                 _nextChunkTime = Time.time + REPLY_CHUNK_DELAY_SEC;
             }
 
@@ -83,15 +91,39 @@ namespace Valkur.Gameplay.Chat
 
             string npcName = _activePersona.displayName ?? "NPC";
 
+            // The wait is the one moment the panel had nothing at all to say. A remote call
+            // is seconds long and this method is fire-and-forget, so without a face here the
+            // player types, the panel goes silent and nothing on screen says anyone is
+            // listening. An offline provider completes its await synchronously, so this
+            // never renders a frame for it — no branch on the provider is needed.
+            SetExpression(FacialExpression.Thinking);
+
             try
             {
-                string reply = await _provider.GenerateReplyAsync(
-                    _activePersona, _activeMemory, playerText, token);
+                var request = new ChatRequest(
+                    _activePersona, _activeMemory, playerText, BuildTradeContext());
 
-                if (string.IsNullOrEmpty(reply)) reply = "...";
+                ChatReply reply = await _provider.GenerateReplyAsync(request, token);
 
-                // Schedule reply in chunks (maps to Python MessageScheduler.schedule_reply_chunks).
-                ScheduleReplyChunks(npcName, reply);
+                // A proposal is checked against the live shop BEFORE anything is said, so a
+                // refusal can be spoken instead of an offer the game would then reject.
+                string spoken = reply.Text;
+                if (reply.Proposal.IsSomething)
+                    spoken = OfferTrade(reply.Proposal, spoken);
+
+                if (string.IsNullOrEmpty(spoken)) spoken = "...";
+
+                // Recorded ONCE, whole, before it is broken up for delivery. What the NPC
+                // said and how it was paced on screen are different things: recording each
+                // bubble wrote "Si te llevas canasta, te hago precio de" and "vecina" as two
+                // separate assistant turns, so the remembered conversation was a list of
+                // fragments and the do-not-repeat check compared against "vecina".
+                // The face lands with the FIRST bubble rather than here, so the expression
+                // and the words it belongs to arrive together — ScheduleReplyChunks holds
+                // the first one back half a second, and changing the portrait during that
+                // gap reads as the character reacting to something the player cannot see.
+                RecordToMemoryAndLog(npcName, spoken);
+                ScheduleReplyChunks(npcName, spoken, reply.Expression);
             }
             catch (System.OperationCanceledException)
             {
@@ -100,42 +132,207 @@ namespace Valkur.Gameplay.Chat
             catch (System.Exception ex)
             {
                 Debug.LogError($"[ChatSystem] Provider '{_provider?.ProviderName}' failed: {ex}");
-                // Deliver a fallback reply so the chat doesn't silently stall.
-                ScheduleReplyChunks(npcName, "...");
+                // Deliver a fallback reply so the chat doesn't silently stall. Not recorded:
+                // an ellipsis the NPC never chose to say is noise in a remembered
+                // conversation, and it would be what the next session refuses to repeat.
+                // The face goes back to neutral rather than staying on Thinking, which would
+                // leave the character visibly stuck mid-thought forever.
+                ScheduleReplyChunks(npcName, "...", FacialExpression.Neutral);
             }
         }
 
-        private void ScheduleReplyChunks(string sender, string fullReply)
+        /// <summary>
+        /// What this character can see about the player's ability to pay.
+        ///
+        /// Read fresh on every message rather than captured when the conversation opened:
+        /// the player can buy something from the shop and come back mid-conversation, and a
+        /// vendor still talking about the purse they saw two minutes ago is worse than one
+        /// that never mentions money.
+        /// </summary>
+        private ChatTradeContext BuildTradeContext()
         {
-            string[] words = fullReply.Split(' ');
-            int idx = 0;
+            var wallet = EntityRegistry.PlayerTransform != null
+                ? EntityRegistry.PlayerTransform.GetComponent<CurrencyWallet>()
+                : null;
 
-            while (idx < words.Length)
-            {
-                int chunkEnd = Mathf.Min(idx + REPLY_CHUNK_WORDS, words.Length);
-                string chunk = string.Join(" ", words, idx, chunkEnd - idx);
-                _pendingChunks.Enqueue(new ScheduledChunk { sender = sender, text = chunk });
-                idx = chunkEnd;
-            }
+            return ChatTradeContext.FromLive(ActiveVendor, wallet);
+        }
+
+        /// <summary>
+        /// Breaks a reply into the bubbles it will be spoken as, one every
+        /// <see cref="REPLY_CHUNK_DELAY_SEC"/>.
+        ///
+        /// <para>The split is by SENTENCE first and only then by word budget. A pure
+        /// eight-word cut is what Python did and it is visibly wrong on the short authored
+        /// lines this game actually ships: measured live, Gatita's "Si te llevas canasta, te
+        /// hago precio de vecina" — nine words — came out as an eight-word bubble followed
+        /// three seconds later by a bubble containing the single word "vecina". A sentence
+        /// is the unit a person speaks in, so it is the unit to break on.</para>
+        ///
+        /// <para>A trailing fragment shorter than <see cref="MIN_CHUNK_WORDS"/> is folded
+        /// back into the bubble before it. That is deliberately allowed to exceed the word
+        /// budget: a slightly long bubble reads as one sentence, an orphaned word reads as a
+        /// bug.</para>
+        /// </summary>
+        private void ScheduleReplyChunks(
+            string sender, string fullReply,
+            FacialExpression expression = FacialExpression.Neutral)
+        {
+            foreach (string chunk in SplitIntoSpokenChunks(fullReply))
+                _pendingChunks.Enqueue(new ScheduledChunk
+                {
+                    sender = sender,
+                    text = chunk,
+                    expression = expression,
+                });
 
             _nextChunkTime = Time.time + 0.5f; // Short initial delay
         }
 
+        /// <summary>
+        /// The bubbles <paramref name="fullReply"/> should be spoken as. Public surface is
+        /// internal so the tests can state the contract on the split itself rather than
+        /// having to drain a queue to see it.
+        /// </summary>
+        internal static List<string> SplitIntoSpokenChunks(string fullReply)
+        {
+            var chunks = new List<string>();
+            if (string.IsNullOrWhiteSpace(fullReply)) return chunks;
+
+            // Pack WHOLE sentences into a bubble until it is as long as one comfortably
+            // reads, rather than cutting every N words. The old fixed cut was sized for the
+            // short authored lines and falls apart on anything longer: a model reply came
+            // back as five bubbles, one of which was "de remolacha— lista para cocinar y
+            // regalarte un", and at REPLY_CHUNK_DELAY_SEC apiece the whole answer took
+            // fifteen seconds to finish arriving.
+            var current = new List<string>();
+            int currentWords = 0;
+
+            foreach (string sentence in SplitSentences(fullReply))
+            {
+                foreach (string piece in SplitOverlongSentence(sentence))
+                {
+                    int pieceWords = WordCount(piece);
+                    if (currentWords > 0 && currentWords + pieceWords > MAX_BUBBLE_WORDS)
+                    {
+                        chunks.Add(string.Join(" ", current));
+                        current.Clear();
+                        currentWords = 0;
+                    }
+
+                    current.Add(piece);
+                    currentWords += pieceWords;
+                }
+            }
+
+            if (current.Count > 0) chunks.Add(string.Join(" ", current));
+
+            // Fold a stray tail back into whatever came before it. A one or two word bubble
+            // reads as the NPC having been cut off rather than as a pause.
+            for (int i = chunks.Count - 1; i > 0; i--)
+            {
+                if (WordCount(chunks[i]) >= MIN_CHUNK_WORDS) continue;
+                chunks[i - 1] = chunks[i - 1] + " " + chunks[i];
+                chunks.RemoveAt(i);
+            }
+
+            return chunks;
+        }
+
+        /// <summary>
+        /// One sentence, or the pieces of it when it is longer than a bubble holds.
+        ///
+        /// Only a genuinely long sentence is ever cut, and the cut is the last resort: there
+        /// is no punctuation to break on and something has to give.
+        /// </summary>
+        private static List<string> SplitOverlongSentence(string sentence)
+        {
+            var pieces = new List<string>();
+            string[] words = sentence.Split(new[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length == 0) return pieces;
+
+            if (words.Length <= MAX_BUBBLE_WORDS)
+            {
+                pieces.Add(string.Join(" ", words));
+                return pieces;
+            }
+
+            for (int i = 0; i < words.Length; i += MAX_BUBBLE_WORDS)
+            {
+                int take = Mathf.Min(MAX_BUBBLE_WORDS, words.Length - i);
+                pieces.Add(string.Join(" ", words, i, take));
+            }
+            return pieces;
+        }
+
+        /// <summary>
+        /// Splits on sentence-ending punctuation, keeping the punctuation with its sentence.
+        /// Deliberately naive — it is choosing where to pause a bubble, not parsing prose,
+        /// and the cost of a wrong break here is one bubble reading slightly long.
+        /// </summary>
+        private static List<string> SplitSentences(string text)
+        {
+            var sentences = new List<string>();
+            int start = 0;
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                if (c != '.' && c != '!' && c != '?' && c != '\n') continue;
+
+                // Run past a cluster like "?!" or "..." so it stays with its sentence.
+                while (i + 1 < text.Length &&
+                       (text[i + 1] == '.' || text[i + 1] == '!' || text[i + 1] == '?'))
+                    i++;
+
+                string sentence = text.Substring(start, i - start + 1).Trim();
+                if (sentence.Length > 0) sentences.Add(sentence);
+                start = i + 1;
+            }
+
+            string tail = start < text.Length ? text.Substring(start).Trim() : "";
+            if (tail.Length > 0) sentences.Add(tail);
+
+            // A reply with no punctuation at all is one sentence, not zero.
+            if (sentences.Count == 0) sentences.Add(text.Trim());
+            return sentences;
+        }
+
+        private static int WordCount(string text) =>
+            text.Split(new[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries).Length;
+
+        /// <summary>A whole message: shown, remembered and logged.</summary>
         private void AddMessage(string sender, string text)
+        {
+            AddChunkToHistory(sender, text);
+            RecordToMemoryAndLog(sender, text);
+        }
+
+        /// <summary>
+        /// One bubble of a reply: shown in the panel, not written to the record.
+        ///
+        /// The panel is a transcript of the conversation as it is being spoken, so it wants
+        /// the pieces; <see cref="NPCMemory"/> is a record of what was said, so it wants the
+        /// whole line. <see cref="GenerateReply"/> writes that once.
+        /// </summary>
+        private void AddChunkToHistory(string sender, string text)
         {
             _history.Add(new ChatMessage { sender = sender, text = text, timestamp = Time.time });
             while (_history.Count > MAX_HISTORY)
                 _history.RemoveAt(0);
 
-            // Persist to ephemeral memory and session log.
+            OnMessageReceived?.Invoke(sender, text);
+        }
+
+        /// <summary>Writes one whole message to the persistent memory and the session log.</summary>
+        private void RecordToMemoryAndLog(string sender, string text)
+        {
             if (_activeMemory != null)
             {
-                string role = sender == "Player" ? "user" : "assistant";
+                string role = sender == PLAYER_SENDER ? "user" : "assistant";
                 NPCMemoryStore.AppendEphemeral(_activeMemory, role, text);
             }
             ChatSessionLogger.LogLine(sender, text);
-
-            OnMessageReceived?.Invoke(sender, text);
         }
 
         /// <summary>
@@ -212,6 +409,17 @@ namespace Valkur.Gameplay.Chat
         {
             public string sender;
             public string text;
+
+            /// <summary>
+            /// The face to be wearing while this bubble is on screen. Carried per CHUNK
+            /// rather than per reply so the change lands with the words it belongs to —
+            /// applying it when the reply arrives would move the portrait half a second
+            /// before the first bubble appears, which reads as the character reacting to
+            /// nothing. Every chunk of one reply currently carries the same value and
+            /// <c>ApplyExpression</c> refuses a repeat, so the extra field costs nothing
+            /// until a provider has something per-sentence to say.
+            /// </summary>
+            public FacialExpression expression;
         }
     }
 }

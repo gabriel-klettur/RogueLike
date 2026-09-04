@@ -79,25 +79,133 @@ namespace Valkur.Tests.EditMode.Editors.Particles
         {
             LogAssert.ignoreFailingMessages = true;
 
-            // Snapshot the production JSON file so TearDown can restore it.
             _jsonPath = Path.Combine(
                 Application.streamingAssetsPath, "Particles", "particles_instances.json");
+
+            // RECOVER FIRST. A leftover backup means a previous run of this fixture opened the
+            // write guard and never reached its TearDown — a domain reload from a recompile
+            // landing mid-run, or the runner being killed. In that state the real file is
+            // holding this fixture's two-record output and the world's placed emitters are
+            // gone, which is exactly how particles_instances.json went from 188 records to 2.
+            // Restoring here means the damage lasts until the next run of the suite instead of
+            // until somebody notices the map has no particles.
+            RestoreFromBackupIfPresent();
+
             _fileExistedBefore = File.Exists(_jsonPath);
             _snapshotContents  = _fileExistedBefore ? File.ReadAllText(_jsonPath) : null;
+
+            // The snapshot is ALSO written to disk, not just held in this field. An in-memory
+            // snapshot cannot survive the one event that makes it necessary: a domain reload
+            // discards the fixture instance, so TearDown either never runs or runs against a
+            // null snapshot, and the file is left destroyed with nothing reporting it.
+            if (_snapshotContents != null)
+            {
+                try { File.WriteAllText(BackupPath, _snapshotContents); }
+                catch (System.Exception ex)
+                {
+                    Assert.Ignore("Could not write the safety backup for " +
+                                  $"particles_instances.json ({ex.Message}); refusing to run a " +
+                                  "fixture that writes the real file without one.");
+                }
+            }
 
             // This fixture backs the real file up above and restores it below, so it is one
             // of the few allowed to write it from EditMode.
             FileParticleInstanceStore.AllowEditModeWritesToRealPath = true;
         }
 
+        /// <summary>
+        /// Put the production file back, tolerating the one failure that actually happens here.
+        ///
+        /// <para>Unity keeps StreamingAssets files memory-mapped, and a write against a mapped
+        /// section fails with Win32 1224 (ERROR_USER_MAPPED_FILE). Measured: it surfaced as
+        /// <c>TearDown : System.IO.IOException : Win32 IO returned 1224</c> on
+        /// particles_instances.json — and the DATA was fine, the file still held all 188
+        /// records. A thrown TearDown also skips everything after it, which is why the backup
+        /// deletion now sits behind this: a file that could not be restored, whose backup was
+        /// deleted anyway, would be unrecoverable.</para>
+        ///
+        /// <para>Retried rather than given up on, because the mapping is transient — the
+        /// importer holds it for a moment. Returns whether the file is now as it was found.</para>
+        /// </summary>
+        private bool RestoreWithRetry()
+        {
+            const int attempts = 5;
+            for (int i = 0; i < attempts; i++)
+            {
+                try
+                {
+                    if (_fileExistedBefore && _snapshotContents != null)
+                        File.WriteAllText(_jsonPath, _snapshotContents);
+                    else if (!_fileExistedBefore && File.Exists(_jsonPath))
+                        File.Delete(_jsonPath);
+                    return true;
+                }
+                catch (IOException)
+                {
+                    if (i == attempts - 1)
+                    {
+                        Debug.LogWarning(
+                            "[ParticlesPersistenceTests] Could not restore particles_instances.json " +
+                            "(memory-mapped). The backup is LEFT IN PLACE so the next run recovers it.");
+                        return false;
+                    }
+                    System.Threading.Thread.Sleep(40);
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Where the on-disk safety copy lives. Deliberately OUTSIDE the project: Unity
+        /// imports everything under Assets/, so a backup written beside the file it protects
+        /// gets a .meta minted for it within seconds and leaves an orphaned one behind when
+        /// the backup is consumed — which is exactly what the first version of this did.
+        /// temporaryCachePath is machine-local, survives a domain reload, and is not an asset.
+        /// </summary>
+        private static string BackupPath => Path.Combine(
+            Application.temporaryCachePath, "particles_instances.testbackup.json");
+
+        /// <summary>
+        /// Put the real file back from a backup left by a run that died before its TearDown.
+        /// Silent when there is nothing to recover, which is the normal case.
+        /// </summary>
+        private void RestoreFromBackupIfPresent()
+        {
+            try
+            {
+                if (!File.Exists(BackupPath)) return;
+                File.Copy(BackupPath, _jsonPath, overwrite: true);
+                File.Delete(BackupPath);
+                Debug.LogWarning(
+                    "[ParticlesPersistenceTests] Recovered particles_instances.json from a " +
+                    "leftover backup — a previous run of this fixture did not reach TearDown, " +
+                    "so the real file was still holding test output.");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[ParticlesPersistenceTests] Backup recovery failed: {ex.Message}");
+            }
+        }
+
         [TearDown]
         public void TearDown()
         {
             // Restore or remove the production file as it was before the test.
-            if (_fileExistedBefore && _snapshotContents != null)
-                File.WriteAllText(_jsonPath, _snapshotContents);
-            else if (!_fileExistedBefore && File.Exists(_jsonPath))
-                File.Delete(_jsonPath);
+            bool restored = RestoreWithRetry();
+
+            // The backup is removed only when the restore actually SUCCEEDED. While it exists
+            // it means "a restore is still owed", which is what lets SetUp finish the job on
+            // the next run — so a TearDown that could not write must leave it standing, or the
+            // one mechanism that heals this deletes the evidence it needs.
+            if (restored)
+            {
+                try { if (File.Exists(BackupPath)) File.Delete(BackupPath); }
+                catch (System.Exception ex)
+                {
+                    Debug.LogWarning($"[ParticlesPersistenceTests] Could not remove the backup: {ex.Message}");
+                }
+            }
 
             // Also clean up .tmp and .bak artefacts that AtomicJsonFile may leave.
             foreach (var ext in new[] { ".tmp", ".bak" })

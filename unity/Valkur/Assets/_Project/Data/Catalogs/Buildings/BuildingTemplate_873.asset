@@ -18,6 +18,7 @@ MonoBehaviour:
   solid: 1
   splitRatio: 0.85
   colliderScope: CG
+  interactable: 0
   originalScale: {x: 105, y: 109}
   lightPresetKey: Magic
   lightOffsetNormalized: {x: 0.5, y: 0.55}
@@ -26,3 +27,4 @@ MonoBehaviour:
   doorOffsetNormalized: {x: 0.5, y: 0.06}
   doorSizeNormalized: {x: 0.18, y: 0.12}
   sourceImagePath: assets/buildings/quest/portal_arch_stone_blue.png
+  destruction: {fileID: 0}

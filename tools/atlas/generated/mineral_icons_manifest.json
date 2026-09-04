@@ -1,0 +1,839 @@
+{
+  "source": "staging/items/mineral_crystal_icons_sheet.png",
+  "canvas": 160,
+  "count": 64,
+  "minerals": [
+    {
+      "itemId": "stone_chunk",
+      "displayName": "Trozo de Piedra",
+      "rarity": "Common",
+      "description": "Roca comun sin valor mas alla de la construccion.",
+      "row": 0,
+      "col": 0,
+      "sprite": "Assets/_Project/Art/Items/minerals/stone_chunk.png",
+      "trimmed": [
+        130,
+        127
+      ]
+    },
+    {
+      "itemId": "tin_ore",
+      "displayName": "Mineral de Estano",
+      "rarity": "Common",
+      "description": "Nodulos pardos de estano, base de toda aleacion barata.",
+      "row": 0,
+      "col": 1,
+      "sprite": "Assets/_Project/Art/Items/minerals/tin_ore.png",
+      "trimmed": [
+        134,
+        123
+      ]
+    },
+    {
+      "itemId": "iron_ore",
+      "displayName": "Mineral de Hierro",
+      "rarity": "Common",
+      "description": "Vetas de oxido atravesando la roca gris.",
+      "row": 0,
+      "col": 2,
+      "sprite": "Assets/_Project/Art/Items/minerals/iron_ore.png",
+      "trimmed": [
+        131,
+        135
+      ]
+    },
+    {
+      "itemId": "copper_ore",
+      "displayName": "Mineral de Cobre",
+      "rarity": "Common",
+      "description": "Cristales cobrizos de brillo calido.",
+      "row": 0,
+      "col": 3,
+      "sprite": "Assets/_Project/Art/Items/minerals/copper_ore.png",
+      "trimmed": [
+        132,
+        132
+      ]
+    },
+    {
+      "itemId": "coal_chunk",
+      "displayName": "Carbon",
+      "rarity": "Common",
+      "description": "Carbon mineral. Arde largo y sucio.",
+      "row": 0,
+      "col": 4,
+      "sprite": "Assets/_Project/Art/Items/minerals/coal_chunk.png",
+      "trimmed": [
+        130,
+        109
+      ]
+    },
+    {
+      "itemId": "silver_ore",
+      "displayName": "Mineral de Plata",
+      "rarity": "Uncommon",
+      "description": "Nodulos plateados de lustre frio.",
+      "row": 0,
+      "col": 5,
+      "sprite": "Assets/_Project/Art/Items/minerals/silver_ore.png",
+      "trimmed": [
+        136,
+        128
+      ]
+    },
+    {
+      "itemId": "quartz_ore",
+      "displayName": "Cuarzo Bruto",
+      "rarity": "Common",
+      "description": "Agujas de cuarzo claro sobre roca.",
+      "row": 0,
+      "col": 6,
+      "sprite": "Assets/_Project/Art/Items/minerals/quartz_ore.png",
+      "trimmed": [
+        135,
+        135
+      ]
+    },
+    {
+      "itemId": "gold_ore",
+      "displayName": "Mineral de Oro",
+      "rarity": "Uncommon",
+      "description": "Oro nativo en masa, sin refinar.",
+      "row": 0,
+      "col": 7,
+      "sprite": "Assets/_Project/Art/Items/minerals/gold_ore.png",
+      "trimmed": [
+        133,
+        131
+      ]
+    },
+    {
+      "itemId": "limestone_chunk",
+      "displayName": "Caliza",
+      "rarity": "Common",
+      "description": "Piedra clara y blanda, facil de trabajar.",
+      "row": 1,
+      "col": 0,
+      "sprite": "Assets/_Project/Art/Items/minerals/limestone_chunk.png",
+      "trimmed": [
+        129,
+        126
+      ]
+    },
+    {
+      "itemId": "hematite_ore",
+      "displayName": "Hematita",
+      "rarity": "Common",
+      "description": "Hierro rojo, denso y pesado en la mano.",
+      "row": 1,
+      "col": 1,
+      "sprite": "Assets/_Project/Art/Items/minerals/hematite_ore.png",
+      "trimmed": [
+        135,
+        131
+      ]
+    },
+    {
+      "itemId": "limonite_ore",
+      "displayName": "Limonita",
+      "rarity": "Common",
+      "description": "Hierro pardo de vetas herrumbrosas.",
+      "row": 1,
+      "col": 2,
+      "sprite": "Assets/_Project/Art/Items/minerals/limonite_ore.png",
+      "trimmed": [
+        139,
+        135
+      ]
+    },
+    {
+      "itemId": "bronze_ore",
+      "displayName": "Mineral de Bronce",
+      "rarity": "Uncommon",
+      "description": "Cristales dorados de aleacion natural.",
+      "row": 1,
+      "col": 3,
+      "sprite": "Assets/_Project/Art/Items/minerals/bronze_ore.png",
+      "trimmed": [
+        134,
+        134
+      ]
+    },
+    {
+      "itemId": "pyrite_ore",
+      "displayName": "Pirita",
+      "rarity": "Common",
+      "description": "El oro de los tontos, brillante y quebradizo.",
+      "row": 1,
+      "col": 4,
+      "sprite": "Assets/_Project/Art/Items/minerals/pyrite_ore.png",
+      "trimmed": [
+        134,
+        131
+      ]
+    },
+    {
+      "itemId": "cobalt_ore",
+      "displayName": "Mineral de Cobalto",
+      "rarity": "Uncommon",
+      "description": "Azul metalico. Endurece cualquier filo.",
+      "row": 1,
+      "col": 5,
+      "sprite": "Assets/_Project/Art/Items/minerals/cobalt_ore.png",
+      "trimmed": [
+        136,
+        131
+      ]
+    },
+    {
+      "itemId": "moonstone_ore",
+      "displayName": "Piedra Lunar Bruta",
+      "rarity": "Rare",
+      "description": "Cristales lechosos que atrapan la luz.",
+      "row": 1,
+      "col": 6,
+      "sprite": "Assets/_Project/Art/Items/minerals/moonstone_ore.png",
+      "trimmed": [
+        135,
+        131
+      ]
+    },
+    {
+      "itemId": "gold_rich_ore",
+      "displayName": "Veta Aurifera",
+      "rarity": "Rare",
+      "description": "Oro macizo. Una veta asi financia un pueblo.",
+      "row": 1,
+      "col": 7,
+      "sprite": "Assets/_Project/Art/Items/minerals/gold_rich_ore.png",
+      "trimmed": [
+        135,
+        131
+      ]
+    },
+    {
+      "itemId": "obsidian_chunk",
+      "displayName": "Obsidiana",
+      "rarity": "Uncommon",
+      "description": "Vidrio volcanico de filo imposible.",
+      "row": 2,
+      "col": 0,
+      "sprite": "Assets/_Project/Art/Items/minerals/obsidian_chunk.png",
+      "trimmed": [
+        136,
+        140
+      ]
+    },
+    {
+      "itemId": "anthracite_chunk",
+      "displayName": "Antracita",
+      "rarity": "Uncommon",
+      "description": "Carbon negro y compacto. Arde limpio.",
+      "row": 2,
+      "col": 1,
+      "sprite": "Assets/_Project/Art/Items/minerals/anthracite_chunk.png",
+      "trimmed": [
+        139,
+        140
+      ]
+    },
+    {
+      "itemId": "ember_ore",
+      "displayName": "Roca de Brasa",
+      "rarity": "Rare",
+      "description": "Roca cuarteada con rescoldos aun vivos.",
+      "row": 2,
+      "col": 2,
+      "sprite": "Assets/_Project/Art/Items/minerals/ember_ore.png",
+      "trimmed": [
+        139,
+        139
+      ]
+    },
+    {
+      "itemId": "magma_ore",
+      "displayName": "Nucleo de Magma",
+      "rarity": "Epic",
+      "description": "Piedra fundida que no termina de enfriarse.",
+      "row": 2,
+      "col": 3,
+      "sprite": "Assets/_Project/Art/Items/minerals/magma_ore.png",
+      "trimmed": [
+        138,
+        140
+      ]
+    },
+    {
+      "itemId": "cinnabar_ore",
+      "displayName": "Cinabrio",
+      "rarity": "Uncommon",
+      "description": "Rojo intenso, hermoso y venenoso.",
+      "row": 2,
+      "col": 4,
+      "sprite": "Assets/_Project/Art/Items/minerals/cinnabar_ore.png",
+      "trimmed": [
+        134,
+        140
+      ]
+    },
+    {
+      "itemId": "tanzanite_ore",
+      "displayName": "Tanzanita Bruta",
+      "rarity": "Rare",
+      "description": "Cristal azul violaceo de las simas.",
+      "row": 2,
+      "col": 5,
+      "sprite": "Assets/_Project/Art/Items/minerals/tanzanite_ore.png",
+      "trimmed": [
+        136,
+        140
+      ]
+    },
+    {
+      "itemId": "scoria_chunk",
+      "displayName": "Escoria Volcanica",
+      "rarity": "Common",
+      "description": "Roca porosa y ligera, escupida por la tierra.",
+      "row": 2,
+      "col": 6,
+      "sprite": "Assets/_Project/Art/Items/minerals/scoria_chunk.png",
+      "trimmed": [
+        135,
+        140
+      ]
+    },
+    {
+      "itemId": "gold_nugget",
+      "displayName": "Pepita de Oro",
+      "rarity": "Rare",
+      "description": "Una sola pepita, pura y pesada.",
+      "row": 2,
+      "col": 7,
+      "sprite": "Assets/_Project/Art/Items/minerals/gold_nugget.png",
+      "trimmed": [
+        135,
+        136
+      ]
+    },
+    {
+      "itemId": "malachite_ore",
+      "displayName": "Malaquita",
+      "rarity": "Uncommon",
+      "description": "Verde en bandas sobre matriz de cobre.",
+      "row": 3,
+      "col": 0,
+      "sprite": "Assets/_Project/Art/Items/minerals/malachite_ore.png",
+      "trimmed": [
+        132,
+        134
+      ]
+    },
+    {
+      "itemId": "emerald_raw",
+      "displayName": "Esmeralda Bruta",
+      "rarity": "Rare",
+      "description": "Prismas verdes creciendo hacia la luz.",
+      "row": 3,
+      "col": 1,
+      "sprite": "Assets/_Project/Art/Items/minerals/emerald_raw.png",
+      "trimmed": [
+        139,
+        148
+      ]
+    },
+    {
+      "itemId": "turquoise_ore",
+      "displayName": "Turquesa",
+      "rarity": "Uncommon",
+      "description": "Azul verdoso moteado, calido al tacto.",
+      "row": 3,
+      "col": 2,
+      "sprite": "Assets/_Project/Art/Items/minerals/turquoise_ore.png",
+      "trimmed": [
+        139,
+        148
+      ]
+    },
+    {
+      "itemId": "aquamarine_raw",
+      "displayName": "Aguamarina Bruta",
+      "rarity": "Rare",
+      "description": "Agujas del color del mar poco profundo.",
+      "row": 3,
+      "col": 3,
+      "sprite": "Assets/_Project/Art/Items/minerals/aquamarine_raw.png",
+      "trimmed": [
+        130,
+        148
+      ]
+    },
+    {
+      "itemId": "azurite_ore",
+      "displayName": "Azurita",
+      "rarity": "Uncommon",
+      "description": "Azul profundo incrustado en roca.",
+      "row": 3,
+      "col": 4,
+      "sprite": "Assets/_Project/Art/Items/minerals/azurite_ore.png",
+      "trimmed": [
+        133,
+        139
+      ]
+    },
+    {
+      "itemId": "sapphire_raw",
+      "displayName": "Zafiro Bruto",
+      "rarity": "Rare",
+      "description": "Cristales azules con luz propia.",
+      "row": 3,
+      "col": 5,
+      "sprite": "Assets/_Project/Art/Items/minerals/sapphire_raw.png",
+      "trimmed": [
+        136,
+        148
+      ]
+    },
+    {
+      "itemId": "lapis_ore",
+      "displayName": "Lapislazuli",
+      "rarity": "Uncommon",
+      "description": "Azul nocturno salpicado de oro.",
+      "row": 3,
+      "col": 6,
+      "sprite": "Assets/_Project/Art/Items/minerals/lapis_ore.png",
+      "trimmed": [
+        135,
+        148
+      ]
+    },
+    {
+      "itemId": "amethyst_raw",
+      "displayName": "Amatista Bruta",
+      "rarity": "Rare",
+      "description": "Puntas violetas sobre costra de cuarzo.",
+      "row": 3,
+      "col": 7,
+      "sprite": "Assets/_Project/Art/Items/minerals/amethyst_raw.png",
+      "trimmed": [
+        135,
+        148
+      ]
+    },
+    {
+      "itemId": "clear_quartz",
+      "displayName": "Cuarzo Cristalino",
+      "rarity": "Uncommon",
+      "description": "Puntas transparentes, sin una sola nube.",
+      "row": 4,
+      "col": 0,
+      "sprite": "Assets/_Project/Art/Items/minerals/clear_quartz.png",
+      "trimmed": [
+        132,
+        148
+      ]
+    },
+    {
+      "itemId": "smoky_quartz",
+      "displayName": "Cuarzo Ahumado",
+      "rarity": "Uncommon",
+      "description": "Cuarzo pardo, como humo congelado.",
+      "row": 4,
+      "col": 1,
+      "sprite": "Assets/_Project/Art/Items/minerals/smoky_quartz.png",
+      "trimmed": [
+        139,
+        148
+      ]
+    },
+    {
+      "itemId": "amethyst_cluster",
+      "displayName": "Racimo de Amatista",
+      "rarity": "Rare",
+      "description": "Un racimo entero, digno de un cetro.",
+      "row": 4,
+      "col": 2,
+      "sprite": "Assets/_Project/Art/Items/minerals/amethyst_cluster.png",
+      "trimmed": [
+        139,
+        145
+      ]
+    },
+    {
+      "itemId": "kunzite_raw",
+      "displayName": "Kunzita",
+      "rarity": "Rare",
+      "description": "Rosa intenso que palidece al sol.",
+      "row": 4,
+      "col": 3,
+      "sprite": "Assets/_Project/Art/Items/minerals/kunzite_raw.png",
+      "trimmed": [
+        131,
+        148
+      ]
+    },
+    {
+      "itemId": "ruby_raw",
+      "displayName": "Rubi Bruto",
+      "rarity": "Epic",
+      "description": "Rojo sangre encerrado en su matriz.",
+      "row": 4,
+      "col": 4,
+      "sprite": "Assets/_Project/Art/Items/minerals/ruby_raw.png",
+      "trimmed": [
+        134,
+        140
+      ]
+    },
+    {
+      "itemId": "garnet_cluster",
+      "displayName": "Racimo de Granate",
+      "rarity": "Rare",
+      "description": "Puntas rojo fuego apinadas.",
+      "row": 4,
+      "col": 5,
+      "sprite": "Assets/_Project/Art/Items/minerals/garnet_cluster.png",
+      "trimmed": [
+        136,
+        148
+      ]
+    },
+    {
+      "itemId": "citrine_geode",
+      "displayName": "Geoda de Citrino",
+      "rarity": "Rare",
+      "description": "Una geoda partida, naranja por dentro.",
+      "row": 4,
+      "col": 6,
+      "sprite": "Assets/_Project/Art/Items/minerals/citrine_geode.png",
+      "trimmed": [
+        135,
+        143
+      ]
+    },
+    {
+      "itemId": "topaz_cluster",
+      "displayName": "Racimo de Topacio",
+      "rarity": "Rare",
+      "description": "Ambar dorado en agujas limpias.",
+      "row": 4,
+      "col": 7,
+      "sprite": "Assets/_Project/Art/Items/minerals/topaz_cluster.png",
+      "trimmed": [
+        133,
+        145
+      ]
+    },
+    {
+      "itemId": "emerald_cluster",
+      "displayName": "Racimo de Esmeralda",
+      "rarity": "Epic",
+      "description": "Verde profundo, sin una fractura.",
+      "row": 5,
+      "col": 0,
+      "sprite": "Assets/_Project/Art/Items/minerals/emerald_cluster.png",
+      "trimmed": [
+        136,
+        136
+      ]
+    },
+    {
+      "itemId": "emerald_in_matrix",
+      "displayName": "Esmeralda en Matriz",
+      "rarity": "Rare",
+      "description": "Una sola gema verde asomando de la roca.",
+      "row": 5,
+      "col": 1,
+      "sprite": "Assets/_Project/Art/Items/minerals/emerald_in_matrix.png",
+      "trimmed": [
+        139,
+        134
+      ]
+    },
+    {
+      "itemId": "sapphire_cabochon",
+      "displayName": "Zafiro en Matriz",
+      "rarity": "Epic",
+      "description": "Azul pulido por la propia montana.",
+      "row": 5,
+      "col": 2,
+      "sprite": "Assets/_Project/Art/Items/minerals/sapphire_cabochon.png",
+      "trimmed": [
+        139,
+        137
+      ]
+    },
+    {
+      "itemId": "sapphire_cluster",
+      "displayName": "Racimo de Zafiro",
+      "rarity": "Epic",
+      "description": "Varias gemas azules en un mismo nucleo.",
+      "row": 5,
+      "col": 3,
+      "sprite": "Assets/_Project/Art/Items/minerals/sapphire_cluster.png",
+      "trimmed": [
+        138,
+        138
+      ]
+    },
+    {
+      "itemId": "amethyst_geode",
+      "displayName": "Geoda de Amatista",
+      "rarity": "Rare",
+      "description": "Violeta oscuro dentro de piedra gris.",
+      "row": 5,
+      "col": 4,
+      "sprite": "Assets/_Project/Art/Items/minerals/amethyst_geode.png",
+      "trimmed": [
+        134,
+        134
+      ]
+    },
+    {
+      "itemId": "pink_sapphire",
+      "displayName": "Zafiro Rosa",
+      "rarity": "Epic",
+      "description": "Rarisimo entre los zafiros.",
+      "row": 5,
+      "col": 5,
+      "sprite": "Assets/_Project/Art/Items/minerals/pink_sapphire.png",
+      "trimmed": [
+        136,
+        135
+      ]
+    },
+    {
+      "itemId": "ruby_in_matrix",
+      "displayName": "Rubi en Matriz",
+      "rarity": "Epic",
+      "description": "Rojo puro sujeto todavia por la roca.",
+      "row": 5,
+      "col": 6,
+      "sprite": "Assets/_Project/Art/Items/minerals/ruby_in_matrix.png",
+      "trimmed": [
+        135,
+        137
+      ]
+    },
+    {
+      "itemId": "amber_in_matrix",
+      "displayName": "Ambar en Matriz",
+      "rarity": "Rare",
+      "description": "Resina antigua endurecida en la veta.",
+      "row": 5,
+      "col": 7,
+      "sprite": "Assets/_Project/Art/Items/minerals/amber_in_matrix.png",
+      "trimmed": [
+        135,
+        137
+      ]
+    },
+    {
+      "itemId": "opal_raw",
+      "displayName": "Opalo de Fuego",
+      "rarity": "Epic",
+      "description": "Cambia de color segun donde lo mires.",
+      "row": 6,
+      "col": 0,
+      "sprite": "Assets/_Project/Art/Items/minerals/opal_raw.png",
+      "trimmed": [
+        136,
+        133
+      ]
+    },
+    {
+      "itemId": "milk_opal",
+      "displayName": "Opalo Lechoso",
+      "rarity": "Rare",
+      "description": "Blanco calido con destellos escondidos.",
+      "row": 6,
+      "col": 1,
+      "sprite": "Assets/_Project/Art/Items/minerals/milk_opal.png",
+      "trimmed": [
+        139,
+        121
+      ]
+    },
+    {
+      "itemId": "moonstone_gem",
+      "displayName": "Piedra Lunar",
+      "rarity": "Epic",
+      "description": "Una luz azul se desplaza bajo su superficie.",
+      "row": 6,
+      "col": 2,
+      "sprite": "Assets/_Project/Art/Items/minerals/moonstone_gem.png",
+      "trimmed": [
+        139,
+        127
+      ]
+    },
+    {
+      "itemId": "starstone_ore",
+      "displayName": "Piedra Estelar",
+      "rarity": "Legendary",
+      "description": "Guarda un cielo nocturno entero dentro.",
+      "row": 6,
+      "col": 3,
+      "sprite": "Assets/_Project/Art/Items/minerals/starstone_ore.png",
+      "trimmed": [
+        138,
+        136
+      ]
+    },
+    {
+      "itemId": "verdant_opal",
+      "displayName": "Opalo Verde",
+      "rarity": "Epic",
+      "description": "Verde azulado con fuego interior.",
+      "row": 6,
+      "col": 4,
+      "sprite": "Assets/_Project/Art/Items/minerals/verdant_opal.png",
+      "trimmed": [
+        134,
+        136
+      ]
+    },
+    {
+      "itemId": "void_orb_ore",
+      "displayName": "Orbe del Vacio",
+      "rarity": "Legendary",
+      "description": "Una esfera que se traga la luz que recibe.",
+      "row": 6,
+      "col": 5,
+      "sprite": "Assets/_Project/Art/Items/minerals/void_orb_ore.png",
+      "trimmed": [
+        136,
+        136
+      ]
+    },
+    {
+      "itemId": "magma_heart",
+      "displayName": "Corazon de Magma",
+      "rarity": "Legendary",
+      "description": "Late. La roca alrededor nunca se enfria.",
+      "row": 6,
+      "col": 6,
+      "sprite": "Assets/_Project/Art/Items/minerals/magma_heart.png",
+      "trimmed": [
+        135,
+        136
+      ]
+    },
+    {
+      "itemId": "void_crystal",
+      "displayName": "Cristal del Vacio",
+      "rarity": "Legendary",
+      "description": "Cristales que brillan sin fuente alguna.",
+      "row": 6,
+      "col": 7,
+      "sprite": "Assets/_Project/Art/Items/minerals/void_crystal.png",
+      "trimmed": [
+        135,
+        136
+      ]
+    },
+    {
+      "itemId": "verdant_crystal",
+      "displayName": "Cristal Verdeante",
+      "rarity": "Epic",
+      "description": "Crece sobre madera viva y sigue creciendo.",
+      "row": 7,
+      "col": 0,
+      "sprite": "Assets/_Project/Art/Items/minerals/verdant_crystal.png",
+      "trimmed": [
+        136,
+        150
+      ]
+    },
+    {
+      "itemId": "frost_crystal",
+      "displayName": "Cristal de Escarcha",
+      "rarity": "Rare",
+      "description": "Frio al tacto incluso junto al fuego.",
+      "row": 7,
+      "col": 1,
+      "sprite": "Assets/_Project/Art/Items/minerals/frost_crystal.png",
+      "trimmed": [
+        139,
+        150
+      ]
+    },
+    {
+      "itemId": "glacier_crystal",
+      "displayName": "Cristal de Glaciar",
+      "rarity": "Epic",
+      "description": "Hielo que lleva mil anos sin derretirse.",
+      "row": 7,
+      "col": 2,
+      "sprite": "Assets/_Project/Art/Items/minerals/glacier_crystal.png",
+      "trimmed": [
+        139,
+        150
+      ]
+    },
+    {
+      "itemId": "sunstone_cluster",
+      "displayName": "Racimo de Sol",
+      "rarity": "Epic",
+      "description": "Guarda calor mucho despues del anochecer.",
+      "row": 7,
+      "col": 3,
+      "sprite": "Assets/_Project/Art/Items/minerals/sunstone_cluster.png",
+      "trimmed": [
+        138,
+        150
+      ]
+    },
+    {
+      "itemId": "toxic_ore",
+      "displayName": "Veta Toxica",
+      "rarity": "Rare",
+      "description": "Vetas verdes que ninguna mano deberia tocar.",
+      "row": 7,
+      "col": 4,
+      "sprite": "Assets/_Project/Art/Items/minerals/toxic_ore.png",
+      "trimmed": [
+        134,
+        150
+      ]
+    },
+    {
+      "itemId": "shadow_crystal",
+      "displayName": "Cristal de Sombra",
+      "rarity": "Epic",
+      "description": "Purpura tan oscuro que parece un agujero.",
+      "row": 7,
+      "col": 5,
+      "sprite": "Assets/_Project/Art/Items/minerals/shadow_crystal.png",
+      "trimmed": [
+        136,
+        150
+      ]
+    },
+    {
+      "itemId": "celestial_geode",
+      "displayName": "Geoda Celestial",
+      "rarity": "Legendary",
+      "description": "Cuarzo blanco atado con oro que nadie fundio.",
+      "row": 7,
+      "col": 6,
+      "sprite": "Assets/_Project/Art/Items/minerals/celestial_geode.png",
+      "trimmed": [
+        135,
+        143
+      ]
+    },
+    {
+      "itemId": "eternal_crystal",
+      "displayName": "Cristal Eterno",
+      "rarity": "Legendary",
+      "description": "Hielo y oro en la misma piedra. No se agrieta.",
+      "row": 7,
+      "col": 7,
+      "sprite": "Assets/_Project/Art/Items/minerals/eternal_crystal.png",
+      "trimmed": [
+        135,
+        144
+      ]
+    }
+  ]
+}

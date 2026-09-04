@@ -5,7 +5,7 @@ namespace Valkur.Gameplay.Buildings
     /// <summary>
     /// Editorial grouping for the Buildings Editor (F10) template picker.
     ///
-    /// The catalog holds 969 templates in one flat grid, and no author is browsing more than
+    /// The catalog holds 1176 templates in one flat grid, and no author is browsing more than
     /// one family of them at a time: 137 tree variants, 106 pieces of ground flora, and — since
     /// the second prop wave landed 463 more — whole themed sets of 33 to 69 (graveyard, arcane,
     /// military, bandit, forge, water, quest, monuments). Scrolling past all of them to reach a

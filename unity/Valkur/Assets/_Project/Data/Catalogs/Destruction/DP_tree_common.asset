@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6356c656e272af444b71b4c904a789e4, type: 3}
+  m_Name: DP_tree_common
+  m_EditorClassIdentifier: 
+  material: 0
+  durability: 40
+  requiredToolTier: 1
+  chipDamageFraction: 0.15
+  kind: 0
+  remainsAssetPath: Buildings/nature/tree_stump_cut_rings
+  drops: {fileID: 11400000, guid: 2551a05548a361449b6bd945e3692086, type: 2}
+  swingAnimationKey: harvest_chop
+  regrowSeconds: 0
+  noiseRadius: 12
+  remainsWalkable: 1
+  harvestable: 1
+  harvestMode: 0
+  harvestVerb: Talar
+  interactionRadius: 1.7
+  secondsPerBlow: 0.6
+  blowDamage: 10
+  charges: 12
+  yieldPerBlow: {fileID: 0}
+  yieldPool: {fileID: 11400000, guid: 56487b1c2b6937a42a613262ebb77806, type: 2}
+  spentTint: {r: 0.52, g: 0.52, b: 0.58, a: 1}

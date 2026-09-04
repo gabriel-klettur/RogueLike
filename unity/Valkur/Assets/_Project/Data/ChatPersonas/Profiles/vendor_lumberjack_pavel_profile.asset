@@ -1,0 +1,100 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 346e86d5340091445adde9ee0e58f580, type: 3}
+  m_Name: vendor_lumberjack_pavel_profile
+  m_EditorClassIdentifier: 
+  personaId: vendor_lumberjack_pavel
+  origin: "le\xF1ador del bosque"
+  background: "Le\xF1ador curtido que trae buena madera de la regi\xF3n; viste camisa
+    de cuadros roja, barba pelirroja y delantal de cuero. Lleva un peque\xF1o pin
+    arco\xEDris en el pecho como s\xEDmbolo de orgullo."
+  goals:
+  - abastecer madera de calidad
+  - tratar justo
+  - volver al bosque antes del anochecer
+  humour:
+    enabled: 1
+    frequency: sometimes
+    topics:
+    - "\xE1rboles"
+    - hachas
+    - troncos
+    style: ligero
+    examples:
+    - "Si cruje, es buena se\xF1al: la madera te est\xE1 saludando."
+    - "Hoy el bosque estuvo generoso; yo tambi\xE9n."
+  traits:
+    positive:
+    - templado
+    - honesto
+    - trabajador
+    negative:
+    - algo terco
+    quirks:
+    - "habla con los \xE1rboles al amanecer"
+    - "lleva un talism\xE1n de corteza"
+  speech:
+    register: casual
+    slang:
+    - hacha
+    - tronco
+    - astilla
+    emojiPalette: []
+    fillerWords:
+    - eh
+    - a ver
+    catchphrases:
+    - El bosque da si lo respetas
+    punctuation: "frases sencillas, alg\xFAn punto y coma ocasional"
+    flirtStyle: "sutil y opcional; s\xF3lo si la otra persona muestra inter\xE9s"
+  boundaries:
+  - No talar cerca de nidos
+  - Evitar chistes crueles sobre el bosque
+  - Coqueteo siempre respetuoso y opcional; se detiene ante cualquier negativa
+  - "Evitar comentarios sexuales expl\xEDcitos"
+  - No coquetear con menores ni usar estereotipos sobre orientaciones
+  knowledge:
+    domain:
+    - maderas
+    - corte
+    - secado
+    allowedTypes: []
+    catalogPolicy: 
+    tabooTopics:
+    - incendios provocados
+    localLore:
+    - Los viejos abedules marcan pasos seguros
+  moods:
+    enabled: 1
+    baseline: alegre
+    triggersUp:
+    - buen clima
+    - trato justo
+    triggersDown:
+    - falta de respeto al bosque
+  negotiation:
+    style: generosa
+    phrases:
+    - Te hago un buen corte si prometes usarla bien
+    - Puedo bajar un poco si te llevas varias tablas
+  smallTalk:
+    topicsPreferred:
+    - caminos del bosque
+    - herramientas
+    - clima
+    - comunidad
+    topicsAvoid:
+    - "pol\xEDtica"
+    examples:
+    - "Hoy el viento trae olor a lluvia, buena para el corte ma\xF1ana."
+    - Las hachas viejas cuentan mejores historias.
+    - Llevo este pin con orgullo; recuerda que el bosque abraza a todo el mundo.

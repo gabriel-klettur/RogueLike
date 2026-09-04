@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbb63fb46c808444da70b8310a8cfbee, type: 3}
+  m_Name: pyromancy_cinder_trail
+  m_EditorClassIdentifier: 
+  nodeId: pyromancy_cinder_trail
+  spell: {fileID: 11400000, guid: 9ef22c6c8ccde634295b78448a88981c, type: 2}
+  pointCost: 3
+  levelRequirement: 18
+  prerequisites:
+  - {fileID: 11400000, guid: 6dfe573242c1dcc4493ceabbf3c6a72b, type: 2}
+  role: 1
+  displayNameOverride: 
+  description: 
+  iconOverride: {fileID: 0}
+  modifiers:
+  - stat: 12
+    op: 0
+    value: 0.04
+  row: 7
+  column: 0

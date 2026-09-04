@@ -15,6 +15,18 @@ namespace Valkur.Gameplay
         [SerializeField] private int maxHp = 100;
         [SerializeField] private int currentHp;
         private bool _invincible;
+
+        // Extra fraction of damage this entity takes, owned by VulnerableEffect. 0 is the
+        // neutral value every entity holds for its whole life unless something curses it.
+        //
+        // SINGLE OWNER, unlike _invincible. That flag has three independent writers (the dev
+        // console's god mode, the F4 editor's test invulnerability and the shield), which is
+        // why it has to be saved and restored rather than cleared -- a defect that shipped
+        // twice. This one is written by exactly one status effect, and StatusEffectManager
+        // replaces an effect of the same type before applying a new one, so the pairing of
+        // OnApply and OnRemove is exact by construction. Adding a second writer would
+        // reintroduce the save/restore problem and must not be done casually.
+        private float _vulnerability;
         private PlayerSpiritState _spiritState;
 
         [Header("Mitigation")]
@@ -218,7 +230,17 @@ namespace Valkur.Gameplay
             float multiplier = ResolveElementMultiplier(element);
             int elementAdjusted = Mathf.RoundToInt(amount * multiplier);
             if (elementAdjusted <= 0) return 0;
-            return Mathf.Max(MinDamageAfterDefense, elementAdjusted - defense);
+
+            int afterDefense = Mathf.Max(MinDamageAfterDefense, elementAdjusted - defense);
+            if (_vulnerability <= 0f) return afterDefense;
+
+            // Vulnerability amplifies what SURVIVED the armor, deliberately, and it is the
+            // last step for that reason. Applying it before defense would let armor eat most
+            // of the amplification, so a curse worth +30% would read as +30% against a soft
+            // target and near-nothing against the armored one it exists to open up -- the
+            // exact opposite of what a player buys it for.
+            return Mathf.Max(MinDamageAfterDefense,
+                             Mathf.RoundToInt(afterDefense * (1f + _vulnerability)));
         }
 
         private float ResolveElementMultiplier(SpellElement? element)
@@ -231,6 +253,19 @@ namespace Valkur.Gameplay
 
         /// <summary>Wired from MonsterDefinition.stats.defense by EntitySetup.</summary>
         public void SetDefense(int value) => defense = Mathf.Max(0, value);
+
+        /// <summary>
+        /// Extra fraction of damage this entity takes while cursed (0.30 = +30% incoming).
+        /// Owned solely by <c>VulnerableEffect</c> -- see the field's comment for why a
+        /// second writer would be a regression rather than a feature.
+        /// </summary>
+        public void SetVulnerability(float extraFraction)
+            => _vulnerability = Mathf.Max(0f, extraFraction);
+
+        /// <summary>Current extra-damage fraction, 0 when nothing is cursing this entity.
+        /// Read by the hit feedback so a landed blow can say the curse is doing something,
+        /// which is otherwise only visible as a number the player has to compare.</summary>
+        public float Vulnerability => _vulnerability;
 
         /// <summary>Wired from MonsterDefinition.stats.resistances by EntitySetup.</summary>
         public void SetResistances(ElementResistance[] value)
@@ -266,6 +301,35 @@ namespace Valkur.Gameplay
             if (delta <= 0) return;
             maxHp += delta;
             currentHp += delta;
+            OnHpChanged?.Invoke(currentHp, maxHp);
+        }
+
+        /// <summary>
+        /// Sets the max HP to an ABSOLUTE value, granting the difference when it rises and
+        /// clamping current HP when it falls.
+        ///
+        /// This is the seam <see cref="Valkur.Gameplay.PlayerStats"/> pushes through, and it
+        /// exists because <see cref="IncreaseMaxHp"/> cannot be called from a recompute:
+        /// that one takes a DELTA, so re-resolving the same layers twice — which happens
+        /// every time any unrelated buff expires — would grant the bonus again and heal the
+        /// player a little each time. An absolute setter is idempotent by construction, and
+        /// idempotence is the whole contract a layered stat store rests on.
+        ///
+        /// Dead entities are refused: raising the cap on a corpse would resurrect it as far
+        /// as <see cref="IsDead"/> is concerned while every death system has already run.
+        /// </summary>
+        public void SetMaxHp(int newMax)
+        {
+            newMax = Mathf.Max(1, newMax);
+            if (newMax == maxHp) return;
+            if (IsDead) { maxHp = newMax; return; }
+
+            int delta = newMax - maxHp;
+            maxHp = newMax;
+            currentHp = delta > 0
+                ? currentHp + delta            // a bigger pool arrives full of the new room
+                : Mathf.Min(currentHp, maxHp);  // a smaller one just clips what no longer fits
+
             OnHpChanged?.Invoke(currentHp, maxHp);
         }
 

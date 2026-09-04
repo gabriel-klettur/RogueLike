@@ -18,5 +18,13 @@ MonoBehaviour:
   solid: 1
   splitRatio: 0.633
   colliderScope: CG
+  interactable: 0
   originalScale: {x: 251, y: 324}
+  lightPresetKey: 
+  lightOffsetNormalized: {x: 0.5, y: 0.75}
+  litAssetPath: 
+  hasDoor: 0
+  doorOffsetNormalized: {x: 0.5, y: 0.06}
+  doorSizeNormalized: {x: 0.18, y: 0.12}
   sourceImagePath: assets/buildings/vegetation/tree_10.png
+  destruction: {fileID: 11400000, guid: 2a861c4d7ddb6904cb9b0f9af29df5b0, type: 2}

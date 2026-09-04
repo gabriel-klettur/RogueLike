@@ -1,10 +1,64 @@
 {
   "lamps_torches_braziers_sheet": {
-    "drop": [19, 21],
+    "drop": [
+      19,
+      21
+    ],
     "_comment": "19 and 21 are the two halves of the 'VERSION NOCTURNA' caption, not props."
   },
   "nature_foliage_sheet": {
-    "boxes": [[1246, 734, 1332, 806]],
+    "boxes": [
+      [
+        1246,
+        734,
+        1332,
+        806
+      ]
+    ],
     "_comment": "The clover sprig is drawn as four disconnected leaves, each below min_core_area, so it needs an explicit box."
+  },
+  "shore_fishing_props_sheet": {
+    "merge": [
+      [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14
+      ]
+    ],
+    "_comment": "The shell-and-starfish scatter is eight separate objects with sand between them, so alpha segmentation returns eight fragments where the sheet draws one cell."
+  },
+  "tidepool_debris_props_sheet": {
+    "merge": [
+      [
+        10,
+        11,
+        12,
+        13
+      ]
+    ],
+    "_comment": "Same shape as the shell scatter: the bone pile is four disconnected bones."
+  },
+  "fishing_station_props_sheet": {
+    "merge": [
+      [
+        9,
+        10
+      ]
+    ],
+    "_comment": "The small hooks sit in a gap inside the tackle cell and come back as their own component."
+  },
+  "sea_rocks_props_sheet": {
+    "merge": [
+      [
+        1,
+        2
+      ]
+    ],
+    "_comment": "Twin spires drawn leaning together; their boxes overlap, so cut apart each crop would carry a slice of the other. The two spires at 6 and 7 are genuinely separate and stay so."
   }
 }

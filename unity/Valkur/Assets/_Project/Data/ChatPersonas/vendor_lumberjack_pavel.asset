@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed9538361f26fd349acf74087eae2155, type: 3}
+  m_Name: vendor_lumberjack_pavel
+  m_EditorClassIdentifier: 
+  personaId: vendor_lumberjack_pavel
+  displayName: Pavel
+  role: vendor
+  profile: {fileID: 11400000, guid: e7eca92b462299c46862dbf643b3135b, type: 2}
+  portrait: {fileID: 0}
+  chatRange: 2
+  greeting: "Hoy el viento trae olor a lluvia, buena para el corte ma\xF1ana."
+  tone: "amigable, trabajador, sencillo, c\xE1lido"
+  maxSentences: 3
+  verbosity: medium
+  useEmoji: 0
+  allowedItemTypes: []
+  discountLimits:
+  - itemKey: wood
+    maxDiscount: 0.1
+  - itemKey: resina
+    maxDiscount: 0.08
+  - itemKey: default
+    maxDiscount: 0.05
+  dialogueLines:
+  - "Si cruje, es buena se\xF1al: la madera te est\xE1 saludando."
+  - "Hoy el bosque estuvo generoso; yo tambi\xE9n."
+  - Las hachas viejas cuentan mejores historias.
+  - Llevo este pin con orgullo; recuerda que el bosque abraza a todo el mundo.
+  - Te hago un buen corte si prometes usarla bien
+  - Puedo bajar un poco si te llevas varias tablas
+  - El bosque da si lo respetas
+  - Si te llevas varias tablas, te hago un buen corte; que te luzca el proyecto.
+  - 'Llevo este pin con orgullo: el bosque abraza a todo el mundo.'

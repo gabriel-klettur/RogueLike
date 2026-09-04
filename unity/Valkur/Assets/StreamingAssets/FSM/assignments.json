@@ -16,7 +16,7 @@
     "vendor_alchemist_valeria": "NPC_Passive",
     "vendor_banker_abigail": "NPC_Passive",
     "vendor_blacksmith_smith": "NPC_Passive",
-    "vendor_cheff_gatita": "NPC_Passive",
+    "vendor_cheff_gatita": "NPC_Stroller",
     "vendor_lumberjack_pavel": "NPC_Passive",
     "vendor_mague_roberto": "NPC_Passive"
   },

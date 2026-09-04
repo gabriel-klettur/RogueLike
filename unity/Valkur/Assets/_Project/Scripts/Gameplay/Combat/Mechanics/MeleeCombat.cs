@@ -54,6 +54,13 @@ namespace Valkur.Gameplay
 
         private float ScaledCooldown => cooldown * _cooldownScale;
 
+        // Stamped by the last swing so feedback systems can ask after the fact rather than
+        // having the flag threaded through every damage callback.
+        private bool _lastSwingWasCrit;
+
+        /// <summary>True when the most recent swing was a critical strike.</summary>
+        public bool LastSwingWasCrit => _lastSwingWasCrit;
+
         public bool CanAttack => Time.time >= _lastAttackTime + ScaledCooldown;
         public float CooldownRemaining => Mathf.Max(0f, (_lastAttackTime + ScaledCooldown) - Time.time);
         public float CooldownTotal => ScaledCooldown;
@@ -67,6 +74,23 @@ namespace Valkur.Gameplay
             cooldown = cd;
             range = rng;
         }
+
+        // The three absolute setters below are what PlayerStats pushes through on every
+        // recompute. They exist separately from Initialize because a recompute must be able
+        // to move ONE of the three without asserting anything about the other two — the
+        // sword changes damage, the boots change nothing here, and a caller forced to
+        // re-supply all three would have to know the current value of the ones it does not
+        // own, which is exactly the "read the total, change it, write it back" pattern the
+        // layered store exists to delete.
+        //
+        // Monsters never call these: their numbers come from EntityStats through Initialize
+        // and do not change once the entity is configured.
+
+        public void SetDamage(int value) => damage = Mathf.Max(1, value);
+
+        public void SetRange(float value) => range = Mathf.Max(0.01f, value);
+
+        public void SetCooldown(float value) => cooldown = Mathf.Max(0.01f, value);
 
         public void SetSlashVfxColor(Color color)
         {
@@ -98,6 +122,12 @@ namespace Valkur.Gameplay
             _lastAttackTime = Time.time;
 
             int swingDamage = Mathf.Max(1, Mathf.RoundToInt(damage * Mathf.Max(0f, damageMultiplier)));
+
+            // Rolled once per SWING, not once per target: a cleave that crits on the first
+            // enemy and not the second reads as inconsistent damage rather than as a crit,
+            // and the number the player sees is the swing's, not each victim's.
+            swingDamage = CritResolver.Resolve(swingDamage, gameObject, out bool wasCrit);
+            _lastSwingWasCrit = wasCrit;
             float swingRange = Mathf.Max(0.01f, range * Mathf.Max(0.01f, rangeMultiplier));
 
             PerformAttack(direction, swingDamage, swingRange);
@@ -164,6 +194,15 @@ namespace Valkur.Gameplay
             // registry is empty and this costs a Count check.
             if (DestructibleObstacleRegistry.Count > 0)
                 hitCount += DestructibleObstacleRegistry.DamageInArc(
+                    origin, swingRange, direction.normalized, arcDegrees, swingDamage, gameObject, null);
+
+            // Harvest seams are reached the same way and for the same reason, but through a
+            // registry of their own. They deliberately do NOT implement IDestructibleObstacle:
+            // Projectile resolves that interface directly off the collider's parents, so a
+            // seam that implemented it could be emptied by any stray fireball that clipped it.
+            // See HarvestSwingRegistry.
+            if (Valkur.Gameplay.World.HarvestSwingRegistry.Count > 0)
+                hitCount += Valkur.Gameplay.World.HarvestSwingRegistry.WorkInArc(
                     origin, swingRange, direction.normalized, arcDegrees, swingDamage, gameObject, null);
 
             if (hitCount > 0)

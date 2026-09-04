@@ -40,6 +40,19 @@ namespace Valkur.Gameplay.Spells
             public KiPalette Palette;
             /// <summary>Sphere radius in WORLD UNITS.</summary>
             public float Radius;
+
+            /// <summary>
+            /// Damage this shell can absorb before it breaks. Zero (the default, and what
+            /// every shield authored before this field existed reads) means a pure TIMER
+            /// shield -- it holds until its duration runs out, which is the behaviour
+            /// sphere_magic_shield has always had.
+            ///
+            /// <para>An absorb shell is a genuinely different tool from a timed one, and the
+            /// difference is legibility: invincibility for five seconds is a state the player
+            /// can only wait out, while "one more hit" is a resource they can spend. That is
+            /// why guardian_light exists beside the older spell rather than replacing it.</para>
+            /// </summary>
+            public float AbsorbPool;
         }
 
         private Setup _setup;
@@ -53,10 +66,27 @@ namespace Valkur.Gameplay.Spells
         private bool _hadInvincibility;
         private int _lastBodyOrder = int.MinValue;
 
+        // Remaining absorb, and the pool it started from. Both are needed: the RATIO is what
+        // drives the feedback, and a shell that only knew its remainder could not tell a
+        // nearly-full one from a nearly-empty one.
+        private float _absorbRemaining;
+        private float _absorbCapacity;
+
+        /// <summary>True when this shell breaks on damage rather than on time.</summary>
+        private bool HasAbsorbPool => _absorbCapacity > 0f;
+
+        /// <summary>How much of the pool is left, 1 at full and 0 at break. Always 1 for a
+        /// timer shield, so a reader never has to know which kind it is looking at.</summary>
+        public float Integrity => HasAbsorbPool
+            ? Mathf.Clamp01(_absorbRemaining / _absorbCapacity)
+            : 1f;
+
         internal void Initialize(Setup setup)
         {
             _setup = setup;
             _remainingTime = setup.Duration;
+            _absorbCapacity = Mathf.Max(0f, setup.AbsorbPool);
+            _absorbRemaining = _absorbCapacity;
 
             _bodyRenderer = ResolveBodyRenderer(setup.Caster);
             Vector3 bodyOffset = _bodyRenderer != null && _bodyRenderer.sprite != null
@@ -148,10 +178,28 @@ namespace Valkur.Gameplay.Spells
                 ? Mathf.Clamp01(amount / (_casterHealth.MaxHp * 0.25f))
                 : 0.5f;
 
+            if (HasAbsorbPool)
+            {
+                _absorbRemaining -= amount;
+
+                // The ripple is scaled by the BITE this hit takes out of what is LEFT, not by
+                // the raw damage. So the same blow rings the shell harder as the pool empties,
+                // and the last hit before the break is the loudest -- which is the whole of
+                // how a player reads "one more hit" without a bar on screen.
+                float bite = Mathf.Clamp01(amount / Mathf.Max(1f, _absorbRemaining + amount));
+                strength = Mathf.Max(strength, bite);
+            }
+
             _sphere.Impact(direction, strength);
             PlayOneShot(ShieldAudio.Impact(), Mathf.Lerp(0.55f, 1f, strength));
             CameraFeel.Cue(CameraFeelCue.ImpactLight, direction.normalized,
                 Mathf.Lerp(0.35f, 0.85f, strength));
+
+            // Broken, not expired. The two endings are deliberately different beats: a shell
+            // that ran out of time dissolves on its own clock, and one that was BEATEN goes
+            // now, on the frame of the blow that did it, so the cause is unmistakable.
+            if (HasAbsorbPool && _absorbRemaining <= 0f)
+                BeginEnd(BreakSeconds * 0.55f, ShieldAudio.Break());
         }
 
         // ── audio ───────────────────────────────────────────────────────────────────

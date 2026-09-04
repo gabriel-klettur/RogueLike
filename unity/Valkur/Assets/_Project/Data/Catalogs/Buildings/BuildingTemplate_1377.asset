@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9f5d83c654b68c40ac738eedbcc1cb4, type: 3}
+  m_Name: BuildingTemplate_1377
+  m_EditorClassIdentifier: 
+  templateId: 1377
+  assetPath: Buildings/water/fish_school_01
+  previewSprite: {fileID: 21300000, guid: 9f315f02857f6a340bb61f0bac624da2, type: 3}
+  solid: 0
+  splitRatio: 0
+  colliderScope: CU
+  interactable: 0
+  originalScale: {x: 96, y: 90}
+  lightPresetKey: 
+  lightOffsetNormalized: {x: 0.5, y: 0.75}
+  litAssetPath: 
+  hasDoor: 0
+  doorOffsetNormalized: {x: 0.5, y: 0.06}
+  doorSizeNormalized: {x: 0.18, y: 0.12}
+  sourceImagePath: assets/buildings/water/fish_school_01.png
+  destruction: {fileID: 11400000, guid: 97b362b0a9234d84a94ee6b9e7b867c8, type: 2}

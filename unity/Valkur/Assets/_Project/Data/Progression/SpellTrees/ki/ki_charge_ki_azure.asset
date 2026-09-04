@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbb63fb46c808444da70b8310a8cfbee, type: 3}
+  m_Name: ki_charge_ki_azure
+  m_EditorClassIdentifier: 
+  nodeId: ki_charge_ki_azure
+  spell: {fileID: 11400000, guid: f492263348d178144af073b805dee3c4, type: 2}
+  pointCost: 1
+  levelRequirement: 5
+  prerequisites:
+  - {fileID: 11400000, guid: fa51003f9da127245ad9626ad81c8571, type: 2}
+  role: 6
+  displayNameOverride: 
+  description: 
+  iconOverride: {fileID: 0}
+  modifiers: []
+  row: 1
+  column: 0

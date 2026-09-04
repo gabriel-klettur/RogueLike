@@ -18,6 +18,7 @@ MonoBehaviour:
   solid: 1
   splitRatio: 0.85
   colliderScope: CG
+  interactable: 0
   originalScale: {x: 172, y: 192}
   lightPresetKey: Torch
   lightOffsetNormalized: {x: 0.5, y: 0.28}
@@ -26,3 +27,4 @@ MonoBehaviour:
   doorOffsetNormalized: {x: 0.5, y: 0.06}
   doorSizeNormalized: {x: 0.18, y: 0.12}
   sourceImagePath: assets/buildings/shops/shop_blacksmith_forge_a.png
+  destruction: {fileID: 0}

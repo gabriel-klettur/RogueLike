@@ -62,6 +62,20 @@ namespace Valkur.Gameplay.Combat
                     // No magnitude: a hold is binary. Anything an author types there is
                     // ignored rather than silently meaning something.
                     return new RootEffect(app.duration, applier);
+                case StatusEffectKind.Vulnerable:
+                    // magnitude is the EXTRA fraction taken (0.30 = +30% incoming). The
+                    // fallback is not 0: a curse authored with no magnitude that silently
+                    // did nothing is the authored-and-inert failure this project has
+                    // recorded eleven times, so an unspecified curse still curses.
+                    return new VulnerableEffect(app.duration,
+                        app.magnitude > 0f ? app.magnitude : 0.30f, applier);
+                case StatusEffectKind.Marked:
+                    // magnitude is how long the raised thrall SERVES, which is a different
+                    // clock from the mark's own window (app.duration). Two durations on one
+                    // application is unusual and it is the honest shape here: the bet has a
+                    // deadline and the payout has a length.
+                    return new ThrallMarkEffect(app.duration,
+                        app.magnitude > 0f ? app.magnitude : 18f, applier);
                 default:
                     return null;
             }

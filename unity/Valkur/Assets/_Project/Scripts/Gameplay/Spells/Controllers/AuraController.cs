@@ -34,6 +34,18 @@ namespace Valkur.Gameplay.Spells
         private float     _remaining;
         private float     _visualRadius;
         private int       _healPerTick;
+
+        // ── Damaging variant ─────────────────────────────────────────────────
+        // One controller with a branch rather than two classes: everything above the tick --
+        // the rig, the pulse rings, the fade, the lifetime -- is identical, and a second
+        // class would be a copy of all of it that drifts on the first fix.
+        private bool      _damaging;
+        private int       _damagePerTick;
+        private float     _gameRadius = 1f;
+        private LayerMask _targetLayers;
+        private Valkur.Data.StatusApplication[] _statuses;
+        private Color     _tint = Color.white;
+        // Borrowed from PhysicsScratch, which owns the reset Domain-Reload-OFF demands.
         private float     _tickPeriod;
         private float     _tickTimer;
         private Transform _caster;
@@ -78,6 +90,41 @@ namespace Valkur.Gameplay.Spells
             SpawnPulseRing(initial: true);
         }
 
+        /// <summary>
+        /// A field that hurts whatever stands in it, rather than mending whoever cast it.
+        ///
+        /// <para>Unlike <see cref="InitializeHealing"/> this one actually USES
+        /// <paramref name="gameRadius"/>: the healing aura discarded it, which is how the
+        /// executor got away with dividing it by 16 for the whole life of the project.</para>
+        /// </summary>
+        public void InitializeDamaging(
+            float duration,
+            float gameRadius,
+            float visualRadius,
+            int damagePerTick,
+            float tickPeriod,
+            Transform caster,
+            LayerMask targetLayers,
+            Valkur.Data.StatusApplication[] statuses,
+            Color tint)
+        {
+            _remaining     = duration;
+            _gameRadius    = Mathf.Max(0.1f, gameRadius);
+            _visualRadius  = visualRadius;
+            _damagePerTick = damagePerTick;
+            _tickPeriod    = tickPeriod;
+            _tickTimer     = 0f;
+            _caster        = caster;
+            _targetLayers  = targetLayers;
+            _statuses      = statuses;
+            _damaging      = true;
+            _tint          = tint;
+
+            AuraSpriteFactory.EnsureSprites();
+            BuildVisualRig();
+            SpawnPulseRing(initial: true);
+        }
+
         private void Update()
         {
             _remaining -= Time.deltaTime;
@@ -92,11 +139,53 @@ namespace Valkur.Gameplay.Spells
             _tickTimer -= Time.deltaTime;
             if (_tickTimer <= 0f)
             {
-                HealTick();
+                if (_damaging) DamageTick();
+                else           HealTick();
                 _tickTimer = _tickPeriod;
             }
 
             AnimateVisuals(alpha);
+        }
+
+        /// <summary>
+        /// Hurt everything hostile inside the circle. The sweep is the same
+        /// <c>OverlapCircleNonAlloc</c> every other area effect in the project uses, against
+        /// the layers the CASTER was given -- so a monster that ever gets this spell hurts
+        /// the player and not its own side, with no second code path.
+        /// </summary>
+        private void DamageTick()
+        {
+            if (_caster == null) return;
+
+            bool prevHitTriggers = Physics2D.queriesHitTriggers;
+            Physics2D.queriesHitTriggers = true;
+            int count = Physics2D.OverlapCircleNonAlloc(
+                transform.position, _gameRadius, Valkur.Gameplay.Combat.PhysicsScratch.AuraTargets, _targetLayers);
+            Physics2D.queriesHitTriggers = prevHitTriggers;
+
+            bool struck = false;
+            for (int i = 0; i < count; i++)
+            {
+                var col = Valkur.Gameplay.Combat.PhysicsScratch.AuraTargets[i];
+                if (col == null) continue;
+                if (col.transform == _caster || col.transform.IsChildOf(_caster)) continue;
+
+                var health = col.GetComponent<Health>() ?? col.GetComponentInParent<Health>();
+                if (health == null || health.IsDead) continue;
+
+                // TakeDotDamage, not TakeDamage: the post-hit grace window exists to stop
+                // several independent ATTACKERS stacking hits in one instant, and a field
+                // ticking on its own clock is not a new attacker. Gating it would mean the
+                // field stops working for a tenth of a second every time something else
+                // lands a blow.
+                health.TakeDotDamage(_damagePerTick, _caster.gameObject);
+                Valkur.Gameplay.Combat.StatusApplicationFactory.ApplyAll(
+                    _statuses, health.gameObject, _caster.gameObject);
+                struck = true;
+            }
+
+            SpawnPulseRing(initial: false);
+            if (struck) EmitSparkleBurst(8);
         }
 
         // --------------------------------------------------------------------

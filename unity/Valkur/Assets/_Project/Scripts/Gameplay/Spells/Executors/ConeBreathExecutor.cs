@@ -33,7 +33,9 @@ namespace Valkur.Gameplay.Spells
             float arc = ctx.Spell.coneArc > 0 ? ctx.Spell.coneArc : DEFAULT_ARC;
             float length = ctx.Spell.coneLength > 0 ? ctx.Spell.coneLength : DEFAULT_LENGTH;
             float duration = ctx.Spell.duration > 0 ? ctx.Spell.duration : DEFAULT_DURATION;
-            float damagePerTick = ctx.Spell.damagePerTick > 0 ? ctx.Spell.damagePerTick : DEFAULT_DAMAGE_PER_TICK;
+            float damagePerTick = SpellPower.Scale(
+                ctx.Spell.damagePerTick > 0 ? ctx.Spell.damagePerTick : DEFAULT_DAMAGE_PER_TICK,
+                ctx.Caster);
             float tickPeriod = ctx.Spell.tickPeriod > 0 ? ctx.Spell.tickPeriod : DEFAULT_TICK_PERIOD;
 
             Vector3 castStart = ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell);

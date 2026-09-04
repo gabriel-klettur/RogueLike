@@ -35,14 +35,29 @@ MonoBehaviour:
     feetHeightFactor: 0.2
     faction: NEUTRAL
     chatRange: 2
+    resistances: []
+    statusImmunities: 
+  level: 1
+  levelScaling: {fileID: 0}
   fsmSet: 
   patrolType: 
   useAttackTelegraph: 0
-  nextPhase: 
-  phaseIndex: 0
+  aiTuning:
+    aggroExitHysteresis: 0
+    leashRange: 0
+    repathInterval: 0
+    waypointReachDistance: 0
+    alertDuration: 0
+    fleeDuration: 0
+    fleeSpeedMultiplier: 0
+    reswingRangeFactor: 0
+  bossDefinition: {fileID: 0}
   autoCast: 0
   autoCastList: []
   xpReward: 0
+  lootTable: {fileID: 0}
+  chatPersona: {fileID: 11400000, guid: 3a9f895aee49e8a41af2b2f699f846b4, type: 2}
+  vendorConfig: {fileID: 11400000, guid: c7e52c5072551344aa82fd39e7be26cd, type: 2}
   assetConfig:
     idle:
       south: {fileID: 21300000, guid: acc84a8f5c573dc46864363157562d49, type: 3}
@@ -107,6 +122,15 @@ MonoBehaviour:
       northWest: {fileID: 0}
       west: {fileID: 0}
       southWest: {fileID: 0}
+    recover:
+      south: {fileID: 0}
+      southEast: {fileID: 0}
+      east: {fileID: 0}
+      northEast: {fileID: 0}
+      north: {fileID: 0}
+      northWest: {fileID: 0}
+      west: {fileID: 0}
+      southWest: {fileID: 0}
     idleSheets: []
     walkSheets: []
     chaseSheets: []
@@ -114,12 +138,12 @@ MonoBehaviour:
     attackSheets: []
     damageSheets: []
     deathSheets: []
+    recoverSheets: []
+    directionLayout: 0
+    attackVariants: []
+    castVariants: []
+    loadouts: []
     scaleConfig:
       scaleIdle: 0.3
-      scaleWalk: 0.3
-      scaleChase: 0.3
-      scaleCast: 0.3
-      scaleAttack: 0.3
-      scaleDamage: 0.3
-      scaleDeath: 0.05
       tint: {r: 1, g: 1, b: 1, a: 1}
+      animationSpeedMultiplier: 0

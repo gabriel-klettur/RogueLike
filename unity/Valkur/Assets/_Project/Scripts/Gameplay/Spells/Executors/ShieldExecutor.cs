@@ -63,6 +63,12 @@ namespace Valkur.Gameplay.Spells
                 // that cannot be authored inside-out — and it is already pinned by tests.
                 Palette = KiPalette.From(ctx.Spell.particleColor, 0.6f),
                 Radius = radius,
+                // wallHP is reused as the absorb pool. Reuse rather than a new field because
+                // the two mean the same thing -- how much punishment this piece of conjured
+                // matter takes before it fails -- and the wall already had the better name for
+                // it. Zero keeps the historical pure-timer shield, which is what
+                // sphere_magic_shield authors.
+                AbsorbPool = ctx.Spell.wallHP,
             });
         }
 

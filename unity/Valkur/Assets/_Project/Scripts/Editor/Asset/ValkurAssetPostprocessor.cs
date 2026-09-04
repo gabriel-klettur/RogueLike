@@ -117,7 +117,13 @@ namespace Valkur.Editor
                 // ruins the pixel-art look the rest of the game uses. Tiles, NPCs,
                 // and items are all Point-filtered; characters must match.
                 importer.spritePixelsPerUnit = PLAYER_CHARACTER_PPU;
-                SetPivot(importer, new Vector2(0.5f, 0f));
+                // The feet are normally the bottom row, so (0.5, 0) puts the pivot on them
+                // and the frame builder ends the canvas at the ground line precisely because
+                // of that. Two animations break the assumption: a dwarf chopping or mining
+                // swings the tool THROUGH the boot line, and their canvases now reserve the
+                // room rather than shearing the blade flat. Those sheets carry their measured
+                // pivot in the frame manifest; everything else reports 0 and is unchanged.
+                SetPivot(importer, new Vector2(0.5f, CharacterSpritePivots.PivotYFor(assetPath)));
                 // Character spritesheets are wide (e.g. 5248×128 = 41 frames @ 128 px).
                 // Standalone's default 2048 max would downsample each 128×128 frame
                 // to ~50×50, making the wizard look heavily blocky after zoom even

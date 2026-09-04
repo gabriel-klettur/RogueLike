@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -48,6 +48,9 @@ namespace Valkur.Tests.EditMode.Game.Data
                                         // runtime, so it has no inspector slot to be wired from
             "TileCatalog.asset",
             "TerrainCatalog.asset", // autotile pipeline (rulesets + Blob16 lookup)
+            "DestructionResistanceTable.asset", // building durability matrix; loaded by
+                                        // BuildingDurability via Resources.Load, so it has
+                                        // no inspector slot to be wired from either
         };
 
         // Subfolders of Resources/ that ship whole into the build. Each entry
@@ -56,9 +59,21 @@ namespace Valkur.Tests.EditMode.Game.Data
         {
             "Buildings",
             "Catalogs",
+            "Chat",        // ChatAssignmentCatalog, loaded by ChatSystem.EnsureCatalog via
+                           // Resources.Load("Chat/ChatAssignmentCatalog"). The ChatSystem is
+                           // AddComponent-ed by GameplaySceneSetup onto a bare GameObject, so
+                           // there is no inspector slot to wire the catalogue from — which is
+                           // exactly why its [SerializeField] sat null for the life of the
+                           // project and no NPC ever spoke.
             "Dungeon",     // autotile sample tilesheets + catacombs blob assets
             "Input",
             "Placeholders",
+            "Progression", // ProgressionCatalog, loaded by PlayerProgression.LoadCatalog via
+                           // Resources.Load("Progression/ProgressionCatalog"). Same reason as
+                           // Chat above: PlayerProgression is AddComponent-ed onto the player
+                           // by EntitySetup, so a [SerializeField] on it could never be
+                           // filled. One small asset — the trees and curves it points at live
+                           // outside Resources and are pulled in by reference.
             "Spells",
             "Tiles",
             "UI",

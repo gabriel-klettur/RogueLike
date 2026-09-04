@@ -199,6 +199,7 @@ namespace Valkur.Gameplay.Spells
             // F4 leaves you standing in the live world with combat armed, so nothing
             // stops an NPC killing you mid-tuning. Borrow invincibility while it is open.
             ApplyEditorInvulnerability();
+            ApplyAuthoringSpellUnlock(true);
             SetStatus("Spells Editor active. F4 to close.");
             Debug.Log("[SpellsEditor] Activated (F4)");
         }
@@ -207,6 +208,7 @@ namespace Valkur.Gameplay.Spells
         {
             _active = false;
             ReleaseEditorInvulnerability();
+            ApplyAuthoringSpellUnlock(false);
             // Tear down the live preview before hiding the canvas so the camera /
             // RenderTexture / spawned spell objects are released and audio mute is
             // restored. Safe to call even if the View panel was never opened.
@@ -218,6 +220,41 @@ namespace Valkur.Gameplay.Spells
             if (GameEditorManager.HasInstance)
                 GameEditorManager.Instance.NotifyDeactivated(this);
             Debug.Log("[SpellsEditor] Deactivated (F4)");
+        }
+
+        /// <summary>
+        /// Lifts the known-spell restriction on the player's caster while the editor is
+        /// open, and puts it back on close.
+        ///
+        /// The editor exists to cast spells the character has NOT learned — that is the
+        /// whole point of it, and the nineteen AnimationProbe spells exist for nothing
+        /// else. Without this, PlayerProgression's spell-book sync would leave the editor
+        /// able to select any spell in the catalogue and cast only the handful the current
+        /// character happens to know. Save/restore rather than force-on, the same shape as
+        /// the invulnerability borrow immediately above.
+        /// </summary>
+        private void ApplyAuthoringSpellUnlock(bool unlocked)
+        {
+            var player = Valkur.Core.EntityRegistry.PlayerTransform;
+            var caster = player != null ? player.GetComponent<Spells.SpellCaster>() : null;
+            if (caster == null) return;
+
+            caster.SetAuthoringUnlockAll(unlocked);
+
+            if (unlocked)
+            {
+                // Re-register the whole catalogue. The flag alone only stops the book being
+                // trimmed AGAIN — by the time the editor opens the trim has already
+                // happened, so without this the editor would offer every spell in the
+                // picker and be able to cast the handful the character knows.
+                EntitySetup.ConfigurePlayerSpells(player.gameObject);
+                return;
+            }
+
+            // Coming back off, re-sync so the book returns to exactly what the character
+            // knows. The editor may have registered anything at all while it was open.
+            var progression = player.GetComponent<PlayerProgression>();
+            if (progression != null) progression.SyncSpellBook();
         }
 
         private void ToggleActive()

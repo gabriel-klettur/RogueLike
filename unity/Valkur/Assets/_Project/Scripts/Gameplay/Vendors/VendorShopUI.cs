@@ -37,6 +37,10 @@ namespace Valkur.Gameplay.NPC
         private Canvas _canvas;
         private GameObject _root;
         private VendorNPC _currentVendor;
+
+        /// <summary>Shown when a column has no rows. See CreateEmptyState for why.</summary>
+        private TMPro.TextMeshProUGUI _vendorEmptyText;
+        private TMPro.TextMeshProUGUI _playerEmptyText;
         private Inventory.Inventory _playerInventory;
         private CurrencyWallet _playerWallet;
         private bool _visible;
@@ -58,9 +62,12 @@ namespace Valkur.Gameplay.NPC
 
         protected override void OnSingletonAwake()
         {
+            // Escape only. E used to close the shop too, and E is now the interact key
+            // that OPENS a conversation — with Unity's Update order undefined between
+            // this component and PlayerInteractionController, one press would have closed
+            // the shop and re-opened the chat behind it, or not, depending on the frame.
             _closeAction = new InputAction("CloseShop", InputActionType.Button);
             _closeAction.AddBinding("<Keyboard>/escape");
-            _closeAction.AddBinding("<Keyboard>/e");
             _closeAction.Enable();
         }
 

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Core;
 
 namespace Valkur.Gameplay
 {
@@ -133,6 +134,7 @@ namespace Valkur.Gameplay
             animator.SetVariants(DirectionalAnimator.AnimState.Cast, castSets,
                                  castSpellKeys, castPacing);
             animator.SetAnimationSpeedMultiplier(assetConfig.scaleConfig.animationSpeedMultiplier);
+            ApplyStatePacing(animator, assetConfig);
             var initialFrame = animator.PeekFirstFrame(idleSet);
             if (initialFrame != null)
                 renderer.sprite = initialFrame;
@@ -168,6 +170,38 @@ namespace Valkur.Gameplay
             mpb.SetColor(HdrColorPropertyId, tint);
             renderer.SetPropertyBlock(mpb);
         }
+
+        /// <summary>
+        /// Hands each authored per-state speed to the animator.
+        ///
+        /// Every state is pushed, not only the authored ones, so a re-bind — a loadout swap
+        /// goes through this same path — resets a state whose entry was removed instead of
+        /// leaving the previous binding's multiplier in place.
+        /// </summary>
+        private static void ApplyStatePacing(DirectionalAnimator animator, EntityAssetConfig assetConfig)
+        {
+            for (int i = 0; i < StateNames.Length; i++)
+            {
+                animator.SetStateSpeed((DirectionalAnimator.AnimState)i,
+                                       assetConfig.StateSpeedMultiplier(StateNames[i]));
+            }
+        }
+
+        /// <summary>
+        /// The <see cref="DirectionalAnimator.AnimState"/> names as the data spells them,
+        /// IN ENUM ORDER — the index into this array is the enum value.
+        ///
+        /// The same eight strings <c>LoadoutStateSheets.state</c> and the frame manifests use.
+        /// Pinned by a test rather than trusted: this is the fifth place the seven-plus-one
+        /// states are enumerated positionally, and a reorder of the enum would silently pace
+        /// the wrong state.
+        /// </summary>
+        [SelfHealingStatic("Immutable table of string literals in enum order. Holds no Unity " +
+                           "objects and is never mutated, so it cannot go stale across a Play session.")]
+        internal static readonly string[] StateNames =
+        {
+            "idle", "walk", "chase", "cast", "attack", "damage", "death", "recover",
+        };
 
         private static DirectionalAnimator.DirectionalSpriteSet BuildSet(
             DirectionalSprites directional,

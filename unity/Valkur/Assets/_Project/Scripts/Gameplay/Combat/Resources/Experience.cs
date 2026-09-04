@@ -72,6 +72,15 @@ namespace Valkur.Gameplay
         /// <summary>Test seam — assign a curve at runtime.</summary>
         public void SetCurve(XpCurveDefinition newCurve) => curve = newCurve;
 
+        // Multiplier pushed by PlayerStats from StatKind.XpGain. 1 on every entity that
+        // has no PlayerStats, which is every monster.
+        private float _xpMultiplier = 1f;
+
+        /// <summary>Multiplier applied to every award in <see cref="AddXp"/>.</summary>
+        public float XpMultiplier => _xpMultiplier;
+
+        public void SetXpMultiplier(float value) => _xpMultiplier = Mathf.Max(0f, value);
+
         public void Initialize(int xp, int level)
         {
             _totalXp = xp;
@@ -89,6 +98,13 @@ namespace Valkur.Gameplay
         {
             if (amount <= 0) return;
             if (IsAtLevelCap) return;
+
+            // The multiplier is applied HERE, at the single seam every award passes
+            // through, rather than at each of the callers that computes a reward. There are
+            // four of those (kills, quests, harvesting, the dev console) and a stat that
+            // only some of them honoured would be a stat the player cannot verify.
+            if (!Mathf.Approximately(_xpMultiplier, 1f))
+                amount = Mathf.Max(1, Mathf.RoundToInt(amount * _xpMultiplier));
 
             _totalXp += amount;
             OnXpGained?.Invoke(amount);

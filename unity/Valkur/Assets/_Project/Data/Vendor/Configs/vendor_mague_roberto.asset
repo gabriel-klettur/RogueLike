@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ae7595914ecbad4f89c6d774a9e8c5b, type: 3}
+  m_Name: vendor_mague_roberto
+  m_EditorClassIdentifier: 
+  vendorKey: vendor_mague_roberto
+  economyGroup: {fileID: 0}
+  persona: {fileID: 11400000, guid: 3a9f895aee49e8a41af2b2f699f846b4, type: 2}
+  inventorySeed:
+  - item: {fileID: 11400000, guid: f851cacc73963e4498ab378816fff85a, type: 2}
+    quantity: 2
+  - item: {fileID: 11400000, guid: 419eb7d5ed4912e4b9ec4d3517b1dc35, type: 2}
+    quantity: 2
+  - item: {fileID: 11400000, guid: 48ae4be7eb1e82942978ff8686eb9301, type: 2}
+    quantity: 2
+  - item: {fileID: 11400000, guid: fb4c1b6e003a43344b3b3ce1b0a19e98, type: 2}
+    quantity: 2
+  priceOverrides: []

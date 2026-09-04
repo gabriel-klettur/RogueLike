@@ -23,7 +23,7 @@ namespace Valkur.Gameplay.Spells
                 var health = hit.GetComponentInParent<Health>();
                 if (health != null && !health.IsDead)
                 {
-                    int dealt = Mathf.RoundToInt(ctx.Spell.damage);
+                    int dealt = SpellPower.ScaleToInt(ctx.Spell.damage, ctx.Caster);
                     health.TakeDamage(dealt, ctx.Caster.gameObject, element);
                     Valkur.Core.GameEvents.FireHitDealt(ctx.Caster.gameObject, hit.gameObject, dealt);
                     StatusApplicationFactory.ApplyAll(ctx.Spell.statusApplications, health.gameObject, ctx.Caster.gameObject);

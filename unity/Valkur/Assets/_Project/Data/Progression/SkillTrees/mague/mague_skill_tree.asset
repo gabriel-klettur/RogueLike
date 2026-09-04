@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36d1094d9ba7ed546a6bd9f0b160891f, type: 3}
+  m_Name: mague_skill_tree
+  m_EditorClassIdentifier: 
+  displayName: Path of the Deep Library
+  classKey: mague
+  flavour: Power is a reading problem.
+  nodes:
+  - {fileID: 11400000, guid: 51aefb6eaa836ed4d976c3eeb7c3a207, type: 2}
+  - {fileID: 11400000, guid: 8f77d90e9bf88734990e12ad742e03ea, type: 2}
+  - {fileID: 11400000, guid: eebd0f7f36fbb2e4586d9a5801a422e2, type: 2}
+  - {fileID: 11400000, guid: 27bfea4d4c6e3c04db69375ebc7f2c88, type: 2}
+  - {fileID: 11400000, guid: 04d72817261fd1d4595e6bb2672a7cc9, type: 2}
+  - {fileID: 11400000, guid: 1e9402c8a02c54b47ac2fba01e4ed16d, type: 2}
+  - {fileID: 11400000, guid: 65970ae33cc068c4f9d896564da7ac36, type: 2}

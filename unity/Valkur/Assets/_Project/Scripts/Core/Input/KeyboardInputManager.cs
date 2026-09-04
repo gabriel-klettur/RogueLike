@@ -55,6 +55,48 @@ namespace Valkur.Core.Input
             return n || UnityEngine.Input.GetKeyDown(legacyKey);
         }
 
+        /// <summary>
+        /// Legacy-backend-only press check, for the callsites that hold a
+        /// <see cref="KeyCode"/> and no matching <see cref="Key"/> — the spell table in
+        /// <c>InputService.EnumerateSpellBindings</c> being the one that matters.
+        ///
+        /// <para>Those callsites paired a bound action with a RAW
+        /// <c>UnityEngine.Input.GetKeyDown</c>, and the raw half answered while a modal
+        /// panel had focus. Disabling the Gameplay action map covers the action; nothing
+        /// covered the fallback. So typing a message into the chat cast a spell for every
+        /// letter that happens to be bound — "hola gatita que tal estas hoy?" fired meteor
+        /// shower, healing totem, shield, teleport and summon barbol, and pressing Q dropped
+        /// an inventory item.</para>
+        ///
+        /// <para>Use the <see cref="WasKeyPressedThisFrame(Key, KeyCode)"/> pair wherever a
+        /// <c>Key</c> is available; this exists for the tables that only carry the legacy
+        /// half, not as a shortcut around them.</para>
+        /// </summary>
+        public static bool WasKeyCodePressedThisFrame(KeyCode legacyKey)
+        {
+            if (InputBlocker.IsGameplayBlocked && !InputBlocker.IsAlwaysAllowedKey(legacyKey))
+                return false;
+            return UnityEngine.Input.GetKeyDown(legacyKey);
+        }
+
+        /// <summary>
+        /// Legacy-backend-only HELD check, the sustained twin of
+        /// <see cref="WasKeyCodePressedThisFrame"/> and blocked by the same modal rule.
+        ///
+        /// <para>Needed by hold-to-charge, which is the first thing in this project to care
+        /// whether a spell key is still down rather than only whether it went down. It goes
+        /// through this helper for the reason CLAUDE.md gives in as many words: a raw
+        /// <c>UnityEngine.Input.GetKey</c> at the callsite answers while a modal panel has
+        /// focus, and that is exactly how typing in the chat used to cast a spell per
+        /// letter.</para>
+        /// </summary>
+        public static bool IsKeyCodeHeld(KeyCode legacyKey)
+        {
+            if (InputBlocker.IsGameplayBlocked && !InputBlocker.IsAlwaysAllowedKey(legacyKey))
+                return false;
+            return UnityEngine.Input.GetKey(legacyKey);
+        }
+
         public static bool WasKeyReleasedThisFrame(Key newKey, KeyCode legacyKey)
         {
             if (InputBlocker.IsGameplayBlocked &&

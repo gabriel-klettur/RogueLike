@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbb63fb46c808444da70b8310a8cfbee, type: 3}
+  m_Name: ki_charge_ki_violet
+  m_EditorClassIdentifier: 
+  nodeId: ki_charge_ki_violet
+  spell: {fileID: 11400000, guid: 5559c90ebbae7f74886d15ae76694985, type: 2}
+  pointCost: 2
+  levelRequirement: 18
+  prerequisites:
+  - {fileID: 11400000, guid: f7a1bc72f8fdcd64796a9cc49960cc7d, type: 2}
+  role: 6
+  displayNameOverride: 
+  description: 
+  iconOverride: {fileID: 0}
+  modifiers: []
+  row: 5
+  column: 0

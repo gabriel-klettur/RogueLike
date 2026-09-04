@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Data;
 
 namespace Valkur.Gameplay.World
@@ -100,6 +101,40 @@ namespace Valkur.Gameplay.World
             // which only exist once the renderers have been built. The factory refuses (and
             // reports) any combination that cannot produce a working door.
             BuildingDoorFactory.TryAttach(bObj, doorSpec);
+
+            // Durability is opt-in per template. The overwhelming majority declare no
+            // profile, and those pay nothing: no component, and no entry in the obstacle
+            // registry every swing in the game would then have to walk past.
+            // Durability is what makes a building breakable by a BLOW, and only a Destroy-mode
+            // profile is. A Deplete-mode node (a mine, an ore seam) deliberately never enters
+            // the obstacle registry: you cannot delete a hillside with a stray fireball, and a
+            // seam that could be would be exhausted by accident from across the room.
+            BuildingDurability durability = null;
+            if (template.destruction != null &&
+                template.destruction.harvestMode == HarvestMode.Destroy)
+            {
+                durability = bObj.gameObject.AddComponent<BuildingDurability>();
+                durability.Initialize(template.destruction, bObj);
+            }
+
+            // Harvesting is opt-in on top of that: a barricade can be destructible without
+            // being workable by hand, and a mine workable without being destructible.
+            HarvestNode node = null;
+            if (template.destruction != null && template.destruction.harvestable)
+            {
+                node = bObj.gameObject.AddComponent<HarvestNode>();
+                node.Initialize(template.destruction, bObj, durability);
+            }
+
+            // The save layer adopts LAST, because a restore writes through both components'
+            // own clamping entry points and cannot run before they exist. It is also the only
+            // place this run's damage is put back: the building's PLACEMENT came from authored
+            // world data, and what the player did to it did not.
+            if ((durability != null || node != null) &&
+                ServiceLocator.TryGet<WorldDamageService>(out var worldDamage) && worldDamage != null)
+            {
+                worldDamage.Adopt(durability, node);
+            }
 
             _spawnedBuildings.Add(bObj);
             return bObj;

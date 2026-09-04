@@ -523,6 +523,97 @@
         }
       ],
       "transitions": []
+    },
+    {
+      "blackboard": {},
+      "id": "NPC_Stroller",
+      "initial": "IdleState",
+      "label": "Passive NPC that paces (never fights)",
+      "states": [
+        {
+          "class": "",
+          "h": 60,
+          "id": "IdleState",
+          "label": "Idle",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 80,
+          "y": 80
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "PatrolState",
+          "label": "Patrol",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 300,
+          "y": 80
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "UnconsciousState",
+          "label": "Unconscious",
+          "props": {},
+          "terminal": true,
+          "w": 120,
+          "x": 300,
+          "y": 400
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "DeathState",
+          "label": "Death",
+          "props": {},
+          "terminal": true,
+          "w": 120,
+          "x": 520,
+          "y": 400
+        },
+        {
+          "class": "DamageState",
+          "external_entry": true,
+          "h": 60,
+          "id": "DamageState",
+          "label": "Damage",
+          "props": {},
+          "special": "damage",
+          "terminal": false,
+          "w": 120,
+          "x": 200,
+          "y": 220
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [],
+          "cooldown_frames": 240,
+          "event": "",
+          "from": "IdleState",
+          "guard": "",
+          "id": "t_stroller_idle_patrol",
+          "label": "after 4s idle",
+          "priority": 100,
+          "to": "PatrolState",
+          "when": ""
+        },
+        {
+          "actions": [],
+          "cooldown_frames": 300,
+          "event": "",
+          "from": "PatrolState",
+          "guard": "",
+          "id": "t_stroller_patrol_idle",
+          "label": "after 5s pacing",
+          "priority": 100,
+          "to": "IdleState",
+          "when": ""
+        }
+      ]
     }
   ],
   "version": 1

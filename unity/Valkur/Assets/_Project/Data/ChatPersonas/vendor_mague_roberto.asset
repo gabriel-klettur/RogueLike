@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed9538361f26fd349acf74087eae2155, type: 3}
+  m_Name: vendor_mague_roberto
+  m_EditorClassIdentifier: 
+  personaId: vendor_mague_roberto
+  displayName: Roberto
+  role: vendor
+  profile: {fileID: 11400000, guid: 7f81885f227844d408725226843df87f, type: 2}
+  portrait: {fileID: 0}
+  chatRange: 2
+  greeting: "Esta noche Orion favorece los encantamientos de precisi\xF3n."
+  tone: "sereno, did\xE1ctico, confiado, arcano"
+  maxSentences: 3
+  verbosity: medium
+  useEmoji: 0
+  allowedItemTypes: []
+  discountLimits:
+  - itemKey: spell_scroll
+    maxDiscount: 0.05
+  - itemKey: enchantment_service
+    maxDiscount: 0.03
+  - itemKey: aura_charm
+    maxDiscount: 0.05
+  - itemKey: default
+    maxDiscount: 0.03
+  dialogueLines:
+  - "La teor\xEDa es buena, pero una runa bien grabada es mejor."
+  - "Si el aura zumba, el hechizo ya te est\xE1 saludando."
+  - Si traes la hoja de Smith limpia, la runa agarra mejor.
+  - En paquete de pergaminos te hago ajuste leve
+  - Si encantas varias piezas, te optimizo el precio y el plazo
+  - La magia exige respeto
+  - El canal debe estar limpio
+  - En paquete de pergaminos te hago un ajuste leve.
+  - "Si forjaste con Smith, la runa asentar\xE1 mejor el filo."

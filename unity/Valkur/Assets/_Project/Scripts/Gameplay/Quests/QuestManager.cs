@@ -233,7 +233,7 @@ namespace Valkur.Gameplay.Quests
             _completed.Add(def.questId);
 
             // Rewards. XP and skill points fire as game events so existing
-            // systems (Experience, LevelUpSkillPointSystem) pick them up.
+            // systems (Experience, PlayerProgression) pick them up.
             var player = EntityRegistry.PlayerTransform;
             if (player != null)
             {

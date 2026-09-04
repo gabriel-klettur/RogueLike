@@ -71,6 +71,33 @@ namespace Valkur.Gameplay.Combat
             SpawnText(amount.ToString(), color, amount);
         }
 
+        /// <summary>
+        /// Pop floating text at an arbitrary world point, through the same shared pool.
+        ///
+        /// <para>Static because the thing being labelled is not always an entity: a harvest
+        /// yield belongs over the ROCK it came out of, and a building carries no
+        /// <see cref="Health"/> and therefore no spawner of its own. Attaching one to every
+        /// harvestable building to reach an instance method would mean a component and a
+        /// pool subscription per tree in the forest, for text that shows for half a second.</para>
+        /// </summary>
+        public static void ShowAt(Vector3 worldPosition, string text, Color color)
+        {
+            if (string.IsNullOrEmpty(text)) return;
+
+            EnsurePool();
+            if (_pool == null) return;
+
+            var go = _pool.Get(worldPosition, Quaternion.identity);
+            if (go == null) return;
+
+            var dmgNum = go.GetComponent<FloatingDamageNumber>();
+            if (dmgNum == null) return;
+
+            dmgNum.OnFinished -= ReturnToPool;
+            dmgNum.OnFinished += ReturnToPool;
+            dmgNum.Initialize(text, color);
+        }
+
         private void SpawnText(string text, Color color, int? numericFallback = null)
         {
             EnsurePool();

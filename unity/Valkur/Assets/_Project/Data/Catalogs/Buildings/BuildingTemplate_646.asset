@@ -18,6 +18,7 @@ MonoBehaviour:
   solid: 1
   splitRatio: 0.3
   colliderScope: CG
+  interactable: 0
   originalScale: {x: 13, y: 42}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
@@ -26,3 +27,4 @@ MonoBehaviour:
   doorOffsetNormalized: {x: 0.5, y: 0.06}
   doorSizeNormalized: {x: 0.18, y: 0.12}
   sourceImagePath: assets/buildings/blacksmith/pincers_small.png
+  destruction: {fileID: 0}

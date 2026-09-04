@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8770dafe3e2eea64d90791fb3fe76644, type: 3}
+  m_Name: radiance_school
+  m_EditorClassIdentifier: 
+  displayName: Radiance
+  schoolKey: radiance
+  flavour: Keeping people alive is the harder half of any fight.
+  accent: {r: 1, g: 0.95, b: 0.72, a: 1}
+  classAffinities:
+  - valkyrie
+  - mague
+  offAffinityCostMultiplier: 2
+  nodes:
+  - {fileID: 11400000, guid: 4beaf72f4716fce469348763f77b4e37, type: 2}
+  - {fileID: 11400000, guid: 82b5847223c384d4e8b193e2df5df197, type: 2}
+  - {fileID: 11400000, guid: 46b1cf6a00c4fe94db996be4e31132a9, type: 2}
+  - {fileID: 11400000, guid: 02b9b992a35a9714fb1c9c196a526dc7, type: 2}
+  - {fileID: 11400000, guid: a01986edde7f20a499eed1b07b367770, type: 2}
+  - {fileID: 11400000, guid: 4615a7315781f7b42afde1235030aab9, type: 2}
+  - {fileID: 11400000, guid: da2d3ef3b4fd1c54d813207df42ca127, type: 2}
+  - {fileID: 11400000, guid: 9aaeeeb8d0b90134f815c774007b370a, type: 2}
+  - {fileID: 11400000, guid: 82bc2db362e654b438e2ab86624b7e01, type: 2}

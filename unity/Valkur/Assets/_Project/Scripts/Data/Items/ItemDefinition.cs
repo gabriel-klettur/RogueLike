@@ -85,6 +85,13 @@ namespace Valkur.Data
         public float critMultiplier = 1f;
         public int durability;
 
+        [Tooltip("Arbitrary stat modifiers granted while this item is EQUIPPED. The " +
+                 "open-ended authoring path beside the fixed damage/attackSpeed/critChance " +
+                 "fields above: a helmet that grants Max HP or a book that grants Spell " +
+                 "Power has nowhere to say so otherwise. Both feed the same Equipment stat " +
+                 "layer, so a designer may use either or both.")]
+        public StatModifier[] statModifiers = System.Array.Empty<StatModifier>();
+
         [Header("Economy")]
         public int value;
         public int buyPrice;
@@ -115,8 +122,29 @@ namespace Valkur.Data
         public float mana;
         public float energy;
         public float hunger;
+        [Tooltip("LEGACY. A stat name as a string, from the Python build. Only two shipped " +
+                 "items carry one and neither names a stat — 'explosion_damage' and " +
+                 "'poison_dot' are throwable effects, not character buffs — so nothing " +
+                 "could ever have consumed it. Parsed on a best effort basis and warned " +
+                 "about once; author buffModifiers instead.")]
         public string buffStat;
         public float buffValue;
         public float duration;
+
+        [Tooltip("Stat modifiers applied for `duration` seconds when this item is " +
+                 "consumed. The typed replacement for buffStat/buffValue: a StatKind " +
+                 "cannot be misspelled and an enum renders as a dropdown.")]
+        public StatModifier[] buffModifiers = System.Array.Empty<StatModifier>();
+
+        [Header("Tool")]
+        [Tooltip("How this item's blows are classified against a destructible building. " +
+                 "None means it is not a tool and never wins the resolution, which is the " +
+                 "right answer for every item that is not swung at scenery.")]
+        public DamageClass toolClass = DamageClass.None;
+
+        [Tooltip("Tool tier, compared against DestructionProfile.requiredToolTier. A stone " +
+                 "axe is tier 1, a steel one tier 2. Below the requirement a physical blow " +
+                 "is scaled down to the profile's chip fraction rather than refused.")]
+        public int toolTier;
     }
 }

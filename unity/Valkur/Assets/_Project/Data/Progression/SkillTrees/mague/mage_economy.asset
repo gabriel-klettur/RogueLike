@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9daf39b310f62e64eafddc1b747855a0, type: 3}
+  m_Name: mage_economy
+  m_EditorClassIdentifier: 
+  skillId: mage_economy
+  displayName: Economy of Motion
+  description: Nothing wasted. Not a syllable.
+  icon: {fileID: 0}
+  pointCost: 2
+  maxRank: 3
+  levelRequirement: 8
+  levelPerRank: 0
+  prerequisites:
+  - {fileID: 11400000, guid: 51aefb6eaa836ed4d976c3eeb7c3a207, type: 2}
+  modifiersPerRank:
+  - stat: 12
+    op: 0
+    value: 0.06
+  passiveAuras: []
+  row: 1
+  column: 0

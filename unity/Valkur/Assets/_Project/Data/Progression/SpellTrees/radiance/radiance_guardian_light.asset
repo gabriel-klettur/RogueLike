@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbb63fb46c808444da70b8310a8cfbee, type: 3}
+  m_Name: radiance_guardian_light
+  m_EditorClassIdentifier: 
+  nodeId: radiance_guardian_light
+  spell: {fileID: 11400000, guid: 0cf6acd76f97815428ed595e29cc5bca, type: 2}
+  pointCost: 3
+  levelRequirement: 21
+  prerequisites:
+  - {fileID: 11400000, guid: 9aaeeeb8d0b90134f815c774007b370a, type: 2}
+  role: 2
+  displayNameOverride: 
+  description: 
+  iconOverride: {fileID: 0}
+  modifiers:
+  - stat: 7
+    op: 0
+    value: 3
+  row: 8
+  column: 0

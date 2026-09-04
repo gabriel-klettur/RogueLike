@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
 
@@ -195,6 +195,86 @@ namespace Valkur.Gameplay.World
             // Light fixtures carry their own Light2D. Done last so the renderers and the final
             // localScale exist — the light is positioned from the rendered bounds.
             RefreshLightFromTemplate();
+        }
+
+        /// <summary>
+        /// Replace the art with whatever is left of the building after it was destroyed — a
+        /// stump, a rubble pile, a shattered frame — or hide it entirely when the profile
+        /// names no remains.
+        ///
+        /// <para>The canopy is switched OFF unconditionally. It is the half sorted on
+        /// WallsTop, over the player: a felled tree that kept it would go on covering the
+        /// character from above for the rest of the session, which is the same trap the
+        /// split ratio exists to manage.</para>
+        ///
+        /// <para>The remains render at NATIVE scale rather than inheriting the transform
+        /// that stretched the original sprite to its authored pixel dimensions. A stump
+        /// squeezed into a tree's footprint reads as a texture swap; one at its own authored
+        /// size reads as a different object.</para>
+        /// </summary>
+        public void ApplyRemainsSprite(Sprite remains)
+        {
+            if (_topRenderer != null) _topRenderer.gameObject.SetActive(false);
+            if (_bottomRenderer == null) return;
+
+            if (remains == null)
+            {
+                _bottomRenderer.enabled = false;
+                return;
+            }
+
+            // Everything a regrow has to put back, captured BEFORE it is overwritten. All
+            // three matter and losing any one of them is visible: without the sprite the tree
+            // comes back as a stump, without the scale it comes back at the stump's size, and
+            // without the split ratio it comes back with no canopy at all.
+            if (!_hasPristineSnapshot)
+            {
+                _pristineFootprintSprite = _bottomRenderer.sprite;
+                _pristineLocalScale = transform.localScale;
+                _pristineSplitRatioOverride = _splitRatioOverride;
+                _hasPristineSnapshot = true;
+            }
+
+            transform.localScale = Vector3.one;
+            _bottomRenderer.sprite = remains;
+            _bottomRenderer.enabled = true;
+
+            // Nothing draws above the footprint any more, so the split has to say so too —
+            // the save layer reads it back, and a persisted stump must not restore a canopy.
+            _splitRatioOverride = 0f;
+            ApplyZOffsets();
+        }
+
+        /// <summary>
+        /// Undo <see cref="ApplyRemainsSprite"/>: the building goes back to the art, scale and
+        /// split it was assembled with. What a regrown tree needs.
+        ///
+        /// <para>It restores a SNAPSHOT rather than re-running the assembly pass, because the
+        /// pass reads the template plus this instance's overrides and the remains swap
+        /// deliberately clobbered two of those overrides — re-running it would rebuild the
+        /// building from the clobbered values and produce the stump again, convincingly.</para>
+        ///
+        /// <para>Returns false when there is nothing to restore, which is the honest answer
+        /// for a building that was never destroyed.</para>
+        /// </summary>
+        public bool RestorePristine()
+        {
+            if (!_hasPristineSnapshot || _bottomRenderer == null) return false;
+
+            _bottomRenderer.sprite = _pristineFootprintSprite;
+            _bottomRenderer.enabled = true;
+            transform.localScale = _pristineLocalScale;
+            _splitRatioOverride = _pristineSplitRatioOverride;
+
+            // The canopy is only reinstated when it had art of its own. A building assembled
+            // with an empty top half has an inactive Canopy child by construction, and turning
+            // that on would draw a blank renderer over the player.
+            if (_topRenderer != null && _topRenderer.sprite != null)
+                _topRenderer.gameObject.SetActive(true);
+
+            _hasPristineSnapshot = false;
+            ApplyZOffsets();
+            return true;
         }
 
         // ── Helpers ────────────────────────────────────────────────────────────────

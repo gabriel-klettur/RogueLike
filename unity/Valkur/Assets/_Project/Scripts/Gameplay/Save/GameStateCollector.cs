@@ -53,6 +53,7 @@ namespace Valkur.Gameplay.Save
             var experience = player.GetComponent<Experience>();
             var inventory = player.GetComponent<Inventory.Inventory>();
             var layerOccupant = player.GetComponent<VisualLayerOccupant>();
+            var wallet = player.GetComponent<CurrencyWallet>();
 
             var psd = new PlayerSaveData
             {
@@ -65,11 +66,22 @@ namespace Valkur.Gameplay.Save
                 currentZone = UnityEngine.Object.FindObjectOfType<ZoneManager>()?.CurrentZone ?? "",
                 experience = experience != null ? experience.TotalXp : 0,
                 level = experience != null ? experience.Level : 1,
-                visualLayer = layerOccupant != null ? layerOccupant.CurrentVisualLayer : 0
+                visualLayer = layerOccupant != null ? layerOccupant.CurrentVisualLayer : 0,
+
+                // -1 when the player somehow has no wallet, which the restorer reads as
+                // "this save says nothing about money" and leaves the balance untouched —
+                // the same path a save written before coins were persisted takes.
+                coins = wallet != null ? wallet.Coins : -1
             };
 
             if (inventory != null)
                 psd.inventory = inventory.ToSaveData("player");
+
+            // Talents and grimoire. Written through the component that owns them rather
+            // than read off the trees, because the character's spent points are state the
+            // trees know nothing about.
+            var progression = player.GetComponent<PlayerProgression>();
+            if (progression != null) progression.WriteTo(psd.progression);
 
             return psd;
         }

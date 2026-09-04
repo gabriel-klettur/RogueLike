@@ -529,7 +529,7 @@
                 {
                     "name": "",
                     "id": "b1000027-0001-0001-0001-000000000001",
-                    "path": "<Keyboard>/e",
+                    "path": "<Keyboard>/z",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -617,7 +617,7 @@
                 {
                     "name": "",
                     "id": "b100002f-0001-0001-0001-000000000001",
-                    "path": "<Keyboard>/p",
+                    "path": "<Keyboard>/o",
                     "interactions": "",
                     "processors": "",
                     "groups": "",

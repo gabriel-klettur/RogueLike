@@ -123,12 +123,12 @@ namespace Valkur.Gameplay.FSM
             if (IsSupressed()) return;
 
             // Find player
-            var player = Valkur.Core.EntityRegistry.PlayerTransform;
+            var player = FactionTargeting.EnemyTransformOf(gameObject);
             if (player == null) return;
 
             // Spirit-form players are intangible: don't burn cooldowns on a target
             // that can't be hit and won't aggro back.
-            var playerGo = Valkur.Core.EntityRegistry.Player;
+            var playerGo = player != null ? player.gameObject : null;
             if (playerGo != null)
             {
                 var playerSpirit = playerGo.GetComponent<PlayerSpiritState>();

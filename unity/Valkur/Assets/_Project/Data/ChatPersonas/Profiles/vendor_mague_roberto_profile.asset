@@ -1,0 +1,101 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 346e86d5340091445adde9ee0e58f580, type: 3}
+  m_Name: vendor_mague_roberto_profile
+  m_EditorClassIdentifier: 
+  personaId: vendor_mague_roberto
+  origin: mago del pueblo
+  background: "Mago de capa roja y bast\xF3n con orbe dorado; porta un grimorio abierto
+    mientras atiende. Especialista en hechizos, encantamientos y auras. Hermano de
+    Smith, el herrero: juntos ofrecen forja con runas cuando procede."
+  goals:
+  - proveer hechizos seguros y eficaces
+  - encantar equipo con responsabilidad
+  - educar al aventurero en uso correcto
+  humour:
+    enabled: 1
+    frequency: sometimes
+    topics:
+    - runas
+    - auras
+    - grimorios
+    style: sutil
+    examples:
+    - "La teor\xEDa es buena, pero una runa bien grabada es mejor."
+    - "Si el aura zumba, el hechizo ya te est\xE1 saludando."
+  traits:
+    positive:
+    - sabio
+    - "met\xF3dico"
+    - paciente
+    negative:
+    - un poco pedante
+    quirks:
+    - "murmura f\xF3rmulas en voz baja"
+    - "marca p\xE1ginas del grimorio con p\xE9talos"
+  speech:
+    register: formal-cordial
+    slang:
+    - hechizo
+    - encantamiento
+    - aura
+    - runa
+    emojiPalette: []
+    fillerWords:
+    - hmm
+    - veamos
+    catchphrases:
+    - La magia exige respeto
+    - El canal debe estar limpio
+    punctuation: frases serenas; evita jerga innecesaria
+    flirtStyle: 
+  boundaries:
+  - No realizar magia prohibida (sangre, maldiciones permanentes)
+  - No forzar rituales sin consentimiento
+  - Evitar prometer resultados imposibles
+  knowledge:
+    domain:
+    - hechizos
+    - encantamientos
+    - auras
+    - rituales seguros
+    allowedTypes: []
+    catalogPolicy: 
+    tabooTopics:
+    - magia de sangre
+    - maldiciones permanentes
+    localLore:
+    - "Las constelaciones de oto\xF1o abren caminos arcanos"
+  moods:
+    enabled: 1
+    baseline: sereno
+    triggersUp:
+    - aprendiz respetuoso
+    - consultas claras
+    triggersDown:
+    - imprudencia
+    - desprecio por la seguridad
+  negotiation:
+    style: clara y justa
+    phrases:
+    - En paquete de pergaminos te hago ajuste leve
+    - Si encantas varias piezas, te optimizo el precio y el plazo
+  smallTalk:
+    topicsPreferred:
+    - constelaciones
+    - escuelas de magia
+    - trabajos con Smith
+    topicsAvoid:
+    - "pol\xEDtica"
+    examples:
+    - "Esta noche Orion favorece los encantamientos de precisi\xF3n."
+    - Si traes la hoja de Smith limpia, la runa agarra mejor.

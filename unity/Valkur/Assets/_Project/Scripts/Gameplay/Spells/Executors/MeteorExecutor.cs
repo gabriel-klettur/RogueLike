@@ -18,7 +18,7 @@ namespace Valkur.Gameplay.Spells
             float interval = ctx.Spell.meteorInterval > 0 ? ctx.Spell.meteorInterval : 0.25f;
             float areaRadius = ctx.Spell.meteorAreaRadius > 0 ? ctx.Spell.meteorAreaRadius / 16f : 32.5f;
             float impactRadius = ctx.Spell.meteorImpactRadius > 0 ? ctx.Spell.meteorImpactRadius / 16f : 10f;
-            float damage = ctx.Spell.damage;
+            float damage = SpellPower.Scale(ctx.Spell.damage, ctx.Caster);
 
             // Maximum distance from the caster that the meteor centre may sit at.
             // Player casts use the cursor (clamped to this); NPCs / no-mouse fall

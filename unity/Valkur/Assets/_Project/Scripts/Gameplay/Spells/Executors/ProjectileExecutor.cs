@@ -25,31 +25,90 @@ namespace Valkur.Gameplay.Spells
                 return;
             }
 
-            string poolKey = POOL_PREFIX + ctx.Spell.spellKey;
+            var spell = ctx.Spell;
+
+            // Charge resolves to a neutral 1 for every spell that is not chargeable, which
+            // is all but one of them. See ChargeMath for why this must not be inlined.
+            float damageMul = ChargeMath.DamageMultiplier(spell, ctx.ChargeFraction);
+            float scaleMul  = ChargeMath.ScaleMultiplier(spell, ctx.ChargeFraction);
+
             // This is the canonical start point for every spell emitted by a caster.
             // Keeping Fireball on the shared helper makes its proven-good launch point the
             // source of truth for beams, breaths, boomerangs, lightning and slashes too.
-            Vector3 spawnPos = ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell);
+            Vector3 spawnPos = ResolveCastStart(ctx.Caster, ctx.Direction, spell);
+
+            int shots = Mathf.Max(1, spell.projectileCount);
+            for (int i = 0; i < shots; i++)
+                SpawnOne(ctx, spawnPos, FanDirection(ctx.Direction, i, shots, spell.spreadDegrees),
+                         damageMul, scaleMul);
+
+            // The muzzle beat belongs to the CAST, not to each shot: firing it per projectile
+            // would stack five flashes on one point for a volley and make a five-shot spell
+            // five times brighter than a one-shot spell at the same authored values, which is
+            // the additive-layer-count trap in a different costume.
+            var vfxService = ServiceLocator.Get<IVFXService>();
+            if (vfxService != null)
+            {
+                Color flashColor = spell.particleColor != Color.white
+                    ? spell.particleColor
+                    : new Color(1f, 0.8f, 0.3f, 0.8f);
+                vfxService.SpawnImpact(spawnPos, flashColor, 0.15f * scaleMul, 0.5f);
+            }
+
+            // Launch stack, played at the caster. Unlike the trail this is not parented to
+            // anything: the muzzle effect belongs to the moment and the place, not to the
+            // projectile that is already leaving.
+            var castPresets = spell.CollectCastPresets();
+            if (castPresets.Count > 0 && VFXManager.Instance != null)
+            {
+                for (int i = 0; i < castPresets.Count; i++)
+                    VFXManager.Instance.SpawnParticlePreset(castPresets[i], spawnPos, -1f);
+            }
+        }
+
+        /// <summary>
+        /// Heading for shot <paramref name="index"/> of <paramref name="shots"/>, spread
+        /// evenly across <paramref name="spreadDegrees"/> and centred on the aim.
+        ///
+        /// <para>A single shot is returned untouched rather than "centred on a zero-width
+        /// fan", so a spell that never authored the volley fields flies exactly where it
+        /// always did — including through the floating-point path, which a lerp over a
+        /// degenerate range would not guarantee.</para>
+        /// </summary>
+        public static Vector2 FanDirection(Vector2 aim, int index, int shots, float spreadDegrees)
+        {
+            if (shots <= 1 || spreadDegrees <= 0f) return aim;
+
+            float t = index / (float)(shots - 1);          // 0 .. 1 across the fan
+            float angle = Mathf.Lerp(-spreadDegrees * 0.5f, spreadDegrees * 0.5f, t);
+            return (Vector2)(Quaternion.Euler(0f, 0f, angle) * aim);
+        }
+
+        private void SpawnOne(SpellContext ctx, Vector3 spawnPos, Vector2 direction,
+                              float damageMul, float scaleMul)
+        {
+            var spell = ctx.Spell;
+            string poolKey = POOL_PREFIX + spell.spellKey;
 
             // Try pool-based spawn, fall back to Instantiate
             GameObject go = null;
             var vfxMgr = VFXManager.Instance;
             if (vfxMgr != null)
             {
-                vfxMgr.RegisterPrefab(poolKey, ctx.ProjectilePrefab, 4);
+                // Prewarm by the volley size: a five-shot spell that reserved four would
+                // Instantiate one projectile on every single cast, forever.
+                vfxMgr.RegisterPrefab(poolKey, ctx.ProjectilePrefab, Mathf.Max(4, spell.projectileCount * 2));
                 go = vfxMgr.Spawn(poolKey, spawnPos, Quaternion.identity);
             }
             if (go == null)
                 go = Object.Instantiate(ctx.ProjectilePrefab, spawnPos, Quaternion.identity);
             go.SetActive(true);
 
-            // Ball projectiles (fireball / iceball / lightball / darkball — the
-            // only SpellType.Projectile entries in the catalog) render exclusively
-            // through the spell's vfxPreset particle trail. AttachVisual installs
-            // ParticleProjectileVisual on the pooled projectile and stripps any
-            // legacy SpriteRenderer-based rig left over from earlier prefab
+            // Ball projectiles render exclusively through the spell's vfxPreset particle
+            // trail. AttachVisual installs ParticleProjectileVisual on the pooled projectile
+            // and strips any legacy SpriteRenderer-based rig left over from earlier prefab
             // configurations.
-            AttachVisual(go, ctx.Spell);
+            AttachVisual(go, spell);
 
             var proj = go.GetComponent<Projectile>();
             if (proj != null)
@@ -62,76 +121,111 @@ namespace Valkur.Gameplay.Spells
                 // blew up in my face").
                 proj.SetCaster(ctx.Caster);
                 proj.Initialize(
-                    ctx.Direction,
-                    ctx.Spell.speed,
-                    ctx.Spell.damage,
-                    ctx.Spell.lifetime > 0 ? ctx.Spell.lifetime : 3f,
-                    ctx.Spell.range > 0 ? ctx.Spell.range : 20f,
+                    direction,
+                    spell.speed,
+                    SpellPower.Scale(spell.damage, ctx.Caster) * damageMul,
+                    spell.lifetime > 0 ? spell.lifetime : 3f,
+                    spell.range > 0 ? spell.range : 20f,
                     ctx.TargetLayers
                 );
                 // Assigned unconditionally: the projectile is pooled, so skipping the call
                 // for a spell with no impact preset would leave the PREVIOUS spell's
                 // explosion attached to it. CollectImpactPresets also folds in
                 // impactPresetLayers, which a spell may use without a primary.
-                proj.SetImpactPresets(ctx.Spell.CollectImpactPresets());
+                proj.SetImpactPresets(spell.CollectImpactPresets());
                 // Damage typing + status rolls, consulted by Health on impact — see
                 // ResolveElement's doc for why the SO field wins over the legacy key switch.
-                proj.SetElement(ResolveElement(ctx.Spell));
-                proj.SetStatusApplications(ctx.Spell.statusApplications);
+                proj.SetElement(ResolveElement(spell));
+                proj.SetStatusApplications(spell.statusApplications);
+                // Both set unconditionally, for the same pool-reuse reason as the impact
+                // presets above: a shot that inherited the last spell's pierce budget would
+                // fly straight through this caster's target.
+                proj.SetPiercing(spell.pierceCount, spell.pierceDamageFalloff);
+                proj.SetHoming(spell.homingStrength, spell.homingRange);
+                AttachMechanicFeedback(proj, spell);
                 // Acceleration: reuses the SpellDefinition.distance field (unused for projectiles).
-                if (ctx.Spell.distance > 0f)
-                    proj.SetAcceleration(ctx.Spell.distance);
-                // AOE explosion on impact.
-                if (ctx.Spell.explosionRadius > 0f)
-                    proj.SetExplosion(ctx.Spell.explosionRadius,
-                        ctx.Spell.explosionDamage > 0f ? ctx.Spell.explosionDamage : ctx.Spell.damage);
+                if (spell.distance > 0f)
+                    proj.SetAcceleration(spell.distance);
+                // AOE explosion on impact. A chargeable spell only splashes once it is
+                // actually charged — that difference is the payoff the ramp promises, and
+                // hiding it behind an identical impact would make the hold pointless.
+                bool splashes = spell.explosionRadius > 0f
+                             && (!spell.IsChargeable || ChargeMath.IsFullyCharged(spell, ctx.ChargeFraction));
+                if (splashes)
+                    proj.SetExplosion(spell.explosionRadius * scaleMul, SpellPower.Scale(
+                        spell.explosionDamage > 0f ? spell.explosionDamage : spell.damage,
+                        ctx.Caster) * damageMul);
+                else
+                    proj.SetExplosion(0f, 0f);
             }
 
-            if (ctx.Spell.sprite != null)
+            if (spell.sprite != null)
             {
                 var sr = go.GetComponentInChildren<SpriteRenderer>();
                 if (sr != null)
                 {
-                    sr.sprite = ctx.Spell.sprite;
-                    // Apply visual scale to the sprite child only â€” never to the root GO.
-                    // Python's spell.scale is a sprite pixel-scale factor (e.g. 0.05 for fireball),
-                    // not a world-unit scale. Applying it to the root GO would shrink physics
-                    // colliders and make procedural visuals (ParticleProjectileVisual) invisible.
-                    if (ctx.Spell.scale > 0 && ctx.Spell.scale != 1f)
-                        sr.transform.localScale = Vector3.one * ctx.Spell.scale;
+                    sr.sprite = spell.sprite;
+                    // Apply visual scale to the sprite child only — never to the root GO.
+                    // Python's spell.scale is a sprite pixel-scale factor (e.g. 0.05 for
+                    // fireball), not a world-unit scale. Applying it to the root GO would
+                    // shrink physics colliders and make procedural visuals invisible.
+                    float drawn = spell.scale > 0 ? spell.scale * scaleMul : scaleMul;
+                    if (!Mathf.Approximately(drawn, 1f))
+                        sr.transform.localScale = Vector3.one * drawn;
                 }
             }
 
             // Apply particle color tint to sprite (only meaningful for legacy
             // sprite-driven projectiles; ParticleProjectileVisual hides the
             // root SpriteRenderer so this is a no-op for ball projectiles).
-            if (ctx.Spell.particleColor != Color.white)
+            if (spell.particleColor != Color.white)
             {
                 var sr = go.GetComponentInChildren<SpriteRenderer>();
-                if (sr != null) sr.color = ctx.Spell.particleColor;
+                if (sr != null) sr.color = spell.particleColor;
             }
+        }
 
-            // VFX: spawn muzzle flash at caster.
-            // NOTE: vfxPreset (trail) is handled by ParticleProjectileVisual,
-            // which spawns the preset and parents it to the projectile.
-            // impactPreset is applied at impact position via Projectile.OnExpire().
-            var vfxService = ServiceLocator.Get<IVFXService>();
-            if (vfxService != null)
+        /// <summary>
+        /// Give the two new projectile mechanics a visible beat each.
+        ///
+        /// <para>A pierce and a lock-on are both EVENTS, and an event the player cannot see
+        /// is a mechanic they cannot learn: without this a piercing lance four bodies deep
+        /// looks exactly like the one that just left the hand, and its damage falloff is a
+        /// number that exists only in the asset. Subscriptions are cleared by
+        /// <c>Projectile.ResetState</c> on pool return, so a recycled shot never drives a
+        /// rig belonging to a cast that finished several seconds ago.</para>
+        /// </summary>
+        private static void AttachMechanicFeedback(Projectile proj, SpellDefinition spell)
+        {
+            if (spell.pierceCount > 0)
             {
-                Color flashColor = ctx.Spell.particleColor != Color.white ? ctx.Spell.particleColor : new Color(1f, 0.8f, 0.3f, 0.8f);
-                vfxService.SpawnImpact(spawnPos, flashColor, 0.15f, 0.5f);
+                Color pierceColor = spell.particleColor != Color.white
+                    ? spell.particleColor
+                    : new Color(0.85f, 0.92f, 1f, 0.9f);
+                int budget = spell.pierceCount;
+                proj.OnPierced += (contact, remaining) =>
+                {
+                    var vfx = ServiceLocator.Get<IVFXService>();
+                    if (vfx == null) return;
+                    // Each pierce is dimmer than the last, so the falloff is legible on
+                    // screen rather than only in the tooltip.
+                    float fade = Mathf.Clamp01((remaining + 1f) / (budget + 1f));
+                    vfx.SpawnImpact(contact, pierceColor, 0.18f, 0.35f + 0.45f * fade);
+                };
             }
 
-            // Launch stack, played at the caster. Unlike the trail this is not parented to
-            // anything: the muzzle effect belongs to the moment and the place, not to the
-            // projectile that is already leaving.
-            var castPresets = ctx.Spell.CollectCastPresets();
-            if (castPresets.Count > 0 && VFXManager.Instance != null)
+            if (spell.homingStrength > 0f && spell.homingRange > 0f)
             {
-                for (int i = 0; i < castPresets.Count; i++)
-                    VFXManager.Instance.SpawnParticlePreset(castPresets[i], spawnPos, -1f);
+                Color lockColor = spell.particleColor != Color.white
+                    ? spell.particleColor
+                    : new Color(1f, 0.95f, 0.45f, 0.9f);
+                proj.OnHomingAcquired += target =>
+                {
+                    if (target == null) return;
+                    var vfx = ServiceLocator.Get<IVFXService>();
+                    vfx?.SpawnImpact(target.position, lockColor, 0.22f, 0.5f);
+                };
             }
-
         }
 
         /// <summary>

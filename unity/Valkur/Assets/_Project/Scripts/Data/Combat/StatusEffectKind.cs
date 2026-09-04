@@ -30,5 +30,30 @@ namespace Valkur.Data
         /// zoning tool rather than a shorter stun.
         /// </summary>
         Root,
+
+        /// <summary>
+        /// Takes MORE damage from every source while it lasts. The magnitude is the extra
+        /// fraction (0.30 = +30% incoming). APPENDED for the reason <see cref="Root"/>
+        /// records: both readers of this enum serialise it as an integer.
+        ///
+        /// It is a status effect rather than a stat layer on purpose. The layered store
+        /// (<c>PlayerStats</c>, seven layers) hangs off the PLAYER; an NPC has
+        /// <c>EntityStats</c> and no equivalent, and building a second composition rule on
+        /// the NPC side is how a project ends up with two that disagree. As a status effect
+        /// it inherits duration, refresh, immunity and the tint layer for free.
+        /// </summary>
+        Vulnerable,
+
+        /// <summary>
+        /// Marked for raising: if the bearer dies while this holds, something answers. Carries
+        /// no magnitude and no combat effect of its own — it is a claim on the DEATH, which is
+        /// why it is a status and not a component. See <c>ThrallMarkEffect</c>.
+        ///
+        /// Being a status is what makes the mechanic cheap: the mark is carried by a LIVING
+        /// target, so at the moment of death the definition, level, position and facing are
+        /// all still on a live GameObject. A corpse-raising spell would instead need a death
+        /// registry, and would have to survive <c>deathDisappearTime</c> despawning the body.
+        /// </summary>
+        Marked,
     }
 }
