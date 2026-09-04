@@ -21,6 +21,15 @@ namespace Valkur.Gameplay.Items
     ///   Both share the same horizontal scroll position via
     ///   <see cref="SyncHeaderScroll"/> so the header tracks the body.
     ///
+    /// • The body is VIRTUALISED: only the rows inside the viewport (plus a small
+    ///   overscan) exist as GameObjects, placed by index at absolute positions. The
+    ///   content rect is sized to <c>rows x TABLE_ROW_H</c> so the scrollbar range is
+    ///   right, and <see cref="UpdateVisibleRows"/> realises / drops rows as the body
+    ///   scrolls. Measured before this: 38 columns x 180 items = 6,840 live widgets on
+    ///   open, at ~0.48 ms each — a 3.5 s freeze every time F7 was pressed, and 52 % of
+    ///   the entire EditMode suite inside 37 tests. Nothing in a cell was expensive;
+    ///   the volume was.
+    ///
     /// • Columns are driven purely by <see cref="ItemTableColumns.All"/>. Adding a
     ///   field to the registry is the only change required to extend the table.
     ///
@@ -67,8 +76,28 @@ namespace Valkur.Gameplay.Items
         // Content container inside _headerScroll (header cells land here)
         private RectTransform _tableHeaderContent;
 
-        // Cache of row GameObjects for efficient refresh-in-place (rebuild fully on filter change).
-        private readonly List<GameObject> _tableRows = new List<GameObject>();
+        // ── Virtualisation state ─────────────────────────────────────────────
+
+        // Rows that currently EXIST, keyed by their index into _filtered. Everything
+        // outside the realised window is nothing at all — not hidden, not pooled.
+        private readonly Dictionary<int, GameObject> _tableRowsByIndex
+            = new Dictionary<int, GameObject>();
+        private readonly List<int> _rowScratch = new List<int>();
+
+        // The window realised by the last UpdateVisibleRows, so a scroll that does not
+        // cross a row boundary costs one comparison and nothing else.
+        private int _visibleFirst = -1;
+        private int _visibleLast  = -1;
+
+        // Rows kept alive above and below the viewport so a wheel tick never shows an
+        // empty band before the next frame fills it.
+        private const int TABLE_OVERSCAN_ROWS = 4;
+
+        // uGUI performs no layout in Edit Mode, so a viewport can legitimately report a
+        // zero-height rect (see the "uGUI does not lay out in EditMode" note in CLAUDE.md).
+        // Realising this many rows there keeps the table usable without ever falling
+        // back to "all of them", which is the exact thing virtualisation exists to avoid.
+        private const int TABLE_FALLBACK_VISIBLE_ROWS = 24;
 
         // ── Public wiring: called by ItemsEditorUIBuilder to hand off the two
         //    ScrollRects created during BuildItemsPanel. ──────────────────────
@@ -95,48 +124,113 @@ namespace Valkur.Gameplay.Items
         // ── Refresh ───────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Rebuilds all data rows from _filtered. Call this whenever _filtered changes
-        /// (same code path as RefreshPicker so both views stay in sync).
+        /// Resets the table for the current <c>_filtered</c>. Call this whenever
+        /// <c>_filtered</c> changes (same code path as RefreshPicker so both views stay
+        /// in sync) or when the visible column set changes.
         ///
-        /// Crucial side-effect: sets the body content's <c>sizeDelta.x</c> to the
-        /// total column width so the ScrollRect recognises horizontal overflow.
-        /// Without this the horizontal scrollbar's draggable range collapses to
-        /// zero and rows appear "stuck" — the rows are wide enough but the
-        /// content rect is 0 px wide.
+        /// <para>Two side-effects on the body content rect are load-bearing. Its
+        /// <c>sizeDelta.x</c> is the total column width, or the horizontal scrollbar's
+        /// draggable range collapses to zero and rows appear "stuck". Its
+        /// <c>sizeDelta.y</c> is <c>rows x TABLE_ROW_H</c>: with no layout group and no
+        /// <c>ContentSizeFitter</c> on the body — both removed on purpose, because a
+        /// layout group would stack whatever rows happen to exist from the top and
+        /// fight the absolute placement — this is the ONLY thing that tells the
+        /// ScrollRect how tall the table is.</para>
         /// </summary>
         private void RefreshTable()
         {
             if (_tableBodyContent == null) return;
 
-            // Destroy old rows.
-            for (int i = _tableBodyContent.childCount - 1; i >= 0; i--)
-            {
-                var child = _tableBodyContent.GetChild(i).gameObject;
-                if (Application.isPlaying) Destroy(child);
-                else DestroyImmediate(child);
-            }
-            _tableRows.Clear();
+            DestroyAllTableRows();
 
-            // One row per filtered item.
-            for (int i = 0; i < _filtered.Count; i++)
-            {
-                var def = _filtered[i];
-                var row = BuildTableRow(def, i);
-                _tableRows.Add(row);
-            }
-
-            // Tell the ScrollRect the real horizontal extent so the thumb sizes
-            // correctly and dragging actually moves the content. The vertical
-            // axis is still driven by the ContentSizeFitter on the content
-            // GameObject (verticalFit = PreferredSize).
             float totalW = ComputeTotalWidth();
-            var bodySize = _tableBodyContent.sizeDelta;
-            _tableBodyContent.sizeDelta = new Vector2(totalW, bodySize.y);
+            _tableBodyContent.sizeDelta = new Vector2(totalW, _filtered.Count * TABLE_ROW_H);
 
-            // CSF runs after layout; force one pass so the body's measured
-            // height also reflects the freshly built rows on the very first
-            // frame the table becomes visible.
-            LayoutRebuilder.ForceRebuildLayoutImmediate(_tableBodyContent);
+            UpdateVisibleRows();
+        }
+
+        /// <summary>
+        /// Realises the rows inside the viewport (plus overscan) and drops the ones
+        /// outside it. Cheap when nothing crossed a row boundary; otherwise it touches
+        /// only the delta, so a wheel tick that moves three rows builds three rows.
+        ///
+        /// <para>Row objects are created in index order, so after a fresh
+        /// <see cref="RefreshTable"/> the body's first child is the first realised row —
+        /// which is what the column-config tests read through <c>GetChild(0)</c>.</para>
+        /// </summary>
+        private void UpdateVisibleRows()
+        {
+            if (_tableBodyContent == null) return;
+
+            int count = _filtered.Count;
+            if (count == 0)
+            {
+                DestroyAllTableRows();
+                return;
+            }
+
+            float viewportH = ResolveTableViewportHeight();
+            int visibleRows = viewportH > 1f
+                ? Mathf.CeilToInt(viewportH / TABLE_ROW_H)
+                : TABLE_FALLBACK_VISIBLE_ROWS;
+
+            // The content is top-anchored with a top pivot, so scrolling DOWN the list
+            // moves it up and anchoredPosition.y grows positive.
+            float scrollY = Mathf.Max(0f, _tableBodyContent.anchoredPosition.y);
+            int first = Mathf.FloorToInt(scrollY / TABLE_ROW_H) - TABLE_OVERSCAN_ROWS;
+            first = Mathf.Clamp(first, 0, count - 1);
+            int last = Mathf.Clamp(first + visibleRows + TABLE_OVERSCAN_ROWS * 2, 0, count - 1);
+
+            if (first == _visibleFirst && last == _visibleLast) return;
+
+            _rowScratch.Clear();
+            foreach (var kv in _tableRowsByIndex)
+                if (kv.Key < first || kv.Key > last) _rowScratch.Add(kv.Key);
+            for (int i = 0; i < _rowScratch.Count; i++)
+            {
+                DestroyRowObject(_tableRowsByIndex[_rowScratch[i]]);
+                _tableRowsByIndex.Remove(_rowScratch[i]);
+            }
+
+            for (int i = first; i <= last; i++)
+            {
+                if (_tableRowsByIndex.ContainsKey(i)) continue;
+                _tableRowsByIndex[i] = BuildTableRow(_filtered[i], i);
+            }
+
+            _visibleFirst = first;
+            _visibleLast  = last;
+        }
+
+        private float ResolveTableViewportHeight()
+        {
+            if (_tableScroll == null) return 0f;
+            var vp = _tableScroll.viewport != null
+                ? _tableScroll.viewport
+                : _tableScroll.GetComponent<RectTransform>();
+            return vp != null ? vp.rect.height : 0f;
+        }
+
+        private void DestroyAllTableRows()
+        {
+            foreach (var kv in _tableRowsByIndex) DestroyRowObject(kv.Value);
+            _tableRowsByIndex.Clear();
+
+            // Anything else under the body — a row from an older build, a stray child —
+            // goes as well, so the body only ever holds what this class put there.
+            if (_tableBodyContent != null)
+                for (int i = _tableBodyContent.childCount - 1; i >= 0; i--)
+                    DestroyRowObject(_tableBodyContent.GetChild(i).gameObject);
+
+            _visibleFirst = -1;
+            _visibleLast  = -1;
+        }
+
+        private static void DestroyRowObject(GameObject go)
+        {
+            if (go == null) return;
+            if (Application.isPlaying) Destroy(go);
+            else DestroyImmediate(go);
         }
 
         // ── Header ────────────────────────────────────────────────────────────
@@ -270,9 +364,12 @@ namespace Valkur.Gameplay.Items
             var rowGo = UIFactory.CreateUI("Row_" + (def.itemId ?? rowIndex.ToString()),
                 _tableBodyContent);
             var rowRt = rowGo.GetComponent<RectTransform>();
-            // Rows are laid out vertically by the VLG on _tableBodyContent.
-            // Give each row an explicit preferred height so the CSF sizes correctly.
-            rowGo.AddComponent<LayoutElement>().preferredHeight = TABLE_ROW_H;
+            // Placed by INDEX. The body is virtualised, so the rows that exist are an
+            // arbitrary window of the list and nothing may stack them from the top.
+            rowRt.anchorMin        = new Vector2(0f, 1f);
+            rowRt.anchorMax        = new Vector2(0f, 1f);
+            rowRt.pivot            = new Vector2(0f, 1f);
+            rowRt.anchoredPosition = new Vector2(0f, -rowIndex * TABLE_ROW_H);
 
             // Row background — alternating zebra stripe.
             var rowBg = rowGo.AddComponent<Image>();
@@ -280,10 +377,7 @@ namespace Valkur.Gameplay.Items
                 ? new Color(0.10f, 0.11f, 0.14f, 0.90f)
                 : new Color(0.12f, 0.13f, 0.17f, 0.90f);
 
-            // The row itself holds cells in absolute positions (like the header).
-            // We override the VLG by switching it off and placing manually.
-            // Actually, rows are children of a VLG content so they stack vertically;
-            // cells inside each row are positioned absolutely.
+            // Cells inside the row are positioned absolutely, exactly like the header's.
 
             var cols = ItemTableColumns.All;
             float xCursor = 0f;
@@ -518,6 +612,10 @@ namespace Valkur.Gameplay.Items
             var hdr = _tableHeaderContent.anchoredPosition;
             hdr.x = _tableBodyContent.anchoredPosition.x;
             _tableHeaderContent.anchoredPosition = hdr;
+
+            // The same callback carries the vertical position, which is what decides
+            // which rows exist.
+            UpdateVisibleRows();
         }
 
         // ── Utility ───────────────────────────────────────────────────────────

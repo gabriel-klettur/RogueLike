@@ -281,16 +281,13 @@ namespace Valkur.Gameplay.Items
             bodyContentRt.anchoredPosition = Vector2.zero;
             bodyContentRt.sizeDelta        = Vector2.zero;
 
-            // Rows are stacked by a VLG; they set their own explicit width via sizeDelta.
-            var bodyVlg = bodyContent.AddComponent<VerticalLayoutGroup>();
-            bodyVlg.spacing                = 0f;
-            bodyVlg.padding                = new RectOffset(0, 0, 0, 0);
-            bodyVlg.childForceExpandWidth  = false;
-            bodyVlg.childForceExpandHeight = false;
-            bodyVlg.childControlWidth      = false;
-            bodyVlg.childControlHeight     = false;
-            bodyContent.AddComponent<ContentSizeFitter>().verticalFit =
-                ContentSizeFitter.FitMode.PreferredSize;
+            // NO layout group and NO ContentSizeFitter on the body, on purpose. The
+            // table is virtualised (ItemsRuntimeEditor.Table.cs): rows are an arbitrary
+            // window of the list placed at absolute positions by index, and a layout
+            // group would stack whatever rows exist from the top and fight that. The
+            // content rect's size — width from the visible columns, height from
+            // rows x TABLE_ROW_H — is owned by RefreshTable and is what gives the
+            // ScrollRect its range.
 
             var bodySR = bodyScrollGo.AddComponent<ScrollRect>();
             bodySR.content          = bodyContentRt;
