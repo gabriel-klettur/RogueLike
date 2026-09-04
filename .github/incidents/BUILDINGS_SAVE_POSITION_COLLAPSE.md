@@ -55,20 +55,112 @@ their zone's origin before save fired.
 
 ## Recovery procedure
 
-1. Stop Play Mode in Unity (so the in-memory corrupted state can't re-save).
-2. Revert from git:
+> **Read all of step 2 before running anything.** Every restore path below OVERWRITES the
+> corrupted file, and that file is the only artefact this incident has ever produced — the
+> root cause is still unidentified, and the whole "Investigation that's still pending"
+> checklist below needs the per-building positions that only the corrupted JSON holds.
+> Restore second. Preserve first.
 
-   ```bash
-   git checkout HEAD -- unity/Valkur/Assets/StreamingAssets/Buildings/buildings_instances.json
-   git checkout HEAD -- unity/Valkur/Assets/_Project/Data/Backups/buildings_instances.json.bak
-   ```
+### 1. Stop Play Mode
 
-3. Re-enter Play Mode → loader spawns the 337 buildings at their original
-   positions.
+So the in-memory corrupted state cannot re-save over anything you are about to inspect. Do
+this before opening a shell — an autosave can fire while you are typing.
 
-If git HEAD is too old, the next fallback is `path.prev` (atomic-write
-sidecar — see Defenses §3 below). Beyond that there is no automated
-recovery.
+### 2. Preserve the evidence
+
+Copy all three artefacts somewhere OUTSIDE the project, before touching any of them:
+
+```bash
+STAMP=$(date +%Y%m%d-%H%M%S)
+mkdir -p ~/valkur-incident-$STAMP
+cp unity/Valkur/Assets/StreamingAssets/Buildings/buildings_instances.json      ~/valkur-incident-$STAMP/ 2>/dev/null
+cp unity/Valkur/Assets/StreamingAssets/Buildings/buildings_instances.json.prev ~/valkur-incident-$STAMP/ 2>/dev/null
+cp unity/Valkur/Assets/_Project/Data/Backups/buildings_instances.json.bak      ~/valkur-incident-$STAMP/ 2>/dev/null
+ls -la ~/valkur-incident-$STAMP
+echo "$STAMP" > /tmp/valkur-incident-stamp   # step 4 reads this back
+```
+
+Outside the project because Unity imports everything under `Assets/`, and because a later
+`git checkout` or `git clean` in the repo must not be able to reach them.
+
+`$STAMP` goes to a file because step 4 restores from this folder, and a recovery is exactly
+the situation where someone closes the terminal, restarts Unity and comes back — at which
+point the variable is gone and so is the path. Resuming in a fresh shell, run
+`STAMP=$(cat /tmp/valkur-incident-stamp)` before step 4. Note `~` and `/tmp` are your
+shell's, not Unity's; under Git Bash on Windows they resolve inside the MSYS root.
+
+Also capture the console: the guard message is ground truth, and `[BuildingsEditor] ABORTING
+save` naming a specific reason tells you which of the three guards fired, which is
+information that exists nowhere on disk.
+
+### 3. Pick the source BEFORE restoring
+
+Three candidates exist, freshest first — and in the original incident the `.bak` was ALREADY
+corrupted (same byte size as the bad file), so freshest is not automatically best. Test each
+one rather than assuming:
+
+```bash
+python3 - <<'EOF'
+import json, io, collections, sys, os
+for p in [
+    "unity/Valkur/Assets/StreamingAssets/Buildings/buildings_instances.json",
+    "unity/Valkur/Assets/StreamingAssets/Buildings/buildings_instances.json.prev",
+    "unity/Valkur/Assets/_Project/Data/Backups/buildings_instances.json.bak",
+]:
+    if not os.path.exists(p):
+        print(f"{p}: ABSENT"); continue
+    d = json.load(io.open(p, encoding="utf-8"))
+    pos = collections.Counter((e.get("zone"), e.get("rel_x"), e.get("rel_y")) for e in d)
+    verdict = "HEALTHY" if len(pos) == len(d) else "COLLAPSED"
+    print(f"{p}: {len(d)} entries, {len(pos)} unique positions, "
+          f"max {max(pos.values())} sharing one -> {verdict}")
+EOF
+```
+
+A healthy file has one unique `(zone, rel_x, rel_y)` per entry. The collapse signature is
+unique positions equal to the ZONE COUNT — 16 in the original incident, against 337 entries
+with 67 stacked on one cell. Verified against the shipped file (302 entries, 302 unique) and
+against a synthetic collapse of it (302 entries, 16 unique, 111 stacked), so the check
+distinguishes the two states rather than merely printing numbers.
+
+Run the same check on the git copy before choosing it:
+
+```bash
+git show HEAD:unity/Valkur/Assets/StreamingAssets/Buildings/buildings_instances.json \
+  > /tmp/head_candidate.json
+```
+
+### 4. Restore from the candidate that passed
+
+Prefer a plain file copy from the artefacts you saved in step 2 — it restores exactly the
+bytes you just verified. In a fresh shell, set `STAMP` back first (see step 2):
+
+```bash
+cp ~/valkur-incident-$STAMP/buildings_instances.json.prev \
+   unity/Valkur/Assets/StreamingAssets/Buildings/buildings_instances.json
+```
+
+Only if git HEAD is the candidate that passed:
+
+```bash
+git checkout HEAD -- unity/Valkur/Assets/StreamingAssets/Buildings/buildings_instances.json
+git checkout HEAD -- unity/Valkur/Assets/_Project/Data/Backups/buildings_instances.json.bak
+```
+
+**`git checkout HEAD --` restores the COMMITTED state, which discards every legitimate
+uncommitted edit to that file along with the corruption.** If buildings were placed since the
+last commit, those placements are lost too, and nothing reports it — the file simply comes
+back older than you expected. Check `git status` on the file first, and prefer `.prev` or
+`.bak` whenever either passed step 3. See the same trap, with the same shape, in
+[BUILDING_TEMPLATES_MASS_DELETION.md](BUILDING_TEMPLATES_MASS_DELETION.md).
+
+Beyond these three there is no automated recovery.
+
+### 5. Verify before trusting it
+
+Re-enter Play Mode: the loader should spawn the buildings at their original positions. Then
+re-run the step-3 check against the restored file and confirm it reads HEALTHY — a restore
+from a source nobody tested is how the `.bak` came to hold the corruption in the first place.
 
 ## Defenses currently in place
 
@@ -218,3 +310,19 @@ roughly an hour apart, with no recorded sequence of intermediate actions.
   the user requested deeper protection. Refined the disk guard to skip
   legitimate "replace map" scenarios (new total < 50% of on-disk total)
   after a test fixture false-positive. Suite green: 3351/3351.
+- **2026-09-04** — Rewrote the recovery procedure. It had two ordering
+  defects of the same class found that day in
+  `BUILDING_TEMPLATES_MASS_DELETION.md`: **a warning placed after the
+  command it guards is not a warning, because the reader is executing
+  rather than reading ahead.** Concretely, step 2 ran
+  `git checkout HEAD --` over the corrupted JSON *before* any instruction
+  to preserve it — destroying the only artefact this incident has ever
+  produced, which is exactly what the still-open investigation checklist
+  needs — and the "if git HEAD is too old, fall back to `.prev`" caveat
+  came after the block that made that choice unrecoverable. Now:
+  preserve, then test all three candidates, then restore, then verify.
+  The collapse-detection check is verified in both directions against the
+  shipped data (302 entries / 302 unique positions = HEALTHY; a synthetic
+  collapse of the same file = 302 entries / 16 unique / 111 stacked), and
+  the `.prev` and `.bak` paths are read from `AtomicWriteJson` and
+  `BuildingsDataGuard` rather than assumed. No production code touched.
