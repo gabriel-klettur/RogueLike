@@ -85,15 +85,18 @@ namespace Valkur.Gameplay.Inventory
             // Same pattern as InputCompat / EditorHotkeyBindings — protects
             // against the recurring Unity 2022.3 Editor InputSystem drop-out.
             bool toggleNew = _toggleAction != null && _toggleAction.WasPerformedThisFrame();
-            bool toggleLegacy = UnityEngine.Input.GetKeyDown(KeyCode.Tab) ||
-                                UnityEngine.Input.GetKeyDown(KeyCode.I);
+            // Through KeyboardInputManager so a modal panel's input block reaches these:
+            // raw reads answered while the chat had focus, so typing 'i' opened the
+            // inventory mid-sentence and 'q' threw an item on the ground.
+            bool toggleLegacy = Valkur.Core.Input.KeyboardInputManager.WasKeyCodePressedThisFrame(KeyCode.Tab) ||
+                                Valkur.Core.Input.KeyboardInputManager.WasKeyCodePressedThisFrame(KeyCode.I);
             if (toggleNew || toggleLegacy)
                 SetVisible(!_visible);
 
             if (_visible)
             {
                 bool dropNew = _dropAction != null && _dropAction.WasPerformedThisFrame();
-                bool dropLegacy = UnityEngine.Input.GetKeyDown(KeyCode.Q);
+                bool dropLegacy = Valkur.Core.Input.KeyboardInputManager.WasKeyCodePressedThisFrame(KeyCode.Q);
                 if ((dropNew || dropLegacy) && _selectedSlot >= 0)
                     DropSelectedItem();
             }
