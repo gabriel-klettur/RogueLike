@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace Valkur.Data
 {
@@ -94,5 +94,11 @@ namespace Valkur.Data
         [Tooltip("Source image path (e.g. 'buildings/vegetation/tree_7.png'). " +
                  "Used to key into buildings_collisions_by_image.json.")]
         public string sourceImagePath;
+
+        [Header("Durability")]
+        [Tooltip("Destruction profile. Empty = indestructible, which is the default for " +
+                 "every shipped template: without one no BuildingDurability component is " +
+                 "added and the building never enters the obstacle registry.")]
+        public DestructionProfile destruction;
     }
 }
