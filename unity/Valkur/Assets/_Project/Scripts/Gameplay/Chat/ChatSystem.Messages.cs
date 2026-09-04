@@ -19,6 +19,7 @@ namespace Valkur.Gameplay.Chat
             _chatTarget = null;
             _activePersona = null;
             _pendingChunks.Clear();
+            ResetExpression();
 
             // An offer belongs to the conversation it was made in. Leaving one on the table
             // would let the next chat's Confirm button spend coins on the last chat's deal.
@@ -59,6 +60,7 @@ namespace Valkur.Gameplay.Chat
             if (_pendingChunks.Count > 0 && Time.time >= _nextChunkTime)
             {
                 var chunk = _pendingChunks.Dequeue();
+                SetExpression(chunk.expression);
                 ShowTargetBubble(chunk.text, NPC_BUBBLE_TTL_MS);
                 AddChunkToHistory(chunk.sender, chunk.text);
                 _nextChunkTime = Time.time + REPLY_CHUNK_DELAY_SEC;
@@ -89,6 +91,13 @@ namespace Valkur.Gameplay.Chat
 
             string npcName = _activePersona.displayName ?? "NPC";
 
+            // The wait is the one moment the panel had nothing at all to say. A remote call
+            // is seconds long and this method is fire-and-forget, so without a face here the
+            // player types, the panel goes silent and nothing on screen says anyone is
+            // listening. An offline provider completes its await synchronously, so this
+            // never renders a frame for it — no branch on the provider is needed.
+            SetExpression(FacialExpression.Thinking);
+
             try
             {
                 var request = new ChatRequest(
@@ -109,8 +118,12 @@ namespace Valkur.Gameplay.Chat
                 // bubble wrote "Si te llevas canasta, te hago precio de" and "vecina" as two
                 // separate assistant turns, so the remembered conversation was a list of
                 // fragments and the do-not-repeat check compared against "vecina".
+                // The face lands with the FIRST bubble rather than here, so the expression
+                // and the words it belongs to arrive together — ScheduleReplyChunks holds
+                // the first one back half a second, and changing the portrait during that
+                // gap reads as the character reacting to something the player cannot see.
                 RecordToMemoryAndLog(npcName, spoken);
-                ScheduleReplyChunks(npcName, spoken);
+                ScheduleReplyChunks(npcName, spoken, reply.Expression);
             }
             catch (System.OperationCanceledException)
             {
@@ -122,7 +135,9 @@ namespace Valkur.Gameplay.Chat
                 // Deliver a fallback reply so the chat doesn't silently stall. Not recorded:
                 // an ellipsis the NPC never chose to say is noise in a remembered
                 // conversation, and it would be what the next session refuses to repeat.
-                ScheduleReplyChunks(npcName, "...");
+                // The face goes back to neutral rather than staying on Thinking, which would
+                // leave the character visibly stuck mid-thought forever.
+                ScheduleReplyChunks(npcName, "...", FacialExpression.Neutral);
             }
         }
 
@@ -159,10 +174,17 @@ namespace Valkur.Gameplay.Chat
         /// budget: a slightly long bubble reads as one sentence, an orphaned word reads as a
         /// bug.</para>
         /// </summary>
-        private void ScheduleReplyChunks(string sender, string fullReply)
+        private void ScheduleReplyChunks(
+            string sender, string fullReply,
+            FacialExpression expression = FacialExpression.Neutral)
         {
             foreach (string chunk in SplitIntoSpokenChunks(fullReply))
-                _pendingChunks.Enqueue(new ScheduledChunk { sender = sender, text = chunk });
+                _pendingChunks.Enqueue(new ScheduledChunk
+                {
+                    sender = sender,
+                    text = chunk,
+                    expression = expression,
+                });
 
             _nextChunkTime = Time.time + 0.5f; // Short initial delay
         }
@@ -387,6 +409,17 @@ namespace Valkur.Gameplay.Chat
         {
             public string sender;
             public string text;
+
+            /// <summary>
+            /// The face to be wearing while this bubble is on screen. Carried per CHUNK
+            /// rather than per reply so the change lands with the words it belongs to —
+            /// applying it when the reply arrives would move the portrait half a second
+            /// before the first bubble appears, which reads as the character reacting to
+            /// nothing. Every chunk of one reply currently carries the same value and
+            /// <c>ApplyExpression</c> refuses a repeat, so the extra field costs nothing
+            /// until a provider has something per-sentence to say.
+            /// </summary>
+            public FacialExpression expression;
         }
     }
 }

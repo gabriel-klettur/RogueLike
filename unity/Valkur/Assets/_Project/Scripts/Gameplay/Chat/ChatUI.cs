@@ -61,6 +61,47 @@ namespace Valkur.Gameplay.Chat
         /// </summary>
         private const float SCROLL_MIN_H = 48f;
 
+        /// <summary>
+        /// Padding the panel keeps on every side. Named because the portrait gutter is
+        /// expressed as an ADDITION to the left one, and the two have to move together.
+        /// </summary>
+        private const float PANEL_PADDING = 8f;
+
+        /// <summary>
+        /// Width reserved down the left of the panel for the character's face, when the
+        /// character has one.
+        ///
+        /// <para>Deliberately NOT added to <see cref="PANEL_MIN_W"/>. A per-character minimum
+        /// would have to be static mutable state on a class where Domain Reload is off, and
+        /// it would clamp a size the player saved on a portrait-less NPC upward the moment
+        /// they talked to Gatita. At the minimum width the conversation gives up the space
+        /// instead — the same trade <see cref="SCROLL_MIN_H"/> makes for the trade row.</para>
+        /// </summary>
+        private const float PORTRAIT_GUTTER = 96f;
+
+        /// <summary>
+        /// Drawn size of the portrait frame. Height leads: the expression lives in the eyes
+        /// and mouth, which are about a third of a face, so 94 px of face is roughly 30 px of
+        /// the part the player is actually reading. The width follows the source art's
+        /// 370:395, and <c>preserveAspect</c> keeps a differently-shaped drawing honest.
+        /// </summary>
+        private const float PORTRAIT_SIZE_W = 88f;
+        private const float PORTRAIT_SIZE_H = 94f;
+
+        /// <summary>Border of frame left visible around the face.</summary>
+        private const float PORTRAIT_INSET = 3f;
+
+        /// <summary>
+        /// How long one expression takes to dissolve into the next. Short: this is a change
+        /// of face, not a scene transition, and anything past about a fifth of a second reads
+        /// as the portrait being slow rather than as the character reacting.
+        /// </summary>
+        private const float PORTRAIT_FADE_SEC = 0.14f;
+
+        /// <summary>Frame behind the face. A shade darker than the panel so the head reads as
+        /// being IN something rather than floating on the panel.</summary>
+        private static readonly Color PORTRAIT_FRAME_COLOR = new Color(0.05f, 0.05f, 0.08f, 0.95f);
+
         private const float PANEL_DEFAULT_W = 520f;
         private const float PANEL_DEFAULT_H = 250f;
 
@@ -151,6 +192,12 @@ namespace Valkur.Gameplay.Chat
         private TextMeshProUGUI _tradeOfferText;
         private TextMeshProUGUI _resetButtonText;
 
+        /// <summary>
+        /// The panel's own layout group, kept so the portrait gutter can be reserved and
+        /// released per conversation by moving its left padding.
+        /// </summary>
+        private VerticalLayoutGroup _panelLayout;
+
         /// <summary>Idle label of the Reset button.</summary>
         private const string RESET_LABEL_IDLE = "Reiniciar memoria";
 
@@ -182,6 +229,7 @@ namespace Valkur.Gameplay.Chat
                 chatSystem.OnMessageReceived += OnMessageReceived;
                 chatSystem.OnHistoryReset += RebuildMessageRows;
                 chatSystem.OnTradeOfferChanged += OnTradeOfferChanged;
+                chatSystem.OnExpressionChanged += OnExpressionChanged;
             }
         }
 
@@ -196,11 +244,16 @@ namespace Valkur.Gameplay.Chat
                 chatSystem.OnMessageReceived -= OnMessageReceived;
                 chatSystem.OnHistoryReset -= RebuildMessageRows;
                 chatSystem.OnTradeOfferChanged -= OnTradeOfferChanged;
+                chatSystem.OnExpressionChanged -= OnExpressionChanged;
             }
         }
 
         private void Update()
         {
+            // Before the early return below, which exists to watch for Enter and would
+            // otherwise skip the crossfade on every frame the player is not pressing it.
+            TickPortraitFade();
+
             // Enter key: open / send / close, depending on current state.
             // Routed through KeyboardInputManager so the legacy backend keeps
             // it working when the new InputSystem drops events (Unity 2022.3 bug).
@@ -245,6 +298,11 @@ namespace Valkur.Gameplay.Chat
                 ? chatSystem.ActivePersona.displayName
                 : "NPC";
             _titleText.text = $"Chat — {npcName}";
+
+            // Before the history is replayed, so the panel is already the right SHAPE when
+            // the rows are laid into it — reserving the gutter afterwards would lay every
+            // row out twice on the frame a conversation opens.
+            ConfigurePortraitFor(chatSystem.ActivePersona);
 
             // Sync language button to the persisted preference.
             if (_langButtonText != null)

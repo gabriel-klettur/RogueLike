@@ -308,6 +308,12 @@ namespace Valkur.Gameplay.Chat
                 AddMessage(npcName, _activePersona.greeting);
                 ShowTargetBubble(_activePersona.greeting, NPC_BUBBLE_TTL_MS);
                 _activeMemory.hasGreeted = true;
+
+                // The greeting is authored text that never passed through a provider, so it
+                // carries no expression of its own and has to be read the same way an
+                // offline line is. Set BEFORE OnChatOpened fires, so the panel builds with
+                // the right face rather than opening neutral and correcting itself.
+                SetExpression(ClassifySpoken(_activePersona.greeting));
             }
 
             NPCMemoryStore.Save(_activeMemory);

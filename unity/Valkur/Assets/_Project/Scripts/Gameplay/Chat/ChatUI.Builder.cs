@@ -58,7 +58,9 @@ namespace Valkur.Gameplay.Chat
             panelImg.color = new Color(0.08f, 0.08f, 0.12f, 0.92f);
 
             var vlg = _panel.AddComponent<VerticalLayoutGroup>();
-            vlg.padding = new RectOffset(8, 8, 8, 8);
+            _panelLayout = vlg;
+            vlg.padding = new RectOffset(
+                (int)PANEL_PADDING, (int)PANEL_PADDING, (int)PANEL_PADDING, (int)PANEL_PADDING);
             vlg.spacing = 4f;
             vlg.childForceExpandWidth = true;
             vlg.childForceExpandHeight = false;
@@ -470,6 +472,11 @@ namespace Valkur.Gameplay.Chat
 
             var langBtn = langBtnGo.AddComponent<Button>();
             langBtn.onClick.AddListener(ToggleLang);
+
+            // Last, so it draws over the rows whose gutter it occupies rather than under
+            // them. It starts hidden; whether a conversation reserves the gutter at all is
+            // ConfigurePortraitFor's decision, per character.
+            BuildPortrait(_panel.transform);
         }
 
         /// <summary>A fixed-width button inside a horizontal row.</summary>
