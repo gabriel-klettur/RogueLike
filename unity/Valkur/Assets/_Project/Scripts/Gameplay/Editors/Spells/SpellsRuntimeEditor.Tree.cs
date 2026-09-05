@@ -126,6 +126,79 @@ namespace Valkur.Gameplay.Spells
             strip.SetActive(_treeSchoolFilter);
         }
 
+        private SpellGraphView _graphView;
+
+        /// <summary>The view tab that owns the full-screen constellation.</summary>
+        internal const string VIEW_TAB_GRAPH = "graph";
+
+        /// <summary>
+        /// The last tab that actually had a PANEL. Closing the constellation returns here, so
+        /// the strip never sits lit on Graph with nothing on screen — a tab that stays
+        /// selected after its content is gone is a control lying about the state.
+        /// </summary>
+        private string _lastPanelViewTab = "tree";
+
+        private void OnSpellsViewTabChanged(int _, string key)
+        {
+            if (key == VIEW_TAB_GRAPH) { OpenSpellGraph(); return; }
+            _lastPanelViewTab = key;
+            CloseSpellGraph();
+            // The view just revealed may never have been built, or may be stale since the
+            // last filter change. This is the first moment anyone can see it.
+            RefreshVisibleView();
+        }
+
+        /// <summary>
+        /// Take the constellation down without it answering back. The notify:false is what
+        /// stops a loop: the view's own close callback re-selects a panel tab, which raises
+        /// TabChanged, which lands right back here.
+        /// </summary>
+        private void CloseSpellGraph()
+        {
+            var view = _graphView;
+            _graphView = null;
+            if (view != null) view.Close(notify: false);
+        }
+
+        /// <summary>
+        /// Open the constellation on whatever school the outline is showing, and hand it a
+        /// callback into the SAME selection path the Grid and the Table use — so a node
+        /// clicked out there moves the Properties panel and the preview in here.
+        /// </summary>
+        private void OpenSpellGraph()
+        {
+            CloseSpellGraph();
+
+            var catalog = Progression;
+            if (catalog == null)
+            {
+                Toast("No ProgressionCatalog under Resources/Progression.");
+                _uiRefs.SpellsViewTabs?.SetActive(_lastPanelViewTab);
+                return;
+            }
+
+            // "All" and "Unlinked" are outline concepts: a constellation draws one school, so
+            // an outline tab that names none falls back to the first.
+            string school = _treeSchoolFilter == TREE_SCHOOL_ALL ||
+                            _treeSchoolFilter == TREE_SECTION_ORPHANS
+                ? null
+                : _treeSchoolFilter;
+
+            _graphView = SpellGraphView.Open(catalog, school, _selectedKey,
+                onSelect: key =>
+                {
+                    SelectSpell(key);
+                    SetStatus("Selected " + key + " from the constellation.");
+                },
+                onClosed: () =>
+                {
+                    _graphView = null;
+                    _uiRefs.SpellsViewTabs?.SetActive(_lastPanelViewTab);
+                });
+
+            if (_graphView == null) _uiRefs.SpellsViewTabs?.SetActive(_lastPanelViewTab);
+        }
+
         private void OnTreeSchoolTabChanged(int _, string key)
         {
             _treeSchoolFilter = string.IsNullOrEmpty(key) ? TREE_SCHOOL_ALL : key;

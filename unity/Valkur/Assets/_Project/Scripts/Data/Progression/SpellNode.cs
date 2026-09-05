@@ -78,7 +78,23 @@ namespace Valkur.Data
             return nodeId;
         }
 
-        public Sprite ResolveIcon() => iconOverride != null ? iconOverride : null;
+        /// <summary>
+        /// The icon this node shows. Override first, then the SPELL's own icon.
+        ///
+        /// <para>It used to answer <c>iconOverride</c> or NULL, and <c>iconOverride</c> is
+        /// unauthored on all 71 shipped nodes — so this method returned null for every node in
+        /// the game and no caller could ever draw one. Same family as
+        /// <c>animation_map.json</c>: a member that round-trips, reads correctly, and cannot
+        /// produce a result. 46 of the 104 spells carry an <c>iconSprite</c>; a node with
+        /// neither is the caller's to stand in for, and it must not be answered with a
+        /// placeholder HERE — <c>Valkur.Data</c> owns no art and a default chosen down here
+        /// could not be told apart from a real one by the view that draws it.</para>
+        /// </summary>
+        public Sprite ResolveIcon()
+        {
+            if (iconOverride != null) return iconOverride;
+            return spell != null ? spell.iconSprite : null;
+        }
 
         /// <summary>Generated mechanical summary, for the same reason
         /// <see cref="SkillNode.DescribeRank"/> generates its own.</summary>

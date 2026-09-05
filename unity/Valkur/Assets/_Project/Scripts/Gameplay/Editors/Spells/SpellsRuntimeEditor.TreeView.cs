@@ -34,6 +34,7 @@ namespace Valkur.Gameplay.Spells
                 Valkur.Core.SafeDestroy.Of(go);
             }
             _spellTreeRows.Clear();
+            _treeRowsByKey.Clear();
 
             RebuildTreeModel();
 
@@ -44,6 +45,7 @@ namespace Valkur.Gameplay.Spells
                     ? BuildTreeHeaderRow(row)
                     : BuildTreeSpellRow(row, i));
             }
+            _treeDirty = false;
         }
 
         private GameObject BuildTreeHeaderRow(TreeRow row)
@@ -99,6 +101,7 @@ namespace Valkur.Gameplay.Spells
 
                 string captured = row.SpellKey;
                 btn.onClick.AddListener(() => SelectSpell(captured));
+                _treeRowsByKey[captured] = new RowRefs { Background = bg, Button = btn, Index = index };
             }
 
             float indent = 6f + row.Depth * TREE_INDENT_PX;

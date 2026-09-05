@@ -13,11 +13,12 @@ namespace Valkur.Gameplay.Spells
     {
         // ── Spells Panel (picker — Grid / Table) ──────────────────────────────────
         // Layout top-to-bottom inside the panel content VLG:
-        //   1. Tab strip (26 px) — "Grid" | "Table" | "Tree"
+        //   1. Tab strip (26 px) — "Grid" | "Table" | "Tree" | "Graph"
         //   2. Search box (26 px)
         //   3a. Grid container (flex) — 4-col icon grid (Grid tab, default)
         //   3b. Table container (flex) — sticky header + scrollable rows (Table tab)
         //   3c. Tree container (flex) — indented grimoire outline (Tree tab)
+        //   (Graph tab owns no container — it opens SpellGraphView full-screen)
         //   4. Status label (20 px)
 
         private const float SPELL_TABLE_HEADER_STRIP_H = 24f;
@@ -61,6 +62,7 @@ namespace Valkur.Gameplay.Spells
             EnsureFlexibleHeight(gridScroll.gameObject);
             EditorUIHelpers.AddVerticalScrollbar(gridScroll);
             refs.PickerContent = gridContent;
+            MakeNestedCanvas(gridScroll.gameObject);
 
             // ── 3b. Table container ───────────────────────────────────────────
             var tableContainerGo = CreateUI("TableContainer", t);
@@ -108,6 +110,11 @@ namespace Valkur.Gameplay.Spells
             tabStrip.AddTab("grid",  "Grid",  gridContainerGo);
             tabStrip.AddTab("table", "Table", tableContainerGo);
             tabStrip.AddTab("tree",  "Tree",  treeContainerGo);
+            // No content of its own: the constellation is a full-screen slab, so selecting
+            // this tab opens that and leaves the panel body empty BEHIND it. A tab with a
+            // container would have to be the graph drawn at 312 px, which is the thing the
+            // outline exists instead of.
+            tabStrip.AddTab("graph", "Graph", null);
             tabStrip.transform.SetSiblingIndex(0);
             refs.SpellsViewTabs = tabStrip;
 
@@ -176,6 +183,27 @@ namespace Valkur.Gameplay.Spells
 
             refs.SpellsTreeScroll  = sr;
             refs.SpellsTreeContent = contentRt;
+            MakeNestedCanvas(scrollGo);
+        }
+
+
+        /// <summary>
+        /// Give a scrolling list its own canvas.
+        ///
+        /// <para>A uGUI canvas rebuilds and re-batches as ONE unit, so before this a single
+        /// row repaint — a hover, a selection moving, a zebra stripe changing — dirtied all
+        /// ~1,000 active Graphics of the editor at once. A nested Canvas draws the same
+        /// pixels in the same order (it inherits sorting; overrideSorting stays false) while
+        /// confining that rebuild to the list, which is exactly the part that changes.</para>
+        ///
+        /// <para>The GraphicRaycaster is not optional: a nested Canvas ends the parent
+        /// raycaster's traversal, so without one the rows stop taking clicks entirely.</para>
+        /// </summary>
+        private static void MakeNestedCanvas(GameObject go)
+        {
+            if (go == null || go.GetComponent<Canvas>() != null) return;
+            go.AddComponent<Canvas>();
+            go.AddComponent<GraphicRaycaster>();
         }
 
         private static void BuildTableHeader(Transform parent, ref UIRefs refs)
@@ -248,15 +276,12 @@ namespace Valkur.Gameplay.Spells
             bodyContentRt.anchoredPosition = Vector2.zero;
             bodyContentRt.sizeDelta        = Vector2.zero;
 
-            var bodyVlg = bodyContent.AddComponent<VerticalLayoutGroup>();
-            bodyVlg.spacing                = 0f;
-            bodyVlg.padding                = new RectOffset(0, 0, 0, 0);
-            bodyVlg.childForceExpandWidth  = false;
-            bodyVlg.childForceExpandHeight = false;
-            bodyVlg.childControlWidth      = false;
-            bodyVlg.childControlHeight     = false;
-            bodyContent.AddComponent<ContentSizeFitter>().verticalFit =
-                ContentSizeFitter.FitMode.PreferredSize;
+            // NO layout group and NO ContentSizeFitter on the body, on purpose. The table
+            // is VIRTUALISED: the rows that exist are an arbitrary window of the list, so a
+            // layout group would stack whatever happens to be there from the top and put row
+            // 90 where row 0 belongs, and the fitter would shrink the content to that window
+            // and make the rest unreachable. RefreshTable sizes the content itself.
+            // ItemsRuntimeEditor.Table.cs records the same two constraints.
 
             var bodySR = bodyScrollGo.AddComponent<ScrollRect>();
             bodySR.content           = bodyContentRt;
@@ -292,6 +317,7 @@ namespace Valkur.Gameplay.Spells
 
             refs.SpellsTableBodyScroll  = bodySR;
             refs.SpellsTableBodyContent = bodyContentRt;
+            MakeNestedCanvas(bodyScrollGo);
         }
 
         // Triangle resize handle anchored to the panel's bottom-right corner.

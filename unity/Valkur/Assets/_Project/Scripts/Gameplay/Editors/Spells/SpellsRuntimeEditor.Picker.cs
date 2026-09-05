@@ -97,9 +97,10 @@ namespace Valkur.Gameplay.Spells
         private void RefreshActivePicker()
         {
             ApplySpellFilter();
-            RefreshPicker();
-            RefreshTable();
-            RefreshTree();
+            // Every view is stale now; only the one on screen pays for it. The other two are
+            // built when their tab is picked. See SpellsRuntimeEditor.Views.cs.
+            InvalidateAllViews();
+            RefreshVisibleView();
         }
 
         // ── Grid view ─────────────────────────────────────────────────────────
@@ -119,9 +120,8 @@ namespace Valkur.Gameplay.Spells
             // callers like SelectSpell skip that so we re-apply here as a safety net.)
             ApplySpellFilter();
 
-            // Clear existing slots.
-            for (int i = content.childCount - 1; i >= 0; i--)
-                Valkur.Core.SafeDestroy.Of(content.GetChild(i).gameObject);
+            DetachAndDestroyChildren(content);
+            _gridSlotsByKey.Clear();
 
             int shown = 0;
             foreach (var spell in _filtered)
@@ -140,7 +140,7 @@ namespace Valkur.Gameplay.Spells
                 // HUD-grade icon first (transparent PNG under Art/UI/spells/),
                 // fall back to the legacy in-world sprite if the spell hasn't
                 // been migrated yet.
-                Sprite hudIcon = spell.iconSprite != null ? spell.iconSprite : spell.sprite;
+                Sprite hudIcon = IceLanceArt.ResolveIcon(spell);
                 if (hudIcon != null)
                 {
                     icon.sprite  = hudIcon;
@@ -172,15 +172,12 @@ namespace Valkur.Gameplay.Spells
                 // the panel, or a single CanvasGroup change, which repaints every slot at
                 // once. It read as the colour-coding fading out on its own after a few
                 // seconds. See EditorUIHelpers.SetSlotTint.
-                if (key == _selectedKey)
-                {
-                    EditorUIHelpers.SetSlotTint(btn, EditorUIHelpers.SLOT_SELECTED);
-                }
-                else
-                {
-                    var tint = preview; tint.a = SLOT_TINT_ALPHA;
-                    EditorUIHelpers.SetSlotTint(btn, tint);
-                }
+                var restingTint = preview; restingTint.a = SLOT_TINT_ALPHA;
+                EditorUIHelpers.SetSlotTint(btn,
+                    key == _selectedKey ? EditorUIHelpers.SLOT_SELECTED : restingTint);
+                // Remembered so a later selection can recolour this slot without rebuilding
+                // the grid around it.
+                _gridSlotsByKey[key] = new SlotRefs { Button = btn, RestingTint = restingTint };
 
                 // Selection frame. The background tint above is nearly invisible on this
                 // grid: every spell has a HUD icon with a solid backdrop behind it, so the
@@ -199,6 +196,7 @@ namespace Valkur.Gameplay.Spells
 
                 shown++;
             }
+            _gridDirty = false;
 
             string filterTrim = (_searchFilter ?? "").Trim();
             string audienceLabel = AudienceFilterLabel(_audienceFilterKey);
@@ -276,12 +274,11 @@ namespace Valkur.Gameplay.Spells
 
         private void SelectSpell(string key)
         {
+            string previous = _selectedKey;
             _selectedKey = key;
-            RefreshPicker();
-            // The outline draws the selection too, so it has to repaint with the grid — and
-            // it is safe to rebuild from inside a row's own click, because RefreshTree
-            // detaches before destroying.
-            RefreshTree();
+            // A repaint of two entries per view, never a rebuild: measured at 366 ms per
+            // click when this rebuilt the grid and the outline to move one highlight.
+            RepaintSelection(previous, key);
             RefreshPropertiesForm();
             // Live-preview: if the View panel is open, update the looped cast.
             NotifyPreviewSelectionChanged();

@@ -207,6 +207,10 @@ namespace Valkur.Gameplay.Spells
         public void Deactivate()
         {
             _active = false;
+            // The constellation is a ROOT object with its own canvas, so hiding this editor's
+            // root does not take it down — closing F4 with the graph open would leave a
+            // full-screen slab over the game with nothing to dismiss it.
+            CloseSpellGraph();
             ReleaseEditorInvulnerability();
             ApplyAuthoringSpellUnlock(false);
             // Tear down the live preview before hiding the canvas so the camera /

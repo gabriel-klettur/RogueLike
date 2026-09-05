@@ -79,13 +79,19 @@ namespace Valkur.Gameplay.Spells
                 _uiRefs.SpellsTreeSchoolTabs?.SetActive(treeSchool);
             }
 
-            RefreshPicker();
-            RefreshTable();
-            RefreshTree();
+            // Everything is stale after a restore; SetActive below builds the one tab that
+            // comes back on screen, and RefreshVisibleView covers a workspace that saved none.
+            InvalidateAllViews();
 
+            // Never restore straight into the constellation. It is a full-screen slab over
+            // the game, and an editor that opens with one already up is the same surprise the
+            // workspace layer refuses for a destructive MODE — the author asked for F4, not
+            // for the screen to be covered.
             string viewTab = ws.GetString(WS_VIEW_TAB, null);
+            if (viewTab == VIEW_TAB_GRAPH) viewTab = "tree";
             if (!string.IsNullOrEmpty(viewTab) && _uiRefs.SpellsViewTabs != null)
                 _uiRefs.SpellsViewTabs.SetActive(viewTab);
+            RefreshVisibleView();
 
             RestoreSelectedSpell(ws);
         }

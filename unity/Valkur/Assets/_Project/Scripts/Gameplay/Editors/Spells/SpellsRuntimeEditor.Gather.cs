@@ -51,10 +51,28 @@ namespace Valkur.Gameplay.Spells
 
         // ── Build ─────────────────────────────────────────────────────────────────
 
+        /// <summary>Set when the selection moved while the Gather tab was hidden.</summary>
+        private bool _gatherFormDirty = true;
+
+        internal const string PROPS_TAB_GATHER = "gather";
+
+        private string ActivePropsTab
+            => _uiRefs.PropsTabStrip != null ? _uiRefs.PropsTabStrip.ActiveKey : null;
+
+        /// <summary>
+        /// Build whichever Properties tab is on screen if the selection moved while it was
+        /// hidden. Wired to the tab strip, so revealing Gather is the moment it catches up.
+        /// </summary>
+        private void OnPropsTabChanged(int _, string key)
+        {
+            if (key == PROPS_TAB_GATHER && _gatherFormDirty) RefreshGatherForm();
+        }
+
         private void RefreshGatherForm()
         {
             var form = _uiRefs.PropsGatherForm;
             if (form == null) return;
+            _gatherFormDirty = false;
 
             if (!_gatherFormSubscribed)
             {

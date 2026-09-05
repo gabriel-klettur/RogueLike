@@ -88,6 +88,21 @@
 1	Spawners/SpawnerEditorManager.Outlines.cs
 2	Spawners/SpawnerEditorManager.PickerDrag.cs
 3	Spawners/SpawnerOutlineRenderer.cs
+# The Spells constellation (F4 -> Graph) and the virtualised table, added 2026-09-05.
+# Reviewed exceptions, per the rule above:
+#  * SpellGraphView.cs is one surface's own palette, declared once at the class top. Its
+#    two colours that DID match tokens now read UITheme.ACCENT and UITheme.BG_PANEL.
+#  * SpellGraphView.Board.cs holds no palette at all: every literal there is a re-alpha of
+#    a value declared elsewhere, or a fully transparent hit area.
+#  * SpellGraphSprites.cs is a raster primitive -- white at a varying alpha, never a hue.
+#  * TableCells.cs is two ColorTint MULTIPLIERS (>1, not colours) and the resting shade of
+#    a cell that has to read as an input field.
+# The three values that were genuinely duplicated are gone: ROW_HOVER_LIFT and
+# SPRITE_CELL_EMPTY_BG now have one owner in SpellsRuntimeEditor.Table.cs.
+1	Spells/Graph/SpellGraphSprites.cs
+4	Spells/Graph/SpellGraphView.Board.cs
+6	Spells/Graph/SpellGraphView.cs
+3	Spells/SpellsRuntimeEditor.TableCells.cs
 2	Spells/SpellPreviewService.cs
 1	Spells/SpellsEditorUIBuilder.Helpers.cs
 1	Spells/SpellsEditorUIBuilder.SpellsPanel.cs

@@ -64,8 +64,28 @@ namespace Valkur.Gameplay.Spells
         // Content container inside _spellsHeaderScroll (header cells land here).
         private RectTransform _spellsTableHeaderContent;
 
-        // Cache of row GameObjects for efficient full rebuild on filter change.
-        private readonly List<GameObject> _spellTableRows = new List<GameObject>();
+        // Realised rows, by index into _filtered. The table is virtualised: only the rows
+        // inside the viewport (plus overscan) exist as GameObjects.
+        private readonly Dictionary<int, GameObject> _spellTableRowsByIndex
+            = new Dictionary<int, GameObject>();
+        private readonly List<int> _spellRowScratch = new List<int>();
+
+        // The window realised by the last UpdateVisibleSpellRows, so a scroll that does not
+        // cross a row boundary costs one comparison and nothing else.
+        private int _spellVisibleFirst = -1;
+        private int _spellVisibleLast  = -1;
+
+        /// <summary>Which columns the pooled rows were built for. See DestroyAllSpellTableRows.</summary>
+        private int _spellRowShapeSignature = -1;
+
+        // Rows kept alive above and below the viewport so a wheel tick never shows an empty
+        // band before the next frame fills it.
+        private const int SPELL_TABLE_OVERSCAN_ROWS = 4;
+
+        // uGUI performs no layout in Edit Mode, so a viewport can legitimately report a
+        // zero-height rect. Realising this many rows there keeps the table usable without
+        // ever falling back to "all of them", which is what virtualisation exists to avoid.
+        private const int SPELL_TABLE_FALLBACK_VISIBLE_ROWS = 24;
 
         // ── Public wiring: called by SpellsEditorUIBuilder ───────────────────
 
@@ -98,26 +118,149 @@ namespace Valkur.Gameplay.Spells
         {
             if (_spellsTableBodyContent == null) return;
 
-            for (int i = _spellsTableBodyContent.childCount - 1; i >= 0; i--)
+            DestroyAllSpellTableRows();
+
+            // Both axes are load-bearing. sizeDelta.x is the total column width, or the
+            // horizontal scrollbar's range collapses to zero and the rows appear stuck.
+            // sizeDelta.y is rows x ROW_H: with no layout group and no ContentSizeFitter on
+            // the body, this is the ONLY thing that tells the ScrollRect how tall the table
+            // is, and therefore the only thing that makes the vertical scrollbar honest.
+            _spellsTableBodyContent.sizeDelta = new Vector2(
+                ComputeSpellTableTotalWidth(), _filtered.Count * SPELL_TABLE_ROW_H);
+
+            UpdateVisibleSpellRows();
+            _tableDirty = false;
+        }
+
+        /// <summary>
+        /// Realise the rows inside the viewport (plus overscan) and drop the ones outside it.
+        /// Cheap when nothing crossed a row boundary; otherwise it touches only the delta, so
+        /// a wheel tick that moves three rows builds three rows.
+        /// </summary>
+        private void UpdateVisibleSpellRows()
+        {
+            if (_spellsTableBodyContent == null) return;
+
+            int count = _filtered.Count;
+            if (count == 0) { DestroyAllSpellTableRows(); return; }
+
+            float viewportH = ResolveSpellTableViewportHeight();
+            int visibleRows = viewportH > 1f
+                ? Mathf.CeilToInt(viewportH / SPELL_TABLE_ROW_H)
+                : SPELL_TABLE_FALLBACK_VISIBLE_ROWS;
+
+            // The content is top-anchored with a top pivot, so scrolling DOWN the list moves
+            // it up and anchoredPosition.y grows positive.
+            float scrollY = Mathf.Max(0f, _spellsTableBodyContent.anchoredPosition.y);
+            int first = Mathf.FloorToInt(scrollY / SPELL_TABLE_ROW_H) - SPELL_TABLE_OVERSCAN_ROWS;
+            first = Mathf.Clamp(first, 0, count - 1);
+            int last = Mathf.Clamp(first + visibleRows + SPELL_TABLE_OVERSCAN_ROWS * 2, 0, count - 1);
+
+            if (first == _spellVisibleFirst && last == _spellVisibleLast) return;
+
+            _spellRowScratch.Clear();
+            foreach (var kv in _spellTableRowsByIndex)
+                if (kv.Key < first || kv.Key > last) _spellRowScratch.Add(kv.Key);
+            for (int i = 0; i < _spellRowScratch.Count; i++)
             {
-                var child = _spellsTableBodyContent.GetChild(i).gameObject;
-                if (Application.isPlaying) Destroy(child);
-                else DestroyImmediate(child);
+                int index = _spellRowScratch[i];
+                ForgetSpellRowKey(index);
+                ReleaseSpellRow(_spellTableRowsByIndex[index]);
+                _spellTableRowsByIndex.Remove(index);
             }
-            _spellTableRows.Clear();
 
-            for (int i = 0; i < _filtered.Count; i++)
+            // Built in index order, so after a fresh RefreshTable the body's first child is
+            // the first realised row -- which is what the editor tests read via GetChild(0).
+            for (int i = first; i <= last; i++)
             {
-                var def = _filtered[i];
-                var row = BuildSpellTableRow(def, i);
-                _spellTableRows.Add(row);
+                if (_spellTableRowsByIndex.ContainsKey(i)) continue;
+                _spellTableRowsByIndex[i] = AcquireSpellRow(_filtered[i], i);
             }
 
-            float totalW = ComputeSpellTableTotalWidth();
-            var bodySize = _spellsTableBodyContent.sizeDelta;
-            _spellsTableBodyContent.sizeDelta = new Vector2(totalW, bodySize.y);
+            _spellVisibleFirst = first;
+            _spellVisibleLast  = last;
+        }
 
-            LayoutRebuilder.ForceRebuildLayoutImmediate(_spellsTableBodyContent);
+        private float ResolveSpellTableViewportHeight()
+        {
+            if (_spellsTableScroll == null) return 0f;
+            var vp = _spellsTableScroll.viewport != null
+                ? _spellsTableScroll.viewport
+                : _spellsTableScroll.GetComponent<RectTransform>();
+            return vp != null ? vp.rect.height : 0f;
+        }
+
+        /// <summary>
+        /// Reset the body for a fresh fill.
+        ///
+        /// <para>WHAT A ROW CAN SURVIVE. A pooled row is reusable exactly while it carries the
+        /// columns the table is drawing, and a filter change does not touch those — so on a
+        /// filter change, or on closing and reopening the editor, the realised rows are handed
+        /// to the POOL rather than destroyed and the next fill rebinds them. Only a column
+        /// being shown or hidden makes them the wrong shape, and that is what the signature
+        /// detects. Measured, clearing unconditionally made every open of the Table tab pay for
+        /// 24 rows built from nothing.</para>
+        /// </summary>
+        private void DestroyAllSpellTableRows()
+        {
+            int signature = ComputeSpellRowShapeSignature();
+            bool shapeChanged = signature != _spellRowShapeSignature;
+            _spellRowShapeSignature = signature;
+
+            _tableRowsByKey.Clear();
+
+            if (shapeChanged)
+            {
+                _spellTableRowsByIndex.Clear();
+                ClearSpellRowPool();
+                // Anything else under the body -- a row from an older build, a stray child --
+                // goes as well, so the body only ever holds what this class put there.
+                DetachAndDestroyChildren(_spellsTableBodyContent);
+            }
+            else
+            {
+                foreach (var kv in _spellTableRowsByIndex) ReleaseSpellRow(kv.Value);
+                _spellTableRowsByIndex.Clear();
+            }
+
+            _spellVisibleFirst = -1;
+            _spellVisibleLast  = -1;
+        }
+
+        /// <summary>
+        /// Identifies the row SHAPE: which columns are visible, in order. Two builds that agree
+        /// on this produce rows that are interchangeable, which is the whole precondition
+        /// <see cref="RebindSpellRow"/> checks cell by cell — this just answers it once for the
+        /// whole table instead of rejecting forty rows one at a time.
+        /// </summary>
+        private int ComputeSpellRowShapeSignature()
+        {
+            unchecked
+            {
+                int hash = 17;
+                var cols = SpellTableColumns.All;
+                for (int i = 0; i < cols.Count; i++)
+                {
+                    if (!IsColumnVisible(cols[i])) continue;
+                    hash = hash * 31 + (cols[i].Header != null ? cols[i].Header.GetHashCode() : 0);
+                }
+                return hash;
+            }
+        }
+
+        /// <summary>Drop one row's selection-repaint entry as that row is de-realised.</summary>
+        private void ForgetSpellRowKey(int index)
+        {
+            if (index < 0 || index >= _filtered.Count) return;
+            var def = _filtered[index];
+            if (def != null && !string.IsNullOrEmpty(def.spellKey)) _tableRowsByKey.Remove(def.spellKey);
+        }
+
+        private static void DetachAndDestroy(GameObject go)
+        {
+            if (go == null) return;
+            go.transform.SetParent(null, false);
+            Valkur.Core.SafeDestroy.Of(go);
         }
 
         // ── Header ────────────────────────────────────────────────────────────
@@ -233,6 +376,18 @@ namespace Valkur.Gameplay.Spells
         private static readonly Color ROW_ZEBRA_B  = new Color(0.12f, 0.13f, 0.17f, 0.90f);
         private static readonly Color ROW_SELECTED = new Color(0.22f, 0.35f, 0.55f, 0.95f);
 
+        /// <summary>
+        /// How much a row lifts under the pointer. ADDED to whatever the row is resting at,
+        /// so one value serves the zebra stripes and the selected row alike. Shared because
+        /// three places set a row's Button colours — the builder, the selection repaint and
+        /// the recycler — and a hover that differed between them would flicker as a row was
+        /// reused.
+        /// </summary>
+        internal static readonly Color ROW_HOVER_LIFT = new Color(0.05f, 0.05f, 0.08f, 0f);
+
+        /// <summary>The plate behind a sprite cell that has no sprite to show.</summary>
+        internal static readonly Color SPRITE_CELL_EMPTY_BG = new Color(0.25f, 0.25f, 0.30f, 0.60f);
+
         private GameObject BuildSpellTableRow(SpellDefinition def, int rowIndex)
         {
             float totalW = ComputeSpellTableTotalWidth();
@@ -240,7 +395,12 @@ namespace Valkur.Gameplay.Spells
             var rowGo = UIFactory.CreateUI(
                 "Row_" + (def.spellKey ?? rowIndex.ToString()), _spellsTableBodyContent);
             var rowRt = rowGo.GetComponent<RectTransform>();
-            rowGo.AddComponent<LayoutElement>().preferredHeight = SPELL_TABLE_ROW_H;
+            // Placed by INDEX. The body is virtualised, so the rows that exist are an
+            // arbitrary window of the list and nothing may stack them from the top.
+            rowRt.anchorMin        = new Vector2(0f, 1f);
+            rowRt.anchorMax        = new Vector2(0f, 1f);
+            rowRt.pivot            = new Vector2(0f, 1f);
+            rowRt.anchoredPosition = new Vector2(0f, -rowIndex * SPELL_TABLE_ROW_H);
 
             var rowBg = rowGo.AddComponent<Image>();
             rowBg.color = (def.spellKey == _selectedKey)
@@ -253,12 +413,14 @@ namespace Valkur.Gameplay.Spells
             btn.targetGraphic = rowBg;
             var bc = btn.colors;
             bc.normalColor      = rowBg.color;
-            bc.highlightedColor = rowBg.color + new Color(0.05f, 0.05f, 0.08f, 0f);
+            bc.highlightedColor = rowBg.color + ROW_HOVER_LIFT;
             bc.pressedColor     = ROW_SELECTED;
             bc.selectedColor    = ROW_SELECTED;
             bc.fadeDuration     = 0.08f;
             btn.colors          = bc;
             btn.onClick.AddListener(() => SelectSpell(capturedKey));
+            if (!string.IsNullOrEmpty(capturedKey))
+                _tableRowsByKey[capturedKey] = new RowRefs { Background = rowBg, Button = btn, Index = rowIndex };
 
             var cols = SpellTableColumns.All;
             float xCursor = 0f;
@@ -322,21 +484,9 @@ namespace Valkur.Gameplay.Spells
                 return;
             }
 
-            var contentType = col.EditorKind == SpellTableEditorKind.Int
-                ? TMP_InputField.ContentType.IntegerNumber
-                : col.EditorKind == SpellTableEditorKind.Float
-                    ? TMP_InputField.ContentType.DecimalNumber
-                    : TMP_InputField.ContentType.Standard;
-
-            var input = UIInputField.AddCommit(cellT,
-                col.GetString(def),
-                v => OnSpellCellCommit(col, def, v),
-                SPELL_TABLE_ROW_H, 10f);
-            input.contentType = contentType;
-            var inputRt = input.GetComponent<RectTransform>();
-            inputRt.anchorMin = Vector2.zero;
-            inputRt.anchorMax = Vector2.one;
-            inputRt.sizeDelta = Vector2.zero;
+            // Rests as a label and becomes a real input field on click, which also focuses
+            // it. See SpellsRuntimeEditor.TableCells.cs for the measurement behind that.
+            BuildLazyEditableCell(cellT, col, def);
         }
 
         private void BuildSpellToggleCell(Transform cellT, SpellTableColumn col, SpellDefinition def)
@@ -398,7 +548,7 @@ namespace Valkur.Gameplay.Spells
             // falling back to the legacy in-world sprite for unmigrated spells.
             Sprite sprite = null;
             if (col.Header == "sprite")
-                sprite = def.iconSprite != null ? def.iconSprite : def.sprite;
+                sprite = IceLanceArt.ResolveIcon(def);
 
             // Solid black backdrop so the alpha-transparent HUD icons read
             // against the row's striped background.
@@ -410,7 +560,7 @@ namespace Valkur.Gameplay.Spells
             bgRt.anchoredPosition = Vector2.zero;
             bgRt.sizeDelta        = new Vector2(SPELL_TABLE_SPRITE_SZ, SPELL_TABLE_SPRITE_SZ);
             var bg = bgGo.AddComponent<Image>();
-            bg.color = sprite != null ? Color.black : new Color(0.25f, 0.25f, 0.30f, 0.60f);
+            bg.color = sprite != null ? Color.black : SPRITE_CELL_EMPTY_BG;
             bg.raycastTarget = false;
 
             var imgGo = UIFactory.CreateUI("SpriteImg", cellT);
@@ -441,8 +591,9 @@ namespace Valkur.Gameplay.Spells
             if (col.SetString == null || def == null) return;
             col.SetString(def, value);
             MarkSpellDefinitionDirty(def);
-            // Rebuild picker in case the displayName or sprite changed.
-            RefreshPicker();
+            // The grid may now show a stale name or icon, but it is not on screen — the
+            // table is — so it is marked and rebuilt when its tab comes back.
+            _gridDirty = true;
         }
 
         private void OnSpellDropdownCellCommit(SpellTableColumn col, SpellDefinition def, int index)
@@ -450,7 +601,7 @@ namespace Valkur.Gameplay.Spells
             if (col.SetDropdownIndex == null || def == null) return;
             col.SetDropdownIndex(def, index);
             MarkSpellDefinitionDirty(def);
-            RefreshPicker();
+            _gridDirty = true;
         }
 
         private static void MarkSpellDefinitionDirty(SpellDefinition def)
@@ -474,6 +625,10 @@ namespace Valkur.Gameplay.Spells
             var hdr = _spellsTableHeaderContent.anchoredPosition;
             hdr.x = _spellsTableBodyContent.anchoredPosition.x;
             _spellsTableHeaderContent.anchoredPosition = hdr;
+
+            // The same callback carries the vertical position, which is what decides which
+            // rows exist.
+            UpdateVisibleSpellRows();
         }
 
         // ── Utility ───────────────────────────────────────────────────────────

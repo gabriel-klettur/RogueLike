@@ -61,6 +61,12 @@ namespace Valkur.Gameplay.Spells
 
             BindTreeRefs(_uiRefs.SpellsTreeContent);
 
+            if (_uiRefs.SpellsViewTabs != null)
+                _uiRefs.SpellsViewTabs.TabChanged += OnSpellsViewTabChanged;
+
+            if (_uiRefs.PropsTabStrip != null)
+                _uiRefs.PropsTabStrip.TabChanged += OnPropsTabChanged;
+
             // Wire the "Columns" button → column-visibility popup.
             if (_uiRefs.SpellsColumnsCfgBtn != null)
                 _uiRefs.SpellsColumnsCfgBtn.onClick.AddListener(OpenColumnsConfigPopup);

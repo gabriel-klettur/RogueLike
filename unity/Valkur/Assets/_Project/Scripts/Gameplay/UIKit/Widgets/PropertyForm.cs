@@ -226,6 +226,16 @@ namespace Valkur.UIKit
         /// </summary>
         private static void DestroyRow(GameObject go)
         {
+            if (go == null) return;
+
+            // DETACH FIRST. The paragraph above says immediate destruction is what the rebuild
+            // needs, and then Play Mode took the deferred branch anyway -- so the old rows were
+            // still children of this form's VerticalLayoutGroup for the rest of the frame the
+            // new ones were added in, and the layout ran over both sets. Measured on the Spells
+            // editor, a 150-row form laid out 300 rows on every selection change. Reparenting
+            // to null removes it from the layout at once, whichever branch destroys it.
+            go.transform.SetParent(null, false);
+
             if (Application.isPlaying) Destroy(go);
             else DestroyImmediate(go);
         }
