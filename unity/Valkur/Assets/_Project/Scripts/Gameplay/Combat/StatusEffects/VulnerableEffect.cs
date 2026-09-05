@@ -15,9 +15,11 @@ namespace Valkur.Gameplay.Combat
     /// duration, refresh semantics, the immunity list and the tint layer for free, and it
     /// composes with burns and slows through machinery that already works.</para>
     ///
-    /// <para>WHY THE TINT IS WEAK. The sigil <c>ThrallMarkFX</c>'s sibling rig draws over the
-    /// target is what carries the reading; a strongly tinted enemy stops looking like the
-    /// creature it is, which costs the player more information than the curse gives them.</para>
+    /// <para>WHY THE TINT IS WEAK. <c>CurseMarkFX</c> — the sigil this effect attaches over the
+    /// target — is what carries the reading; a strongly tinted enemy stops looking like the
+    /// creature it is, which costs the player more information than the curse gives them.
+    /// That split only works while the sigil actually exists: for as long as this comment
+    /// named a rig nobody had written, the curse's entire presence was a 28 % violet wash.</para>
     /// </summary>
     public sealed class VulnerableEffect : StatusEffect
     {
@@ -46,6 +48,10 @@ namespace Valkur.Gameplay.Combat
             var tint = SpriteTintStack.Attach(target);
             if (tint != null)
                 target.StartCoroutine(CurseTintRoutine(tint, target));
+
+            // The half that actually reads. It tears itself down off this effect's own
+            // expiry, so there is no second lifetime to keep in sync.
+            Valkur.Gameplay.Spells.CurseMarkFX.Attach(target.gameObject, this);
         }
 
         public override void Tick(StatusEffectManager target)

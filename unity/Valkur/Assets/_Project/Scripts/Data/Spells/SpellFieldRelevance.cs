@@ -75,10 +75,18 @@ namespace Valkur.Data
                                         "chargeDamageMultiplier", "chargeScaleMultiplier") },
             { SpellType.Slash,      Set("damage", "hitRadius", "range", "arcRangeDegrees",
                                         "lifetime", "particleColor", "vfxPreset", "impactPreset") },
-            { SpellType.Area,       Set("damage", "radius", "particleColor", "vfxPreset", "impactPreset") },
+            // spawnAtMouse: AreaExecutor now aims through SpellTargeting instead of always
+            // detonating `radius` in front of the caster, so where the burst lands is authored.
+            { SpellType.Area,       Set("damage", "radius", "particleColor", "vfxPreset", "impactPreset",
+                                        "spawnAtMouse", "range", "castAnchor", "statusApplications") },
             { SpellType.Dash,       Set("distance", "duration", "collisionDamage", "knockback",
                                         "particleColor", "vfxPreset") },
-            { SpellType.Teleport,   Set("distance", "particleColor", "vfxPreset") },
+            // radius/damage/statusApplications: a blink now applies its authored area at BOTH
+            // ends (glacial_step froze nothing for its whole life), so those three stopped
+            // being decoration on the asset and became the spell.
+            { SpellType.Teleport,   Set("distance", "particleColor", "vfxPreset",
+                                        "radius", "damage", "spawnAtMouse", "range",
+                                        "duration", "statusApplications") },
             // No damage, no geometry, no lifetime: it changes which sprites the caster is
             // drawn with and nothing else.
             { SpellType.WeaponLoadout, Set("loadoutKey", "vfxPreset") },
@@ -92,7 +100,13 @@ namespace Valkur.Data
             // panel hides is one a designer cannot author. The two types deliberately without
             // it are WeaponLoadout and AnimationProbe, which AppliesTo refuses outright.
             { SpellType.Smoke,      Set("duration", "radius", "vfxPreset", "particleColor") },
-            { SpellType.SmokeEmitter, Set("duration", "radius", "vfxPreset", "particleColor") },
+            // The cloud does damage now. SmokeEmitterExecutor was 32 lines with no Physics2D
+            // call at all, so spore_cloud's authored damagePerTick/tickPeriod/Poison/Slow
+            // reached zero code — the panel hid them because nothing read them.
+            { SpellType.SmokeEmitter, Set("duration", "radius", "vfxPreset", "particleColor",
+                                          "damagePerTick", "tickPeriod", "element",
+                                          "spawnAtMouse", "range", "maxInstances",
+                                          "statusApplications") },
             { SpellType.Wall,       Set("distance", "duration", "infinite", "particleColor", "sprite",
                                         "wallWidth", "wallHeight", "wallHP",
                                         "blockProjectiles", "blockUnits") },

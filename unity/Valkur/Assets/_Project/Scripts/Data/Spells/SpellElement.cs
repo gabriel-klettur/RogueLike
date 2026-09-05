@@ -23,5 +23,20 @@ namespace Valkur.Data
         Boomerang,
         Arcane,
         Fire,
+
+        /// <summary>
+        /// Verdant Rites. Appended last, and safe to append because <c>SpellDefinition.element</c>
+        /// is a STRING parsed by name — no shipped asset stores this enum as an integer, so
+        /// adding a member repoints nothing.
+        ///
+        /// <para>It exists because the five Verdant spells (<c>thorn_burst</c>, <c>entangle</c>,
+        /// <c>barkskin</c>, <c>spore_cloud</c>, <c>summon_wolf</c>) have all authored
+        /// <c>element: Nature</c> since they shipped, against an enum that had no such member —
+        /// so <c>Enum.TryParse</c> failed on every one of them, they fell through to the legacy
+        /// key switch, and it returned null. The whole school then drew from whatever palette
+        /// each caller used for "no element", which is why a wolf summoned by a green spell
+        /// arrived violet.</para>
+        /// </summary>
+        Nature,
     }
 }

@@ -8,15 +8,30 @@ using Valkur.Gameplay.Combat;
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
-    /// Healing-aura controller. Builds a multi-layered procedural VFX rig
-    /// (ground rune + inner glow + rising sparkles + light pillar + Light2D + per-tick
-    /// pulse rings + caster halo flash) and ticks healing on the caster.
+    /// Two fields centred on the caster, sharing one tick clock and one lifetime, and drawing
+    /// nothing alike.
     ///
-    /// All sprites/textures are generated once and cached statically to avoid
-    /// per-cast allocations (see <see cref="AuraSpriteFactory"/>). Light2D is wired
-    /// via reflection so the assembly does not need a hard dependency on URP.
+    /// <para><b>HEALING</b> keeps the historical rig: a gold-and-green sacred circle on the
+    /// floor, an inner glow, a light pillar, rising sparkles and a pulse ring per tick. That is
+    /// the right picture for a blessing standing on the ground, and it is unchanged.</para>
+    ///
+    /// <para><b>DAMAGING</b> gets <see cref="StaticDomeFX"/>: a charged shell the caster walks
+    /// around inside, whose event layer is arcs crawling its surface. It used to take the
+    /// healing rig, so <c>static_field</c> — a Lightning spell authoring <c>(0.95, 0.92, 0.50)</c>
+    /// — drew as a HOLY HEALING CIRCLE in hardcoded gold and green, and the <c>_tint</c> the
+    /// executor handed it was assigned and read by nobody. The rune also never stopped turning
+    /// while a pulse ring fired every half second: measured ~170 % duty, so there was no frame
+    /// without an "event" and the whole thing read as one steady texture.</para>
+    ///
+    /// <para>One controller with a branch rather than two classes, because everything ABOVE the
+    /// rig — the sweep, the tick clock, the fade, the lifetime — is genuinely identical, and a
+    /// second class would be a copy of all of it that drifts on the first fix.</para>
+    ///
+    /// <para>All healing-rig sprites are generated once and cached statically to avoid per-cast
+    /// allocations (see <see cref="AuraSpriteFactory"/>). Light2D is wired via reflection so the
+    /// assembly needs no hard dependency on URP.</para>
     /// </summary>
-    public class AuraController : MonoBehaviour
+    public class AuraController : MonoBehaviour, ISpellEffectDissipates
     {
         // --- Tunables (palette + animation) ---
         // Holy gold + nature green: classic "sacred ground" look.
@@ -60,6 +75,24 @@ namespace Valkur.Gameplay.Spells
         private SpriteRenderer _pillarSr;
         private SpriteRenderer _casterHaloSr;
         private ParticleSystem _sparkles;
+
+        /// <summary>
+        /// The DAMAGING variant's rig, and the only one it has. A damaging field used to draw
+        /// the healing rune — a hardcoded Gold/Green sacred circle lying flat on the floor — so
+        /// <c>static_field</c>, a Lightning spell authoring <c>(0.95, 0.92, 0.50)</c>, rendered
+        /// as a holy healing ground and its <c>_tint</c> was assigned and read by nobody.
+        /// </summary>
+        private StaticDomeFX   _dome;
+
+        /// <summary>The caster's own body renderer, for the live sorting order the dome sorts
+        /// its front and back hemispheres against. <c>YSortEntity</c> rewrites that order
+        /// whenever the caster walks, so it has to be re-read, not captured.</summary>
+        private SpriteRenderer _casterBody;
+
+        /// <summary>Set once the registry has handed this field a compressed close. See
+        /// <see cref="BeginDissipate"/>.</summary>
+        private bool           _dissipating;
+
         private Component      _light2D;          // URP Light2D via reflection
         private static PropertyInfo _light2DIntensity;
         private static PropertyInfo _light2DColor;
@@ -106,7 +139,8 @@ namespace Valkur.Gameplay.Spells
             Transform caster,
             LayerMask targetLayers,
             Valkur.Data.StatusApplication[] statuses,
-            Color tint)
+            Color tint,
+            Valkur.Data.SpellElement? element = null)
         {
             _remaining     = duration;
             _gameRadius    = Mathf.Max(0.1f, gameRadius);
@@ -120,9 +154,29 @@ namespace Valkur.Gameplay.Spells
             _damaging      = true;
             _tint          = tint;
 
-            AuraSpriteFactory.EnsureSprites();
-            BuildVisualRig();
-            SpawnPulseRing(initial: true);
+            // The dome is sized on the GAMEPLAY radius, not the visual one: this rig's whole
+            // job is that the reach it draws is the reach it queries. The visual minimum exists
+            // for the healing rune, which has no sweep to be honest about.
+            var palette = ElementPalette.For(element ?? Valkur.Data.SpellElement.Lightning)
+                                       .RecolouredTo(_tint);
+            _dome = StaticDomeFX.Attach(transform, _gameRadius, palette);
+            _casterBody = ResolveCasterBody(caster);
+
+            // Deliberately NO spawn pulse ring. The dome's arcs ARE its event layer, and the
+            // pulse rings this class fires per tick measured ~170 % duty against a 0.5 s
+            // tickPeriod — overlapping events are not events, they are a steady texture.
+        }
+
+        /// <summary>
+        /// The renderer whose sorting order the dome hangs its hemispheres off. Unity's
+        /// overloaded null makes <c>??</c> unsafe on a Component, so both halves are explicit.
+        /// </summary>
+        private static SpriteRenderer ResolveCasterBody(Transform caster)
+        {
+            if (caster == null) return null;
+            var own = caster.GetComponent<SpriteRenderer>();
+            if (own != null) return own;
+            return caster.GetComponentInChildren<SpriteRenderer>();
         }
 
         private void Update()
@@ -136,6 +190,13 @@ namespace Valkur.Gameplay.Spells
                 return;
             }
 
+            // FOLLOWS, DOES NOT PARENT. AuraExecutor used to SetParent this whole object onto
+            // the caster, which inherits the entity's scale — and a scaled parent renders a
+            // Light2D at `authored x lossyScale`, the failure that once put a spell light at an
+            // effective 367 world units. The healing variant is still parented, because it is
+            // literally an effect ON the caster and nothing under it carries a world radius.
+            if (_damaging && _caster != null) transform.position = _caster.position;
+
             _tickTimer -= Time.deltaTime;
             if (_tickTimer <= 0f)
             {
@@ -144,7 +205,50 @@ namespace Valkur.Gameplay.Spells
                 _tickTimer = _tickPeriod;
             }
 
-            AnimateVisuals(alpha);
+            if (_damaging) AnimateDome(alpha);
+            else           AnimateVisuals(alpha);
+        }
+
+        /// <summary>
+        /// Drive the dome, re-reading the caster's live sorting order every frame.
+        /// <c>YSortEntity</c> rewrites that order whenever the caster walks, so a base captured
+        /// once at build time flips the far hemisphere in front of them the first time they
+        /// take a step — which flattens the sphere back into the disc it exists not to be.
+        /// </summary>
+        private void AnimateDome(float alpha)
+        {
+            if (_dome == null) return;
+            int order = _casterBody != null
+                ? _casterBody.sortingOrder
+                : SortingConfig.ComputeSortingOrder(SortingConfig.Z_ENTITY, transform.position.y);
+            _dome.Tick(Time.deltaTime, alpha, order);
+        }
+
+        /// <summary>
+        /// A persistent field has FIVE exit paths — its own timer, eviction by
+        /// <c>maxInstances</c>, a zone change, its caster dying, and scene unload — and only the
+        /// first runs any of this object's code before the GameObject is gone. Compressing
+        /// <c>_remaining</c> rather than starting a second timeline means the close runs through
+        /// exactly the same fade as a natural expiry, for both variants.
+        /// </summary>
+        public bool BeginDissipate(float seconds)
+        {
+            if (!isActiveAndEnabled) return false;
+            if (_dissipating) return true;
+
+            _dissipating = true;
+            // A field on its way out must not still be hurting or mending: the caller has
+            // already dropped the handle, so as far as maxInstances is concerned it is gone.
+            _damagePerTick = 0;
+            _healPerTick = 0;
+            _remaining = Mathf.Min(_remaining, Mathf.Max(0.05f, seconds));
+            return true;
+        }
+
+        private void OnDestroy()
+        {
+            _dome?.Destroy();
+            _dome = null;
         }
 
         /// <summary>
@@ -163,7 +267,6 @@ namespace Valkur.Gameplay.Spells
                 transform.position, _gameRadius, Valkur.Gameplay.Combat.PhysicsScratch.AuraTargets, _targetLayers);
             Physics2D.queriesHitTriggers = prevHitTriggers;
 
-            bool struck = false;
             for (int i = 0; i < count; i++)
             {
                 var col = Valkur.Gameplay.Combat.PhysicsScratch.AuraTargets[i];
@@ -181,11 +284,18 @@ namespace Valkur.Gameplay.Spells
                 health.TakeDotDamage(_damagePerTick, _caster.gameObject);
                 Valkur.Gameplay.Combat.StatusApplicationFactory.ApplyAll(
                     _statuses, health.gameObject, _caster.gameObject);
-                struck = true;
+
+                // The next arc terminates on this body. That is what turns a decorative layer
+                // into a damage indicator at no extra cost — the player sees WHICH enemy the
+                // field is reaching, not merely that it is running.
+                _dome?.NoteTarget(health.transform.position);
             }
 
-            SpawnPulseRing(initial: false);
-            if (struck) EmitSparkleBurst(8);
+            // No pulse ring here. The old rig fired one every 0.5 s on top of a rune spinning at
+            // a constant rate, which measured ~170 % duty: the rings overlapped, so there was
+            // never a frame without one and the whole thing read as one steady texture. The
+            // dome answers a hit through NoteTarget above instead, which is an event on the
+            // ENEMY rather than a second ambient loop.
         }
 
         // --------------------------------------------------------------------

@@ -1,140 +1,178 @@
-﻿using UnityEngine;
+using UnityEngine;
 using Valkur.Core;
-using Valkur.Data;
-using Valkur.Gameplay.Combat;
 
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
-    /// Summoned unit with epic spawn-burst VFX (rune ground + halo flash + Light2D pop)
-    /// and an ambient Light2D aura that follows it. Auto-destroys on Health death or
-    /// duration expiry.
+    /// What a summon looks like for the whole of its service, as opposed to its entrance
+    /// (<see cref="SummonRiseFX"/>) or its dismissal (<c>AllyDismissFX</c>).
+    ///
+    /// <para>WHY A RIM AT ALL. A summon that is indistinguishable from an enemy is a UI
+    /// failure wearing a VFX costume: in a fight the player has to decide in a fraction of a
+    /// second whether the thing in front of them is theirs, and a green minimap dot answers
+    /// that on a different part of the screen. The rim answers it where they are looking.</para>
+    ///
+    /// <para>IT MUST BE REBASED EVERY FRAME. <c>YSortEntity</c> rewrites an entity's
+    /// <c>sortingOrder</c> whenever it walks, so a value captured once at build time pops the
+    /// rim in front of — or behind — the creature the first time it moves. Same measurement
+    /// <c>KiAuraFX</c> and <c>ShieldSphereFX</c> record for their own layers. The sprite is
+    /// re-read too, because a <c>DirectionalAnimator</c> swaps it several times a second and a
+    /// rim holding the idle frame while the body runs is worse than no rim.</para>
+    ///
+    /// <para>THIS CLASS DOES NOT OWN THE LIFETIME. <c>AlliedUnit</c> does — it raises
+    /// <c>OnExpired</c>, which <c>AlliedSummonService</c> has already wired to
+    /// <c>AllyDismissFX</c>. Duplicating the clock here is how the rim would finish fading two
+    /// seconds after the creature had gone.</para>
     /// </summary>
-    public class SummonController : MonoBehaviour
+    internal sealed class SummonController : MonoBehaviour
     {
-        private float _remaining;
-        private float _duration;
-        private Transform _owner;
-        private Health _health;
-        private SpriteRenderer _sr;
+        /// <summary>Seconds before expiry that the rim starts to cool and the leaves start.</summary>
+        private const float FAREWELL_SECONDS = 2f;
 
-        private SpriteRenderer _aura;
-        private GameObject _lightGo;
-        private Component _light;
+        private const float RIM_SWELL = 1.09f;
+        private const int LEAF_COUNT = 10;
+        private const int ORDER_LEAF = 47;
 
-        public void Initialize(float duration, Transform owner)
+        /// <summary>Rest alpha of the rim. Deliberately modest: it has to be readable at a
+        /// glance without competing with the creature's own art.</summary>
+        private const float RIM_ALPHA = 0.55f;
+
+        private RootPalette _palette;
+        private float _fallbackLifetime;
+        private float _age;
+
+        private AlliedUnit _ally;
+        private SpriteRenderer _body;
+        private SpriteRenderer _rim;
+
+        private SpriteRenderer[] _leaves;
+        private Vector3[] _leafDrift;
+        private bool _leavesBuilt;
+
+        internal void Initialize(RootPalette palette, float lifetime)
         {
-            _remaining = duration;
-            _duration = duration;
-            _owner = owner;
-            _health = GetComponent<Health>();
-            _sr = GetComponentInChildren<SpriteRenderer>();
-
-            BuildVisual();
-            SpawnSummonBurst();
-
-            var audio = ServiceLocator.Get<IAudioService>();
-            if (audio != null) audio.PlaySfxById("spell_summon_create");
+            _palette = palette;
+            _fallbackLifetime = lifetime;
+            _ally = GetComponent<AlliedUnit>();
+            _body = ResolveBodyRenderer();
+            BuildRim();
         }
 
-        private void BuildVisual()
+        private SpriteRenderer ResolveBodyRenderer()
         {
+            var sr = GetComponent<SpriteRenderer>();
+            if (sr != null && sr.sprite != null) return sr;
+
+            foreach (var candidate in GetComponentsInChildren<SpriteRenderer>())
+                if (candidate != null && candidate.sprite != null) return candidate;
+
+            return null;
+        }
+
+        private void BuildRim()
+        {
+            if (_body == null) return;
             ElementalSprites.EnsureAll();
-            // Aura follows summon, behind sprite
-            var auraGo = new GameObject("SummonAura");
-            auraGo.transform.SetParent(transform, false);
-            auraGo.transform.localScale = Vector3.one * 0.9f;
-            _aura = auraGo.AddComponent<SpriteRenderer>();
-            _aura.sprite = ElementalSprites.Halo;
-            _aura.color = new Color(0.85f, 0.55f, 1f, 0.45f);
-            _aura.sortingLayerID = SortingLayer.NameToID(Valkur.Core.SortingConfig.LAYER_FLOOR_DECALS);
-            _aura.sortingLayerName = Valkur.Core.SortingConfig.LAYER_FLOOR_DECALS;
-            _aura.sortingOrder = 80;
-            _aura.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
 
-            var l2dType = ElementalProjectileVisual.GetLight2DType();
-            if (l2dType != null)
-            {
-                _lightGo = new GameObject("SummonLight");
-                _lightGo.transform.SetParent(transform, false);
-                try
-                {
-                    _light = _lightGo.AddComponent(l2dType);
-                    var lt = ElementalProjectileVisual.GetLight2DLightTypeProp();
-                    if (lt != null) lt.SetValue(_light, System.Enum.ToObject(lt.PropertyType, 3));
-                    ElementalProjectileVisual.GetLight2DColorProp()?.SetValue(_light, new Color(0.85f, 0.55f, 1f, 1f));
-                    ElementalProjectileVisual.GetLight2DIntensityProp()?.SetValue(_light, 1.0f);
-                    ElementalProjectileVisual.GetLight2DOuterProp()?.SetValue(_light, 1.6f);
-                    ElementalProjectileVisual.GetLight2DInnerProp()?.SetValue(_light, 0.3f);
-                    ElementalProjectileVisual.GetLight2DFalloffProp()?.SetValue(_light, 0.85f);
-                }
-                catch { }
-            }
-        }
+            var go = new GameObject("AllySummonRim");
+            // Parented to the BODY renderer's transform so the entity's own scale and any
+            // animation offset are inherited for free. Nothing with a Light2D hangs under it,
+            // so L6's "never scale a root that sized its children" does not bite here.
+            go.transform.SetParent(_body.transform, false);
+            go.transform.localScale = Vector3.one * RIM_SWELL;
 
-        private void SpawnSummonBurst()
-        {
-            ElementalImpactFX.Spawn(transform.position, SpellElement.Arcane);
-            Feel.CameraFeel.Cue(Data.Feel.CameraFeelCue.ImpactMedium, Vector2.up);
+            _rim = go.AddComponent<SpriteRenderer>();
+            _rim.sprite = _body.sprite;
+            _rim.sharedMaterial = ElementalSprites.SharedAdditiveMaterial;
+            _rim.color = WithAlpha(_palette.Leaf, 0f);
         }
 
         private void Update()
         {
-            _remaining -= Time.deltaTime;
+            _age += Time.deltaTime;
+            if (_rim == null || _body == null) return;
 
-            if (_health != null && _health.IsDead)
-            {
-                if (_lightGo != null) Destroy(_lightGo);
-                ElementalImpactFX.Spawn(transform.position, SpellElement.Arcane);
-                Destroy(gameObject);
-                return;
-            }
+            float remaining = _ally != null && _ally.RemainingSeconds >= 0f
+                ? _ally.RemainingSeconds
+                : Mathf.Max(0f, _fallbackLifetime - _age);
 
-            if (_remaining <= 0f)
-            {
-                if (_lightGo != null) Destroy(_lightGo);
-                ElementalImpactFX.Spawn(transform.position, SpellElement.Arcane);
-                Destroy(gameObject);
-                return;
-            }
+            SyncRim();
 
-            // Basic follow
-            if (_owner != null)
-            {
-                float dist = Vector2.Distance(transform.position, _owner.position);
-                var rb = GetComponent<Rigidbody2D>();
-                if (rb != null)
-                {
-                    if (dist > 4f)
-                    {
-                        Vector2 dir = ((Vector2)_owner.position - (Vector2)transform.position).normalized;
-                        rb.velocity = dir * 3f;
-                    }
-                    else
-                    {
-                        rb.velocity = Vector2.zero;
-                    }
-                }
-            }
+            // The swell of the rim is a slow breath rather than a flicker: a summon is a
+            // steady state, and an event-rate pulse on something that lives twenty seconds
+            // stops being read within the first two.
+            float breath = 0.86f + 0.14f * Mathf.Sin(Time.time * 2.4f);
+            float farewell = Mathf.Clamp01(remaining / FAREWELL_SECONDS);
+            _rim.color = WithAlpha(_palette.Leaf, RIM_ALPHA * breath * farewell);
 
-            // Aura pulse + fade
-            float t = Time.time;
-            float pulse = 0.85f + 0.15f * Mathf.Sin(t * 4f);
-            float fade = (_remaining < 2f) ? Mathf.Clamp01(_remaining * 0.5f) : 1f;
-            if (_aura != null)
+            if (remaining <= FAREWELL_SECONDS) UpdateFarewell(farewell);
+        }
+
+        /// <summary>
+        /// Re-read everything the animator and the Y-sorter own. Cheap — three field reads
+        /// and two assignments — and the alternative is a rim that is correct for one frame.
+        /// </summary>
+        private void SyncRim()
+        {
+            _rim.sprite = _body.sprite;
+            _rim.flipX = _body.flipX;
+            _rim.flipY = _body.flipY;
+            _rim.sortingLayerID = _body.sortingLayerID;
+            // One BELOW the body, so what shows is the fringe around the silhouette rather
+            // than a wash over the art.
+            _rim.sortingOrder = _body.sortingOrder - 1;
+        }
+
+        /// <summary>
+        /// The last two seconds. Leaves come off the creature and drift up as the rim cools,
+        /// so the player is told the summon is about to go while there is still time to act
+        /// on it. The SINKING itself belongs to <c>AllyDismissFX</c>, fired by
+        /// <c>AlliedUnit.OnExpired</c>.
+        /// </summary>
+        private void UpdateFarewell(float farewell)
+        {
+            if (!_leavesBuilt) BuildLeaves();
+            if (_leaves == null) return;
+
+            for (int i = 0; i < _leaves.Length; i++)
             {
-                _aura.transform.localRotation = Quaternion.Euler(0f, 0f, t * 30f);
-                var c = _aura.color; c.a = 0.45f * fade * pulse; _aura.color = c;
+                if (_leaves[i] == null) continue;
+                _leaves[i].transform.position += _leafDrift[i] * Time.deltaTime;
+                _leaves[i].transform.localRotation *= Quaternion.Euler(0f, 0f, 60f * Time.deltaTime);
+                _leaves[i].color = WithAlpha(_palette.Leaf, (1f - farewell) * 0.6f * farewell * 4f);
             }
-            if (_sr != null && _remaining < 2f)
+        }
+
+        private void BuildLeaves()
+        {
+            _leavesBuilt = true;
+            _leaves = new SpriteRenderer[LEAF_COUNT];
+            _leafDrift = new Vector3[LEAF_COUNT];
+
+            for (int i = 0; i < LEAF_COUNT; i++)
             {
-                var c = _sr.color; c.a = fade; _sr.color = c;
+                var go = new GameObject($"Leaf{i}");
+                go.transform.SetParent(transform, worldPositionStays: false);
+                go.transform.localPosition = new Vector3(Random.Range(-0.45f, 0.45f),
+                                                         Random.Range(0.1f, 1.1f), 0f);
+                go.transform.localScale = Vector3.one * Random.Range(0.10f, 0.20f);
+
+                var sr = go.AddComponent<SpriteRenderer>();
+                sr.sprite = ElementalSprites.Wisp;
+                sr.sharedMaterial = ElementalSprites.SharedAdditiveMaterial;
+                sr.sortingLayerName = SortingConfig.LAYER_VFX;
+                sr.sortingOrder = ORDER_LEAF;
+                sr.color = WithAlpha(_palette.Leaf, 0f);
+
+                _leaves[i] = sr;
+                _leafDrift[i] = new Vector3(Random.Range(-0.4f, 0.4f), Random.Range(0.35f, 0.9f), 0f);
             }
-            if (_light != null)
-            {
-                try { ElementalProjectileVisual.GetLight2DIntensityProp()?.SetValue(_light, 1.0f * fade * pulse); }
-                catch { }
-            }
+        }
+
+        private static Color WithAlpha(Color color, float alpha)
+        {
+            color.a = alpha;
+            return color;
         }
     }
 }

@@ -120,10 +120,20 @@ namespace Valkur.Gameplay.Spells
         /// body and stay orbiting, there is no lance because there is no direction, and the
         /// shockwave is centred on the character rather than on their hand. The longest family,
         /// because a ward settling is a slower idea than a bolt leaving.
+        ///
+        /// <para><paramref name="radiusHint"/> is what a spell that authors no <c>radius</c>
+        /// wants gathered at. Every Buff in the game authors <c>radius: 0</c>, so without it
+        /// <c>FirstPositive</c> returned the same 1.7 for all of them and the cast was
+        /// byte-identical across four spells from four schools apart from hue. Buffs pass
+        /// <c>BuffAuraProfile.GatherRadius</c>, which is derived from the same rule that picks
+        /// the sustained silhouette — so the gather and what it resolves into agree by
+        /// construction. Zero (the default) keeps every other caller exactly as it was.</para>
         /// </summary>
-        public static CastFlourishProfile Ward(SpellDefinition spell)
+        public static CastFlourishProfile Ward(SpellDefinition spell, float radiusHint = 0f)
         {
-            float radius = spell != null ? CastFlourishProfile.FirstPositive(1.7f, spell.radius) : 1.7f;
+            float radius = spell != null
+                ? CastFlourishProfile.FirstPositive(1.7f, spell.radius, radiusHint)
+                : 1.7f;
             radius = Mathf.Clamp(radius, 1.1f, 3.0f);
 
             return new CastFlourishProfile
@@ -137,6 +147,50 @@ namespace Valkur.Gameplay.Spells
                 Lance = LanceAim.None, LanceLength = 0f,
                 Burst = BurstOrigin.Body, BurstRadius = radius * 1.35f,
                 AuraDrive = 1.9f, BodyDrive = 0.70f, LightMul = 1.35f, HandScale = 0.75f,
+                HandAnchored = false,
+            };
+        }
+
+        /// <summary>
+        /// <b>Rally</b> — a shout. The martial gesture, and the only family defined as much by
+        /// what it REFUSES as by what it draws.
+        ///
+        /// <para>No sigil, no lance, no light, no hand glow. A circle on the floor and a glow
+        /// in the palm are the two things that say "this character is casting", and Martial
+        /// Forms' whole identity is that nothing in it is enchanted. <c>war_cry</c> reached
+        /// <see cref="Ward"/> through <c>SpellType.Buff</c> for as long as it existed, so the
+        /// game's battle shout opened by drawing a rotating magic circle under eighteen motes
+        /// orbiting the body — the single most damaging identity defect in the spell audit,
+        /// and not something a tweak to Ward could fix, because Ward's sigil and orbit ARE
+        /// Ward.</para>
+        ///
+        /// <para>What is left is dust off the floor thrown outward, a hard punch of light on
+        /// the body, and almost no wind-up: a shout is an EVENT, and the longest gather in the
+        /// game would make it a spell being prepared.</para>
+        ///
+        /// <para>NO GROUND BURST EITHER, and that one is a division of labour rather than a
+        /// refusal: <c>BuffAuraFX</c>'s Fervor silhouette owns the shockwave, because the rig
+        /// has to be able to draw it whether or not a flourish is playing. Two expanding rings
+        /// at the caster's feet on the same frame is one ring too many.</para>
+        /// </summary>
+        public static CastFlourishProfile Rally(SpellDefinition spell, float reach)
+        {
+            float spread = Mathf.Clamp(reach > 0f ? reach : 1.6f, 1.0f, 4.0f);
+            return new CastFlourishProfile
+            {
+                FamilyName = "Rally",
+                Duration = 0.34f, Gather = 0.06f, Release = 0.04f,
+                Sigil = SigilMotion.None, SigilRadius = 0f, SigilSpin = 0f, SigilAlpha = 0f,
+                // Off the floor and pushed away — the dust a shout disturbs, not power being
+                // gathered. Nothing here converges on the hands.
+                Approach = MoteApproach.RiseFromGround, Departure = MoteDeparture.PushOutward,
+                MoteCount = 14, MoteRadius = spread * 0.34f,
+                MoteSpeedMin = 5.5f, MoteSpeedMax = 12f, MoteSize = 0.15f, MoteSpread = 3.14f,
+                Lance = LanceAim.None, LanceLength = 0f,
+                Burst = BurstOrigin.None, BurstRadius = 0f,
+                // The body is the whole event, so the aura and the tint carry it and the two
+                // knobs that would make it magical are zero.
+                AuraDrive = 1.05f, BodyDrive = 0.80f, LightMul = 0f, HandScale = 0f,
                 HandAnchored = false,
             };
         }

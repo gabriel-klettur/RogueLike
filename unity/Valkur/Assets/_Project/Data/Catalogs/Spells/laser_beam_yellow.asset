@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: Laser Yellow
   type: 5
   audience: 1
+  usesAttackAnimation: 0
   manaCost: 2
   maxInstances: 1
   allowOverlap: 1
@@ -39,6 +40,7 @@ MonoBehaviour:
   distance: 0
   knockback: 0
   collisionDamage: 0
+  infinite: 0
   duration: 0
   damagePerTick: 0
   tickPeriod: 0
@@ -48,6 +50,9 @@ MonoBehaviour:
   forceMode: 
   followCaster: 0
   spawnAtMouse: 0
+  statusApplications: []
+  castAnchor: 0
+  castForwardOffset: 0
   meteorCount: 0
   meteorInterval: 0
   meteorAreaRadius: 0
@@ -68,11 +73,26 @@ MonoBehaviour:
   totemKind: 
   coneArc: 0
   coneLength: 0
+  animState: 
+  loadoutAnimKey: 
+  loadoutKey: 
+  statModifiers: []
+  buffKey: 
+  pierceCount: 0
+  pierceDamageFalloff: 0
+  homingStrength: 0
+  homingRange: 0
+  projectileCount: 1
+  spreadDegrees: 0
+  chargeMaxSeconds: 0
+  chargeMinFraction: 0.45
+  chargeDamageMultiplier: 1
+  chargeScaleMultiplier: 1
   sprite: {fileID: 0}
   scale: 2
   speedMultiplier: 1
   offset: 0
-  iconSprite: {fileID: 21300000, guid: 619a0ad701cbfaf41b3b4ba80d787702, type: 3}
+  iconSprite: {fileID: 21300000, guid: 40ff9741f5e54db45b91b8b183ffe689, type: 3}
   telegraphColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.3}
   telegraphAlpha: 80
   particleCount: 0
@@ -89,3 +109,5 @@ MonoBehaviour:
   impactPresetLayers: []
   castPreset: 
   castPresetLayers: []
+  gatherOverride:
+    fields: []

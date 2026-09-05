@@ -56,6 +56,7 @@ namespace Valkur.Gameplay.Spells
             AgeRipples(deltaTime);
 
             UpdateFacets(envelope, shellAssemble, breakTime);
+            UpdateCracks(envelope, shellAssemble, breakTime, deltaTime);
             UpdateMotes(envelope, moteRadiusFactor, deltaTime, breakTime);
             UpdateRim(envelope, shellAssemble, breakTime, _impact01 + ignition);
             UpdateSheen(envelope, shellAssemble);

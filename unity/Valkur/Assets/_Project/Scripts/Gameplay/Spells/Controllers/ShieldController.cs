@@ -129,6 +129,10 @@ namespace Valkur.Gameplay.Spells
 
             if (_setup.Caster != null) transform.position = _setup.Caster.position;
             SyncSortingToCaster();
+            // Pushed before the tick so opacity, cracks and rim colour are all drawn from the
+            // same frame's pool. Until this call existed Integrity had no readers at all, and
+            // an absorb shell was indistinguishable from an invincibility one.
+            _sphere?.SetIntegrity(Integrity);
             _sphere?.Tick(deltaTime);
             UpdateHum(deltaTime);
 

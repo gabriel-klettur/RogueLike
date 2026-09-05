@@ -146,6 +146,9 @@ namespace Valkur.Gameplay.Spells
                 float ripple = RippleAt(d);
                 float alpha = (facet.RestAlpha * lit * depthFade + ripple) * envelope;
                 alpha *= 1f - breakTime;
+                // The absorb pool, made visible. A timer shell passes 1 forever, so this is a
+                // no-op for every shield that has no pool to show.
+                alpha *= IntegrityAlphaScale;
 
                 // Struck cells go SOLID. A hollow cell cannot get much brighter than its own
                 // border; filling it is what makes a blocked hit land as a slab of light.
@@ -179,8 +182,14 @@ namespace Valkur.Gameplay.Spells
                     : (breakTime < 0.25f
                         ? Mathf.Lerp(1f, 1.9f, breakTime / 0.25f)
                         : Mathf.Lerp(1.9f, 0f, (breakTime - 0.25f) / 0.75f));
-                SetColor(_rim, Color.Lerp(_config.Palette.Mid, _config.Palette.Core,
-                    Mathf.Max(impact, breakTime * 2f)), alpha);
+                // Third reading of the pool: the rim COOLS from its warm mid toward a pale
+                // white as the absorb drains, so a nearly-spent shell has lost its colour as
+                // well as its weight. Applied after the impact blend so a blocked hit still
+                // flares to the palette's own core.
+                var rimColor = Color.Lerp(_config.Palette.Mid, _config.Palette.Core,
+                    Mathf.Max(impact, breakTime * 2f));
+                rimColor = Color.Lerp(rimColor, Color.white, IntegrityCool * 0.55f);
+                SetColor(_rim, rimColor, alpha);
             }
 
             if (_fill != null)

@@ -18,7 +18,7 @@ MonoBehaviour:
   audience: 1
   usesAttackAnimation: 0
   manaCost: 22
-  maxInstances: 0
+  maxInstances: 1
   allowOverlap: 1
   allowMovement: 0
   interruptible: 0
@@ -92,7 +92,7 @@ MonoBehaviour:
   scale: 1
   speedMultiplier: 1
   offset: 0
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: 9819d74f11df1c44d9797f726c28c29f, type: 3}
   telegraphColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.3}
   telegraphAlpha: 80
   particleCount: 0

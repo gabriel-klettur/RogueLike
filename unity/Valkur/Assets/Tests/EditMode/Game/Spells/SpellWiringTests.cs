@@ -272,12 +272,13 @@ namespace Valkur.Tests.EditMode.Game.Spells
             var actions = new InputService.GameplayActions(gameplay);
 
             var unknown = new List<string>();
-            foreach ((InputAction action, string spellKey, KeyCode legacy) in
+            foreach ((InputAction action, InputActionDescriptor descriptor) in
                      actions.EnumerateSpellBindings())
             {
+                string spellKey = descriptor.PayloadKey;
                 if (string.IsNullOrEmpty(spellKey)) continue;
                 if (catalog.GetByKey(spellKey) == null)
-                    unknown.Add($"{action?.name ?? "?"} / {legacy} → '{spellKey}'");
+                    unknown.Add($"{action?.name ?? "?"} → '{spellKey}'");
             }
 
             // EnumerateSpellBindings is the single source of truth for what a key press casts.
@@ -295,17 +296,22 @@ namespace Valkur.Tests.EditMode.Game.Spells
             var actions = new InputService.GameplayActions(gameplay);
 
             var unbound = new List<string>();
-            foreach ((InputAction action, string spellKey, KeyCode legacy) in
+            foreach ((InputAction action, InputActionDescriptor descriptor) in
                      actions.EnumerateSpellBindings())
             {
                 if (action != null && action.bindings.Count == 0)
-                    unbound.Add($"{action.name} ('{spellKey}')");
+                    unbound.Add($"{action.name} ('{descriptor.PayloadKey}')");
             }
 
+            // An unbound slot is now COMPLETELY dead, and that is a change worth stating.
+            // The legacy KeyCode column that used to sit beside each slot meant a slot with
+            // no binding still fired from its hardcoded key — so this test was guarding a
+            // half-broken state that still worked by accident. The legacy half is derived
+            // from the binding now, so no binding means no key at all.
             Assert.IsEmpty(unbound,
                 "Spell actions that exist but carry no binding. The action resolves, so " +
-                "nothing throws; the key simply never fires and only the legacy KeyCode " +
-                "fallback still works:\n" + string.Join("\n", unbound));
+                "nothing throws; the slot simply never fires, in either backend:\n" +
+                string.Join("\n", unbound));
         }
     }
 }

@@ -1,13 +1,24 @@
 using UnityEngine;
 using Valkur.Data;
-using Valkur.Gameplay.Combat;
-using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
-    /// Places a healing totem at the target position that periodically heals nearby allies.
-    /// Mirrors Python's TotemResolver (healing_totem: kind=heal).
+    /// Places a healing totem that periodically mends everything friendly inside its circle.
+    ///
+    /// <para><b>radius is WORLD UNITS.</b> It used to be <c>ctx.Spell.radius / 16f</c> — the
+    /// SEVENTH sighting of the Python pixel scale in this project, after <c>wallWidth</c>, the
+    /// vortex radius, <c>range</c> on three executors, <c>coneLength</c>, <c>arcane_flame</c>'s
+    /// radius and <c>AuraExecutor</c>'s. The tell was the usual one: the fallback for an
+    /// unauthored field (13.75 WORLD units) was sixty-four times anything the divide could
+    /// produce from a sane asset. Shipped <c>sanctuary</c> authors 3.4 and was resolving to a
+    /// heal circle <b>0.21 units</b> across — a fifth of a tile.</para>
+    ///
+    /// <para><b>NO COMPATIBILITY SHIM, and <c>healing_totem.asset</c> was re-authored in the
+    /// same change</b> (13.75 -> 3.0, the world value its divide had been producing, rounded to
+    /// something a designer can read). <c>PuddleExecutor</c> made exactly this call when its own
+    /// divide was removed, and for the stated reason: a silent factor of sixteen is worse than a
+    /// value that is obviously wrong.</para>
     /// </summary>
     public class TotemExecutor : ISpellExecutor
     {
@@ -17,26 +28,11 @@ namespace Valkur.Gameplay.Spells
         /// </summary>
         private static readonly Color DefaultTint = new Color(1f, 0.9f, 0.3f, 1f);
 
-        /// <summary>
-        /// One shared sprite for every totem ever placed. It used to be generated per cast and
-        /// never released — a 24x32 texture leaked on each one, the same defect the magic
-        /// shield carried.
-        /// </summary>
-        private static Sprite _totemSprite;
+        /// <summary>Heal radius used when the definition authors none, WORLD units.</summary>
+        private const float DEFAULT_RADIUS = 3f;
 
         /// <summary>
-        /// Domain Reload is OFF, so the managed handle survives a recompile while the native
-        /// texture does not. Nulling the field is a plain <c>stsfld</c>, the only shape
-        /// <c>DomainReloadStaticResetTests</c> reads as a reset.
-        /// </summary>
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics()
-        {
-            _totemSprite = null;
-        }
-
-        /// <summary>
-        /// The colour this totem draws with — its body, its area indicator, and the cast gather
+        /// The colour this totem draws with — its band, its ring, its light, and the cast gather
         /// that precedes it. Same shape as <see cref="SlashExecutor.ResolveTint"/>, and for the
         /// same reason: the swatch reaches the flourish now, so a totem that ignored it would
         /// be announced in one colour and arrive in another.
@@ -50,7 +46,7 @@ namespace Valkur.Gameplay.Spells
         public void Execute(SpellContext ctx)
         {
             float duration = ctx.Spell.duration > 0 ? ctx.Spell.duration : 10f;
-            float radius = ctx.Spell.radius > 0 ? ctx.Spell.radius / 16f : 13.75f;
+            float radius = ctx.Spell.radius > 0 ? ctx.Spell.radius : DEFAULT_RADIUS;
             float healPerTick = SpellPower.Scale(
                 ctx.Spell.healPerTick > 0 ? ctx.Spell.healPerTick : 6f, ctx.Caster);
             float tickPeriod = ctx.Spell.tickPeriod > 0 ? ctx.Spell.tickPeriod : 0.5f;
@@ -61,58 +57,23 @@ namespace Valkur.Gameplay.Spells
             var totemGo = new GameObject("SpellTotem");
             totemGo.transform.position = (Vector3)spawnPos;
 
-            // Totem visual: triangle/pillar shape
-            Color tint = ResolveTint(ctx.Spell);
-
-            var sr = totemGo.AddComponent<SpriteRenderer>();
-            sr.sprite = TotemSprite();
-            // Alpha is tuning and stays put; only the hue is authorable.
-            sr.color = new Color(tint.r, tint.g, tint.b, 0.9f);
-            sr.sortingLayerName = "Entities";
-            sr.sortingOrder = 8;
-            totemGo.transform.localScale = Vector3.one * 0.8f;
-
-            // Collision
+            // A totem is something you can bump into. The collider is unchanged from the
+            // triangle-sprite version so the obstacle the player learned is the obstacle they
+            // keep, even though the art it stood behind is gone.
             var col = totemGo.AddComponent<BoxCollider2D>();
             col.size = new Vector2(0.5f, 0.7f);
 
             var controller = totemGo.AddComponent<TotemController>();
-            controller.Initialize(duration, radius, Mathf.RoundToInt(healPerTick), tickPeriod, ctx.Caster);
+            controller.Initialize(duration, radius, Mathf.RoundToInt(healPerTick), tickPeriod,
+                ctx.Caster, ResolveTint(ctx.Spell), ProjectileExecutor.ResolveElement(ctx.Spell));
 
-            if (VFXManager.Instance != null)
-            {
-                VFXManager.Instance.SpawnAreaIndicator((Vector3)spawnPos,
-                    new Color(tint.r, tint.g, tint.b, 0.4f), radius, 0.5f);
-            }
+            // No SpawnAreaIndicator. The rig draws its own ground ring, pinned to exactly the
+            // circle the heal sweep queries; a second translucent halo over it would be a
+            // second, contradictory promise about the same number.
 
-        
-            // Free-standing world object: nothing else can end it. The registry
-            // enforces maxInstances and clears it on a zone change.
+            // Free-standing world object: nothing else can end it. The registry enforces
+            // maxInstances and clears it on a zone change.
             SpellEffectRegistry.Track(totemGo, ctx.Spell, ctx.Caster != null ? ctx.Caster.gameObject : null);
-}
-
-        private static Sprite TotemSprite()
-        {
-            if (_totemSprite != null) return _totemSprite;
-
-            int w = 24, h = 32;
-            var tex = new Texture2D(w, h);
-            tex.filterMode = FilterMode.Point;
-            var pixels = new Color[w * h];
-            // Triangle shape
-            for (int y = 0; y < h; y++)
-            {
-                float halfWidth = (float)(h - y) / h * (w / 2f);
-                for (int x = 0; x < w; x++)
-                {
-                    float dx = Mathf.Abs(x - w / 2f);
-                    pixels[y * w + x] = dx <= halfWidth ? Color.white : Color.clear;
-                }
-            }
-            tex.SetPixels(pixels);
-            tex.Apply();
-            _totemSprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0f), 16f);
-            return _totemSprite;
         }
     }
 }

@@ -33,8 +33,25 @@ namespace Valkur.Gameplay.Spells
             bool damaging = ctx.Spell.damagePerTick > 0f;
 
             var auraGo = new GameObject(damaging ? "SpellAura_Static" : "SpellAura_Healing");
-            auraGo.transform.SetParent(ctx.Caster, false);
-            auraGo.transform.localPosition = Vector3.zero;
+
+            // A DAMAGING field FOLLOWS its caster; it is not parented to them. Parenting
+            // inherits the entity's scale, and a scaled parent renders a Light2D at
+            // `authored x lossyScale` — the failure that once put a spell light at an effective
+            // 367 world units — while also scaling a dome whose radius is supposed to BE the
+            // damage radius. The healing variant stays parented: nothing under it carries a
+            // world radius, and it is literally an effect on the caster's own body.
+            if (damaging)
+            {
+                auraGo.transform.position = ctx.Caster != null
+                    ? ctx.Caster.position
+                    : (Vector3)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell);
+                auraGo.transform.localScale = Vector3.one;
+            }
+            else
+            {
+                auraGo.transform.SetParent(ctx.Caster, false);
+                auraGo.transform.localPosition = Vector3.zero;
+            }
 
             var controller = auraGo.AddComponent<AuraController>();
 
@@ -49,7 +66,13 @@ namespace Valkur.Gameplay.Spells
                     caster:        ctx.Caster,
                     targetLayers:  ctx.TargetLayers,
                     statuses:      ctx.Spell.statusApplications,
-                    tint:          ctx.Spell.particleColor);
+                    // The raw swatch, resolved ONE level down through
+                    // ElementPalette.RecolouredTo — which already answers all three meanings of
+                    // particleColor in the right order: opaque white is the "nobody authored
+                    // this" sentinel, an achromatic value is a request for the ABSENCE of
+                    // colour, and near-black adds nothing on an additive material.
+                    tint:          ctx.Spell.particleColor,
+                    element:       ProjectileExecutor.ResolveElement(ctx.Spell));
             }
             else
             {

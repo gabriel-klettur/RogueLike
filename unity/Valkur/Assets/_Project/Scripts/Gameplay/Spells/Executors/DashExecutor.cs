@@ -16,8 +16,22 @@ namespace Valkur.Gameplay.Spells
     /// happened at the ORIGIN and dashing through a pack hit nobody. And the caster was
     /// only ever moved as far as a hardcoded fallback, because both dash spells author
     /// <c>distance: 0</c>. The sweep now follows the path the body actually takes.
+    ///
+    /// <para>A THIRD THING WAS WRONG AND IT COST <c>leap_slam</c> ITS ENTIRE PAYLOAD. The
+    /// contact sweep opens on <c>collisionDamage</c>, which that spell authors as 0 — by
+    /// design, because a leap does not shoulder-check everything it passes over, it lands on
+    /// one place. Its authored <c>damage: 30</c>, <c>radius: 2.6</c>, <c>knockback: 6</c> and
+    /// <c>Stun 0.8 s</c> were therefore read by nothing at all: the spell was a jump that did
+    /// no damage, and every number on it was internally consistent while describing something
+    /// that never happened. The landing is a separate application now — see
+    /// <c>DashExecutor.Leap.cs</c> — and it is gated on the spell authoring an area, so
+    /// <c>dash</c> and <c>hostile_dash</c> (radius 0) are untouched.</para>
+    ///
+    /// <para><c>spawnAtMouse</c> was the other half of the same gap: this executor always went
+    /// <c>ctx.Direction * distance</c>, so a spell whose whole point is "leap to a POINT" could
+    /// only ever leap along its facing.</para>
     /// </summary>
-    public class DashExecutor : ISpellExecutor
+    public partial class DashExecutor : ISpellExecutor
     {
         // Visible duration of the moving trail emitter. The caster itself is
         // teleported instantly via Rigidbody2D.MovePosition, but the trail
@@ -39,16 +53,19 @@ namespace Valkur.Gameplay.Spells
 
         public void Execute(SpellContext ctx)
         {
+            if (ctx.Caster == null || ctx.Spell == null) return;
+
             float dist = ctx.Spell.distance > 0 ? ctx.Spell.distance : DEFAULT_DISTANCE;
             Vector2 startPos = ctx.Caster.position;
-            Vector2 endPos = startPos + ctx.Direction * dist;
+            Vector2 travel = ResolveTravel(ctx, startPos, dist);
+            Vector2 endPos = startPos + travel;
             float moveDuration = ctx.Spell.duration > 0f
                 ? Mathf.Clamp(ctx.Spell.duration, MinTrailMoveSeconds, MaxTrailMoveSeconds)
                 : DefaultTrailMoveSeconds;
 
             // Contact is resolved against the path BEFORE the body is moved, because
             // MovePosition does not take effect until the next physics step.
-            ApplyPathContact(ctx, startPos, dist);
+            ApplyPathContact(ctx, startPos, travel);
 
             // Caster motion. In real gameplay the caster has a Rigidbody2D and
             // the dash is an instant teleport (1-frame physics step) — the
@@ -61,7 +78,7 @@ namespace Valkur.Gameplay.Spells
             var rb = ctx.Caster.GetComponent<Rigidbody2D>();
             if (rb != null)
             {
-                rb.MovePosition(rb.position + ctx.Direction * dist);
+                rb.MovePosition(rb.position + travel);
             }
             else
             {
@@ -71,7 +88,21 @@ namespace Valkur.Gameplay.Spells
 
             Color tint = ctx.Spell.particleColor != Color.clear ? ctx.Spell.particleColor : DefaultTint;
             var casterSr = ResolveBodyRenderer(ctx.Caster);
-            DashStreakFX.Spawn(ctx.Caster, startPos, endPos, casterSr, tint);
+
+            if (HasLandingSlam(ctx.Spell))
+            {
+                // A leap is not a dash, and giving it the dash's speed streak would say the
+                // opposite of what it is: a streak is something moving fast ALONG the ground,
+                // and the whole illusion here is that the character left it. The flight rig
+                // owns the landing beat too, because the slam must land when the body is seen
+                // to arrive rather than at the instant the key was pressed.
+                LeapFlightFX.Play(ctx.Caster, startPos, endPos, casterSr, moveDuration,
+                                  ctx.Spell, landing => ApplyLandingSlam(ctx, landing));
+            }
+            else
+            {
+                DashStreakFX.Spawn(ctx.Caster, startPos, endPos, casterSr, tint);
+            }
 
             // Dust is kicked up by feet, so the wake runs on the same line the streak does.
             Vector3 feet = DashStreakFX.FeetOffset(ctx.Caster, casterSr);
@@ -79,19 +110,30 @@ namespace Valkur.Gameplay.Spells
 
             // The camera commits to where the dash is going and settles on arrival. Guarded
             // to the player inside the director — an NPC dashing must not move the frame.
-            Feel.CameraFeel.Dash(ctx.Direction, dist, moveDuration);
-            ServiceLocator.Get<IAudioService>()?.PlaySfxById("spell_dash_whoosh");
+            Vector2 heading = travel.sqrMagnitude > 0.0001f ? travel.normalized : ctx.Direction;
+            Feel.CameraFeel.Dash(heading, travel.magnitude, moveDuration);
+
+            // Gated on HasSfx: AudioCatalog.asset holds no spell_* id at all, so an ungated
+            // call is one guaranteed console warning per session for a sound that has never
+            // been authored.
+            var audio = ServiceLocator.Get<IAudioService>();
+            if (audio != null && audio.HasSfx("spell_dash_whoosh"))
+                audio.PlaySfxById("spell_dash_whoosh");
         }
 
         /// <summary>
         /// Everything standing between the two ends of the dash is shoulder-checked once.
         /// A circle cast rather than an overlap: the point of a dash is the line it draws.
         /// </summary>
-        private static void ApplyPathContact(SpellContext ctx, Vector2 startPos, float dist)
+        private static void ApplyPathContact(SpellContext ctx, Vector2 startPos, Vector2 travel)
         {
             if (ctx.Spell.collisionDamage <= 0 || ctx.TargetLayers.value == 0) return;
 
-            var hits = Physics2D.CircleCastAll(startPos, SWEEP_RADIUS, ctx.Direction, dist,
+            float dist = travel.magnitude;
+            if (dist < 0.01f) return;
+            Vector2 heading = travel / dist;
+
+            var hits = Physics2D.CircleCastAll(startPos, SWEEP_RADIUS, heading, dist,
                                                ctx.TargetLayers);
             if (hits.Length == 0) return;
 
@@ -115,8 +157,7 @@ namespace Valkur.Gameplay.Spells
                 if (ctx.Spell.knockback <= 0) continue;
                 var hitRb = health.GetComponent<Rigidbody2D>();
                 if (hitRb != null)
-                    hitRb.AddForce(ctx.Direction.normalized * ctx.Spell.knockback,
-                                   ForceMode2D.Impulse);
+                    hitRb.AddForce(heading * ctx.Spell.knockback, ForceMode2D.Impulse);
             }
         }
 

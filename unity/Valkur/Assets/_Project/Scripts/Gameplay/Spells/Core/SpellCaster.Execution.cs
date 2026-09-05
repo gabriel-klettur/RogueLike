@@ -272,10 +272,11 @@ namespace Valkur.Gameplay.Spells
             _activeKey = spellKey;
             _castDirection = direction.normalized;
 
-            if (spell.prepareDuration > 0f)
+            float prepare = ResolvePrepareDuration(spell);
+            if (prepare > 0f)
             {
                 _phase = CastPhase.Prepare;
-                _phaseTimer = spell.prepareDuration;
+                _phaseTimer = prepare;
             }
             else
             {
@@ -289,7 +290,12 @@ namespace Valkur.Gameplay.Spells
                 }
             }
 
-            Debug.Log($"[SpellCaster] TryCastByKey '{spellKey}' → {spell.displayName} (type={spell.type})");
+            // Gated: this fires once per cast, and the F4 editor's whole workflow is casting the
+            // same spell repeatedly to look at it. Ungated it buries the console the moment an
+            // author starts working — the console this project requires to be readable.
+            // Func<string> overload so the string is never built while the category is off.
+            Valkur.Core.VerboseLog.Log(Valkur.Core.VerboseLog.Category.Combat,
+                () => $"[SpellCaster] TryCastByKey '{spellKey}' → {spell.displayName} (type={spell.type})");
             return true;
         }
 
@@ -350,7 +356,27 @@ namespace Valkur.Gameplay.Spells
         /// </summary>
         public bool AuthoringUnlockAll { get; private set; }
 
-        public void SetAuthoringUnlockAll(bool value) => AuthoringUnlockAll = value;
+        /// <summary>
+        /// Turn authoring mode on or off. While it is on the caster ignores mana, cooldown and
+        /// windup, so selecting a spell in the F4 picker shows it immediately.
+        ///
+        /// <para>Turning it ON also CLEARS whatever was already running. The resolvers below
+        /// only make FUTURE casts free — a cooldown armed a moment before the editor opened is
+        /// already ticking in <c>_cooldownTimers</c>, and a cast still in its prepare phase
+        /// leaves <c>_phase</c> somewhere other than Ready, which refuses the next cast outright.
+        /// Without this an author would open the editor and find the first few clicks silently
+        /// swallowed, which reads as the editor being broken rather than as a cooldown.</para>
+        /// </summary>
+        public void SetAuthoringUnlockAll(bool value)
+        {
+            AuthoringUnlockAll = value;
+            if (!value) return;
+
+            if (_cooldownTimers != null)
+                for (int i = 0; i < _cooldownTimers.Length; i++) _cooldownTimers[i] = 0f;
+            _spellBookCooldowns.Clear();
+            ResetPhase();
+        }
 
         public void ReplaceSpellBook(IReadOnlyList<string> keys,
                                      System.Func<string, SpellDefinition> resolve)
@@ -414,16 +440,41 @@ namespace Valkur.Gameplay.Spells
         public int ResolveManaCost(SpellDefinition spell)
         {
             if (spell == null) return 0;
+            // Authoring: the F4 editor exists to LOOK at a spell, and an author comparing two
+            // effects should not be rationed by a mana bar. Answered here rather than at the
+            // call sites because this method is the single owner of the number on all three
+            // cast paths (slot, book, and the deferred one AdvancePhase takes).
+            if (AuthoringUnlockAll) return 0;
             float cost = spell.manaCost;
             var stats = ResolveStats();
             if (stats != null) cost *= stats.SpellManaCostMultiplier;
             return Mathf.Max(0, Mathf.RoundToInt(cost));
         }
 
+        /// <summary>
+        /// The windup this caster actually waits before the spell goes off.
+        ///
+        /// <para>Zero while the F4 editor is open. A prepare is a GAMEPLAY cost — it is the
+        /// window in which a player can be interrupted — and it buys an author nothing but a
+        /// pause between clicking a spell and seeing it. Nine of the shipped spells author one,
+        /// so without this, selecting them in the picker feels like the editor is lagging.</para>
+        /// </summary>
+        public float ResolvePrepareDuration(SpellDefinition spell)
+        {
+            if (spell == null) return 0f;
+            if (AuthoringUnlockAll) return 0f;
+            return Mathf.Max(0f, spell.prepareDuration);
+        }
+
         /// <summary>Cooldown this caster actually waits, after SpellCooldownReduction.</summary>
         public float ResolveCooldown(SpellDefinition spell)
         {
             if (spell == null) return 0f;
+            // Authoring: zero here is what makes the whole editor responsive, and it does more
+            // than skip a wait. A cooldown of 0 means StartCooldown takes its ResetPhase branch
+            // instead of parking the FSM in CastPhase.Cooldown — so the NEXT cast is not
+            // refused by the `_phase != Ready` guard either. One number, three gates.
+            if (AuthoringUnlockAll) return 0f;
             float cd = spell.cooldownDuration;
             var stats = ResolveStats();
             if (stats != null) cd *= stats.SpellCooldownMultiplier;

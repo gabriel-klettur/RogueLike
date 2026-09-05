@@ -145,7 +145,7 @@ namespace Valkur.Gameplay.Spells
                 proj.SetVFXColor(spell.particleColor != Color.white
                     ? spell.particleColor
                     : new Color(1f, 0.6f, 0.2f, 0.8f));
-                proj.SetGenericImpactEnabled(!IceLanceArt.Matches(spell));
+                proj.SetGenericImpactEnabled(!HasOwnImpactRig(spell));
                 // Damage typing + status rolls, consulted by Health on impact — see
                 // ResolveElement's doc for why the SO field wins over the legacy key switch.
                 proj.SetElement(ResolveElement(spell));
@@ -228,6 +228,13 @@ namespace Valkur.Gameplay.Spells
                         }
                     }
 
+                    var rig = proj.GetComponent<SpellProjectileVisual>();
+                    if (rig != null)
+                    {
+                        rig.OnPierced(contact, remaining, budget);
+                        return;
+                    }
+
                     var vfx = ServiceLocator.Get<IVFXService>();
                     if (vfx == null) return;
                     // Each pierce is dimmer than the last, so the falloff is legible on
@@ -245,6 +252,14 @@ namespace Valkur.Gameplay.Spells
                 proj.OnHomingAcquired += target =>
                 {
                     if (target == null) return;
+
+                    var rig = proj.GetComponent<SpellProjectileVisual>();
+                    if (rig != null)
+                    {
+                        rig.OnHomingLocked(target);
+                        return;
+                    }
+
                     var vfx = ServiceLocator.Get<IVFXService>();
                     vfx?.SpawnImpact(target.position, lockColor, 0.22f, 0.5f);
                 };
@@ -439,9 +454,59 @@ namespace Valkur.Gameplay.Spells
             var oldLance = go.GetComponent<IceLanceProjectileVisual>();
             if (oldLance != null) Object.Destroy(oldLance);
 
-            var pv = go.GetComponent<ParticleProjectileVisual>();
-            if (pv == null) pv = go.AddComponent<ParticleProjectileVisual>();
-            pv.SetSpell(spell);
+            // A spell with an authored preset stack keeps the particle rig: those are the four
+            // legacy balls, they are tuned, and their presets are the whole of their look.
+            //
+            // A spell WITHOUT one used to get that same rig, which hides the root SpriteRenderer
+            // in Awake and returns early from StartTrail when the preset list is empty — so it
+            // drew nothing whatsoever. Six of the expansion's seven projectiles shipped in that
+            // state. They get the procedural rig instead, whose silhouette comes from the
+            // spell's own mechanics and therefore cannot resolve to nothing.
+            bool hasAuthoredPresets = spell != null && spell.CollectVfxPresets().Count > 0;
+
+            if (hasAuthoredPresets)
+            {
+                var proceduralRig = go.GetComponent<SpellProjectileVisual>();
+                if (proceduralRig != null) DestroyRig(proceduralRig);
+
+                var pv = go.GetComponent<ParticleProjectileVisual>();
+                if (pv == null) pv = go.AddComponent<ParticleProjectileVisual>();
+                pv.SetSpell(spell);
+                return;
+            }
+
+            var particleRig = go.GetComponent<ParticleProjectileVisual>();
+            if (particleRig != null) DestroyRig(particleRig);
+
+            var procedural = go.GetComponent<SpellProjectileVisual>();
+            if (procedural == null) procedural = go.AddComponent<SpellProjectileVisual>();
+            procedural.Configure(spell);
+        }
+
+        /// <summary>
+        /// Swap one visual rig for another, from either mode.
+        ///
+        /// <para><c>Object.Destroy</c> is an outright ERROR in Edit Mode ("Destroy may not be
+        /// called from edit mode"), and this runs from EditMode tests: every fixture that casts
+        /// a projectile reaches here, so a plain Destroy turns an unrelated assertion red with
+        /// an unhandled log message rather than a failure anyone can read.</para>
+        /// </summary>
+        private static void DestroyRig(Component rig)
+        {
+            if (rig == null) return;
+            if (Application.isPlaying) Object.Destroy(rig);
+            else Object.DestroyImmediate(rig);
+        }
+
+        /// <summary>
+        /// True when this spell draws its own impact, so <see cref="Projectile"/>'s generic
+        /// round blob must stay out of the way. Two rigs answering the same beat is how every
+        /// mechanic in the game came to look like the same burst in three sizes.
+        /// </summary>
+        private static bool HasOwnImpactRig(SpellDefinition spell)
+        {
+            if (IceLanceArt.Matches(spell)) return true;
+            return spell != null && spell.CollectVfxPresets().Count == 0;
         }
 
         private static void StripLegacyVisualRigs(GameObject go)

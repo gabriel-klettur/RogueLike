@@ -76,11 +76,23 @@ MonoBehaviour:
   animState: 
   loadoutAnimKey: 
   loadoutKey: 
+  statModifiers: []
+  buffKey: 
+  pierceCount: 0
+  pierceDamageFalloff: 0
+  homingStrength: 0
+  homingRange: 0
+  projectileCount: 1
+  spreadDegrees: 0
+  chargeMaxSeconds: 0
+  chargeMinFraction: 0.45
+  chargeDamageMultiplier: 1
+  chargeScaleMultiplier: 1
   sprite: {fileID: 0}
   scale: 0.72
   speedMultiplier: 1
   offset: 0
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: 83b8367c0c40c024f9b2ab76c783810a, type: 3}
   telegraphColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.3}
   telegraphAlpha: 80
   particleCount: 0
@@ -97,3 +109,5 @@ MonoBehaviour:
   impactPresetLayers: []
   castPreset: 
   castPresetLayers: []
+  gatherOverride:
+    fields: []

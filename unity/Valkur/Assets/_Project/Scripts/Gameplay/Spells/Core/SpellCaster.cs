@@ -215,10 +215,11 @@ namespace Valkur.Gameplay.Spells
             _activeSlot = slotIndex;
             _castDirection = direction.normalized;
 
-            if (spell.prepareDuration > 0f)
+            float prepare = ResolvePrepareDuration(spell);
+            if (prepare > 0f)
             {
                 _phase = CastPhase.Prepare;
-                _phaseTimer = spell.prepareDuration;
+                _phaseTimer = prepare;
             }
             else
             {
@@ -235,7 +236,11 @@ namespace Valkur.Gameplay.Spells
             if (_phase != CastPhase.Ready) return false;
             var spell = spellSlots[slotIndex];
             if (spell == null) return false;
-            int manaCost = Mathf.Max(0, Mathf.RoundToInt(spell.manaCost));
+            // ResolveManaCost, not the raw field: this predicate is what greys a spell out in
+            // the HUD, so reading the asset directly made it disagree with TryCast about both
+            // ManaCostReduction and the editor's authoring mode — the bar would show a spell as
+            // unaffordable and the cast would then succeed.
+            int manaCost = ResolveManaCost(spell);
             if (manaCost > 0)
             {
                 var mana = ResolveMana();

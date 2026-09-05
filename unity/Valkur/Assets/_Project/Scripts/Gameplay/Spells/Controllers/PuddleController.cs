@@ -24,7 +24,7 @@ namespace Valkur.Gameplay.Spells
     /// extra damage and no extra duration. Refresh a status on its own timer, never on
     /// the damage timer.</para>
     /// </summary>
-    public class PuddleController : MonoBehaviour
+    public class PuddleController : MonoBehaviour, ISpellEffectDissipates
     {
         private float _remaining;
         private float _radius;
@@ -54,6 +54,14 @@ namespace Valkur.Gameplay.Spells
         /// instead of being cut off on one frame.
         /// </summary>
         private const float FADE_OUT_SECONDS = 1f;
+
+        /// <summary>
+        /// Set once the registry has handed this field a compressed close. See
+        /// <see cref="BeginDissipate"/>: the whole remaining life becomes the fade window, so
+        /// an evicted field SINKS in the seconds it was given instead of being cut on a frame.
+        /// </summary>
+        private bool _dissipating;
+        private float _dissipateWindow = FADE_OUT_SECONDS;
 
         /// <param name="ownVisual">
         /// The rig the caller already built on this GameObject, or null to take the shared
@@ -102,9 +110,13 @@ namespace Valkur.Gameplay.Spells
             // 1.5-unit damage circle.
             if (_ownVisual != null) return;
 
-            // One palette today. The branch that used to stand here tested the element and
-            // returned LavaPuddle() from BOTH sides, so it read as a choice and was not
-            // one; a real PoisonPuddle/WaterPuddle belongs in AreaPalette when it exists.
+            // Reaching here means GroundFieldProfile resolved this field to a POOL, which is
+            // the only shape AreaFXRig's four concentric discs were ever right for — and today
+            // that is `puddle_lava` alone. This call used to run for EVERY field, which is how
+            // `blizzard` came to draw four orange sprites and an orange light off an Ice spell
+            // authoring (0.72, 0.90, 1.00), pixel-identical to `cinder_trail`. The branch that
+            // used to stand here tested the element and returned LavaPuddle() from BOTH sides,
+            // so it read as a choice and was not one.
             var palette = AreaPalette.LavaPuddle();
             _rig = AreaFXRig.Attach(transform, palette, _radius);
             // The root stays at IDENTITY. AreaFXRig.Attach has already sized every child by
@@ -140,9 +152,35 @@ namespace Valkur.Gameplay.Spells
             }
 
             if (_ownVisual != null)
-                _ownVisual.Tick(Time.deltaTime, Mathf.Clamp01(_remaining / FADE_OUT_SECONDS));
+                _ownVisual.Tick(Time.deltaTime, Mathf.Clamp01(_remaining / _dissipateWindow));
 
             Animate();
+        }
+
+        /// <summary>
+        /// A persistent field has FIVE exit paths — its own timer, eviction by
+        /// <c>maxInstances</c>, a zone change, its caster dying, and scene unload — and only the
+        /// first runs any of this object's code before the GameObject is gone. The other four go
+        /// through <c>SpellEffectRegistry.DestroySafely</c>, so a fade implemented on the
+        /// field's own timeline is simply SKIPPED and the player sees a hard cut.
+        ///
+        /// <para>Compressing <c>_remaining</c> rather than starting a second timeline means the
+        /// close runs through exactly the same code as a natural expiry: the owned rig gets the
+        /// same falling fade, the disc rig gets the same dim, and there is no second ending to
+        /// keep in step with the first.</para>
+        /// </summary>
+        public bool BeginDissipate(float seconds)
+        {
+            if (!isActiveAndEnabled) return false;
+            if (_dissipating) return true;
+
+            _dissipating = true;
+            // A field on its way out must not still be hurting people: the caller has already
+            // dropped the handle, so as far as maxInstances is concerned this one is gone.
+            _damagePerTick = 0;
+            _dissipateWindow = Mathf.Max(0.05f, seconds);
+            _remaining = Mathf.Min(_remaining, _dissipateWindow);
+            return true;
         }
 
         private void Animate()

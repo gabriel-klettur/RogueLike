@@ -33,6 +33,7 @@ namespace Valkur.Gameplay.Spells
                 case SpellElement.Boomerang:  return Boomerang();
                 case SpellElement.Arcane:     return Arcane();
                 case SpellElement.Fire:       return Fire();
+                case SpellElement.Nature:     return Nature();
                 case SpellElement.Dark:
                 default:                      return Dark();
             }
@@ -127,6 +128,43 @@ namespace Valkur.Gameplay.Spells
         };
 
         // Ice: cyan/white frost with snowflake accent + sharp shards.
+        /// <summary>
+        /// Verdant green. Deliberately the least luminous palette in the set: growing things
+        /// are matter, so the school's rigs carry their weight in OPAQUE layers — thorns, bark
+        /// strips, soil chips — and a bright additive green sitting behind them would wash the
+        /// silhouettes out and make a root indistinguishable from a light. Its embers drift
+        /// gently upward (leaves, spores) instead of streaming.
+        /// </summary>
+        private static ElementPalette Nature() => new ElementPalette
+        {
+            element = SpellElement.Nature,
+            hotCore = new Color(0.88f, 1.00f, 0.82f, 1f),
+            core    = new Color(0.52f, 0.92f, 0.46f, 1f),
+            glow    = new Color(0.32f, 0.74f, 0.34f, 0.58f),
+            halo    = new Color(0.16f, 0.46f, 0.22f, 0.22f),
+            accent  = new Color(0.74f, 0.96f, 0.60f, 0.85f),
+            lightColor = new Color(0.55f, 0.95f, 0.55f, 1f),
+            coreScale = 0.40f, glowScale = 0.92f, haloScale = 1.55f, hotCoreScale = 0.20f, accentScale = 0.85f,
+            ghostCount = 4, ghostSpacing = 0.11f,
+            emberInterval = 0.05f, emberLifetime = 0.85f, emberJitter = 0.9f, emberDrag = 1.4f, emberBuoyancy = -0.5f,
+            flickerRate = 4f, stretch = 0.18f,
+            lightIntensity = 1.1f, lightOuter = 1.9f, lightInner = 0.35f,
+            accentSpinSpeed = 22f,
+            hotCoreSprite = ElementalSprites.HotCore,
+            coreSprite    = ElementalSprites.Core,
+            glowSprite    = ElementalSprites.Glow,
+            haloSprite    = ElementalSprites.Halo,
+            // Drifting seed-fluff rather than a spark: the ember layer is the only part of a
+            // Verdant effect that is allowed to float, so it should not read as fire.
+            emberSprite   = ElementalSprites.Wisp,
+            accentSprite  = ElementalSprites.Sparkle,
+            ringSprite    = ElementalSprites.Ring,
+            // Deliberately blank. The sole consumer calls PlaySfxById WITHOUT a HasSfx guard,
+            // and AudioCatalog contains no `spell_*` id at all, so naming one here would add a
+            // guaranteed console warning per impact to buy a sound that cannot exist yet.
+            impactSfxId   = "",
+        };
+
         private static ElementPalette Ice() => new ElementPalette
         {
             element = SpellElement.Ice,

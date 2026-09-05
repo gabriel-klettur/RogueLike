@@ -209,12 +209,26 @@ namespace Valkur.Gameplay.Spells
                 case SpellType.Aura:
                 case SpellType.Shield:
                 case SpellType.SphereMagicShield:
-                // A timed self-buff is the Ward gesture by definition: the power orbits the
-                // body and never leaves it. Left out of this switch it would fall through to
-                // the Hurl default and throw motes FORWARD at nothing, which is the one
-                // gesture that actively contradicts what the spell does.
-                case SpellType.Buff:
                     return CastFlourishFamilies.Ward(spell);
+
+                // A timed self-buff is USUALLY the Ward gesture — power orbits the body and
+                // never leaves it — but not always, and the exception is not cosmetic. A
+                // martial buff is a SHOUT: it summons nothing, so it draws no circle and no
+                // orbit, and routing it to Ward gave the game's battle cry a rotating magic
+                // sigil for as long as the spell existed.
+                //
+                // The test is BuffAuraProfile's, not a second opinion held here, so the cast
+                // gesture and the sustained silhouette cannot end up disagreeing about which
+                // school a spell belongs to. It also hands Ward the gather radius that same
+                // rule derived, because every Buff in the game authors `radius: 0` and Ward
+                // would otherwise size all of them identically.
+                case SpellType.Buff:
+                {
+                    var buff = BuffAuraProfile.Resolve(spell);
+                    return buff.Silhouette == BuffSilhouette.Fervor
+                        ? CastFlourishFamilies.Rally(spell, buff.GatherRadius)
+                        : CastFlourishFamilies.Ward(spell, buff.GatherRadius);
+                }
 
                 case SpellType.Dash:
                     return CastFlourishFamilies.Surge(spell);
