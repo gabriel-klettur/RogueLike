@@ -1339,6 +1339,27 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   thing here (ground pulses, telegraphs, puddles) lies on the FLOOR and is flattened because
   the camera looks at it at an angle; this one is in VIEW space, so flattening it makes it read
   as a disc lying under the character's feet.
+- **The InputSystem mouse does not always freeze at ZERO, and a frozen non-zero position
+  is the one that wins.** `MouseInputManager.TrySelectScreenMousePosition` prefers the
+  InputSystem whenever it is finite and in view, with one guard — a stale `(0,0)` while
+  legacy reads something else. Measured live (2026-09-05, in the player loop via
+  `InputSystem.onAfterUpdate`, NOT from `EditorApplication.update`, which reads a different
+  state buffer and lied): under the 2022.3 event-drop bug the device sat at the screen
+  CENTRE `(800,400)` and at its last delivered position — finite, in view, plausible — so it
+  beat the correct legacy reading, the cursor resolved to the player's own feet, and every
+  aimed spell flew straight down while the pointer sat elsewhere. It is intermittent because
+  it depends on which value the device stopped on; a session where it froze at zero "works
+  perfectly", which proves nothing. `MouseFreezeTracker` turns the per-frame guess into a
+  verdict from evidence (legacy moved across 3 distinct frames, InputSystem did not) and the
+  selector yields to legacy while it stands; the verdict clears the moment the InputSystem
+  moves. Distrust never invents a position — legacy out of view still answers false. Pinned
+  by `MouseFreezeTrackerTests` and the `Frozen*` cases in `MouseInputManagerTests`, including
+  a source check that the production path feeds the tracker, because the pure halves being
+  green is exactly the shape that shipped broken. Two things this cost before it was found:
+  a throttle on the redirected editor click was blamed first (it only made the single true
+  trajectory visible), and a real but SMALLER defect — aiming from the sprite centre while
+  firing from the hands, 0.42 u off — was fixed in `SpellTargeting.ResolveAimDirection`
+  along the way.
 - **A shield that cannot react to being hit is an aura.** `Health.ApplyDamage` opened with
   `if (IsDead || amount <= 0 || _invincible) return;` — a refused blow was SILENT, so no system
   downstream could tell a blow that was stopped from a blow that never happened, and the one
