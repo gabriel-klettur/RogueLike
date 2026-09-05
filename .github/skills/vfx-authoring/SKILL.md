@@ -1,6 +1,6 @@
 ---
 name: vfx-authoring
-description: Valkur particle/VFX authoring — the art direction (HD glow over pixel-art world), the ParticleVfxParams field reference, recipes per `kind`, the gradient/curve rules, the additive-vs-alpha decision, per-preset budgets, naming, and the known engine gaps that cap how beautiful a preset can get. Load before creating or tuning any particle preset, touching ParticleEmitter, or working in the Particles Editor (F1).
+description: Valkur particle/VFX authoring — the art direction (HD glow over pixel-art world), the ParticleVfxParams field reference, recipes per `kind`, the gradient/curve rules, the additive-vs-alpha decision, per-preset budgets, naming, and the known engine gaps that cap how beautiful a preset can get. Load before creating or tuning any particle preset, touching ParticleEmitter, or working in the Particles Editor.
 ---
 
 # VFX Authoring for Valkur
@@ -49,7 +49,7 @@ Everything else in `asset-pipeline` still applies — naming, folders, atlas pol
    primary field plus a `…Layers` list: `vfxPreset` (trail, parented to the projectile),
    `impactPreset` (spawned at the hit point at 5× scale — author impact sizes divided by
    five), and `castPreset` (spawned unparented at the caster). Placed world emitters stack
-   by placing several presets in the F1 editor.
+   by placing several presets in the Particles editor.
 
    Reach for a new layer whenever one emitter would have to be two things at once — the
    classic being additive light and alpha-blended mass.
@@ -67,7 +67,7 @@ Everything else in `asset-pipeline` still applies — naming, folders, atlas pol
    rendered by the SAME `ParticleEmitter`, one extra `ParticleSystem` per entry. This is
    a different mechanism from the `…Layers` lists above: those spawn separate placed
    presets/emitters at the spell level, this stacks sub-effects onto ONE placed instance
-   (or one spell slot) so a single F1 placement, or a single `vfxPreset`, can already be
+   (or one spell slot) so a single Particles-editor placement, or a single `vfxPreset`, can already be
    a whole core+rim+sparks stack. One level deep only — a layer's own `layers` are
    ignored — and a `lightning`-kind layer is skipped, since lightning draws with a
    LineRenderer, not a `ParticleSystem`.
@@ -92,7 +92,7 @@ Presets are ScriptableObjects at
 ```
 ParticlePresetDefinition          ScriptableObject
 ├── id            string          unique key, snake_case, no PP_ prefix
-├── displayName   string          human label shown in the F1 picker
+├── displayName   string          human label shown in the Particles picker
 ├── type          string          category shown in the picker ("aura", "portal", …)
 ├── vfx           ParticleVfxParams
 └── layers        List<ParticlePresetDefinition>   optional child presets, one extra
@@ -117,7 +117,7 @@ since. So:
 
 | You are editing | It reaches |
 |---|---|
-| a preset, nothing placed selected (F1 picker) | every FUTURE placement, the preview, the asset on disk |
+| a preset, nothing placed selected (Particles picker) | every FUTURE placement, the preview, the asset on disk |
 | a placement selected on the map | that one emitter, and nothing else |
 | "Reapply Preset → This / → All Placements" | one placement, or every placement of that preset — the deliberate version of the old coupling |
 
@@ -132,7 +132,7 @@ RAM would thaw at the next restart. The file pays for it: the world's 190 record
 ~25 KB to ~300 KB, because a frozen copy is a full block, deliberately not a diff against the
 preset (a diff would re-link them to it).
 
-Not persisted, on purpose: the F1 undo stack, the selected box / hovered edge / open tab, and
+Not persisted, on purpose: the Particles editor's undo stack, the selected box / hovered edge / open tab, and
 the outline's smoothing — all session state.
 
 ### The leaf-fall family shares one behaviour
@@ -150,7 +150,7 @@ What each one still owns is exactly what makes it itself:
 | `colors`, `color`, `colorOverLife`, `colorIntensity`, `additive` | the colour is the whole point of the variant |
 | `textureShape`, `textureSoftness` | Leaf (8) and Petal (9) are different silhouettes |
 | `sizeMin` / `sizeMax` / `sizeAspect` | quad size is a look — no motion term reads it |
-| `spawnWidth` | how wide the effect covers the world, and the axis the F1 drag handle owns |
+| `spawnWidth` | how wide the effect covers the world, and the axis the Particles drag handle owns |
 | `sortingLayer` / `sortingOrder` | the deliberate stacking of co-located fields (canopy 10 over petals 5 over leaves 0) |
 
 `spawnHeight` is NOT in that list even though it is a size: the visible band is
@@ -169,8 +169,8 @@ RATIOS against the preset, stored on the instance and folded over the preset by
 
 | Ratio | Multiplies | Authored by |
 |---|---|---|
-| `spawnScaleX` / `spawnScaleY` | the emission area per axis (`spawnWidth`/`spawnHeight`; the emission radius by their geometric mean for the circular kinds, which have no ellipse to stretch) | dragging the EMISSION box's edges in F1 |
-| `reachScale` | every motion term at once — `speed`, `gravity`, `gravityVector`, `radialSpeed`, `noiseStrength`, `swayAmp` | dragging the REACH box's edges in F1 |
+| `spawnScaleX` / `spawnScaleY` | the emission area per axis (`spawnWidth`/`spawnHeight`; the emission radius by their geometric mean for the circular kinds, which have no ellipse to stretch) | dragging the EMISSION box's edges in the Particles editor |
+| `reachScale` | every motion term at once — `speed`, `gravity`, `gravityVector`, `radialSpeed`, `noiseStrength`, `swayAmp` | dragging the REACH box's edges in the Particles editor |
 
 Ratios rather than absolute sizes, so retuning a preset carries its instances with it, and so
 they compose with `scale_multiplier` (also a ratio) instead of one silently overriding the
@@ -344,11 +344,11 @@ Additive traps:
   volume is not.** If a layer's job is to occupy space rather than to glow, it is mass —
   author the warmth into its gradient, not into its blend mode.
 
-### 4.1 Two things that bite when a preset is resized in F1
+### 4.1 Two things that bite when a preset is resized in the Particles editor
 
 - **A small reach is a frozen effect, not a small one.** At the 0.05 minimum a leaf's drift is
   0.0275 u/s — nine tenths of a pixel over its whole life — while spawning and dying carry on
-  unchanged. The F1 handles refuse to author past a measured floor (four art texels of lifetime
+  unchanged. The Particles handles refuse to author past a measured floor (four art texels of lifetime
   travel, or a fifth of what the preset was authored to travel, whichever is larger) and say so
   in the status line. An orbital preset hits the same wall through the EMISSION box, because an
   orbit's arc is proportional to the radius it turns around.
@@ -364,7 +364,7 @@ not `count`, is the one to hold.
 
 | Context | Steady-state cap | Notes |
 |---|---|---|
-| Ambient world emitter (placed via F1) | **≤ 40** | Many are on screen at once; `ParticleInstancesLoader` culls off-camera but on-screen density adds up. |
+| Ambient world emitter (placed via the Particles editor) | **≤ 40** | Many are on screen at once; `ParticleInstancesLoader` culls off-camera but on-screen density adds up. |
 | Player aura / trail | ≤ 60 | Always visible. |
 | Signature spell (fireball) | ≤ 120 | A deliberate exception. NOT enforced by anything: `maxInstances` is unread metadata (see §7) and `FireballSignatureTests` never asserts a particle budget. Do not treat it as the general rule. |
 | Spell impact (burst) | ≤ 120 per burst | Sub-second life, so peak-only. |
@@ -387,8 +387,8 @@ Rules of thumb:
   `PP_portal_oval_core_soft`, `PP_portal_oval_rim_add`, `PP_portal_oval_sparks_add`.
   Suffix `_add` marks an additive layer, `_soft` an alpha haze layer.
 - Register every new preset in `ParticlePresetCatalog.asset` — an unregistered preset is
-  invisible to the F1 picker and resolves to null at load.
-- Never hand-edit `StreamingAssets/Particles/*.json`; it is written by the F1 editor
+  invisible to the Particles picker and resolves to null at load.
+- Never hand-edit `StreamingAssets/Particles/*.json`; it is written by the Particles editor
   through `IParticleInstanceRepository`.
 
 ## 7. Known engine gaps (what currently caps beauty)
@@ -406,7 +406,7 @@ Fix them in `ParticleEmitter` before spending long tuning numbers.
 | **`burstIntervalSeconds` dead.** | `IsBurstWithInterval()` returns `false` unconditionally | Repeating ambient bursts impossible. |
 | **Noise hardcoded to `falling_leaf`.** | `ConfigureParticleSystem` | No turbulence for smoke or fire. |
 
-**Dead fields — Python-importer debt.** These serialize, show up in the F1 inspector and
+**Dead fields — Python-importer debt.** These serialize, show up in the Particles inspector and
 survive every round trip, but a grep over `Assets/_Project/Scripts/` finds **zero runtime
 consumers** for any of them. They are leftovers from the Pygame preset importer. Authoring
 them changes nothing on screen; do not tune them, and do not cite them in a recipe:
@@ -440,7 +440,7 @@ what caused presets to be authored against effects that never existed.
   `rotationOneWay`, with `sizeAspect` for an oval gate.
 - Sub-1 emission rates. `emitRate` floors at 0.02/s, which is what lets a preset be two or three
   long-lived quads instead of a crowd.
-- Per-instance size overrides and the F1 resize handles — see "Per-instance size overrides".
+- Per-instance size overrides and the Particles resize handles — see "Per-instance size overrides".
 
 **Already fixed (2026-08-21)** — do not re-report these as gaps:
 
@@ -482,6 +482,6 @@ diminishing returns.
 6. Author `sizeOverLife`. Never leave a looping emitter without one.
 7. Check the steady-state count against §5.
 8. Register in `ParticlePresetCatalog.asset`.
-9. Preview in play mode with F1 (`ParticlePreviewService`) over both a dark and a bright
+9. Preview in play mode from the Particles editor (`ParticlePreviewService`) over both a dark and a bright
    tile.
 10. Run `mcp_unity_refresh_unity` + `mcp_unity_read_console` — console clean before done.

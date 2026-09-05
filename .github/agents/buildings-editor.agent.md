@@ -1,5 +1,5 @@
 ---
-description: "Use when developing, fixing, or extending the Valkur Buildings Editor. Covers both the Unity EditorWindow (BuildingsEditorWindow) and the in-game runtime editor (BuildingsRuntimeEditor, F10). Use for: placing buildings, collision grid painting, split-ratio tool, Z-offset controls, picker panel, toolbar, save/load JSON, drag/resize/delete handles, outline FX, undo/redo, confirm-delete modal, tutorial overlay, collider scope CG/CU, BuildingObject, BuildingLoader, BuildingCollisionLoader, BuildingCatalog, BuildingTemplateData, BuildingsEditorUIBuilder, BuildingOutlineRenderer, ZoneManager integration."
+description: "Use when developing, fixing, or extending the Valkur Buildings Editor. Covers both the Unity EditorWindow (BuildingsEditorWindow) and the in-game runtime editor (BuildingsRuntimeEditor, opened from the General Editor on Escape). Use for: placing buildings, collision grid painting, split-ratio tool, Z-offset controls, picker panel, toolbar, save/load JSON, drag/resize/delete handles, outline FX, undo/redo, confirm-delete modal, tutorial overlay, collider scope CG/CU, BuildingObject, BuildingLoader, BuildingCollisionLoader, BuildingCatalog, BuildingTemplateData, BuildingsEditorUIBuilder, BuildingOutlineRenderer, ZoneManager integration."
 tools: [read, edit, search, execute]
 user-invocable: true
 argument-hint: "Describe the Buildings Editor feature to implement or bug to fix"
@@ -21,7 +21,7 @@ The Buildings Editor has **two surfaces**:
   - `BuildingsEditorWindow.Interaction.cs` — SceneView ghost preview, place-on-click, Save/Reload JSON persistence
 - Assembly: `Valkur.Editor` (`Assets/_Project/Scripts/Editor/`)
 
-### 2. In-Game Runtime Editor — `BuildingsRuntimeEditor` (play-mode, F10)
+### 2. In-Game Runtime Editor — `BuildingsRuntimeEditor` (play-mode, ESC → Buildings)
 - `SingletonMonoBehaviour<BuildingsRuntimeEditor>` implementing `GameEditorManager.IGameEditor`
 - Assembly: `Valkur.Gameplay` (`Assets/_Project/Scripts/Gameplay/Editors/`)
 - Namespace: `Valkur.Gameplay.Buildings`
@@ -47,7 +47,7 @@ The Buildings Editor has **two surfaces**:
 | `Scripts/Editor/BuildingsEditorWindow.cs` | `Valkur.Editor` | EditorWindow entry point + state |
 | `Scripts/Editor/BuildingsEditorWindow.DrawPanel.cs` | `Valkur.Editor` | Palette, inspector, buildings list, toolbar |
 | `Scripts/Editor/BuildingsEditorWindow.Interaction.cs` | `Valkur.Editor` | SceneView interaction, placement, save/load |
-| `Scripts/Gameplay/Editors/Buildings/BuildingsRuntimeEditor.cs` | `Valkur.Gameplay.Buildings` | Runtime editor (F10), ~3000 lines |
+| `Scripts/Gameplay/Editors/Buildings/BuildingsRuntimeEditor.cs` | `Valkur.Gameplay.Buildings` | Runtime editor, ~3000 lines |
 | `Scripts/Gameplay/Editors/Buildings/BuildingsEditorUIBuilder.cs` | `Valkur.Gameplay.Buildings` | Builds all runtime UI panels (menu bar, Modes, Buildings picker, Properties, Colliders) |
 | `Scripts/Gameplay/World/Buildings/BuildingObject.cs` | `Valkur.Gameplay.World` | Runtime building entity (split-render, collider, Apply()) |
 | `Scripts/Gameplay/World/Buildings/BuildingLoader.cs` | `Valkur.Gameplay.World` | Loads `buildings_instances.json`, spawns BuildingObjects |

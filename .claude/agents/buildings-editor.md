@@ -1,6 +1,6 @@
 ---
 name: buildings-editor
-description: Specialist for the Valkur Buildings Editor — both the Unity EditorWindow (`BuildingsEditorWindow`, menu `Valkur > Buildings Editor`) and the in-game runtime editor (`BuildingsRuntimeEditor`, F10). Covers placement, collision grid painting, split-ratio, Z-offsets, picker, toolbar, save/load JSON, drag/resize/delete, outline FX, undo/redo, confirm-delete modal, tutorial overlay, collider scope CG/CU, BuildingObject, BuildingLoader, BuildingCollisionLoader, BuildingCatalog, BuildingTemplateData. Stays strictly within the Buildings subsystem.
+description: Specialist for the Valkur Buildings Editor — both the Unity EditorWindow (`BuildingsEditorWindow`, menu `Valkur > Buildings Editor`) and the in-game runtime editor (`BuildingsRuntimeEditor`, opened from the General Editor on Escape). Covers placement, collision grid painting, split-ratio, Z-offsets, picker, toolbar, save/load JSON, drag/resize/delete, outline FX, undo/redo, confirm-delete modal, tutorial overlay, collider scope CG/CU, BuildingObject, BuildingLoader, BuildingCollisionLoader, BuildingCatalog, BuildingTemplateData. Stays strictly within the Buildings subsystem.
 tools: Read, Grep, Glob, Edit, Write, Bash
 model: sonnet
 ---

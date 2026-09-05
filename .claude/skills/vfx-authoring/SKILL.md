@@ -1,6 +1,6 @@
 ---
 name: vfx-authoring
-description: Valkur particle/VFX authoring — the art direction (HD glow over pixel-art world), the ParticleVfxParams field reference, recipes per `kind`, the gradient/curve rules, the additive-vs-alpha decision, per-preset budgets, naming, and the known engine gaps that cap how beautiful a preset can get. Load before creating or tuning any particle preset, touching ParticleEmitter, or working in the Particles Editor (F1).
+description: Valkur particle/VFX authoring — the art direction (HD glow over pixel-art world), the ParticleVfxParams field reference, recipes per `kind`, the gradient/curve rules, the additive-vs-alpha decision, per-preset budgets, naming, and the known engine gaps that cap how beautiful a preset can get. Load before creating or tuning any particle preset, touching ParticleEmitter, or working in the Particles Editor.
 ---
 
 # VFX Authoring for Valkur

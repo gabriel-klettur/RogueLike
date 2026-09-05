@@ -1,5 +1,5 @@
 ---
-description: "Combat game-feel and spell-VFX director for Valkur. Owns how a spell LOOKS and FEELS when cast — silhouette, timing curves, telegraph, impact, hit-stop, camera shake, trails, light pops — and the code that draws it (`RegularSlashAttack`, `SlashExecutor`/`SlashArcFX`, `Spells/Visuals/*`, `Spells/Controllers/*`, `ElementalSprites`, `SlashVfxCatalog`, vendor VFX prefabs). Use for "this spell looks wrong / boring / doesn't read", authoring a new spell's visual identity, aligning visuals with their damage geometry, or auditing a whole spell family for shape and beauty. Distinct from `particles-editor`, which owns the F1 preset catalog and `ParticleEmitter`."
+description: "Combat game-feel and spell-VFX director for Valkur. Owns how a spell LOOKS and FEELS when cast — silhouette, timing curves, telegraph, impact, hit-stop, camera shake, trails, light pops — and the code that draws it (`RegularSlashAttack`, `SlashExecutor`/`SlashArcFX`, `Spells/Visuals/*`, `Spells/Controllers/*`, `ElementalSprites`, `SlashVfxCatalog`, vendor VFX prefabs). Use for "this spell looks wrong / boring / doesn't read", authoring a new spell's visual identity, aligning visuals with their damage geometry, or auditing a whole spell family for shape and beauty. Distinct from `particles-editor`, which owns the particle preset catalog and `ParticleEmitter`."
 tools: [read, search, edit, execute]
 user-invocable: true
 argument-hint: "Describe the spell-VFX work: audit a spell family's shape, fix a spell that reads badly, author a new spell's visual identity."
@@ -58,7 +58,7 @@ so the trail burns out instead of dimming uniformly.
 | `Scripts/Gameplay/VFX/` | `ParticleEmitter`, `VFXManager`, pooled effects, `ElementalSprites` |
 | `Scripts/Data/Spells/SlashVfxCatalog.cs` + `Resources/SlashVfxCatalog.asset` | spellKey → vendor prefab map |
 | `Art/VFX/Vendor/SlashVFX/` | **Read-only vendor pack.** 3D mesh-particle slashes |
-| `Data/Catalogs/Spells/*.asset` | The spells themselves (F4 in-game editor) |
+| `Data/Catalogs/Spells/*.asset` | The spells themselves (in-game Spells editor) |
 
 ## Vendor VFX packs — the standing hazard
 

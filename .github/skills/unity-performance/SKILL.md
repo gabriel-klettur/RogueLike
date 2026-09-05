@@ -13,7 +13,7 @@ argument-hint: "Describe the perf symptom (low FPS, stutter, freeze, etc.) and t
 - High **GPU frame time** while CPU is idle — render/post-process bottleneck.
 - High **`Gfx.WaitForGfxCommandsFromMainThread`** — VSync or render-queue stall.
 - Memory pressure: heap >1 GB, many `Gen0` collections, or "Garbage Collector" spikes in Profiler.
-- Editor specific: dropped FPS only when a runtime editor (F6/F10/F11...) is open.
+- Editor specific: dropped FPS only when a runtime editor (Inventory, Buildings, Map...) is open.
 
 > **NOT for:** asset import optimization (use `asset-pipeline` skill), test perf (use `unity-testing` skill), or general C# correctness (use `unity-development`).
 
