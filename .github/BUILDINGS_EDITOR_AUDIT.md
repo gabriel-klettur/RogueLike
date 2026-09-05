@@ -69,11 +69,12 @@
   would be cleaner, but three fixtures (`BuildingColliderDebugOverlay*Tests`)
   are written against the per-cell hosts and the frame cost does not justify
   rewriting them.
-- **The big partials are not split.** Persistence (612 lines), Lifecycle
-  (509), Doors (490), MapInteraction (429), Erase (406). Splitting for size
-  alone is the highest-risk, lowest-value change in this editor.
-  `UpdateOutlineState` living in `Persistence.cs` is the one misplacement worth
-  moving when that file is next touched.
+- **The big partials are mostly not split.** Lifecycle (509 lines), Doors
+  (490), MapInteraction (429), Erase (406). Splitting for size alone is the
+  highest-risk, lowest-value change in this editor. The one real misplacement
+  was fixed: the confirm modal, tutorial, visibility toggle and per-frame
+  outline updates that lived in `Persistence.cs` (612 lines) now sit in
+  `BuildingsRuntimeEditor.Chrome.cs`, and Persistence holds persistence (457).
 - **Raw colour literals.** 37 in the Buildings folder; exactly one matched a
   theme token (now converted). The rest are authored values and a rewrite
   would be guessing.
