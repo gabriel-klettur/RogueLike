@@ -147,51 +147,6 @@
       ],
       "grid_ref_size": [29, 48]
     },
-  "assets/buildings/nature/bush_round_plain_green.png": {
-      "width": 3,
-      "height": 2,
-      "collision": [
-        [".", ".", "."],
-        [".", ".", "."]
-      ],
-      "grid_ref_size": [65, 58]
-    },
-  "assets/buildings/nature/bush_scattered_white_daisies.png": {
-      "width": 3,
-      "height": 2,
-      "collision": [
-        [".", ".", "."],
-        [".", ".", "."]
-      ],
-      "grid_ref_size": [65, 58]
-    },
-  "assets/buildings/nature/bush_wide_dark_green.png": {
-      "width": 3,
-      "height": 2,
-      "collision": [
-        [".", ".", "."],
-        [".", ".", "."]
-      ],
-      "grid_ref_size": [67, 61]
-    },
-  "assets/buildings/nature/flowers_pink_coneflowers.png": {
-      "width": 1,
-      "height": 2,
-      "collision": [
-        ["."],
-        ["."]
-      ],
-      "grid_ref_size": [32, 35]
-    },
-  "assets/buildings/nature/flowers_pink_tulips.png": {
-      "width": 1,
-      "height": 2,
-      "collision": [
-        ["."],
-        ["."]
-      ],
-      "grid_ref_size": [28, 35]
-    },
   "assets/buildings/nature/rock_boulder_grey_tall.png": {
       "width": 3,
       "height": 3,
@@ -201,15 +156,6 @@
         ["#", "#", "#"]
       ],
       "grid_ref_size": [90, 70]
-    },
-  "assets/buildings/nature/rock_boulder_moss_covered.png": {
-      "width": 3,
-      "height": 2,
-      "collision": [
-        [".", ".", "."],
-        [".", ".", "."]
-      ],
-      "grid_ref_size": [89, 64]
     },
   "assets/buildings/nature/tree_ancient_oak.png": {
       "width": 14,
@@ -560,6 +506,18 @@
         ["#", "#", "#", "#", "#", "#", "#"]
       ],
       "grid_ref_size": [216, 256]
+    },
+  "assets/buildings/statues/statue_king_crowned.png": {
+      "width": 3,
+      "height": 5,
+      "collision": [
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."]
+      ],
+      "grid_ref_size": [77, 141]
     },
   "assets/buildings/vegetation/tree_1.png": {
       "width": 6,

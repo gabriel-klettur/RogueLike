@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f7abf3dd53ab354eb1de6a1c670f0d2, type: 3}
-  m_Name: perogi_01
+  m_Name: varenyky_01
   m_EditorClassIdentifier:
-  itemId: perogi_01
-  displayName: "Perogi Polacos"
-  description: "Empanadillas polacas rellenas de queso y patata. Comida casera reconfortante."
+  itemId: varenyky_01
+  displayName: "Varenyky Ucranianos"
+  description: "Empanadillas ucranianas rellenas de queso y patata. Comida casera reconfortante."
   itemType: food
   stackable: 1
   maxStack: 8
