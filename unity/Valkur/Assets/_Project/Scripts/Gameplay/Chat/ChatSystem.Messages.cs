@@ -26,9 +26,10 @@ namespace Valkur.Gameplay.Chat
             // would let the next chat's Confirm button spend coins on the last chat's deal.
             ClearPendingTrade(notify: true);
 
-            // Persist memory and close log session.
+            // Persist memory, flush the journal page and close the log session.
             if (_activeMemory != null)
                 NPCMemoryStore.Save(_activeMemory);
+            CloseJournalForConversation();
             ChatSessionLogger.CloseSession();
 
             // Cancel any in-flight provider call.
@@ -51,8 +52,36 @@ namespace Valkur.Gameplay.Chat
 
             ShowPlayerBubble(text, PLAYER_BUBBLE_TTL_MS, Color.cyan);
 
+            RememberPlayerLine(text);
+
             // Generate NPC reply (offline mode: cycle through dialogue lines)
             GenerateReply(text);
+        }
+
+        /// <summary>
+        /// Everything one player line leaves behind once the twelve-message window has
+        /// rolled past it: what it moved in the relationship, and what it disclosed.
+        ///
+        /// <para>The intent is classified ONCE here and used for both. It is the same
+        /// classifier the offline provider and the expression fallback already run on every
+        /// message — the signal has always been computed and, until now, thrown away by
+        /// everything that could have acted on it.</para>
+        ///
+        /// <para>Persisted immediately rather than at <c>CloseChat</c>: a conversation that
+        /// ends with the game being killed is exactly the one worth not losing, and the
+        /// write only happens on a line that actually changed something.</para>
+        /// </summary>
+        private void RememberPlayerLine(string text)
+        {
+            if (_activeMemory == null) return;
+
+            DialogueIntent intent = DialogueIntentClassifier.Classify(text);
+
+            bool changed = ChatRelationship.ApplyIntent(
+                _activeMemory, intent, ref _goodwillThisConversation) != 0;
+            changed |= ChatMemoryDigest.RecordPlayerLine(_activeMemory, text, intent);
+
+            if (changed) NPCMemoryStore.Save(_activeMemory);
         }
 
         private void Update()
@@ -74,9 +103,11 @@ namespace Valkur.Gameplay.Chat
                 _nextChunkTime = Time.time + REPLY_CHUNK_DELAY_SEC;
             }
 
-            // ESC closes chat. Routed through KeyboardInputManager for legacy fallback.
+            // ESC dismisses whatever is on top: an overlay if one is up, otherwise the chat
+            // itself. Routed through KeyboardInputManager for legacy fallback, and resolved
+            // in HandleEscape so there is exactly ONE reader of this key in the subsystem.
             if (_chatOpen && Valkur.Core.Input.KeyboardInputManager.WasEscapePressedThisFrame())
-                CloseChat();
+                HandleEscape();
         }
 
         // ── Reply Generation ──
@@ -348,7 +379,18 @@ namespace Valkur.Gameplay.Chat
             OnMessageReceived?.Invoke(sender, text);
         }
 
-        /// <summary>Writes one whole message to the persistent memory and the session log.</summary>
+        /// <summary>
+        /// Writes one whole message to the three records that outlive the bubble: the
+        /// character's verbatim memory, the day's journal page and the session log.
+        ///
+        /// <para>They are not redundant. The MEMORY is a twelve-message window the character
+        /// reasons from and forgets; the JOURNAL is the player-facing archive of the day and
+        /// keeps everything; the LOG is a diagnostic file named by a timestamp that no
+        /// feature reads. Writing all three from one seam is what stops them disagreeing
+        /// about what was said — the failure the panel already paid for once, when the
+        /// bubbles were recorded instead of the whole reply and the remembered conversation
+        /// became a list of fragments.</para>
+        /// </summary>
         private void RecordToMemoryAndLog(string sender, string text)
         {
             if (_activeMemory != null)
@@ -356,6 +398,7 @@ namespace Valkur.Gameplay.Chat
                 string role = sender == PLAYER_SENDER ? "user" : "assistant";
                 NPCMemoryStore.AppendEphemeral(_activeMemory, role, text);
             }
+            RecordToJournal(sender, text);
             ChatSessionLogger.LogLine(sender, text);
         }
 

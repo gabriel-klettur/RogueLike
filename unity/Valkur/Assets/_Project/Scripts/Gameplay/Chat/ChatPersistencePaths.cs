@@ -52,6 +52,17 @@ namespace Valkur.Gameplay.Chat
         /// </summary>
         public static string LogDirectory => Path.Combine(Root, "logs", "chat_sessions");
 
+        /// <summary>
+        /// <c>{Root}/chat/journals</c> — one SUBDIRECTORY per NPC, holding one file per day.
+        ///
+        /// <para>Separate from <see cref="MemoryDirectory"/> because the two answer different
+        /// questions and have opposite lifetimes. A memory record is one small document that
+        /// is rewritten constantly and forgets by design; a journal is an unbounded shelf of
+        /// documents that are written once and then never change. Filing them together would
+        /// put a year of immutable pages in the directory that a memory load enumerates.</para>
+        /// </summary>
+        public static string JournalDirectory => Path.Combine(Root, "chat", "journals");
+
         // ─── Path helpers ─────────────────────────────────────────────────────
 
         /// <summary>
@@ -60,6 +71,23 @@ namespace Valkur.Gameplay.Chat
         /// </summary>
         public static string MemoryPath(string npcKey) =>
             Path.Combine(MemoryDirectory, Slugify(npcKey) + ".json");
+
+        /// <summary>
+        /// The directory holding every journal page for <paramref name="npcKey"/>.
+        /// Does NOT create it.
+        /// </summary>
+        public static string JournalDirectoryFor(string npcKey) =>
+            Path.Combine(JournalDirectory, Slugify(npcKey));
+
+        /// <summary>
+        /// The absolute path of one journal page, addressed by the stem
+        /// <see cref="ChatJournalPageRef"/> derived from its day key.
+        /// </summary>
+        public static string JournalPagePath(string npcKey, string pageStem) =>
+            Path.Combine(JournalDirectoryFor(npcKey), pageStem + ".json");
+
+        /// <summary>The extension every journal page carries. Used to filter the directory.</summary>
+        public const string JournalPageExtension = ".json";
 
         /// <summary>
         /// Returns the absolute path for a new chat-session log file with a

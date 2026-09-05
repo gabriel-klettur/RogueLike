@@ -69,7 +69,7 @@ namespace Valkur.Gameplay.Chat
             var titleGo = CreateTextRow(_panel.transform, "Chat — NPC", 18, Color.white, TextAlignmentOptions.Center);
             _titleText = titleGo.GetComponentInChildren<TextMeshProUGUI>();
             var titleLe = titleGo.AddComponent<LayoutElement>();
-            titleLe.preferredHeight = 28f;
+            titleLe.preferredHeight = TITLE_ROW_HEIGHT;
 
             // Kept clear of the two floating corner buttons. The row is owned by the panel's
             // VerticalLayoutGroup, which overwrites its RectTransform every rebuild, so the
@@ -302,6 +302,20 @@ namespace Valkur.Gameplay.Chat
             _tradeButton.GetComponent<Button>().onClick.AddListener(OnTradeClicked);
             _tradeButton.SetActive(false);
 
+            // Diario sits under Comerciar and is UNCONDITIONAL, where Comerciar is not: five
+            // of the six characters do not trade, and all of them can be remembered. Its Y,
+            // like Comerciar's, is set per conversation by LayoutGutterColumn — the column
+            // closes up when a character has no face and no shop, and one owner for that
+            // arithmetic is the whole reason it is not decided here.
+            _journalButton = CreateGutterButton(_panel.transform, "JournalButton", ChatLanguage.Journal,
+                new Color(0.22f, 0.20f, 0.34f, 1f), 12f, wrap: false, out _journalButtonText);
+            var journalRt = (RectTransform)_journalButton.transform;
+            journalRt.anchorMin = new Vector2(0f, 1f);
+            journalRt.anchorMax = new Vector2(0f, 1f);
+            journalRt.pivot     = new Vector2(0f, 1f);
+            journalRt.sizeDelta = new Vector2(GUTTER_BUTTON_WIDTH, GUTTER_JOURNAL_HEIGHT);
+            _journalButton.GetComponent<Button>().onClick.AddListener(OnJournalClicked);
+
             // Bottom-left, as far from the conversation as the panel allows. It is the only
             // control here that destroys player data, and it takes two clicks.
             _resetButton = CreateGutterButton(_panel.transform, "ResetButton", RESET_LABEL_IDLE,
@@ -448,6 +462,10 @@ namespace Valkur.Gameplay.Chat
             // them. It starts hidden; whether a conversation reserves the gutter at all is
             // ConfigurePortraitFor's decision, per character.
             BuildPortrait(_panel.transform);
+
+            // After the portrait, because it covers it too: the journal is a view of the
+            // whole panel, not a row inside the conversation. Built hidden.
+            BuildJournalOverlay(_panel.transform);
         }
 
         /// <summary>

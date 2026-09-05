@@ -100,6 +100,14 @@ namespace Valkur.Gameplay.Chat
         private CancellationTokenSource _replyCts;
         private NPCMemory _activeMemory;
 
+        /// <summary>
+        /// How much regard this conversation has already earned, against
+        /// <see cref="ChatRelationship.GAIN_CAP_PER_CONVERSATION"/>. It lives here rather
+        /// than in <see cref="ChatRelationship"/> — which is pure and static — because
+        /// "when does a conversation start" is a fact only this class holds.
+        /// </summary>
+        private int _goodwillThisConversation;
+
         // ── Events ──
         public event Action OnChatOpened;
         public event Action OnChatClosed;
@@ -231,7 +239,7 @@ namespace Valkur.Gameplay.Chat
             if (bestTarget == null)
             {
                 // Show "no one nearby" bubble on player.
-                ShowPlayerBubble("No hay nadie cerca para hablar...", NO_ONE_BUBBLE_TTL_MS,
+                ShowPlayerBubble(ChatLanguage.NoOneNearby, NO_ONE_BUBBLE_TTL_MS,
                     new Color(0.7f, 0.7f, 0.7f));
                 return false;
             }
@@ -290,7 +298,23 @@ namespace Valkur.Gameplay.Chat
             string npcKey = (_activePersona?.personaId ?? npcName) + "-" + npcName;
             _activeMemory = NPCMemoryStore.LoadOrCreate(npcKey, _activePersona?.personaId);
             _activeMemory.visitCount++;
+            _goodwillThisConversation = 0;
+
+            // The language is the PLAYER's preference, held globally by ChatLanguage; the
+            // field on the memory record is only how it reaches PersonaPromptBuilder, which
+            // reads that and nothing else. Seeding it here is what closes the gap that made
+            // a character answer in Spanish inside an English panel: the toggle wrote the
+            // field only while a conversation was already open, so every conversation opened
+            // AFTER the switch started from the record's own default of "es".
+            _activeMemory.preferredLanguage = ChatLanguage.Current;
+
             ChatSessionLogger.OpenSession(npcKey, _activePersona?.role ?? "generic");
+
+            // Before the transcript is replayed. Sealing a finished day CLEARS
+            // ephemeralHistory, which is what SeedHistoryFromMemory reads — see
+            // OpenJournalForConversation for why that order is the feature rather than a
+            // detail.
+            OpenJournalForConversation(npcName);
 
             SeedHistoryFromMemory(npcName);
 
@@ -308,19 +332,15 @@ namespace Valkur.Gameplay.Chat
             // GameObject mid-conversation. Its absence is handled by ShowPlayerBubble.
             ResolvePlayerBubble();
 
-            // Show greeting only on the first-ever visit (hasGreeted persisted).
-            if (_activePersona != null && !_activeMemory.hasGreeted && !string.IsNullOrEmpty(_activePersona.greeting))
-            {
-                AddMessage(npcName, _activePersona.greeting);
-                ShowTargetBubble(_activePersona.greeting, NPC_BUBBLE_TTL_MS);
-                _activeMemory.hasGreeted = true;
-
-                // The greeting is authored text that never passed through a provider, so it
-                // carries no expression of its own and has to be read the same way an
-                // offline line is. Set BEFORE OnChatOpened fires, so the panel builds with
-                // the right face rather than opening neutral and correcting itself.
-                SetExpression(ClassifySpoken(_activePersona.greeting));
-            }
+            // Greet once a DAY, not once a lifetime. The old one-time flag meant that from
+            // the second visit on the panel opened in silence with a stale transcript in it
+            // and nothing acknowledging the player had walked up — see ChatDayClock for why
+            // "today" is a composite key and is compared for inequality only.
+            //
+            // The body of this lives in GreetForNewDay, shared with the midnight rollover:
+            // both are the same question, and two copies of it is how a character greets
+            // twice in one morning.
+            GreetForNewDay();
 
             NPCMemoryStore.Save(_activeMemory);
 
@@ -423,9 +443,10 @@ namespace Valkur.Gameplay.Chat
         /// chat that destroys player data, which is why it lives behind a confirm in the
         /// panel rather than on a key.</para>
         ///
-        /// <para>The greeting is re-spoken rather than merely re-armed: <c>hasGreeted</c>
-        /// going false with nothing said would leave the panel blank and the flag primed to
-        /// fire on the NEXT open, which is neither the old state nor a fresh one.</para>
+        /// <para>The greeting is re-spoken rather than merely re-armed: clearing
+        /// <c>lastGreetedDayKey</c> with nothing said would leave the panel blank and the
+        /// greeting primed to fire on the NEXT open, which is neither the old state nor a
+        /// fresh one.</para>
         /// </summary>
         public bool ResetActiveMemory()
         {
@@ -434,6 +455,10 @@ namespace Valkur.Gameplay.Chat
             string npcKey = _activeMemory.npcKey;
             string personaId = _activeMemory.personaId;
 
+            // The written record goes with the remembered one. A character who has never met
+            // you cannot be holding a diary of your conversations, and that state is worse
+            // than either of the two it sits between.
+            DiscardJournalForConversation();
             NPCMemoryStore.Delete(npcKey);
 
             _history.Clear();
@@ -446,13 +471,15 @@ namespace Valkur.Gameplay.Chat
 
             _activeMemory = NPCMemoryStore.LoadOrCreate(npcKey, personaId);
             _activeMemory.visitCount = 1;
+            _activeMemory.preferredLanguage = ChatLanguage.Current;
+            _goodwillThisConversation = 0;
 
-            if (_activePersona != null && !string.IsNullOrEmpty(_activePersona.greeting))
-            {
-                AddMessage(_activePersona.displayName ?? npcKey, _activePersona.greeting);
-                ShowTargetBubble(_activePersona.greeting, NPC_BUBBLE_TTL_MS);
-                _activeMemory.hasGreeted = true;
-            }
+            // A fresh page for a fresh acquaintance. Re-opened rather than left closed
+            // because the conversation carries on from here — without this, everything said
+            // after a Reset would be remembered and logged and reach no page at all.
+            OpenJournalForConversation(npcKey);
+
+            GreetForNewDay();
 
             NPCMemoryStore.Save(_activeMemory);
             OnHistoryReset?.Invoke();

@@ -47,6 +47,16 @@ namespace Valkur.Gameplay.Chat.Providers
 
         private string _lastFailureReason;
 
+        /// <summary>Requests actually sent this session, against the settings' ceiling.</summary>
+        private int _requestsThisSession;
+
+        /// <summary>
+        /// <see cref="Now"/> at the last request sent, or negative when none has been.
+        /// Negative rather than 0 because 0 is a real timestamp at boot and would make the
+        /// very first message of a session wait out the cooldown.
+        /// </summary>
+        private float _lastRequestAt = -1f;
+
         public OpenAiChatProvider(ChatLlmSettings settings, IChatProvider fallback)
         {
             _settings = settings;
@@ -127,6 +137,25 @@ namespace Valkur.Gameplay.Chat.Providers
             if (_settings == null || !_settings.IsUsable) return false;
             if (_settings.mode == ChatProviderMode.ForceOffline) return false;
 
+            BudgetVerdict budget = CheckBudget(_settings, _requestsThisSession, _lastRequestAt, Now);
+            if (budget == BudgetVerdict.CeilingReached)
+            {
+                Debug.LogWarning(
+                    $"[OpenAiChatProvider] Session budget of {_settings.maxRequestsPerSession} " +
+                    "requests is spent. The persona's authored lines answer from here on; " +
+                    "raise it on Resources/Chat/ChatLlmSettings or restart Play.");
+                DisableForSession("session budget spent");
+                return false;
+            }
+
+            if (budget == BudgetVerdict.Cooling)
+            {
+                VerboseLog.Log(VerboseLog.Category.Bootstrap,
+                    () => "[OpenAiChatProvider] Inside the request cooldown; answering from " +
+                          "the persona instead.");
+                return false;
+            }
+
             if (!EnvFile.TryGet(_settings.apiKeyEnvVar, out apiKey))
             {
                 // Auto mode is the shipped default and a missing key is its NORMAL state —
@@ -142,8 +171,79 @@ namespace Valkur.Gameplay.Chat.Providers
                 return false;
             }
 
+            // Charged HERE rather than on a successful reply: a request that times out or
+            // comes back 500 has still been sent and may still be billed, so counting only
+            // the ones that worked would let a broken endpoint spend without limit.
+            _requestsThisSession++;
+            _lastRequestAt = Now;
             return true;
         }
+
+        /// <summary>
+        /// How many requests this provider has sent since it was created. One provider is
+        /// built per Play session by <c>GameplaySceneSetup</c> (<c>ServiceLocator</c> is
+        /// cleared at <c>SubsystemRegistration</c>), so "this provider" and "this session"
+        /// are the same span and the counter needs no reset hook of its own.
+        /// </summary>
+        public int RequestsThisSession => _requestsThisSession;
+
+        /// <summary>Seconds until the next request would be allowed; 0 when one is.</summary>
+        public float CooldownRemaining => RemainingCooldown(_settings, _lastRequestAt, Now);
+
+        /// <summary>Why a request was not sent, when the budget is what stopped it.</summary>
+        internal enum BudgetVerdict
+        {
+            /// <summary>Nothing in the budget objects.</summary>
+            Allowed,
+
+            /// <summary>The session has spent its whole allowance; the model is done for good.</summary>
+            CeilingReached,
+
+            /// <summary>Too soon after the last one; the next message may well be sent.</summary>
+            Cooling,
+        }
+
+        /// <summary>
+        /// The budget's verdict on sending one more request. Pure and static so the two
+        /// rules can be stated by a test without a key, a network or a Unity clock — with
+        /// them inline, the only way to reach them was to have a real key in the
+        /// environment, and a limit nobody can test is a limit nobody can trust.
+        ///
+        /// <para>The ceiling is checked before the rate because it is the one that ENDS the
+        /// session's spending rather than postponing it.</para>
+        /// </summary>
+        internal static BudgetVerdict CheckBudget(
+            ChatLlmSettings settings, int requestsSoFar, float lastRequestAt, float now)
+        {
+            if (settings == null) return BudgetVerdict.Allowed;
+
+            if (settings.maxRequestsPerSession > 0 && requestsSoFar >= settings.maxRequestsPerSession)
+                return BudgetVerdict.CeilingReached;
+
+            return RemainingCooldown(settings, lastRequestAt, now) > 0f
+                ? BudgetVerdict.Cooling
+                : BudgetVerdict.Allowed;
+        }
+
+        /// <summary>
+        /// Seconds still owed to the cooldown. A negative <paramref name="lastRequestAt"/>
+        /// means nothing has been sent yet, which is never a wait — 0 could not carry that,
+        /// since it is a real timestamp at boot.
+        /// </summary>
+        internal static float RemainingCooldown(
+            ChatLlmSettings settings, float lastRequestAt, float now)
+        {
+            if (settings == null || settings.minSecondsBetweenRequests <= 0f) return 0f;
+            if (lastRequestAt < 0f) return 0f;
+            return Mathf.Max(0f, lastRequestAt + settings.minSecondsBetweenRequests - now);
+        }
+
+        /// <summary>
+        /// The clock the budget runs on. Realtime rather than <c>Time.time</c> so a paused
+        /// or time-scaled game still rate-limits, and so does a conversation held while the
+        /// world is frozen behind the panel.
+        /// </summary>
+        private static float Now => Time.realtimeSinceStartup;
 
         private void DisableForSession(string reason)
         {

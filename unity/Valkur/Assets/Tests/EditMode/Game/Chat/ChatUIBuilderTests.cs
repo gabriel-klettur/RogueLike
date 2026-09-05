@@ -499,7 +499,13 @@ namespace Valkur.Tests.EditMode.Game.Chat
         {
             var grip = Child(Panel, "ResizeGrip").GetComponent<Valkur.UIKit.PanelResizeHandle>();
 
-            Assert.AreEqual(new Vector2(470f, 244f), grip.MinSize,
+            // 259 = the gutter column, which is the tallest thing in this panel and the only
+            // thing that has to fit whatever the conversation gives up: 8 padding + 141 face
+            // + 28 Comerciar + 28 Diario + 28 Reiniciar, with a 6px gap between each and 8
+            // padding at the foot. It is DERIVED in ChatUI from those same constants, so a
+            // taller gutter control moves it — and this assertion is the tripwire that makes
+            // that a deliberate change rather than a silent one.
+            Assert.AreEqual(new Vector2(470f, 259f), grip.MinSize,
                 "PANEL_MIN_W/PANEL_MIN_H sat in ChatUI.cs unread since the Python port. They " +
                 "are the floor the panel was always meant to refuse to shrink past, and this " +
                 "is the call that finally makes them mean something.");
@@ -650,7 +656,7 @@ namespace Valkur.Tests.EditMode.Game.Chat
 
             var size = Panel.GetComponent<RectTransform>().sizeDelta;
             Assert.GreaterOrEqual(size.x, 470f, "PANEL_MIN_W is the floor.");
-            Assert.GreaterOrEqual(size.y, 244f, "PANEL_MIN_H is the floor.");
+            Assert.GreaterOrEqual(size.y, 259f, "PANEL_MIN_H is the floor.");
         }
 
         [Test]
@@ -702,17 +708,21 @@ namespace Valkur.Tests.EditMode.Game.Chat
             // panel, and a full-width red bar cost a row of the conversation to say what an
             // X says by being an X.
             //
-            // TradeButton and ResetButton are free-floating in the LEFT gutter — under the
-            // face and at the foot of the column — and CloseXButton and LangButton in the
-            // top-right corner. All four are ignoreLayout, and they come after the rows
-            // because sibling order is draw order and nothing in the layout arranges them.
+            // TradeButton, JournalButton and ResetButton are free-floating in the LEFT gutter
+            // — under the face, then under each other, then at the foot of the column — and
+            // CloseXButton and LangButton in the top-right corner. All of them are
+            // ignoreLayout, and they come after the rows because sibling order is draw order
+            // and nothing in the layout arranges them.
             //
-            // Portrait is last of all, and for the same reason one step further: unlike the
-            // corner buttons it occupies a gutter every OTHER row was shortened to make, so
-            // it overlaps more of the panel than any of them. Built earlier it would render
-            // underneath the conversation it sits beside.
+            // Portrait comes after those, and for the same reason one step further: unlike
+            // the corner buttons it occupies a gutter every OTHER row was shortened to make,
+            // so it overlaps more of the panel than any of them.
+            //
+            // JournalOverlay is last of all, because it covers the whole conversation
+            // including the gutter's own rows. Anything built after it would draw on top of
+            // the archive the player is reading.
             CollectionAssert.AreEqual(
-                new[] { "MsgRow", "ScrollArea", "TradeConfirmRow", "InputRow", "TradeButton", "ResetButton", "ResizeGrip", "CloseXButton", "LangButton", "Portrait" }, names,
+                new[] { "MsgRow", "ScrollArea", "TradeConfirmRow", "InputRow", "TradeButton", "JournalButton", "ResetButton", "ResizeGrip", "CloseXButton", "LangButton", "Portrait", "JournalOverlay" }, names,
                 "Panel row order defines the whole visual layout - reordering rearranges the panel.");
         }
 
@@ -852,7 +862,7 @@ namespace Valkur.Tests.EditMode.Game.Chat
         [Test]
         public void BuildUI_GutterButtons_FloatWithSeparateImageAndLabelObjects()
         {
-            foreach (var name in new[] { "TradeButton", "ResetButton" })
+            foreach (var name in new[] { "TradeButton", "JournalButton", "ResetButton" })
             {
                 var go = Child(Panel, name);
 
@@ -1032,8 +1042,9 @@ namespace Valkur.Tests.EditMode.Game.Chat
 
             foreach (var name in new[] { "Backdrop", "ChatPanel", "ScrollArea", "Content",
                                          "InputRow", "InputField", "SendButton",
-                                         "TradeButton", "ResetButton", "CloseXButton",
-                                         "LangButton", "LangLabel", "Text Area", "Placeholder" })
+                                         "TradeButton", "JournalButton", "ResetButton", "CloseXButton",
+                                         "LangButton", "LangLabel", "Text Area", "Placeholder",
+                                         "JournalOverlay", "JournalScroll", "JournalContent" })
             {
                 Assert.IsTrue(counts.ContainsKey(name), "Node '" + name + "' disappeared from the hierarchy.");
                 Assert.AreEqual(1, counts[name],

@@ -77,11 +77,11 @@ namespace Valkur.Gameplay.Chat
                                        Inventory.Inventory inventory, CurrencyWallet wallet)
         {
             if (!proposal.IsSomething) return TradeQuote.No("");
-            if (vendor == null) return TradeQuote.No("Aquí no hay con quién comerciar.");
+            if (vendor == null) return TradeQuote.No(ChatLanguage.NoOneToTradeWith);
 
             var item = FindItem(vendor, proposal.ItemId);
             if (item == null)
-                return TradeQuote.No("Eso no está a la venta aquí.");
+                return TradeQuote.No(ChatLanguage.NotForSaleHere);
 
             int wanted = Mathf.Clamp(proposal.Quantity, 1, MAX_UNITS_PER_TRADE);
 
@@ -94,17 +94,17 @@ namespace Valkur.Gameplay.Chat
                                            Inventory.Inventory inventory, ItemDefinition item, int wanted)
         {
             int stock = StockOf(vendor, item);
-            if (stock <= 0) return TradeQuote.No("Se ha acabado.");
+            if (stock <= 0) return TradeQuote.No(ChatLanguage.SoldOut);
 
             if (inventory != null && inventory.IsFull)
-                return TradeQuote.No("No te cabe nada más.");
+                return TradeQuote.No(ChatLanguage.InventoryFull);
 
             int unitPrice = vendor.GetBuyPrice(item);
             if (unitPrice <= 0) unitPrice = 1;
 
             int coins = wallet != null ? wallet.Coins : 0;
             if (coins < unitPrice)
-                return TradeQuote.No($"No te llega: cuesta {unitPrice} y llevas {coins}.");
+                return TradeQuote.No(ChatLanguage.CannotAfford(unitPrice, coins));
 
             // Cut the count down rather than refusing outright. Asking for three and being
             // told "you can have two" is a better answer than "no", and it is the answer a
@@ -118,10 +118,10 @@ namespace Valkur.Gameplay.Chat
         private static TradeQuote QuoteSell(VendorNPC vendor, Inventory.Inventory inventory,
                                             ItemDefinition item, int wanted)
         {
-            if (inventory == null) return TradeQuote.No("No llevas nada.");
+            if (inventory == null) return TradeQuote.No(ChatLanguage.CarryingNothing);
 
             int held = CountHeld(inventory, item);
-            if (held <= 0) return TradeQuote.No("No llevas eso encima.");
+            if (held <= 0) return TradeQuote.No(ChatLanguage.NotCarryingThat);
 
             int unitPrice = vendor.GetSellPrice(item);
             int quantity = Mathf.Min(wanted, held);

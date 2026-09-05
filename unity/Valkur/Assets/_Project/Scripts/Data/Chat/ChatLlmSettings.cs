@@ -90,6 +90,24 @@ namespace Valkur.Data
                  "instead. A player waiting on a bubble notices well before this.")]
         [Range(3f, 60f)] public float timeoutSeconds = 20f;
 
+        [Header("Budget")]
+        [Tooltip("Shortest gap between two requests. A message sent inside it is answered " +
+                 "from the persona's authored lines instead of being billed.\n\n" +
+                 "Nothing else in the chat rate-limits anything: every Enter was one " +
+                 "request, and the whole persona prompt (profile, stock list, purse, rules) " +
+                 "is re-sent on each one, so holding the key down was an unbounded bill with " +
+                 "no cap and no counter anywhere. Degrading to the offline provider rather " +
+                 "than refusing keeps the character talking, which is the same trade every " +
+                 "other failure here makes.")]
+        [Range(0f, 10f)] public float minSecondsBetweenRequests = 1.5f;
+
+        [Tooltip("How many requests one Play session may spend before the model is put away " +
+                 "for the rest of it. 0 means no ceiling.\n\n" +
+                 "This is the backstop the cooldown cannot be: a cooldown bounds the RATE " +
+                 "and not the TOTAL, so an afternoon of testing still adds up. When it is " +
+                 "reached the offline provider answers and the console says so once.")]
+        [Min(0)] public int maxRequestsPerSession = 150;
+
         [Header("Safety rails")]
         [Tooltip("Appended to every persona's system prompt. This is what keeps a model from " +
                  "narrating for the player, inventing shop stock or breaking character.")]

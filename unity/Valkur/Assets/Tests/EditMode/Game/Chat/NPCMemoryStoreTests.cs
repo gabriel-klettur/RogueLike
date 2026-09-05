@@ -60,7 +60,8 @@ namespace Valkur.Tests.EditMode.Game.Chat
             // Assert
             Assert.IsNotNull(mem, "LoadOrCreate must never return null.");
             Assert.AreEqual(0, mem.visitCount, "visitCount should default to 0.");
-            Assert.IsFalse(mem.hasGreeted, "hasGreeted should default to false.");
+            Assert.IsTrue(string.IsNullOrEmpty(mem.lastGreetedDayKey),
+                "lastGreetedDayKey should default to empty — nobody has been greeted yet.");
             Assert.AreEqual("es", mem.preferredLanguage,
                 "preferredLanguage should default to 'es'.");
             Assert.IsNotNull(mem.ephemeralHistory,
@@ -75,7 +76,7 @@ namespace Valkur.Tests.EditMode.Game.Chat
             // Arrange — build a memory with mutated fields.
             var original = NPCMemoryStore.LoadOrCreate("round-trip-npc", "persona-b");
             original.visitCount = 7;
-            original.hasGreeted = true;
+            original.lastGreetedDayKey = "2026-09-05#3";
             original.friendshipScore = 42;
             original.preferredLanguage = "en";
             NPCMemoryStore.AppendEphemeral(original, "user", "Hello!");
@@ -87,7 +88,7 @@ namespace Valkur.Tests.EditMode.Game.Chat
 
             // Assert — all mutated fields survive the round-trip.
             Assert.AreEqual(7, loaded.visitCount, "visitCount must round-trip.");
-            Assert.IsTrue(loaded.hasGreeted, "hasGreeted must round-trip.");
+            Assert.AreEqual("2026-09-05#3", loaded.lastGreetedDayKey, "lastGreetedDayKey must round-trip.");
             Assert.AreEqual(42, loaded.friendshipScore, "friendshipScore must round-trip.");
             Assert.AreEqual("en", loaded.preferredLanguage, "preferredLanguage must round-trip.");
             Assert.AreEqual(2, loaded.ephemeralHistory.Count,

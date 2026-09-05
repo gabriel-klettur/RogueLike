@@ -138,7 +138,7 @@ namespace Valkur.Gameplay.Chat
                 LayoutRebuilder.MarkLayoutForRebuild((RectTransform)_panel.transform);
             }
 
-            PlaceTradeButtonInGutter();
+            LayoutGutterColumn();
 
             if (!_portraitActive) return;
 
@@ -150,24 +150,49 @@ namespace Valkur.Gameplay.Chat
         }
 
         /// <summary>
-        /// Seats Comerciar under the face, or at the top of the column when this character
-        /// has none.
+        /// Stacks the gutter's contents from the top: the face when there is one, then
+        /// Comerciar when this character trades, then Diario. Reiniciar is not here — it is
+        /// pinned to the FOOT of the column, as far from the conversation as the panel
+        /// allows, because it is the one control that destroys player data.
         ///
-        /// <para>ONE owner for that Y. Deciding it in the builder would have to guess, and
-        /// deciding it beside the SetActive in <c>OnChatOpened</c> would put half the gutter's
-        /// arrangement in each of two places — the failure this panel has already paid for
-        /// twice with free-floating children that silently overlapped.</para>
+        /// <para>ONE owner for those Y values, and it earns that the hard way. The gutter's
+        /// children are <c>ignoreLayout</c> — they have to be, or the panel's
+        /// <c>VerticalLayoutGroup</c> overwrites their anchors — which means NOTHING arranges
+        /// them and nothing complains when two of them land on the same pixels. The panel has
+        /// already paid for that twice: a 504x0 language button lying invisibly across the
+        /// close control and eating its clicks. A stack computed in one pass cannot produce a
+        /// gap it did not intend or an overlap it cannot see.</para>
+        ///
+        /// <para>Both conditions really vary. Five of the six characters in the game have no
+        /// portrait, five of the seven do not trade, and Gatita is both — so a column that
+        /// assumed either would be wrong for most conversations.</para>
         /// </summary>
-        private void PlaceTradeButtonInGutter()
+        private void LayoutGutterColumn()
         {
-            if (_tradeButton == null) return;
+            float top = PANEL_PADDING;
 
-            float top = _portraitActive
-                ? PANEL_PADDING + PORTRAIT_SIZE_H + GUTTER_GAP
-                : PANEL_PADDING;
+            if (_portraitActive) top += PORTRAIT_SIZE_H + GUTTER_GAP;
 
-            ((RectTransform)_tradeButton.transform).anchoredPosition =
-                new Vector2(PANEL_PADDING, -top);
+            top = SeatGutterButton(_tradeButton, top, GUTTER_TRADE_HEIGHT);
+            top = SeatGutterButton(_journalButton, top, GUTTER_JOURNAL_HEIGHT);
+        }
+
+        /// <summary>
+        /// Places one gutter button at <paramref name="top"/> and returns where the next one
+        /// starts.
+        ///
+        /// <para>The two halves are deliberately independent. It ALWAYS writes the position,
+        /// so a button switched on later is already where it belongs rather than sitting at
+        /// the origin until the next conversation; and it only ADVANCES the cursor when the
+        /// button is actually showing, which is what closes the column up for a character who
+        /// does not trade instead of leaving a hole above Diario.</para>
+        /// </summary>
+        private static float SeatGutterButton(GameObject button, float top, float height)
+        {
+            if (button == null) return top;
+
+            ((RectTransform)button.transform).anchoredPosition = new Vector2(PANEL_PADDING, -top);
+            return button.activeSelf ? top + height + GUTTER_GAP : top;
         }
 
         /// <summary>Puts a face up with no transition. Opening a panel is not a change of mood.</summary>

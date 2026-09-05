@@ -660,8 +660,16 @@ namespace Valkur.Tests.EditMode.Game.Chat
             // must therefore behave like a clean restart, not append to the old one.
             chat.OpenChat(npc);
 
-            Assert.IsEmpty(chat.History,
-                "Re-opening a session must clear the previous conversation's history.");
+            // Rebuilt from the record, never appended to. It used to be asserted as EMPTY,
+            // which was true only because nothing had reached disk yet: memory was saved at
+            // CloseChat and this test never closes. A player line is persisted as it is said
+            // now — a conversation that ends with the game being killed is the one worth not
+            // losing — so what re-opening shows is the exchange the player left, exactly once.
+            Assert.AreEqual(1, chat.History.Count,
+                "Re-opening a session must REBUILD the transcript from the record, not append " +
+                "to the one already on screen.");
+            Assert.AreEqual("hola", chat.History[0].text,
+                "And what it rebuilds is what was actually said.");
             Assert.AreEqual(2, chat.ActiveMemory.visitCount,
                 "Each OpenChat call counts as a visit, so a second call must reach visitCount 2.");
             Assert.IsTrue(chat.IsChatOpen, "The session must remain open after re-opening.");
@@ -733,7 +741,7 @@ namespace Valkur.Tests.EditMode.Game.Chat
         // ── Greeting + memory ────────────────────────────────────────────────
 
         [Test]
-        public void OpenChat_FirstVisit_DeliversGreetingAndMarksHasGreeted()
+        public void OpenChat_FirstVisit_DeliversGreetingAndStampsTheDay()
         {
             var persona = MakePersona("p1", "Gatita", greeting: "Bienvenido, viajero.");
             var catalog = MakeCatalog(("Gatita", persona));
@@ -749,12 +757,12 @@ namespace Valkur.Tests.EditMode.Game.Chat
                 "The greeting text must come from the persona verbatim.");
             Assert.AreEqual("Gatita", chat.History[0].sender,
                 "The greeting must be attributed to the NPC name used for the catalog lookup.");
-            Assert.IsTrue(chat.ActiveMemory.hasGreeted,
-                "hasGreeted must be flipped so the greeting is never replayed.");
+            Assert.AreEqual(ChatDayClock.TodayKey, chat.ActiveMemory.lastGreetedDayKey,
+                "The greeting must stamp today, so it is not said again until the day turns.");
         }
 
         [Test]
-        public void OpenChat_SecondVisit_SkipsGreetingBecauseHasGreetedPersisted()
+        public void OpenChat_SecondVisitSameDay_SkipsGreetingBecauseTheDayIsStamped()
         {
             var persona = MakePersona("p1", "Gatita", greeting: "Bienvenido, viajero.");
             var catalog = MakeCatalog(("Gatita", persona));
@@ -772,11 +780,14 @@ namespace Valkur.Tests.EditMode.Game.Chat
             // still holds exactly one copy of it. Asserting an empty history here was
             // asserting the absence of continuity, which is the defect the memory layer was
             // written for and never delivered.
+            //
+            // Both opens happen inside one test, so they share a day key. That is the whole
+            // point of the assertion: the greeting is once per DAY, and this is the same day.
             int greetings = chat.ActiveMemory.ephemeralHistory
                 .Count(m => m.content == "Bienvenido, viajero.");
             Assert.AreEqual(1, greetings,
-                "hasGreeted is persisted, so the greeting must be spoken once ever — recalled " +
-                "on later visits, never re-emitted.");
+                "The day stamp is persisted, so a second visit on the same day recalls the " +
+                "greeting rather than re-emitting it.");
             Assert.AreEqual(1, chat.History.Count(m => m.text == "Bienvenido, viajero."),
                 "And the recall must show it once, not once per visit.");
             Assert.AreEqual(2, chat.ActiveMemory.visitCount,
@@ -797,8 +808,8 @@ namespace Valkur.Tests.EditMode.Game.Chat
             Assert.IsEmpty(chat.History,
                 "An empty greeting must produce no history entry — an empty bubble would " +
                 "otherwise pop over the NPC's head.");
-            Assert.IsFalse(chat.ActiveMemory.hasGreeted,
-                "hasGreeted must stay false when nothing was actually greeted, so a greeting " +
+            Assert.IsTrue(string.IsNullOrEmpty(chat.ActiveMemory.lastGreetedDayKey),
+                "The day must stay unstamped when nothing was actually greeted, so a greeting " +
                 "added later by a designer still fires.");
         }
 
@@ -1227,6 +1238,106 @@ namespace Valkur.Tests.EditMode.Game.Chat
                 "The bubble is resolved per message, so a respawned player recovers on its " +
                 "own instead of staying mute for the rest of the session.");
             Assert.AreEqual(2, chat.History.Count);
+        }
+
+        // ── Language, relationship and durable memory ────────────────────────
+        //
+        // These three are what one player message leaves behind, and each was a defect
+        // rather than a missing feature: the conversation opened in the wrong language, the
+        // relationship score was read by the prompt builder and written by nobody, and
+        // anything said more than twelve messages ago was gone with no trace.
+
+        [Test]
+        public void OpenChat_SeedsPreferredLanguageFromThePlayersGlobalChoice()
+        {
+            // PlayerPrefs is machine state, so whatever this developer had is put back.
+            string original = ChatLanguage.Current;
+            try
+            {
+                ChatLanguage.Set(ChatLanguage.ENGLISH);
+                var chat = OpenReadyChat(out _, out _);
+
+                Assert.AreEqual(ChatLanguage.ENGLISH, chat.ActiveMemory.preferredLanguage,
+                    "PersonaPromptBuilder reads preferredLanguage and nothing else. The panel " +
+                    "toggle only wrote it while a conversation was already open, so every " +
+                    "conversation opened AFTER the switch started from the record's own 'es' " +
+                    "default — English chrome, Spanish character.");
+            }
+            finally
+            {
+                ChatLanguage.Set(original);
+            }
+        }
+
+        [Test]
+        public void SubmitPlayerMessage_Insult_CostsRegardAndIsRemembered()
+        {
+            var chat = OpenReadyChat(out _, out _);
+
+            chat.SubmitPlayerMessage("eres una ladrona");
+
+            Assert.Less(chat.ActiveMemory.friendshipScore, 0,
+                "The intent classifier has always seen the insult; until ChatRelationship " +
+                "existed nothing acted on it and every character met the player at 0 forever.");
+            Assert.IsTrue(chat.ActiveMemory.digest.Exists(n => n.key == ChatMemoryDigest.KEY_INSULTED),
+                "And it must outlive the twelve-message window, which is the whole point of " +
+                "the digest.");
+        }
+
+        [Test]
+        public void SubmitPlayerMessage_SelfDisclosure_SurvivesInTheDigest()
+        {
+            var chat = OpenReadyChat(out _, out _);
+
+            chat.SubmitPlayerMessage("me llamo Bruno");
+
+            MemoryNote note = chat.ActiveMemory.digest.Find(n => n.key == ChatMemoryDigest.KEY_NAME);
+            Assert.AreEqual("Bruno", note.value,
+                "A name given once must still be known after the verbatim history has rolled " +
+                "past it.");
+        }
+
+        [Test]
+        public void SubmitPlayerMessage_OrdinaryLine_WritesNoNoteAndMovesNothing()
+        {
+            var chat = OpenReadyChat(out _, out _);
+
+            chat.SubmitPlayerMessage("¿cuánto vale el pan?");
+
+            Assert.IsEmpty(chat.ActiveMemory.digest,
+                "Everyone asks a vendor about prices. A note per message would evict the real " +
+                "ones inside one conversation.");
+            Assert.AreEqual(0, chat.ActiveMemory.friendshipScore,
+                "And trade talk is worth no regard, or the score measures shopping.");
+        }
+
+        [Test]
+        public void SubmitPlayerMessage_RepeatedGreetings_StopEarningWithinOneConversation()
+        {
+            var chat = OpenReadyChat(out _, out _);
+
+            for (int i = 0; i < 30; i++) chat.SubmitPlayerMessage("hola");
+
+            Assert.AreEqual(ChatRelationship.GAIN_CAP_PER_CONVERSATION, chat.ActiveMemory.friendshipScore,
+                "The per-conversation cap has to be wired to the OPEN, not just to exist: a " +
+                "tally that is never reset makes the cap permanent, and one that is reset per " +
+                "message makes it no cap at all.");
+        }
+
+        [Test]
+        public void SubmitPlayerMessage_DigestAndScore_SurviveACloseAndReopen()
+        {
+            var chat = OpenReadyChat(out _, out _);
+            chat.SubmitPlayerMessage("me llamo Bruno");
+            var npc = chat.ChatTarget;
+            chat.CloseChat();
+
+            chat.OpenChat(npc);
+
+            Assert.AreEqual("Bruno",
+                chat.ActiveMemory.digest.Find(n => n.key == ChatMemoryDigest.KEY_NAME).value,
+                "The note is written to disk on the message that produced it — a conversation " +
+                "that ends with the game being killed is exactly the one worth not losing.");
         }
 
         [Test]

@@ -66,8 +66,8 @@ namespace Valkur.Gameplay.Chat
             // otherwise still be promising the original number.
             if (quote.Quantity < Mathf.Max(1, proposal.Quantity))
             {
-                return $"Puedo darte {quote.Quantity} de {quote.Item.displayName}, no más. " +
-                       $"Serían {quote.TotalPrice} monedas.";
+                return ChatLanguage.OfferPartial(
+                    quote.Quantity, quote.Item.displayName, quote.TotalPrice);
             }
 
             // A model that calls the tool sometimes says nothing at all — the action WAS its
@@ -103,7 +103,7 @@ namespace Valkur.Gameplay.Chat
 
             if (vendor == null || vendor != ActiveVendor)
             {
-                Say("Ese trato era con otra persona.");
+                Say(ChatLanguage.OfferBelongedToSomeoneElse);
                 return 0;
             }
 
@@ -113,11 +113,12 @@ namespace Valkur.Gameplay.Chat
 
             if (!fresh.IsValid)
             {
-                Say(string.IsNullOrWhiteSpace(fresh.Refusal) ? "Ya no puede ser." : fresh.Refusal);
+                Say(string.IsNullOrWhiteSpace(fresh.Refusal) ? ChatLanguage.OfferNoLongerPossible : fresh.Refusal);
                 return 0;
             }
 
             int done = ChatTradeBroker.Execute(fresh, vendor, inventory, wallet);
+            RememberTrade(fresh, done);
             Say(DescribeOutcome(fresh, done));
             return done;
         }
@@ -127,7 +128,7 @@ namespace Valkur.Gameplay.Chat
         {
             if (!_pendingTrade.IsValid) return;
             ClearPendingTrade(notify: true);
-            Say("Como quieras, tesoro.");
+            Say(ChatLanguage.OfferDeclined);
         }
 
         private void ClearPendingTrade(bool notify)
@@ -146,6 +147,53 @@ namespace Valkur.Gameplay.Chat
         /// leaves the charm to the confirmation row beneath it rather than inventing a voice
         /// that is not quite hers.
         /// </summary>
+        /// <summary>
+        /// Writes a completed deal into the durable record and pays the goodwill it earns.
+        ///
+        /// <para>Only a deal that MOVED something counts. An offer that was made, or one
+        /// that failed at the counter, is not a thing the character would remember about
+        /// this traveller — and paying regard for an attempt would make the score
+        /// farmable by confirming trades that cannot complete.</para>
+        /// </summary>
+        private void RememberTrade(TradeQuote quote, int done)
+        {
+            if (done <= 0 || _activeMemory == null || quote.Item == null) return;
+
+            // Into the day's page as an EVENT, beside the receipt the character speaks.
+            // The two are not the same information: the receipt is a line of dialogue in her
+            // voice, and this is what actually moved — which is the half a player rereading
+            // the week wants, and the half that would be lost if the vendor's wording ever
+            // changed.
+            RecordEventToJournal(DescribeLedgerLine(quote, done));
+
+            bool changed = ChatMemoryDigest.RecordTrade(
+                _activeMemory, quote.Item.itemId, quote.Item.displayName, done,
+                playerBought: quote.Intent == TradeIntent.Buy);
+
+            changed |= ChatRelationship.ApplyTrade(_activeMemory, ref _goodwillThisConversation) != 0;
+
+            if (changed) NPCMemoryStore.Save(_activeMemory);
+        }
+
+        /// <summary>
+        /// The deal as a ledger line for the journal: what moved and what it cost, with no
+        /// voice on it.
+        ///
+        /// <para>Priced from what ACTUALLY happened for the same reason
+        /// <see cref="DescribeOutcome"/> is — a run cut short by a full inventory must not
+        /// record the whole basket's total, and a page that disagrees with the coins the
+        /// player has is worse than no page.</para>
+        /// </summary>
+        private static string DescribeLedgerLine(TradeQuote quote, int done)
+        {
+            int perUnit = quote.Quantity > 0 ? quote.TotalPrice / quote.Quantity : quote.TotalPrice;
+            int paid = perUnit * done;
+
+            return quote.Intent == TradeIntent.Buy
+                ? ChatLanguage.LedgerBought(done, quote.Item.displayName, paid)
+                : ChatLanguage.LedgerSold(done, quote.Item.displayName, paid);
+        }
+
         private static string DescribeOffer(TradeQuote quote)
         {
             string what = quote.Quantity > 1
@@ -153,8 +201,8 @@ namespace Valkur.Gameplay.Chat
                 : quote.Item.displayName;
 
             return quote.Intent == TradeIntent.Buy
-                ? $"{what} son {quote.TotalPrice} monedas. ¿Te lo preparo?"
-                : $"Te doy {quote.TotalPrice} monedas por {what}. ¿Trato?";
+                ? ChatLanguage.OfferBuy(what, quote.TotalPrice)
+                : ChatLanguage.OfferSell(what, quote.TotalPrice);
         }
 
         /// <summary>
@@ -165,7 +213,7 @@ namespace Valkur.Gameplay.Chat
         /// </summary>
         private static string DescribeOutcome(TradeQuote quote, int done)
         {
-            if (done <= 0) return "No ha podido ser.";
+            if (done <= 0) return ChatLanguage.TradeFailed;
 
             string what = done > 1
                 ? $"{done}x {quote.Item.displayName}"
@@ -177,8 +225,8 @@ namespace Valkur.Gameplay.Chat
             int paid = perUnit * done;
 
             return quote.Intent == TradeIntent.Buy
-                ? $"Hecho: {what} por {paid} monedas. ¡Que aproveche!"
-                : $"Trato hecho: me quedo {what} y te doy {paid} monedas.";
+                ? ChatLanguage.TradeDoneBuy(what, paid)
+                : ChatLanguage.TradeDoneSell(what, paid);
         }
 
         /// <summary>

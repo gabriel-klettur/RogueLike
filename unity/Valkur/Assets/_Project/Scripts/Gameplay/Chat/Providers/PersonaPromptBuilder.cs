@@ -113,6 +113,7 @@ namespace Valkur.Gameplay.Chat.Providers
             }
 
             AppendRelationship(sb, memory);
+            AppendMemories(sb, memory, language);
             AppendPurse(sb, trade);
             AppendStyleRules(sb, persona, language);
 
@@ -194,8 +195,45 @@ namespace Valkur.Gameplay.Chat.Providers
             else
                 sb.AppendLine($"Este viajero te visita a menudo ({memory.visitCount} veces); ya es un conocido.");
 
-            if (memory.friendshipScore >= 40) sb.AppendLine("Le tienes cariño.");
-            else if (memory.friendshipScore <= -40) sb.AppendLine("No te cae bien y se te nota, sin ser grosero.");
+            // Bands rather than a threshold pair. The score only started moving when
+            // ChatRelationship was written, and a single step at +/-40 means the first six
+            // or seven conversations read as identical to a stranger's — which is how a
+            // relationship layer ends up feeling like it does nothing.
+            int score = memory.friendshipScore;
+            if (score >= 60) sb.AppendLine("Le tienes mucho cariño; es de los tuyos.");
+            else if (score >= 25) sb.AppendLine("Le tienes cariño.");
+            else if (score >= 10) sb.AppendLine("Te cae bien.");
+            else if (score <= -60) sb.AppendLine("No lo soportas, y te cuesta disimularlo, sin llegar a ser grosero.");
+            else if (score <= -25) sb.AppendLine("No te cae bien y se te nota, sin ser grosero.");
+            else if (score <= -10) sb.AppendLine("Te dejó mal sabor de boca la última vez.");
+        }
+
+        /// <summary>
+        /// The handful of things this character still knows about the player once the
+        /// twelve-message window has rolled past.
+        ///
+        /// <para>Presented as things REMEMBERED, not as a data sheet: a model handed a list
+        /// of fields recites them, and a character who opens by listing everything you have
+        /// ever told them is unnerving rather than familiar. The line saying so is worth its
+        /// tokens — without it the digest reliably turns into "¡Hola Bruno de Aldea Norte,
+        /// que buscas a tu hermana!" on the very next message.</para>
+        /// </summary>
+        private static void AppendMemories(StringBuilder sb, NPCMemory memory, string language)
+        {
+            var notes = memory?.digest;
+            if (notes == null || notes.Count == 0) return;
+
+            sb.AppendLine();
+            sb.AppendLine("Lo que recuerdas de este viajero:");
+
+            foreach (var note in notes)
+            {
+                string rendered = ChatMemoryDigest.Render(note, language);
+                if (string.IsNullOrWhiteSpace(rendered)) continue;
+                sb.Append("  - ").AppendLine(rendered);
+            }
+
+            sb.AppendLine("Úsalo solo si viene a cuento. No lo recites ni lo enumeres.");
         }
 
         /// <summary>

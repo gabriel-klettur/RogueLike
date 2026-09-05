@@ -64,8 +64,8 @@ namespace Valkur.Tests.EditMode.Game.Chat
         {
             // A record built directly with `new` (not via NPCMemoryStore.CreateFresh)
             // must already be safe to append to and to show to the player.
-            Assert.AreEqual(1, _memory.schemaVersion,
-                "schemaVersion must default to 1; a 0 default would make every fresh record look stale and trigger a pointless migration.");
+            Assert.AreEqual(3, _memory.schemaVersion,
+                "schemaVersion must default to the current version (3); a stale default would make every fresh record look old and trigger a pointless migration.");
             Assert.AreEqual("es", _memory.preferredLanguage,
                 "preferredLanguage must default to 'es' — the Python schema default. A null/'en' default would flip every new NPC to the wrong language.");
             Assert.IsNotNull(_memory.ephemeralHistory,
@@ -73,8 +73,10 @@ namespace Valkur.Tests.EditMode.Game.Chat
             Assert.AreEqual(0, _memory.ephemeralHistory.Count,
                 "A fresh record must start with no conversation history.");
             Assert.AreEqual(0, _memory.visitCount, "visitCount must start at 0.");
-            Assert.IsFalse(_memory.hasGreeted,
-                "hasGreeted must start false, otherwise the one-time greeting is skipped for brand-new NPCs.");
+            Assert.IsTrue(string.IsNullOrEmpty(_memory.lastGreetedDayKey),
+                "lastGreetedDayKey must start empty, otherwise the daily greeting is skipped for brand-new NPCs.");
+            Assert.IsNotNull(_memory.digest,
+                "digest must be initialised by the field initialiser; a null list would NRE on the first note written.");
             Assert.AreEqual(0, _memory.friendshipScore,
                 "friendshipScore must start neutral (0), not at either end of the -100..100 range.");
             Assert.IsNull(_memory.npcKey, "npcKey is assigned by the store, not defaulted to a placeholder.");
@@ -250,7 +252,7 @@ namespace Valkur.Tests.EditMode.Game.Chat
             _memory.npcKey = "blacksmith-42";
             _memory.personaId = "persona-blacksmith";
             _memory.visitCount = 9;
-            _memory.hasGreeted = true;
+            _memory.lastGreetedDayKey = "2026-09-05#3";
             _memory.friendshipScore = -37;
             _memory.preferredLanguage = "en";
             _memory.lastUpdatedIso8601 = "2026-08-18T10:11:12.0000000Z";
@@ -262,11 +264,12 @@ namespace Valkur.Tests.EditMode.Game.Chat
             Assert.AreEqual("blacksmith-42", loaded.npcKey, "npcKey must survive serialisation — it is the file identity.");
             Assert.AreEqual("persona-blacksmith", loaded.personaId, "personaId must survive serialisation.");
             Assert.AreEqual(9, loaded.visitCount, "visitCount must survive serialisation.");
-            Assert.IsTrue(loaded.hasGreeted, "hasGreeted must survive serialisation.");
+            Assert.AreEqual("2026-09-05#3", loaded.lastGreetedDayKey, "lastGreetedDayKey must survive serialisation.");
             Assert.AreEqual(-37, loaded.friendshipScore,
                 "A negative friendshipScore must survive — sign loss would silently reset hostile relationships.");
             Assert.AreEqual("en", loaded.preferredLanguage, "preferredLanguage must survive serialisation.");
-            Assert.AreEqual(1, loaded.schemaVersion, "schemaVersion must survive serialisation, otherwise every load re-migrates.");
+            Assert.AreEqual(NPCMemoryStore.CURRENT_SCHEMA_VERSION, loaded.schemaVersion,
+                "schemaVersion must survive serialisation, otherwise every load re-migrates.");
             Assert.AreEqual("2026-08-18T10:11:12.0000000Z", loaded.lastUpdatedIso8601, "lastUpdatedIso8601 must survive serialisation.");
 
             Assert.AreEqual(NPCMemory.EPHEMERAL_CAP, loaded.ephemeralHistory.Count,

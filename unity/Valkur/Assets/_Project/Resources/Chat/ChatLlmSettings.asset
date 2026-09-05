@@ -23,6 +23,8 @@ MonoBehaviour:
   temperature: 0.9
   historyTurns: 6
   timeoutSeconds: 20
+  minSecondsBetweenRequests: 1.5
+  maxRequestsPerSession: 150
   sharedSystemRules: "Eres un personaje dentro de un videojuego de fantas\xEDa. Responde
     SIEMPRE en primera persona como ese personaje y nunca como un asistente.\n- M\xE1ximo
     3 frases. Habla corto, como en una conversaci\xF3n de pasillo.\n- No narres las

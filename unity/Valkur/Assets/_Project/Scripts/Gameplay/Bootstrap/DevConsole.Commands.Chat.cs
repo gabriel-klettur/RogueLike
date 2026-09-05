@@ -42,6 +42,119 @@ namespace Valkur.Gameplay
                 Category = "chat",
                 Handler  = args => CmdChatProvider(args)
             });
+
+            RegisterCommand(new ConsoleCommand
+            {
+                Name     = "journal",
+                Aliases  = new[] { "diario" },
+                Usage    = "journal [npcs|<day index>]",
+                Help     = "read the conversation journal of the open chat",
+                Category = "chat",
+                Handler  = args => CmdJournal(args)
+            });
+        }
+
+        /// <summary>
+        /// The <c>journal</c> probe.
+        ///
+        /// <para>It exists for the same reason <c>faces</c> does: the journal is written by
+        /// the message path, sealed by a clock and read by a panel, and every one of those
+        /// three can fail in a way the others hide. Without this, "did today's page get
+        /// written" is answered by finding a directory under
+        /// <c>Application.persistentDataPath</c>, and "did midnight seal yesterday" is not
+        /// answerable at all without waiting for midnight.</para>
+        /// </summary>
+        private void CmdJournal(string[] args)
+        {
+            string verb = args != null && args.Length > 0 ? args[0].ToLowerInvariant() : "";
+
+            if (verb == "npcs")
+            {
+                ReportJournalArchives();
+                return;
+            }
+
+            var chat = ChatSystem.Instance;
+            if (chat == null || !chat.IsChatOpen)
+            {
+                Log("No chat is open. 'journal npcs' lists every archive on disk.");
+                return;
+            }
+
+            var pages = chat.ListJournalPages();
+            if (pages.Count == 0)
+            {
+                Log($"'{chat.ActiveNpcKey}' has no journal pages yet.");
+                return;
+            }
+
+            if (verb.Length > 0 && int.TryParse(verb, out int index))
+            {
+                ReportJournalPage(chat, pages, index);
+                return;
+            }
+
+            Log($"{pages.Count} page(s) for '{chat.ActiveNpcKey}', newest first:");
+            for (int i = 0; i < pages.Count; i++)
+            {
+                bool today = pages[i].DayKey == ChatDayClock.TodayKey;
+                Log($"  {i + 1,2}. {pages[i].Label(english: false)}{(today ? "  (today)" : "")}");
+            }
+            Log("journal <n> prints one.");
+        }
+
+        /// <summary>Prints one day, 1-based to match the list above it.</summary>
+        private void ReportJournalPage(
+            ChatSystem chat, System.Collections.Generic.List<ChatJournalPageRef> pages, int index)
+        {
+            if (index < 1 || index > pages.Count)
+            {
+                Log($"No page {index}. There are {pages.Count}.");
+                return;
+            }
+
+            var pageRef = pages[index - 1];
+            ChatJournalPage page = chat.LoadJournalPage(pageRef);
+            if (page == null)
+            {
+                Log($"Page {index} ({pageRef.Stem}) could not be read.");
+                return;
+            }
+
+            Log($"— {pageRef.Label(english: false)} — {page.entries.Count} line(s), " +
+                $"{page.conversations} conversation(s){(page.IsSealed ? ", sealed" : "")}");
+
+            for (int i = 0; i < page.entries.Count; i++)
+            {
+                var entry = page.entries[i];
+                string who = entry.role == ChatJournalEntry.ROLE_SYSTEM
+                    ? "·"
+                    : (string.IsNullOrEmpty(entry.speaker) ? entry.role : entry.speaker);
+                Log($"  {who}: {entry.text}");
+            }
+        }
+
+        /// <summary>
+        /// Every archive on disk, named by the directory slug rather than by the character.
+        /// Slugging is one-way, so this is the honest answer — and it is enough to tell an
+        /// archive that exists from one that does not.
+        /// </summary>
+        private void ReportJournalArchives()
+        {
+            var slugs = ChatJournalStore.ListArchivedSlugs();
+            if (slugs.Count == 0)
+            {
+                Log("No journals on disk yet.");
+                return;
+            }
+
+            Log($"{slugs.Count} archive(s):");
+            for (int i = 0; i < slugs.Count; i++)
+            {
+                var pages = ChatJournalStore.ListPagesBySlug(slugs[i]);
+                string newest = pages.Count > 0 ? pages[0].CalendarDate : "—";
+                Log($"  {slugs[i]}: {pages.Count} page(s), newest {newest}");
+            }
         }
 
         private void CmdChatProvider(string[] args)
@@ -98,10 +211,27 @@ namespace Valkur.Gameplay
             Log($"history   : {settings.historyTurns} turns sent as context");
             Log($"max tokens: {settings.maxOutputTokens} via '{settings.maxOutputTokensField}'");
 
+            string ceiling = settings.maxRequestsPerSession > 0
+                ? settings.maxRequestsPerSession + " requests/session"
+                : "no ceiling";
+            Log($"budget    : {ceiling}, min {settings.minSecondsBetweenRequests:0.##}s apart");
+
             if (ServiceLocator.TryGet<IChatProvider>(out var provider))
+            {
                 Log($"live      : {provider.ProviderName} (online={provider.IsOnline})");
+
+                // The counter is the only place the session's spending is visible at all —
+                // there is no bill to read from inside the game.
+                if (provider is OpenAiChatProvider openAi)
+                    Log($"spent     : {openAi.RequestsThisSession} requests this session" +
+                        (openAi.CooldownRemaining > 0f
+                            ? $" (next allowed in {openAi.CooldownRemaining:0.#}s)"
+                            : ""));
+            }
             else
+            {
                 Log("live      : no IChatProvider registered — bootstrap has not run.");
+            }
 
             var chat = ChatSystem.Instance;
             if (chat != null && chat.IsChatOpen && chat.ActivePersona != null)

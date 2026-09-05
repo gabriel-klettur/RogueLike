@@ -55,8 +55,20 @@ namespace Valkur.Gameplay.Chat
         /// <para><c>ChatUIBuilderTests</c> lays the panel out AT this size, in both states,
         /// and fails if the rows no longer fit — so adding a row is a red test rather than a
         /// silently clipped conversation.</para>
+        ///
+        /// <para>Raised from 244 when Diario joined the gutter. It is DERIVED now, from the
+        /// column that actually has to fit: the portrait, the two stacked buttons under it
+        /// and Reiniciar pinned at the foot. Typing a number here and a button height there
+        /// is how the tallest gutter quietly grows past the shortest panel — and the failure
+        /// is silent, because free-floating children do not participate in layout and simply
+        /// overlap.</para>
         /// </summary>
-        private const float PANEL_MIN_H = 244f;
+        private const float PANEL_MIN_H =
+            PANEL_PADDING + PORTRAIT_SIZE_H +
+            GUTTER_GAP + GUTTER_TRADE_HEIGHT +
+            GUTTER_GAP + GUTTER_JOURNAL_HEIGHT +
+            GUTTER_GAP +
+            GUTTER_RESET_HEIGHT + PANEL_PADDING;
 
         /// <summary>
         /// Shortest the message area may be squeezed to, in pixels.
@@ -227,6 +239,17 @@ namespace Valkur.Gameplay.Chat
         private const float PANEL_SPACING = 6f;
 
         /// <summary>
+        /// Height of the title row, which is the panel's first child and the strip the
+        /// floating corner controls share.
+        ///
+        /// <para>Named because a second thing measures against it now: the journal overlay
+        /// starts below it, and an overlay that swallows the close button and the resize grip
+        /// is a window the player is stuck in. A literal in the builder and a literal in the
+        /// overlay would be two numbers that have to agree, with nothing to make them.</para>
+        /// </summary>
+        private const float TITLE_ROW_HEIGHT = 28f;
+
+        /// <summary>
         /// Width of the buttons that live in the left gutter. The portrait's width exactly,
         /// so the face and the controls under it share one edge and the gutter reads as a
         /// column rather than as three things that happen to be on the left.
@@ -235,6 +258,13 @@ namespace Valkur.Gameplay.Chat
 
         /// <summary>Height of the gutter's Comerciar button.</summary>
         private const float GUTTER_TRADE_HEIGHT = 28f;
+
+        /// <summary>
+        /// Height of the gutter's Diario button. The same as Comerciar's: they are the two
+        /// things a player OPENS from this panel and there is no reason for one to look
+        /// heavier than the other.
+        /// </summary>
+        private const float GUTTER_JOURNAL_HEIGHT = 28f;
 
         /// <summary>
         /// Height of the gutter's Reiniciar button. The same as Comerciar's, so the two
@@ -293,6 +323,8 @@ namespace Valkur.Gameplay.Chat
         private TextMeshProUGUI _sendButtonText;
         private TextMeshProUGUI _tradeButtonText;
         private GameObject _tradeButton;
+        private GameObject _journalButton;
+        private TextMeshProUGUI _journalButtonText;
         private GameObject _resetButton;
         private GameObject _tradeConfirmRow;
         private TextMeshProUGUI _tradeOfferText;
@@ -337,6 +369,8 @@ namespace Valkur.Gameplay.Chat
                 chatSystem.OnTradeOfferChanged += OnTradeOfferChanged;
                 chatSystem.OnExpressionChanged += OnExpressionChanged;
                 chatSystem.OnListeningChanged += OnListeningChanged;
+                chatSystem.OnOverlayDismissRequested += CloseJournal;
+                chatSystem.OnDayRolledOver += OnDayRolledOver;
                 ChatLanguage.OnChanged += ApplyLanguageToChrome;
             }
         }
@@ -354,6 +388,8 @@ namespace Valkur.Gameplay.Chat
                 chatSystem.OnTradeOfferChanged -= OnTradeOfferChanged;
                 chatSystem.OnExpressionChanged -= OnExpressionChanged;
                 chatSystem.OnListeningChanged -= OnListeningChanged;
+                chatSystem.OnOverlayDismissRequested -= CloseJournal;
+                chatSystem.OnDayRolledOver -= OnDayRolledOver;
                 ChatLanguage.OnChanged -= ApplyLanguageToChrome;
             }
         }
@@ -387,6 +423,15 @@ namespace Valkur.Gameplay.Chat
                 return;
             }
 
+            // The archive is up. Enter takes the player back to the conversation rather than
+            // sending — the field is disabled and covered, so "send" would post whatever
+            // draft was there before the diary was opened, into a panel they cannot see.
+            if (IsJournalOpen)
+            {
+                CloseJournal();
+                return;
+            }
+
             // Chat is open: send if the field has text, close if it is empty.
             string text = _inputField != null ? (_inputField.text?.Trim() ?? "") : "";
             if (string.IsNullOrEmpty(text))
@@ -409,6 +454,14 @@ namespace Valkur.Gameplay.Chat
                 : "NPC";
             _titleText.text = $"Chat — {npcName}";
 
+            // Only a character who actually sells something gets a Trade button — and this
+            // has to be decided BEFORE the gutter is laid out, because a switched-off button
+            // consumes no space in the column. Setting it afterwards leaves Diario floating
+            // over a gap where Comerciar would have been, and nothing complains: the gutter's
+            // children are ignoreLayout, so nothing arranges them.
+            if (_tradeButton != null)
+                _tradeButton.SetActive(chatSystem.ActiveVendor != null);
+
             // Before the history is replayed, so the panel is already the right SHAPE when
             // the rows are laid into it — reserving the gutter afterwards would lay every
             // row out twice on the frame a conversation opens.
@@ -420,11 +473,8 @@ namespace Valkur.Gameplay.Chat
             ApplyLanguageToChrome(ChatLanguage.Current);
             SyncActiveMemoryLanguage();
 
-            // Only a character who actually sells something gets a Trade button.
-            if (_tradeButton != null)
-                _tradeButton.SetActive(chatSystem.ActiveVendor != null);
-
             DisarmReset();
+            CloseJournal();
             OnTradeOfferChanged(false);
 
             // Show existing history
@@ -437,6 +487,11 @@ namespace Valkur.Gameplay.Chat
 
         private void OnChatClosed()
         {
+            // Before the panel goes: closing the overlay also clears the modal flag and gives
+            // the input field back its interactable state, and both are properties of a panel
+            // that is about to be shown again for someone else.
+            CloseJournal();
+
             _panel.SetActive(false);
             if (_backdrop != null) _backdrop.SetActive(false);
         }
@@ -611,6 +666,14 @@ namespace Valkur.Gameplay.Chat
             if (_placeholderText != null) _placeholderText.text = ChatLanguage.InputPlaceholder;
             if (_sendButtonText != null) _sendButtonText.text = ChatLanguage.Send;
             if (_tradeButtonText != null) _tradeButtonText.text = ChatLanguage.Trade;
+
+            ApplyLanguageToJournal();
+
+            // The archive's PAGE is language-dependent too — the day label, the counter, the
+            // notice on a trimmed day — so a view that is up is redrawn rather than merely
+            // relabelled. Guarded, because rebuilding rows for a hidden overlay is the cost
+            // of the whole feature paid on every language toggle.
+            if (IsJournalOpen) RenderJournalPage();
         }
 
         // ── UI Construction ──

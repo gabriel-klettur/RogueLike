@@ -156,13 +156,22 @@ namespace Valkur.Tests.EditMode.Game.Chat
         }
 
         [Test]
-        public void Portrait_IsBuiltLast_SoItDrawsOverTheRowsBesideIt()
+        public void Portrait_DrawsOverTheRowsBesideIt()
         {
             Transform panel = FindPortrait().transform.parent;
+            Transform scrollArea = panel.Find("ScrollArea");
+            Assert.IsNotNull(scrollArea, "The conversation's scroll area was renamed or removed.");
 
-            Assert.AreEqual(panel.childCount - 1, FindPortrait().transform.GetSiblingIndex(),
+            Assert.Greater(FindPortrait().transform.GetSiblingIndex(), scrollArea.GetSiblingIndex(),
                 "The portrait occupies the gutter those rows were shortened to make. Built " +
                 "earlier it would render underneath them.");
+
+            // It used to be the LAST child, and the journal overlay took that slot — which is
+            // correct, since the overlay covers the conversation AND the face is a detail of
+            // the panel underneath it. The invariant that mattered was never "last", it was
+            // "after the rows".
+            Assert.AreEqual(panel.childCount - 1, panel.Find("JournalOverlay").GetSiblingIndex(),
+                "The journal covers the panel, so nothing may be built after it.");
         }
 
         // ── The gutter ──────────────────────────────────────────────────────
