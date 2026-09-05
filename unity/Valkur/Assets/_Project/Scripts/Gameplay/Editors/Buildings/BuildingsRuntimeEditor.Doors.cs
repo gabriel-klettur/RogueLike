@@ -11,7 +11,7 @@ using Valkur.Gameplay.World;
 namespace Valkur.Gameplay.Buildings
 {
     /// <summary>
-    /// Door authoring for the F10 editor — Phase 2 of .github/BUILDING_DOORS_ROADMAP.md.
+    /// Door authoring for the Buildings editor — Phase 2 of .github/BUILDING_DOORS_ROADMAP.md.
     ///
     /// A doorway is authored across TWO scopes and this file is careful to keep them apart,
     /// because conflating them is the one mistake that would quietly corrupt a catalog:

@@ -103,6 +103,8 @@ namespace Valkur.Gameplay.Buildings
 
             // Map builder refs to private fields so all downstream logic is unchanged
             _pickerContent = _uiRefs.PickerContent;
+            _pickerScroll  = _uiRefs.PickerScroll;
+            PreparePickerVirtualization();
             _statusTmp     = _uiRefs.StatusText;
             _searchBox     = _uiRefs.SearchBox;
             _propsTmp      = _uiRefs.PropsText;

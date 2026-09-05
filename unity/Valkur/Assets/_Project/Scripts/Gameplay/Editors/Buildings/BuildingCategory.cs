@@ -3,7 +3,7 @@ using System;
 namespace Valkur.Gameplay.Buildings
 {
     /// <summary>
-    /// Editorial grouping for the Buildings Editor (F10) template picker.
+    /// Editorial grouping for the Buildings Editor template picker.
     ///
     /// The catalog holds 1176 templates in one flat grid, and no author is browsing more than
     /// one family of them at a time: 137 tree variants, 106 pieces of ground flora, and — since

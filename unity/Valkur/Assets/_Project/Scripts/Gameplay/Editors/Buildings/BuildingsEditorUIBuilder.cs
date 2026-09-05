@@ -76,6 +76,7 @@ namespace Valkur.Gameplay.Buildings
             public TMP_InputField  SearchBox;
             public TabStrip        CategoryTabStrip;
             public RectTransform   PickerContent;
+            public ScrollRect      PickerScroll;
             public TextMeshProUGUI StatusText;
 
             // Properties panel refs
@@ -106,7 +107,9 @@ namespace Valkur.Gameplay.Buildings
 
         // ── Panel sizes (mirrors TileEditor constants) ────────────────────────────
 
-        private const float MODES_W     = TOOLS_DROP_W;          // 60 px
+        // 84, not the Tile editor's 60: the header reserves 24 px on the right for the
+        // chrome close button, and at 60 the title "TOOLS" shipped truncated to "TOO".
+        private const float MODES_W     = 84f;
         // Tools: Undo + Redo + Fill + Erase + Door. The multiplier is the count of BTN_H-tall
         // buttons BEYOND the two the 88f base already covers - a 6th button needs a 4 here, or
         // it is clipped off the bottom of the panel with no other symptom.

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
+using Valkur.UIKit;
 using UnityEngine.Profiling;
 using Valkur.Gameplay.World;
 
@@ -141,7 +142,7 @@ namespace Valkur.Gameplay.Buildings
             _headerStyle = new GUIStyle(GUI.skin.label) { fontSize = 12, fontStyle = FontStyle.Bold,
                 normal = { textColor = new Color(0.9f, 0.95f, 1f) } };
             _labelStyle  = new GUIStyle(GUI.skin.label) { fontSize = 11,
-                normal = { textColor = new Color(0.60f, 0.62f, 0.68f) } };
+                normal = { textColor = UITheme.TEXT_SECONDARY } };
             _rowStyle    = new GUIStyle(GUI.skin.label) { fontSize = 11,
                 normal = { textColor = new Color(0.90f, 0.92f, 0.96f) } };
             _warnStyle   = new GUIStyle(_rowStyle) { normal = { textColor = new Color(1f, 0.85f, 0.2f) } };

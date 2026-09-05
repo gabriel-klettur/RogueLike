@@ -626,6 +626,9 @@ namespace Valkur.Gameplay
             RegisterReloadCommands();
             RegisterEditorCommands();
 
+            // Placed-building rendering audit — see DevConsole.Commands.Buildings.cs.
+            RegisterBuildingsCommands();
+
             // Weather levels, wind field and lightning — see DevConsole.Commands.Weather.cs.
             RegisterWeatherCommands();
 

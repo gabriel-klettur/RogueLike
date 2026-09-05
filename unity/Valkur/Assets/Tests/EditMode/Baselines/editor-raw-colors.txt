@@ -25,7 +25,7 @@
 1	Buildings/BuildingOutlineRenderer.cs
 1	Buildings/BuildingsEditorUIBuilder.Tools.cs
 2	Buildings/BuildingsFillPreviewOverlay.cs
-5	Buildings/BuildingsPerfProbe.GUI.cs
+4	Buildings/BuildingsPerfProbe.GUI.cs
 2	Buildings/BuildingsRuntimeEditor.Colliders.cs
 8	Buildings/BuildingsRuntimeEditor.cs
 2	Buildings/BuildingsRuntimeEditor.Doors.cs

@@ -46,12 +46,12 @@ namespace Valkur.Gameplay.Buildings
             ApplyBuildingsVisibility();
             RefreshBuildingsVisibilityButton();
             if (_statusTmp != null)
-                _statusTmp.text = "Buildings Editor active. F10 = close. ESC = cancel.";
+                _statusTmp.text = "Buildings Editor active. ESC = back to the General Editor.";
             _mainCamera = Camera.main;
             if (Valkur.Gameplay.CameraSetup.Instance != null)
                 Valkur.Gameplay.CameraSetup.Instance.DetachFollow();
             HideHUDs();
-            Debug.Log("[BuildingsEditor] Activated (F10)");
+            Debug.Log("[BuildingsEditor] Activated.");
         }
 
         public void Deactivate()
@@ -81,8 +81,8 @@ namespace Valkur.Gameplay.Buildings
             _colliderStroke.Active = false;
             // "Show Colliders" must not survive the editor closing: stop any
             // in-flight progressive overlay build, hide every overlay visual,
-            // and reset the toggle so the NEXT F10 open starts with colliders
-            // off. Without this, closing F10 while the toggle was on left the
+            // and reset the toggle so the NEXT open starts with colliders
+            // off. Without this, closing the editor while the toggle was on left the
             // debug overlay quads/lines sitting in the world with no editor
             // open to turn them off.
             HideCollidersOverlayHard();
@@ -106,7 +106,7 @@ namespace Valkur.Gameplay.Buildings
             if (Valkur.Gameplay.CameraSetup.Instance != null)
                 Valkur.Gameplay.CameraSetup.Instance.ReattachFollow();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.NotifyDeactivated(this);
-            Debug.Log("[BuildingsEditor] Deactivated (F10)");
+            Debug.Log("[BuildingsEditor] Deactivated.");
         }
 
         private void OnApplicationQuit()

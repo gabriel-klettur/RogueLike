@@ -20,7 +20,7 @@ using Valkur.Gameplay.World;
 namespace Valkur.Gameplay.Buildings
 {
     /// <summary>
-    /// Runtime in-game Buildings Editor (F10) — full feature parity with the Python
+    /// Runtime in-game Buildings Editor (ESC → Buildings) — full feature parity with the Python
     /// roguelike_editors/buildings package.
     ///
     /// Covers all 10 migration gaps:
@@ -228,7 +228,7 @@ namespace Valkur.Gameplay.Buildings
         private int _tutorialStep;
         private static readonly (string title, string body)[] TUTORIAL_STEPS =
         {
-            ("1. Open editor",   "Press F10 anywhere in-game to toggle the Buildings Editor."),
+            ("1. Open editor",   "Press Escape for the General Editor and choose Buildings. Escape again toggles back to it."),
             ("2. Pick template", "In the left picker, click a building thumbnail to select it. Use the search box to filter by ID or asset path."),
             ("3. Place a building", "DRAG a building thumbnail from the Buildings panel and DROP it on the map. Click-to-place is disabled — the only way to place a building is to drag it from the panel."),
             ("4. Hover & select",  "Move the mouse over a building — it outlines in CYAN. Use the mouse wheel to cycle through stacked buildings. Click to select (outline turns YELLOW)."),
@@ -237,7 +237,7 @@ namespace Valkur.Gameplay.Buildings
             ("7. Remove mode",   "Click the Remove (–) button to enable remove mode — buildings highlight RED on hover. Click to delete."),
             ("8. Delete handle", "Or click the red E handle on the active building to delete it (a confirmation modal appears with reference count)."),
             ("9. Undo / Redo",   "Use the toolbar Undo / Redo buttons to revert or replay the last edits (capacity 64)."),
-           ("10. Save",          "Click Save to write StreamingAssets/Buildings/buildings_instances.json. Press F10 again to close the editor."),
+           ("10. Save",          "Click Save to write StreamingAssets/Buildings/buildings_instances.json. Press Escape to return to the General Editor."),
         };
 
         // Confirm-delete modal
@@ -360,11 +360,14 @@ namespace Valkur.Gameplay.Buildings
             // Defensive mirror of Deactivate()'s collider-overlay teardown: with
             // Domain Reload + Scene Reload disabled, stopping Play Mode does NOT
             // reload the scene, so any collider-debug overlay left visible (e.g.
-            // the editor singleton destroyed without going through F10 first)
+            // the editor singleton destroyed without going through Deactivate first)
             // would otherwise sit in the Editor scene after Stop.
             HideCollidersOverlayHard();
             if (_ownsToggleAction) _toggleAction?.Dispose();
             if (_collBrushCursorMat != null) Destroy(_collBrushCursorMat);
+            // The only picker that builds thumbnails today; the textures are HideAndDontSave
+            // and would otherwise outlive the scene.
+            SpriteThumbnailCache.Clear();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();
         }

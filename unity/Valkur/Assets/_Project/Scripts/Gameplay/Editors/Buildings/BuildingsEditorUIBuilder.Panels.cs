@@ -62,6 +62,7 @@ namespace Valkur.Gameplay.Buildings
             // Thin gold scrollbar (matches Tiles editor style).
             EditorUIHelpers.AddVerticalScrollbar(pickerScroll);
             refs.PickerContent     = pickerContent;
+            refs.PickerScroll      = pickerScroll;
 
             refs.StatusText = EditorUIHelpers.MakeStatusText(t);
 

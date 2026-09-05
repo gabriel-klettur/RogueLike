@@ -7,7 +7,7 @@ using Valkur.Gameplay.World;
 namespace Valkur.Gameplay.Buildings
 {
     /// <summary>
-    /// Buildings Editor (F10) — what it remembers between sessions.
+    /// Buildings Editor — what it remembers between sessions.
     ///
     /// Half of the panel-key collision the workspace layer was built to make impossible:
     /// this editor and the Map Editor both build a panel named <c>"PropertiesPanel"</c>,

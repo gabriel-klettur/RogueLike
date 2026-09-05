@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
@@ -23,6 +23,7 @@ namespace Valkur.Gameplay.Buildings
 
         private BuildingObject[] _buildingsCache;
         private bool             _buildingsCacheValid;
+        private int              _buildingsCacheGeneration = -1;
 
         internal void InvalidateBuildingCache()
         {
@@ -35,10 +36,15 @@ namespace Valkur.Gameplay.Buildings
 
         private BuildingObject[] GetCachedBuildings()
         {
-            if (!_buildingsCacheValid || _buildingsCache == null)
+            // Explicit invalidation OR a building appearing / disappearing anywhere
+            // (BuildingObject.LiveGeneration) — the second is what covers the loader,
+            // the fill tool and a world swap without each of them having to remember.
+            if (!_buildingsCacheValid || _buildingsCache == null
+                || _buildingsCacheGeneration != BuildingObject.LiveGeneration)
             {
-                _buildingsCache = FindObjectsOfType<BuildingObject>();
-                _buildingsCacheValid = true;
+                _buildingsCache           = FindObjectsOfType<BuildingObject>();
+                _buildingsCacheValid      = true;
+                _buildingsCacheGeneration = BuildingObject.LiveGeneration;
             }
             return _buildingsCache;
         }
