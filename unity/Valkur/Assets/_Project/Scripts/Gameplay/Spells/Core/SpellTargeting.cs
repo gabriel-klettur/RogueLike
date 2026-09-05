@@ -1,5 +1,6 @@
 using UnityEngine;
 using Valkur.Core.Input;
+using Valkur.Data;
 
 namespace Valkur.Gameplay.Spells
 {
@@ -56,6 +57,44 @@ namespace Valkur.Gameplay.Spells
             Vector2 offset = cursor - start;
             if (offset.sqrMagnitude > reach * reach) offset = offset.normalized * reach;
             return start + offset;
+        }
+
+        /// <summary>
+        /// The heading a caster-emitted spell should actually fly on.
+        ///
+        /// <para>The player's facing is measured from the SPRITE'S CENTRE
+        /// (<c>PlayerController.ResolveFacingOrigin</c>) while the spell is born from the
+        /// HANDS — <c>ResolveCastOrigin</c> lifts the origin by <c>castAnchor</c> times the
+        /// caster's half-height. Both are right on their own, and the composition is not: the
+        /// shot leaves parallel to the line the aim was measured on but from a point above it,
+        /// so it travels that lift's distance past the cursor AT EVERY RANGE. Measured on the
+        /// shipped player sprite (1.86 units tall, Hands at 0.45 of the half-height) the miss
+        /// is 0.42 world units — a quarter of the character — and it is a constant offset
+        /// rather than an angle, so it never closes with distance.</para>
+        ///
+        /// <para>Aiming from the ORIGIN instead makes the projectile pass through the cursor.
+        /// Same family as SPAWNER_COORDINATE_SPACE_DRIFT: each half was internally consistent
+        /// and only the composition disagreed with the screen.</para>
+        ///
+        /// <para>Falls back to <paramref name="fallback"/> for every caster with no pointer —
+        /// a monster aims with its facing, which is what every caster did before.</para>
+        /// </summary>
+        public static Vector2 ResolveAimDirection(Transform caster, Vector2 fallback,
+                                                  SpellDefinition spell)
+        {
+            Vector2 cursor;
+            if (!TryResolveCursorWorld(caster, out cursor)) return fallback;
+
+            Vector2 origin = ProjectileExecutor.ResolveCastOrigin(
+                caster, spell != null ? spell.castAnchor : SpellCastAnchor.Hands);
+
+            Vector2 aim = cursor - origin;
+
+            // A cursor sitting on the origin has no heading to give. Same threshold
+            // PlayerFacingResolver uses for the same reason.
+            return aim.sqrMagnitude > PlayerFacingResolver.MinDirectionSqrMagnitude
+                ? aim.normalized
+                : fallback;
         }
 
         /// <summary>

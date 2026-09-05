@@ -32,14 +32,21 @@ namespace Valkur.Gameplay.Spells
             float damageMul = ChargeMath.DamageMultiplier(spell, ctx.ChargeFraction);
             float scaleMul  = ChargeMath.ScaleMultiplier(spell, ctx.ChargeFraction);
 
+            // Re-aimed from the point the shot is actually BORN, not from the body centre the
+            // player's facing was measured against. The lift between the two is a CONSTANT
+            // sideways miss at every range -- 0.42 units on the shipped player -- which is the
+            // whole of "the spell goes near the cursor but not at it". SpellTargeting owns the
+            // reasoning and answers ctx.Direction unchanged for any caster with no pointer.
+            Vector2 aim = SpellTargeting.ResolveAimDirection(ctx.Caster, ctx.Direction, spell);
+
             // This is the canonical start point for every spell emitted by a caster.
             // Keeping Fireball on the shared helper makes its proven-good launch point the
             // source of truth for beams, breaths, boomerangs, lightning and slashes too.
-            Vector3 spawnPos = ResolveCastStart(ctx.Caster, ctx.Direction, spell);
+            Vector3 spawnPos = ResolveCastStart(ctx.Caster, aim, spell);
 
             int shots = Mathf.Max(1, spell.projectileCount);
             for (int i = 0; i < shots; i++)
-                SpawnOne(ctx, spawnPos, FanDirection(ctx.Direction, i, shots, spell.spreadDegrees),
+                SpawnOne(ctx, spawnPos, FanDirection(aim, i, shots, spell.spreadDegrees),
                          damageMul, scaleMul);
 
             // The muzzle beat belongs to the CAST, not to each shot: firing it per projectile
@@ -51,7 +58,7 @@ namespace Valkur.Gameplay.Spells
             {
                 // A lance wants a directional crystalline snap, not the round generic
                 // impact blob used as the safety-net muzzle flash for ordinary projectiles.
-                IceLanceCastFX.Spawn(spawnPos, ctx.Direction);
+                IceLanceCastFX.Spawn(spawnPos, aim);
             }
             else if (vfxService != null)
             {
