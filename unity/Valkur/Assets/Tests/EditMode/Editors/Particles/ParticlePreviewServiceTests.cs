@@ -85,14 +85,12 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             LogAssert.ignoreFailingMessages = false;
         }
 
-        /// <summary>
-        /// Unity's engine-side error when <c>RenderTexture.Release()</c> runs while a still-enabled
-        /// Camera holds that texture as its <c>targetTexture</c>. Shutdown() releases before detaching,
-        /// so any test that leaves a preview camera enabled will see exactly this message.
-        /// It is NOT suppressed by <c>LogAssert.ignoreFailingMessages</c> (it comes from native code),
-        /// so the affected tests have to Expect it explicitly.
-        /// </summary>
-        private const string RT_RELEASE_ERROR = "Releasing render texture that is set as Camera.targetTexture!";
+        // Two tests here used to Expect Unity's engine-side "Releasing render texture that is
+        // set as Camera.targetTexture!" because Shutdown() released each RT while the camera
+        // pointing at it was still live. The comment on one of those Expects said to drop it
+        // the day the service detached first, and that day arrived: Shutdown() now nulls every
+        // targetTexture -- thumbnails and large alike -- before releasing anything, so the
+        // error is gone and expecting it would fail.
 
         // ── Builders ─────────────────────────────────────────────────────────────
 
@@ -516,11 +514,6 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             Assert.IsTrue(thumbRt != null, "Sanity: the preset must own a thumbnail before Shutdown.");
             Assert.IsTrue(largeRt != null, "Sanity: the large RT must exist before Shutdown.");
 
-            // Selecting a preset enables the large camera, so releasing its RT trips Unity's
-            // engine-side complaint. Expected here rather than ignored: if the service ever starts
-            // detaching targetTexture before releasing, this line tells us to drop the Expect.
-            LogAssert.Expect(LogType.Error, RT_RELEASE_ERROR);
-
             _service.Shutdown();
 
             Assert.IsNull(_service.GetPreviewTexture(presets[0].id),
@@ -575,9 +568,8 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             Assert.DoesNotThrow(() => _service.Tick(),
                 "Ticking with a cleared selection must not dereference the null definition.");
 
-            // That Tick pointed a thumb camera at a slot RT, so shut down inside the test body where
-            // the resulting engine error can be expected — TearDown has no LogAssert scope of its own.
-            LogAssert.Expect(LogType.Error, RT_RELEASE_ERROR);
+            // That Tick pointed a thumb camera at a slot RT. Shutdown detaches every camera
+            // before releasing, so this is silent now.
             _service.Shutdown();
         }
 

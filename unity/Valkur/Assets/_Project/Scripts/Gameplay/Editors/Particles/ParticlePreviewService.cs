@@ -363,6 +363,16 @@ namespace Valkur.Gameplay.VFX
         {
             if (!_initialized) return;
 
+            // EVERY camera lets go of its target BEFORE any RenderTexture is released.
+            // Releasing one a live camera still holds logs "Releasing render texture that is
+            // set as Camera.targetTexture!" into a console this project requires to be clean,
+            // and the thumbnails are released in a loop above the cameras that point at them,
+            // so the order has to be split rather than merely swapped per pair.
+            // SpellPreviewService carried the identical defect.
+            for (int i = 0; i < _thumbCameras.Count; i++)
+                if (_thumbCameras[i] != null) _thumbCameras[i].targetTexture = null;
+            if (_largeCamera != null) _largeCamera.targetTexture = null;
+
             for (int i = 0; i < _pool.Count; i++)
             {
                 var s = _pool[i];
