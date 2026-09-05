@@ -15,7 +15,21 @@ namespace Valkur.Gameplay.Spells
     /// </summary>
     internal sealed partial class SpellGraphView
     {
-        private void RefreshBoard()
+        /// <summary>Opacity of a connector on the route to the selected node.</summary>
+        private const float ROUTE_LINK_ALPHA = 0.95f;
+
+        /// <summary>Thickness of a route connector against an idle one.</summary>
+        private const float LINK_W = 11f, ROUTE_LINK_W = 13f;
+
+        /// <summary>
+        /// Rebuild the whole board for the current school.
+        ///
+        /// <para><paramref name="refit"/> is what separates the two reasons this runs. Opening
+        /// the view or switching school is a NEW board and has to be framed; a selection is the
+        /// same board with four colours moved, and reframing on that would throw away the
+        /// author's pan and zoom on every node click.</para>
+        /// </summary>
+        private void RefreshBoard(bool refit)
         {
             if (_board == null) return;
 
@@ -30,27 +44,18 @@ namespace Valkur.Gameplay.Spells
             _nodeRects.Clear();
 
             var tree = ResolveTree(_schoolKey);
-            if (tree == null) { SetHeader("No school", 0, 0); return; }
+            if (tree == null) { SetHeader("No school", 0, 0); _fitPending = false; return; }
 
             var nodes = new List<SpellNode>();
             for (int i = 0; i < tree.Count; i++)
                 if (tree.Nodes[i] != null) nodes.Add(tree.Nodes[i]);
 
             var placements = SpellGraphLayout.Resolve(nodes);
-            if (placements.Count == 0) { SetHeader(tree.displayName, 0, 0); return; }
+            if (placements.Count == 0)
+            { SetHeader(tree.displayName, 0, 0); _fitPending = false; return; }
 
-            float minCol = float.MaxValue, maxCol = float.MinValue;
-            int maxRow = 0;
-            for (int i = 0; i < placements.Count; i++)
-            {
-                minCol = Mathf.Min(minCol, placements[i].Column);
-                maxCol = Mathf.Max(maxCol, placements[i].Column);
-                maxRow = Mathf.Max(maxRow, placements[i].Row);
-            }
-
-            _board.sizeDelta = new Vector2(
-                (maxCol - minCol) * COL_SPACING + BOARD_PADDING * 2f,
-                maxRow * ROW_SPACING + BOARD_PADDING * 2f);
+            var frame = SpellGraphGeometry.Measure(placements);
+            _board.sizeDelta = frame.BoardSize;
 
             Color accent = ResolveAccent(tree);
 
@@ -58,9 +63,11 @@ namespace Valkur.Gameplay.Spells
             // always covers the ends of the lines that reach it.
             var positions = new Dictionary<SpellNode, Vector2>();
             for (int i = 0; i < placements.Count; i++)
-                positions[placements[i].Node] = BoardPosition(placements[i], minCol, maxRow);
+                positions[placements[i].Node] = frame.Position(placements[i]);
 
             var owned = new HashSet<SpellNode>(nodes);
+            var route = ResolveUnlockRoute(placements, owned);
+
             for (int i = 0; i < placements.Count; i++)
             {
                 var node = placements[i].Node;
@@ -70,7 +77,8 @@ namespace Valkur.Gameplay.Spells
                     var parent = pres[p];
                     if (parent == null || !owned.Contains(parent)) continue;
                     if (!positions.TryGetValue(parent, out var a)) continue;
-                    BuildLink(a, positions[node], accent);
+                    BuildLink(a, positions[node], accent,
+                        onRoute: route.Contains(node) && route.Contains(parent));
                 }
             }
 
@@ -85,17 +93,45 @@ namespace Valkur.Gameplay.Spells
             SetHeader(string.IsNullOrEmpty(tree.displayName) ? _schoolKey : tree.displayName,
                 placements.Count, withArt);
             SetStatus(placements.Count - withArt);
-            FitToView();
+            if (refit) FitToView();
         }
 
-        private Vector2 BoardPosition(SpellGraphLayout.Placement p, float minCol, int maxRow)
+        /// <summary>
+        /// The selected node plus every prerequisite that leads to it.
+        ///
+        /// <para>This is the one question a prerequisite graph exists to answer — "what do I
+        /// have to buy before this" — and reading it off the picture meant tracing wires by
+        /// eye through nodes the wires ran underneath. Empty when nothing is selected, so a
+        /// school with no selection draws exactly as it did.</para>
+        /// </summary>
+        private HashSet<SpellNode> ResolveUnlockRoute(
+            List<SpellGraphLayout.Placement> placements, HashSet<SpellNode> owned)
         {
-            // Row 0 at the TOP, deeper nodes below — the direction every skill tree in the
-            // genre reads, and the same direction the outline indents.
-            float x = (p.Column - minCol) * COL_SPACING
-                      - ((_board.sizeDelta.x - BOARD_PADDING * 2f) * 0.5f);
-            float y = ((maxRow * ROW_SPACING) * 0.5f) - p.Row * ROW_SPACING;
-            return new Vector2(x, y);
+            var route = new HashSet<SpellNode>();
+            if (string.IsNullOrEmpty(_selectedSpellKey)) return route;
+
+            SpellNode selected = null;
+            for (int i = 0; i < placements.Count; i++)
+            {
+                var n = placements[i].Node;
+                if (n.spell != null && n.spell.spellKey == _selectedSpellKey) { selected = n; break; }
+            }
+            if (selected == null) return route;
+
+            // Iterative, and guarded by the visited set rather than by depth: nothing
+            // validates the authored graph against a prerequisite loop, and a walk that
+            // trusted it would not come back.
+            var pending = new Stack<SpellNode>();
+            pending.Push(selected);
+            while (pending.Count > 0)
+            {
+                var node = pending.Pop();
+                if (!route.Add(node)) continue;
+                var pres = node.prerequisites;
+                for (int p = 0; pres != null && p < pres.Length; p++)
+                    if (pres[p] != null && owned.Contains(pres[p])) pending.Push(pres[p]);
+            }
+            return route;
         }
 
         private static bool HasChildIn(SpellNode node, HashSet<SpellNode> owned)
@@ -137,24 +173,49 @@ namespace Valkur.Gameplay.Spells
 
         // ── connectors ───────────────────────────────────────────────────────────────
 
-        private void BuildLink(Vector2 from, Vector2 to, Color accent)
+        /// <summary>
+        /// One connector, drawn RIM TO RIM.
+        ///
+        /// <para>It used to run centre to centre and pass under the node it arrived at. That
+        /// only works if a node is opaque, and none of them is: the socket is a RING whose
+        /// interior is <c>Color.clear</c>, its bevel falls to 0.42 alpha on the unlit side,
+        /// and the plate under the icon is 0.72 — so every wire was faintly drawn across the
+        /// face of both nodes it joined, and a node with three wires had three of them
+        /// crossing inside its own circle. Trimming by
+        /// <see cref="SpellGraphGeometry.NodeRimRadius"/> removes the cause rather than
+        /// hiding it, which also means the fix cannot be undone by a future socket retune.</para>
+        /// </summary>
+        private void BuildLink(Vector2 from, Vector2 to, Color accent, bool onRoute)
         {
-            var go = UIFactory.CreateUI("Link", _board);
-            var rt = go.GetComponent<RectTransform>();
-
             Vector2 diff = to - from;
             float length = diff.magnitude;
-            if (length < 0.01f) { SafeDestroy.Of(go); return; }
+            float trim = SpellGraphGeometry.NodeRimRadius;
+
+            // Two nodes closer together than their own rims have no wire to show. Skipping
+            // beats drawing a negative-length rect, which uGUI renders mirrored.
+            if (length <= trim * 2f + 1f) return;
+
+            Vector2 dir = diff / length;
+            var go = UIFactory.CreateUI(onRoute ? "Link_Route" : "Link", _board);
+            var rt = go.GetComponent<RectTransform>();
 
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0f, 0.5f);
-            rt.anchoredPosition = from;
-            rt.sizeDelta = new Vector2(length, 11f);
+            rt.anchoredPosition = from + dir * trim;
+            rt.sizeDelta = new Vector2(length - trim * 2f, onRoute ? ROUTE_LINK_W : LINK_W);
             rt.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(diff.y, diff.x) * Mathf.Rad2Deg);
 
             var img = go.AddComponent<Image>();
             img.sprite = SpellGraphSprites.Link;
-            img.color = Color.Lerp(LINK_COLOR, accent, 0.35f);
+            // A route wire is the school's own colour at full strength; an idle one stays the
+            // muted grey-blue it has always been, so the contrast IS the answer. The alpha is
+            // set on a COPY of the accent rather than by constructing a fresh colour, which
+            // would have raised this file's entry in the raw-colour ratchet — and that ratchet
+            // only means anything while its counts may fall and may never rise. Note the
+            // ratchet counts TEXT, so even naming the constructor in a comment lifts it.
+            Color routeColor = accent;
+            routeColor.a = ROUTE_LINK_ALPHA;
+            img.color = onRoute ? routeColor : Color.Lerp(LINK_COLOR, accent, 0.35f);
             img.raycastTarget = false;
             img.type = Image.Type.Simple;
 
@@ -188,7 +249,8 @@ namespace Valkur.Gameplay.Spells
             hit.color = new Color(0f, 0f, 0f, 0f);
 
             AddLayer(go.transform, "Halo", SpellGraphSprites.Glow,
-                new Color(accent.r, accent.g, accent.b, selected ? 0.55f : 0.16f), 1.85f);
+                new Color(accent.r, accent.g, accent.b, selected ? 0.55f : 0.16f),
+                SpellGraphGeometry.HALO_SCALE);
 
             AddLayer(go.transform, "Socket",
                 isCapstone ? SpellGraphSprites.SocketCapstone : SpellGraphSprites.Socket,
@@ -203,9 +265,9 @@ namespace Valkur.Gameplay.Spells
             iconImg.preserveAspect = true;
 
             AddCaption(go.transform, "Name", node.ResolveDisplayName(),
-                -NODE_PX * 0.5f - 16f, 10f, UITheme.TEXT_PRIMARY);
+                -NODE_PX * 0.5f - SpellGraphGeometry.CAPTION_NAME_DROP, 10f, UITheme.TEXT_PRIMARY);
             AddCaption(go.transform, "Cost", $"{node.pointCost}p · L{node.levelRequirement}",
-                -NODE_PX * 0.5f - 29f, 9f, UITheme.TEXT_MUTED);
+                -NODE_PX * 0.5f - SpellGraphGeometry.CAPTION_COST_DROP, 9f, UITheme.TEXT_MUTED);
 
             var button = go.AddComponent<Button>();
             button.targetGraphic = hit;
@@ -215,7 +277,7 @@ namespace Valkur.Gameplay.Spells
                 {
                     _selectedSpellKey = captured;
                     _onSelect?.Invoke(captured);
-                    RefreshBoard();
+                    RefreshBoard(refit: false);
                 });
 
             return hasArt;
@@ -250,7 +312,10 @@ namespace Valkur.Gameplay.Spells
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = new Vector2(0f, y);
-            rt.sizeDelta = new Vector2(COL_SPACING - 8f, 14f);
+            // Width follows the HORIZONTAL step. It used to be the sibling step, which was
+            // horizontal until depth moved onto X — leaving it there put a 130 px name under a
+            // node 122 px from its neighbour, i.e. two names overlapping by eight pixels.
+            rt.sizeDelta = new Vector2(SpellGraphGeometry.CaptionWidth, SpellGraphGeometry.CAPTION_H);
 
             var tmp = go.AddComponent<TextMeshProUGUI>();
             tmp.text = text;
@@ -306,12 +371,22 @@ namespace Valkur.Gameplay.Spells
 
         private void Update()
         {
-            if (KeyboardInputManager.WasEscapePressedThisFrame()) { Close(notify: true); return; }
+            if (EditorInput.ClosePressed()) { Close(notify: true); return; }
+
+            TickResponsiveLayout();
+
+            // A fit that could not measure its viewport on the frame the canvas was built
+            // retries here, once the layout has resolved.
+            if (_fitPending) FitToView();
 
             float wheel = MouseInputManager.GetMouseWheelDelta();
             if (Mathf.Abs(wheel) > 0.01f)
             {
-                _zoom = Mathf.Clamp(_zoom + Mathf.Sign(wheel) * ZOOM_STEP, ZOOM_MIN, ZOOM_MAX);
+                // Multiplied, not added: one notch is the same 12 % wherever the author is.
+                float floor = Mathf.Min(ZOOM_MIN, _fitZoom);
+                _zoom = Mathf.Clamp(_zoom * (1f + Mathf.Sign(wheel) * ZOOM_STEP),
+                    floor, ZOOM_MAX);
+                _autoFramed = false;
                 ApplyZoom();
             }
 
@@ -326,8 +401,37 @@ namespace Valkur.Gameplay.Spells
             if (_panning && !MouseInputManager.IsLeftMouseButtonPressed()) _panning = false;
             if (!_panning) return;
 
-            _board.anchoredPosition =
-                _panStartBoard + (MouseInputManager.GetScreenMousePosition() - _panStartMouse);
+            var moved = MouseInputManager.GetScreenMousePosition() - _panStartMouse;
+            if (moved.sqrMagnitude > 1f) _autoFramed = false;
+            _board.anchoredPosition = _panStartBoard + moved;
+        }
+
+        /// <summary>
+        /// Keep the chrome and the framing honest as the window changes size.
+        ///
+        /// <para>The slab is anchored to fractions of the screen, so it already RESIZED with
+        /// the window — what it did not do was re-derive the rail's wrapping, the viewport's
+        /// insets, or the fit, all three of which were computed once at open. Resize the
+        /// window after opening and the board kept a zoom fitted to a viewport that no longer
+        /// existed, while a rail that needed a third row was drawn over the graph.</para>
+        ///
+        /// <para>The re-frame is gated on <see cref="_autoFramed"/>: a resize should recover a
+        /// view the author never touched, and must not overwrite one they framed themselves.
+        /// The chrome is re-derived either way — that is layout, not framing.</para>
+        /// </summary>
+        private void TickResponsiveLayout()
+        {
+            if (_viewport == null) return;
+
+            Vector2 size = _viewport.rect.size;
+            bool chromeMoved = LayoutChrome();
+            if (chromeMoved) size = _viewport.rect.size;
+
+            // A sub-pixel wobble is not a resize; re-fitting on one would fight the author.
+            if (!chromeMoved && (size - _lastViewportSize).sqrMagnitude < 1f) return;
+
+            _lastViewportSize = size;
+            if (_autoFramed) FitToView();
         }
 
         private bool PointerOverBackground()
@@ -350,25 +454,39 @@ namespace Valkur.Gameplay.Spells
         private void ApplyZoom() => _board.localScale = Vector3.one * _zoom;
 
         /// <summary>
-        /// Open on the whole school at once.
+        /// Frame the whole school inside the viewport.
         ///
-        /// <para>Measured before this, a school's board came out 728 px tall against a 590 px
-        /// viewport, so the deepest row of every one of the nine was off screen until the
-        /// author panned — and a constellation whose whole point is the SHAPE cannot open with
-        /// the shape cropped. The fit is capped at 1 so a small school is not blown up past
-        /// the size its art is drawn for.</para>
+        /// <para>The old fit was capped at 1, which was the binding constraint on every school
+        /// in the game: the natural fit measures 1.9-2.9, so all nine opened at 1.0 and filled
+        /// about 42 % of the width of the window they were drawn in. The cap now lives in
+        /// <see cref="SpellGraphGeometry.FIT_MAX"/>, above what any shipped school needs, so
+        /// the fit really fits — and stays the SAME for all nine, which is what stops a node
+        /// resizing as the author clicks along the school rail.</para>
+        ///
+        /// <para>The board is re-centred here and nowhere else. Its content is centred inside
+        /// its own box by <c>Measure</c>, captions and all, so zeroing the position is exact
+        /// rather than approximately right.</para>
         /// </summary>
         private void FitToView()
         {
-            if (_board == null || _viewport == null) { ApplyZoom(); return; }
+            if (_board == null || _viewport == null) { _fitPending = false; ApplyZoom(); return; }
 
-            Vector2 board = _board.sizeDelta;
             Rect viewport = _viewport.rect;
-            if (board.x < 1f || board.y < 1f || viewport.width < 1f || viewport.height < 1f)
-            { ApplyZoom(); return; }
+            if (viewport.width < 1f || viewport.height < 1f)
+            {
+                // Not a failure — uGUI has simply not laid out yet. Retry next frame rather
+                // than silently keeping a zoom that was never fitted to anything.
+                _fitPending = true;
+                ApplyZoom();
+                return;
+            }
 
-            float fit = Mathf.Min(viewport.width / board.x, viewport.height / board.y);
-            _zoom = Mathf.Clamp(Mathf.Min(1f, fit), ZOOM_MIN, ZOOM_MAX);
+            _fitPending = false;
+            _autoFramed = true;
+            _lastViewportSize = viewport.size;
+            _fitZoom = SpellGraphGeometry.FitZoom(_board.sizeDelta,
+                new Vector2(viewport.width, viewport.height));
+            _zoom = Mathf.Min(_fitZoom, ZOOM_MAX);
             _board.anchoredPosition = Vector2.zero;
             ApplyZoom();
         }

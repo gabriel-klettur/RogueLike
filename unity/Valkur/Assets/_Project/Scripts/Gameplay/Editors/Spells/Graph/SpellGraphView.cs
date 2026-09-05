@@ -36,12 +36,23 @@ namespace Valkur.Gameplay.Spells
         /// <summary>Above DungeonNodeGraph's 800, so opening this covers whatever is beneath.</summary>
         private const int CANVAS_ORDER = 810;
 
-        private const float NODE_PX = 76f;
-        private const float COL_SPACING = 138f;
-        private const float ROW_SPACING = 122f;
-        private const float BOARD_PADDING = 120f;
+        // Every distance the board is drawn at lives in SpellGraphGeometry, so the frame that
+        // fits the board and the code that draws it read the same numbers.
+        private const float NODE_PX = SpellGraphGeometry.NODE_PX;
 
-        private const float ZOOM_MIN = 0.45f, ZOOM_MAX = 2.2f, ZOOM_STEP = 0.12f;
+        /// <summary>
+        /// Manual zoom bounds, as FACTORS per wheel notch rather than absolute steps.
+        ///
+        /// <para>The old step was a flat +-0.12 on a zoom that never left 1.0, so it read as a
+        /// steady 12 %. Now that the fit opens a school near 1.8 the same constant would be
+        /// 7 % a notch up there and 27 % a notch down at the floor — the same gesture doing
+        /// four times as much work depending on where the author already is.</para>
+        ///
+        /// <para>The ceiling is well above <see cref="SpellGraphGeometry.FIT_MAX"/> on purpose:
+        /// the fit is where a school OPENS, so leaving no room above it would mean the author
+        /// could not lean in on a single node.</para>
+        /// </summary>
+        private const float ZOOM_MIN = 0.35f, ZOOM_MAX = 4f, ZOOM_STEP = 0.12f;
 
         private static readonly Color SLAB_BG = new Color(0.055f, 0.052f, 0.070f, 0.985f);
         private static readonly Color BACKDROP = new Color(0f, 0f, 0f, 0.72f);
@@ -72,8 +83,42 @@ namespace Valkur.Gameplay.Spells
             new Dictionary<SpellNode, RectTransform>();
 
         private float _zoom = 1f;
+
+        /// <summary>
+        /// The zoom the last fit chose. It is also the manual zoom FLOOR whenever it lands
+        /// below <see cref="ZOOM_MIN"/>, so a school too big for the normal range can still be
+        /// seen whole rather than being clamped back up into a crop.
+        /// </summary>
+        private float _fitZoom = 1f;
+
+        /// <summary>
+        /// Set when a fit was asked for and the viewport could not be measured yet. uGUI
+        /// resolves nothing on the frame a canvas is created, so the first fit of a freshly
+        /// opened view reads a zero rect; before the fit mattered that failed silently into a
+        /// 1.0 zoom, which is now the difference between a framed school and a small one.
+        /// </summary>
+        private bool _fitPending;
+
         private bool _panning;
         private Vector2 _panStartMouse, _panStartBoard;
+
+        private RectTransform _slab;
+        private RectTransform _railHost;
+        private int _railColumns = -1;
+
+        /// <summary>Mutes the TabChanged storm a rail rebuild would otherwise raise.</summary>
+        private bool _rebuildingRail;
+
+        /// <summary>
+        /// Cleared the moment the author pans or zooms by hand.
+        ///
+        /// <para>It is what lets a window resize RE-FRAME the school without stealing a
+        /// framing the author chose — the same distinction that stopped a node click
+        /// reframing. Auto-framed views follow the window; hand-framed ones are left alone.</para>
+        /// </summary>
+        private bool _autoFramed = true;
+
+        private Vector2 _lastViewportSize = Vector2.zero;
 
         /// <summary>Open the constellation over everything, on the given school.</summary>
         public static SpellGraphView Open(ProgressionCatalog catalog, string schoolKey,
@@ -112,11 +157,18 @@ namespace Valkur.Gameplay.Spells
             if (notify) callback?.Invoke();
         }
 
-        /// <summary>Repoint the highlight without rebuilding, for a selection made elsewhere.</summary>
+        /// <summary>
+        /// Repoint the highlight without rebuilding, for a selection made elsewhere.
+        ///
+        /// <para>It does NOT refit. A selection changes four colours and moves nothing, so
+        /// reframing on it would throw away wherever the author had panned and zoomed to —
+        /// which is what this view did on every single node click before the fit was worth
+        /// anything, and would have become a hard snap the moment it was.</para>
+        /// </summary>
         public void SetSelected(string spellKey)
         {
             _selectedSpellKey = spellKey;
-            RefreshBoard();
+            RefreshBoard(refit: false);
         }
 
         // ── chrome ───────────────────────────────────────────────────────────────────
@@ -139,7 +191,7 @@ namespace Valkur.Gameplay.Spells
             backdrop.AddComponent<Image>().color = BACKDROP;
 
             var slab = UIFactory.CreateUI("Slab", canvasGo.transform);
-            var slabRt = slab.GetComponent<RectTransform>();
+            var slabRt = _slab = slab.GetComponent<RectTransform>();
             slabRt.anchorMin = new Vector2(0.04f, 0.05f);
             slabRt.anchorMax = new Vector2(0.96f, 0.95f);
             slabRt.offsetMin = Vector2.zero;
@@ -151,7 +203,8 @@ namespace Valkur.Gameplay.Spells
             BuildViewport(slab.transform);
             BuildFooter(slab.transform);
 
-            RefreshBoard();
+            LayoutChrome();
+            RefreshBoard(refit: true);
         }
 
         private void BuildHeader(Transform slab)
@@ -161,7 +214,7 @@ namespace Valkur.Gameplay.Spells
             rt.anchorMin = new Vector2(0f, 1f);
             rt.anchorMax = new Vector2(1f, 1f);
             rt.pivot = new Vector2(0.5f, 1f);
-            rt.offsetMin = new Vector2(0f, -38f);
+            rt.offsetMin = new Vector2(0f, -SpellGraphGeometry.HEADER_H);
             rt.offsetMax = Vector2.zero;
             bar.AddComponent<Image>().color = UITheme.BG_HEADER;
 
@@ -185,18 +238,16 @@ namespace Valkur.Gameplay.Spells
         }
 
         /// <summary>
-        /// The school rail. Wrapped at four columns for the reason the outline's strip is:
-        /// eleven tabs across one row leaves each of them unreadable.
+        /// The host the school rail lives in. Built once; the rail inside it is rebuilt
+        /// whenever the window width changes the number of columns that stay readable.
         /// </summary>
         private void BuildSchoolRail(Transform slab)
         {
             var host = UIFactory.CreateUI("SchoolRailHost", slab);
-            var rt = host.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0f, 1f);
-            rt.anchorMax = new Vector2(1f, 1f);
-            rt.pivot = new Vector2(0.5f, 1f);
-            rt.offsetMin = new Vector2(8f, -96f);
-            rt.offsetMax = new Vector2(-8f, -40f);
+            _railHost = host.GetComponent<RectTransform>();
+            _railHost.anchorMin = new Vector2(0f, 1f);
+            _railHost.anchorMax = new Vector2(1f, 1f);
+            _railHost.pivot = new Vector2(0.5f, 1f);
 
             var vlg = host.AddComponent<VerticalLayoutGroup>();
             vlg.childForceExpandWidth = true;
@@ -204,8 +255,42 @@ namespace Valkur.Gameplay.Spells
             vlg.childControlHeight = true;
             vlg.childForceExpandHeight = false;
 
-            _schoolRail = TabStrip.CreateWrapped(host.transform, "SchoolRail",
-                columns: 5, rowHeight: 24f);
+            RebuildSchoolRail(SpellGraphGeometry.RailColumns(RailWidth(), SchoolCount()));
+        }
+
+        private int SchoolCount()
+        {
+            var trees = _catalog != null ? _catalog.spellTrees : null;
+            int n = 0;
+            for (int i = 0; trees != null && i < trees.Length; i++) if (trees[i] != null) n++;
+            return n;
+        }
+
+        /// <summary>Rail width available inside the slab, once its own 8 px inset is taken.</summary>
+        private float RailWidth()
+            => _slab != null ? Mathf.Max(0f, _slab.rect.width - 16f) : 0f;
+
+        /// <summary>
+        /// Replace the rail with one wrapped at <paramref name="columns"/>.
+        ///
+        /// <para><see cref="TabStrip"/> fixes its column count at creation and offers no way
+        /// to clear it, so a column change is a rebuild. Both <c>AddTab</c> (on the first tab)
+        /// and <c>SetActive</c> raise <c>TabChanged</c> unconditionally, so the handler is
+        /// muted for the duration — otherwise restoring the author's own school would read as
+        /// them picking a new one, and refit a board that had not moved.</para>
+        /// </summary>
+        private void RebuildSchoolRail(int columns)
+        {
+            if (_railHost == null) return;
+
+            string keep = _schoolRail != null ? _schoolRail.ActiveKey : _schoolKey;
+            if (_schoolRail != null) SafeDestroy.Of(_schoolRail.gameObject);
+
+            _rebuildingRail = true;
+            _railColumns = Mathf.Max(1, columns);
+            _schoolRail = TabStrip.CreateWrapped(_railHost, "SchoolRail",
+                columns: _railColumns, rowHeight: SpellGraphGeometry.RAIL_ROW_H,
+                rowSpacing: SpellGraphGeometry.RAIL_ROW_SPACING);
 
             var trees = _catalog.spellTrees;
             for (int i = 0; trees != null && i < trees.Length; i++)
@@ -214,10 +299,21 @@ namespace Valkur.Gameplay.Spells
                 if (tree == null) continue;
                 _schoolRail.AddTab(SchoolKeyOf(tree), SchoolLabel(tree), null);
             }
-            _schoolRail.TabChanged += (_, key) => { _schoolKey = key; _zoom = 1f; RefreshBoard(); };
-            if (!string.IsNullOrEmpty(_schoolKey)) _schoolRail.SetActive(_schoolKey);
-            else if (_schoolRail.Count > 0) _schoolRail.SetActive(0);
+            _schoolRail.TabChanged += OnSchoolTabChanged;
+
+            if (string.IsNullOrEmpty(keep) || !_schoolRail.SetActive(keep))
+                if (_schoolRail.Count > 0) _schoolRail.SetActive(0);
             _schoolKey = _schoolRail.ActiveKey;
+            _rebuildingRail = false;
+        }
+
+        /// <summary>A different school is a different board, so it may be framed afresh.</summary>
+        private void OnSchoolTabChanged(int _, string key)
+        {
+            if (_rebuildingRail) return;
+            _schoolKey = key;
+            _autoFramed = true;
+            RefreshBoard(refit: true);
         }
 
         private void BuildViewport(Transform slab)
@@ -226,8 +322,11 @@ namespace Valkur.Gameplay.Spells
             _viewport = vp.GetComponent<RectTransform>();
             _viewport.anchorMin = new Vector2(0f, 0f);
             _viewport.anchorMax = new Vector2(1f, 1f);
-            _viewport.offsetMin = new Vector2(6f, 30f);
-            _viewport.offsetMax = new Vector2(-6f, -100f);
+            // The vertical insets are applied by LayoutChrome, which derives them from the
+            // rail's real row count. They used to be -100 and 30, which cleared a two-row rail
+            // and nothing else.
+            _viewport.offsetMin = new Vector2(SpellGraphGeometry.VIEWPORT_INSET, 0f);
+            _viewport.offsetMax = new Vector2(-SpellGraphGeometry.VIEWPORT_INSET, 0f);
             vp.AddComponent<RectMask2D>();
 
             // An Image that raycasts is what gives the empty background something to catch a
@@ -251,12 +350,59 @@ namespace Valkur.Gameplay.Spells
             rt.anchorMax = new Vector2(1f, 0f);
             rt.pivot = new Vector2(0.5f, 0f);
             rt.offsetMin = Vector2.zero;
-            rt.offsetMax = new Vector2(0f, 26f);
+            rt.offsetMax = new Vector2(0f, SpellGraphGeometry.FOOTER_H);
             bar.AddComponent<Image>().color = UITheme.BG_HEADER;
 
             _statusText = Label(bar.transform, "Drag to pan  ·  Wheel to zoom  ·  Click a node to select it",
                 10.5f, FontStyles.Normal, UITheme.TEXT_MUTED,
                 TextAlignmentOptions.MidlineLeft, left: 12f, right: -12f);
+        }
+
+        /// <summary>
+        /// Re-derive every chrome inset from the rail's real row count, and rewrap the rail
+        /// if the window can now carry a different number of readable columns.
+        ///
+        /// <para>Returns whether anything moved, so the caller can decide whether the board
+        /// needs re-framing. Called on open and whenever the slab's size changes — the slab is
+        /// anchored to fractions of the screen, so ANY window resize reaches here.</para>
+        /// </summary>
+        private bool LayoutChrome()
+        {
+            if (_slab == null || _railHost == null || _viewport == null) return false;
+
+            int wanted = SpellGraphGeometry.RailColumns(RailWidth(), SchoolCount());
+            bool changed = false;
+            if (wanted != _railColumns) { RebuildSchoolRail(wanted); changed = true; }
+
+            float railH = SpellGraphGeometry.RailHeight(
+                SpellGraphGeometry.RailRows(SchoolCount(), _railColumns));
+            float top = SpellGraphGeometry.ChromeTopInset(railH);
+
+            // Every write below is guarded by a comparison. This runs once a frame from
+            // TickResponsiveLayout, and assigning a RectTransform's offsets marks its layout
+            // dirty whether or not the value changed — an unguarded version would rebuild the
+            // rail's VerticalLayoutGroup sixty times a second for a window nobody resized.
+            var railMin = new Vector2(8f, -(top - SpellGraphGeometry.RAIL_PAD));
+            var railMax = new Vector2(-8f,
+                -(SpellGraphGeometry.HEADER_H + SpellGraphGeometry.RAIL_PAD));
+            if (_railHost.offsetMin != railMin || _railHost.offsetMax != railMax)
+            {
+                _railHost.offsetMin = railMin;
+                _railHost.offsetMax = railMax;
+                changed = true;
+            }
+
+            var min = new Vector2(SpellGraphGeometry.VIEWPORT_INSET,
+                SpellGraphGeometry.FOOTER_H + SpellGraphGeometry.VIEWPORT_INSET * 0.5f);
+            var max = new Vector2(-SpellGraphGeometry.VIEWPORT_INSET, -top);
+            if (_viewport.offsetMin != min || _viewport.offsetMax != max)
+            {
+                _viewport.offsetMin = min;
+                _viewport.offsetMax = max;
+                changed = true;
+            }
+
+            return changed;
         }
 
         internal static string SchoolKeyOf(SpellTree tree)

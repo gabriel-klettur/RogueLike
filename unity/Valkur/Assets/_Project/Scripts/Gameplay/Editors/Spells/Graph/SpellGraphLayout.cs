@@ -9,7 +9,13 @@ namespace Valkur.Gameplay.Spells
     /// slots. Pure arithmetic over the prerequisite graph — no Unity UI, so it can be
     /// measured without a canvas.
     ///
-    /// <para>ROW IS DEPTH, COLUMN IS PACKING. Depth is what the data really says: a node sits
+    /// <para>ROW IS DEPTH, COLUMN IS PACKING — AND NEITHER NAMES AN AXIS. Both are abstract
+    /// here; <see cref="SpellGraphGeometry"/> is what decides which one runs across the screen,
+    /// and it puts depth on X. Reading either field as a screen direction from inside this file
+    /// would silently pin an orientation the view is free to change.
+    /// </para>
+    ///
+    /// <para>Depth is what the data really says: a node sits
     /// one row below the deepest prerequisite that reaches it. Column is not in the data at
     /// all — <c>SpellNode.column</c> is <c>0</c> on all 71 shipped nodes and had no reader
     /// anywhere in the project — so it is COMPUTED by tidy-tree packing: leaves take
@@ -31,9 +37,9 @@ namespace Valkur.Gameplay.Spells
         internal struct Placement
         {
             public SpellNode Node;
-            /// <summary>0 at a root, +1 per prerequisite step. Drives the vertical axis.</summary>
+            /// <summary>0 at a root, +1 per prerequisite step. The DEPTH axis.</summary>
             public int Row;
-            /// <summary>Fractional slot across. Siblings are whole numbers apart.</summary>
+            /// <summary>Fractional slot across the fan. Siblings are whole numbers apart.</summary>
             public float Column;
         }
 
@@ -109,7 +115,7 @@ namespace Valkur.Gameplay.Spells
         /// <summary>
         /// Siblings order by <c>row</c> then id. That is the ONLY job the authored <c>row</c>
         /// field has — it is a seed ordinal, not a depth (a shipped node carries <c>row: 8</c>
-        /// in a school five deep), so reading it as a Y coordinate would scatter every tree.
+        /// in a school five deep), so reading it as a coordinate would scatter every tree.
         /// </summary>
         private static int BySibling(SpellNode a, SpellNode b)
         {
@@ -146,7 +152,7 @@ namespace Valkur.Gameplay.Spells
 
         /// <summary>
         /// Leaves take consecutive slots; a parent centres over its children. Roots are laid
-        /// left to right with a gap between their subtrees.
+        /// out in order with a gap between their subtrees.
         ///
         /// <para>A node with TWO parents is emitted under the first one that reaches it and
         /// centred between them afterwards. The spell trees have none, but each of the five

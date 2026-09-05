@@ -259,5 +259,72 @@ namespace Valkur.Tests.EditMode.Game.Editors
             Assert.IsTrue(src.Contains("if (IsPointerOverInteractiveUI()) return;"),
                 "Without this, every click on a spell tile would also cast into the world.");
         }
+
+        // ---------------------------------------------------------------------------------
+        // Held-click throttle.
+        //
+        // The redirected poll reads the button as HELD, so a spell whose own cooldownDuration
+        // is 0 — every AnimationProbe, and several authoring-time spells — fired once per
+        // frame for as long as the button was down. Sixty casts a second stack into something
+        // the author cannot read, in the one editor that exists for looking at a spell.
+        // ---------------------------------------------------------------------------------
+
+        [Test]
+        public void AFreshPressAlwaysCasts()
+        {
+            // The gate is for the HOLD. A deliberate click that waits out an interval left
+            // over from the previous one reads as the editor having ignored it.
+            Assert.IsTrue(PlayerController.AllowsRedirectedCast(
+                channelled: false, pressedThisFrame: true, now: 10f, nextAllowedTime: 10.9f));
+        }
+
+        [Test]
+        public void AHeldClickIsRefusedUntilTheIntervalHasElapsed()
+        {
+            Assert.IsFalse(PlayerController.AllowsRedirectedCast(
+                channelled: false, pressedThisFrame: false, now: 10.5f, nextAllowedTime: 11f));
+        }
+
+        [Test]
+        public void AHeldClickCastsAgainOnceTheIntervalHasElapsed()
+        {
+            Assert.IsTrue(PlayerController.AllowsRedirectedCast(
+                channelled: false, pressedThisFrame: false, now: 11f, nextAllowedTime: 11f));
+        }
+
+        [Test]
+        public void AChannelledSpellIsNeverThrottled()
+        {
+            // A beam is refreshed every frame and ended by the release, so gating it would
+            // chop the laser into one-second pulses rather than limit anything.
+            Assert.IsTrue(PlayerController.AllowsRedirectedCast(
+                channelled: true, pressedThisFrame: false, now: 10.5f, nextAllowedTime: 11f));
+        }
+
+        [Test]
+        public void TheIntervalIsOneSecondAndOnlyTheRedirectedPollUsesIt()
+        {
+            // Ordinary gameplay must be untouched: the primary attack is not throttled, and a
+            // spell's own cooldownDuration stays the only thing pacing it outside the editor.
+            string src = Source("Gameplay", "Player", "PlayerController.Movement.cs");
+
+            Assert.IsTrue(src.Contains("REDIRECTED_CAST_REPEAT_INTERVAL = 1f"),
+                "One second between repeats of a held click in a redirecting editor.");
+            // Two: the declaration and its single call site inside PollRedirectedPrimaryCast.
+            // A third would mean something outside the redirected poll is being paced by it.
+            Assert.AreEqual(2, CountOccurrences(src, "AllowsRedirectedCast("),
+                "The gate belongs to PollRedirectedPrimaryCast alone. A second reader would be " +
+                "pacing ordinary gameplay too.");
+        }
+
+        private static int CountOccurrences(string haystack, string needle)
+        {
+            int n = 0;
+            for (int i = haystack.IndexOf(needle, System.StringComparison.Ordinal);
+                 i >= 0;
+                 i = haystack.IndexOf(needle, i + needle.Length, System.StringComparison.Ordinal))
+                n++;
+            return n;
+        }
     }
 }

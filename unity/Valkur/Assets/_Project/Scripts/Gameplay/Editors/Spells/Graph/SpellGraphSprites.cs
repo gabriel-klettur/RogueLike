@@ -21,6 +21,17 @@ namespace Valkur.Gameplay.Spells
     /// </summary>
     internal static class SpellGraphSprites
     {
+        /// <summary>
+        /// Outer radius of the socket ring, in normalized sprite space.
+        ///
+        /// <para>Shared rather than local because it is where a NODE ENDS, and the connectors
+        /// have to stop there. It used to be a <c>const</c> inside <c>BuildSocket</c>, so the
+        /// links knew nothing about it and were drawn centre-to-centre — straight under a ring
+        /// whose bevel bottoms out at 0.42 alpha and a plate at 0.72, i.e. visibly THROUGH
+        /// every node they touched.</para>
+        /// </summary>
+        internal const float SOCKET_OUTER_R = 0.94f;
+
         private const int SocketPx = 128;
         private const int PlatePx = 96;
         private const int GlowPx = 128;
@@ -112,7 +123,7 @@ namespace Valkur.Gameplay.Spells
             var tex = NewTexture(SocketPx, SocketPx);
             var px = new Color[SocketPx * SocketPx];
 
-            const float outer = 0.94f;
+            const float outer = SOCKET_OUTER_R;
             const float inner = 0.66f;
             float mid = (outer + inner) * 0.5f;
             float half = (outer - inner) * 0.5f;
