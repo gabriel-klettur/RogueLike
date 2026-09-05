@@ -18,6 +18,10 @@ namespace Valkur.Tests.EditMode.Game.Input
         [SetUp]
         public void SetUp()
         {
+            // A freeze verdict is static state: a fixture that walked the legacy pointer
+            // while the InputSystem sat still would otherwise decide this one's readings.
+            MouseInputManager.ResetFreezeTracking();
+
             // Ensure mouse device exists
             if (Mouse.current == null)
             {
@@ -44,6 +48,7 @@ namespace Valkur.Tests.EditMode.Game.Input
         [TearDown]
         public void TearDown()
         {
+            MouseInputManager.ResetFreezeTracking();
             if (_cameraGo != null) Object.DestroyImmediate(_cameraGo);
             if (_managerGo != null) Object.DestroyImmediate(_managerGo);
             if (_eventSystem != null) Object.DestroyImmediate(_eventSystem.gameObject);
@@ -119,6 +124,127 @@ namespace Valkur.Tests.EditMode.Game.Input
             Assert.IsTrue(ok);
             Assert.AreEqual(200f, selected.x, 0.001f);
             Assert.AreEqual(300f, selected.y, 0.001f);
+        }
+
+        // ── Frozen InputSystem (non-zero) ───────────────────────────────────
+        // Measured 2026-09-05: the InputSystem mouse froze at the screen CENTRE, finite and
+        // in view, and won over the live legacy reading. The cursor resolved to the player's
+        // feet and every aimed spell flew straight down. The stale-zero guard above cannot
+        // see a freeze at any value but zero; the tracker's verdict is what covers the rest.
+
+        [Test]
+        public void Manager_SelectBestScreenMousePosition_FrozenInputSystemYieldsToLegacyInView()
+        {
+            var view = new Rect(0f, 0f, 1600f, 800f);
+
+            bool ok = MouseInputManager.TrySelectScreenMousePosition(
+                inputSystemPosition: new Vector2(800f, 400f),   // the centre it froze at
+                hasInputSystemPosition: true,
+                legacyPosition: new Vector2(533f, 556f),
+                hasLegacyPosition: true,
+                viewRect: view,
+                requireInView: true,
+                inputSystemFrozen: true,
+                out Vector2 selected);
+
+            Assert.IsTrue(ok);
+            Assert.AreEqual(533f, selected.x, 0.001f);
+            Assert.AreEqual(556f, selected.y, 0.001f);
+        }
+
+        [Test]
+        public void Manager_SelectBestScreenMousePosition_FrozenInputSystemYieldsToLegacyWithoutViewGate()
+        {
+            // The ground-target path asks with requireInView = false. Same answer.
+            var view = new Rect(0f, 0f, 1600f, 800f);
+
+            bool ok = MouseInputManager.TrySelectScreenMousePosition(
+                inputSystemPosition: new Vector2(800f, 400f),
+                hasInputSystemPosition: true,
+                legacyPosition: new Vector2(533f, 556f),
+                hasLegacyPosition: true,
+                viewRect: view,
+                requireInView: false,
+                inputSystemFrozen: true,
+                out Vector2 selected);
+
+            Assert.IsTrue(ok);
+            Assert.AreEqual(533f, selected.x, 0.001f);
+        }
+
+        [Test]
+        public void Manager_SelectBestScreenMousePosition_FrozenInputSystemDoesNotInventAPosition()
+        {
+            // Distrust is not a fallback to "anything": legacy outside the view under the
+            // view gate answers false, or the player snaps to face a screen corner.
+            var view = new Rect(0f, 0f, 1600f, 800f);
+
+            bool ok = MouseInputManager.TrySelectScreenMousePosition(
+                inputSystemPosition: new Vector2(800f, 400f),
+                hasInputSystemPosition: true,
+                legacyPosition: new Vector2(3028f, 209f),
+                hasLegacyPosition: true,
+                viewRect: view,
+                requireInView: true,
+                inputSystemFrozen: true,
+                out _);
+
+            Assert.IsFalse(ok);
+        }
+
+        [Test]
+        public void Manager_SelectBestScreenMousePosition_FrozenFlagIsInertWithoutALegacyReading()
+        {
+            // No second opinion to prefer: the InputSystem stays the answer.
+            var view = new Rect(0f, 0f, 1600f, 800f);
+
+            bool ok = MouseInputManager.TrySelectScreenMousePosition(
+                inputSystemPosition: new Vector2(800f, 400f),
+                hasInputSystemPosition: true,
+                legacyPosition: Vector2.zero,
+                hasLegacyPosition: false,
+                viewRect: view,
+                requireInView: true,
+                inputSystemFrozen: true,
+                out Vector2 selected);
+
+            Assert.IsTrue(ok);
+            Assert.AreEqual(800f, selected.x, 0.001f);
+        }
+
+        [Test]
+        public void Manager_SelectBestScreenMousePosition_LegacyOverloadStillTrustsTheInputSystem()
+        {
+            // The seven-argument overload is the historical contract; it must keep answering
+            // as if nothing were frozen, or every existing caller changes behaviour silently.
+            var view = new Rect(0f, 0f, 1600f, 800f);
+
+            bool ok = MouseInputManager.TrySelectScreenMousePosition(
+                inputSystemPosition: new Vector2(800f, 400f),
+                hasInputSystemPosition: true,
+                legacyPosition: new Vector2(533f, 556f),
+                hasLegacyPosition: true,
+                viewRect: view,
+                requireInView: true,
+                out Vector2 selected);
+
+            Assert.IsTrue(ok);
+            Assert.AreEqual(800f, selected.x, 0.001f);
+        }
+
+        [Test]
+        public void Manager_ProductionPath_ConsultsTheFreezeTracker()
+        {
+            // The selector is pure and the tracker is pure; what shipped broken was neither,
+            // it was the WIRING. Pin that the production read feeds the tracker, or the two
+            // halves can each be green while the composition is not.
+            string src = System.IO.File.ReadAllText(System.IO.Path.Combine(
+                Application.dataPath, "_Project", "Scripts", "Core", "Input", "MouseInputManager.cs"));
+
+            Assert.IsTrue(src.Contains("_freezeTracker.Observe("),
+                "TryGetScreenMousePosition must feed MouseFreezeTracker before selecting.");
+            Assert.IsTrue(src.Contains("inputSystemFrozen,") || src.Contains("inputSystemFrozen:"),
+                "The tracker's verdict must reach TrySelectScreenMousePosition.");
         }
 
         [Test]

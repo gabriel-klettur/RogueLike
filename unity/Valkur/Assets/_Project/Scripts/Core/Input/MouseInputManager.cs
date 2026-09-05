@@ -164,6 +164,23 @@ namespace Valkur.Core.Input
         // Tests set _testOverridePosition to bypass both fallbacks deterministically.
         private static Vector2? _testOverridePosition;
 
+        /// <summary>
+        /// Watches the InputSystem pointer against the legacy one so a device that has
+        /// stopped delivering events loses its priority. See <see cref="MouseFreezeTracker"/>
+        /// for the failure it exists for: a freeze at a NON-ZERO position, which the
+        /// stale-zero guard below cannot see.
+        /// </summary>
+        private static MouseFreezeTracker _freezeTracker = new MouseFreezeTracker();
+
+        /// <summary>Test seam: forget any freeze verdict a previous fixture built up.</summary>
+        internal static void ResetFreezeTracking() => _freezeTracker.Reset();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetFreezeTrackerStatic()
+        {
+            _freezeTracker = new MouseFreezeTracker();
+        }
+
         /// <summary>Editor/test seam: force a deterministic screen-space mouse
         /// position. Pass null to clear (production behaviour). Always pair a
         /// SetTestMousePosition(...) call with a SetTestMousePosition(null) in
@@ -209,6 +226,9 @@ namespace Valkur.Core.Input
             bool hasLegacy = TryGetLegacyScreenMousePosition(out Vector2 legacyPos);
             Rect viewRect = ResolveViewRect(camera);
 
+            bool inputSystemFrozen = _freezeTracker.Observe(
+                Time.frameCount, inputSystemPos, hasInputSystem, legacyPos, hasLegacy);
+
             return TrySelectScreenMousePosition(
                 inputSystemPos,
                 hasInputSystem,
@@ -216,6 +236,7 @@ namespace Valkur.Core.Input
                 hasLegacy,
                 viewRect,
                 requireInView,
+                inputSystemFrozen,
                 out position);
         }
 
@@ -257,22 +278,53 @@ namespace Valkur.Core.Input
             Rect viewRect,
             bool requireInView,
             out Vector2 position)
+            => TrySelectScreenMousePosition(inputSystemPosition, hasInputSystemPosition,
+                                            legacyPosition, hasLegacyPosition, viewRect,
+                                            requireInView, inputSystemFrozen: false,
+                                            out position);
+
+        /// <summary>
+        /// Pick the pointer position to trust this frame.
+        ///
+        /// <para>The InputSystem wins whenever it is credible. It stops being credible in two
+        /// shapes, and both hand the answer to the legacy backend: a stale <c>(0,0)</c> while
+        /// legacy reads something real (per frame, no history needed), and a FROZEN position
+        /// — any value at all that has not moved while the legacy pointer has
+        /// (<paramref name="inputSystemFrozen"/>, decided by <see cref="MouseFreezeTracker"/>).
+        /// The second is the one that shipped: a device frozen at the screen centre aimed
+        /// every spell at the player's own feet.</para>
+        ///
+        /// <para>Distrust never invents a position. A distrusted InputSystem with the legacy
+        /// pointer out of view still answers false under <paramref name="requireInView"/>,
+        /// which is what stops the player snapping to face a corner of the screen.</para>
+        /// </summary>
+        public static bool TrySelectScreenMousePosition(
+            Vector2 inputSystemPosition,
+            bool hasInputSystemPosition,
+            Vector2 legacyPosition,
+            bool hasLegacyPosition,
+            Rect viewRect,
+            bool requireInView,
+            bool inputSystemFrozen,
+            out Vector2 position)
         {
             position = Vector2.zero;
 
             bool inputFinite = hasInputSystemPosition && IsFinite(inputSystemPosition);
             bool legacyFinite = hasLegacyPosition && IsFinite(legacyPosition);
             bool staleInputZero = inputFinite && IsStaleInputSystemZero(inputSystemPosition, legacyFinite, legacyPosition);
+            // A freeze only means anything while there is a live legacy reading to prefer.
+            bool distrustInput = staleInputZero || (inputSystemFrozen && legacyFinite);
             bool inputInView = inputFinite && IsInsideView(inputSystemPosition, viewRect);
             bool legacyInView = legacyFinite && IsInsideView(legacyPosition, viewRect);
 
-            if (inputFinite && !staleInputZero && (!requireInView || inputInView))
+            if (inputFinite && !distrustInput && (!requireInView || inputInView))
             {
                 position = inputSystemPosition;
                 return true;
             }
 
-            if (inputFinite && !staleInputZero && requireInView && !inputInView)
+            if (inputFinite && !distrustInput && requireInView && !inputInView)
                 return false;
 
             if (legacyFinite && (!requireInView || legacyInView))
