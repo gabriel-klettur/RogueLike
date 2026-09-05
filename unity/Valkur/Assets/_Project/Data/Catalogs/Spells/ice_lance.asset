@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Ice Lance
   type: 0
   audience: 1
-  usesAttackAnimation: 0
+  usesAttackAnimation: 1
   manaCost: 16
   maxInstances: 0
   allowOverlap: 1

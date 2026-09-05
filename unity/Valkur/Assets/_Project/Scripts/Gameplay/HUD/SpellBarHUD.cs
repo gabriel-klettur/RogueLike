@@ -174,7 +174,7 @@ namespace Valkur.Gameplay.UI
 
             // Prefer the dedicated HUD icon; fall back to the in-world sprite for legacy spells
             // that still pack the icon into SpellDefinition.sprite.
-            Sprite icon = def != null ? (def.iconSprite != null ? def.iconSprite : def.sprite) : null;
+            Sprite icon = IceLanceArt.ResolveIcon(def);
             if (icon != null)
             {
                 v.Icon.sprite  = icon;

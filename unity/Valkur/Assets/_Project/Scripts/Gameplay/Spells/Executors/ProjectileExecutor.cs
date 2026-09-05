@@ -47,7 +47,13 @@ namespace Valkur.Gameplay.Spells
             // five times brighter than a one-shot spell at the same authored values, which is
             // the additive-layer-count trap in a different costume.
             var vfxService = ServiceLocator.Get<IVFXService>();
-            if (vfxService != null)
+            if (IceLanceArt.Matches(spell))
+            {
+                // A lance wants a directional crystalline snap, not the round generic
+                // impact blob used as the safety-net muzzle flash for ordinary projectiles.
+                IceLanceCastFX.Spawn(spawnPos, ctx.Direction);
+            }
+            else if (vfxService != null)
             {
                 Color flashColor = spell.particleColor != Color.white
                     ? spell.particleColor
@@ -133,6 +139,13 @@ namespace Valkur.Gameplay.Spells
                 // explosion attached to it. CollectImpactPresets also folds in
                 // impactPresetLayers, which a spell may use without a primary.
                 proj.SetImpactPresets(spell.CollectImpactPresets());
+                // Set even when no authored impact stack exists. The projectile is pooled,
+                // and its fallback was otherwise permanently fire-orange — including Ice
+                // Lance's blue-white collision beat.
+                proj.SetVFXColor(spell.particleColor != Color.white
+                    ? spell.particleColor
+                    : new Color(1f, 0.6f, 0.2f, 0.8f));
+                proj.SetGenericImpactEnabled(!IceLanceArt.Matches(spell));
                 // Damage typing + status rolls, consulted by Health on impact — see
                 // ResolveElement's doc for why the SO field wins over the legacy key switch.
                 proj.SetElement(ResolveElement(spell));
@@ -205,6 +218,16 @@ namespace Valkur.Gameplay.Spells
                 int budget = spell.pierceCount;
                 proj.OnPierced += (contact, remaining) =>
                 {
+                    if (IceLanceArt.Matches(spell))
+                    {
+                        var lance = proj.GetComponent<IceLanceProjectileVisual>();
+                        if (lance != null)
+                        {
+                            lance.OnPierced(contact, remaining, budget);
+                            return;
+                        }
+                    }
+
                     var vfx = ServiceLocator.Get<IVFXService>();
                     if (vfx == null) return;
                     // Each pierce is dimmer than the last, so the falloff is legible on
@@ -398,6 +421,23 @@ namespace Valkur.Gameplay.Spells
         private static void AttachVisual(GameObject go, SpellDefinition spell)
         {
             StripLegacyVisualRigs(go);
+
+            if (IceLanceArt.Matches(spell))
+            {
+                // A long rigid crystal cannot be represented by the particle-only ball
+                // visual: its root renderer is hidden and a preset has no directional
+                // silhouette. Give this projectile the dedicated rig instead.
+                var particle = go.GetComponent<ParticleProjectileVisual>();
+                if (particle != null) Object.Destroy(particle);
+
+                var lance = go.GetComponent<IceLanceProjectileVisual>();
+                if (lance == null) lance = go.AddComponent<IceLanceProjectileVisual>();
+                lance.Configure(spell);
+                return;
+            }
+
+            var oldLance = go.GetComponent<IceLanceProjectileVisual>();
+            if (oldLance != null) Object.Destroy(oldLance);
 
             var pv = go.GetComponent<ParticleProjectileVisual>();
             if (pv == null) pv = go.AddComponent<ParticleProjectileVisual>();

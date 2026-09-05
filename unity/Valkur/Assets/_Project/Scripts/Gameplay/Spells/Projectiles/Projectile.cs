@@ -64,6 +64,9 @@ namespace Valkur.Gameplay.Spells
         // Explosion AOE on impact (radius = 0 means no AOE).
         private float _explosionRadius;
         private float _explosionDamage;
+        // Dedicated visuals (Ice Lance) already own their complete impact composition.
+        // True keeps the historical generic fallback for every ordinary projectile.
+        private bool _spawnGenericImpact = true;
 
         // ── Piercing ─────────────────────────────────────────────────────────
         // Bodies this shot may still pass THROUGH. 0 (the default) stops at the first
@@ -120,6 +123,9 @@ namespace Valkur.Gameplay.Spells
         /// Set the VFX color for impact effects.
         /// </summary>
         public void SetVFXColor(Color color) => _vfxColor = color;
+
+        /// <summary>Whether Expire should layer the small generic impact under authored visuals.</summary>
+        public void SetGenericImpactEnabled(bool enabled) => _spawnGenericImpact = enabled;
 
         /// <summary>
         /// Set the particle preset played on impact (e.g. "explosion_small").
@@ -531,7 +537,8 @@ namespace Valkur.Gameplay.Spells
 
             if (VFXManager.Instance != null)
             {
-                VFXManager.Instance.SpawnImpact(vfxPos, _vfxColor, 0.25f, 0.8f);
+                if (_spawnGenericImpact)
+                    VFXManager.Instance.SpawnImpact(vfxPos, _vfxColor, 0.25f, 0.8f);
 
                 // Play the spell's impact particle preset (e.g. explosion_small) scaled up.
                 for (int i = 0; i < _impactPresets.Count; i++)
@@ -570,6 +577,7 @@ namespace Valkur.Gameplay.Spells
             _acceleration = 0f;
             _explosionRadius = 0f;
             _explosionDamage = 0f;
+            _spawnGenericImpact = true;
             _impactPresets.Clear();   // pool reuse: never inherit the last spell's explosion
             _caster = null; // pool reuse: drop the previous caster so the next
                             // shooter doesn't inherit a stale ignore-target.

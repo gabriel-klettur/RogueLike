@@ -206,7 +206,7 @@ namespace Valkur.Gameplay.Spells
                 ColSprite("sprite", W_SPRITE, SpellColumnCategory.Identity,
                     "HUD icon shown in the spell bar slot. Falls back to the legacy " +
                     "in-world sprite for spells not yet migrated. Null = procedural preview.",
-                    d => d.iconSprite != null ? d.iconSprite : d.sprite),
+                    d => IceLanceArt.ResolveIcon(d)),
 
                 // ── Casting ───────────────────────────────────────────────────
                 ColFloat("manaCost", W_FLOAT, SpellColumnCategory.Casting,
