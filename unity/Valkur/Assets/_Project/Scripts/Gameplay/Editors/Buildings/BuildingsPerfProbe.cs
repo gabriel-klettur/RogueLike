@@ -3,6 +3,7 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.Profiling;
 using Valkur.Gameplay.World;
+using Valkur.Core.Input;
 
 namespace Valkur.Gameplay.Buildings
 {
@@ -220,12 +221,12 @@ namespace Valkur.Gameplay.Buildings
             // Routed through KeyboardInputManager so the legacy backend keeps
             // these probe hotkeys working when the new InputSystem package
             // drops OS events.
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(UnityEngine.InputSystem.Key.F2, KeyCode.F2)) ToggleExtraCameras();
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(UnityEngine.InputSystem.Key.F3, KeyCode.F3)) ToggleSprites();
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(UnityEngine.InputSystem.Key.F4, KeyCode.F4)) ToggleLights();
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(UnityEngine.InputSystem.Key.F5, KeyCode.F5)) ToggleVolumes();
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(UnityEngine.InputSystem.Key.F6, KeyCode.F6)) TogglePostFx();
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(UnityEngine.InputSystem.Key.F7, KeyCode.F7)) ToggleBuildingColliders();
+            if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "ProbeExtraCameras")) ToggleExtraCameras();
+            if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "ProbeSprites")) ToggleSprites();
+            if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "ProbeLights")) ToggleLights();
+            if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "ProbeVolumes")) ToggleVolumes();
+            if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "ProbePostFx")) TogglePostFx();
+            if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "ProbeColliders")) ToggleBuildingColliders();
         }
 
     }

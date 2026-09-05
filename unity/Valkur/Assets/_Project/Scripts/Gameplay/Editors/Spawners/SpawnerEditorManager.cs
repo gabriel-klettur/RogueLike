@@ -58,8 +58,6 @@ namespace Valkur.Gameplay.Spawners
 
         private InputAction _toggleAction;
         private InputAction _ctrlModifier;
-        private InputAction _clickAction;
-        private InputAction _escapeAction;
         private bool _ownsToggleAction;
         private bool _ownsCtrlModifier;
 
@@ -144,16 +142,14 @@ namespace Valkur.Gameplay.Spawners
             _ctrlModifier = EditorHotkeyBindings.Resolve(
                 EditorHotkeyBindings.Hotkey.CtrlModifier, out _ownsCtrlModifier);
 
-            _clickAction = new InputAction("SpawnerEditorClick", InputActionType.Button);
-            _clickAction.AddBinding("<Mouse>/leftButton");
-            _clickAction.Enable();
+            // Select and Close are SHARED editor verbs now (EditorShared map), so this
+            // editor cannot drift onto a different click or a different escape from the
+            // other fifteen.
 
             // RMB is read directly through MouseInputManager (move-drag pickup +
             // active-drag release) — no dedicated InputAction is required.
 
-            _escapeAction = new InputAction("SpawnerEditorEscape", InputActionType.Button);
-            _escapeAction.AddBinding("<Keyboard>/escape");
-            _escapeAction.Enable();
+
         }
 
         private void Start()
@@ -184,12 +180,10 @@ namespace Valkur.Gameplay.Spawners
             // save trigger was the toolbar button, so a session of placing spawners was lost on
             // restart unless the user happened to click it. That read as broken persistence
             // when the persistence itself was fine.
-            if (Valkur.Core.Input.KeyboardInputManager.IsCtrlHeld() &&
-                Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(
-                    UnityEngine.InputSystem.Key.S, KeyCode.S))
+            if (EditorInput.SavePressed())
                 SaveInstancesToJson();
 
-            if (_escapeAction != null && _escapeAction.WasPerformedThisFrame())
+            if (EditorInput.ClosePressed())
                 CancelCurrentMode();
 
             TickAutosave();
@@ -210,8 +204,6 @@ namespace Valkur.Gameplay.Spawners
         {
             if (_ownsToggleAction) { _toggleAction?.Disable(); _toggleAction?.Dispose(); }
             if (_ownsCtrlModifier) { _ctrlModifier?.Disable(); _ctrlModifier?.Dispose(); }
-            _clickAction?.Disable();      _clickAction?.Dispose();
-            _escapeAction?.Disable();     _escapeAction?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();
         }

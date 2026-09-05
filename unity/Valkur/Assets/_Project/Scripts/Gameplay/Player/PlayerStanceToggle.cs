@@ -36,12 +36,18 @@ namespace Valkur.Gameplay
             PlayerStance.Toggle();
         }
 
-        private static bool WasTogglePressed()
-        {
-            var action = InputService.Instance?.Gameplay?.ToggleStance;
-            if (action != null && action.WasPerformedThisFrame()) return true;
-            return KeyboardInputManager.WasTabPressedThisFrame();
-        }
+        /// <summary>
+        /// Both backends, and the legacy half comes from whatever ToggleStance is bound to
+        /// right now. The hardcoded key read this replaced would have gone on flipping the
+        /// stance from the shipped key after a player rebound it — and, worse in this one
+        /// case, would have kept firing from a key they had deliberately given to something
+        /// else. It is never gated on the stance mask: this is the only way OUT of a stance,
+        /// and a control that can be switched off from inside the mode it escapes is a soft
+        /// lock.
+        /// </summary>
+        private static bool WasTogglePressed() =>
+            InputBindingResolver.WasPerformedThisFrame(
+                InputService.Instance?.Gameplay?.ToggleStance);
 
         /// <summary>
         /// A runtime editor owns the world while it is open and several of them have text

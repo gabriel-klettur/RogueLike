@@ -74,6 +74,28 @@ namespace Valkur.UIKit
         public static readonly Color DANGER_IDLE   = new Color(0.55f, 0.15f, 0.15f, 1f);
         public static readonly Color SUCCESS       = new Color(0.30f, 0.90f, 0.45f, 1f);
 
+        // ── Modal scrim ──────────────────────────────────────────────────────
+        /// <summary>Full-screen dim behind a capture or a modal. Dark enough that the panel
+        /// below stops competing, light enough that the author can still see what they are
+        /// about to rebind.</summary>
+        public static readonly Color OVERLAY_SCRIM = new Color(0f, 0f, 0f, 0.72f);
+
+        // ── Input category tints (the drawn keyboard) ─────────────────────────
+        //
+        // One fill per InputActionCategory, so a key cap says what KIND of verb is on it
+        // before the reader has parsed the label. Deliberately low-saturation, with ACCENT
+        // and DANGER left free for selection and conflict: a board where every key shouts is
+        // a board where the two things that matter do not.
+        public static readonly Color INPUT_FREE       = new Color(0.14f, 0.14f, 0.18f, 1f);
+        public static readonly Color INPUT_MOVEMENT   = new Color(0.18f, 0.30f, 0.24f, 1f);
+        public static readonly Color INPUT_TRAVERSAL  = new Color(0.18f, 0.32f, 0.34f, 1f);
+        public static readonly Color INPUT_COMBAT     = new Color(0.36f, 0.18f, 0.18f, 1f);
+        public static readonly Color INPUT_SPELL      = new Color(0.28f, 0.20f, 0.38f, 1f);
+        public static readonly Color INPUT_INTERACT   = new Color(0.20f, 0.26f, 0.36f, 1f);
+        public static readonly Color INPUT_INTERFACE  = new Color(0.24f, 0.24f, 0.30f, 1f);
+        public static readonly Color INPUT_EDITOR     = new Color(0.32f, 0.28f, 0.16f, 1f);
+        public static readonly Color INPUT_SYSTEM     = new Color(0.22f, 0.22f, 0.26f, 1f);
+
         // ── Layout ──
         public const float PANEL_PAD       = 10f;
         public const float SECTION_SPACING = 6f;

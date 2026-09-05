@@ -47,11 +47,9 @@ namespace Valkur.UI.MainMenu
         private TextMeshProUGUI[] _optSoundLabels;
 
         // ── Inputs panel ─────────────────────────────────────────────────────
-        private int _optInputsTabSel;
-        private TextMeshProUGUI[] _optTabLabels;
+        // The tab index and the tab labels went with the rebindable rows they drove. The
+        // panel is a read-only summary of the live bindings now.
         // Selected editor sub-tab when the "Editors" main tab is active (0–11).
-        private int _optEditorSubTabSel;
-        private TextMeshProUGUI[] _optEditorSubTabLabels;
 
         // ════════════════════════════════════════════════════════════════════
         // Screen management
@@ -115,7 +113,7 @@ namespace Valkur.UI.MainMenu
             if (screen == MenuScreen.Video)
             { _optVideoSel = 0; LoadOptVideoFromSettings(); RefreshOptVideoRows(); UpdateOptVideoVisuals(); }
             if (screen == MenuScreen.Inputs)
-            { _optInputsTabSel = 0; UpdateOptInputsPanel(); }
+                UpdateOptInputsPanel();
             if (screen == MenuScreen.LoadGame)
             { RefreshMMLoadPanel(); }
         }
@@ -172,18 +170,13 @@ namespace Valkur.UI.MainMenu
             { OptionsGoBack(); }
         }
 
+        /// <summary>
+        /// The controls panel is read-only, so the only verb it needs is "go back". The Q/E
+        /// tab cycling went with the four tabs of rebindable rows.
+        /// </summary>
         private void HandleOptionsInputsInput()
         {
-            int tabCount = _optTabLabels != null ? _optTabLabels.Length : 0;
-            bool tabLeft  = Valkur.Core.Input.KeyboardInputManager.WasQPressedThisFrame();
-            bool tabRight = Valkur.Core.Input.KeyboardInputManager.WasEPressedThisFrame();
-
-            if (tabLeft && tabCount > 0)
-            { _optInputsTabSel = (_optInputsTabSel - 1 + tabCount) % tabCount; UpdateOptInputsPanel(); }
-            else if (tabRight && tabCount > 0)
-            { _optInputsTabSel = (_optInputsTabSel + 1) % tabCount; UpdateOptInputsPanel(); }
-            else if (Valkur.Core.Input.InputCompat.CancelPressed())
-            { OptionsGoBack(); }
+            if (Valkur.Core.Input.InputCompat.CancelPressed()) OptionsGoBack();
         }
 
         private void ExecuteOptionsItem(int idx)

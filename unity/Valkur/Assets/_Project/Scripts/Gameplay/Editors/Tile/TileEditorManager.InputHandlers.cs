@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
 using Valkur.Data;
 using Valkur.Gameplay.World;
+using Valkur.Core.Input;
 
 namespace Valkur.Gameplay.TileEditor
 {
@@ -147,13 +148,13 @@ namespace Valkur.Gameplay.TileEditor
             if (_state.CurrentTool == TileEditorState.Tool.Select)
             {
                 bool ctrl = Valkur.Core.Input.KeyboardInputManager.IsCtrlHeld();
-                if (ctrl && Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.C, KeyCode.C))
+                if (ctrl && EditorInput.Tool(InputActionCatalog.MapTileEditor, "Copy"))
                     OnCopyClicked();
-                else if (ctrl && Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.X, KeyCode.X))
+                else if (ctrl && EditorInput.Tool(InputActionCatalog.MapTileEditor, "Cut"))
                     OnCutClicked();
-                else if (ctrl && Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.V, KeyCode.V))
+                else if (ctrl && EditorInput.Tool(InputActionCatalog.MapTileEditor, "Paste"))
                     OnPasteClicked();
-                else if (Valkur.Core.Input.KeyboardInputManager.WasEscapePressedThisFrame())
+                else if (EditorInput.ClosePressed())
                     ClearSelection();
             }
         }

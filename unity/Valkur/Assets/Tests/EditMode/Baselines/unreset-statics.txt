@@ -31,7 +31,6 @@
 # never scanned before because their declaring type happened to carry a hook for some
 # OTHER field.
 
-COLLECTION	Valkur.Core.GameSettingsBindings._table
 COLLECTION	Valkur.Data.PlayerClassCatalog.Presets
 # 2026-08-25 field-level ratchet sharpening: fixed lookup array, never mutated at
 # runtime -- same "immutable lookup table" class as the other COLLECTION entries in
@@ -78,7 +77,6 @@ COLLECTION	Valkur.Gameplay.World.Dungeon.Strategy.DungeonStrategyResolver._strat
 COLLECTION	Valkur.Gameplay.World.Dungeon.Udemy.Runtime.RoomTilemapLayerMapping.NameToLayer
 COLLECTION	Valkur.Gameplay.World.Layering.VisualLayerSortingSync.SortingLayerByVisualLayer
 COLLECTION	Valkur.Gameplay.World.Layering.WorldCollisionLayers._worldLayerIndices
-COLLECTION	Valkur.UI.EditorSubTabData.All
 # 2026-08-25 field-level ratchet sharpening: `CountLabelCache[count] ??= ...` really
 # does mutate this readonly array as a lazy string-format cache; the type's hook only
 # resets the 4 sprite fields (_solidSprite etc.), not this one. Stale entries are just

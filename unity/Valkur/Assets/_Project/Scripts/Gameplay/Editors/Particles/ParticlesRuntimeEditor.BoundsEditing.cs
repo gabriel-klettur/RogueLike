@@ -106,7 +106,7 @@ namespace Valkur.Gameplay.VFX
             UpdateBoundsHover(emitter, worldPos);
 
             // Escape gives the box back before it gives the emitter back.
-            if (_boundsBox != ParticleBoundsBox.None && KeyboardInputManager.WasEscapePressedThisFrame())
+            if (_boundsBox != ParticleBoundsBox.None && EditorInput.ClosePressed())
             {
                 _boundsBox = ParticleBoundsBox.None;
                 SetStatus("Bounds released.");
@@ -175,7 +175,7 @@ namespace Valkur.Gameplay.VFX
             // Escape mid-drag restores the size the drag started from. Without it the only way
             // out of a bad drag is to finish it and undo, and the emitter has already been
             // rebuilt at every intermediate size on the way.
-            if (KeyboardInputManager.WasEscapePressedThisFrame())
+            if (EditorInput.ClosePressed())
             {
                 ApplyBounds(emitter, identity, _boundsDragStartOverrides, _boundsDragStartPosition);
                 EndBoundsDrag();

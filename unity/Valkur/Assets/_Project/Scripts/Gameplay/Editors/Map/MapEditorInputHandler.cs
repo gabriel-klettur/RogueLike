@@ -38,23 +38,26 @@ namespace Valkur.Gameplay.MapEditor
             return EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleMap);
         }
 
+        /// <summary>Selecting is a SHARED verb — it must be the same gesture in all sixteen
+        /// editors, which is exactly what the user asked for and what a per-editor literal
+        /// could never guarantee.</summary>
         public bool WasSelectPressed()
-            => MouseInputManager.WasLeftMouseButtonPressedThisFrame();
+            => EditorInput.SelectPressed();
 
         public bool WasCreatePressed()
-            => KeyboardInputManager.WasKeyPressedThisFrame(Key.N, KeyCode.N);
+            => EditorInput.Tool(InputActionCatalog.MapMapEditor, "NewSlot");
 
         public bool WasDuplicatePressed()
-            => KeyboardInputManager.WasKeyPressedThisFrame(Key.D, KeyCode.D);
+            => EditorInput.Tool(InputActionCatalog.MapMapEditor, "Duplicate");
 
         public bool WasDeletePressed()
-            => KeyboardInputManager.WasDeletePressedThisFrame();
+            => EditorInput.DeletePressed();
 
         public bool WasRenamePressed()
-            => KeyboardInputManager.WasKeyPressedThisFrame(Key.R, KeyCode.R);
+            => EditorInput.Tool(InputActionCatalog.MapMapEditor, "Rename");
 
         public bool WasToggleEditablePressed()
-            => KeyboardInputManager.WasEPressedThisFrame();
+            => EditorInput.Tool(InputActionCatalog.MapMapEditor, "EditSlot");
 
         /// <summary>
         /// Ctrl+Z (no Shift) — Undo. Mirrors the Tile Editor / Buildings Editor
@@ -62,9 +65,7 @@ namespace Valkur.Gameplay.MapEditor
         /// have to relearn anything.
         /// </summary>
         public bool WasUndoPressed()
-            => KeyboardInputManager.IsCtrlHeld()
-               && !KeyboardInputManager.IsShiftHeld()
-               && KeyboardInputManager.WasKeyPressedThisFrame(Key.Z, KeyCode.Z);
+            => !KeyboardInputManager.IsShiftHeld() && EditorInput.UndoPressed();
 
         /// <summary>
         /// Ctrl+Y or Ctrl+Shift+Z — Redo. Both bindings are accepted because
@@ -73,10 +74,10 @@ namespace Valkur.Gameplay.MapEditor
         /// </summary>
         public bool WasRedoPressed()
         {
-            if (!KeyboardInputManager.IsCtrlHeld()) return false;
-            if (KeyboardInputManager.WasKeyPressedThisFrame(Key.Y, KeyCode.Y)) return true;
-            return KeyboardInputManager.IsShiftHeld()
-                && KeyboardInputManager.WasKeyPressedThisFrame(Key.Z, KeyCode.Z);
+            if (EditorInput.RedoPressed()) return true;
+            // Ctrl+Shift+Z, the macOS-shaped alias for the same verb. It rides on whatever
+            // Undo is bound to, so moving Undo in the Controls editor moves the alias with it.
+            return KeyboardInputManager.IsShiftHeld() && EditorInput.UndoPressed();
         }
 
         public bool IsPointerOverUI()

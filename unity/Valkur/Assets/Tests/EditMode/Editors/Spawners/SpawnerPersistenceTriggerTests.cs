@@ -39,8 +39,14 @@ namespace Valkur.Tests.EditMode.Editors.Spawners
         [Test]
         public void CtrlSSavesTheSpawnerEditor()
         {
+            // The Ctrl and the S are no longer literals here: Save is one of the verbs every
+            // editor shares, declared once in the EditorShared map and read through
+            // EditorInput.SavePressed(), which folds in the Ctrl. That is a stronger version
+            // of what this test wanted — Buildings, Tile and Lighting now save through the
+            // SAME action rather than through three copies of the same pair of key reads, so
+            // they cannot drift apart and an author can move Save for all of them at once.
             bool bound = SpawnerSources().Any(src =>
-                src.Contains("IsCtrlHeld()") && src.Contains("Key.S") && src.Contains("SaveInstancesToJson"));
+                src.Contains("EditorInput.SavePressed()") && src.Contains("SaveInstancesToJson"));
 
             Assert.IsTrue(bound,
                 "Ctrl+S must save, as it does in Buildings, Tile and Lighting. Without it the " +
@@ -74,7 +80,7 @@ namespace Valkur.Tests.EditMode.Editors.Spawners
 
                 bool auto = Directory.GetFiles(folder, "*.cs")
                     .Select(File.ReadAllText)
-                    .Any(src => src.Contains("IsCtrlHeld()")
+                    .Any(src => src.Contains("EditorInput.SavePressed()")
                              || System.Text.RegularExpressions.Regex.IsMatch(
                                     src, @"Deactivate\(\)\s*\{[^}]*Save", System.Text.RegularExpressions.RegexOptions.Singleline));
 

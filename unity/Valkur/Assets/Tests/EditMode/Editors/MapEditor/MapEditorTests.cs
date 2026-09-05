@@ -357,8 +357,15 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
 
         // ── MapEditorInputHandler: toggle key ─────────────────────────────────────
 
+        /// <summary>
+        /// The Map editor's toggle ships UNBOUND — every runtime editor is reached from the
+        /// General Editor on Escape now, and the F-row was the source of every same-map
+        /// binding collision in the project. The action still exists so the Controls editor
+        /// can offer it; reachability is pinned by
+        /// <c>EditorEntryPointTests.EveryRetiredToggle_HasAGeneralEditorEntry</c>.
+        /// </summary>
         [Test]
-        public void MapEditorInputHandler_ToggleKey_IsF11()
+        public void MapEditorInputHandler_ToggleShipsUnbound()
         {
             LogAssert.ignoreFailingMessages = true;
 
@@ -369,25 +376,12 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
                 BindingFlags.NonPublic | BindingFlags.Instance);
             Assert.IsNotNull(field, "_toggleAction field must exist on MapEditorInputHandler.");
 
-            var action = field.GetValue(handler);
-            Assert.IsNotNull(action, "_toggleAction must be initialized after CreateActions().");
+            var action = field.GetValue(handler) as UnityEngine.InputSystem.InputAction;
+            if (action == null)
+                Assert.Pass("Ships unbound and resolves to no action without InputService.");
 
-            var bindings = action.GetType().GetProperty("bindings")?.GetValue(action);
-            bool hasF11 = false;
-            if (bindings is System.Collections.IEnumerable bindingsList)
-            {
-                foreach (var binding in bindingsList)
-                {
-                    var pathProp = binding.GetType().GetProperty("path");
-                    var path = pathProp?.GetValue(binding)?.ToString() ?? "";
-                    if (path.IndexOf("f11", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        hasF11 = true;
-                        break;
-                    }
-                }
-            }
-            Assert.IsTrue(hasF11, "MapEditorInputHandler toggle action must bind to F11.");
+            Assert.AreEqual(0, action.bindings.Count,
+                "The Map toggle must ship unbound — F11 is free now.");
         }
 
         // ── Regression: hot-reload defensive recovery ────────────────────────────

@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Data;
 
 namespace Valkur.Gameplay.Inventory
@@ -45,8 +46,17 @@ namespace Valkur.Gameplay.Inventory
         private ItemConsumer     _playerConsumer;
 
         // ── Input ──
-        private InputAction _toggleAction;
-        private InputAction _dropAction;
+        // Resolved from the canonical asset every read rather than held in a field. With
+        // Domain Reload off, a serialized private InputAction comes back as a zombie
+        // (bindings.Count == 0, actionMap == null) after a mid-Play recompile — the hazard
+        // PlayerController carries EnsureInputActionsLive for — and a property that asks the
+        // service cannot go stale.
+        private InputAction _toggleAction => InputService.Instance?.Gameplay?.Inventory;
+        private InputAction _dropAction   => InputService.Instance?.Gameplay?.DropItem;
+
+        private static InputActionDescriptor _descInventory =>
+            InputActionCatalog.Find(InputActionCatalog.MapGameplay, "Inventory");
+
         private bool _visible;
         private int  _selectedSlot = -1;
 
@@ -62,13 +72,14 @@ namespace Valkur.Gameplay.Inventory
 
         protected override void OnSingletonAwake()
         {
-            _toggleAction = new InputAction("ToggleInventory", InputActionType.Button);
-            _toggleAction.AddBinding("<Keyboard>/tab");
-            _toggleAction.AddBinding("<Keyboard>/i");
-            _toggleAction.Enable();
-
-            _dropAction = new InputAction("DropItem", InputActionType.Button, "<Keyboard>/q");
-            _dropAction.Enable();
+            // Deliberately empty. This used to build two InputActions in code —
+            // "ToggleInventory" on tab AND i, and "DropItem" on q — which put two live
+            // bindings outside ValkurInputActions where nothing could audit them. That is
+            // how `tab` went on opening the inventory for the whole life of the War/Peace
+            // stance, months after a comment in this very file declared it removed, and
+            // while StanceGateTests.Tab_IsBoundOnlyToToggleStance passed: the test reads the
+            // ASSET, and this action was not in it. Both are asset actions now.
+            InputService.Initialize();
         }
 
         private void Start()
@@ -81,32 +92,32 @@ namespace Valkur.Gameplay.Inventory
 
         private void Update()
         {
-            // OR new-system action with legacy KeyCode fallback (I only).
-            // Same pattern as InputCompat / EditorHotkeyBindings — protects
-            // against the recurring Unity 2022.3 Editor InputSystem drop-out.
-            bool toggleNew = _toggleAction != null && _toggleAction.WasPerformedThisFrame();
-            // Through KeyboardInputManager so a modal panel's input block reaches these:
-            // raw reads answered while the chat had focus, so typing 'i' opened the
-            // inventory mid-sentence and 'q' threw an item on the ground.
+            // Both backends, both derived from whatever the action is bound to right now.
+            // InputBindingResolver reads through KeyboardInputManager, so a modal panel's
+            // input block still reaches these: raw reads answered while the chat had focus,
+            // so typing 'i' opened the inventory mid-sentence and 'q' threw an item on the
+            // ground.
             //
-            // TAB WAS REMOVED, and it is the reason this comment is longer than the code.
-            // It was a LEGACY KeyCode read with no matching entry in the input asset, so
-            // the asset was not the source of truth for it and a binding audit over
-            // ValkurInputActions could not see it at all — which is exactly how
-            // PlayerStanceToggle came within one commit of shipping Tab as a second
-            // meaning for the same physical key, the third time this project has bound one
-            // key to two features (`e` on Interact + SpellSlash, `p` on Pause +
-            // SpellMeteorShower, which threw meteors when the player paused). Tab now
-            // belongs to the War/Peace stance; the inventory keeps `I` and the HUD icon.
-            bool toggleLegacy = Valkur.Core.Input.KeyboardInputManager.WasKeyCodePressedThisFrame(KeyCode.I);
-            if (toggleNew || toggleLegacy)
+            // THE LITERALS WERE THE BUG. `KeyCode.I` and `KeyCode.Q` were hardcoded next to
+            // the actions, so rebinding the inventory left `I` opening it anyway — and
+            // ValkurInputActions was not the source of truth for the fallback, which is
+            // exactly how Tab came within one commit of being a second meaning for the same
+            // physical key. This project has bound one key to two features three times
+            // (`e` on Interact + SpellSlash, `p` on Pause + SpellMeteorShower, which threw
+            // meteors when the player paused); an audit over the asset can only see the ones
+            // that are IN the asset.
+            //
+            // `q` is still the drop key AND SpellTeleport. It survives because the drop is
+            // read only while the panel is open, and the panel sets InputBlocker — so the
+            // Controls editor reports it as a conflict the player may resolve, rather than
+            // this file silently owning half of it.
+            if (InputContextPolicy.IsLive(_descInventory) &&
+                InputBindingResolver.WasPerformedThisFrame(_toggleAction))
                 SetVisible(!_visible);
 
             if (_visible)
             {
-                bool dropNew = _dropAction != null && _dropAction.WasPerformedThisFrame();
-                bool dropLegacy = Valkur.Core.Input.KeyboardInputManager.WasKeyCodePressedThisFrame(KeyCode.Q);
-                if ((dropNew || dropLegacy) && _selectedSlot >= 0)
+                if (InputBindingResolver.WasPerformedThisFrame(_dropAction) && _selectedSlot >= 0)
                     DropSelectedItem();
             }
         }

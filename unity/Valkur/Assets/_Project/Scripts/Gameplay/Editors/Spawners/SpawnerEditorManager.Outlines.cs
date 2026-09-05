@@ -72,7 +72,7 @@ namespace Valkur.Gameplay.Spawners
             // Poll Alt key — one-shot toggle, not held. Routed through the
             // centralized helper so the legacy backend kicks in if the new
             // InputSystem package drops events (Unity 2022.3 Editor bug).
-            if (KeyboardInputManager.WasKeyPressedThisFrame(Key.LeftAlt, KeyCode.LeftAlt))
+            if (EditorInput.ToggleOutlinesPressed())
             {
                 ToggleAllOutlines();
             }

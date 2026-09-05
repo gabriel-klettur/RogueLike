@@ -279,7 +279,7 @@ namespace Valkur.Gameplay.TimeWeather
 
         private void HandleKeyboardShortcuts()
         {
-            if (KeyboardInputManager.WasEscapePressedThisFrame())
+            if (EditorInput.ClosePressed())
             {
                 if (_tutorial != null && _tutorial.activeSelf) _tutorial.SetActive(false);
                 else                                            Deactivate();

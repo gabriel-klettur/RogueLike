@@ -7,6 +7,7 @@ using Valkur.Data;
 using Valkur.UIKit;
 using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.WorldDrops;
+using Valkur.Core.Input;
 
 namespace Valkur.Gameplay.Items
 {
@@ -521,9 +522,9 @@ namespace Valkur.Gameplay.Items
             // Routed through KeyboardInputManager so the legacy backend keeps
             // these shortcuts working under the InputSystem-drops-events bug.
             bool ctrl = Valkur.Core.Input.KeyboardInputManager.IsCtrlHeld();
-            if (ctrl && Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Z, KeyCode.Z)) DoUndo();
-            if (ctrl && Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Y, KeyCode.Y)) DoRedo();
-            if (Valkur.Core.Input.KeyboardInputManager.WasEscapePressedThisFrame())
+            if (EditorInput.UndoPressed()) DoUndo();
+            if (EditorInput.RedoPressed()) DoRedo();
+            if (EditorInput.ClosePressed())
             {
                 if (_movingInstance != null)            CancelRmbMove();
                 else if (_tutorial != null && _tutorial.activeSelf) _tutorial.SetActive(false);

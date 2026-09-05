@@ -63,71 +63,17 @@ namespace Valkur.Tests.EditMode.Game.Data
             Assert.AreEqual(18.0f, _settings.ambientMaxInterval, 0.001f);
         }
 
-        // ── Default keybinding values match Python input_config.py ──────
-
-        [Test]
-        public void DefaultPauseKey_IsEscape()
-        {
-            Assert.AreEqual("Escape", _settings.pauseKeyA);
-        }
-
-        [Test]
-        public void DefaultMoveUpKeys_AreCorrect()
-        {
-            Assert.AreEqual("w", _settings.moveUpKeyA);
-            Assert.AreEqual("UpArrow", _settings.moveUpKeyB);
-        }
-
-        [Test]
-        public void DefaultMoveDownKeys_AreCorrect()
-        {
-            Assert.AreEqual("s", _settings.moveDownKeyA);
-            Assert.AreEqual("DownArrow", _settings.moveDownKeyB);
-        }
-
-        [Test]
-        public void DefaultMoveLeftKeys_AreCorrect()
-        {
-            Assert.AreEqual("a", _settings.moveLeftKeyA);
-            Assert.AreEqual("LeftArrow", _settings.moveLeftKeyB);
-        }
-
-        [Test]
-        public void DefaultMoveRightKeys_AreCorrect()
-        {
-            Assert.AreEqual("d", _settings.moveRightKeyA);
-            Assert.AreEqual("RightArrow", _settings.moveRightKeyB);
-        }
-
-        [Test]
-        public void DefaultDashKeys_AreCorrect()
-        {
-            Assert.AreEqual("RightCtrl", _settings.dashKeyA);
-            Assert.AreEqual("RightShift", _settings.dashKeyB);
-        }
-
-        [Test]
-        public void DefaultSpellKeys_Are1234()
-        {
-            Assert.AreEqual("1", _settings.spell1KeyA);
-            Assert.AreEqual("2", _settings.spell2KeyA);
-            Assert.AreEqual("3", _settings.spell3KeyA);
-            Assert.AreEqual("4", _settings.spell4KeyA);
-        }
-
-        [Test]
-        public void DefaultAttackMouse_LeftAndRight()
-        {
-            Assert.AreEqual("LeftButton", _settings.primaryAttackMouse);
-            Assert.AreEqual("RightButton", _settings.secondaryAttackMouse);
-        }
-
-        [Test]
-        public void DefaultEditorKeys_AreCorrect()
-        {
-            Assert.AreEqual("F8", _settings.toggleTileEditorKeyA);
-            Assert.AreEqual("F11", _settings.toggleMapEditorKeyA);
-        }
+        // ── The keybinding default tests are GONE with the fields ────────
+        //
+        // Nine fixtures asserted that GameSettings.moveUpKeyA read "w", dashKeyA read
+        // "RightCtrl", spell1..4KeyA read "1".."4", and so on. Every one of them passed for
+        // the whole life of the project while NOTHING IN PRODUCTION READ THOSE FIELDS —
+        // verified by grep: the only consumers were these tests. A green suite over an inert
+        // model is worse than no suite, because it reports the controls as covered.
+        //
+        // Bindings live in Resources/Input/ValkurInputActions now, and what covers them is
+        // ControlsBindingLayerTests (round trips, the legacy half moving with a rebind, the
+        // Peace whitelist) plus InputServiceTests (asset/catalog coverage, unique ids).
 
         // ── ResetToDefaults ──────────────────────────────────────────────
 
@@ -143,18 +89,6 @@ namespace Valkur.Tests.EditMode.Game.Data
             Assert.AreEqual(0.6f, _settings.musicVolume, 0.001f);
             Assert.AreEqual(0.7f, _settings.sfxVolume, 0.001f);
             Assert.AreEqual(0.6f, _settings.ambientVolume, 0.001f);
-        }
-
-        [Test]
-        public void ResetToDefaults_RestoresInput()
-        {
-            _settings.moveUpKeyA = "z";
-            _settings.dashKeyA = "space";
-
-            _settings.ResetToDefaults();
-
-            Assert.AreEqual("w", _settings.moveUpKeyA);
-            Assert.AreEqual("RightCtrl", _settings.dashKeyA);
         }
 
         [Test]
@@ -177,15 +111,13 @@ namespace Valkur.Tests.EditMode.Game.Data
         public void JsonRoundtrip_PreservesModifiedValues()
         {
             _settings.musicVolume = 0.42f;
-            _settings.moveUpKeyA = "z";
-            _settings.spell3KeyA = "q";
+            _settings.resolutionWidth = 1280;
 
             string json = UnityEngine.JsonUtility.ToJson(_settings);
             var loaded = UnityEngine.JsonUtility.FromJson<GameSettings>(json);
 
             Assert.AreEqual(0.42f, loaded.musicVolume, 0.001f);
-            Assert.AreEqual("z", loaded.moveUpKeyA);
-            Assert.AreEqual("q", loaded.spell3KeyA);
+            Assert.AreEqual(1280, loaded.resolutionWidth);
         }
 
         [Test]

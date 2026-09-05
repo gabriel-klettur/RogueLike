@@ -28,26 +28,34 @@ namespace Valkur.Core.Input
     {
         public enum Hotkey
         {
-            ToggleParticles,    // F1
-            ToggleCombatRanges, // F2 (Alt)
-            ToggleTimeWeather,  // F2 (bare)
-            ToggleSpawner,      // F3
-            ToggleLighting,     // F3 (Ctrl)
-            ToggleSpells,       // F4
-            ToggleEntities,     // F5
-            ToggleInventory,    // F6
-            ToggleItems,        // F7
-            ToggleTile,         // F8
-            ToggleDebugHUD,     // F9
-            ToggleBuildings,    // F10
-            ToggleMap,          // F11
-            ToggleFSM,          // F12
-            QuickSave,          // F5 (Ctrl)
-            QuickLoad,          // F9 (Ctrl)
+            // THE FOURTEEN EDITOR TOGGLES SHIP UNBOUND. Every editor is reached from the
+            // General Editor (Escape); the F-row is free. The actions stay declared so the
+            // Controls editor can offer them as "sin asignar" and a player who wants F8 back
+            // can put it there — deleting them would make that impossible, and the whole
+            // point of the binding layer is that this is a preference rather than a fact
+            // baked into source.
+            ToggleParticles,
+            ToggleCombatRanges,
+            ToggleTimeWeather,
+            ToggleSpawner,
+            ToggleLighting,
+            ToggleSpells,
+            ToggleEntities,
+            ToggleInventory,
+            ToggleItems,
+            ToggleTile,
+            ToggleDebugHUD,
+            ToggleBuildings,
+            ToggleMap,
+            ToggleFSM,
+
+            // Still bound: these are not editors.
+            QuickSave,          // Ctrl+F5
+            QuickLoad,          // Ctrl+F9
             CtrlModifier,       // leftCtrl
             AltModifier,        // leftAlt
             ToggleDevConsole,   // backquote
-            OpenGeneralEditor,  // escape (top-level launcher panel)
+            OpenGeneralEditor,  // escape — the way in to everything above
         }
 
         public static InputAction Resolve(Hotkey hotkey, out bool ownsAction)
@@ -69,8 +77,18 @@ namespace Valkur.Core.Input
                 return action;
             }
 
+            var path = FallbackPath(hotkey);
+            if (path == null)
+            {
+                // Ships unbound. Returning null rather than an action with no bindings keeps
+                // "has no key" one answer instead of two that behave the same but read
+                // differently at the call sites.
+                ownsAction = false;
+                return null;
+            }
+
             ownsAction = true;
-            var ad = new InputAction(hotkey.ToString(), InputActionType.Button, FallbackPath(hotkey));
+            var ad = new InputAction(hotkey.ToString(), InputActionType.Button, path);
             ad.Enable();
             return ad;
         }
@@ -88,64 +106,36 @@ namespace Valkur.Core.Input
         {
             if (InputBlocker.IsGameplayBlocked && hotkey != Hotkey.ToggleDevConsole)
                 return false;
-            var a = ResolveLive(hotkey);
-            bool newSystem = a != null && a.WasPerformedThisFrame();
-            // Legacy fallback: under Unity 2022.3 in the Editor the new
-            // InputSystem package intermittently drops OS event delivery,
-            // and F-keys silently die. UnityEngine.Input always works as
-            // long as activeInputHandler != "Input System Package only".
-            return newSystem || LegacyKeyDown(hotkey);
+            // Both backends, and the legacy half is DERIVED from whatever the hotkey is
+            // bound to right now. It used to come from a hardcoded KeyCode table beside the
+            // enum, which meant two things: a rebind moved only the InputSystem half, and —
+            // the reason this mattered the day the editor F-keys were retired — clearing a
+            // binding did not clear the key, because UnityEngine.Input.GetKeyDown(F8) went on
+            // answering forever.
+            return InputBindingResolver.WasPerformedThisFrame(ResolveLive(hotkey));
         }
 
         public static bool IsPressed(Hotkey hotkey)
         {
             if (InputBlocker.IsGameplayBlocked && hotkey != Hotkey.ToggleDevConsole)
                 return false;
-            var a = ResolveLive(hotkey);
-            bool newSystem = a != null && a.IsPressed();
-            return newSystem || LegacyKeyHeld(hotkey);
+            return InputBindingResolver.IsPressed(ResolveLive(hotkey));
         }
 
         public static bool WasReleasedThisFrame(Hotkey hotkey)
         {
             if (InputBlocker.IsGameplayBlocked && hotkey != Hotkey.ToggleDevConsole)
                 return false;
-            var a = ResolveLive(hotkey);
-            bool newSystem = a != null && a.WasReleasedThisFrame();
-            return newSystem || LegacyKeyUp(hotkey);
+            return InputBindingResolver.WasReleasedThisFrame(ResolveLive(hotkey));
         }
 
-        private static KeyCode LegacyKeyCode(Hotkey hotkey) => hotkey switch
-        {
-            Hotkey.ToggleParticles    => KeyCode.F1,
-            Hotkey.ToggleCombatRanges => KeyCode.F2,
-            Hotkey.ToggleTimeWeather  => KeyCode.F2,
-            Hotkey.ToggleSpawner      => KeyCode.F3,
-            Hotkey.ToggleLighting     => KeyCode.F3,
-            Hotkey.ToggleSpells       => KeyCode.F4,
-            Hotkey.ToggleEntities     => KeyCode.F5,
-            Hotkey.ToggleInventory    => KeyCode.F6,
-            Hotkey.ToggleItems        => KeyCode.F7,
-            Hotkey.ToggleTile         => KeyCode.F8,
-            Hotkey.ToggleDebugHUD     => KeyCode.F9,
-            Hotkey.ToggleBuildings    => KeyCode.F10,
-            Hotkey.ToggleMap          => KeyCode.F11,
-            Hotkey.ToggleFSM          => KeyCode.F12,
-            Hotkey.QuickSave          => KeyCode.F5,
-            Hotkey.QuickLoad          => KeyCode.F9,
-            Hotkey.CtrlModifier       => KeyCode.LeftControl,
-            Hotkey.AltModifier        => KeyCode.LeftAlt,
-            Hotkey.ToggleDevConsole   => KeyCode.BackQuote,
-            Hotkey.OpenGeneralEditor  => KeyCode.Escape,
-            _ => KeyCode.None
-        };
-
-        private static bool LegacyKeyDown(Hotkey hotkey) =>
-            UnityEngine.Input.GetKeyDown(LegacyKeyCode(hotkey));
-        private static bool LegacyKeyHeld(Hotkey hotkey) =>
-            UnityEngine.Input.GetKey(LegacyKeyCode(hotkey));
-        private static bool LegacyKeyUp(Hotkey hotkey) =>
-            UnityEngine.Input.GetKeyUp(LegacyKeyCode(hotkey));
+        // The LegacyKeyCode table and its LegacyKeyDown / LegacyKeyHeld / LegacyKeyUp
+        // helpers are GONE. They mapped each Hotkey to a literal KeyCode and fed
+        // UnityEngine.Input directly, so the OR-gate's legacy leg answered for F1-F12 no
+        // matter what the asset said — a rebind moved half of a hotkey, and REMOVING a
+        // binding removed none of it. InputBindingResolver derives that half from the live
+        // binding instead, which is what lets the editor F-keys be retired by clearing
+        // bindings rather than by deleting code.
 
         /// <summary>
         /// Returns the canonical live action when InputService is up, or a cached
@@ -162,7 +152,10 @@ namespace Valkur.Core.Input
                 cached != null && cached.bindings.Count > 0)
                 return cached;
 
-            var fresh = new InputAction(hotkey.ToString(), InputActionType.Button, FallbackPath(hotkey));
+            var path = FallbackPath(hotkey);
+            if (path == null) return null;
+
+            var fresh = new InputAction(hotkey.ToString(), InputActionType.Button, path);
             fresh.Enable();
             _adHocCache[hotkey] = fresh;
             return fresh;
@@ -187,22 +180,16 @@ namespace Valkur.Core.Input
             return Resolve(hotkey, out ownsAction);
         }
 
+        /// <summary>
+        /// The path an ad-hoc action gets when <see cref="InputService"/> is absent — EditMode
+        /// tests, and nothing else. It MIRRORS the shipped asset, so the fourteen editor
+        /// toggles answer null: they ship unbound, and a fallback that quietly re-bound them
+        /// to F1-F12 in tests would make the suite disagree with the game about which keys
+        /// exist. <see cref="ResolveLive"/> and <see cref="Resolve"/> both handle null by
+        /// returning no action, which reads as "this hotkey has no key" everywhere.
+        /// </summary>
         public static string FallbackPath(Hotkey hotkey) => hotkey switch
         {
-            Hotkey.ToggleParticles    => "<Keyboard>/f1",
-            Hotkey.ToggleCombatRanges => "<Keyboard>/f2",
-            Hotkey.ToggleTimeWeather  => "<Keyboard>/f2",
-            Hotkey.ToggleSpawner      => "<Keyboard>/f3",
-            Hotkey.ToggleLighting     => "<Keyboard>/f3",
-            Hotkey.ToggleSpells       => "<Keyboard>/f4",
-            Hotkey.ToggleEntities     => "<Keyboard>/f5",
-            Hotkey.ToggleInventory    => "<Keyboard>/f6",
-            Hotkey.ToggleItems        => "<Keyboard>/f7",
-            Hotkey.ToggleTile         => "<Keyboard>/f8",
-            Hotkey.ToggleDebugHUD     => "<Keyboard>/f9",
-            Hotkey.ToggleBuildings    => "<Keyboard>/f10",
-            Hotkey.ToggleMap          => "<Keyboard>/f11",
-            Hotkey.ToggleFSM          => "<Keyboard>/f12",
             Hotkey.QuickSave          => "<Keyboard>/f5",
             Hotkey.QuickLoad          => "<Keyboard>/f9",
             Hotkey.CtrlModifier       => "<Keyboard>/leftCtrl",

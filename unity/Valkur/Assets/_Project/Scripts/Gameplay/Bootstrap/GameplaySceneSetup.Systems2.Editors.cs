@@ -104,6 +104,21 @@ namespace Valkur.Gameplay
             Debug.Log("[GameplaySceneSetup] CameraEditor created. Open it from the General Editor (ESC).");
         }
 
+        /// <summary>
+        /// The Controls editor has no hotkey for the same reason the Camera editor has none:
+        /// all thirteen function keys are bound, and a surface for configuring keys is the
+        /// last thing that should claim one the player might hit by accident. Reached from the
+        /// General Editor (ESC).
+        /// </summary>
+        private void EnsureControlsEditor()
+        {
+            if (Valkur.Gameplay.Editors.Controls.ControlsRuntimeEditor.Instance != null) return;
+            var go = new GameObject("ControlsEditor");
+            go.AddComponent<Valkur.Gameplay.Editors.Controls.ControlsRuntimeEditor>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
+            Debug.Log("[GameplaySceneSetup] ControlsEditor created. Open it from the General Editor (ESC).");
+        }
+
         private void EnsureTimeWeatherEditor()
         {
             if (Valkur.Gameplay.TimeWeather.TimeWeatherEditor.Instance != null) return;

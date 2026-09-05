@@ -161,7 +161,7 @@ namespace Valkur.Gameplay.Spells
             }
 
             // Esc: close tutorial first if open, otherwise close the editor.
-            if (Valkur.Core.Input.KeyboardInputManager.WasEscapePressedThisFrame())
+            if (EditorInput.ClosePressed())
             {
                 if (_uiRefs.TutorialDropdown != null && _uiRefs.TutorialDropdown.activeSelf)
                 {

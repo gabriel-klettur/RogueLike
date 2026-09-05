@@ -176,6 +176,16 @@ namespace Valkur.Core.Input
             public InputAction Pause     { get; }
 
             /// <summary>
+            /// Drops the selected inventory slot. It is in the asset because it was not:
+            /// <c>InventoryUI</c> built its own <see cref="InputAction"/> instances locally,
+            /// so neither this service nor any audit over <c>ValkurInputActions</c> could see
+            /// them — and one of those local actions was still bound to <c>tab</c>, which
+            /// belongs to the stance toggle. A binding that lives outside the asset is a
+            /// binding nothing can find.
+            /// </summary>
+            public InputAction DropItem  { get; }
+
+            /// <summary>
             /// Flips <see cref="Valkur.Core.PlayerStance"/>. Read by
             /// <c>PlayerStanceToggle</c> and by nothing else. Tab is safe here even though
             /// uGUI runs the legacy <c>StandaloneInputModule</c>: only a focused
@@ -188,31 +198,26 @@ namespace Valkur.Core.Input
             /// </summary>
             public InputAction ToggleStance { get; }
 
-            // 23 named spells (Python parity, see PlayerController spell list)
-            public InputAction SpellDarkball         { get; }
-            public InputAction SpellIceball          { get; }
-            public InputAction SpellLightball        { get; }
-            public InputAction SpellPuddleLava       { get; }
-            public InputAction SpellMineBasic        { get; }
-            public InputAction SpellBoomerang        { get; }
-            public InputAction SpellChainLightning   { get; }
-            public InputAction SpellVortexPull       { get; }
-            public InputAction SpellVortexPush       { get; }
-            public InputAction SpellFlameBreath      { get; }
-            public InputAction SpellTeleport         { get; }
-            public InputAction SpellSlash            { get; }
-            public InputAction SpellLightning        { get; }
-            public InputAction SpellSphereMagicShield{ get; }
-            public InputAction SpellSmoke            { get; }
-            public InputAction SpellSmokeEmitter     { get; }
-            public InputAction SpellArcaneFlame      { get; }
-            public InputAction SpellFireworkLaunch   { get; }
-            public InputAction SpellHealingAura      { get; }
-            public InputAction SpellMeteorShower     { get; }
-            public InputAction SpellHealingTotem     { get; }
-            public InputAction SpellSummonBarbol     { get; }
-            public InputAction SpellWallIce          { get; }
-            public InputAction SpellWeaponToggle     { get; }
+            /// <summary>
+            /// The spell slots, keyed by their action name — resolved from
+            /// <see cref="InputActionCatalog"/> rather than declared as twenty-four
+            /// properties.
+            ///
+            /// <para>The properties and the hardcoded <c>(action, spellKey, KeyCode)</c> table
+            /// that used to sit here were the last place a spell's meaning lived in source.
+            /// The <see cref="KeyCode"/> column was the load-bearing half of that mistake: it
+            /// fed the legacy OR-gate, so an <c>ApplyBindingOverride</c> moved the action and
+            /// left the old key still casting the spell, silently, which made every rebinding
+            /// UI in this project a lie about its own effect. The catalog owns the slot list
+            /// and <see cref="InputBindingResolver"/> derives the legacy half from whatever the
+            /// slot is bound to right now.</para>
+            /// </summary>
+            private readonly Dictionary<string, InputAction> _spells;
+
+            /// <summary>The action behind one spell slot, by catalog action name
+            /// ("SpellDarkball"). Null when the asset has no such action.</summary>
+            public InputAction Spell(string actionName) =>
+                actionName != null && _spells.TryGetValue(actionName, out var a) ? a : null;
 
             internal GameplayActions(InputActionMap map)
             {
@@ -226,68 +231,49 @@ namespace Valkur.Core.Input
                 Dash            = map.FindAction("Dash",            throwIfNotFound: true);
                 Interact        = map.FindAction("Interact",        throwIfNotFound: true);
                 Inventory       = map.FindAction("Inventory",       throwIfNotFound: true);
+                DropItem        = map.FindAction("DropItem",        throwIfNotFound: true);
                 Pause           = map.FindAction("Pause",           throwIfNotFound: true);
                 ToggleStance    = map.FindAction("ToggleStance",    throwIfNotFound: true);
 
-                SpellDarkball          = map.FindAction("SpellDarkball",          throwIfNotFound: true);
-                SpellIceball           = map.FindAction("SpellIceball",           throwIfNotFound: true);
-                SpellLightball         = map.FindAction("SpellLightball",         throwIfNotFound: true);
-                SpellPuddleLava        = map.FindAction("SpellPuddleLava",        throwIfNotFound: true);
-                SpellMineBasic         = map.FindAction("SpellMineBasic",         throwIfNotFound: true);
-                SpellBoomerang         = map.FindAction("SpellBoomerang",         throwIfNotFound: true);
-                SpellChainLightning    = map.FindAction("SpellChainLightning",    throwIfNotFound: true);
-                SpellVortexPull        = map.FindAction("SpellVortexPull",        throwIfNotFound: true);
-                SpellVortexPush        = map.FindAction("SpellVortexPush",        throwIfNotFound: true);
-                SpellFlameBreath       = map.FindAction("SpellFlameBreath",       throwIfNotFound: true);
-                SpellTeleport          = map.FindAction("SpellTeleport",          throwIfNotFound: true);
-                SpellSlash             = map.FindAction("SpellSlash",             throwIfNotFound: true);
-                SpellLightning         = map.FindAction("SpellLightning",         throwIfNotFound: true);
-                SpellSphereMagicShield = map.FindAction("SpellSphereMagicShield", throwIfNotFound: true);
-                SpellSmoke             = map.FindAction("SpellSmoke",             throwIfNotFound: true);
-                SpellSmokeEmitter      = map.FindAction("SpellSmokeEmitter",      throwIfNotFound: true);
-                SpellArcaneFlame       = map.FindAction("SpellArcaneFlame",       throwIfNotFound: true);
-                SpellFireworkLaunch    = map.FindAction("SpellFireworkLaunch",    throwIfNotFound: true);
-                SpellHealingAura       = map.FindAction("SpellHealingAura",       throwIfNotFound: true);
-                SpellMeteorShower      = map.FindAction("SpellMeteorShower",      throwIfNotFound: true);
-                SpellHealingTotem      = map.FindAction("SpellHealingTotem",      throwIfNotFound: true);
-                SpellSummonBarbol      = map.FindAction("SpellSummonBarbol",      throwIfNotFound: true);
-                SpellWallIce           = map.FindAction("SpellWallIce",           throwIfNotFound: true);
-                SpellWeaponToggle      = map.FindAction("SpellWeaponToggle",      throwIfNotFound: true);
+                _spells = new Dictionary<string, InputAction>(32, StringComparer.Ordinal);
+                foreach (var descriptor in InputActionCatalog.Spells())
+                {
+                    // throwIfNotFound is deliberately FALSE here and true for everything above.
+                    // The catalog is the list of slots this build understands; the asset is the
+                    // list it ships bindings for, and the two are allowed to be edited in
+                    // either order. A missing action is a real gap and is reported by
+                    // InputActionCatalogTests against the shipped asset, not by an exception
+                    // that would take the whole input pipeline down at boot.
+                    var action = map.FindAction(descriptor.Action, throwIfNotFound: false);
+                    if (action == null)
+                    {
+                        Debug.LogWarning($"[InputService] Spell slot '{descriptor.Action}' is in " +
+                                         "the catalog but has no action in ValkurInputActions.");
+                        continue;
+                    }
+                    _spells[descriptor.Action] = action;
+                }
             }
 
             /// <summary>
-            /// Enumerates every spell action paired with the <c>spellKey</c> string
-            /// that <see cref="Valkur.Gameplay.Spells.SpellCaster.TryCastByKey"/>
-            /// expects, plus the legacy <see cref="UnityEngine.KeyCode"/> fallback
-            /// for the OR pipeline. Used by <c>PlayerController.PollCombatActions</c>.
+            /// Every spell slot paired with its catalog descriptor — which carries the
+            /// <c>spellKey</c> <see cref="Valkur.Gameplay.Spells.SpellCaster.TryCastByKey"/>
+            /// expects, the stance mask, and the fact that the slot reaches the damage path.
+            ///
+            /// <para>The legacy <see cref="UnityEngine.KeyCode"/> that used to be the third
+            /// element is GONE on purpose: it was a literal that did not move when the action
+            /// was rebound. Callers OR the two backends through
+            /// <see cref="InputBindingResolver"/>, which derives the legacy half from the
+            /// slot's live binding.</para>
             /// </summary>
-            public IEnumerable<(InputAction action, string spellKey, UnityEngine.KeyCode legacyKey)>
+            public IEnumerable<(InputAction action, InputActionDescriptor descriptor)>
                 EnumerateSpellBindings()
             {
-                yield return (SpellDarkball,          "darkball",            UnityEngine.KeyCode.Alpha1);
-                yield return (SpellIceball,           "iceball",             UnityEngine.KeyCode.Alpha2);
-                yield return (SpellLightball,         "lightball",           UnityEngine.KeyCode.Alpha3);
-                yield return (SpellPuddleLava,        "puddle_lava",         UnityEngine.KeyCode.Alpha4);
-                yield return (SpellMineBasic,         "mine_basic",          UnityEngine.KeyCode.Alpha5);
-                yield return (SpellBoomerang,         "boomerang",           UnityEngine.KeyCode.Alpha6);
-                yield return (SpellChainLightning,    "chain_lightning",     UnityEngine.KeyCode.Alpha7);
-                yield return (SpellVortexPull,        "vortex_pull",         UnityEngine.KeyCode.Alpha8);
-                yield return (SpellVortexPush,        "vortex_push",         UnityEngine.KeyCode.Alpha9);
-                yield return (SpellFlameBreath,       "flame_breath",        UnityEngine.KeyCode.Alpha0);
-                yield return (SpellTeleport,          "teleport",            UnityEngine.KeyCode.Q);
-                yield return (SpellSlash,             "slash",               UnityEngine.KeyCode.Z);
-                yield return (SpellLightning,         "lightning",           UnityEngine.KeyCode.R);
-                yield return (SpellSphereMagicShield, "sphere_magic_shield", UnityEngine.KeyCode.T);
-                yield return (SpellSmoke,             "smoke",               UnityEngine.KeyCode.F);
-                yield return (SpellSmokeEmitter,      "smoke_emitter",       UnityEngine.KeyCode.G);
-                yield return (SpellArcaneFlame,       "arcane_flame",        UnityEngine.KeyCode.C);
-                yield return (SpellFireworkLaunch,    "firework_launch",     UnityEngine.KeyCode.V);
-                yield return (SpellHealingAura,       "healing_aura",        UnityEngine.KeyCode.X);
-                yield return (SpellMeteorShower,      "meteor_shower",       UnityEngine.KeyCode.O);
-                yield return (SpellHealingTotem,      "healing_totem",       UnityEngine.KeyCode.L);
-                yield return (SpellSummonBarbol,      "summon_barbol",       UnityEngine.KeyCode.U);
-                yield return (SpellWallIce,           "wall_ice",            UnityEngine.KeyCode.M);
-                yield return (SpellWeaponToggle,      "weapon_toggle",       UnityEngine.KeyCode.B);
+                foreach (var descriptor in InputActionCatalog.Spells())
+                {
+                    if (_spells.TryGetValue(descriptor.Action, out var action))
+                        yield return (action, descriptor);
+                }
             }
         }
 

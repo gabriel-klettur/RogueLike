@@ -6,6 +6,7 @@ using Valkur.Core.Coordinates;
 using Valkur.Gameplay.Editors;
 using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.World;
+using Valkur.Core.Input;
 
 namespace Valkur.Gameplay.TileEditor
 {
@@ -316,7 +317,7 @@ namespace Valkur.Gameplay.TileEditor
 
             // Shift+F8 toggles the perf probe overlay (only useful while editor is active).
             // Routed through KeyboardInputManager for legacy fallback.
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(UnityEngine.InputSystem.Key.F8, KeyCode.F8) &&
+            if (EditorInput.Tool(InputActionCatalog.MapTileEditor, "ToggleProbe") &&
                 Valkur.Core.Input.KeyboardInputManager.IsShiftHeld() && _perfProbe != null)
             {
                 _perfProbe.Visible = !_perfProbe.Visible;

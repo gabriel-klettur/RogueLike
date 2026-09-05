@@ -272,18 +272,17 @@ namespace Valkur.UI.PauseMenu
 
         private void HandleVideoInput()
         {
-            if (_navUp != null && _navUp.WasPerformedThisFrame())
+            if (NavUpPressed())
             { _videoSel = (_videoSel - 1 + VideoRowCount) % VideoRowCount; UpdateVideoPanel(); }
-            else if (_navDown != null && _navDown.WasPerformedThisFrame())
+            else if (NavDownPressed())
             { _videoSel = (_videoSel + 1) % VideoRowCount; UpdateVideoPanel(); }
-            else if (_navLeft != null && _navLeft.WasPerformedThisFrame())
+            else if (NavLeftPressed())
             { ChangeVideo(_videoSel, -1); }
-            else if (_navRight != null && _navRight.WasPerformedThisFrame())
+            else if (NavRightPressed())
             { ChangeVideo(_videoSel, +1); }
-            else if (_confirm != null && _confirm.WasPerformedThisFrame())
+            else if (ConfirmPressed())
             { ApplyVideo(); }
-            else if ((_cancel != null && _cancel.WasPerformedThisFrame())
-                  || Valkur.Core.Input.InputCompat.CancelPressed())
+            else if (CancelPressed())
             { GoBack(); }
         }
     }

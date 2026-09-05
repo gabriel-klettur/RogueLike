@@ -624,6 +624,7 @@ namespace Valkur.Gameplay
 
             // Re-read authored data into the live scene — see DevConsole.Commands.Reload.cs.
             RegisterReloadCommands();
+            RegisterEditorCommands();
 
             // Weather levels, wind field and lightning — see DevConsole.Commands.Weather.cs.
             RegisterWeatherCommands();

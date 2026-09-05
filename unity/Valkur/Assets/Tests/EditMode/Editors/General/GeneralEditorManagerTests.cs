@@ -244,7 +244,7 @@ namespace Valkur.Tests.EditMode.Editors.General
         {
             "Tile", "Buildings", "Items", "Spells", "Entities", "Boss", "FSM",
             "Map", "Inventory", "Particles", "Spawners", "Lighting",
-            "Time & Weather", "Camera", "Dungeon NodeGraph",
+            "Time & Weather", "Camera", "Controls", "Dungeon NodeGraph",
         };
 
         private static readonly string[] ExpectedDiagnosticsLabels =
@@ -425,18 +425,24 @@ namespace Valkur.Tests.EditMode.Editors.General
         }
 
         [Test]
-        public void Hotkey_OpenGeneralEditor_LegacyKeyCode_IsEscape()
+        public void Hotkey_OpenGeneralEditor_DerivesEscapeAsItsLegacyHalf()
         {
-            // The 2022.3 InputSystem occasionally drops events; the launcher's
-            // OR-fallback path resolves the hotkey via legacy KeyCode. We pin
-            // ESC here so a future "improvement" can't silently rebind to F-key.
-            var method = typeof(EditorHotkeyBindings).GetMethod(
-                "LegacyKeyCode", BindingFlags.NonPublic | BindingFlags.Static);
-            Assert.IsNotNull(method, "LegacyKeyCode helper must exist.");
-            var key = (KeyCode) method.Invoke(null,
-                new object[] { EditorHotkeyBindings.Hotkey.OpenGeneralEditor });
-            Assert.AreEqual(KeyCode.Escape, key,
-                "Hotkey.OpenGeneralEditor must map to KeyCode.Escape in the legacy fallback path.");
+            // The 2022.3 InputSystem occasionally drops events, so the launcher's hotkey ORs
+            // both backends. The legacy half is DERIVED from the live binding now rather than
+            // read from a Hotkey -> KeyCode table, so this checks the derivation lands on
+            // Escape — which matters more than it used to: Escape is the only way into any
+            // editor since the F-row was retired.
+            InputService.Initialize();
+            var action = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.OpenGeneralEditor, out _);
+            Assert.IsNotNull(action, "OpenGeneralEditor must resolve to a live action.");
+
+            var bindings = Valkur.Core.Input.InputBindingResolver.Resolve(action);
+            Assert.IsNotEmpty(bindings, "OpenGeneralEditor must stay bound.");
+            CollectionAssert.Contains(
+                System.Linq.Enumerable.Select(bindings, b => b.Legacy).ToList(), KeyCode.Escape,
+                "The derived legacy half of OpenGeneralEditor must be Escape, or the launcher " +
+                "dies whenever the InputSystem drops events — and with it every editor.");
         }
 
         [Test]

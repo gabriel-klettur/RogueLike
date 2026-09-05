@@ -45,7 +45,7 @@ namespace Valkur.Gameplay.Editors.Boss
             var clock = MusicBeatClock.Instance;
             if (clock == null || !clock.IsActive) return;
 
-            if (KeyboardInputManager.WasKeyPressedThisFrame(Key.Space, KeyCode.Space))
+            if (EditorInput.Tool(InputActionCatalog.MapBossEditor, "TapCue"))
                 TapRecordCue(clock);
         }
 

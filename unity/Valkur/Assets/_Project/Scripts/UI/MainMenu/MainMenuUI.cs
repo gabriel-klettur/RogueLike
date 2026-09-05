@@ -147,9 +147,11 @@ namespace Valkur.UI.MainMenu
                         OptionsGoBack();
                         return;
                     case MenuScreen.Inputs:
-                        if (_optRebinder == null || !_optRebinder.IsActive)
-                        { OptionsGoBack(); return; }
-                        break;
+                        // The controls panel is read-only, so Cancel always means "go back".
+                        // It used to guard against closing mid-capture, which the KeyRebinder
+                        // that panel owned needed; nothing captures here any more.
+                        OptionsGoBack();
+                        return;
                 }
             }
 
@@ -167,8 +169,8 @@ namespace Valkur.UI.MainMenu
         private void OnDestroy()
         {
             // Nav/Confirm/Cancel actions live in InputCompat (no per-instance state
-            // to dispose). Only the rebinder + portrait cache are owned here.
-            _optRebinder?.Dispose(); _optRebinder = null;
+            // to dispose). Only the portrait cache is owned here now — the KeyRebinder went
+            // with the rebindable rows it served.
 
             foreach (var s in _portraitSpriteCache.Values)
                 if (s != null) Destroy(s);

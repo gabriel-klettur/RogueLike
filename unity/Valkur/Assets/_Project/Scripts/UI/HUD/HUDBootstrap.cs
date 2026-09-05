@@ -52,10 +52,23 @@ namespace Valkur.UI.HUD
             if (targetHUD != null)
                 mouseDetector.OnTargetChanged += (target) => targetHUD.SetHoverTarget(target);
 
-            // Create DebugHUD overlay (F1 to toggle)
+            // The Debug HUD is a DIAGNOSTIC overlay, and it lives OUTSIDE [UI] on purpose.
+            //
+            // HUDVisibilityController hides the whole [UI] container whenever any runtime
+            // editor opens — including the General Editor launcher itself, which is where the
+            // Debug HUD button now lives. Parented under [UI], the overlay's GameObject was
+            // deactivated the instant the launcher appeared: its Update() stopped running and
+            // SetActive(true) on a child of a dead parent showed nothing, so clicking the
+            // button flipped a bool and produced no pixel. The whole point of a diagnostic
+            // overlay is to be readable WHILE authoring, which is exactly when [UI] is hidden.
+            //
+            // SaveTelemetryHUD already sits at scene root for the same reason, and
+            // CombatRangeVisualizer draws in world space — so this makes all three
+            // diagnostics behave alike instead of one of them being the odd one out.
+            var diagnosticsRoot = GameObject.Find("[Diagnostics]") ?? new GameObject("[Diagnostics]");
             var debugGo = new GameObject("DebugHUD");
             debugGo.AddComponent<DebugHUD>();
-            if (uiContainer != null) debugGo.transform.SetParent(uiContainer.transform, false);
+            debugGo.transform.SetParent(diagnosticsRoot.transform, false);
 
             // Music beat clock (one per scene, lives next to HUD root)
             if (MusicBeatClock.Instance == null)

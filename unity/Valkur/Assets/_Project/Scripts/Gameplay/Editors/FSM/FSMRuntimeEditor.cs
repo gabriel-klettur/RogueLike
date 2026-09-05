@@ -184,10 +184,10 @@ namespace Valkur.Gameplay.Enemies.FSM
         private void HandleUndoRedoShortcuts()
         {
             bool ctrl = KeyboardInputManager.IsCtrlHeld();
-            if (ctrl && KeyboardInputManager.WasKeyPressedThisFrame(Key.Z, KeyCode.Z)) _undo.Undo();
-            if (ctrl && KeyboardInputManager.WasKeyPressedThisFrame(Key.Y, KeyCode.Y)) _undo.Redo();
+            if (EditorInput.UndoPressed()) _undo.Undo();
+            if (EditorInput.RedoPressed()) _undo.Redo();
 
-            if (KeyboardInputManager.WasEscapePressedThisFrame())
+            if (EditorInput.ClosePressed())
             {
                 if (_pendingConnectFrom != null)
                 {

@@ -79,13 +79,13 @@ namespace Valkur.Gameplay.Spawners
 
         private void HandlePlaceMode(Vector3 worldPos)
         {
-            if (_clickAction != null && _clickAction.WasPerformedThisFrame() && _selectedTemplate != null)
+            if (EditorInput.SelectPressed() && _selectedTemplate != null)
                 PlaceSpawner(_selectedTemplate, worldPos);
         }
 
         private void HandleSelectMode(Vector3 worldPos)
         {
-            if (_clickAction == null || !_clickAction.WasPerformedThisFrame()) return;
+            if (!EditorInput.SelectPressed()) return;
 
             var hit = FindSpawnerAtPosition(worldPos);
             SelectInstance(hit);

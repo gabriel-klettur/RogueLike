@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Valkur.Core.Input;
 
 namespace Valkur.Gameplay.Inventory
 {
@@ -14,21 +15,21 @@ namespace Valkur.Gameplay.Inventory
         [SerializeField] private float pickupRange = 2f;
         [SerializeField] private LayerMask pickupLayers = ~0;
 
-        private InputAction _interactAction;
         private Inventory _inventory;
 
         private void Awake()
         {
             _inventory = GetComponent<Inventory>();
 
-            _interactAction = new InputAction("Interact", InputActionType.Button, "<Keyboard>/e");
-            _interactAction.Enable();
+            // Was a SECOND Interact binding on `e`, built here while the asset already had
+            // Gameplay/Interact on the same key — two actions firing together, and only one
+            // of them visible to the Controls editor or the conflict scanner.
         }
 
         private void Update()
         {
-            if (_interactAction == null) return;
-            if (!_interactAction.WasPerformedThisFrame()) return;
+            if (!InputBindingResolver.WasPerformedThisFrame(
+                    InputService.Instance?.Gameplay?.Interact)) return;
 
             TryPickupNearest();
         }
@@ -62,15 +63,9 @@ namespace Valkur.Gameplay.Inventory
             return nearest.TryPickup(gameObject);
         }
 
-        private void OnDisable()
-        {
-            _interactAction?.Disable();
-        }
-
-        private void OnDestroy()
-        {
-            _interactAction?.Dispose();
-        }
+        // No OnDisable / OnDestroy teardown: the interact action belongs to the canonical
+        // asset, and disposing it would take it from PlayerInteractionController and every
+        // other consumer for the rest of the session.
 
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()

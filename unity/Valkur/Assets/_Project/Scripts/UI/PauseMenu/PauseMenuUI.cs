@@ -119,14 +119,10 @@ namespace Valkur.UI.PauseMenu
         private TextMeshProUGUI[] _soundRowLabels;
 
         // ── Inputs panel ─────────────────────────────────────────────────────
-        private int _inputsTabSel;
-#pragma warning disable CS0414
-        private int _inputsRowSel;
-#pragma warning restore CS0414
-        private TextMeshProUGUI[] _tabLabels;
-        // Selected editor sub-tab when the "Editors" main tab is active (0–11).
-        private int _editorSubTabSel;
-        private TextMeshProUGUI[] _editorSubTabLabels;
+        // The tab index, the row cursor, the tab labels and the editor sub-tab state are all
+        // gone with the rebindable rows they drove. The panel is a read-only summary of the
+        // live bindings now; changing them is the Controls editor's job, and the state it
+        // needs lives there.
 
         // ── Load game panel ──────────────────────────────────────────────────
         private List<SaveSlotInfo> _loadSaves = new List<SaveSlotInfo>();
@@ -139,13 +135,10 @@ namespace Valkur.UI.PauseMenu
         private const int LOAD_VISIBLE_ROWS = 8;
 
         // ── Input actions ────────────────────────────────────────────────────
-        private InputAction _pauseAction;
-        private InputAction _navUp;
-        private InputAction _navDown;
-        private InputAction _navLeft;
-        private InputAction _navRight;
-        private InputAction _confirm;
-        private InputAction _cancel;
+        // The seven InputAction fields are gone with the seven bindings this class used to
+        // declare in C#. Pause resolves from the canonical asset per read (a serialized
+        // InputAction field comes back as a bindingless zombie after a mid-Play recompile);
+        // navigation, confirm and cancel go through InputCompat. See PauseMenuUI.InputSetup.
 
         // ════════════════════════════════════════════════════════════════════
         // Lifecycle

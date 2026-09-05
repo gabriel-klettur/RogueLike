@@ -118,7 +118,7 @@ namespace Valkur.Gameplay.MapEditor.Backups
             // ESC closes either the delete dialog (rolling back stage) or the
             // browser. We poll the keyboard directly because this UI is opened
             // outside the InputService action map.
-            if (Input.GetKeyDown(KeyCode.Escape))
+            if (Valkur.Core.Input.InputCompat.CancelPressed())
             {
                 if (_delDialog != null && _delDialog.activeSelf) CloseDeleteDialog();
                 else Hide();

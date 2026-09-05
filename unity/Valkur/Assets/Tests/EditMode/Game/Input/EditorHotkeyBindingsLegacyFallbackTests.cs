@@ -47,37 +47,59 @@ namespace Valkur.Tests.EditMode.Game.Input
             LogAssert.ignoreFailingMessages = false;
         }
 
+        /// <summary>
+        /// The legacy half is DERIVED, not tabled.
+        ///
+        /// <para>This fixture used to reflect into a private <c>LegacyKeyCode(Hotkey)</c> and
+        /// demand that every hotkey mapped to a real <see cref="KeyCode"/>. That table fed
+        /// <c>UnityEngine.Input</c> directly, and it is exactly why the editor F-keys could not
+        /// be retired by clearing bindings: the legacy leg went on answering for F1-F12 whatever
+        /// the asset said. <c>InputBindingResolver</c> reads the action's live binding for both
+        /// halves now, so the guarantee to pin is that the derivation EXISTS, not that a hand-
+        /// maintained table is complete.</para>
+        /// </summary>
         [Test]
-        public void EveryHotkey_MapsToNonNoneLegacyKeyCode()
+        public void TheLegacyKeyCodeTable_IsGone()
         {
-            // Reflect into the private LegacyKeyCode method that EditorHotkeyBindings
-            // uses for the OR-fallback. Every Hotkey enum value must map to a real
-            // KeyCode — KeyCode.None means the legacy branch silently no-ops, and
-            // a future refactor that adds a Hotkey without updating the mapping
-            // table would silently lose the legacy fallback for that key.
             var legacyKeyCodeMethod = typeof(EditorHotkeyBindings).GetMethod(
                 "LegacyKeyCode", BindingFlags.NonPublic | BindingFlags.Static);
-            Assert.IsNotNull(legacyKeyCodeMethod,
-                "EditorHotkeyBindings.LegacyKeyCode private method must exist " +
-                "(it is the source of truth for the Hotkey→KeyCode mapping).");
+
+            Assert.IsNull(legacyKeyCodeMethod,
+                "A Hotkey -> KeyCode table is a second source of truth for a binding. It made " +
+                "a rebind apply half of itself and made clearing a binding clear none of the " +
+                "key. Derive the legacy pair from the live path via InputBindingResolver.");
+        }
+
+        [Test]
+        public void EveryHotkeyWithAKey_ResolvesBothHalvesFromItsBinding()
+        {
+            InputService.Initialize();
 
             foreach (EditorHotkeyBindings.Hotkey hk in
                 System.Enum.GetValues(typeof(EditorHotkeyBindings.Hotkey)))
             {
-                var keyCode = (KeyCode)legacyKeyCodeMethod.Invoke(null, new object[] { hk });
-                Assert.AreNotEqual(KeyCode.None, keyCode,
-                    $"Hotkey.{hk} maps to KeyCode.None — the legacy fallback for " +
-                    "this hotkey is a silent no-op. Add a row to LegacyKeyCode().");
+                var action = EditorHotkeyBindings.Resolve(hk, out _);
+                if (action == null || action.bindings.Count == 0) continue;   // ships unbound
+
+                foreach (var b in Valkur.Core.Input.InputBindingResolver.Resolve(action))
+                {
+                    bool hasLegacy = b.Legacy != KeyCode.None;
+                    Assert.IsTrue(hasLegacy,
+                        $"Hotkey.{hk} is bound to {b.Path}, which has no legacy KeyCode — the " +
+                        "OR-gate runs on one leg there and the hotkey dies under the 2022.3 " +
+                        "event-drop bug.");
+                }
             }
         }
 
         [Test]
-        public void StatelessQueryMethods_HaveLegacyFallbackBranchInIL()
+        public void StatelessQueryMethods_DelegateToTheResolver()
         {
-            // Verify that each stateless query method's IL body is large enough
-            // to contain BOTH branches of the OR. A method that only checks the
-            // new-system action would be very short (~10 bytes); adding the
-            // legacy branch (UnityEngine.Input.GetKeyXxx) brings it well past 30.
+            // Each stateless query must delegate to InputBindingResolver, which is where
+            // the OR of the two backends now lives. Measuring IL LENGTH was the old proxy for
+            // "does it still have both branches"; that stopped meaning anything when the
+            // branches moved into a shared helper and the method shrank to one call. The
+            // honest check is that the call is there.
             string[] mustHave = {
                 nameof(EditorHotkeyBindings.WasPerformedThisFrame),
                 nameof(EditorHotkeyBindings.IsPressed),
@@ -92,13 +114,13 @@ namespace Valkur.Tests.EditMode.Game.Input
                     new[] { typeof(EditorHotkeyBindings.Hotkey) },
                     null);
                 Assert.IsNotNull(m, $"EditorHotkeyBindings.{name}(Hotkey) must exist");
-                var body = m.GetMethodBody();
-                Assert.IsNotNull(body);
-                var il = body.GetILAsByteArray();
-                Assert.Greater(il.Length, 20,
-                    $"{name}: IL body is {il.Length} bytes — too short to contain " +
-                    "the legacy UnityEngine.Input fallback in addition to the " +
-                    "new-system branch. Did a refactor drop the OR-fallback?");
+                var src = System.IO.File.ReadAllText(System.IO.Path.Combine(
+                    UnityEngine.Application.dataPath,
+                    "_Project", "Scripts", "Core", "Input", "EditorHotkeyBindings.cs"));
+                StringAssert.Contains($"InputBindingResolver.{name}(ResolveLive(hotkey))", src,
+                    $"{name} must read through InputBindingResolver, which is what ORs the two " +
+                    "backends and derives the legacy half from the live binding. Reading the " +
+                    "action alone loses the fallback the 2022.3 event-drop bug needs.");
             }
         }
 

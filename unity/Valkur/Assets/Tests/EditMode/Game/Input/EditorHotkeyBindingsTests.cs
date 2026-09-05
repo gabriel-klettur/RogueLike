@@ -62,6 +62,9 @@ namespace Valkur.Tests.EditMode.Game.Input
             foreach (EditorHotkeyBindings.Hotkey hk in System.Enum.GetValues(typeof(EditorHotkeyBindings.Hotkey)))
             {
                 var a = EditorHotkeyBindings.Resolve(hk, out bool owns);
+                // Still non-null with the service up, INCLUDING the fourteen retired editor
+                // toggles: they ship unbound, not deleted, so the action exists and simply has
+                // no bindings. That is what lets the Controls editor offer them.
                 Assert.IsNotNull(a, $"{hk} resolved to null");
                 Assert.IsTrue(a.enabled, $"{hk} must be enabled when resolved via InputService");
                 Assert.IsFalse(owns, $"{hk} must report ownsAction=false when it came from InputService");
@@ -77,8 +80,12 @@ namespace Valkur.Tests.EditMode.Game.Input
             InputService.ResetForTests();
             Assert.IsFalse(InputService.HasInstance);
 
+            // ToggleDevConsole, not ToggleTile: the editor toggles ship unbound, so their
+            // fallback path is null and Resolve correctly hands back no action at all. This
+            // test is about the ad-hoc CONSTRUCTION path, which still exists for the hotkeys
+            // that do have a key.
             var action = EditorHotkeyBindings.Resolve(
-                EditorHotkeyBindings.Hotkey.ToggleTile, out bool owns);
+                EditorHotkeyBindings.Hotkey.ToggleDevConsole, out bool owns);
 
             try
             {
@@ -94,24 +101,15 @@ namespace Valkur.Tests.EditMode.Game.Input
             }
         }
 
-        [TestCase(EditorHotkeyBindings.Hotkey.ToggleParticles,    "<Keyboard>/f1")]
-        [TestCase(EditorHotkeyBindings.Hotkey.ToggleCombatRanges, "<Keyboard>/f2")]
-        [TestCase(EditorHotkeyBindings.Hotkey.ToggleSpawner,      "<Keyboard>/f3")]
-        [TestCase(EditorHotkeyBindings.Hotkey.ToggleLighting,     "<Keyboard>/f3")]
-        [TestCase(EditorHotkeyBindings.Hotkey.ToggleSpells,       "<Keyboard>/f4")]
-        [TestCase(EditorHotkeyBindings.Hotkey.ToggleEntities,     "<Keyboard>/f5")]
-        [TestCase(EditorHotkeyBindings.Hotkey.ToggleInventory,    "<Keyboard>/f6")]
-        [TestCase(EditorHotkeyBindings.Hotkey.ToggleItems,        "<Keyboard>/f7")]
-        [TestCase(EditorHotkeyBindings.Hotkey.ToggleTile,         "<Keyboard>/f8")]
-        [TestCase(EditorHotkeyBindings.Hotkey.ToggleDebugHUD,     "<Keyboard>/f9")]
-        [TestCase(EditorHotkeyBindings.Hotkey.ToggleBuildings,    "<Keyboard>/f10")]
-        [TestCase(EditorHotkeyBindings.Hotkey.ToggleMap,          "<Keyboard>/f11")]
-        [TestCase(EditorHotkeyBindings.Hotkey.ToggleFSM,          "<Keyboard>/f12")]
+        // Only the hotkeys that still carry a key. The fourteen editor toggles ship unbound —
+        // editors are reached from the General Editor on Escape — and their fallback answers
+        // null on purpose, which EditorEntryPointTests pins from the other direction.
         [TestCase(EditorHotkeyBindings.Hotkey.QuickSave,          "<Keyboard>/f5")]
         [TestCase(EditorHotkeyBindings.Hotkey.QuickLoad,          "<Keyboard>/f9")]
         [TestCase(EditorHotkeyBindings.Hotkey.CtrlModifier,       "<Keyboard>/leftCtrl")]
         [TestCase(EditorHotkeyBindings.Hotkey.AltModifier,        "<Keyboard>/leftAlt")]
         [TestCase(EditorHotkeyBindings.Hotkey.ToggleDevConsole,   "<Keyboard>/backquote")]
+        [TestCase(EditorHotkeyBindings.Hotkey.OpenGeneralEditor,  "<Keyboard>/escape")]
         public void Resolve_WithoutService_BindingPath_MatchesFallbackTable(
             EditorHotkeyBindings.Hotkey hotkey, string expectedPath)
         {
@@ -134,9 +132,9 @@ namespace Valkur.Tests.EditMode.Game.Input
 
         // ─── Service-backed binding paths still match (single source of truth) ─
 
-        [TestCase(EditorHotkeyBindings.Hotkey.ToggleEntities,     "<Keyboard>/f5")]
-        [TestCase(EditorHotkeyBindings.Hotkey.ToggleTile,         "<Keyboard>/f8")]
-        [TestCase(EditorHotkeyBindings.Hotkey.ToggleBuildings,    "<Keyboard>/f10")]
+        [TestCase(EditorHotkeyBindings.Hotkey.OpenGeneralEditor,  "<Keyboard>/escape")]
+        [TestCase(EditorHotkeyBindings.Hotkey.ToggleDevConsole,   "<Keyboard>/backquote")]
+        [TestCase(EditorHotkeyBindings.Hotkey.QuickSave,          "<Keyboard>/f5")]
         public void Resolve_WithService_HasExpectedBindingPath(
             EditorHotkeyBindings.Hotkey hotkey, string expectedPath)
         {

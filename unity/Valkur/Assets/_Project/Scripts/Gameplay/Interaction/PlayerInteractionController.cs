@@ -272,19 +272,27 @@ namespace Valkur.Gameplay.Interaction
         // Input ------------------------------------------------------------------------
 
         /// <summary>
-        /// True on the frame the interact key goes down, through both backends.
+        /// True on the frame the interact key goes down, through both backends — and through
+        /// the action's own live binding, so a player who moves Interact off E moves BOTH
+        /// halves of the OR-gate.
         ///
-        /// The bound action is asked first because the binding is the source of truth and a
-        /// player may have rebound it; the literal E is the legacy OR-gate every input read in
-        /// this project carries, for the Unity 2022.3 event-drop bug.
-        /// <see cref="KeyboardInputManager"/> already refuses while input is blocked, so the
-        /// fallback cannot re-open a conversation that is already open.
+        /// <para>The literal <c>WasEPressedThisFrame()</c> this replaced was the shape of the
+        /// defect <see cref="InputBindingResolver"/> exists for: the fallback did not move
+        /// with the rebind, so E went on opening conversations after the player had bound
+        /// interact to something else. <see cref="KeyboardInputManager"/>, which the resolver
+        /// reads through, still refuses while input is blocked — so the fallback cannot
+        /// re-open a conversation that is already open.</para>
+        ///
+        /// <para>The stance mask is consulted as well: Interact is live in both stances as
+        /// shipped, and a player may narrow it. It carries no damage, so
+        /// <see cref="InputContextPolicy"/> lets them.</para>
         /// </summary>
         private static bool WasInteractPressed()
         {
-            var action = InputService.Instance?.Gameplay?.Interact;
-            if (action != null && action.WasPerformedThisFrame()) return true;
-            return KeyboardInputManager.WasEPressedThisFrame();
+            var descriptor = InputActionCatalog.Find(InputActionCatalog.MapGameplay, "Interact");
+            if (!InputContextPolicy.IsLive(descriptor)) return false;
+            return InputBindingResolver.WasPerformedThisFrame(
+                InputService.Instance?.Gameplay?.Interact);
         }
 
         /// <summary>

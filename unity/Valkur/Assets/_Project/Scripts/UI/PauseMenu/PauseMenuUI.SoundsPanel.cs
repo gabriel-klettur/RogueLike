@@ -187,18 +187,17 @@ namespace Valkur.UI.PauseMenu
 
         private void HandleSoundsInput()
         {
-            if (_navUp != null && _navUp.WasPerformedThisFrame())
+            if (NavUpPressed())
             { _soundSel = (_soundSel - 1 + _soundRows.Count) % _soundRows.Count; UpdateSoundsPanel(); }
-            else if (_navDown != null && _navDown.WasPerformedThisFrame())
+            else if (NavDownPressed())
             { _soundSel = (_soundSel + 1) % _soundRows.Count; UpdateSoundsPanel(); }
-            else if (_navLeft != null && _navLeft.WasPerformedThisFrame())
+            else if (NavLeftPressed())
             { ChangeSound(_soundSel, -1); }
-            else if (_navRight != null && _navRight.WasPerformedThisFrame())
+            else if (NavRightPressed())
             { ChangeSound(_soundSel, +1); }
-            else if (_confirm != null && _confirm.WasPerformedThisFrame())
+            else if (ConfirmPressed())
             { SaveAndBack(); }
-            else if ((_cancel != null && _cancel.WasPerformedThisFrame())
-                  || Valkur.Core.Input.InputCompat.CancelPressed())
+            else if (CancelPressed())
             { GoBack(); }
         }
 

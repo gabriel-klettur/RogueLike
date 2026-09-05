@@ -138,14 +138,16 @@ namespace Valkur.Tests.EditMode.Editors.FSM
         // ── Hotkey wiring ────────────────────────────────────────────────────────
 
         [Test]
-        public void Hotkey_ToggleFSM_FallbackPath_Is_F12()
+        public void Hotkey_ToggleFSM_ShipsUnbound()
         {
-            // FallbackPath is the canonical InputSystem binding string used when the
-            // generated ValkurInputActions asset hasn't been loaded yet (EditMode tests,
-            // boot race). Pinning it to f12 prevents an accidental rebind regression.
+            // The FSM editor is reached from the General Editor (Escape); F12 is free. The
+            // EditMode fallback MIRRORS the shipped asset, so it answers null — a fallback
+            // that quietly re-bound F12 in tests would make the suite disagree with the game
+            // about which keys exist.
             var path = EditorHotkeyBindings.FallbackPath(EditorHotkeyBindings.Hotkey.ToggleFSM);
-            Assert.AreEqual("<Keyboard>/f12", path,
-                "FSM Editor hotkey must remain bound to F12.");
+            Assert.IsNull(path,
+                "The FSM toggle ships unbound. If a key is wanted back it is assigned in the " +
+                "Controls editor, not restored here.");
         }
 
         // ── Activate / Deactivate ────────────────────────────────────────────────

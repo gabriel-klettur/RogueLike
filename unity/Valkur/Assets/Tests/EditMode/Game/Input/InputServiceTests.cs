@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -159,24 +160,17 @@ namespace Valkur.Tests.EditMode.Game.Input
 
         // ─── F-key parity (binding paths in the canonical asset) ────────────────
 
-        [TestCase("ToggleParticles",    "<Keyboard>/f1")]
-        [TestCase("ToggleCombatRanges", "<Keyboard>/f2")]
-        [TestCase("ToggleSpawner",      "<Keyboard>/f3")]
-        [TestCase("ToggleLighting",     "<Keyboard>/f3")]
-        [TestCase("ToggleSpells",       "<Keyboard>/f4")]
-        [TestCase("ToggleEntities",     "<Keyboard>/f5")]
-        [TestCase("ToggleInventory",    "<Keyboard>/f6")]
-        [TestCase("ToggleItems",        "<Keyboard>/f7")]
-        [TestCase("ToggleTile",         "<Keyboard>/f8")]
-        [TestCase("ToggleDebugHUD",     "<Keyboard>/f9")]
-        [TestCase("ToggleBuildings",    "<Keyboard>/f10")]
-        [TestCase("ToggleMap",          "<Keyboard>/f11")]
-        [TestCase("ToggleFSM",          "<Keyboard>/f12")]
+        // Only the Editors-map actions that still carry a key. The fourteen editor toggles
+        // ship UNBOUND — every runtime editor is reached from the General Editor on Escape,
+        // and the F-row was the source of every same-map collision in the project.
+        // EditorEntryPointTests asserts the other side: that they carry no binding, and that
+        // each still has a menu entry so nothing became unreachable.
         [TestCase("QuickSave",          "<Keyboard>/f5")]
         [TestCase("QuickLoad",          "<Keyboard>/f9")]
         [TestCase("CtrlModifier",       "<Keyboard>/leftCtrl")]
         [TestCase("AltModifier",        "<Keyboard>/leftAlt")]
         [TestCase("ToggleDevConsole",   "<Keyboard>/backquote")]
+        [TestCase("OpenGeneralEditor",  "<Keyboard>/escape")]
         public void EditorsMap_ActionHasExpectedBinding(string actionName, string expectedPath)
         {
             var svc = InputService.Initialize();
@@ -202,32 +196,138 @@ namespace Valkur.Tests.EditMode.Game.Input
             Assert.IsNotNull(g.Interact);
             Assert.IsNotNull(g.Inventory);
             Assert.IsNotNull(g.Pause);
-            // 23 named spells (Spell1-4 were renamed to semantic names; the
-            // canonical asset is now the single source of truth for the full
-            // player spell binding table — no ad-hoc actions in PlayerController).
-            Assert.IsNotNull(g.SpellDarkball);
-            Assert.IsNotNull(g.SpellIceball);
-            Assert.IsNotNull(g.SpellLightball);
-            Assert.IsNotNull(g.SpellPuddleLava);
-            Assert.IsNotNull(g.SpellMineBasic);
-            Assert.IsNotNull(g.SpellBoomerang);
-            Assert.IsNotNull(g.SpellChainLightning);
-            Assert.IsNotNull(g.SpellVortexPull);
-            Assert.IsNotNull(g.SpellVortexPush);
-            Assert.IsNotNull(g.SpellFlameBreath);
-            Assert.IsNotNull(g.SpellTeleport);
-            Assert.IsNotNull(g.SpellSlash);
-            Assert.IsNotNull(g.SpellLightning);
-            Assert.IsNotNull(g.SpellSphereMagicShield);
-            Assert.IsNotNull(g.SpellSmoke);
-            Assert.IsNotNull(g.SpellSmokeEmitter);
-            Assert.IsNotNull(g.SpellArcaneFlame);
-            Assert.IsNotNull(g.SpellFireworkLaunch);
-            Assert.IsNotNull(g.SpellHealingAura);
-            Assert.IsNotNull(g.SpellMeteorShower);
-            Assert.IsNotNull(g.SpellHealingTotem);
-            Assert.IsNotNull(g.SpellSummonBarbol);
-            Assert.IsNotNull(g.SpellWallIce);
+            Assert.IsNotNull(g.ToggleStance);
+            // DropItem is in the asset because it was not: InventoryUI built its own
+            // InputActions in code, so nothing could audit them — and one of them was still
+            // bound to `tab`, which belongs to the stance toggle.
+            Assert.IsNotNull(g.DropItem);
+        }
+
+        /// <summary>
+        /// Every spell slot the catalog declares resolves to a live action.
+        ///
+        /// <para>This replaced twenty-four <c>Assert.IsNotNull(g.SpellX)</c> lines against
+        /// twenty-four properties. The properties are gone with the hardcoded
+        /// <c>(action, spellKey, KeyCode)</c> table that sat beside them: the KeyCode column
+        /// fed the legacy OR-gate and did not move when a slot was rebound, so an override
+        /// applied half of itself and the old key went on casting. The slot list is
+        /// <see cref="InputActionCatalog"/>'s now, which is also what makes this test a loop
+        /// rather than a list somebody has to remember to extend.</para>
+        /// </summary>
+        [Test]
+        public void EveryCatalogSpellSlot_ResolvesToALiveAction()
+        {
+            var svc = InputService.Initialize();
+            var g = svc.Gameplay;
+
+            var missing = new List<string>();
+            foreach (var descriptor in InputActionCatalog.Spells())
+                if (g.Spell(descriptor.Action) == null)
+                    missing.Add(descriptor.Id);
+
+            Assert.IsEmpty(missing,
+                "Spell slots in InputActionCatalog with no action in ValkurInputActions:\n" +
+                string.Join("\n", missing));
+        }
+
+        /// <summary>
+        /// Every action the catalog names exists in the asset, in the map the catalog claims.
+        ///
+        /// <para>The catalog is a CLOSED table on purpose — an action present in the asset and
+        /// absent from it is a real gap, because nobody decided whether firing it can hurt
+        /// somebody. This is the half that catches the reverse: a catalog entry naming an
+        /// action the asset does not have, which reads as a control the Controls editor draws
+        /// and can never bind.</para>
+        /// </summary>
+        [Test]
+        public void EveryCatalogAction_ExistsInTheAsset()
+        {
+            var asset = InputService.Initialize().Asset;
+
+            var missing = new List<string>();
+            foreach (var descriptor in InputActionCatalog.All)
+            {
+                var map = asset.FindActionMap(descriptor.Map, throwIfNotFound: false);
+                if (map == null) { missing.Add(descriptor.Id + " (no such map)"); continue; }
+                if (map.FindAction(descriptor.Action, throwIfNotFound: false) == null)
+                    missing.Add(descriptor.Id);
+            }
+
+            Assert.IsEmpty(missing,
+                "InputActionCatalog names actions ValkurInputActions does not have:\n" +
+                string.Join("\n", missing));
+        }
+
+        /// <summary>
+        /// Every action in the asset has a catalog descriptor.
+        ///
+        /// <para>The direction that matters most. Without it, adding an action to the asset
+        /// gives it no category, no stance mask and — the load-bearing one — no answer to
+        /// "does firing this reach the damage path", which is what
+        /// <see cref="InputContextPolicy"/> refuses a Peace binding on. A missing descriptor
+        /// would let a new damage verb be bound in Peace, silently.</para>
+        /// </summary>
+        [Test]
+        public void EveryAssetAction_HasACatalogDescriptor()
+        {
+            var asset = InputService.Initialize().Asset;
+
+            var undeclared = new List<string>();
+            foreach (var map in asset.actionMaps)
+                foreach (var action in map.actions)
+                    if (InputActionCatalog.Find(map.name, action.name) == null)
+                        undeclared.Add(map.name + "/" + action.name);
+
+            Assert.IsEmpty(undeclared,
+                "Actions in ValkurInputActions with no InputActionCatalog descriptor. Each " +
+                "needs a category, a stance mask and — the one that cannot be guessed — a " +
+                "decision about whether firing it can damage something:\n" +
+                string.Join("\n", undeclared));
+        }
+
+        /// <summary>
+        /// No two bindings and no two actions share an id.
+        ///
+        /// <para>Not a tidiness check. <c>ApplyBindingOverride</c> and
+        /// <c>SaveBindingOverridesAsJson</c> key overrides BY BINDING ID, so two bindings
+        /// sharing one means a rebind of either moves BOTH, silently — which is what a
+        /// Controls editor would have done on its first use. The shipped asset really had two
+        /// such pairs (Inventory/MiddleClick and SpellTeleport/ToggleStance) plus a duplicate
+        /// ACTION id (SpellBoomerang/ToggleStance), each of them invisible until something
+        /// tried to write an override.</para>
+        /// </summary>
+        [Test]
+        public void AssetIds_AreUnique()
+        {
+            var asset = InputService.Initialize().Asset;
+
+            var actionIds  = new Dictionary<string, string>();
+            var bindingIds = new Dictionary<string, string>();
+            var clashes    = new List<string>();
+
+            foreach (var map in asset.actionMaps)
+            {
+                foreach (var action in map.actions)
+                {
+                    string id = action.id.ToString();
+                    if (actionIds.TryGetValue(id, out var prior))
+                        clashes.Add($"action id {id}: {prior} and {map.name}/{action.name}");
+                    else actionIds[id] = map.name + "/" + action.name;
+                }
+
+                foreach (var b in map.bindings)
+                {
+                    string id = b.id.ToString();
+                    string who = $"{map.name}/{b.action} → {b.path}";
+                    if (bindingIds.TryGetValue(id, out var prior))
+                        clashes.Add($"binding id {id}: {prior} and {who}");
+                    else bindingIds[id] = who;
+                }
+            }
+
+            Assert.IsEmpty(clashes,
+                "Duplicate ids in ValkurInputActions. Binding overrides are keyed by id, so a " +
+                "rebind of one moves every binding that shares it:\n" + string.Join("\n", clashes));
         }
 
         // ─── Helpers ────────────────────────────────────────────────────────────

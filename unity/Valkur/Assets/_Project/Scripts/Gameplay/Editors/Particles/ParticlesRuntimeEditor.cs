@@ -174,7 +174,7 @@ namespace Valkur.Gameplay.VFX
         private void HandleDeleteKey()
         {
             if (_activeInstance == null) return;
-            if (!Valkur.Core.Input.KeyboardInputManager.WasDeletePressedThisFrame()) return;
+            if (!EditorInput.DeletePressed()) return;
 
             var es = UnityEngine.EventSystems.EventSystem.current;
             if (es != null && es.currentSelectedGameObject != null &&

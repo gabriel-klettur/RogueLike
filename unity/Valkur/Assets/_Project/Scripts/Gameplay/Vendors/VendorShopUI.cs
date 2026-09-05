@@ -49,7 +49,6 @@ namespace Valkur.Gameplay.NPC
         private TextMeshProUGUI _vendorTitleText;
         private Transform _vendorRowsParent;
         private Transform _playerRowsParent;
-        private InputAction _closeAction;
 
         private readonly List<GameObject> _vendorRows = new List<GameObject>();
         private readonly List<GameObject> _playerRows = new List<GameObject>();
@@ -66,9 +65,9 @@ namespace Valkur.Gameplay.NPC
             // that OPENS a conversation — with Unity's Update order undefined between
             // this component and PlayerInteractionController, one press would have closed
             // the shop and re-opened the chat behind it, or not, depending on the frame.
-            _closeAction = new InputAction("CloseShop", InputActionType.Button);
-            _closeAction.AddBinding("<Keyboard>/escape");
-            _closeAction.Enable();
+            // Escape only, and through InputCompat rather than a locally-built action: it
+            // is the same Cancel every other panel uses, so the shop cannot drift onto a
+            // different key from the rest of the menus.
         }
 
         private void Start()
@@ -86,7 +85,7 @@ namespace Valkur.Gameplay.NPC
         private void Update()
         {
             if (!_visible) return;
-            if (_closeAction != null && _closeAction.WasPerformedThisFrame())
+            if (Valkur.Core.Input.InputCompat.CancelPressed())
                 SetVisible(false);
             if (_goldText != null && _playerWallet != null)
             {
@@ -101,11 +100,8 @@ namespace Valkur.Gameplay.NPC
 
         protected override void OnDestroy()
         {
-            if (_closeAction != null)
-            {
-                _closeAction.Disable();
-                _closeAction.Dispose();
-            }
+            // Nothing to dispose: close reads through InputCompat, which holds no
+            // per-instance state.
             base.OnDestroy();
         }
 

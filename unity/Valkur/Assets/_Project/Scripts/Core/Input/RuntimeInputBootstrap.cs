@@ -51,9 +51,20 @@ namespace Valkur.Core.Input
             // m_HasFocus=true. See InputSystemConfigurator XML doc.
             InputSystemConfigurator.Apply();
             InputService.Initialize();
-            // Apply user's saved editor-toggle key overrides so the bindings
-            // visible in Controls Settings actually take effect at runtime.
-            EditorBindingsApplier.ReapplyAll();
+
+            // The player's saved controls: binding overrides and per-action stance masks, in
+            // one document. This replaced EditorBindingsApplier, which bridged twelve editor
+            // F-keys out of GameSettings and nothing else — every gameplay field in that file
+            // (moveUpKeyA, dashKeyA, spell1KeyA.., primaryAttackMouse) had zero readers in
+            // production, so the Controls panel let a player rebind their movement and changed
+            // nothing at all. One model now, and it is the asset.
+            //
+            // Applied on every scene load as well as at boot, because the canonical asset
+            // survives Domain Reload off and a scene transition is the cheapest place to
+            // notice it has drifted.
+            InputBindingStore.Apply();
+            InputBindingResolver.Invalidate();
+
             var es = PersistentEventSystem.Ensure(createEventSystemIfMissing);
             // Pin m_HasFocus=true on every frame so Editor focus changes
             // (Console / Inspector / MCP / OS) cannot mute OS event delivery

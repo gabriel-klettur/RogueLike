@@ -116,10 +116,15 @@ namespace Valkur.Tests.EditMode.Game.Input
         [Test]
         public void ReviveIfZombie_BindinglessClone_ReturnsFreshLiveAction()
         {
-            var zombie = new InputAction("ToggleParticles", InputActionType.Button);
+            // ToggleDevConsole, not ToggleParticles: the fourteen editor toggles ship UNBOUND
+            // now (editors are reached from the General Editor on Escape), so reviving one
+            // correctly yields an action with no bindings and this fixture would be measuring
+            // the retirement rather than the revival. The zombie-after-hot-reload bug is what
+            // is under test, and it bites any hotkey that HAS a key.
+            var zombie = new InputAction("ToggleDevConsole", InputActionType.Button);
             bool owns = false;
             var revived = EditorHotkeyBindings.ReviveIfZombie(
-                zombie, EditorHotkeyBindings.Hotkey.ToggleParticles, ref owns);
+                zombie, EditorHotkeyBindings.Hotkey.ToggleDevConsole, ref owns);
             Assert.IsNotNull(revived);
             Assert.Greater(revived.bindings.Count, 0,
                 "Revival must return a live action with bindings.");

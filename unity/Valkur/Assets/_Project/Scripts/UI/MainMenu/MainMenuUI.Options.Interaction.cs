@@ -36,23 +36,28 @@ namespace Valkur.UI.MainMenu
             }
         }
 
+        /// <summary>
+        /// Repaints the controls summary from the LIVE bindings, so a key rebound in the
+        /// in-game Controls editor shows here without either surface knowing about the other:
+        /// they read the same asset. That is the whole point of there being one model — the
+        /// panel this replaced wrote a parallel string table that gameplay never read.
+        /// </summary>
         private void UpdateOptInputsPanel()
         {
-            if (_optTabLabels == null || _optInputsPanel == null) return;
-            for (int i = 0; i < _optTabLabels.Length; i++)
-            {
-                if (_optTabLabels[i] != null)
-                    _optTabLabels[i].color = i == _optInputsTabSel ? TextSelected : TextNormal;
-                var container = _optInputsPanel.transform.Find($"OTabContent_{i}");
-                if (container != null) container.gameObject.SetActive(i == _optInputsTabSel);
-            }
+            if (_optInputsPanel == null) return;
 
-            // When switching to the Editors tab, refresh editor sub-tab visuals.
-            if (_optInputsTabSel == 3)
+            var asset = Valkur.Core.Input.InputService.Instance?.Asset;
+            for (int i = 0; i < _optInputValues.Count && i < _optInputActions.Count; i++)
             {
-                var editorsContainer = _optInputsPanel.transform.Find("OTabContent_3");
-                if (editorsContainer != null)
-                    RefreshOptEditorSubTabVisuals(editorsContainer, "OESubContent");
+                var descriptor = _optInputActions[i];
+                var map = asset?.FindActionMap(descriptor.Map, throwIfNotFound: false);
+                var action = map?.FindAction(descriptor.Action, throwIfNotFound: false);
+
+                string chip = action == null
+                    ? "?"
+                    : Valkur.Core.Input.InputBindingResolver.PrimaryLabel(action);
+                _optInputValues[i].text = string.IsNullOrEmpty(chip) ? "sin asignar" : chip;
+                _optInputValues[i].color = string.IsNullOrEmpty(chip) ? TextNormal : TextSelected;
             }
         }
 

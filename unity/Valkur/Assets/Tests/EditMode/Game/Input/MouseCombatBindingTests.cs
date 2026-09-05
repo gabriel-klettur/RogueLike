@@ -125,23 +125,42 @@ namespace Valkur.Tests.EditMode.Game.Input
             Assert.Greater(traversalDecl, 0, "PollTraversal not found.");
             Assert.Less(traversalDecl, combatDecl, "Expected PollTraversal declared first.");
 
+            // The three reads go through InputBindingResolver against the three ACTIONS, not
+            // through MouseInputManager's per-button helpers. Both OR the two backends; only
+            // the resolver asks the action what it is bound to, which is what makes the mouse
+            // rebindable at all — the helper call hardcoded "the primary attack is the left
+            // mouse button" in the one place a Controls editor cannot reach.
             foreach (var needle in new[]
                      {
-                         "MouseInputManager.IsLeftMouseButtonPressed()",
-                         "MouseInputManager.WasRightMouseButtonPressedThisFrame()",
-                         "MouseInputManager.IsMiddleMouseButtonPressed()",
+                         "InputBindingResolver.IsPressed(primaryAction)",
+                         "InputBindingResolver.WasPerformedThisFrame(SecondaryAttackAction)",
+                         "InputBindingResolver.IsPressed(middleAction)",
                      })
             {
-                // Searched FROM the declaration, not from the start of the file. The left
-                // click read appears twice: PollRedirectedPrimaryCast reads it too, and that
-                // one is deliberately ahead of the stance gate so the F4 Spells Editor can
-                // still cast. A plain IndexOf finds the editor's copy and calls correct code
-                // broken — which is what it did on the first run of this fixture.
+                // Searched FROM the declaration, not from the start of the file. The primary
+                // read appears twice: PollRedirectedPrimaryCast reads it too, and that one is
+                // deliberately ahead of the stance gate so the F4 Spells Editor can still
+                // cast. A plain IndexOf finds the editor's copy and calls correct code broken
+                // — which is what it did on the first run of this fixture.
                 int at = src.IndexOf(needle, combatDecl, StringComparison.Ordinal);
                 Assert.Greater(at, combatDecl,
                     $"\"{needle}\" must appear inside PollCombatActions so the Peace stance " +
                     "gates it. Outside that method it keeps firing in a stance whose whole " +
                     "promise is that the player cannot attack.");
+            }
+
+            // Each is ALSO gated on its own descriptor's stance mask, so a player can silence
+            // one without leaving War. The coarse gate and the per-action mask are different
+            // guarantees and both have to be here.
+            foreach (var needle in new[]
+                     {
+                         "InputContextPolicy.IsLive(_descPrimaryAttack)",
+                         "InputContextPolicy.IsLive(_descSecondaryAttack)",
+                         "InputContextPolicy.IsLive(_descMiddleClick)",
+                     })
+            {
+                Assert.Greater(src.IndexOf(needle, combatDecl, StringComparison.Ordinal), combatDecl,
+                    $"\"{needle}\" must gate its mouse cast inside PollCombatActions.");
             }
         }
     }

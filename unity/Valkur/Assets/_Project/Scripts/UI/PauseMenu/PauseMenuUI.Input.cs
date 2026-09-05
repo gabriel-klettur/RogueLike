@@ -22,7 +22,7 @@ namespace Valkur.UI.PauseMenu
             // immediately close the menu again).
             if (_screen == PauseScreen.None)
             {
-                if (_pauseAction != null && _pauseAction.WasPerformedThisFrame())
+                if (PausePressed())
                     OpenPause();
                 return;
             }
@@ -47,18 +47,18 @@ namespace Valkur.UI.PauseMenu
         {
             // Both `P` (the configured pause toggle) and `Esc` close the menu
             // from the top-level list — Esc mirrors clicking "Continue". We
-            // dual-read via _cancel.InputAction AND InputCompat (device-level)
-            // because the InputAction state can desync when the EventSystem
-            // holds a Selectable focus from a previous mouse click.
-            if ((_pauseAction != null && _pauseAction.WasPerformedThisFrame())
-             || (_cancel != null && _cancel.WasPerformedThisFrame())
-             || Valkur.Core.Input.InputCompat.CancelPressed())
+            // The dual-read this used to carry — the local Cancel InputAction OR'd with
+            // InputCompat — is now one read: CancelPressed() IS InputCompat, so the second
+            // half was the same question asked twice. The reason for the original dual-read
+            // (an InputAction desyncing when the EventSystem holds a Selectable focus from a
+            // previous mouse click) does not apply to InputCompat, which polls the device.
+            if (PausePressed() || CancelPressed())
             { ClosePause(); return; }
-            if (_navUp != null && _navUp.WasPerformedThisFrame())
+            if (NavUpPressed())
             { _pauseSel = (_pauseSel - 1 + _pauseOptions.Length) % _pauseOptions.Length; UpdateListVisuals(_pauseSel, _pausePills, _pauseBars, _pauseTexts); }
-            else if (_navDown != null && _navDown.WasPerformedThisFrame())
+            else if (NavDownPressed())
             { _pauseSel = (_pauseSel + 1) % _pauseOptions.Length; UpdateListVisuals(_pauseSel, _pausePills, _pauseBars, _pauseTexts); }
-            else if (_confirm != null && _confirm.WasPerformedThisFrame())
+            else if (ConfirmPressed())
             { ExecutePause(_pauseSel); }
         }
 
@@ -69,14 +69,9 @@ namespace Valkur.UI.PauseMenu
                 Valkur.Core.ServiceLocator.Unregister<Valkur.Core.Services.IPauseMenuService>();
                 Instance = null;
             }
-            _pauseAction?.Disable(); _pauseAction?.Dispose();
-            _navUp?.Disable();   _navUp?.Dispose();
-            _navDown?.Disable(); _navDown?.Dispose();
-            _navLeft?.Disable(); _navLeft?.Dispose();
-            _navRight?.Disable(); _navRight?.Dispose();
-            _confirm?.Disable(); _confirm?.Dispose();
-            _cancel?.Disable();  _cancel?.Dispose();
-            _rebinder?.Dispose(); _rebinder = null;
+            // Nothing to dispose. The pause key belongs to the canonical asset — disposing
+            // it would take it from every other consumer for the rest of the session — and
+            // navigation goes through InputCompat, which holds no per-instance state.
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -154,7 +149,7 @@ namespace Valkur.UI.PauseMenu
             if (s == PauseScreen.Options) { _optSel = 0;    UpdateListVisuals(_optSel,    _optPills,    _optBars,    _optTexts);   }
             if (s == PauseScreen.Sounds)  { _soundSel = 0;  UpdateSoundsPanel(); }
             if (s == PauseScreen.Video)   { _videoSel = 0;  LoadVideoFromSettings(); RefreshVideoRows(); UpdateVideoPanel(); }
-            if (s == PauseScreen.Inputs)  { _inputsTabSel = 0; _inputsRowSel = 0; UpdateInputsPanel(); }
+            if (s == PauseScreen.Inputs)  UpdateInputsPanel();
             if (s == PauseScreen.LoadGame) { RefreshLoadGamePanel(); }
         }
 
@@ -186,14 +181,13 @@ namespace Valkur.UI.PauseMenu
             Image[] pills, Image[] bars, TextMeshProUGUI[] texts,
             System.Action<int> execute)
         {
-            if (_navUp != null && _navUp.WasPerformedThisFrame())
+            if (NavUpPressed())
             { sel = (sel - 1 + count) % count; UpdateListVisuals(sel, pills, bars, texts); }
-            else if (_navDown != null && _navDown.WasPerformedThisFrame())
+            else if (NavDownPressed())
             { sel = (sel + 1) % count; UpdateListVisuals(sel, pills, bars, texts); }
-            else if (_confirm != null && _confirm.WasPerformedThisFrame())
+            else if (ConfirmPressed())
             { execute(sel); }
-            else if ((_cancel != null && _cancel.WasPerformedThisFrame())
-                  || Valkur.Core.Input.InputCompat.CancelPressed())
+            else if (CancelPressed())
             { GoBack(); }
         }
 

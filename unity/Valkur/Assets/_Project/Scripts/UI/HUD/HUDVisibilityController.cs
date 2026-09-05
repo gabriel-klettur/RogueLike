@@ -29,7 +29,14 @@ namespace Valkur.UI.HUD
         // Tracks every GameObject we toggled off so Show() can restore exactly
         // those — never more, never less. Skipping objects that were already
         // inactive avoids re-enabling something the gameplay layer had hidden
-        // for its own reasons (e.g. DebugHUD waiting on F1).
+        // for its own reasons.
+        //
+        // WHAT THIS MUST NOT HIDE: the diagnostic overlays. They exist to be read WHILE a
+        // runtime editor is open, which is precisely when this controller fires — so the
+        // Debug HUD lives under [Diagnostics], SaveTelemetryHUD at scene root, and
+        // CombatRangeVisualizer draws in world space. Anything parented under [UI] goes dark
+        // with the rest of the HUD, and the failure is silent: the toggle flips, nothing
+        // appears, and the button even lights up because IsVisible went true.
         private readonly List<GameObject> _hiddenByThisController = new List<GameObject>();
         private bool _hudHidden;
 

@@ -66,25 +66,21 @@ namespace Valkur.Tests.EditMode.Game.Input
             LogAssert.ignoreFailingMessages = false;
         }
 
-        // Each row: (Hotkey, expected effective binding path).
-        // The 13 entries mirror EditorHotkeyDispatchPlayTests 1-to-1 (12 dispatch
-        // tests + CtrlModifier hold test). F5 → both ToggleEntities and QuickSave
-        // verify the deliberately shared binding path.
+        // Each row: (Hotkey, expected authored binding path).
+        //
+        // The fourteen editor toggles are NOT here any more. They ship unbound — every
+        // runtime editor is reached from the General Editor on Escape — and asserting a path
+        // for them would re-pin the contract that was deliberately retired.
+        // EditorEntryPointTests asserts the other side: that they carry no binding at all,
+        // and that each still has a menu entry so nothing became unreachable.
         private static readonly object[] HotkeyCases =
         {
-            new object[] { EditorHotkeyBindings.Hotkey.ToggleParticles,  "<Keyboard>/f1" },
-            new object[] { EditorHotkeyBindings.Hotkey.ToggleSpells,     "<Keyboard>/f4" },
-            new object[] { EditorHotkeyBindings.Hotkey.ToggleEntities,   "<Keyboard>/f5" },
-            new object[] { EditorHotkeyBindings.Hotkey.QuickSave,        "<Keyboard>/f5" },
-            new object[] { EditorHotkeyBindings.Hotkey.ToggleInventory,  "<Keyboard>/f6" },
-            new object[] { EditorHotkeyBindings.Hotkey.ToggleItems,      "<Keyboard>/f7" },
-            new object[] { EditorHotkeyBindings.Hotkey.ToggleTile,       "<Keyboard>/f8" },
-            new object[] { EditorHotkeyBindings.Hotkey.ToggleDebugHUD,   "<Keyboard>/f9" },
-            new object[] { EditorHotkeyBindings.Hotkey.ToggleBuildings,  "<Keyboard>/f10" },
-            new object[] { EditorHotkeyBindings.Hotkey.ToggleMap,        "<Keyboard>/f11" },
-            new object[] { EditorHotkeyBindings.Hotkey.ToggleFSM,        "<Keyboard>/f12" },
-            new object[] { EditorHotkeyBindings.Hotkey.ToggleDevConsole, "<Keyboard>/backquote" },
-            new object[] { EditorHotkeyBindings.Hotkey.CtrlModifier,     "<Keyboard>/leftCtrl" },
+            new object[] { EditorHotkeyBindings.Hotkey.OpenGeneralEditor, "<Keyboard>/escape" },
+            new object[] { EditorHotkeyBindings.Hotkey.ToggleDevConsole,  "<Keyboard>/backquote" },
+            new object[] { EditorHotkeyBindings.Hotkey.QuickSave,         "<Keyboard>/f5" },
+            new object[] { EditorHotkeyBindings.Hotkey.QuickLoad,         "<Keyboard>/f9" },
+            new object[] { EditorHotkeyBindings.Hotkey.CtrlModifier,      "<Keyboard>/leftCtrl" },
+            new object[] { EditorHotkeyBindings.Hotkey.AltModifier,       "<Keyboard>/leftAlt" },
         };
 
         // ── 1. Existence ────────────────────────────────────────────────────────
@@ -106,6 +102,7 @@ namespace Valkur.Tests.EditMode.Game.Input
             EditorHotkeyBindings.Hotkey hotkey, string expectedPath)
         {
             var action = EditorHotkeyBindings.Resolve(hotkey, out _);
+            Assert.IsNotNull(action, $"{hotkey} must resolve to an action.");
 
             // Check the base path (the authored default on the asset) — the override
             // path is the user's customisation surface and not our concern here.
@@ -147,19 +144,19 @@ namespace Valkur.Tests.EditMode.Game.Input
         // ── 5. Fallback when InputService is missing ────────────────────────────
 
         [Test]
-        public void Resolve_FallbackPath_WhenServiceMissing_ReturnsAdHocActionWithF8Binding()
+        public void Resolve_FallbackPath_WhenServiceMissing_ReturnsAdHocAction()
         {
-            // Mirrors Resolve_FallbackPath_FiresOnF8Press from the PlayMode fixture:
-            // editor fixtures often build a single editor in isolation without
-            // booting the input service, and rely on this fallback. Verifies
-            // ownership transfer + binding correctness; the firing assertion
-            // belongs in PlayMode where the action evaluator can run.
+            // Editor fixtures often build a single editor in isolation without booting the
+            // input service and rely on this fallback. Exercised with ToggleDevConsole rather
+            // than ToggleTile: the editor toggles ship unbound, so their fallback path is null
+            // by design and Resolve correctly hands back no action — which is a different
+            // contract, pinned by EditorEntryPointTests.
             InputService.ResetForTests();
             Assert.IsFalse(InputService.HasInstance,
                 "Precondition: InputService must be reset so the fallback branch is exercised.");
 
             var action = EditorHotkeyBindings.Resolve(
-                EditorHotkeyBindings.Hotkey.ToggleTile, out bool owns);
+                EditorHotkeyBindings.Hotkey.ToggleDevConsole, out bool owns);
             try
             {
                 Assert.IsTrue(owns,
@@ -167,14 +164,14 @@ namespace Valkur.Tests.EditMode.Game.Input
                 Assert.IsNotNull(action);
                 Assert.IsTrue(action.enabled,
                     "Fallback action must be enabled on return — editors poll it directly.");
-                bool hasF8 = action.bindings.Any(b =>
-                    string.Equals(b.path, "<Keyboard>/f8", System.StringComparison.OrdinalIgnoreCase));
-                Assert.IsTrue(hasF8,
-                    "Fallback action for ToggleTile must bind <Keyboard>/f8.");
+                bool hasBackquote = action.bindings.Any(b =>
+                    string.Equals(b.path, "<Keyboard>/backquote", System.StringComparison.OrdinalIgnoreCase));
+                Assert.IsTrue(hasBackquote,
+                    "Fallback action for ToggleDevConsole must bind <Keyboard>/backquote.");
             }
             finally
             {
-                action.Dispose();
+                action?.Dispose();
             }
         }
 
@@ -198,6 +195,13 @@ namespace Valkur.Tests.EditMode.Game.Input
                 EditorHotkeyBindings.Hotkey.ToggleFSM        => e.ToggleFSM,
                 EditorHotkeyBindings.Hotkey.ToggleDevConsole => e.ToggleDevConsole,
                 EditorHotkeyBindings.Hotkey.CtrlModifier     => e.CtrlModifier,
+                EditorHotkeyBindings.Hotkey.AltModifier      => e.AltModifier,
+                EditorHotkeyBindings.Hotkey.QuickLoad        => e.QuickLoad,
+                EditorHotkeyBindings.Hotkey.OpenGeneralEditor=> e.OpenGeneralEditor,
+                EditorHotkeyBindings.Hotkey.ToggleCombatRanges => e.ToggleCombatRanges,
+                EditorHotkeyBindings.Hotkey.ToggleTimeWeather => e.ToggleTimeWeather,
+                EditorHotkeyBindings.Hotkey.ToggleSpawner    => e.ToggleSpawner,
+                EditorHotkeyBindings.Hotkey.ToggleLighting   => e.ToggleLighting,
                 _ => null,
             };
         }

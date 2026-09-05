@@ -363,17 +363,16 @@ namespace Valkur.Gameplay.World
             // an undo applied mid-drag is overwritten before it is ever seen — and the CommitMove
             // that follows clears the redo branch, leaving that history step unreachable in both
             // directions. Finish or cancel the drag first.
-            if (ctrl && _moving && (KeyboardInputManager.WasKeyPressedThisFrame(Key.Z, KeyCode.Z) ||
-                                    KeyboardInputManager.WasKeyPressedThisFrame(Key.Y, KeyCode.Y)))
+            if (_moving && (EditorInput.UndoPressed() || EditorInput.RedoPressed()))
             {
                 SetStatus("Finish the drag (release LMB) or cancel it (Esc) before undoing.");
                 return;
             }
-            if (ctrl && KeyboardInputManager.WasKeyPressedThisFrame(Key.Z, KeyCode.Z)) DoUndo();
-            if (ctrl && KeyboardInputManager.WasKeyPressedThisFrame(Key.Y, KeyCode.Y)) DoRedo();
-            if (ctrl && KeyboardInputManager.WasKeyPressedThisFrame(Key.S, KeyCode.S)) DoSave();
+            if (EditorInput.UndoPressed()) DoUndo();
+            if (EditorInput.RedoPressed()) DoRedo();
+            if (EditorInput.SavePressed()) DoSave();
 
-            if (KeyboardInputManager.WasEscapePressedThisFrame())
+            if (EditorInput.ClosePressed())
             {
                 if (_moving)                                                CancelMove();
                 else if (_tutorial != null && _tutorial.activeSelf) _tutorial.SetActive(false);

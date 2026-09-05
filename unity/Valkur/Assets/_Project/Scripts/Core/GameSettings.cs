@@ -41,38 +41,20 @@ namespace Valkur.Core
         public float duckingHoldMs      = 250f;
         public float duckingReleaseMs   = 200f;
 
-        // ── Input bindings (keyboard primary / secondary) ────────────────────
-        // General
-        public string pauseKeyA        = "Escape";
-        public string toggleInventoryKeyA = "i";
-        // Movement
-        public string moveUpKeyA    = "w";       public string moveUpKeyB    = "UpArrow";
-        public string moveDownKeyA  = "s";       public string moveDownKeyB  = "DownArrow";
-        public string moveLeftKeyA  = "a";       public string moveLeftKeyB  = "LeftArrow";
-        public string moveRightKeyA = "d";       public string moveRightKeyB = "RightArrow";
-        public string dashKeyA      = "RightCtrl"; public string dashKeyB   = "RightShift";
-        // Spells
-        public string spell1KeyA = "1";
-        public string spell2KeyA = "2";
-        public string spell3KeyA = "3";
-        public string spell4KeyA = "4";
-        public string primaryAttackMouse  = "LeftButton";
-        public string secondaryAttackMouse = "RightButton";
-        // Editors — toggle bindings (one per editor).
-        // The Lighting editor uses a Ctrl+F3 combination; only the bare key is stored
-        // here because the Ctrl guard is hardcoded in LightingRuntimeEditor.cs.
-        public string toggleTileEditorKeyA        = "F8";
-        public string toggleMapEditorKeyA         = "F11";
-        public string toggleParticlesEditorKeyA   = "F1";
-        public string toggleTimeWeatherEditorKeyA = "F2";
-        public string toggleSpawnerEditorKeyA     = "F3";
-        public string toggleLightingEditorKeyA    = "F3";
-        public string toggleSpellsEditorKeyA      = "F4";
-        public string toggleEntitiesEditorKeyA    = "F5";
-        public string toggleInventoryEditorKeyA   = "F6";
-        public string toggleItemsEditorKeyA       = "F7";
-        public string toggleBuildingsEditorKeyA   = "F10";
-        public string toggleFsmEditorKeyA         = "F12";
+        // ── Input bindings ───────────────────────────────────────────────────
+        //
+        // THE BINDING FIELDS ARE GONE, and what they were is worth recording. Twenty-eight
+        // strings — pauseKeyA, toggleInventoryKeyA, moveUp/Down/Left/RightKeyA+B, dashKeyA+B,
+        // spell1..4KeyA, primaryAttackMouse, secondaryAttackMouse and twelve editor toggles —
+        // written by a Controls panel in two menus and read, in production, by exactly one
+        // consumer: EditorBindingsApplier, which bridged the TWELVE EDITOR KEYS onto the real
+        // actions and nothing else. Every gameplay field had zero production readers, verified
+        // by grep across the whole project; only tests touched them. So the panel let a player
+        // rebind their movement, showed the new key, saved it to disk, and changed nothing.
+        //
+        // There is one binding model now — Resources/Input/ValkurInputActions — and its
+        // overrides persist through Valkur.Core.Input.InputBindingStore, beside the per-action
+        // War/Peace stance masks. Nothing about controls belongs in this file any more.
 
         // ── Statics ──────────────────────────────────────────────────────────
         private static GameSettings _instance;
@@ -145,31 +127,6 @@ namespace Valkur.Core
             duckingHoldMs       = fresh.duckingHoldMs;
             duckingReleaseMs    = fresh.duckingReleaseMs;
             // Input
-            pauseKeyA = fresh.pauseKeyA;
-            toggleInventoryKeyA = fresh.toggleInventoryKeyA;
-            moveUpKeyA    = fresh.moveUpKeyA;    moveUpKeyB    = fresh.moveUpKeyB;
-            moveDownKeyA  = fresh.moveDownKeyA;  moveDownKeyB  = fresh.moveDownKeyB;
-            moveLeftKeyA  = fresh.moveLeftKeyA;  moveLeftKeyB  = fresh.moveLeftKeyB;
-            moveRightKeyA = fresh.moveRightKeyA; moveRightKeyB = fresh.moveRightKeyB;
-            dashKeyA      = fresh.dashKeyA;      dashKeyB      = fresh.dashKeyB;
-            spell1KeyA    = fresh.spell1KeyA;
-            spell2KeyA    = fresh.spell2KeyA;
-            spell3KeyA    = fresh.spell3KeyA;
-            spell4KeyA    = fresh.spell4KeyA;
-            primaryAttackMouse   = fresh.primaryAttackMouse;
-            secondaryAttackMouse = fresh.secondaryAttackMouse;
-            toggleTileEditorKeyA        = fresh.toggleTileEditorKeyA;
-            toggleMapEditorKeyA         = fresh.toggleMapEditorKeyA;
-            toggleParticlesEditorKeyA   = fresh.toggleParticlesEditorKeyA;
-            toggleTimeWeatherEditorKeyA = fresh.toggleTimeWeatherEditorKeyA;
-            toggleSpawnerEditorKeyA     = fresh.toggleSpawnerEditorKeyA;
-            toggleLightingEditorKeyA    = fresh.toggleLightingEditorKeyA;
-            toggleSpellsEditorKeyA      = fresh.toggleSpellsEditorKeyA;
-            toggleEntitiesEditorKeyA    = fresh.toggleEntitiesEditorKeyA;
-            toggleInventoryEditorKeyA   = fresh.toggleInventoryEditorKeyA;
-            toggleItemsEditorKeyA       = fresh.toggleItemsEditorKeyA;
-            toggleBuildingsEditorKeyA   = fresh.toggleBuildingsEditorKeyA;
-            toggleFsmEditorKeyA         = fresh.toggleFsmEditorKeyA;
         }
     }
 }

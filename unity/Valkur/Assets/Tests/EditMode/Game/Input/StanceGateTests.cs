@@ -150,8 +150,8 @@ namespace Valkur.Tests.EditMode.Game.Input
         [Test]
         public void Tab_HasExactlyOneReaderInProductionSource()
         {
-            // Three readers are legitimate and NONE of them can be live at the same moment as
-            // the stance toggle — each exclusion is structural, not a coincidence:
+            // The legitimate readers, and NONE of them can be live at the same moment as the
+            // stance toggle — each exclusion is structural, not a coincidence:
             //   • Core/Input/KeyboardInputManager IS the helper. It defines the key; it does
             //     not claim a meaning for it.
             //   • A runtime EDITOR owns the world while open (Buildings uses Tab to cycle),
@@ -161,6 +161,14 @@ namespace Valkur.Tests.EditMode.Game.Input
             //     which is the other half of that same IsSuppressed check.
             // Verified by reading each guard, because "it probably cannot happen" is how a
             // double binding survives — this project has shipped three of them.
+            //
+            // PLAYERSTANCETOGGLE IS NO LONGER ON THIS LIST, and that is the point rather than
+            // a regression: it used to OR the bound action with a literal
+            // WasTabPressedThisFrame(), so a player who moved the stance toggle elsewhere
+            // still flipped it with Tab — half a rebind, silently. It reads through
+            // InputBindingResolver now, which derives the legacy half from whatever the action
+            // is bound to, so the file names no key at all. A production file that DOES name
+            // Tab is once again the thing to worry about.
             var readers = Directory
                 .GetFiles(ScriptsRoot(), "*.cs", SearchOption.AllDirectories)
                 .Where(f =>
@@ -177,12 +185,13 @@ namespace Valkur.Tests.EditMode.Game.Input
                 .ToList();
 
             CollectionAssert.AreEqual(
-                new[] { "DevConsole.cs", "PlayerStanceToggle.cs" },
+                new[] { "DevConsole.cs" },
                 readers,
-                "Tab may have exactly one GAMEPLAY meaning. A second reader outside the input " +
-                "helpers and the runtime editors is two features on one key — and a legacy " +
-                "KeyCode read is invisible to the asset check below, which is exactly how " +
-                "InventoryUI's Tab survived that check.");
+                "Tab may have exactly one GAMEPLAY meaning, and it is expressed as a BINDING " +
+                "on ToggleStance, not as a literal in source. A literal reader outside the " +
+                "input helpers and the runtime editors is two features on one key AND a half " +
+                "that no rebind can move — which is exactly how InventoryUI's Tab survived " +
+                "the asset check below for the whole life of the stance feature.");
         }
 
         [Test]
@@ -199,9 +208,21 @@ namespace Valkur.Tests.EditMode.Game.Input
                 .Select(t => lines.Skip(t.i).First(l => l.Contains("\"action\":")))
                 .ToList();
 
-            Assert.AreEqual(1, actionsBoundToTab.Count,
-                "Exactly one binding may use <Keyboard>/tab.");
-            StringAssert.Contains("ToggleStance", actionsBoundToTab[0]);
+            // Tab may now be bound more than once, and that is the context model working
+            // rather than a regression: an open runtime editor owns the whole keyboard and
+            // the postures do not apply inside one, so the Buildings editor's CG/CU scope
+            // toggle is free to be Tab too. What must stay unique is Tab's GAMEPLAY meaning —
+            // two gameplay actions on it would fire together, which is the shape this project
+            // has shipped three times.
+            var gameplayHolders = actionsBoundToTab
+                .Where(a => !a.Contains("ToggleColliderScope"))
+                .ToList();
+
+            Assert.AreEqual(1, gameplayHolders.Count,
+                "Exactly one GAMEPLAY binding may use <Keyboard>/tab. Editor tools may reuse " +
+                "it because an editor context is a separate layout:\n" +
+                string.Join("\n", actionsBoundToTab));
+            StringAssert.Contains("ToggleStance", gameplayHolders[0]);
         }
     }
 }

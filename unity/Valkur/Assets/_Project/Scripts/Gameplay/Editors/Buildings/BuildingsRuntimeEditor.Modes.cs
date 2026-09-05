@@ -15,6 +15,7 @@ using Valkur.Gameplay.Editors;
 using Valkur.UIKit;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
+using Valkur.Core.Input;
 
 namespace Valkur.Gameplay.Buildings
 {
@@ -136,13 +137,13 @@ namespace Valkur.Gameplay.Buildings
             // these reads when the new InputSystem package drops OS events
             // (recurring Unity 2022.3 Editor bug).
             bool ctrl = Valkur.Core.Input.KeyboardInputManager.IsCtrlHeld();
-            if (ctrl && Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Z, KeyCode.Z)) _undo.Undo();
-            if (ctrl && Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Y, KeyCode.Y)) _undo.Redo();
-            if (ctrl && Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.S, KeyCode.S)) SaveInstancesToJson();
-            if (Valkur.Core.Input.KeyboardInputManager.WasDeletePressedThisFrame() && _activeBuilding != null) RequestDeleteActiveWithConfirm();
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.D, KeyCode.D) && _activeBuilding != null && !ctrl) ResetActiveBuilding();
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.R, KeyCode.R) && _activeBuilding != null) SetMode(EditorMode.Resize);
-            if (Valkur.Core.Input.KeyboardInputManager.WasEscapePressedThisFrame())
+            if (EditorInput.UndoPressed()) _undo.Undo();
+            if (EditorInput.RedoPressed()) _undo.Redo();
+            if (EditorInput.SavePressed()) SaveInstancesToJson();
+            if (EditorInput.DeletePressed() && _activeBuilding != null) RequestDeleteActiveWithConfirm();
+            if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "ResetActive") && _activeBuilding != null && !ctrl) ResetActiveBuilding();
+            if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "ResizeMode") && _activeBuilding != null) SetMode(EditorMode.Resize);
+            if (EditorInput.ClosePressed())
             {
                 if (_confirmModal != null && _confirmModal.activeSelf) HideConfirm();
                 else if (_fillSpacingModal != null && _fillSpacingModal.activeSelf) ExitFillMode();
@@ -170,29 +171,28 @@ namespace Valkur.Gameplay.Buildings
             bool ctrl = Valkur.Core.Input.KeyboardInputManager.IsCtrlHeld();
 
             // B → toggle brush ON/OFF
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.B, KeyCode.B) && !ctrl)
+            if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "ToggleCollBrush") && !ctrl)
                 SetBrushOn(!BrushOn);
 
             // # (Shift+3) or numpad-3 → action = Paint (writes "#")
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Digit3, KeyCode.Alpha3)
+            if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "BrushPaintSolid")
                 && Valkur.Core.Input.KeyboardInputManager.IsShiftHeld())
                 SetBrushAction(CollBrushMode.Solid);
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Numpad3, KeyCode.Keypad3))
+            if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "BrushPaintSolid"))
                 SetBrushAction(CollBrushMode.Solid);
 
             // . (period) or numpad-. → action = Erase (writes ".")
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Period, KeyCode.Period)
-                || Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.NumpadPeriod, KeyCode.KeypadPeriod))
+            if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "BrushPaintWalk"))
                 SetBrushAction(CollBrushMode.Walk);
 
             // [ / ] → brush size −/+
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.LeftBracket, KeyCode.LeftBracket))
+            if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "BrushSmaller"))
                 OnCollBrushSizeChanged(_collBrushSize - 1);
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.RightBracket, KeyCode.RightBracket))
+            if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "BrushBigger"))
                 OnCollBrushSizeChanged(_collBrushSize + 1);
 
             // Tab → toggle scope CG ↔ CU on the active building
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Tab, KeyCode.Tab) && _activeBuilding != null)
+            if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "ToggleColliderScope") && _activeBuilding != null)
                 ToggleColliderScope();
         }
 

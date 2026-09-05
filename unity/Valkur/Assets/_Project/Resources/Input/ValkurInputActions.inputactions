@@ -274,7 +274,15 @@
                 {
                     "name": "ToggleStance",
                     "type": "Button",
-                    "id": "a1b2c3d4-0002-0021-0001-000000000001",
+                    "id": "ef929f93-b645-4e0d-a540-5ced6883c182",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "DropItem",
+                    "type": "Button",
+                    "id": "91f1d38c-857f-4a2c-aa34-8a73e42c7c04",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": ""
@@ -337,6 +345,61 @@
                     "isPartOfComposite": true
                 },
                 {
+                    "name": "Arrows",
+                    "id": "b1000001-0006-0001-0001-000000000001",
+                    "path": "2DVector",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "up",
+                    "id": "b1000001-0007-0001-0001-000000000001",
+                    "path": "<Keyboard>/upArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "down",
+                    "id": "b1000001-0008-0001-0001-000000000001",
+                    "path": "<Keyboard>/downArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "left",
+                    "id": "b1000001-0009-0001-0001-000000000001",
+                    "path": "<Keyboard>/leftArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "right",
+                    "id": "b1000001-000a-0001-0001-000000000001",
+                    "path": "<Keyboard>/rightArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
                     "name": "",
                     "id": "b1000002-0001-0001-0001-000000000001",
                     "path": "<Mouse>/position",
@@ -382,6 +445,39 @@
                 },
                 {
                     "name": "",
+                    "id": "b1000005-0002-0001-0001-000000000001",
+                    "path": "<Keyboard>/rightShift",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Dash",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000005-0003-0001-0001-000000000001",
+                    "path": "<Keyboard>/leftCtrl",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Dash",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000005-0004-0001-0001-000000000001",
+                    "path": "<Keyboard>/rightCtrl",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Dash",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "b1000006-0001-0001-0001-000000000001",
                     "path": "<Keyboard>/e",
                     "interactions": "",
@@ -404,7 +500,7 @@
                 },
                 {
                     "name": "",
-                    "id": "b1000007-0001-0001-0001-000000000001",
+                    "id": "b1000007-9000-0001-0001-000000000001",
                     "path": "<Mouse>/middleButton",
                     "interactions": "",
                     "processors": "",
@@ -690,12 +786,23 @@
                 },
                 {
                     "name": "",
-                    "id": "b1000026-0001-0001-0001-000000000001",
+                    "id": "b1000026-9001-0001-0001-000000000001",
                     "path": "<Keyboard>/tab",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
                     "action": "ToggleStance",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "fc309df0-265b-48c1-a200-525550f2ebec",
+                    "path": "<Keyboard>/delete",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "DropItem",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
@@ -1150,149 +1257,6 @@
             "bindings": [
                 {
                     "name": "",
-                    "id": "b3000001-0001-0001-0001-000000000001",
-                    "path": "<Keyboard>/f1",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "ToggleParticles",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "b3000002-0001-0001-0001-000000000001",
-                    "path": "<Keyboard>/f2",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "ToggleCombatRanges",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "b3000003-0001-0001-0001-000000000001",
-                    "path": "<Keyboard>/f3",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "ToggleSpawner",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "b3000004-0001-0001-0001-000000000001",
-                    "path": "<Keyboard>/f3",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "ToggleLighting",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "b3000005-0001-0001-0001-000000000001",
-                    "path": "<Keyboard>/f4",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "ToggleSpells",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "b3000006-0001-0001-0001-000000000001",
-                    "path": "<Keyboard>/f5",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "ToggleEntities",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "b3000007-0001-0001-0001-000000000001",
-                    "path": "<Keyboard>/f6",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "ToggleInventory",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "b3000008-0001-0001-0001-000000000001",
-                    "path": "<Keyboard>/f7",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "ToggleItems",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "b3000009-0001-0001-0001-000000000001",
-                    "path": "<Keyboard>/f8",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "ToggleTile",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "b300000a-0001-0001-0001-000000000001",
-                    "path": "<Keyboard>/f9",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "ToggleDebugHUD",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "b300000b-0001-0001-0001-000000000001",
-                    "path": "<Keyboard>/f10",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "ToggleBuildings",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "b300000c-0001-0001-0001-000000000001",
-                    "path": "<Keyboard>/f11",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "ToggleMap",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "b300000d-0001-0001-0001-000000000001",
-                    "path": "<Keyboard>/f12",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "ToggleFSM",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "b300000e-0001-0001-0001-000000000001",
                     "path": "<Keyboard>/f5",
                     "interactions": "",
@@ -1356,15 +1320,921 @@
                     "action": "OpenGeneralEditor",
                     "isComposite": false,
                     "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "EditorShared",
+            "id": "94bb338e-6a36-407c-81d4-fc7b0c3cbc00",
+            "actions": [
+                {
+                    "name": "Undo",
+                    "type": "Button",
+                    "id": "31cf087b-aa89-4d50-b3c9-614be8bf36b5",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Redo",
+                    "type": "Button",
+                    "id": "bc6e1342-02b8-4ba7-89e8-2d7325c641d9",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Save",
+                    "type": "Button",
+                    "id": "fb4d7775-c27d-48bf-a2b7-11f231ee02b0",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Close",
+                    "type": "Button",
+                    "id": "7e635d6c-e15b-487e-99ed-92d4dcd85c32",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Delete",
+                    "type": "Button",
+                    "id": "59da8445-42a6-4311-8760-bfa9544db342",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Select",
+                    "type": "Button",
+                    "id": "e75b63f1-00c4-46c4-a5c2-957bd89efc2f",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "PanDrag",
+                    "type": "Button",
+                    "id": "c486b2ee-bb10-4e6e-846b-c26322a7796d",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ZoomIn",
+                    "type": "Button",
+                    "id": "ce6bb7ec-97d1-4dba-9fbb-1ac6768d08e9",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ZoomOut",
+                    "type": "Button",
+                    "id": "dc20171c-a23f-472c-9875-f5646a651921",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleOutlines",
+                    "type": "Button",
+                    "id": "5814bf6d-2ad1-4ead-9e9d-5c85083aae6d",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "4f4b06b2-4da4-4c0e-9733-84099237c281",
+                    "path": "<Keyboard>/z",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Undo",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 },
                 {
                     "name": "",
-                    "id": "b3000014-0001-0001-0001-000000000001",
+                    "id": "2603d944-60a5-4875-9895-bb25213c9836",
+                    "path": "<Keyboard>/y",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Redo",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "34f5c538-659c-42de-96f0-8c281117489d",
+                    "path": "<Keyboard>/s",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Save",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b2b7add3-7eea-4f01-a632-2a583191ef42",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Close",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f0386335-b74b-42b3-88d4-aee6bc366fdd",
+                    "path": "<Keyboard>/delete",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Delete",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "6f3d3baa-c34d-47b7-b451-ce8a5fcdb943",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Select",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c91c693f-3c2d-44da-9e42-55bf72f518fb",
+                    "path": "<Mouse>/middleButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "PanDrag",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "26e66d5a-1458-43d2-b961-2fea1b0b6004",
+                    "path": "<Mouse>/scroll/up",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ZoomIn",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "05286b69-b8d6-4ac0-9572-5ecc4c2872aa",
+                    "path": "<Mouse>/scroll/down",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ZoomOut",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "8a169305-04dc-4f3d-b191-be7f3d5ea36d",
+                    "path": "<Keyboard>/leftAlt",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleOutlines",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "Editor.Tile",
+            "id": "1fc022f0-e631-4e44-9793-10b2f62bba20",
+            "actions": [
+                {
+                    "name": "ToolBrush",
+                    "type": "Button",
+                    "id": "1910197a-535d-4f4a-961b-07ccd9ad830c",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToolEraser",
+                    "type": "Button",
+                    "id": "23acd6fe-c834-405f-b06b-256fa969b11b",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToolFill",
+                    "type": "Button",
+                    "id": "38f7e3e0-c714-45c0-8fa4-236e2c96cb01",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToolEyedropper",
+                    "type": "Button",
+                    "id": "c38044ba-2372-41d3-b854-8dfbf8c923e2",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToolSelect",
+                    "type": "Button",
+                    "id": "6e9a2038-06d5-4b3b-9f64-5d3e7e0ebc19",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToolAutoTile",
+                    "type": "Button",
+                    "id": "e5dadc2e-75e1-4dc4-831f-76cd21316bde",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Copy",
+                    "type": "Button",
+                    "id": "21b48cb5-42ab-4c2e-8817-c4145779d7e5",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Cut",
+                    "type": "Button",
+                    "id": "e1ed226f-1a48-4a09-a6e8-f00e734ecc22",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Paste",
+                    "type": "Button",
+                    "id": "aca89e95-9530-45c5-9083-6be9eab06cec",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ProbeExtraCameras",
+                    "type": "Button",
+                    "id": "e98f3822-a46e-4ffa-ac29-2d2634ac18d6",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ProbeSprites",
+                    "type": "Button",
+                    "id": "23d159fa-ea02-4168-a729-7cf6fccd96d8",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ProbeLights",
+                    "type": "Button",
+                    "id": "ce42ed31-77f5-40ff-b525-55004e1d82c8",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ProbeVolumes",
+                    "type": "Button",
+                    "id": "5728f967-00c4-4e17-8234-0f621757d611",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ProbePostFx",
+                    "type": "Button",
+                    "id": "352fcc21-7c92-46c3-96b8-387bdb85c9c9",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ProbeExtraTilemaps",
+                    "type": "Button",
+                    "id": "0e7c6c99-9205-45c3-a54d-a91e77d4f0d7",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleProbe",
+                    "type": "Button",
+                    "id": "866e3217-c75a-43be-8fc5-3f9321c4158f",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "165258d1-5aa4-4076-90f7-2c0391fa83a4",
+                    "path": "<Keyboard>/b",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToolBrush",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "d7a90cbc-975d-4747-a1f9-d78cac033b48",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToolEraser",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c4a4b78a-e8b8-49f3-b982-a810a0e85b28",
+                    "path": "<Keyboard>/f",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToolFill",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "2bc2ab0e-b11e-4000-bbbf-22739e412812",
+                    "path": "<Keyboard>/i",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToolEyedropper",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "75883008-1865-478c-a045-5ac17b44f6c1",
+                    "path": "<Keyboard>/s",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToolSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "84edaf6f-920e-45f0-bbcf-50db3f598338",
+                    "path": "<Keyboard>/a",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToolAutoTile",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "12c48c96-09fb-4abe-bb91-dec7aa7fb7d8",
+                    "path": "<Keyboard>/c",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Copy",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "07d4de2a-4e48-4838-8be6-31c2dcbb07fd",
+                    "path": "<Keyboard>/x",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Cut",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "ad143650-e46c-4900-acdd-eab36136a571",
+                    "path": "<Keyboard>/v",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Paste",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "68dcbabd-ea6f-4d35-9ca5-c9f62a44d5b1",
                     "path": "<Keyboard>/f2",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "ToggleTimeWeather",
+                    "action": "ProbeExtraCameras",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b22dc322-1523-4882-aa73-2617a492cd29",
+                    "path": "<Keyboard>/f3",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ProbeSprites",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "918f0b56-c663-48bf-ad2a-1a2cbf863d30",
+                    "path": "<Keyboard>/f4",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ProbeLights",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b6a3173c-0b12-4b79-b07d-d7aa03e0f84f",
+                    "path": "<Keyboard>/f5",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ProbeVolumes",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "190c7efe-1de3-4705-9135-7061e34044e8",
+                    "path": "<Keyboard>/f6",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ProbePostFx",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "611a3091-c2b1-4305-a64e-5b5b3c5d97c9",
+                    "path": "<Keyboard>/f7",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ProbeExtraTilemaps",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "6e3b81c0-e77d-4eac-ae77-1d6e20c354ab",
+                    "path": "<Keyboard>/f8",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleProbe",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "Editor.Buildings",
+            "id": "75145fe5-126c-4a49-b3ce-889d4e6e2354",
+            "actions": [
+                {
+                    "name": "ResetActive",
+                    "type": "Button",
+                    "id": "732ad6cd-fb92-46b9-b308-2045cf9db323",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ResizeMode",
+                    "type": "Button",
+                    "id": "0e00c41a-f12e-4807-8226-c842ca0cc9a0",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleCollBrush",
+                    "type": "Button",
+                    "id": "0ce42215-113e-40db-91f5-4730bf1b666d",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "BrushPaintSolid",
+                    "type": "Button",
+                    "id": "3b2450a8-fc71-4c46-9622-c2aa81b4c5d5",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "BrushPaintWalk",
+                    "type": "Button",
+                    "id": "cb218950-f6c1-461b-8140-09d2d281b558",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "BrushSmaller",
+                    "type": "Button",
+                    "id": "d92aef5e-da15-4fd5-9380-78a72d4e0338",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "BrushBigger",
+                    "type": "Button",
+                    "id": "3dc93e5e-85c5-489e-93b1-5355f79bce31",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleColliderScope",
+                    "type": "Button",
+                    "id": "1989b7df-176c-4365-a665-b09ad0cb89cf",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ProbeExtraCameras",
+                    "type": "Button",
+                    "id": "8b35cb1f-27c5-40bd-ac8e-d5eb16106907",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ProbeSprites",
+                    "type": "Button",
+                    "id": "79d3a88a-5c0c-4d33-b6c9-a70ba8104af9",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ProbeLights",
+                    "type": "Button",
+                    "id": "3a62d626-c1fa-4458-ae1d-189e59824b67",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ProbeVolumes",
+                    "type": "Button",
+                    "id": "7e6e5f33-e296-4f9e-b9a6-2f9f9b69e76d",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ProbePostFx",
+                    "type": "Button",
+                    "id": "edff0edd-6678-4411-97e9-c4f4b05a5088",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ProbeColliders",
+                    "type": "Button",
+                    "id": "5dc5bcf4-e351-4457-a2b6-28b8e6786531",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "5b3d8f86-03b6-4b74-b772-0e98b8644c77",
+                    "path": "<Keyboard>/d",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ResetActive",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "0c2a0c7a-7d31-4077-90f3-5023d86e7e8e",
+                    "path": "<Keyboard>/r",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ResizeMode",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "eb6ccbf0-8d16-43a5-bedc-a936432a23ea",
+                    "path": "<Keyboard>/b",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleCollBrush",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "fcef33b0-77ea-4ecd-b381-05c1018f946a",
+                    "path": "<Keyboard>/3",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "BrushPaintSolid",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "0ce0e342-229b-4622-9fff-82bc9d608771",
+                    "path": "<Keyboard>/numpad3",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "BrushPaintSolid",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "0226e46e-ee3d-4d74-b015-f359d0008068",
+                    "path": "<Keyboard>/period",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "BrushPaintWalk",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "6adae969-1f8b-41a8-af48-7a2a93ed8dea",
+                    "path": "<Keyboard>/numpadPeriod",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "BrushPaintWalk",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "8ce8cfb9-ccb2-4251-88a4-2e0b8b4ea7f5",
+                    "path": "<Keyboard>/leftBracket",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "BrushSmaller",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "6319928d-78f0-45bb-9643-addad3572c11",
+                    "path": "<Keyboard>/rightBracket",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "BrushBigger",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "e70a42a1-fb1d-4c29-ba02-1a02ee490fbb",
+                    "path": "<Keyboard>/tab",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleColliderScope",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "0469917a-f689-4ea8-9d88-8c9957e8d8c5",
+                    "path": "<Keyboard>/f2",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ProbeExtraCameras",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b3433fc4-cdbb-4ce8-b380-0548523252c0",
+                    "path": "<Keyboard>/f3",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ProbeSprites",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "77bf86ca-a870-4ae3-80cb-e27e91aa6802",
+                    "path": "<Keyboard>/f4",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ProbeLights",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "af981361-4ff4-4be6-8f66-30cf95807a39",
+                    "path": "<Keyboard>/f5",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ProbeVolumes",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f54df099-7843-471c-9abe-fd0136336380",
+                    "path": "<Keyboard>/f6",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ProbePostFx",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f3f29b3b-72fe-41f4-963b-7b7b5ed892fb",
+                    "path": "<Keyboard>/f7",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ProbeColliders",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "Editor.Map",
+            "id": "ee84ebdb-ea32-4893-8784-b84fbd275335",
+            "actions": [
+                {
+                    "name": "NewSlot",
+                    "type": "Button",
+                    "id": "c7f25f48-e27f-47e1-b980-bb15cc6c31e1",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Duplicate",
+                    "type": "Button",
+                    "id": "f07beafb-0290-42e0-9c25-33b9df2a128d",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Rename",
+                    "type": "Button",
+                    "id": "e3e8560e-4f25-4ffa-9d5c-69c5caa40b32",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "EditSlot",
+                    "type": "Button",
+                    "id": "d9ba20aa-f41d-4b2e-b4b1-3f3eb27b93ec",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "1d8ecf35-88d4-4dec-9b68-a9a30e4af5b0",
+                    "path": "<Keyboard>/n",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "NewSlot",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "cf92399b-1909-42fe-bea3-568a76d46cf0",
+                    "path": "<Keyboard>/d",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Duplicate",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "5dc68f75-3662-4211-ab0e-8ff8c9956175",
+                    "path": "<Keyboard>/r",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Rename",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "a3072c58-2e54-4aa2-9061-7ff7c722b042",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "EditSlot",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "Editor.Boss",
+            "id": "46428a8d-55ef-44b5-99ff-6ab9d5fde07a",
+            "actions": [
+                {
+                    "name": "TapCue",
+                    "type": "Button",
+                    "id": "c6155751-160e-4344-8e5f-d6e72d4e15b4",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "be11d988-0ea8-46a9-8f7a-4be452cc8589",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "TapCue",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

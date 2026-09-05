@@ -140,23 +140,23 @@ namespace Valkur.Gameplay.Editors.Boss
             // Routed through KeyboardInputManager so the legacy backend keeps
             // these shortcuts working under the InputSystem-drops-events bug.
             bool ctrl = KeyboardInputManager.IsCtrlHeld();
-            if (ctrl && KeyboardInputManager.WasKeyPressedThisFrame(Key.Z, KeyCode.Z))
+            if (EditorInput.UndoPressed())
             {
                 _undo.Undo();
                 RefreshUndoRedoButtons();
                 SetStatus("Undo");
             }
-            if (ctrl && KeyboardInputManager.WasKeyPressedThisFrame(Key.Y, KeyCode.Y))
+            if (EditorInput.RedoPressed())
             {
                 _undo.Redo();
                 RefreshUndoRedoButtons();
                 SetStatus("Redo");
             }
-            if (ctrl && KeyboardInputManager.WasKeyPressedThisFrame(Key.S, KeyCode.S))
+            if (EditorInput.SavePressed())
             {
                 SaveSelectedChart();
             }
-            if (KeyboardInputManager.WasEscapePressedThisFrame())
+            if (EditorInput.ClosePressed())
             {
                 if (_tutorialRoot != null && _tutorialRoot.activeSelf)
                     _tutorialRoot.SetActive(false);

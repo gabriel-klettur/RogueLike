@@ -149,28 +149,24 @@ namespace Valkur.UI.PauseMenu
 
         private void HandleLoadGameInput()
         {
-            if ((_cancel != null && _cancel.WasPerformedThisFrame())
-                || Valkur.Core.Input.InputCompat.CancelPressed())
+            if (CancelPressed())
             { GoBack(); return; }
 
             if (_loadSaves.Count == 0) return;
 
-            if ((_navUp != null && _navUp.WasPerformedThisFrame())
-                || Valkur.Core.Input.InputCompat.NavUpPressed())
+            if (NavUpPressed())
             {
                 _loadSel = Mathf.Max(0, _loadSel - 1);
                 EnsureLoadScrollVisible();
                 UpdateLoadGameVisuals();
             }
-            else if ((_navDown != null && _navDown.WasPerformedThisFrame())
-                     || Valkur.Core.Input.InputCompat.NavDownPressed())
+            else if (NavDownPressed())
             {
                 _loadSel = Mathf.Min(_loadSaves.Count - 1, _loadSel + 1);
                 EnsureLoadScrollVisible();
                 UpdateLoadGameVisuals();
             }
-            else if ((_confirm != null && _confirm.WasPerformedThisFrame())
-                     || Valkur.Core.Input.InputCompat.ConfirmPressed())
+            else if (ConfirmPressed())
             {
                 LoadSelectedSave();
             }

@@ -73,61 +73,25 @@ namespace Valkur.Tests.PlayMode.Input
         }
 
         // ─── Per-key dispatch ──────────────────────────────────────────────────
+        //
+        // The eleven F-key dispatch tests are GONE with the keys they pressed. Every runtime
+        // editor is reached from the General Editor on Escape now; the F-row is free, and the
+        // fourteen toggles ship unbound. What remains is the hotkeys that still carry a key.
 
         [UnityTest]
         [Ignore(IgnoreReason)]
-        public IEnumerator F1_Press_FiresToggleParticles()
-            => AssertKeyFires(Key.F1, () => InputService.Instance.Editors.ToggleParticles);
+        public IEnumerator Escape_Press_FiresOpenGeneralEditor()
+            => AssertKeyFires(Key.Escape, () => InputService.Instance.Editors.OpenGeneralEditor);
 
         [UnityTest]
         [Ignore(IgnoreReason)]
-        public IEnumerator F4_Press_FiresToggleSpells()
-            => AssertKeyFires(Key.F4, () => InputService.Instance.Editors.ToggleSpells);
-
-        [UnityTest]
-        [Ignore(IgnoreReason)]
-        public IEnumerator F5_Press_FiresToggleEntities()
-            => AssertKeyFires(Key.F5, () => InputService.Instance.Editors.ToggleEntities);
-
-        [UnityTest]
-        [Ignore(IgnoreReason)]
-        public IEnumerator F5_Press_AlsoFiresQuickSave_BindingShared()
+        public IEnumerator F5_Press_FiresQuickSave()
             => AssertKeyFires(Key.F5, () => InputService.Instance.Editors.QuickSave);
 
         [UnityTest]
         [Ignore(IgnoreReason)]
-        public IEnumerator F6_Press_FiresToggleInventory()
-            => AssertKeyFires(Key.F6, () => InputService.Instance.Editors.ToggleInventory);
-
-        [UnityTest]
-        [Ignore(IgnoreReason)]
-        public IEnumerator F7_Press_FiresToggleItems()
-            => AssertKeyFires(Key.F7, () => InputService.Instance.Editors.ToggleItems);
-
-        [UnityTest]
-        [Ignore(IgnoreReason)]
-        public IEnumerator F8_Press_FiresToggleTile()
-            => AssertKeyFires(Key.F8, () => InputService.Instance.Editors.ToggleTile);
-
-        [UnityTest]
-        [Ignore(IgnoreReason)]
-        public IEnumerator F9_Press_FiresToggleDebugHUD()
-            => AssertKeyFires(Key.F9, () => InputService.Instance.Editors.ToggleDebugHUD);
-
-        [UnityTest]
-        [Ignore(IgnoreReason)]
-        public IEnumerator F10_Press_FiresToggleBuildings()
-            => AssertKeyFires(Key.F10, () => InputService.Instance.Editors.ToggleBuildings);
-
-        [UnityTest]
-        [Ignore(IgnoreReason)]
-        public IEnumerator F11_Press_FiresToggleMap()
-            => AssertKeyFires(Key.F11, () => InputService.Instance.Editors.ToggleMap);
-
-        [UnityTest]
-        [Ignore(IgnoreReason)]
-        public IEnumerator F12_Press_FiresToggleFSM()
-            => AssertKeyFires(Key.F12, () => InputService.Instance.Editors.ToggleFSM);
+        public IEnumerator F9_Press_FiresQuickLoad()
+            => AssertKeyFires(Key.F9, () => InputService.Instance.Editors.QuickLoad);
 
         [UnityTest]
         [Ignore(IgnoreReason)]
@@ -144,27 +108,57 @@ namespace Valkur.Tests.PlayMode.Input
             yield return ReleaseKey(Key.LeftCtrl);
         }
 
+        /// <summary>
+        /// The retired toggles must NOT fire on the keys they used to own. This is the half
+        /// that would catch a stray binding or a resurrected legacy fallback putting them
+        /// back — the failure mode there is silent, because pressing F8 and getting the Tile
+        /// editor looks like it is working.
+        /// </summary>
+        [UnityTest]
+        [Ignore(IgnoreReason)]
+        public IEnumerator RetiredToggles_DoNotFireOnTheirOldKeys()
+        {
+            var cases = new (Key key, System.Func<InputAction> get)[]
+            {
+                (Key.F1,  () => InputService.Instance.Editors.ToggleParticles),
+                (Key.F4,  () => InputService.Instance.Editors.ToggleSpells),
+                (Key.F8,  () => InputService.Instance.Editors.ToggleTile),
+                (Key.F10, () => InputService.Instance.Editors.ToggleBuildings),
+                (Key.F12, () => InputService.Instance.Editors.ToggleFSM),
+            };
+
+            foreach (var (key, get) in cases)
+            {
+                yield return PressAndRelease(key);
+                var action = get();
+                Assert.IsFalse(action.WasPerformedThisFrame() || action.triggered,
+                    $"{key} must no longer fire {action.name} — editors are opened from the " +
+                    "General Editor on Escape.");
+            }
+        }
+
         // ─── End-to-end via EditorHotkeyBindings.Resolve ───────────────────────
 
         [UnityTest]
         [Ignore(IgnoreReason)]
-        public IEnumerator Resolve_ToggleTile_FiresOnF8Press_ViaService()
+        public IEnumerator Resolve_OpenGeneralEditor_FiresOnEscape_ViaService()
         {
             var action = EditorHotkeyBindings.Resolve(
-                EditorHotkeyBindings.Hotkey.ToggleTile, out bool owns);
+                EditorHotkeyBindings.Hotkey.OpenGeneralEditor, out bool owns);
             Assert.IsFalse(owns, "Service-backed resolve must not transfer ownership.");
 
-            yield return PressAndRelease(Key.F8);
+            yield return PressAndRelease(Key.Escape);
             Assert.IsTrue(action.WasPerformedThisFrame() || action.triggered,
-                "EditorHotkeyBindings.Resolve(ToggleTile) must report a press event in the same frame the F8 key fires.");
+                "Escape is the only way into any editor now — if this stops dispatching, all " +
+                "sixteen are unreachable.");
         }
 
         [UnityTest]
         [Ignore(IgnoreReason)]
-        public IEnumerator Resolve_ToggleEntities_FiresOnF5Press_ViaService()
+        public IEnumerator Resolve_QuickSave_FiresOnF5Press_ViaService()
         {
             var action = EditorHotkeyBindings.Resolve(
-                EditorHotkeyBindings.Hotkey.ToggleEntities, out _);
+                EditorHotkeyBindings.Hotkey.QuickSave, out _);
 
             yield return PressAndRelease(Key.F5);
             Assert.IsTrue(action.WasPerformedThisFrame() || action.triggered);
@@ -172,25 +166,28 @@ namespace Valkur.Tests.PlayMode.Input
 
         [UnityTest]
         [Ignore(IgnoreReason)]
-        public IEnumerator Resolve_FallbackPath_FiresOnF8Press()
+        public IEnumerator Resolve_FallbackPath_FiresOnBackquotePress()
         {
-            // No InputService → fallback returns ad-hoc action.
+            // No InputService → fallback returns ad-hoc action. ToggleDevConsole rather than
+            // ToggleTile: the editor toggles ship unbound, so their fallback path is null by
+            // design and there is no ad-hoc action to dispatch.
             InputService.ResetForTests();
             Assert.IsFalse(InputService.HasInstance);
 
             var action = EditorHotkeyBindings.Resolve(
-                EditorHotkeyBindings.Hotkey.ToggleTile, out bool owns);
+                EditorHotkeyBindings.Hotkey.ToggleDevConsole, out bool owns);
             Assert.IsTrue(owns, "Fallback must transfer ownership.");
 
             try
             {
-                yield return PressAndRelease(Key.F8);
+                yield return PressAndRelease(Key.Backquote);
                 Assert.IsTrue(action.WasPerformedThisFrame() || action.triggered,
-                    "Even without InputService, the ad-hoc fallback must dispatch F8 — every editor depends on this when EditMode tests build them in isolation.");
+                    "Even without InputService, the ad-hoc fallback must dispatch — editor " +
+                    "fixtures that build one editor in isolation depend on it.");
             }
             finally
             {
-                action.Dispose();
+                action?.Dispose();
             }
         }
 

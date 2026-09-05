@@ -16,15 +16,15 @@ namespace Valkur.Gameplay.TileEditor
     public class TileEditorInputHandler : IDisposable
     {
         private InputAction _toggleAction;
-        private InputAction _toolBrushAction;
-        private InputAction _toolEraserAction;
-        private InputAction _toolFillAction;
-        private InputAction _toolEyedropperAction;
-        private InputAction _toolSelectAction;
-        private InputAction _toolAutoTileAction;
-        private InputAction _undoAction;
-        private InputAction _redoAction;
         private InputAction _ctrlModifier;
+
+        // The eight tool / undo / redo InputActions this used to build in code are GONE.
+        // They lived outside ValkurInputActions, so no audit could see them and nobody could
+        // rebind them — the same defect as InventoryUI's tab — and they hid a real bug:
+        // _redoAction was constructed on "<Keyboard>/z", the SAME path as _undoAction, so the
+        // InputSystem half of redo had been firing on Ctrl+Z for the life of this file and
+        // only the legacy Ctrl+Y read below ever did the right thing. They are asset actions
+        // in the Editor.Tile map now, reached through EditorInput.Tool.
 
         private bool _ownsToggleAction;
         private bool _ownsCtrlModifier;
@@ -42,25 +42,10 @@ namespace Valkur.Gameplay.TileEditor
             _ctrlModifier = EditorHotkeyBindings.Resolve(
                 EditorHotkeyBindings.Hotkey.CtrlModifier, out _ownsCtrlModifier);
 
-            // Tool-specific shortcuts are scoped to the Tile Editor only — kept
-            // ad-hoc to avoid polluting the canonical asset with editor-internals.
-            _toolBrushAction = new InputAction("ToolBrush", InputActionType.Button, "<Keyboard>/b");
-            _toolBrushAction.Enable();
-            _toolEraserAction = new InputAction("ToolEraser", InputActionType.Button, "<Keyboard>/e");
-            _toolEraserAction.Enable();
-            _toolFillAction = new InputAction("ToolFill", InputActionType.Button, "<Keyboard>/f");
-            _toolFillAction.Enable();
-            _toolEyedropperAction = new InputAction("ToolEyedropper", InputActionType.Button, "<Keyboard>/i");
-            _toolEyedropperAction.Enable();
-            _toolSelectAction = new InputAction("ToolSelect", InputActionType.Button, "<Keyboard>/s");
-            _toolSelectAction.Enable();
-            _toolAutoTileAction = new InputAction("ToolAutoTile", InputActionType.Button, "<Keyboard>/a");
-            _toolAutoTileAction.Enable();
-
-            _undoAction = new InputAction("Undo", InputActionType.Button, "<Keyboard>/z");
-            _undoAction.Enable();
-            _redoAction = new InputAction("Redo", InputActionType.Button, "<Keyboard>/z");
-            _redoAction.Enable();
+            // The tool shortcuts used to be built here as ad-hoc InputActions "to avoid
+            // polluting the canonical asset with editor-internals". That reasoning is what
+            // made them unauditable and unbindable; the asset is where a binding belongs, and
+            // the Editor.Tile map is how it stays scoped to this editor.
         }
 
         public bool WasTogglePressed()
@@ -80,18 +65,18 @@ namespace Valkur.Gameplay.TileEditor
             bool ctrl = (_ctrlModifier != null && _ctrlModifier.IsPressed())
                      || EditorHotkeyBindings.IsPressed(EditorHotkeyBindings.Hotkey.CtrlModifier);
 
-            bool brushNew = _toolBrushAction != null && _toolBrushAction.WasPerformedThisFrame();
-            if (brushNew || UnityEngine.Input.GetKeyDown(KeyCode.B))         return TileEditorState.Tool.Brush;
-            bool eraserNew = _toolEraserAction != null && _toolEraserAction.WasPerformedThisFrame();
-            if (eraserNew || UnityEngine.Input.GetKeyDown(KeyCode.E))        return TileEditorState.Tool.Eraser;
-            bool fillNew = _toolFillAction != null && _toolFillAction.WasPerformedThisFrame();
-            if (fillNew || UnityEngine.Input.GetKeyDown(KeyCode.F))          return TileEditorState.Tool.Fill;
-            bool eyeNew = _toolEyedropperAction != null && _toolEyedropperAction.WasPerformedThisFrame();
-            if (eyeNew || UnityEngine.Input.GetKeyDown(KeyCode.I))           return TileEditorState.Tool.Eyedropper;
-            bool selNew = _toolSelectAction != null && _toolSelectAction.WasPerformedThisFrame();
-            if ((selNew || UnityEngine.Input.GetKeyDown(KeyCode.S)) && !ctrl) return TileEditorState.Tool.Select;
-            bool autoNew = _toolAutoTileAction != null && _toolAutoTileAction.WasPerformedThisFrame();
-            if ((autoNew || UnityEngine.Input.GetKeyDown(KeyCode.A)) && !ctrl) return TileEditorState.Tool.AutoTileRegion;
+            // EditorInput.Tool ORs both backends AND checks that the Tile editor is the one
+            // currently open, so these can share keys with another editor's tools freely —
+            // which is the point of an editor owning the whole board. The raw
+            // UnityEngine.Input.GetKeyDown fallbacks are gone with the same change: they
+            // answered while the chat had focus, and they did not move when a key was rebound.
+            const string M = InputActionCatalog.MapTileEditor;
+            if (EditorInput.Tool(M, "ToolBrush"))              return TileEditorState.Tool.Brush;
+            if (EditorInput.Tool(M, "ToolEraser"))             return TileEditorState.Tool.Eraser;
+            if (EditorInput.Tool(M, "ToolFill"))               return TileEditorState.Tool.Fill;
+            if (EditorInput.Tool(M, "ToolEyedropper"))         return TileEditorState.Tool.Eyedropper;
+            if (EditorInput.Tool(M, "ToolSelect")   && !ctrl)  return TileEditorState.Tool.Select;
+            if (EditorInput.Tool(M, "ToolAutoTile") && !ctrl)  return TileEditorState.Tool.AutoTileRegion;
             return null;
         }
 
@@ -127,12 +112,12 @@ namespace Valkur.Gameplay.TileEditor
                      || EditorHotkeyBindings.IsPressed(EditorHotkeyBindings.Hotkey.CtrlModifier);
             if (!ctrl) return 0;
 
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Y, KeyCode.Y))
-                return 2;
-
-            bool zPressed = (_undoAction != null && _undoAction.WasPerformedThisFrame())
-                         || UnityEngine.Input.GetKeyDown(KeyCode.Z);
-            if (!zPressed) return 0;
+            // Ctrl+Y is the shared Redo verb; Ctrl+Shift+Z is this editor's historical alias
+            // for the same thing, published on the Tools panel button since before Ctrl+Y
+            // existed here. Both resolve through the shared bindings, so moving Redo in the
+            // Controls editor moves the first and leaves the alias on whatever Undo is.
+            if (EditorInput.RedoPressed()) return 2;
+            if (!EditorInput.UndoPressed()) return 0;
 
             // KeyboardInputManager folds the new+legacy OR for shift internally.
             return Valkur.Core.Input.KeyboardInputManager.IsShiftHeld() ? 2 : 1;
@@ -186,8 +171,10 @@ namespace Valkur.Gameplay.TileEditor
             
             // Check Input Actions
             Debug.Log($"[TileEditor] Toggle action: {_toggleAction != null} (enabled: {_toggleAction?.enabled})");
-            Debug.Log($"[TileEditor] Tool actions: {_toolBrushAction != null && _toolEraserAction != null && _toolFillAction != null}");
-            Debug.Log($"[TileEditor] Undo/Redo actions: {_undoAction != null && _redoAction != null}");
+            Debug.Log($"[TileEditor] Tool bindings: brush={InputBindingResolver.PrimaryLabel(ToolAction("ToolBrush"))} " +
+                      $"eraser={InputBindingResolver.PrimaryLabel(ToolAction("ToolEraser"))} " +
+                      $"fill={InputBindingResolver.PrimaryLabel(ToolAction("ToolFill"))}");
+            Debug.Log($"[TileEditor] Live context: {InputContexts.Current}");
             
             // Test PollZoom method
             float scroll = PollZoom();
@@ -203,14 +190,18 @@ namespace Valkur.Gameplay.TileEditor
             if (_ownsToggleAction) DisposeAction(ref _toggleAction); else _toggleAction = null;
             if (_ownsCtrlModifier) DisposeAction(ref _ctrlModifier); else _ctrlModifier = null;
 
-            DisposeAction(ref _toolBrushAction);
-            DisposeAction(ref _toolEraserAction);
-            DisposeAction(ref _toolFillAction);
-            DisposeAction(ref _toolEyedropperAction);
-            DisposeAction(ref _toolSelectAction);
-            DisposeAction(ref _toolAutoTileAction);
-            DisposeAction(ref _undoAction);
-            DisposeAction(ref _redoAction);
+            // Nothing else to dispose: the tool, undo and redo actions belong to the
+            // canonical asset now, and disposing an InputService-owned action would take it
+            // away from every other consumer for the rest of the session.
+        }
+
+        /// <summary>One of this editor's own actions, from the canonical asset. Null when the
+        /// asset has no such action, which the catalog coverage test reports.</summary>
+        private static InputAction ToolAction(string action)
+        {
+            var map = InputService.Instance?.Asset?.FindActionMap(
+                InputActionCatalog.MapTileEditor, throwIfNotFound: false);
+            return map?.FindAction(action, throwIfNotFound: false);
         }
 
         private static void DisposeAction(ref InputAction action)

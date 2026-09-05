@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Core;
+using Valkur.Core.Input;
 
 namespace Valkur.Gameplay.VFX
 {
@@ -138,8 +139,7 @@ namespace Valkur.Gameplay.VFX
             // Poll Alt key for toggle (one-shot, not held). Routed through the
             // centralized helper so the legacy backend kicks in if the new
             // InputSystem package drops events (Unity 2022.3 Editor bug).
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(
-                    UnityEngine.InputSystem.Key.LeftAlt, KeyCode.LeftAlt))
+            if (EditorInput.ToggleOutlinesPressed())
             {
                 ToggleAllOutlines();
             }

@@ -58,6 +58,7 @@ namespace Valkur.Gameplay.Editors.General
             list.Add(MakeEditor("Lighting",      () => LightingRuntimeEditor.Instance));
             list.Add(MakeEditor("Time & Weather",() => TimeWeatherEditor.Instance));
             list.Add(MakeEditor("Camera",        () => CameraFeelEditor.CameraRuntimeEditor.Instance));
+            list.Add(MakeEditor("Controls",      () => Valkur.Gameplay.Editors.Controls.ControlsRuntimeEditor.Instance));
             list.Add(MakeEditor("Dungeon NodeGraph", () => Valkur.Gameplay.Editors.DungeonNodeGraph.DungeonNodeGraphEditor.Instance));
 
             // ── Diagnostics (toggles, no exclusive activation) ──────────────

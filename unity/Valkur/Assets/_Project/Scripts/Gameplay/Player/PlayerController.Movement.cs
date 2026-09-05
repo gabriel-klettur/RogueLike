@@ -239,27 +239,19 @@ namespace Valkur.Gameplay
             var move = MoveAction;
             if (move != null) _moveInput = move.ReadValue<Vector2>();
 
-            // Legacy fallback: under Unity 2022.3 in the Editor the new
-            // InputSystem package intermittently drops OS event delivery and
-            // _moveInput stays at (0,0) even while WASD is held. KeyboardInputManager
-            // wraps the OR-of-new-and-legacy for each key.
+            // Legacy fallback: under Unity 2022.3 in the Editor the new InputSystem package
+            // intermittently drops OS event delivery and _moveInput stays at (0,0) even while
+            // the movement keys are held.
+            //
+            // The eight Key/KeyCode literals this used to be — WASD plus the arrows — were the
+            // reason movement could not be rebound: the override moved the composite and the
+            // fallback went on walking the player with W. InputBindingResolver reads the SAME
+            // composite the action declares, using its part names to know which way each
+            // control points, so both halves move together.
             if (_moveInput.sqrMagnitude < 0.01f)
             {
-                float lx = 0f, ly = 0f;
-                if (KeyboardInputManager.IsKeyPressed(Key.A, KeyCode.A) ||
-                    KeyboardInputManager.IsKeyPressed(Key.LeftArrow, KeyCode.LeftArrow))   lx -= 1f;
-                if (KeyboardInputManager.IsKeyPressed(Key.D, KeyCode.D) ||
-                    KeyboardInputManager.IsKeyPressed(Key.RightArrow, KeyCode.RightArrow)) lx += 1f;
-                if (KeyboardInputManager.IsKeyPressed(Key.S, KeyCode.S) ||
-                    KeyboardInputManager.IsKeyPressed(Key.DownArrow, KeyCode.DownArrow))   ly -= 1f;
-                if (KeyboardInputManager.IsKeyPressed(Key.W, KeyCode.W) ||
-                    KeyboardInputManager.IsKeyPressed(Key.UpArrow, KeyCode.UpArrow))       ly += 1f;
-                if (lx != 0f || ly != 0f)
-                {
-                    var legacy = new Vector2(lx, ly);
-                    if (legacy.sqrMagnitude > 1f) legacy = legacy.normalized;
-                    _moveInput = legacy;
-                }
+                var legacy = InputBindingResolver.ReadVectorFallback(move);
+                if (legacy.sqrMagnitude > 0.01f) _moveInput = legacy;
             }
         }
 
@@ -332,6 +324,40 @@ namespace Valkur.Gameplay
         private LaserBeamController _leftHeldBeam;
 
         /// <summary>
+        /// Minimum seconds between REPEATS of a held left click while a redirecting editor
+        /// owns the primary cast.
+        ///
+        /// <para>The redirected poll reads the button as HELD, so a spell whose own
+        /// <c>cooldownDuration</c> is 0 -- which is every <see cref="SpellType.AnimationProbe"/>
+        /// and several authoring-time spells -- fires once per frame for as long as the button
+        /// is down, i.e. sixty casts a second. That is not a cooldown bug: the editor is where
+        /// a spell is watched, and stacking sixty copies of it makes the one thing the author
+        /// is looking at unreadable. Ordinary gameplay is untouched -- this gate lives only in
+        /// <see cref="PollRedirectedPrimaryCast"/>.</para>
+        /// </summary>
+        private const float REDIRECTED_CAST_REPEAT_INTERVAL = 1f;
+
+        /// <summary>Earliest <see cref="Time.time"/> a HELD redirected click may cast again.</summary>
+        private float _nextRedirectedCastTime;
+
+        /// <summary>
+        /// Whether a redirected left click may cast on this frame.
+        ///
+        /// <para>Pure so EditMode tests can drive it without a scene, the same shape as
+        /// <see cref="ResolvePrimaryCastKey"/> and <see cref="ShouldSuspendCombatFor"/>.</para>
+        ///
+        /// <para>Two carve-outs, and each is the difference between a throttle and a defect.
+        /// A CHANNELLED spell is refreshed every frame and ended by the release, so gating it
+        /// would chop the beam into one-second pulses rather than limit anything. And a FRESH
+        /// PRESS always casts -- the gate exists for the HOLD, and making a deliberate click
+        /// wait out an interval left over from the previous one reads as the editor having
+        /// ignored it.</para>
+        /// </summary>
+        internal static bool AllowsRedirectedCast(
+            bool channelled, bool pressedThisFrame, float now, float nextAllowedTime)
+            => channelled || pressedThisFrame || now >= nextAllowedTime;
+
+        /// <summary>
         /// Casts <paramref name="key"/> for a held trigger, using channel semantics when the
         /// spell is one.
         ///
@@ -389,8 +415,25 @@ namespace Valkur.Gameplay
             // behind it.
             if (IsPointerOverInteractiveUI()) return;
 
-            if (MouseInputManager.IsLeftMouseButtonPressed())
-                CastHeldPrimary(key, PrimaryCastIgnoresManaCost(active));
+            if (!MouseInputManager.IsLeftMouseButtonPressed()) return;
+
+            // A beam is hold-to-channel -- CastHeldPrimary refreshes it every frame and the
+            // release is what ends it -- so throttling it would chop the laser into one-second
+            // pulses instead of limiting anything. Only discrete casts repeat.
+            var spell = _spellCaster != null ? _spellCaster.GetSpellByKey(key) : null;
+            bool channelled = spell != null && spell.type == SpellType.Beam;
+
+            if (!AllowsRedirectedCast(
+                    channelled,
+                    MouseInputManager.WasLeftMouseButtonPressedThisFrame(),
+                    Time.time,
+                    _nextRedirectedCastTime))
+                return;
+
+            if (!channelled)
+                _nextRedirectedCastTime = Time.time + REDIRECTED_CAST_REPEAT_INTERVAL;
+
+            CastHeldPrimary(key, PrimaryCastIgnoresManaCost(active));
         }
 
         /// <summary>
@@ -829,47 +872,26 @@ namespace Valkur.Gameplay
 
             if (IsPointerOverInteractiveUI()) return;
 
-            // Dash — fired by any of:
-            //   • Space  (canonical InputService.Gameplay.Dash action)
-            //   • RightShift  (legacy Python-parity fallback)
-            //   • LeftCtrl   (per user request)
-            //   • RightCtrl  (per user request)
+            // Dash. Every trigger it has is a BINDING on InputService.Gameplay.Dash — space,
+            // right shift, and both Ctrl keys — and nothing about which keys those are lives
+            // here any more.
             //
-            // Ctrl-as-dash is safe during gameplay because no gameplay system
-            // reads Ctrl-modified input — every IsCtrlHeld() callsite outside
-            // this file lives in a runtime editor (Tile / Buildings / Items /
-            // Lighting / Boss), and those editors gate gameplay via
-            // InputBlocker.IsGameplayBlocked, which short-circuits this entire
-            // method. So Ctrl+S, Ctrl+Z, Ctrl-drag, etc. in
-            // editors do NOT also fire a dash, and during pure gameplay there
-            // are no Ctrl combos for the dash to interfere with.
+            // It used to: three of the four were literal Key/KeyCode pairs in this method,
+            // written when there was no way to express "this action has four bindings" that
+            // the legacy OR-gate could also see. The cost was that the dash was the one
+            // gameplay verb a Controls editor could never fully move — rebinding the action
+            // changed space and left the other three exactly where they were.
             //
-            // Direction always tracks the MOUSE CURSOR — _facingDirection is
-            // already updated to point at the mouse world position whenever
-            // the cursor is inside the viewport (see PlayerFacingResolver),
-            // so reusing it gives the user "dash toward where the mouse is"
-            // for every trigger uniformly. When the cursor is offscreen the
-            // resolver falls back to movement direction, which is the only
-            // sensible alternative.
+            // Ctrl-as-dash stays safe for the same reason it always was: every IsCtrlHeld()
+            // callsite outside this file lives in a runtime editor, and those gate gameplay
+            // through InputBlocker.IsGameplayBlocked, which short-circuits this whole method.
+            // So Ctrl+S and Ctrl-drag in an editor do not also fire a dash.
             //
-            // The Ctrl press detection reads BOTH input backends directly
-            // (legacy UnityEngine.Input.GetKeyDown + Keyboard.current.*Ctrl
-            // wasPressedThisFrame) instead of going through
-            // KeyboardInputManager. The InputActions asset binds leftCtrl to
-            // the "CtrlModifier" action which the new InputSystem can flag as
-            // "consumed" in some scenarios, masking subsequent reads. The
-            // direct OR-fallback survives that and matches the same pattern
-            // the rest of the file uses for arrow keys.
-            var dashAction = DashAction;
-            bool dashNew = dashAction != null && dashAction.WasPerformedThisFrame();
-            bool dashLegacy = KeyboardInputManager.WasKeyPressedThisFrame(Key.RightShift, KeyCode.RightShift);
-
-            // Route through KeyboardInputManager so the InputCentralizationGuard
-            // test passes — direct Keyboard.current reads outside the helper class
-            // are forbidden (see CLAUDE.md "Input pipeline" section).
-            bool leftCtrlPressed  = KeyboardInputManager.WasKeyPressedThisFrame(Key.LeftCtrl,  KeyCode.LeftControl);
-            bool rightCtrlPressed = KeyboardInputManager.WasKeyPressedThisFrame(Key.RightCtrl, KeyCode.RightControl);
-            bool dashCtrl = leftCtrlPressed || rightCtrlPressed;
+            // Direction always tracks the MOUSE CURSOR — _facingDirection already points at
+            // the mouse world position whenever the cursor is inside the viewport (see
+            // PlayerFacingResolver), so every trigger reads as "dash toward the cursor". When
+            // the cursor is offscreen the resolver falls back to movement direction.
+            bool dashFired = InputBindingResolver.WasPerformedThisFrame(DashAction);
 
             // Single source of truth: the spell-based dash is the only path.
             // The legacy DashAbility fallback was removed because it has zero
@@ -881,12 +903,25 @@ namespace Valkur.Gameplay
             // dash simply does nothing, matching the UX of every other spell
             // on cooldown. _dashAbility is still kept on the player so its
             // IsDashing flag can gate other systems if needed.
-            if ((dashNew || dashLegacy || dashCtrl) && _spellCaster != null)
+            if (dashFired && _spellCaster != null)
             {
                 if (_spellCaster.TryCastByKey("dash", _facingDirection))
                     TriggerCastAnimation("dash");
             }
         }
+
+        // Catalog descriptors for the three mouse-driven combat actions. Resolved per read
+        // rather than cached in a static field: the lookup is a dictionary hit against an
+        // immutable table, and a static holding catalog objects is exactly the shape the
+        // Domain-Reload ratchet exists to refuse.
+        private static InputActionDescriptor _descPrimaryAttack =>
+            InputActionCatalog.Find(InputActionCatalog.MapGameplay, "PrimaryAttack");
+
+        private static InputActionDescriptor _descSecondaryAttack =>
+            InputActionCatalog.Find(InputActionCatalog.MapGameplay, "SecondaryAttack");
+
+        private static InputActionDescriptor _descMiddleClick =>
+            InputActionCatalog.Find(InputActionCatalog.MapGameplay, "MiddleClick");
 
         private void PollCombatActions()
         {
@@ -900,27 +935,34 @@ namespace Valkur.Gameplay
             // clear blocksRaycasts, so only live UI blocks here.
             if (IsPointerOverInteractiveUI()) return;
 
-            // Primary attack (left click) → fireball (spell slot 0)
-            // Python parity: M_LEFT → fireball
+            // Primary attack → fireball (spell slot 0). Python parity: M_LEFT → fireball.
             // IsPressed allows hold-to-fire; SpellCaster cooldown (0.4 s) gates the rate.
-            // MouseInputManager already ORs new InputSystem with the legacy backend, so
-            // we don't need to read PrimaryAttackAction separately — both backends are
-            // covered.
-            // The key is resolved per frame rather than hardcoded: a runtime editor that
+            //
+            // Read through InputBindingResolver rather than MouseInputManager's left-button
+            // helper. Both OR the two backends, and only one of them asks the ACTION what it
+            // is bound to — which is what makes the button rebindable at all. The literal
+            // helper call hardcoded "the primary attack is the left mouse button" in the one
+            // place a Controls editor cannot reach.
+            //
+            // The spell key is resolved per frame rather than hardcoded: a runtime editor that
             // implements IChoosesPrimaryCastSpell redirects this click to whatever it has
             // selected, so the Spells Editor can be used to try a spell out in the world. With
             // no such editor open the resolver returns "fireball" and this is unchanged.
-            if (MouseInputManager.IsLeftMouseButtonPressed())
+            var primaryAction = PrimaryAttackAction;
+            if (InputContextPolicy.IsLive(_descPrimaryAttack) &&
+                InputBindingResolver.IsPressed(primaryAction))
                 CastHeldPrimary(ResolvePrimaryCastKey());
 
-            // Releasing left click ends a channelled primary. Harmless for every other spell
-            // type — there is simply no beam to stop.
-            if (MouseInputManager.WasLeftMouseButtonReleasedThisFrame())
+            // Releasing the primary ends a channelled beam. Deliberately NOT gated on the
+            // stance mask: an ending must arrive even for an action that has just stopped
+            // being live, which is the same reason OnStanceChanged cuts the three held things
+            // off the TRANSITION rather than beside the gate.
+            if (InputBindingResolver.WasReleasedThisFrame(primaryAction))
                 StopLeftHeldBeam();
 
-            // Secondary attack (right click) → slash spell
-            // Python parity: M_RIGHT → slash
-            if (MouseInputManager.WasRightMouseButtonPressedThisFrame())
+            // Secondary attack → slash spell. Python parity: M_RIGHT → slash.
+            if (InputContextPolicy.IsLive(_descSecondaryAttack) &&
+                InputBindingResolver.WasPerformedThisFrame(SecondaryAttackAction))
             {
                 if (_spellCaster != null && _spellCaster.TryCastByKey("slash", _facingDirection))
                     TriggerCastAnimation("slash");
@@ -930,9 +972,10 @@ namespace Valkur.Gameplay
             // Python parity: M_MIDDLE → laser_beam
             // First press starts the beam through the spell system; subsequent frames
             // refresh the controller directly (TryCastByKey is gated by cooldown so we
-            // can't rely on it to keep the beam alive). MouseInputManager covers both
-            // backends, so we don't need to consult MiddleClickAction separately.
-            if (MouseInputManager.IsMiddleMouseButtonPressed())
+            // can't rely on it to keep the beam alive).
+            var middleAction = MiddleClickAction;
+            if (InputContextPolicy.IsLive(_descMiddleClick) &&
+                InputBindingResolver.IsPressed(middleAction))
             {
                 if (_spellCaster != null)
                 {
@@ -948,16 +991,17 @@ namespace Valkur.Gameplay
                     TriggerCastAnimation("laser_beam");
                 }
             }
-            if (MouseInputManager.WasMiddleMouseButtonReleasedThisFrame())
+            if (InputBindingResolver.WasReleasedThisFrame(middleAction))
             {
                 var beam = _spellCaster != null ? _spellCaster.GetComponent<LaserBeamController>() : null;
                 if (beam != null) beam.Stop();
             }
 
-            // All 23 spell key bindings (1-0, q, e, r, t, f, g, c, v, x, p, l, u, m).
-            // Python parity. The (action, spellKey, legacyKey) triples come from
-            // InputService.Gameplay.EnumerateSpellBindings — single source of truth
-            // for both the InputAction reference and the legacy KeyCode fallback.
+            // The 24 spell slots. The (action, descriptor) pairs come from
+            // InputService.Gameplay.EnumerateSpellBindings, which reads InputActionCatalog —
+            // single source of truth for the slot list, the spellKey each casts, and the
+            // stance each is live in. The legacy KeyCode column that used to ride along here
+            // is gone: it was a literal that did not move when the slot was rebound.
             var gp = InputService.Instance?.Gameplay;
             if (_spellCaster != null && gp != null)
             {
@@ -968,11 +1012,10 @@ namespace Valkur.Gameplay
                 if (!string.IsNullOrEmpty(charging))
                 {
                     bool stillHeld = false;
-                    foreach (var (action, spellKey, legacyKey) in gp.EnumerateSpellBindings())
+                    foreach (var (action, descriptor) in gp.EnumerateSpellBindings())
                     {
-                        if (spellKey != charging) continue;
-                        stillHeld = (action != null && action.IsPressed())
-                                 || KeyboardInputManager.IsKeyCodeHeld(legacyKey);
+                        if (descriptor.PayloadKey != charging) continue;
+                        stillHeld = InputBindingResolver.IsPressed(action);
                         break;
                     }
 
@@ -984,16 +1027,21 @@ namespace Valkur.Gameplay
                     return;   // charging or releasing, either way the frame is spent
                 }
 
-                foreach (var (action, spellKey, legacyKey) in gp.EnumerateSpellBindings())
+                foreach (var (action, descriptor) in gp.EnumerateSpellBindings())
                 {
-                    // The legacy half goes through KeyboardInputManager, NOT raw
-                    // UnityEngine.Input. Disabling the Gameplay action map silences the
-                    // action; nothing silenced the fallback, so every letter typed into the
-                    // chat that happens to be bound to a spell cast it.
-                    bool fired = (action != null && action.WasPerformedThisFrame())
-                              || KeyboardInputManager.WasKeyCodePressedThisFrame(legacyKey);
-                    if (fired)
+                    // Per-slot stance mask on top of the coarse gate above. The gate answers
+                    // "is any combat live"; this answers "is THIS slot live", which is what
+                    // lets a player silence one spell without leaving War.
+                    if (!InputContextPolicy.IsLive(descriptor)) continue;
+
+                    // Both backends, and the legacy half is derived from the slot's own live
+                    // binding — so a rebind moves it. It also goes through
+                    // KeyboardInputManager rather than raw UnityEngine.Input: disabling the
+                    // Gameplay map silences the action, nothing silenced the raw fallback, and
+                    // every letter typed into the chat that happened to be bound cast a spell.
+                    if (InputBindingResolver.WasPerformedThisFrame(action))
                     {
+                        string spellKey = descriptor.PayloadKey;
                         // A chargeable spell starts building instead of firing. The animation
                         // is deliberately NOT triggered here: the cast pose belongs to the
                         // release, and playing it on the press would show the character
