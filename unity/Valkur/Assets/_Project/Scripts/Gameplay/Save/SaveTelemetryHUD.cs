@@ -72,6 +72,7 @@ namespace Valkur.Gameplay.Save
 
         private void OnDestroy()
         {
+            EscapeOwnership.Release(this);
             SaveTelemetry.OnEntryRecorded -= HandleEntryRecorded;
             if (Instance == this) Instance = null;
         }
@@ -79,18 +80,23 @@ namespace Valkur.Gameplay.Save
         private void Show()
         {
             _root.SetActive(true);
+            // Escape closes this overlay, so it holds Escape while up — otherwise the
+            // launcher read the same press and closed too. See EscapeOwnership.
+            EscapeOwnership.Claim(this);
             Refresh();
         }
 
         private void Close()
         {
             if (_root != null) _root.SetActive(false);
+            EscapeOwnership.Release(this);
         }
 
         private void Update()
         {
             if (_root == null || !_root.activeInHierarchy) return;
-            // ESC closes — sits on top of the General Editor so it owns input.
+            // ESC closes. The claim taken in Show() is what makes this overlay the only
+            // reader of that press.
             if (KeyboardInputManager.WasEscapePressedThisFrame()) Close();
         }
 

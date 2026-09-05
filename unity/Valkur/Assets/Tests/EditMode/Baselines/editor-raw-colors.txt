@@ -47,7 +47,7 @@
 18	FSM/FSMRuntimeEditor.Graph.cs
 5	FSM/FSMRuntimeEditor.Properties.cs
 4	FSM/FSMRuntimeEditor.Sets.cs
-3	General/GeneralEditorManager.UI.cs
+0	General/GeneralEditorManager.UI.cs
 1	Inventory/InventoryEditorUIBuilder.cs
 1	Items/ItemsEditorUIBuilder.cs
 1	Items/ItemsEditorUIBuilder.Panels.cs

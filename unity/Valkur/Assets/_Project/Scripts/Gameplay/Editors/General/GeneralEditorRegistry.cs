@@ -27,12 +27,14 @@ namespace Valkur.Gameplay.Editors.General
     /// Builds the static catalogue of buttons rendered in the General Editor
     /// (ESC) launcher. Three sections:
     /// <list type="bullet">
-    /// <item><b>Editores</b> – the eleven F-key editors. Each entry calls
+    /// <item><b>Editors</b> – the sixteen runtime editors. Each entry calls
     /// <see cref="GameEditorManager.OpenExclusive"/>, which auto-closes the
-    /// launcher (since the launcher is itself the active editor).</item>
-    /// <item><b>Diagnóstico</b> – overlay toggles that don't participate in
+    /// launcher (since the launcher is itself the active editor). Since the
+    /// F-row was retired this list is the ONLY way into any of them, which is
+    /// what <c>EditorReachabilityTests</c> pins.</item>
+    /// <item><b>Diagnostics</b> – overlay toggles that don't participate in
     /// the editor exclusivity contract; the launcher stays open.</item>
-    /// <item><b>Partida</b> – session actions (save / load / options / quit)
+    /// <item><b>Game</b> – session actions (save / load / options / quit)
     /// that close the launcher first and then route through the pause menu
     /// service or scene transition.</item>
     /// </list>
@@ -41,7 +43,7 @@ namespace Valkur.Gameplay.Editors.General
     {
         public static IReadOnlyList<GeneralEditorEntry> BuildEntries()
         {
-            var list = new List<GeneralEditorEntry>(17);
+            var list = new List<GeneralEditorEntry>(25);
 
             // ── Editors ─────────────────────────────────────────────────────
             list.Add(MakeEditor("Tile",          () => TileEditorManager.Instance));
@@ -106,14 +108,14 @@ namespace Valkur.Gameplay.Editors.General
 
             list.Add(new GeneralEditorEntry(
                 "Exit to Menu", GeneralEditorSection.Game,
-                onClick: QuitToMainMenu,
+                onClick: ConfirmQuitToMainMenu,
                 closesLauncher: true));
 
             return list;
         }
 
-        // Helper for the eleven IGameEditor entries — each looks up the live
-        // singleton at click time and routes through GameEditorManager.
+        // Helper for the IGameEditor entries — each looks up the live singleton at
+        // click time and routes through GameEditorManager.
         private static GeneralEditorEntry MakeEditor<T>(string label, Func<T> getter)
             where T : Component, GameEditorManager.IGameEditor
         {
@@ -124,6 +126,9 @@ namespace Valkur.Gameplay.Editors.General
                     var ed = getter();
                     if (ed == null)
                     {
+                        // A console warning is invisible from the Game view; the button
+                        // has to answer on screen or it reads as broken.
+                        ToastSystem.Show($"{label} editor is not available in this scene.");
                         Debug.LogWarning($"[GeneralEditor] '{label}' instance not available.");
                         return;
                     }
@@ -146,6 +151,7 @@ namespace Valkur.Gameplay.Editors.General
         {
             if (SaveService.Instance == null)
             {
+                ToastSystem.Show("Cannot save: the save service is not running.");
                 Debug.LogWarning("[GeneralEditor] SaveService unavailable — cannot quick-save.");
                 return;
             }
@@ -165,6 +171,16 @@ namespace Valkur.Gameplay.Editors.General
                 var mgr = GameEditorManager.Instance;
                 if (ge != null && mgr != null) mgr.OpenExclusive(ge);
             });
+        }
+
+        // Leaving the session is the one launcher action with no way back, so it asks
+        // first. The dialog is the launcher's own (see GeneralEditorManager.Confirm.cs);
+        // without a launcher to host it the action runs as before.
+        private static void ConfirmQuitToMainMenu()
+        {
+            var ge = GeneralEditorManager.Instance;
+            if (ge == null) { QuitToMainMenu(); return; }
+            ge.Confirm("Save the run and return to the main menu?", QuitToMainMenu);
         }
 
         private static void QuitToMainMenu()

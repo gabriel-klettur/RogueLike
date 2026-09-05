@@ -2,6 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Valkur.Core;
+using Valkur.Core.Input;
 
 namespace Valkur.UI.HUD
 {
@@ -170,6 +171,8 @@ namespace Valkur.UI.HUD
         private void ApplyOpenState(bool open)
         {
             IsOpen = open;
+            // The sheet closes on Escape, so it holds Escape while open — see EscapeOwnership.
+            if (open) EscapeOwnership.Claim(this); else EscapeOwnership.Release(this);
             if (_root != null && _root.activeSelf != open) _root.SetActive(open);
         }
 

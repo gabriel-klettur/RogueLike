@@ -1,25 +1,32 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Core.Editors;
 using Valkur.Core.Input;
 using Valkur.Core.Services;
 
 namespace Valkur.Gameplay.Editors.General
 {
     /// <summary>
-    /// Top-level launcher panel toggled with <c>ESC</c>. Lists every other
-    /// runtime editor (Tile, Buildings, Items, …), the diagnostic overlays
-    /// (Combat Ranges, Debug HUD), and session actions (Save / Load /
-    /// Options / Quit) as clickable buttons. Each button delegates to the
-    /// existing system — the launcher never duplicates editor logic.
+    /// Top-level launcher panel toggled with <c>ESC</c> — since the F-row was retired, the
+    /// only way into any of the sixteen runtime editors. Lists them, the diagnostic overlays
+    /// (Combat Ranges, Debug HUD, Save Log) and the session actions (Save / Load / Options /
+    /// Quit) as buttons. Each button delegates to the existing system — the launcher never
+    /// duplicates editor logic.
     ///
-    /// Implements <see cref="GameEditorManager.IGameEditor"/> so it
-    /// participates in the standard exclusivity contract: opening any other
-    /// editor through the launcher auto-closes the launcher; pressing ESC
-    /// again toggles the launcher back off.
+    /// Implements <see cref="GameEditorManager.IGameEditor"/> so it participates in the
+    /// standard exclusivity contract: opening any other editor through the launcher
+    /// auto-closes the launcher; pressing ESC again toggles the launcher back off.
+    ///
+    /// Escape has more than one reader. An overlay that closes on it (Save Log, character
+    /// sheet, the launcher's own confirm dialog) claims it through
+    /// <see cref="EscapeOwnership"/> while it is up, and the toggle below yields to that
+    /// claim — before it did, one press closed the overlay AND toggled the launcher behind it.
     /// </summary>
     public partial class GeneralEditorManager
-        : SingletonMonoBehaviour<GeneralEditorManager>, GameEditorManager.IGameEditor
+        : SingletonMonoBehaviour<GeneralEditorManager>,
+          GameEditorManager.IGameEditor,
+          IProvidesWorkspaceState
     {
         public string EditorName => "General";
         public bool IsActive => _isActive;
@@ -39,6 +46,7 @@ namespace Valkur.Gameplay.Editors.General
 
         protected override void OnDestroy()
         {
+            ReleaseConfirmEscapeClaim();
             if (GameEditorManager.HasInstance)
                 GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();
@@ -46,6 +54,14 @@ namespace Valkur.Gameplay.Editors.General
 
         private void Update()
         {
+            // The confirm dialog owns Escape for as long as it is up: the press cancels it
+            // and must not also reach the toggle below.
+            if (IsConfirmOpen)
+            {
+                if (KeyboardInputManager.WasEscapePressedThisFrame()) CancelConfirm();
+                return;
+            }
+
             if (!EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.OpenGeneralEditor))
                 return;
 
@@ -54,6 +70,11 @@ namespace Valkur.Gameplay.Editors.General
             // double-firing into a launcher toggle.
             var pause = ServiceLocator.Get<IPauseMenuService>();
             if (pause != null && pause.IsOpen) return;
+
+            // An overlay that closes on Escape has claimed it. Before this check, with the
+            // Save Log open, one press closed the log AND closed the launcher it was
+            // opened from.
+            if (EscapeOwnership.IsClaimed) return;
 
             var mgr = GameEditorManager.Instance;
             if (mgr == null) return;
@@ -66,8 +87,8 @@ namespace Valkur.Gameplay.Editors.General
             }
 
             // Anything else (no editor active, or a different editor active) →
-            // open the launcher. GameEditorManager.OpenExclusive auto-closes
-            // the previous editor first, so the per-press UX is uniform:
+            // open the launcher. GameEditorManager.OpenExclusive auto-closes the
+            // previous editor first, so the per-press UX is uniform:
             //   gameplay  ── ESC ─►  launcher
             //   any editor ─ ESC ─►  editor closes + launcher opens
             //   launcher  ── ESC ─►  back to gameplay
@@ -82,11 +103,13 @@ namespace Valkur.Gameplay.Editors.General
             _isActive = true;
             SetPanelVisible(true);
             RefreshActiveStates();
+            FocusFirstEntry();
         }
 
         public void Deactivate()
         {
             _isActive = false;
+            ReleaseFocus();
             SetPanelVisible(false);
             // Notify the manager so its own _activeEditor pointer clears even
             // when Deactivate is invoked outside ToggleExclusive (e.g. through
@@ -95,10 +118,11 @@ namespace Valkur.Gameplay.Editors.General
                 GameEditorManager.Instance.NotifyDeactivated(this);
         }
 
-        // BuildUI / SetPanelVisible / RefreshActiveStates implemented in the
-        // .UI.cs partial so the lifecycle file stays focused on contract.
+        // Implemented in the .UI.cs partial so the lifecycle file stays focused on contract.
         partial void BuildUI();
         partial void SetPanelVisible(bool visible);
         partial void RefreshActiveStates();
+        partial void FocusFirstEntry();
+        partial void ReleaseFocus();
     }
 }
