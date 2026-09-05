@@ -1,8 +1,14 @@
 # Spell HUD Icons
 
 Square icons for the player spell action bar (`SpellBarHUD`, WoW-style grid). The
-HUD slot is 40 px in-game; assets are generated at **256×256 with a transparent
-background** so they downscale cleanly and stay sharp in tooltips/zoom.
+HUD slot is 40 px in-game; assets are square with a **transparent background** so
+they downscale cleanly and stay sharp in tooltips/zoom.
+
+Canvas size is **whatever the source gives**, never an upscale: the 30
+prompt-generated icons are 1024×1024 because that is what the generator emitted,
+and the 27 wave-7 icons are 320×320 because they were cut from a sheet whose
+cells are 100–280 px. Blowing those up four- to ten-fold to match would buy no
+detail and be paid for in `ui.spriteatlas`, for a slot that draws them at 40 px.
 
 ## How they wire up
 
@@ -54,17 +60,24 @@ even though the PNG exists on disk.
 
 | Category    | Folder         | Files | Status                |
 | ----------- | -------------- | ----- | --------------------- |
-| Projectiles | `projectiles/` | 8/8   | Generated + assigned  |
-| Melee       | `melee/`       | 4/4   | Generated + assigned  |
-| Mobility    | `mobility/`    | 2/2   | Generated + assigned  |
-| Area        | `area/`        | 11/11 | Generated + assigned  |
-| Defense     | `defense/`     | 3/3   | Generated + assigned  |
-| Utility     | `utility/`     | 2/2   | Generated + assigned  |
-| Summoning   | `summoning/`   | 0/1   | Pending PNG           |
+| Projectiles | `projectiles/` | 21/21 | Generated + assigned  |
+| Melee       | `melee/`       | 5/5   | Generated + assigned  |
+| Mobility    | `mobility/`    | 5/5   | Generated + assigned  |
+| Area        | `area/`        | 21/21 | Generated + assigned  |
+| Defense     | `defense/`     | 8/8   | Generated + assigned  |
+| Utility     | `utility/`     | 4/4   | Generated + assigned  |
+| Summoning   | `summoning/`   | 2/2   | Generated + assigned  |
+| Charges     | `charges/`     | 7/7   | Generated + assigned  |
 
-Total: **30 / 31** player-castable spells generated and wired. The remaining
-slot is `summon_barbol.png` — once generated, drop it in `summoning/` and rerun
-`Valkur > Spells > Assign Icons`.
+Total: **73 files**, in three batches — 30 prompt-generated, the 27 of the spell
+expansion (*Wave 7*), and the 16 that closed the last gaps (*Wave 8*). **Every
+player-castable spell now has an icon of its own**, including `summon_barbol`,
+which had been pending since this file was written.
+
+The 22 catalog entries still without an `iconSprite` are all `AnimationProbe`
+spells. That is correct and permanent: a probe exists so an animation can be
+selected in the F4 editor, it is never shown in the player action bar, and
+`SpellCastFlourishFX.AppliesTo` refuses it outright.
 
 Hostile / NPC-only spells (`hostile_slash*`, `hostile_dash`, `boss_barbol_slash`)
 are intentionally excluded — they never appear in the player action bar. If a
@@ -73,7 +86,8 @@ templates below.
 
 ## Conventions
 
-- **Source resolution:** 256×256 PNG (Unity downscales to 40 px in HUD).
+- **Source resolution:** native — 1024×1024 for the prompt-generated set,
+  320×320 for the sheet-cut wave-7 set. Never upscaled to match a neighbour.
 - **Background:** fully transparent. The HUD slot already paints frame +
   cooldown overlay + hotkey label + mana cost.
 - **No border, no text, no frame** baked into the icon.
@@ -92,16 +106,31 @@ templates below.
 ```text
 unity/Valkur/Assets/_Project/Art/UI/spells/
 ├── projectiles/   fireball, iceball, lightball, darkball,
-│                  lightning, chain_lightning, laser_beam, lightning_beam
-├── melee/         slash, slash_cleave, slash_stab, slash_combo
-├── mobility/      dash, teleport
+│                  lightning, chain_lightning, laser_beam, lightning_beam,
+│                  ice_lance, void_lance, curse_of_frailty, raise_thrall,
+│                  seeking_shard, scatter_volley, charged_bolt,
+│                  laser_beam_{red,blue,green,yellow,white,black}
+├── melee/         slash, slash_cleave, slash_stab, slash_combo,
+│                  slash_regular
+├── mobility/      dash, teleport, glacial_step, shadow_step, leap_slam
 ├── area/          meteor_shower, flame_breath, arcane_flame, boomerang,
 │                  vortex_pull, vortex_push, root_whip, puddle_lava,
-│                  wall_ice, mine_basic, firework_launch
-├── defense/       healing_aura, healing_totem, sphere_magic_shield
-├── utility/       smoke, smoke_emitter
-└── summoning/     summon_barbol
+│                  wall_ice, mine_basic, firework_launch,
+│                  frost_nova, blizzard, thorn_burst, entangle, spore_cloud,
+│                  radiant_burst, thunderclap, static_field, cinder_trail,
+│                  arcane_barrier
+├── defense/       healing_aura, healing_totem, sphere_magic_shield,
+│                  frozen_ward, barkskin, blessing, sanctuary, guardian_light
+├── utility/       smoke, smoke_emitter, war_cry, weapon_toggle
+├── charges/       charge_ki_{spirit,azure,verdant,solar,
+│                  crimson,violet,void}
+└── summoning/     summon_wolf, summon_barbol
 ```
+
+The folder is the spell's own `SpellType`, which is why `curse_of_frailty` and
+`raise_thrall` sit under `projectiles/` — both are `SpellType.Projectile`, cast
+at a target. Nothing resolves by folder, so this only has to stay honest, not
+stay pretty.
 
 ## Prompt style guide
 
@@ -128,10 +157,114 @@ For batch consistency: feed the first three generated icons (`fireball`,
 `iceball`, `slash`) as a style reference (Midjourney `--sref`, DALL·E "in the
 same style as", Stable Diffusion IP-Adapter, etc.) when re-rolling later icons.
 
+## Wave 7 — the 27 spell-expansion icons
+
+The icons for the 27 spells of `.github/SPELL_EXPANSION_27_ROADMAP.md` have a
+different provenance from everything above: they were delivered as **one 1659×948
+sheet**, four rows by seven columns with the last cell empty, not as 27 separate
+generations. So there are no per-spell prompt blocks for them — the reproducible
+recipe is the cutter, not a prompt.
+
+```text
+staging/spells/last_spells_added.png     the source sheet (gitignored)
+tools/atlas/wave7/build_spell_icons.py   segment, trim, place, name
+tools/atlas/generated/
+  spell_icons_manifest_wave7.json        what was written, and from where
+  spell_icons_wave7_contact.png          --contact-sheet output, for eyeballing
+Valkur > Spells > Assign Icons           wire iconSprite
+```
+
+```bash
+python tools/atlas/wave7/build_spell_icons.py --dry-run --contact-sheet
+python tools/atlas/wave7/build_spell_icons.py
+```
+
+The sheet reads left-to-right, top-to-bottom (C1…C7 across, R1…R4 down). This
+layout is duplicated in the cutter's `SPELLS` table, which is the authority:
+
+- **R1** — `frost_nova`, `ice_lance`, `glacial_step`, `frozen_ward`,
+  `blizzard`, `thorn_burst`, `entangle`
+- **R2** — `barkskin`, `spore_cloud`, `summon_wolf`, `shadow_step`,
+  `void_lance`, `curse_of_frailty`, `raise_thrall`
+- **R3** — `radiant_burst`, `blessing`, `sanctuary`, `guardian_light`,
+  `seeking_shard`, `thunderclap`, `static_field`
+- **R4** — `scatter_volley`, `war_cry`, `leap_slam`, `charged_bolt`,
+  `cinder_trail`, `arcane_barrier`, *(empty)*
+
+Two things about that cutter are worth knowing before re-running it.
+
+**It cannot cut on a grid, and band projection fails outright.** Every icon on
+the sheet carries a wide soft glow, and rows 1–3 bleed into each other hard
+enough that projecting the alpha onto the vertical axis reports *one* band 645 px
+tall covering three rows — the only gap the projection finds is above row 4. So
+the tool thresholds high to isolate the solid cores, clusters those onto the 4×7
+grid, and then hands every remaining glow pixel to whichever core is nearest.
+Where two glows overlap the boundary lands in the dim valley between them, which
+is where a human would cut it too. `minerals/build_mineral_icons.py` cuts by band
+projection and is the right tool for a sheet whose cells do not touch; this is
+not that sheet.
+
+**The table is declared by hand and has to be.** Hue says a cell is violet and
+does not say whether that violet is a void lance, a curse or a raised thrall —
+this sheet holds all three side by side in the same violet. The grid check is
+what catches a mis-declaration: the tool refuses to write anything unless it
+segments exactly 7/7/7/6 cells, so a sheet that gains or loses an icon fails loud
+instead of silently shifting every name one cell to the left.
+
+## Wave 8 — closing the shared-icon gaps
+
+Sixteen more, delivered the same way (one 1448×1086 sheet, 4×4) and cut by the
+same tool — `--only wave8`. What made these a batch is not an element or a
+school: they were the spells that had **no icon of their own**. Six lasers and
+`slash_regular` were borrowing another spell's PNG, and the seven ki charges,
+`weapon_toggle` and `summon_barbol` had nothing at all.
+
+- **R1** — `laser_beam_red`, `laser_beam_blue`, `laser_beam_green`,
+  `laser_beam_yellow`
+- **R2** — `laser_beam_white`, `laser_beam_black`, `slash_regular`,
+  `weapon_toggle`
+- **R3** — `charge_ki_spirit`, `charge_ki_azure`, `charge_ki_verdant`,
+  `charge_ki_solar`
+- **R4** — `charge_ki_crimson`, `charge_ki_violet`, `charge_ki_void`,
+  `summon_barbol`
+
+Three things shaped the art and are worth keeping.
+
+**The laser family should look like a family.** All seven are `SpellType.Beam`
+at `scale 2.0` and `range 6`, identical in every field but `particleColor` — so
+one silhouette in seven hues is the honest icon set, not a failure of
+imagination. `laser_beam_black` is the exception that needed a decision: its
+authored colour is `#0D0D12`, and a black beam on the HUD's dark slot is
+invisible, so it is drawn as a band of void **outlined** in magenta. Darkness
+that reads by its contour, never by its fill.
+
+**On the ki ladder, `scale` is intensity and not size.** It runs 0.15 to 1.00
+across the seven, and what it moves at runtime is density and behaviour — 6 to
+15 flame tongues, 35 to 130 sparks a second, no ground debris below 0.32, no
+lightning below 0.60. So the seven icons are all the same height and escalate in
+violence instead: `spirit` is a calm near-colourless column, `void` is saturated
+with orbiting debris, constant lightning and a shock ring. Drawing them at
+different sizes would have said the opposite of what the spell does.
+
+**This sheet's background was not knocked out cleanly.** Only 0.2% of it is true
+alpha 0, against 31% of the wave-7 sheet, and the residue is mottled colour
+rather than black (mean RGB 97,87,98 over the 10% of it sitting at alpha 9–31).
+It composites invisibly — floors of 8 and 48 are indistinguishable on mid-grey —
+but it does mean the low-alpha band bridges neighbouring icons, which is why
+`SEED_ALPHA` matters: at a threshold of 8 the tool segments **6** icons out of
+this sheet, and 16 at anything from 48 up. It is also why the cutter now
+alpha-bleeds every icon's edge colour outward, so nothing downstream that
+averages neighbouring pixels can drag that junk back in.
+
 ## Per-spell prompts
 
-The blocks below already include the full style preamble — copy and paste each
-one as-is.
+The blocks below cover the 30 prompt-generated icons only; the 43 wave-7 and
+wave-8 icons are cut from sheets and are documented above. Each block already
+includes the full style preamble — copy and paste it as-is.
+
+Note the preamble below asks for **pixel art**, which describes the original 30
+and *not* the sheet-cut waves — those are painted, additive-glow, Diablo/PoE-style
+icons. Match whichever set you are extending, and say which in the prompt.
 
 ### Projectiles
 
@@ -449,6 +582,13 @@ Aliases are only consulted when the spell does NOT have a PNG of its own —
 drop a `<spellKey>.png` under any subfolder of `Art/UI/spells/` at any point
 to take over from the alias automatically (no code change).
 
+After wave 8 these nine are the **only** spells left sharing an icon, and they
+share deliberately: eight of them draw `slash.png` and one draws `dash.png`,
+none of them appear in the player action bar, and all nine are NPC or Boss
+audience. The six `laser_beam_*` colour variants used to share `laser_beam.png`
+too — they were never in the alias table, just assigned by hand — and wave 8
+gave each its own.
+
 If you ever want bespoke versions, derive them from the player templates:
 
 - **`hostile_slash_<color>`** — same Slash prompt, but recolor the arc and
@@ -468,7 +608,10 @@ If you ever want bespoke versions, derive them from the player templates:
 2. Save it as `<spellKey>.png` in the matching category folder. If the spell
    doesn't fit any existing category, create a new folder (no Unity wiring
    change needed — the loader resolves by GUID, not folder).
-3. Open `Assets/_Project/Data/Catalogs/Spells/<spellKey>.asset` and assign the
-   sprite to the `Sprite` field under `Visual`. (Or use **F4** in-game.)
+3. Run `Valkur > Spells > Assign Icons`. To do it by hand instead, open
+   `Assets/_Project/Data/Catalogs/Spells/<spellKey>.asset` and drop the sprite on
+   **`Icon Sprite`** under `Visual` — *not* `Sprite`, which is the in-world
+   projectile and would make the HUD icon fly across the screen. (Or use **F4**
+   in-game.)
 4. Add the prompt block to this README under the matching category so the
    regeneration recipe stays in source control.

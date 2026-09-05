@@ -1,0 +1,522 @@
+{
+  "source": "staging/spells/last_spells_added.png",
+  "canvas": 320,
+  "maskAlpha": 8,
+  "seedAlpha": 64,
+  "trimAlpha": 24,
+  "icons": [
+    {
+      "spellKey": "frost_nova",
+      "displayName": "Frost Nova",
+      "category": "area",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/area/frost_nova.png",
+      "row": 0,
+      "col": 0,
+      "sourceBox": [
+        23,
+        53,
+        246,
+        250
+      ],
+      "trimmed": [
+        223,
+        197
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "ice_lance",
+      "displayName": "Ice Lance",
+      "category": "projectiles",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/projectiles/ice_lance.png",
+      "row": 0,
+      "col": 1,
+      "sourceBox": [
+        261,
+        95,
+        461,
+        213
+      ],
+      "trimmed": [
+        200,
+        118
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "glacial_step",
+      "displayName": "Glacial Step",
+      "category": "mobility",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/mobility/glacial_step.png",
+      "row": 0,
+      "col": 2,
+      "sourceBox": [
+        469,
+        51,
+        724,
+        240
+      ],
+      "trimmed": [
+        255,
+        189
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "frozen_ward",
+      "displayName": "Frozen Ward",
+      "category": "defense",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/defense/frozen_ward.png",
+      "row": 0,
+      "col": 3,
+      "sourceBox": [
+        754,
+        51,
+        914,
+        258
+      ],
+      "trimmed": [
+        160,
+        207
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "blizzard",
+      "displayName": "Blizzard",
+      "category": "area",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/area/blizzard.png",
+      "row": 0,
+      "col": 4,
+      "sourceBox": [
+        937,
+        55,
+        1167,
+        272
+      ],
+      "trimmed": [
+        230,
+        217
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "thorn_burst",
+      "displayName": "Thorn Burst",
+      "category": "area",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/area/thorn_burst.png",
+      "row": 0,
+      "col": 5,
+      "sourceBox": [
+        1181,
+        65,
+        1403,
+        271
+      ],
+      "trimmed": [
+        222,
+        206
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "entangle",
+      "displayName": "Entangle",
+      "category": "area",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/area/entangle.png",
+      "row": 0,
+      "col": 6,
+      "sourceBox": [
+        1423,
+        68,
+        1634,
+        256
+      ],
+      "trimmed": [
+        211,
+        188
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "barkskin",
+      "displayName": "Barkskin",
+      "category": "defense",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/defense/barkskin.png",
+      "row": 1,
+      "col": 0,
+      "sourceBox": [
+        31,
+        275,
+        218,
+        473
+      ],
+      "trimmed": [
+        187,
+        198
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "spore_cloud",
+      "displayName": "Spore Cloud",
+      "category": "area",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/area/spore_cloud.png",
+      "row": 1,
+      "col": 1,
+      "sourceBox": [
+        239,
+        277,
+        462,
+        474
+      ],
+      "trimmed": [
+        223,
+        197
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "summon_wolf",
+      "displayName": "Summon Wolf",
+      "category": "summoning",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/summoning/summon_wolf.png",
+      "row": 1,
+      "col": 2,
+      "sourceBox": [
+        467,
+        278,
+        709,
+        481
+      ],
+      "trimmed": [
+        242,
+        203
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "shadow_step",
+      "displayName": "Shadow Step",
+      "category": "mobility",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/mobility/shadow_step.png",
+      "row": 1,
+      "col": 3,
+      "sourceBox": [
+        722,
+        289,
+        975,
+        467
+      ],
+      "trimmed": [
+        253,
+        178
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "void_lance",
+      "displayName": "Void Lance",
+      "category": "projectiles",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/projectiles/void_lance.png",
+      "row": 1,
+      "col": 4,
+      "sourceBox": [
+        961,
+        332,
+        1223,
+        448
+      ],
+      "trimmed": [
+        262,
+        116
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "curse_of_frailty",
+      "displayName": "Curse of Frailty",
+      "category": "projectiles",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/projectiles/curse_of_frailty.png",
+      "row": 1,
+      "col": 5,
+      "sourceBox": [
+        1205,
+        308,
+        1430,
+        448
+      ],
+      "trimmed": [
+        225,
+        140
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "raise_thrall",
+      "displayName": "Raise Thrall",
+      "category": "projectiles",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/projectiles/raise_thrall.png",
+      "row": 1,
+      "col": 6,
+      "sourceBox": [
+        1429,
+        264,
+        1639,
+        483
+      ],
+      "trimmed": [
+        210,
+        219
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "radiant_burst",
+      "displayName": "Radiant Burst",
+      "category": "area",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/area/radiant_burst.png",
+      "row": 2,
+      "col": 0,
+      "sourceBox": [
+        17,
+        476,
+        245,
+        699
+      ],
+      "trimmed": [
+        228,
+        223
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "blessing",
+      "displayName": "Blessing",
+      "category": "defense",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/defense/blessing.png",
+      "row": 2,
+      "col": 1,
+      "sourceBox": [
+        280,
+        481,
+        433,
+        688
+      ],
+      "trimmed": [
+        153,
+        207
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "sanctuary",
+      "displayName": "Sanctuary",
+      "category": "defense",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/defense/sanctuary.png",
+      "row": 2,
+      "col": 2,
+      "sourceBox": [
+        513,
+        481,
+        655,
+        710
+      ],
+      "trimmed": [
+        142,
+        229
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "guardian_light",
+      "displayName": "Guardian Light",
+      "category": "defense",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/defense/guardian_light.png",
+      "row": 2,
+      "col": 3,
+      "sourceBox": [
+        718,
+        479,
+        926,
+        687
+      ],
+      "trimmed": [
+        208,
+        208
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "seeking_shard",
+      "displayName": "Seeking Shard",
+      "category": "projectiles",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/projectiles/seeking_shard.png",
+      "row": 2,
+      "col": 4,
+      "sourceBox": [
+        935,
+        530,
+        1169,
+        659
+      ],
+      "trimmed": [
+        234,
+        129
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "thunderclap",
+      "displayName": "Thunderclap",
+      "category": "area",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/area/thunderclap.png",
+      "row": 2,
+      "col": 5,
+      "sourceBox": [
+        1167,
+        492,
+        1429,
+        688
+      ],
+      "trimmed": [
+        262,
+        196
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "static_field",
+      "displayName": "Static Field",
+      "category": "area",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/area/static_field.png",
+      "row": 2,
+      "col": 6,
+      "sourceBox": [
+        1420,
+        499,
+        1643,
+        678
+      ],
+      "trimmed": [
+        223,
+        179
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "scatter_volley",
+      "displayName": "Scatter Volley",
+      "category": "projectiles",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/projectiles/scatter_volley.png",
+      "row": 3,
+      "col": 0,
+      "sourceBox": [
+        28,
+        704,
+        236,
+        901
+      ],
+      "trimmed": [
+        208,
+        197
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "war_cry",
+      "displayName": "War Cry",
+      "category": "utility",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/utility/war_cry.png",
+      "row": 3,
+      "col": 1,
+      "sourceBox": [
+        254,
+        710,
+        466,
+        882
+      ],
+      "trimmed": [
+        212,
+        172
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "leap_slam",
+      "displayName": "Leap Slam",
+      "category": "mobility",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/mobility/leap_slam.png",
+      "row": 3,
+      "col": 2,
+      "sourceBox": [
+        484,
+        703,
+        700,
+        900
+      ],
+      "trimmed": [
+        216,
+        197
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "charged_bolt",
+      "displayName": "Charged Bolt",
+      "category": "projectiles",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/projectiles/charged_bolt.png",
+      "row": 3,
+      "col": 3,
+      "sourceBox": [
+        700,
+        729,
+        925,
+        883
+      ],
+      "trimmed": [
+        225,
+        154
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "cinder_trail",
+      "displayName": "Cinder Trail",
+      "category": "area",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/area/cinder_trail.png",
+      "row": 3,
+      "col": 4,
+      "sourceBox": [
+        926,
+        746,
+        1208,
+        871
+      ],
+      "trimmed": [
+        282,
+        125
+      ],
+      "canvas": 320
+    },
+    {
+      "spellKey": "arcane_barrier",
+      "displayName": "Arcane Barrier",
+      "category": "area",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/area/arcane_barrier.png",
+      "row": 3,
+      "col": 5,
+      "sourceBox": [
+        1217,
+        708,
+        1474,
+        903
+      ],
+      "trimmed": [
+        257,
+        195
+      ],
+      "canvas": 320
+    }
+  ]
+}

@@ -1,0 +1,313 @@
+{
+  "source": "staging/spells/spells_without_icons.png",
+  "canvas": 384,
+  "maskAlpha": 8,
+  "seedAlpha": 64,
+  "trimAlpha": 24,
+  "icons": [
+    {
+      "spellKey": "laser_beam_red",
+      "displayName": "Laser Red",
+      "category": "projectiles",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/projectiles/laser_beam_red.png",
+      "row": 0,
+      "col": 0,
+      "sourceBox": [
+        17,
+        41,
+        371,
+        207
+      ],
+      "trimmed": [
+        354,
+        166
+      ],
+      "canvas": 384
+    },
+    {
+      "spellKey": "laser_beam_blue",
+      "displayName": "Laser Blue",
+      "category": "projectiles",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/projectiles/laser_beam_blue.png",
+      "row": 0,
+      "col": 1,
+      "sourceBox": [
+        371,
+        37,
+        727,
+        205
+      ],
+      "trimmed": [
+        356,
+        168
+      ],
+      "canvas": 384
+    },
+    {
+      "spellKey": "laser_beam_green",
+      "displayName": "Laser Green",
+      "category": "projectiles",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/projectiles/laser_beam_green.png",
+      "row": 0,
+      "col": 2,
+      "sourceBox": [
+        727,
+        42,
+        1082,
+        202
+      ],
+      "trimmed": [
+        355,
+        160
+      ],
+      "canvas": 384
+    },
+    {
+      "spellKey": "laser_beam_yellow",
+      "displayName": "Laser Yellow",
+      "category": "projectiles",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/projectiles/laser_beam_yellow.png",
+      "row": 0,
+      "col": 3,
+      "sourceBox": [
+        1082,
+        37,
+        1433,
+        206
+      ],
+      "trimmed": [
+        351,
+        169
+      ],
+      "canvas": 384
+    },
+    {
+      "spellKey": "laser_beam_white",
+      "displayName": "Laser White",
+      "category": "projectiles",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/projectiles/laser_beam_white.png",
+      "row": 1,
+      "col": 0,
+      "sourceBox": [
+        15,
+        245,
+        369,
+        423
+      ],
+      "trimmed": [
+        354,
+        178
+      ],
+      "canvas": 384
+    },
+    {
+      "spellKey": "laser_beam_black",
+      "displayName": "Laser Void",
+      "category": "projectiles",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/projectiles/laser_beam_black.png",
+      "row": 1,
+      "col": 1,
+      "sourceBox": [
+        377,
+        243,
+        741,
+        427
+      ],
+      "trimmed": [
+        364,
+        184
+      ],
+      "canvas": 384
+    },
+    {
+      "spellKey": "slash_regular",
+      "displayName": "Slash Regular",
+      "category": "melee",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/melee/slash_regular.png",
+      "row": 1,
+      "col": 2,
+      "sourceBox": [
+        759,
+        231,
+        1067,
+        470
+      ],
+      "trimmed": [
+        308,
+        239
+      ],
+      "canvas": 384
+    },
+    {
+      "spellKey": "weapon_toggle",
+      "displayName": "Draw Weapon",
+      "category": "utility",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/utility/weapon_toggle.png",
+      "row": 1,
+      "col": 3,
+      "sourceBox": [
+        1140,
+        226,
+        1388,
+        444
+      ],
+      "trimmed": [
+        248,
+        218
+      ],
+      "canvas": 384
+    },
+    {
+      "spellKey": "charge_ki_spirit",
+      "displayName": "Ki Charge: Spirit",
+      "category": "charges",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/charges/charge_ki_spirit.png",
+      "row": 2,
+      "col": 0,
+      "sourceBox": [
+        82,
+        447,
+        304,
+        727
+      ],
+      "trimmed": [
+        222,
+        280
+      ],
+      "canvas": 384
+    },
+    {
+      "spellKey": "charge_ki_azure",
+      "displayName": "Ki Charge: Azure",
+      "category": "charges",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/charges/charge_ki_azure.png",
+      "row": 2,
+      "col": 1,
+      "sourceBox": [
+        442,
+        447,
+        658,
+        739
+      ],
+      "trimmed": [
+        216,
+        292
+      ],
+      "canvas": 384
+    },
+    {
+      "spellKey": "charge_ki_verdant",
+      "displayName": "Ki Charge: Verdant",
+      "category": "charges",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/charges/charge_ki_verdant.png",
+      "row": 2,
+      "col": 2,
+      "sourceBox": [
+        792,
+        447,
+        1008,
+        723
+      ],
+      "trimmed": [
+        216,
+        276
+      ],
+      "canvas": 384
+    },
+    {
+      "spellKey": "charge_ki_solar",
+      "displayName": "Ki Charge: Solar",
+      "category": "charges",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/charges/charge_ki_solar.png",
+      "row": 2,
+      "col": 3,
+      "sourceBox": [
+        1133,
+        433,
+        1375,
+        724
+      ],
+      "trimmed": [
+        242,
+        291
+      ],
+      "canvas": 384
+    },
+    {
+      "spellKey": "charge_ki_crimson",
+      "displayName": "Ki Charge: Crimson",
+      "category": "charges",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/charges/charge_ki_crimson.png",
+      "row": 3,
+      "col": 0,
+      "sourceBox": [
+        62,
+        725,
+        330,
+        1038
+      ],
+      "trimmed": [
+        268,
+        313
+      ],
+      "canvas": 384
+    },
+    {
+      "spellKey": "charge_ki_violet",
+      "displayName": "Ki Charge: Violet",
+      "category": "charges",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/charges/charge_ki_violet.png",
+      "row": 3,
+      "col": 1,
+      "sourceBox": [
+        416,
+        724,
+        690,
+        1039
+      ],
+      "trimmed": [
+        274,
+        315
+      ],
+      "canvas": 384
+    },
+    {
+      "spellKey": "charge_ki_void",
+      "displayName": "Ki Charge: Void",
+      "category": "charges",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/charges/charge_ki_void.png",
+      "row": 3,
+      "col": 2,
+      "sourceBox": [
+        739,
+        722,
+        1053,
+        1060
+      ],
+      "trimmed": [
+        314,
+        338
+      ],
+      "canvas": 384
+    },
+    {
+      "spellKey": "summon_barbol",
+      "displayName": "Summon Barbol",
+      "category": "summoning",
+      "path": "unity/Valkur/Assets/_Project/Art/UI/spells/summoning/summon_barbol.png",
+      "row": 3,
+      "col": 3,
+      "sourceBox": [
+        1093,
+        732,
+        1424,
+        1051
+      ],
+      "trimmed": [
+        331,
+        319
+      ],
+      "canvas": 384
+    }
+  ]
+}
