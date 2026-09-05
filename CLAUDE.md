@@ -28,7 +28,7 @@ Inspiration project (architecture only, do not copy code wholesale): `unity/Udem
 1. **The Unity MCP console MUST be clean before declaring any task done.** After every C# change run `mcp_unity_refresh_unity` (compile=request, mode=force, scope=scripts, wait_for_ready=true) followed by `mcp_unity_read_console` (types=["error","warning"], format=detailed). Fix every error and every actionable warning. The terminal output of the test runner / Unity batch must also be clean. If the console can't be read because Unity isn't running, say so — don't pretend it's clean.
 2. **Never modify `unity/Udemy_Inspiration/`** — reference only.
 3. **Check existing scripts before creating new ones.** Many systems have multiple partial files; duplicates are the #1 source of regression.
-4. **Edit ScriptableObjects, not external JSON.** Catalog data lives in `.asset` files and is edited via the Inspector (or via in-game runtime editors F1/F3/F4/F5/F6/F7/F8/F10/F11/F12/Ctrl+F3). World-state JSON under `StreamingAssets/` is written by the runtime editors via the `IRepository` pattern — don't hand-edit it.
+4. **Edit ScriptableObjects, not external JSON.** Catalog data lives in `.asset` files and is edited via the Inspector (or via the in-game runtime editors, all reached from the General Editor on **Escape** — the F-key toggles were retired, see "Editors are reached from Escape" below). World-state JSON under `StreamingAssets/` is written by the runtime editors via the `IRepository` pattern — don't hand-edit it.
 5. **Never read `Mouse.current` / `Keyboard.current` / `UnityEngine.Input.*` directly outside the Input core helpers.** Use the centralized fachadas — see "Input pipeline" below.
 
 ## Input pipeline (single source of truth)
@@ -41,7 +41,123 @@ Every input read in Valkur goes through one of four centralized helpers. Touchin
 | **`MouseInputManager`** | `Scripts/Core/Input/MouseInputManager.cs` | Mouse buttons + position + wheel. `IsLeftMouseButtonPressed()`, `WasLeftMouseButtonReleasedThisFrame()`, `GetScreenMousePosition()`, `GetMouseWheelDelta()`, etc. ORs new InputSystem with legacy `UnityEngine.Input` automatically. |
 | **`KeyboardInputManager`** | `Scripts/Core/Input/KeyboardInputManager.cs` | Keyboard keys. `WasKeyPressedThisFrame(Key, KeyCode)`, `IsCtrlHeld()`, `WasEnterPressedThisFrame()`, `WasEscapePressedThisFrame()`, etc. Same OR-fallback pattern. |
 | **`InputCompat`** | `Scripts/Core/Input/InputCompat.cs` | Semantic menu helpers — `NavUpPressed()`, `ConfirmPressed()`, `CancelPressed()`. Wraps `KeyboardInputManager`. |
-| **`EditorHotkeyBindings`** | `Scripts/Core/Input/EditorHotkeyBindings.cs` | F1–F12 hotkeys + Ctrl/Alt modifiers. Stateless API: `WasPerformedThisFrame(Hotkey.ToggleTile)`. Resolves the live action from `InputService.Editors` on every call (immune to zombie-after-hot-reload). |
+| **`EditorHotkeyBindings`** | `Scripts/Core/Input/EditorHotkeyBindings.cs` | The `Editors` map's hotkeys — Escape, backquote, Ctrl+F5/F9, the Ctrl/Alt modifier probes, plus the fourteen editor toggles that now ship UNBOUND. Stateless API: `WasPerformedThisFrame(Hotkey.ToggleTile)`. Resolves the live action from `InputService.Editors` on every call (immune to zombie-after-hot-reload) and derives its legacy half from that binding. |
+| **`InputBindingResolver`** | `Scripts/Core/Input/InputBindingResolver.cs` | The OR-gate itself. `WasPerformedThisFrame(action)` / `IsPressed(action)` / `WasReleasedThisFrame(action)` / `ReadVectorFallback(action)` — derives the LEGACY half from the action's own live binding, so a rebind moves both. Prefer it over a bare `action.WasPerformedThisFrame()` plus a literal `KeyCode`. |
+
+### The binding layer (one model, not two)
+
+There used to be TWO, and only one of them was read. `ValkurInputActions` is what gameplay
+reads; a wall of `GameSettings.*KeyA` strings was what the Controls panels in the main and
+pause menus wrote. Exactly twelve editor F-keys were bridged between them (`EditorBindingsApplier`,
+slot 0 only) and **every gameplay field had zero production readers** — `moveUpKeyA`,
+`dashKeyA`, `spell1KeyA`..`spell4KeyA`, `primaryAttackMouse`, `pauseKeyA`,
+`toggleInventoryKeyA`, verified by grep. A player could rebind their movement, watch the panel
+update, save it, and change nothing. All of that is deleted; the asset is the only model.
+
+| Piece | Location | What it owns |
+|---|---|---|
+| `InputControlPaths` | `Core/Input/` | The translator: `path ↔ Key ↔ KeyCode ↔ cap label`, 110 controls. A static TABLE, not a device query, so EditMode tests can use it. |
+| `InputActionCatalog` | `Core/Input/` | The MEANING of each action — category, context mask, `OwnerEditor`, `PayloadKey` (the spellKey), and `ReachesDamage`. A CLOSED table: an action in the asset with no descriptor is a red test. |
+| `InputContexts` | `Core/Input/` | The context vocabulary and the single answer to "which is live now". |
+| `InputContextPolicy` | `Core/Input/` | The Peace whitelist and the live per-action context masks. |
+| `EditorInput` | `Core/Input/` | The verbs every editor shares, plus `Tool(map, action)` for one editor's own. |
+| `InputBindingResolver` | `Core/Input/` | Resolves an action's live bindings and answers the OR-gate with them. Caches; call `Invalidate()` after any rebind. |
+| `InputBindingStore` | `Core/Input/` | Persists binding overrides + stance masks to `persistentDataPath/Input/controls.json`. Applied by `RuntimeInputBootstrap` on boot and on every scene load. |
+| `InputConflictScanner` | `Core/Input/` | Finds controls more than one action answers to, **map-aware and stance-aware**. |
+| `ControlsRuntimeEditor` | `Gameplay/Editors/Controls/` | The drawn keyboard + mouse. No hotkey; opened from the General Editor (ESC → Controls), same reasoning as the Camera editor. |
+| `KeyboardLayoutModel` / `ControlsKeyboardView` / `ControlsMouseView` | `Gameplay/UIKit/Controls/` | The board, in UIKit so both the editor and the menus can host it. |
+
+### Contexts: the postures are for PLAYING, an editor owns everything
+
+Input lives in exactly one CONTEXT at a time, and there are three shapes of it:
+
+| Context id | When | What is live |
+|---|---|---|
+| `gameplay/war` | playing, War posture | movement, traversal, combat, all 24 spell slots, everyday verbs |
+| `gameplay/peace` | playing, Peace posture | everything except anything that reaches the damage path |
+| `editor/<Name>` | that runtime editor is open | the shared editor verbs + THAT editor's own tools, and nothing else |
+
+**An open editor beats the posture unconditionally.** The runtime already worked this way —
+`IsGameplayInputSuspended` freezes gameplay input while any editor is open — and the
+configuration layer now agrees with it. `InputContexts.Current` is the one place that
+answers, and it READS `GameEditorManager.ActiveEditor` rather than being told: that field is
+written from six places, and pushing from all six is the shape that drifts.
+
+- **Shared vs owned is the whole design.** Selecting, drag-selecting, zoom, scroll, undo,
+  redo, save, close and delete must behave IDENTICALLY in all sixteen editors, so they are
+  declared once in the `EditorShared` map with no `OwnerEditor`. Everything else is one
+  editor's tool: same `Editors` bit, plus an owner, so it is live in that editor and nowhere
+  else. That is why the Tile brush and the Buildings collider brush can both be `B`.
+- **Two editors sharing a key is not a conflict**, and `InputContextLayerTests` pins it — the
+  obvious "fix" would take away the property that each editor gets a whole keyboard.
+- **Adding a tool to an editor is: an action in `Editor.<Name>`, one `Tool(...)` line in the
+  catalog, one `EditorInput.Tool(map, action)` read.** Never a raw key read — a literal is
+  invisible to the Controls editor and does not move when the key is rebound.
+- **`OwnerEditor` is the editor's EXACT `EditorName`, spaces and all — `"Tile Editor"`, not
+  `"Tile"`.** That string is what `InputContexts.Current` puts in the context id, and
+  `InputContextPolicy.IsLive` compares the two; a mismatch is silent and kills every tool of
+  that editor. The map name is a separate SLUG (`Editor.Tile`) and deliberately does NOT
+  match, so comparing the two proves nothing. It shipped wrong on the first pass — all 35
+  tools dead — and the fixture meant to cover it PASSED, because it derived its editor list
+  from those same owners and so compared one half against itself. `EditorReachabilityTests`
+  reads the other side: the `EditorName` declarations in production source.
+- **Every editor must have a General Editor entry, and that is now load-bearing.** With the
+  F-keys retired, an editor missing from the ESC list cannot be opened at all — and nothing
+  throws to say so. `EditorReachabilityTests.EveryEditor_HasAGeneralEditorEntry` walks the
+  shipped `EditorName` declarations, not a list anybody maintains by hand.
+
+Rules that follow:
+
+- **Never pair an action with a hardcoded `KeyCode` for the fallback.** That literal does not
+  move when the action is rebound, so an override applies HALF of itself, silently, and only
+  under the 2022.3 event-drop bug the fallback exists for. Measured before the fix: moving
+  `darkball` from `1` to `5` left `1` still casting it. Use `InputBindingResolver`.
+- **A binding built in C# is a binding no audit can see**, and it is invisible three ways at
+  once: no scan over the asset finds it, the Controls editor cannot list or move it, and the
+  conflict scanner cannot check it. Every duplicate-key bug this project has shipped was one.
+  There were FOUR systems doing it — `PauseMenuUI` built seven (including a straight duplicate
+  of `Gameplay/Pause` on `p`), `TileEditorInputHandler` eight (one of them Redo on
+  `<Keyboard>/z`, the same path as Undo), `PickupSystem` an Interact on `e` the asset already
+  had, and `InventoryUI` one on `tab` that belonged to the stance toggle. All gone.
+  `BindingConstructionGuardTests` now refuses BOTH `new InputAction(` and a
+  `"<Keyboard>/…"` path literal outside `Core/Input`.
+- **Two guards, two axes, and the older one only covered half.**
+  `InputCentralizationGuardTests` forbids reading a DEVICE (`Mouse.current`,
+  `Keyboard.current`); `BindingConstructionGuardTests` forbids DECLARING a binding outside the
+  asset. The first was green for the life of the project while all four systems above declared
+  bindings in code — it was never asking that question.
+- **Binding overrides are keyed by binding ID, so duplicate ids are a live defect.** The shipped
+  asset had two pairs sharing one (`Inventory`/`MiddleClick`, `SpellTeleport`/`ToggleStance`)
+  plus a duplicate ACTION id (`SpellBoomerang`/`ToggleStance`): a rebind of either would have
+  moved both. `InputServiceTests.AssetIds_AreUnique` pins it.
+### Editors are reached from Escape, not from the F-row
+
+**The fourteen editor toggles ship UNBOUND.** Every runtime editor is opened from the General
+Editor on **Escape**. The F-row is free.
+
+That retired every same-map collision the project had: F2 held Combat Ranges AND Time &
+Weather, F3 held Spawner AND Lighting, F5 held Entities AND QuickSave, F9 held Debug HUD AND
+QuickLoad — and while a perf-probe overlay was up, F2–F7 also fired the probe's bisection.
+Thirteen keys carrying twenty meanings, three pairs separated only by a modifier that lived in
+C# rather than in the binding.
+
+- **The actions are NOT deleted, and that is the point.** They stay in the `Editors` map with
+  no binding, so the Controls editor lists them as "sin asignar" and a player who wants F8
+  back can put it there. Deleting them would make the menu the only possibility instead of the
+  default.
+- **`EditorHotkeyBindings` no longer carries a `Hotkey → KeyCode` table.** It did, feeding
+  `UnityEngine.Input` directly, which meant clearing a binding cleared none of the key — the
+  legacy leg of the OR-gate went on answering for F1–F12 forever. Both halves come from the
+  live binding now, which is what made retiring the keys a data change rather than a code
+  deletion. Its `FallbackPath` (EditMode only, when `InputService` is absent) mirrors the
+  asset and answers null for the retired toggles, so the suite cannot disagree with the game
+  about which keys exist.
+- **Still bound, because they are not editors:** Escape (General Editor — the only way in),
+  backquote (DevConsole), Ctrl+F5 / Ctrl+F9 (quick save / load), leftCtrl / leftAlt (the
+  modifier probes).
+- `EditorEntryPointTests` pins all of it, including the half that makes it safe: every retired
+  toggle has a General Editor entry. An editor with no hotkey AND no menu entry is one nothing
+  can open, and it would fail silently — nothing throws when a key never fires.
 
 The **only legitimate exceptions** to the rule are:
 
@@ -66,6 +182,20 @@ by trying to trade. The freed-up keyboard is the consequence, not the reason.
   untouched. A map-based stance leaks exactly there, silently.
 - **One gate, one place.** The entire war surface — LMB/RMB/MMB and the 24 spell hotkeys — lives
   in `PollCombatActions`. `MeleeCombat` reads no input at all.
+- **The whitelist is enforced at ASSIGNMENT and again at READ, and the two are not redundant.**
+  `StanceBindingPolicy.Evaluate` refuses to give a Peace binding to anything whose descriptor
+  says `ReachesDamage`; `IsLive` refuses it again at the reader, so a `controls.json` written
+  by an older build — or by hand — cannot re-open the hole. That is what makes Peace a property
+  rather than a convention: a guarantee the player can configure their way out of is not one.
+- **A spell SLOT is the unit of trust, not the spell.** All 24 slots are marked as reaching
+  damage, healing and warding ones included, because the executor dispatch is shared and a
+  spell's type is data — a slot whitelisted for Peace today becomes a damage slot the moment
+  its `SpellDefinition` is retuned.
+- **Peace is now a real LAYOUT, not one early return.** Each action carries a stance mask the
+  player can narrow or widen in the Controls editor, and `PollCombatActions` checks the
+  per-slot mask on top of the coarse gate — so a player can silence one spell without leaving
+  War, and can give a mouse button a harmless verb in Peace. The coarse gate stays as the fast
+  path and as the thing `StanceGateTests` pins the ORDER of.
 - **The dash is NOT combat** and was extracted into `PollTraversal`, which runs on both sides of
   the gate. Nothing auto-switches, so a Peace stance that also removed the dash would have no
   recovery from being jumped.
@@ -112,16 +242,16 @@ The Gameplay assembly is subdivided by feature so any single folder stays under 
 | `Editors/_Shared/` | EditorCameraPanController, EditorUIHelpers (cross-editor) |
 | `Editors/_Shared/Workspace/` | `EditorWorkspaceService` — the single owner of editor layout/session/selection persistence |
 | `Editors/Camera/` | Camera Editor — no hotkey, opened from the General Editor; partials + UIBuilder + UIHoverHelp |
-| `Editors/Buildings/` | Buildings runtime editor (F10) — partials + UIBuilder + Outline + PerfProbe |
+| `Editors/Buildings/` | Buildings runtime editor — partials + UIBuilder + Outline + PerfProbe |
 | `Editors/Entities/` | Entities runtime editor — partials + UIBuilder + Outline |
 | `Editors/FSM/` | FSM runtime editor — partials + UIBuilder |
 | `Editors/Inventory/` | Inventory runtime editor — partials + UIBuilder |
 | `Editors/Items/` | Items runtime editor — partials + UIBuilder |
 | `Editors/Lighting/` | Lighting runtime editor — partials |
-| `Editors/Map/` | Map runtime editor (F11) |
+| `Editors/Map/` | Map runtime editor |
 | `Editors/Particles/` | Particles runtime editor — partials + UIBuilder |
 | `Editors/Spells/` | Spells runtime editor — partials + UIBuilder + SpellPreviewGraphic |
-| `Editors/Tile/` | Tile runtime editor (F8) |
+| `Editors/Tile/` | Tile runtime editor |
 | `Enemies/` | NPC AI, FSM behaviors, NPCAutoCast, NPCCastState, BossPhaseController, BossConfigurator |
 | `HUD/` | In-world HUD overlays + modal panels: SpellBarHUD, BossHealthBarHUD, QuestLogHUD, SkillTreeHUD, StatisticsHUD |
 | `Inventory/` | Inventory model + UI runtime |
@@ -192,10 +322,10 @@ The full convention lives in `.github/skills/asset-pipeline/SKILL.md` (sections 
 | Music BPM / beat metadata | Same asset (per-track fields), or `tools/audio/{analyze_music,patch_audio_catalog_bpm}.py` |
 | Items | `Data/Catalogs/Items/ItemCatalog.asset` |
 | Monsters | `Data/Catalogs/Monsters/*.asset` (catalog at `MonsterCatalog.asset`) |
-| Spells | `Data/Catalogs/SpellCatalog.asset` — note it sits beside `Catalogs/`, not inside `Catalogs/Spells/`, which holds the individual `*.asset` definitions (edit via Inspector or F4 in-game) |
-| Buildings | `Data/Catalogs/Buildings/BuildingCatalog.asset` (edit via F10 in-game) — 1176 templates over 1174 sprites (two sprites carry a second template that differs in a field no instance can override: `curse_house_topdown` with/without its doorway, `totem_forest` solid/non-solid); every prop imported through the sheet pipeline is described by a `tools/atlas/generated/building_props_manifest*.json`, one per wave |
-| Particles | `Data/Catalogs/Particles/ParticlePresetCatalog.asset` (edit via F1) |
-| Spawners | `Data/Catalogs/Spawners/SpawnerTemplateCatalog.asset` (edit via F3) |
+| Spells | `Data/Catalogs/SpellCatalog.asset` — note it sits beside `Catalogs/`, not inside `Catalogs/Spells/`, which holds the individual `*.asset` definitions (edit via Inspector or the Spells editor in-game) |
+| Buildings | `Data/Catalogs/Buildings/BuildingCatalog.asset` (edit via the Buildings editor in-game) — 1176 templates over 1174 sprites (two sprites carry a second template that differs in a field no instance can override: `curse_house_topdown` with/without its doorway, `totem_forest` solid/non-solid); every prop imported through the sheet pipeline is described by a `tools/atlas/generated/building_props_manifest*.json`, one per wave |
+| Particles | `Data/Catalogs/Particles/ParticlePresetCatalog.asset` (edit via the Particles editor) |
+| Spawners | `Data/Catalogs/Spawners/SpawnerTemplateCatalog.asset` (edit via the Spawners editor) |
 | Camera feel (shake, kick, lead, smooth follow) | `Resources/CameraFeelProfile.asset` |
 | Lighting Presets | `Data/LightPresetCatalog.asset` (edit via Ctrl+F3) |
 | Chat Personas / Assignments | `Data/ChatPersonas/*.asset` (runtime half) + `Data/ChatPersonas/Profiles/*_profile.asset` (narrative half) + **`Resources/Chat/ChatAssignmentCatalog.asset`** — under `Resources/` because `ChatSystem` is `AddComponent`-ed onto a bare GameObject and has no inspector slot to be wired from. All of it is generated by `Valkur > Chat > Import Personas` from `tools/chat/generated/chat_personas_manifest.json`; the join to entities is `Valkur > Chat > Wire Entities To Personas` |
@@ -244,7 +374,7 @@ Use the right agent for the right job. Each agent has a constrained scope and pr
 | `unity-tester` | Create/fix/run tests; enforce namespaces; audit coverage |
 | `asset-pipeline` | Sprite/audio/atlas migration; PPU/pivot policies |
 | `buildings-editor` | Anything involving the Buildings Editor (window or runtime F10) |
-| `tile-editor` | Anything involving the Tile Editor (F8) |
+| `tile-editor` | Anything involving the Tile Editor |
 | `particles-editor` | Particle presets, `ParticleEmitter`, VFX beauty work, Particles Editor (F1) |
 | `spell-vfx-director` | Spell look & game-feel — slash/projectile/area silhouettes, timing, impact, hit-stop, camera shake |
 | `editor-ux-parity` | Audit / enforce UI/UX parity across in-game runtime editors — chrome, gestures, workspace persistence, theme, feedback |
@@ -2255,6 +2385,96 @@ ChatUI.Portrait                                    the gutter down the left of t
   `WeaponSwapFlashFX` exists. And two expressions can share one drawing through the chain
   (laugh and happy on a character that only drew happy), so dissolving a sprite into itself is
   refused — it is a flicker with no cause the player can see.
+
+## Conversation journal (Diario)
+
+Every conversation is written down as it happens, one page per character per day, and read
+back from the **Diario** button in the chat panel's left gutter. At the end of a day the page
+is sealed and the character's verbatim memory is cleared, so the panel opens on a blank
+transcript and they greet the player again.
+
+```text
+ChatJournalPage / ChatJournalEntry   the page on disk: one day, one character, verbatim
+ChatJournalPageRef                   a day, identified from its FILE NAME alone
+ChatJournalStore                     load / save / list / delete. No clock, no notion of today
+ChatJournal                          the live half: which page is open, and what midnight does
+ChatSystem.Journal.cs                the seams — open, record, seal, and the Escape owner
+ChatUI.Journal.cs                    the overlay over the conversation
+journal / journal npcs / journal <n> the console probe
+persistentDataPath/chat/journals/<slug>/<yyyy-MM-dd>_d<NNNNN>.json
+```
+
+- **The journal is written PER LINE, never archived from `ephemeralHistory` at the end of the
+  day.** That window holds twelve messages and drops the oldest, so most of a long
+  conversation is already gone by the time there is a day to seal. It hangs off
+  `RecordToMemoryAndLog`, the one seam every message passes through — the same seam that
+  already feeds the memory record and the session log, which is what stops the three
+  disagreeing about what was said.
+- **Three records, three jobs, and they are not redundant.** `NPCMemory.ephemeralHistory` is
+  the twelve-message window the character REASONS from and forgets; the journal is the
+  player-facing archive of the day and keeps everything; `ChatSessionLogger` writes a
+  timestamped `.log` that no feature reads and exists for diagnosis.
+- **One file per DAY, and no index.** Retention is unbounded, so a single document per
+  character would have to be rewritten in full on every line typed — a cost that grows with
+  how long the save has run. A page is bounded by how much a person types in a day, and
+  yesterday is immutable the moment it is sealed. The day list is built from FILE NAMES
+  (`ChatJournalPageRef`) rather than from an index, because an index is a cache of what the
+  directory already knows and nothing throws when the two disagree.
+- **The day key is `ChatDayClock`'s, which means a page can be sealed and written again.**
+  The in-game half of that key is not persisted and runs backwards across a Play-mode
+  restart, so the same calendar day is routinely left and re-entered; `LoadOrCreatePage`
+  returns the EXISTING page and clears its seal, or one day becomes several half-empty ones.
+  Ordering is therefore `(calendar date, in-game day)` compared as a date and an int — never
+  the filename string, and never the in-game counter alone.
+- **What a day boundary does, in one place (`ChatJournal`): seal the page, CLEAR
+  `ephemeralHistory`, keep `digest`, `friendshipScore` and `visitCount`.** Forgetting the
+  words is not forgetting the person. `lastGreetedDayKey` is deliberately left alone — it is
+  already keyed on the day and already answers "is a greeting due", and a second mechanism
+  saying the same thing is two things that eventually disagree about which day it is.
+- **An EMPTY `lastJournalDayKey` is not a boundary.** It means a character never spoken to,
+  or a record migrated from before the journal existed — whose verbatim window no page holds.
+  Sealing there would wipe the only copy of it. `NPCMemory` schema v3 sets it empty for
+  exactly that reason and the first conversation adopts today, so the NEXT boundary is
+  detectable.
+- **Midnight mid-conversation is handled**, through `DayNightCycle.OnDayChanged`, subscribed
+  only while a chat is open and guarded by a flag: it is a STATIC delegate on a class with
+  Domain Reload off, so a handler added twice fires twice and one never removed keeps a
+  destroyed `ChatSystem` alive for the session. The panel clears, the greeting is re-spoken
+  (`GreetForNewDay`, shared with `OpenChat` so there is one answer to "has she said hello
+  today"), and an open Diario holds the reader's place BY DAY — the new page arrives at the
+  front of a newest-first list, so every index below it shifts.
+- **An empty page is never written, and an emptied one is deleted.** A conversation opened
+  and closed in silence is not a day, and a selector offering blank pages reads as a broken
+  archive. Deleting matters as much as skipping: a page can be emptied after it was written.
+- **Reset takes the journal with the memory.** A character who has never met you cannot be
+  holding a diary of your conversations; `DiscardAll` also clears `lastJournalDayKey`, or the
+  very next open seals a day that no longer exists.
+- **`ChatJsonFile` is the one atomic-write/`.bak`-recovery/quarantine implementation**, shared
+  by `NPCMemoryStore` and `ChatJournalStore`. Its temp name carries a GUID per write, not a
+  fixed `.tmp` — the two stores really do write in the same frame, and a shared temp name is
+  what makes overlapping writes collide (`WriteSerializedJsonAtomic` shipped that defect).
+- **The overlay covers the CONVERSATION, not the panel.** The title row, the corner controls
+  and the gutter stay visible: an overlay that swallows the close button and the resize grip
+  is a window the player is stuck in, and `JOURNAL_TOP_INSET` is derived from
+  `TITLE_ROW_HEIGHT` so it cannot go stale. It is opaque, because the transcript underneath
+  would otherwise be legible through it.
+- **Escape has ONE reader in the chat subsystem and it is `ChatSystem`.** The overlay raises
+  `SetModalOverlay(true)` and listens for `OnOverlayDismissRequested`; two readers of that key
+  in an undefined Update order is how a single press closes both the overlay and the panel
+  behind it, or neither, depending on the frame. Enter closes the view for the same reason,
+  and the input field is disabled while it is up — uGUI focus is not blocked by an image
+  drawn over it, so otherwise the player types into a box they cannot see.
+- **The gutter is a stack with one owner (`LayoutGutterColumn`).** Face, then Comerciar when
+  the character trades, then Diario; Reiniciar is pinned to the foot. Both conditions really
+  vary — five of six characters have no portrait, five of seven do not trade — and the
+  children are `ignoreLayout`, so NOTHING arranges them and an overlap is silent. A hidden
+  button is still SEATED but consumes no space, so switching it on later needs no re-layout.
+  `PANEL_MIN_H` (259) is DERIVED from that column, and `ChatJournalPanelTests` states the
+  constraint independently of the derivation.
+- **`journal` / `journal npcs` / `journal <n>`** exist for the reason `faces` does: the
+  archive is written by the message path, sealed by a clock and read by a panel, and each can
+  fail in a way the others hide. Without the probe, "did midnight seal yesterday" is not
+  answerable without waiting for midnight.
 
 ## Player stats and progression
 
