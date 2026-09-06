@@ -56,6 +56,9 @@ namespace Valkur.Gameplay.Buildings
 
         public void Deactivate()
         {
+            // Before the instance flush: a debounced collider save still in flight must
+            // reach disk, and it writes through the same serialiser.
+            FlushPendingColliderSave();
             PersistDirtyInstanceChanges("Deactivate");
             _buildingsVisible = true;
             ApplyBuildingsVisibility();

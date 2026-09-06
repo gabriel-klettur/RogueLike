@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,8 +17,6 @@ namespace Valkur.Gameplay.Buildings
             Action<float> onSplitChanged,
             Action onZBottomMinus, Action onZBottomPlus,
             Action onZTopMinus,    Action onZTopPlus,
-            Action onGridColsMinus, Action onGridColsPlus,
-            Action onGridRowsMinus, Action onGridRowsPlus,
             Action onScope,
             Action onInteractable,
             Action onPaintSolid, Action onPaintWalk, Action onSaveCU,
@@ -52,7 +50,6 @@ namespace Valkur.Gameplay.Buildings
             BuildInspectorControls(refs.InspectorRoot.transform, ref refs,
                 onSplitChanged,
                 onZBottomMinus, onZBottomPlus, onZTopMinus, onZTopPlus,
-                onGridColsMinus, onGridColsPlus, onGridRowsMinus, onGridRowsPlus,
                 onScope, onInteractable, onPaintSolid, onPaintWalk, onSaveCU, onDelete, onReset);
 
             refs.InspectorRoot.SetActive(false);
@@ -63,8 +60,6 @@ namespace Valkur.Gameplay.Buildings
             Action<float> onSplitChanged,
             Action onZBottomMinus, Action onZBottomPlus,
             Action onZTopMinus,    Action onZTopPlus,
-            Action onGridColsMinus, Action onGridColsPlus,
-            Action onGridRowsMinus, Action onGridRowsPlus,
             Action onScope,
             Action onInteractable,
             Action onPaintSolid, Action onPaintWalk, Action onSaveCU,
@@ -106,19 +101,6 @@ namespace Valkur.Gameplay.Buildings
             // Z rows
             BuildZRow(parent, "Z-Bottom", onZBottomMinus, onZBottomPlus, out refs.ZBottomVal);
             BuildZRow(parent, "Z-Top",    onZTopMinus,    onZTopPlus,    out refs.ZTopVal);
-
-            // Collider grid resolution (cols × rows). Edits the SHARED logical
-            // grid for CG buildings (every instance of the same image gets the
-            // same N×M topology) or the per-instance grid for CU buildings.
-            BuildSeparator(parent);
-            var gridLbl       = CreateUI("GridLbl", parent);
-            gridLbl.AddComponent<LayoutElement>().preferredHeight = 18f;
-            var gridLblTmp    = gridLbl.AddComponent<TextMeshProUGUI>();
-            gridLblTmp.text   = "Collider grid resolution";
-            gridLblTmp.fontSize = 10f;
-            gridLblTmp.color  = TEXT_SECONDARY;
-            BuildZRow(parent, "Cols", onGridColsMinus, onGridColsPlus, out refs.GridColsVal);
-            BuildZRow(parent, "Rows", onGridRowsMinus, onGridRowsPlus, out refs.GridRowsVal);
 
             // Collider scope
             BuildSeparator(parent);

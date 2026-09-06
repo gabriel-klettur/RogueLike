@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -119,13 +119,14 @@ namespace Valkur.Gameplay.Buildings
         // Sits between Buildings and Properties. Provides:
         //   • Visibility toggle for the per-building collider overlay (red shapes).
         //   • Scope toggle (CG = shared by image / CU = unique to this instance).
-        //   • Brush ON/OFF + Action (# Paint / . Erase) + Size preset buttons (1–8) + stepper.
-        //   • Status (target id, scope, grid size, dirty flag, brush state).
+        //   • Brush ON/OFF + Action (# Solid / . Walkable) + Size preset buttons (1–8) + stepper.
+        //   • Grid resolution (cols × rows) — the topology the brush paints into.
+        //   • Status (target id, scope, how many buildings it edits, grid size, dirty, brush).
         //   • Save Colliders.
         // Keyboard shortcuts (handled in BuildingsRuntimeEditor while panel is open):
         //   B  → toggle brush ON/OFF
-        //   #  → set action = Paint
-        //   .  → set action = Erase
+        //   #  → set action = Solid
+        //   .  → set action = Walkable
         //   [  → brush size −1     ]  → brush size +1
         //   Tab→ toggle scope CG ↔ CU
 
@@ -135,7 +136,9 @@ namespace Valkur.Gameplay.Buildings
             Action onBrushPaint, Action onBrushErase,
             Action<int>  onBrushSizeChanged,
             Action       onBrushSizeStepDown,
-            Action       onBrushSizeStepUp)
+            Action       onBrushSizeStepUp,
+            Action onGridColsMinus, Action onGridColsPlus,
+            Action onGridRowsMinus, Action onGridRowsPlus)
         {
             float collX = PANEL_GAP + MODES_W + PANEL_GAP + BUILDINGS_W + PANEL_GAP;
             refs.CollidersDropdown = MakeDrop("CollidersPanel", canvasT,
@@ -154,7 +157,7 @@ namespace Valkur.Gameplay.Buildings
             (refs.CollScopeBtnImg, refs.CollScopeBtnLabel) =
                 AddFullWidthBtn(t, "Scope: --", 30f, onScopeToggle);
 
-            // ── Action: # Paint / . Erase (clicking the active action toggles it off) ──
+            // ── Action: # Solid / . Walkable (clicking the active action toggles it off) ──
             AddSectionLabel(t, "Brush Action");
             var actionRow = CreateUI("ActionRow", t);
             actionRow.AddComponent<LayoutElement>().preferredHeight = 28f;
@@ -165,8 +168,11 @@ namespace Valkur.Gameplay.Buildings
             ahlg.childControlWidth      = true;
             ahlg.childControlHeight     = true;
 
-            refs.CollPaintBtnImg = AddBrushActionBtn(actionRow.transform, "# Paint", onBrushPaint);
-            refs.CollEraseBtnImg = AddBrushActionBtn(actionRow.transform, ". Erase", onBrushErase);
+            // Named after the cell state they write, which is also what the grid file and
+            // the hint call them. The same action was "Erase" on the button, "Walk" in the
+            // enum and "." in the data — three names for one thing.
+            refs.CollPaintBtnImg = AddBrushActionBtn(actionRow.transform, "# Solid",    onBrushPaint);
+            refs.CollEraseBtnImg = AddBrushActionBtn(actionRow.transform, ". Walkable", onBrushErase);
 
             // ── Brush size: preset buttons (1–8) + stepper (−/value/+), matching Tile Editor UX ──
             BuildSeparator(t);
@@ -174,6 +180,15 @@ namespace Valkur.Gameplay.Buildings
             BuildCollBrushSizePresetRow(t, ref refs, onBrushSizeChanged);
             BuildSeparator(t);
             BuildCollBrushSizeStepperRow(t, ref refs, onBrushSizeStepDown, onBrushSizeStepUp);
+
+            // ── Collider grid resolution (moved here from Properties) ──
+            // The topology every control above paints into. It edits the SHARED logical grid
+            // for CG buildings (every instance of the same image gets the same N×M) or the
+            // per-instance grid for CU.
+            BuildSeparator(t);
+            AddSectionLabel(t, "Grid Resolution");
+            BuildZRow(t, "Cols", onGridColsMinus, onGridColsPlus, out refs.GridColsVal);
+            BuildZRow(t, "Rows", onGridRowsMinus, onGridRowsPlus, out refs.GridRowsVal);
 
             // ── Status texts ──
             BuildSeparator(t);
@@ -200,14 +215,22 @@ namespace Valkur.Gameplay.Buildings
             hintGo.AddComponent<LayoutElement>().preferredHeight = 64f;
             refs.CollHintText                     = hintGo.AddComponent<TextMeshProUGUI>();
             refs.CollHintText.text                =
-                "# paint · . erase (click active to toggle off) · [ ] size · Tab scope · B on/off. LMB on building to apply.";
-            refs.CollHintText.fontSize            = 9f;
+                "LMB drags on the building to apply.\n" +
+                "B  brush on/off   ·   [ ]  brush size   ·   Tab  scope\n" +
+                "#  solid   ·   .  walkable   (click the active one to switch the brush off)";
+            refs.CollHintText.fontSize            = 10f;
             refs.CollHintText.color               = TEXT_MUTED;
             refs.CollHintText.alignment           = TextAlignmentOptions.TopLeft;
             refs.CollHintText.enableWordWrapping  = true;
 
+            BuildResizeGrip(refs.CollidersDropdown, COLLIDERS_PANEL_MIN_SIZE, COLLIDERS_PANEL_MAX_SIZE);
+
             refs.CollidersDropdown.SetActive(false);
         }
+
+        /// <summary>Floor: the eight brush-size presets stop fitting on one row below this.</summary>
+        private static readonly Vector2 COLLIDERS_PANEL_MIN_SIZE = new Vector2(200f, 320f);
+        private static readonly Vector2 COLLIDERS_PANEL_MAX_SIZE = new Vector2(900f, 1400f);
 
         private const int CollBrushSizeMin = 1;
         private const int CollBrushSizeMax = 8;

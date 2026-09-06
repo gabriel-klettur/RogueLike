@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
@@ -152,6 +152,15 @@ namespace Valkur.Gameplay.Buildings
             public ColliderAuthoringScope Scope;
             public Vector2Int EffectivePixelSize;
             public ColliderGridData WorkingGrid;
+
+            /// <summary>
+            /// How many placed buildings this grid reaches — 1 for CU, and for CG every
+            /// instance sharing the image. Painting in CG edits all of them, and the panel
+            /// said only "CG (all of type)", which does not tell an author whether that is
+            /// this house or seventeen trees. Counted once when the session is built, not
+            /// per panel refresh: the refresh runs on every brush sample.
+            /// </summary>
+            public int SharedInstanceCount = 1;
         }
 
         private sealed class ColliderPaintStroke
@@ -162,6 +171,16 @@ namespace Valkur.Gameplay.Buildings
             public int InstanceId;
             public ColliderGridData Before;
             public bool Changed;
+
+            /// <summary>
+            /// Every cell this stroke wrote, and the state it ended on: (row, col) -> solid.
+            ///
+            /// It exists so the stroke can be handed to the CG siblings as a DELTA. Replaying
+            /// the whole grid onto each of them instead — which is what ApplyGridSnapshot
+            /// does — tears down and rebuilds every tile they own, measured at ~3 s on mouse
+            /// release for fourteen shared trees.
+            /// </summary>
+            public readonly Dictionary<Vector2Int, bool> ChangedCells = new Dictionary<Vector2Int, bool>(64);
         }
 
         private bool          _collidersVisible;

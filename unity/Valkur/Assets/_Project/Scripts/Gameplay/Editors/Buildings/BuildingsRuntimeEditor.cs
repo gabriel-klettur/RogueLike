@@ -362,6 +362,9 @@ namespace Valkur.Gameplay.Buildings
             // reload the scene, so any collider-debug overlay left visible (e.g.
             // the editor singleton destroyed without going through Deactivate first)
             // would otherwise sit in the Editor scene after Stop.
+            // Play Mode stopping runs OnDestroy, and it is the last chance a debounced
+            // collider save has to reach disk.
+            FlushPendingColliderSave();
             HideCollidersOverlayHard();
             if (_ownsToggleAction) _toggleAction?.Dispose();
             if (_collBrushCursorMat != null) Destroy(_collBrushCursorMat);

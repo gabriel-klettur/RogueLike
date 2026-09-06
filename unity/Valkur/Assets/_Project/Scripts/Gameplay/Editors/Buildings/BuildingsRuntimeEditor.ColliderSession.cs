@@ -88,7 +88,8 @@ namespace Valkur.Gameplay.Buildings
                 ImageKey = imageKey,
                 Scope = scope,
                 EffectivePixelSize = effectiveSize,
-                WorkingGrid = ResolveWorkingGridFor(_activeBuilding, scope, imageKey, _activeBuilding.InstanceId, effectiveSize)
+                WorkingGrid = ResolveWorkingGridFor(_activeBuilding, scope, imageKey, _activeBuilding.InstanceId, effectiveSize),
+                SharedInstanceCount = CountBuildingsSharingGrid(scope, imageKey)
             };
             return _activeColliderSession;
         }
@@ -291,6 +292,28 @@ namespace Valkur.Gameplay.Buildings
         // source image file (sourceImagePath) should share a single CG collider grid.
         // Previously this returned "template:{templateId}", which prevented buildings
         // with different templateIds (but the same image) from sharing — fixed here.
+        /// <summary>
+        /// Placed buildings a stroke in this scope will reach: 1 for CU, and for CG every
+        /// instance that resolves to the same image and has not been overridden to CU —
+        /// the exact set <see cref="ApplyCollisionTargetsFor"/> writes to.
+        /// </summary>
+        private int CountBuildingsSharingGrid(ColliderAuthoringScope scope, string imageKey)
+        {
+            if (scope == ColliderAuthoringScope.CU || string.IsNullOrEmpty(imageKey)) return 1;
+
+            int count = 0;
+            var all = GetCachedBuildings();
+            for (int i = 0; i < all.Length; i++)
+            {
+                var b = all[i];
+                if (b == null || b.Template == null) continue;
+                if (string.Equals(b.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase)) continue;
+                if (!string.Equals(ResolveSharedScopeKey(b), imageKey, StringComparison.OrdinalIgnoreCase)) continue;
+                count++;
+            }
+            return Mathf.Max(1, count);
+        }
+
         private static string ResolveSharedScopeKey(BuildingObject building)
         {
             if (building == null || building.Template == null) return string.Empty;

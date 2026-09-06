@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
@@ -23,16 +23,19 @@ namespace Valkur.Gameplay.Buildings
 
         private void EnsureCollTile(BuildingObject building, int row, int col, int rows, int cols)
         {
-            string childName = $"{CollTilePrefix}{row}_{col}";
-            Transform tileTransform = building.transform.Find(childName);
-            if (tileTransform == null)
-                tileTransform = TryReusePooledCollTile(building.transform, childName);
+            // Through the index, not by name: reading Transform.name marshals a managed
+            // string out of the native object, so the old walk over the children cost
+            // 205 us per cell on a building with 451 of them — once per cell, per building,
+            // per stroke. See BuildingCollisionTileIndex.
+            var index = BuildingCollisionTileIndex.Of(building.transform);
+            Transform tileTransform = index.Find(row, col) ?? index.TakePooled(row, col);
 
             if (tileTransform == null)
             {
-                var tileGo = new GameObject(childName);
+                var tileGo = new GameObject($"{CollTilePrefix}{row}_{col}");
                 tileGo.transform.SetParent(building.transform, worldPositionStays: false);
                 tileTransform = tileGo.transform;
+                index.Register(row, col, tileTransform);
             }
 
             // Single source of truth: derive the cell's WORLD rect from the
@@ -93,34 +96,15 @@ namespace Valkur.Gameplay.Buildings
                 return;
             }
 
-            string childName = $"{CollTilePrefix}{row}_{col}";
-            var tileTransform = building.transform.Find(childName);
+            // Retire moves the tile into the index's pool and renames it, so a LATER
+            // EnsureCollTile (this cell, or any other going solid) reclaims the GameObject
+            // instead of allocating one.
+            var tileTransform = BuildingCollisionTileIndex.Of(building.transform).Retire(row, col);
             if (tileTransform == null) return; // already walkable — nothing to hide
 
             var box = tileTransform.GetComponent<BoxCollider2D>();
             if (box != null) box.enabled = false;
             tileTransform.gameObject.SetActive(false);
-            // Rename into the pooled bucket so a LATER EnsureCollTile call (this
-            // cell — or a different one — going solid again) can reclaim the
-            // GameObject instead of allocating a new one. Same pooling contract
-            // ClearCollisionTiles uses; GetInstanceID() keeps the name unique
-            // without needing a shared counter across incremental calls.
-            tileTransform.name = $"{PooledCollTilePrefix}{tileTransform.GetInstanceID()}";
-        }
-
-        private static Transform TryReusePooledCollTile(Transform parent, string childName)
-        {
-            for (int i = 0; i < parent.childCount; i++)
-            {
-                var child = parent.GetChild(i);
-                if (!child.name.StartsWith(PooledCollTilePrefix, StringComparison.Ordinal))
-                    continue;
-
-                child.name = childName;
-                return child;
-            }
-
-            return null;
         }
 
         private static Vector2 GetBuildingLocalSpriteSize(BuildingObject building)
@@ -158,19 +142,16 @@ namespace Valkur.Gameplay.Buildings
         {
             if (building == null) return;
 
-            int pooledIndex = 0;
+            // One dictionary walk, not a name-reading pass over every child.
+            var index = BuildingCollisionTileIndex.Of(building.transform);
+            index.RetireAll();
             for (int i = building.transform.childCount - 1; i >= 0; i--)
             {
                 var child = building.transform.GetChild(i);
-                if (!child.name.StartsWith(CollTilePrefix, StringComparison.Ordinal) &&
-                    !child.name.StartsWith(PooledCollTilePrefix, StringComparison.Ordinal))
-                    continue;
-
-                child.name = $"{PooledCollTilePrefix}{pooledIndex++}";
+                if (!child.name.StartsWith(PooledCollTilePrefix, StringComparison.Ordinal)) continue;
                 var box = child.GetComponent<BoxCollider2D>();
-                if (box != null)
-                    box.enabled = false;
-                child.gameObject.SetActive(false);
+                if (box != null) box.enabled = false;
+                if (child.gameObject.activeSelf) child.gameObject.SetActive(false);
             }
         }
 

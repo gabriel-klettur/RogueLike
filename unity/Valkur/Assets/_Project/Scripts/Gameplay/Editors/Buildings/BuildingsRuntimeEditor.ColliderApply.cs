@@ -87,6 +87,7 @@ namespace Valkur.Gameplay.Buildings
             // (stroke end, undo/redo, scope change) so the cache is either already valid
             // or correctly invalidated before the call.
             var all = GetCachedBuildings();
+            _appliedTargetsScratch.Clear();
             if (scope == ColliderAuthoringScope.CU)
             {
                 for (int i = 0; i < all.Length; i++)
@@ -94,6 +95,7 @@ namespace Valkur.Gameplay.Buildings
                     if (all[i] != null && all[i].InstanceId == instanceId)
                     {
                         ApplyCollisionStateForBuilding(all[i]);
+                        _appliedTargetsScratch.Add(all[i]);
                         break;
                     }
                 }
@@ -109,15 +111,25 @@ namespace Valkur.Gameplay.Buildings
                     if (string.Equals(b.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase))
                         continue;
                     ApplyCollisionStateForBuilding(b);
+                    _appliedTargetsScratch.Add(b);
                 }
             }
 
             if (_collidersVisible)
             {
                 Physics2D.SyncTransforms();
-                RefreshCollidersOverlay();
+                // Only the buildings this call actually wrote to. The global
+                // RefreshCollidersOverlay walks every building in the scene and
+                // materialises an overlay per visible one — measured at 749 ms for a stroke
+                // that touched fourteen trees, on every mouse release. Nothing else changed
+                // its colliders, so nothing else needs redrawing.
+                for (int i = 0; i < _appliedTargetsScratch.Count; i++)
+                    RefreshOverlayCellsFor(_appliedTargetsScratch[i]);
             }
         }
+
+        /// <summary>Buildings the last <see cref="ApplyCollisionTargetsFor"/> wrote to.</summary>
+        private readonly List<BuildingObject> _appliedTargetsScratch = new List<BuildingObject>(32);
 
         private void ApplyCollisionStateForBuilding(BuildingObject building)
         {

@@ -96,3 +96,69 @@
   caller must remember was already shipped and already missing at two of four
   sites.
 - **The catalog holds 1474 building templates**, not 1176.
+
+## Colliders window — audit and hardening (2026-09-06)
+
+Measured the same way, on the same world: 302 buildings, **249 of them CG**
+(shared scope), painting a tree whose image fourteen instances share, with
+Show Colliders on.
+
+| Measure | Before | After |
+| --- | --- | --- |
+| Paint, per mouse-move sample, brush 1 | 32.3 ms | ~1.9 ms |
+| Paint, per sample, brush 4 | 123.0 ms | 7.5 ms |
+| Paint, per sample, brush 8 | 149.2 ms | 8.7 ms |
+| Erase, per sample | 0.4 ms | 0.02 ms |
+| Erase, mouse release | ~330 ms | 2.6 ms |
+| Allocation per sample | 24.7 KB | 0 KB |
+| Authoring save | 51 ms on every release | debounced, 1 s after the last stroke |
+
+### What was actually slow
+
+- **The stroke propagated to every CG sibling on every sample.** Each
+  newly-solid cell materialised a collider tile and, with the overlay on, an
+  overlay visual — on the active building and on all fourteen siblings,
+  synchronously. None of the cost was in the grid maths: cloning the grid
+  measured 0.007 ms, the physics sync 0.001 ms, the panel refresh 0.005 ms.
+  Siblings now receive the stroke once, on release, as a delta of the cells
+  that changed.
+- **Tiles were addressed by child name.** `Transform.name` marshals a fresh
+  managed string out of the native object, so the walk looking for a pooled
+  tile cost **205 µs** on a building with 451 children, against 3.1 µs for the
+  native `transform.Find` beside it — once per cell, per building, per stroke.
+  And the child count only grows: a retired tile is renamed into a pool and
+  never destroyed. `BuildingCollisionTileIndex` gives O(1) lookup and keeps the
+  names the loader and the tests read.
+- **Every release wrote all 302 instances.** Debounced to one write a second
+  after the last stroke, flushed on deactivate, on map-slot change and in
+  `OnDestroy`, which is what Play Mode stopping runs.
+- **`_undo.Do` replayed the whole grid onto every sibling** on release —
+  ~3 s. The command is recorded rather than executed: the active building
+  already reflects the stroke and the siblings take the delta. Undo and redo
+  still run the full snapshot, because they must restore anything.
+
+### Still slow, and why
+
+The first large paint stroke with Show Colliders on across many on-screen
+shared instances still costs ~1.6 s on release. That is the overlay
+materialising one GameObject with a SpriteRenderer and a LineRenderer per
+newly-solid cell per visible sibling. It is amortised — the overlay pools its
+visuals, so later strokes reuse them — and it is the price of showing the
+change on fourteen buildings at once. Making it cheap means drawing the
+overlay as one mesh per building instead of one object per cell, which three
+fixtures currently assert against.
+
+### Usability
+
+- The grid resolution moved from the **Properties** panel into the
+  **Colliders** panel. It is the topology every other control there paints
+  into, and splitting them meant watching a number in a different window.
+- The panel is resizable, like Buildings, Tile, Items, Particles and Spells.
+- The scope button and the status line say how many buildings a stroke edits
+  ("CG · 14 buildings"), instead of "all of type".
+- One name for one thing: the button, the hint and the status all say
+  **# Solid** and **. Walkable**, matching the two characters the grid file
+  stores. It used to be "Erase" on the button, `Walk` in the enum and "." in
+  the data.
+- The hint is three readable lines at 10 pt instead of one dense line of six
+  shortcuts at 9 pt.

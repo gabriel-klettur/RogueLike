@@ -56,12 +56,19 @@ namespace Valkur.Gameplay.Buildings
         /// pushed. This is the difference between 20 fps and 120+ fps when
         /// Show Colliders is on with many buildings in the scene.
         /// </summary>
-        private void RefreshActiveBuildingOverlayCells()
+        private void RefreshActiveBuildingOverlayCells() => RefreshOverlayCellsFor(_activeBuilding);
+
+        /// <summary>
+        /// Pushes one building's authoring cells into its existing overlay. Does NOT create
+        /// an overlay: a building without one is either off-screen or was never shown, and
+        /// materialising it here is what made the stroke-end refresh walk the whole scene.
+        /// </summary>
+        private void RefreshOverlayCellsFor(BuildingObject building)
         {
-            if (!_collidersVisible || _activeBuilding == null) return;
-            var overlay = _activeBuilding.GetComponent<BuildingColliderDebugOverlay>();
+            if (!_collidersVisible || building == null) return;
+            var overlay = building.GetComponent<BuildingColliderDebugOverlay>();
             if (overlay == null) return;
-            int filled = ComputeAuthoringCellsInto(_activeBuilding, _authoringCellsScratch);
+            int filled = ComputeAuthoringCellsInto(building, _authoringCellsScratch);
             if (filled > 0)
                 overlay.SetAuthoringCells(_authoringCellsScratch);
             else
@@ -253,6 +260,7 @@ namespace Valkur.Gameplay.Buildings
             _colliderStroke.InstanceId = session.InstanceId;
             _colliderStroke.Before = CloneGrid(session.WorkingGrid);
             _colliderStroke.Changed = false;
+            _colliderStroke.ChangedCells.Clear();
 
             // Seed the PHYSICAL colliders from the session's starting grid once,
             // so the incremental per-cell deltas HandleColliderPaint applies for
@@ -266,36 +274,49 @@ namespace Valkur.Gameplay.Buildings
             // O(total solid cells) here, but only ONCE per stroke (mouse-down)
             // instead of once per mouse-move sample.
             ApplyGridOverrideToBuilding(_activeBuilding, session.WorkingGrid);
-            if (session.Scope == ColliderAuthoringScope.CG)
-                SeedSharedTemplatesFromGrid(session);
+            // Siblings are NOT seeded here any more. They used to be, because the stroke
+            // propagated to them live and needed a materialised baseline to diff against.
+            // The stroke no longer touches them until it ends, and EndColliderStroke applies
+            // their grid in full — so seeding at mouse-down was a rebuild of every sibling
+            // for a view that does not change during the drag.
         }
 
-        /// <summary>
-        /// Full-rebuild counterpart to <see cref="ApplyGridOverrideToBuilding"/>
-        /// for every OTHER building sharing this stroke's CG image key. Called
-        /// once from <see cref="BeginColliderStroke"/> so siblings start the
-        /// drag with the same fully-materialised baseline as the active
-        /// building — the live per-cell propagation during the drag
-        /// (<see cref="PropagateLiveStrokeToSharedTemplates"/>) only needs to
-        /// apply the cells that actually changed after that point.
-        /// </summary>
-        private void SeedSharedTemplatesFromGrid(ActiveColliderGridSession session)
-        {
-            if (session == null || session.WorkingGrid == null) return;
-            string sharedKey = session.ImageKey ?? string.Empty;
-            if (string.IsNullOrEmpty(sharedKey)) return;
+        /// <summary>Cells the stroke that is ending wrote, and their final state.</summary>
+        private readonly Dictionary<Vector2Int, bool> _strokeDeltaScratch = new Dictionary<Vector2Int, bool>(64);
 
+        /// <summary>
+        /// Pushes one stroke's changed cells onto every OTHER building that shares this CG
+        /// grid. No-op for CU, which has no siblings by definition.
+        ///
+        /// Safe as a delta because those buildings already carry their grid: the loader
+        /// materialises it at scene load and placement re-applies it, so the only cells that
+        /// can disagree are the ones this stroke just changed.
+        /// </summary>
+        private void ApplyStrokeDeltaToSharedBuildings(
+            ColliderAuthoringScope scope, string imageKey, ColliderGridData after,
+            Dictionary<Vector2Int, bool> delta)
+        {
+            if (scope != ColliderAuthoringScope.CG) return;
+            if (after == null || delta == null || delta.Count == 0) return;
+            if (string.IsNullOrEmpty(imageKey)) return;
+
+            int rows = after.height, cols = after.width;
             var all = GetCachedBuildings();
             for (int i = 0; i < all.Length; i++)
             {
                 var b = all[i];
                 if (b == null || b.Template == null) continue;
                 if (ReferenceEquals(b, _activeBuilding)) continue;
-                if (string.Equals(b.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase))
-                    continue;
-                if (!string.Equals(ResolveSharedScopeKey(b), sharedKey, StringComparison.OrdinalIgnoreCase))
-                    continue;
-                ApplyGridOverrideToBuilding(b, session.WorkingGrid);
+                if (string.Equals(b.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase)) continue;
+                if (!string.Equals(ResolveSharedScopeKey(b), imageKey, StringComparison.OrdinalIgnoreCase)) continue;
+
+                foreach (var kv in delta)
+                    ApplyGridCellToBuilding(b, kv.Key.x, kv.Key.y, rows, cols, kv.Value);
+
+                var mainCollider = b.GetComponent<BoxCollider2D>();
+                if (mainCollider != null) mainCollider.enabled = false;
+
+                RefreshOverlayCellsFor(b);
             }
         }
 
@@ -310,19 +331,41 @@ namespace Valkur.Gameplay.Buildings
             var after = CloneGrid(GetStoredGrid(strokeScope, strokeImageKey, strokeInstanceId));
             bool changed = _colliderStroke.Changed && !GridEquals(before, after);
 
+            // Snapshot the delta before the stroke is reset.
+            _strokeDeltaScratch.Clear();
+            foreach (var kv in _colliderStroke.ChangedCells) _strokeDeltaScratch[kv.Key] = kv.Value;
+
             _colliderStroke.Active = false;
             _colliderStroke.Before = null;
             _colliderStroke.Changed = false;
+            _colliderStroke.ChangedCells.Clear();
 
             if (!changed || after == null) return;
 
-            _undo.Do("Paint colliders",
+            // RECORDED, not executed. The active building already reflects the stroke, and
+            // executing the snapshot would re-apply the WHOLE grid to every sibling — tear
+            // down each one's tiles and rebuild them — which measured ~3 s on release for a
+            // tree shared by fourteen instances. Undo and redo still run the full snapshot:
+            // they are rare, and they have to be able to restore anything.
+            _undo.Record(new UndoStack.LambdaCommand("Paint colliders",
                 () => ApplyGridSnapshot(strokeScope, strokeImageKey, strokeInstanceId, after),
-                () => ApplyGridSnapshot(strokeScope, strokeImageKey, strokeInstanceId, before));
+                () => ApplyGridSnapshot(strokeScope, strokeImageKey, strokeInstanceId, before)));
+
+            // The siblings get exactly the cells that changed, which is O(delta) instead of
+            // O(their whole grid).
+            ApplyStrokeDeltaToSharedBuildings(strokeScope, strokeImageKey, after, _strokeDeltaScratch);
+
+            // One sync for the whole stroke. ApplyCollisionTargetsFor only syncs when the
+            // overlay is visible, and the colliders this stroke created or disabled are
+            // real physics whether or not anyone is looking at them.
+            Physics2D.SyncTransforms();
+
             // Auto-save only in play mode. EditMode reflection tests exercise this
             // method on temporary scene objects and must not rewrite project data.
+            // Debounced: a full instance serialisation is 51 ms and a wall is a dozen
+            // strokes — see RequestColliderSave.
             if (Application.isPlaying)
-                SaveColliderAuthoring();
+                RequestColliderSave();
         }
     }
 }

@@ -205,14 +205,18 @@ namespace Valkur.Gameplay.Buildings
                 onDoorSizeMinus,    onDoorSizePlus,
                 onDoorApply,        onDoorClear);
             BuildBuildingsPanel(canvasT, ref refs, onSearchChanged, onCategoryChanged);
+            // The collider grid resolution lives in the COLLIDERS panel, not Properties:
+            // it is the topology every other control in that panel paints into, and
+            // splitting the two meant an author changing a grid had to watch a number in
+            // a different window.
             BuildCollidersPanel(canvasT, ref refs,
                 onToggleCollidersVisible,
                 onCollScopeToggle,
                 onBrushPaint, onBrushErase,
-                onCollBrushSizeChanged, onCollBrushSizeStepDown, onCollBrushSizeStepUp);
+                onCollBrushSizeChanged, onCollBrushSizeStepDown, onCollBrushSizeStepUp,
+                onGridColsMinus, onGridColsPlus, onGridRowsMinus, onGridRowsPlus);
             BuildPropertiesPanel(canvasT, ref refs, onSplitChanged,
                 onZBottomMinus, onZBottomPlus, onZTopMinus, onZTopPlus,
-                onGridColsMinus, onGridColsPlus, onGridRowsMinus, onGridRowsPlus,
                 onColliderScope, onInteractable, onPaintSolid, onPaintWalk, onSaveCU, onDeleteBuilding, onResetBuilding);
             return refs;
         }

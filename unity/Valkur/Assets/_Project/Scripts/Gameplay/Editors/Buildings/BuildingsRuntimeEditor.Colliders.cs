@@ -172,9 +172,10 @@ namespace Valkur.Gameplay.Buildings
             SetCollBrushMode(action);
         }
 
+        // Matches the button labels, which match the two characters the grid file stores.
         private static string ActionLabel(CollBrushMode action)
-            => action == CollBrushMode.Solid ? "# Paint"
-             : action == CollBrushMode.Walk  ? ". Erase"
+            => action == CollBrushMode.Solid ? "# Solid"
+             : action == CollBrushMode.Walk  ? ". Walkable"
              : action.ToString();
 
         private void SetCollBrushMode(CollBrushMode mode)
@@ -256,8 +257,11 @@ namespace Valkur.Gameplay.Buildings
                 string scopeNow = _activeBuilding != null
                     ? _activeBuilding.EffectiveColliderScope
                     : "--";
-                string scopeDesc = scopeNow == "CU" ? "this only"
-                                 : scopeNow == "CG" ? "all of type"
+                // "all of type" never said how many that was. The count comes off the live
+                // session, which computed it once when the building was selected.
+                int reachCount = _activeColliderSession != null ? _activeColliderSession.SharedInstanceCount : 1;
+                string scopeDesc = scopeNow == "CU" ? "this building only"
+                                 : scopeNow == "CG" ? $"{reachCount} buildings"
                                  : "no selection";
                 _uiRefs.CollScopeBtnLabel.text = $"Scope: {scopeNow} ({scopeDesc})";
             }
@@ -286,9 +290,16 @@ namespace Valkur.Gameplay.Buildings
             string target = session.Scope == ColliderAuthoringScope.CU
                 ? $"instance:{session.InstanceId}"
                 : string.IsNullOrEmpty(session.ImageKey) ? "image:(none)" : $"image:{session.ImageKey}";
+            // How far a stroke reaches, in buildings. "CG (all of type)" alone never said
+            // whether that meant this house or seventeen trees.
+            string reach = session.Scope == ColliderAuthoringScope.CU
+                ? "this building only"
+                : session.SharedInstanceCount == 1
+                    ? "1 building"
+                    : $"{session.SharedInstanceCount} buildings";
             string dirty = IsSessionDirty(session) ? "Dirty" : "Saved";
             int solids = CountSolidCells(session.WorkingGrid);
-            _uiRefs.CollTargetText.text = $"ID {session.InstanceId} | Scope {scope}\n{target}";
+            _uiRefs.CollTargetText.text = $"ID {session.InstanceId} | Scope {scope} · edits {reach}\n{target}";
             _uiRefs.CollStateText.text =
                 $"Grid: {session.WorkingGrid.width}x{session.WorkingGrid.height} | Solids {solids} | {dirty} | Brush {brushLabel} x{_collBrushSize}";
         }

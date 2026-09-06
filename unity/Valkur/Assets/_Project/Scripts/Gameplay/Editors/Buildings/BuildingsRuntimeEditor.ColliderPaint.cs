@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
@@ -60,7 +60,11 @@ namespace Valkur.Gameplay.Buildings
                     if (session.WorkingGrid.collision[r][c] == next) continue;
                     session.WorkingGrid.collision[r][c] = next;
                     changed = true;
-                    _collPaintChangedCellsScratch.Add(new Vector2Int(r, c)); // x = row, y = col
+                    var cell = new Vector2Int(r, c);                 // x = row, y = col
+                    _collPaintChangedCellsScratch.Add(cell);
+                    // Remembered for the whole stroke so EndColliderStroke can hand the
+                    // siblings a delta instead of the whole grid.
+                    _colliderStroke.ChangedCells[cell] = solidNow;
                 }
             }
 
@@ -88,68 +92,87 @@ namespace Valkur.Gameplay.Buildings
             var mainCollider = _activeBuilding.GetComponent<BoxCollider2D>();
             if (mainCollider != null) mainCollider.enabled = false;
 
-            // Live propagation for Shared (CG) scope: every other building that
-            // resolves to the same shared key (template-based) and has not been
-            // overridden to CU must reflect the brush stroke immediately, not
-            // only when the stroke ends. The cached buildings list keeps this
-            // O(N) loop cheap, and CU buildings are skipped so per-instance
-            // overrides remain authoritative.
-            if (session.Scope == ColliderAuthoringScope.CG)
-                PropagateLiveStrokeToSharedTemplates(session, _collPaintChangedCellsScratch, solidNow);
-
-            Physics2D.SyncTransforms();
-            // For CU strokes, the heavier ApplyCollisionTargetsFor is still
-            // deferred to EndColliderStroke (single building → cheap there).
-            // For CG strokes, propagation above already touched all matching
-            // buildings, so we only need the lightweight overlay refresh here.
+            // CG (shared) scope propagates to its siblings when the stroke ENDS, not on
+            // every mouse-move sample, and it goes as a DELTA.
+            //
+            // Live propagation was the dominant cost in this editor. Measured on the shipped
+            // world (302 buildings, 249 of them CG) painting a tree fourteen instances share:
+            // every newly-solid cell materialised a collider tile AND, with Show Colliders on,
+            // an overlay visual, on the active building AND on each sibling, synchronously.
+            //   brush 1 -> 32.3 ms/sample, brush 4 -> 123.0 ms, brush 8 -> 149.2 ms
+            // i.e. 6-30 fps while painting. None of it was in the grid maths: cloning the grid
+            // measured 0.007 ms, the physics sync 0.001 ms, the panel refresh 0.005 ms.
+            //
+            // The siblings are not skipped, only deferred: EndColliderStroke hands them the
+            // cells this stroke changed. What the author drags over is the building under the
+            // cursor, and that still updates every sample.
+            //
+            // Physics2D.SyncTransforms moved with it, to once per stroke. Nothing queries
+            // physics mid-stroke: the brush hit-tests the building's own rect, not colliders.
             RefreshActiveBuildingOverlayCells();
             RefreshCollidersPanel();
         }
 
-        private void PropagateLiveStrokeToSharedTemplates(
-            ActiveColliderGridSession session, List<Vector2Int> changedCells, bool solidNow)
+        // ── Debounced authoring save ──────────────────────────────────────────────
+
+        /// <summary>
+        /// How long the editor waits, after the last stroke, before writing the authoring
+        /// files. Short enough that a crash costs one stroke, long enough that a burst of
+        /// brush strokes writes once.
+        /// </summary>
+        private const float COLLIDER_SAVE_DEBOUNCE_SECONDS = 1.0f;
+
+        private Coroutine _pendingColliderSave;
+        private bool      _colliderSaveQueued;
+
+        /// <summary>
+        /// Ask for the authoring files to be written soon.
+        ///
+        /// <para>Every stroke used to write them immediately, and
+        /// <see cref="SaveInstancesToJson"/> serialises ALL 302 building instances:
+        /// measured at 51 ms, on every mouse release. Painting a wall is a dozen short
+        /// strokes, so that was half a second of stalls the author reads as the editor
+        /// being slow at erasing.</para>
+        ///
+        /// <para>Deferring only moves WHEN, never WHETHER: the pending write is flushed by
+        /// <see cref="FlushPendingColliderSave"/> from every exit — deactivating the editor,
+        /// switching map slot, the explicit Save button, and OnDestroy, which is what Play
+        /// Mode stopping runs.</para>
+        /// </summary>
+        private void RequestColliderSave()
         {
-            if (session == null || session.WorkingGrid == null) return;
-            string sharedKey = session.ImageKey ?? string.Empty;
-            if (string.IsNullOrEmpty(sharedKey)) return;
+            _colliderSaveQueued = true;
 
-            int gridRows = session.WorkingGrid.height;
-            int gridCols = session.WorkingGrid.width;
-
-            var all = GetCachedBuildings();
-            for (int i = 0; i < all.Length; i++)
+            // No coroutine outside Play Mode (and none on a disabled component): write now.
+            if (!Application.isPlaying || !isActiveAndEnabled)
             {
-                var b = all[i];
-                if (b == null || b.Template == null) continue;
-                if (ReferenceEquals(b, _activeBuilding)) continue;
-                if (string.Equals(b.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase))
-                    continue;
-                if (!string.Equals(ResolveSharedScopeKey(b), sharedKey, StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                // Same incremental apply as the active building — a shared
-                // (CG) grid can fan this out to dozens of sibling instances,
-                // so a full ApplyGridOverrideToBuilding rebuild PER SIBLING
-                // PER SAMPLE would multiply the already-expensive full
-                // rebuild by the sibling count on every mouse-move.
-                for (int ci = 0; ci < changedCells.Count; ci++)
-                {
-                    var cell = changedCells[ci];
-                    ApplyGridCellToBuilding(b, cell.x, cell.y, gridRows, gridCols, solidNow);
-                }
-                var mainCollider = b.GetComponent<BoxCollider2D>();
-                if (mainCollider != null) mainCollider.enabled = false;
-
-                if (_collidersVisible)
-                {
-                    var overlay = b.GetComponent<BuildingColliderDebugOverlay>();
-                    if (overlay == null)
-                        overlay = b.gameObject.AddComponent<BuildingColliderDebugOverlay>();
-                    int filled = ComputeAuthoringCellsInto(b, _authoringCellsScratch);
-                    if (filled > 0) overlay.SetAuthoringCells(_authoringCellsScratch);
-                    else overlay.ClearAuthoringCells();
-                }
+                FlushPendingColliderSave();
+                return;
             }
+
+            if (_pendingColliderSave != null) StopCoroutine(_pendingColliderSave);
+            _pendingColliderSave = StartCoroutine(ColliderSaveAfterDelay());
+        }
+
+        private System.Collections.IEnumerator ColliderSaveAfterDelay()
+        {
+            // Realtime: the editor is usable while the game is paused.
+            yield return new WaitForSecondsRealtime(COLLIDER_SAVE_DEBOUNCE_SECONDS);
+            _pendingColliderSave = null;
+            FlushPendingColliderSave();
+        }
+
+        /// <summary>Writes a queued save now. No-op when nothing is queued. Idempotent.</summary>
+        internal void FlushPendingColliderSave()
+        {
+            if (_pendingColliderSave != null)
+            {
+                StopCoroutine(_pendingColliderSave);
+                _pendingColliderSave = null;
+            }
+            if (!_colliderSaveQueued) return;
+            _colliderSaveQueued = false;
+            SaveColliderAuthoring();
         }
 
         // NOTE: Quick Actions (Fill / Clear / Revert) were removed by user request
@@ -158,6 +181,8 @@ namespace Valkur.Gameplay.Buildings
 
         private void SaveColliderAuthoring()
         {
+            // An explicit save satisfies whatever the debounce was still holding.
+            _colliderSaveQueued = false;
             SaveInstancesToJson();
         }
 
@@ -238,6 +263,9 @@ namespace Valkur.Gameplay.Buildings
         {
             // Persist still-pending edits to the OUTGOING slot. Skip when the
             // editor has never been activated (no UI, no edits to flush).
+            // The debounced collider save goes first, or a stroke painted seconds before
+            // the slot flipped would be written into the INCOMING slot's file.
+            FlushPendingColliderSave();
             if (_uiBuilt && _hasUnsavedInstanceChanges)
                 PersistDirtyInstanceChanges("Active map slot changed");
 
