@@ -66,7 +66,53 @@ namespace Valkur.Gameplay.Buildings
 
             refs.StatusText = EditorUIHelpers.MakeStatusText(t);
 
+            BuildResizeGrip(refs.BuildingsDropdown, BUILDINGS_PANEL_MIN_SIZE, BUILDINGS_PANEL_MAX_SIZE);
+
             refs.BuildingsDropdown.SetActive(false);
+        }
+
+        // ── Resize grip ───────────────────────────────────────────────────────────
+
+        private const float RESIZE_GRIP_PX = 16f;
+
+        /// <summary>
+        /// Smallest the Buildings panel may get. The width is what two picker columns plus
+        /// the scrollbar need; below that the category tabs start wrapping their labels.
+        /// </summary>
+        private static readonly Vector2 BUILDINGS_PANEL_MIN_SIZE = new Vector2(232f, 300f);
+        private static readonly Vector2 BUILDINGS_PANEL_MAX_SIZE = new Vector2(1600f, 1400f);
+
+        /// <summary>
+        /// Adds the triangular drag handle every other resizable editor panel carries
+        /// (Tile, Items, Particles, Spells) to the bottom-right corner of a panel built by
+        /// <see cref="MakeDrop"/>, which pivots top-left — the corner
+        /// <see cref="PanelResizeHandle"/> expects.
+        ///
+        /// The size is persisted for free: <c>DraggablePanel.CaptureState</c> records
+        /// <c>sizeDelta</c> and the workspace layer writes it with the rest of the layout.
+        /// </summary>
+        private static void BuildResizeGrip(GameObject panelRoot, Vector2 minSize, Vector2 maxSize)
+        {
+            if (panelRoot == null) return;
+            var panelRt = panelRoot.GetComponent<RectTransform>();
+            if (panelRt == null) return;
+
+            var go = CreateUI("ResizeHandle", panelRoot.transform);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin        = new Vector2(1f, 0f);
+            rt.anchorMax        = new Vector2(1f, 0f);
+            rt.pivot            = new Vector2(1f, 0f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta        = new Vector2(RESIZE_GRIP_PX, RESIZE_GRIP_PX);
+
+            var tri = go.AddComponent<TriangleHandleGraphic>();
+            tri.color         = TileEditorTheme.Border;
+            tri.raycastTarget = true;
+
+            var handle = go.AddComponent<PanelResizeHandle>();
+            handle.Target  = panelRt;
+            handle.MinSize = minSize;
+            handle.MaxSize = maxSize;
         }
 
         // ── Colliders Panel ───────────────────────────────────────────────────────

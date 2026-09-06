@@ -390,6 +390,9 @@ namespace Valkur.Gameplay.Buildings
             HandleMapInteraction();
             UpdateCollBrushCursor();
             UpdatePickerDrag();
+            // One float compare unless the panel was actually resized — the grid reflows to
+            // whatever width the drag (or a restored workspace) left it at.
+            UpdatePickerLayoutIfResized();
             UpdateOutlineState();
             UpdateFloatingHandles();
             UpdateIdLabel();

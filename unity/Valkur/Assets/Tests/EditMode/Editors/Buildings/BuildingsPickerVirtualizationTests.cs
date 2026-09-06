@@ -11,26 +11,35 @@ using UnityEngine.UI;
 using Valkur.Data;
 using Valkur.Gameplay.Buildings;
 using Valkur.Gameplay.Editors;
+using Valkur.UIKit;
 
 namespace Valkur.Tests.EditMode.Editors.Buildings
 {
     /// <summary>
-    /// The picker grid is virtualised: the content rect is sized for every template, and
-    /// only the rows in view (plus overscan) exist as GameObjects. Measured before: the
-    /// full rebuild of 1474 slots cost 772 ms and 53 MB, and ran on every slot click.
+    /// The picker grid is virtualised AND reflowing: the content rect is sized for every
+    /// template, only the rows in view (plus overscan) exist as GameObjects, and the column
+    /// count comes from the live width rather than a hardcoded three.
     ///
-    /// The two constraints that hold it up are pinned here because both are the obvious
-    /// thing to "add back": a layout group would stack whatever slots exist from the top
-    /// and put row 150 where row 0 belongs, and a size fitter would shrink the content to
+    /// Both halves shipped broken. The rebuild of 1474 slots cost 772 ms and 53 MB and ran
+    /// on every slot click; and three fixed 80 px columns in a 384 px panel left a 104 px
+    /// dead strip down the right-hand side, which is what the panel looked like in the bug
+    /// report that started this.
+    ///
+    /// The two constraints under the virtualisation are pinned here because both are the
+    /// obvious thing to "add back": a layout group would stack whatever slots exist from the
+    /// top and put row 150 where row 0 belongs, and a size fitter would shrink the content to
     /// the realised window and make the rest unreachable.
     /// </summary>
     [TestFixture]
     public class BuildingsPickerVirtualizationTests
     {
-        private const int TEMPLATE_COUNT = 300;
+        private const int   TEMPLATE_COUNT = 300;
+        private const float CANVAS_W       = 400f;
+        private const float CANVAS_H       = 600f;
 
         private readonly List<Object> _cleanup = new List<Object>();
         private BuildingsRuntimeEditor _editor;
+        private RectTransform          _canvasRt;
         private RectTransform          _content;
         private ScrollRect             _scroll;
         private TextMeshProUGUI        _status;
@@ -51,7 +60,13 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
 
             var canvasGo = new GameObject("Canvas", typeof(RectTransform), typeof(Canvas));
             _cleanup.Add(canvasGo);
+            // An explicit size so rect.width resolves without a layout pass — uGUI runs none
+            // in Edit Mode, and the grid's whole job here is to answer to a real width.
+            _canvasRt = canvasGo.GetComponent<RectTransform>();
+            _canvasRt.sizeDelta = new Vector2(CANVAS_W, CANVAS_H);
+
             var (scroll, content) = EditorUIHelpers.MakeGridPicker(canvasGo.transform, "BuildingGrid", 3, 80f, 4f);
+            EditorUIHelpers.AddVerticalScrollbar(scroll);
             _scroll  = scroll;
             _content = content;
 
@@ -87,9 +102,55 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
             LogAssert.ignoreFailingMessages = false;
         }
 
-        private static int MaxWindowSlots =>
-            (BuildingsRuntimeEditor.PICKER_FALLBACK_VISIBLE_ROWS + BuildingsRuntimeEditor.PICKER_OVERSCAN_ROWS * 2 + 1)
-            * BuildingsRuntimeEditor.PICKER_COLUMNS;
+        /// <summary>Width the grid lays out against: the viewport, i.e. the canvas minus the scrollbar.</summary>
+        private float ContentWidth => _scroll.viewport.rect.width;
+
+        private int MaxWindowSlots =>
+            (BuildingsRuntimeEditor.PICKER_FALLBACK_VISIBLE_ROWS + BuildingsRuntimeEditor.PICKER_OVERSCAN_ROWS * 2 + 2)
+            * _editor.PickerColumns
+            + _editor.PickerColumns * 4;   // slack: the viewport-derived row count is >= the fallback
+
+        // ── The maths ────────────────────────────────────────────────────────────
+
+        [TestCase(356f)]   // the shipped 384 px panel, less its padding and scrollbar
+        [TestCase(244f)]   // the panel as it was before the width grew
+        [TestCase(500f)]
+        [TestCase(812f)]
+        public void ResolvePickerMetrics_FillsTheRowExactly(float width)
+        {
+            BuildingsRuntimeEditor.ResolvePickerMetrics(width, out int columns, out float cell);
+
+            Assert.GreaterOrEqual(columns, 1);
+            Assert.GreaterOrEqual(cell, BuildingsRuntimeEditor.PICKER_MIN_CELL - 0.01f,
+                "A cell below the minimum stops reading as building art.");
+            Assert.LessOrEqual(cell, BuildingsRuntimeEditor.PICKER_MAX_CELL + 0.01f);
+
+            float used = BuildingsRuntimeEditor.PICKER_PAD * 2f
+                       + columns * cell
+                       + (columns - 1) * BuildingsRuntimeEditor.PICKER_SPACING;
+            Assert.AreEqual(width, used, 0.01f,
+                $"{columns} columns of {cell:0.##} must fill {width:0.##} exactly — the slack IS the dead strip.");
+        }
+
+        [Test]
+        public void ResolvePickerMetrics_OnTheShippedPanel_GivesFourColumns_NotThree()
+        {
+            // 384 px panel - 8 px of content padding each side - 12 px scrollbar = 356.
+            BuildingsRuntimeEditor.ResolvePickerMetrics(356f, out int columns, out float cell);
+
+            Assert.AreEqual(4, columns,
+                "Three 80 px columns reach 252 px and left 104 px of nothing down the right.");
+            Assert.AreEqual(84f, cell, 0.01f);
+        }
+
+        [Test]
+        public void ResolvePickerMetrics_ZeroWidth_FallsBackInsteadOfCollapsing()
+        {
+            BuildingsRuntimeEditor.ResolvePickerMetrics(0f, out int columns, out float cell);
+
+            Assert.Greater(columns, 1, "uGUI lays out nothing in Edit Mode; one column is not a sane default.");
+            Assert.Greater(cell, 1f);
+        }
 
         // ── The window ───────────────────────────────────────────────────────────
 
@@ -108,19 +169,36 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
         }
 
         [Test]
+        public void TheGrid_LeavesNoDeadStrip_DownTheRight()
+        {
+            Invoke("RefreshPicker");
+
+            float used = BuildingsRuntimeEditor.PICKER_PAD * 2f
+                       + _editor.PickerColumns * _editor.PickerCell
+                       + (_editor.PickerColumns - 1) * BuildingsRuntimeEditor.PICKER_SPACING;
+            Assert.AreEqual(ContentWidth, used, 0.5f,
+                "The row must span the content width; whatever it leaves over is visible as empty panel.");
+
+            // And the right-most realised slot really does reach the edge.
+            var last = _editor.PickerSlotObjectAt(_editor.PickerColumns - 1);
+            Assert.IsNotNull(last, "The first row must be fully realised.");
+            var rt = (RectTransform)last.transform;
+            Assert.AreEqual(ContentWidth - BuildingsRuntimeEditor.PICKER_PAD,
+                rt.anchoredPosition.x + rt.rect.width, 0.5f);
+        }
+
+        [Test]
         public void ContentRect_IsSizedForEveryRow_NotForTheWindow()
         {
             Invoke("RefreshPicker");
 
-            float expected = BuildingsRuntimeEditor.PickerContentHeight(TEMPLATE_COUNT);
+            int rows = (TEMPLATE_COUNT + _editor.PickerColumns - 1) / _editor.PickerColumns;
+            float expected = BuildingsRuntimeEditor.PICKER_PAD * 2f
+                           + rows * _editor.PickerCell
+                           + (rows - 1) * BuildingsRuntimeEditor.PICKER_SPACING;
+
             Assert.AreEqual(expected, _content.sizeDelta.y, 0.01f,
                 "The scrollbar range comes from the content height; it must cover rows that do not exist yet.");
-
-            int rows = (TEMPLATE_COUNT + BuildingsRuntimeEditor.PICKER_COLUMNS - 1) / BuildingsRuntimeEditor.PICKER_COLUMNS;
-            Assert.AreEqual(
-                BuildingsRuntimeEditor.PICKER_PAD * 2f + rows * BuildingsRuntimeEditor.PICKER_CELL
-                    + (rows - 1) * BuildingsRuntimeEditor.PICKER_SPACING,
-                expected, 0.01f);
         }
 
         [Test]
@@ -139,26 +217,29 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
         {
             Invoke("RefreshPicker");
 
-            float pitch = BuildingsRuntimeEditor.PickerRowPitch;
-            var slot4 = (RectTransform)_editor.PickerSlotObjectAt(4).transform;   // row 1, col 1
-            Assert.AreEqual(BuildingsRuntimeEditor.PICKER_PAD + 1 * pitch, slot4.anchoredPosition.x, 0.01f);
-            Assert.AreEqual(-(BuildingsRuntimeEditor.PICKER_PAD + 1 * pitch), slot4.anchoredPosition.y, 0.01f);
-            Assert.AreEqual("B5", slot4.name, "A slot is named after the template it shows.");
+            float pitch = _editor.PickerRowPitch;
+            int   cols  = _editor.PickerColumns;
+            int   index = cols + 1;                       // row 1, column 1
+            var slot = (RectTransform)_editor.PickerSlotObjectAt(index).transform;
+
+            Assert.AreEqual(BuildingsRuntimeEditor.PICKER_PAD + pitch, slot.anchoredPosition.x, 0.01f);
+            Assert.AreEqual(-(BuildingsRuntimeEditor.PICKER_PAD + pitch), slot.anchoredPosition.y, 0.01f);
+            Assert.AreEqual($"B{index + 1}", slot.name, "A slot is named after the template it shows.");
         }
 
         [Test]
         public void Scrolling_MovesTheWindow_AndRecyclesSlots()
         {
             Invoke("RefreshPicker");
-            var firstBefore = _editor.PickerSlotObjectAt(0);
-            Assert.IsNotNull(firstBefore);
+            Assert.IsNotNull(_editor.PickerSlotObjectAt(0));
 
-            // Scroll 40 rows down (top-anchored content: y grows positive).
-            _content.anchoredPosition = new Vector2(0f, 40 * BuildingsRuntimeEditor.PickerRowPitch);
+            const int scrollRows = 40;
+            _content.anchoredPosition = new Vector2(0f, scrollRows * _editor.PickerRowPitch);
             Invoke("UpdatePickerVisibleSlots");
 
             Assert.IsNull(_editor.PickerSlotObjectAt(0), "Row 0 left the window and was recycled.");
-            Assert.IsNotNull(_editor.PickerSlotObjectAt(40 * 3), "Row 40 entered the window.");
+            Assert.IsNotNull(_editor.PickerSlotObjectAt(scrollRows * _editor.PickerColumns),
+                "Row 40 entered the window.");
             Assert.LessOrEqual(_editor.PickerRealizedSlotCount, MaxWindowSlots);
 
             int active = 0;
@@ -167,6 +248,80 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
                 "Recycled slots go inactive into the pool; the active count IS the window.");
             Assert.LessOrEqual(_content.childCount, MaxWindowSlots * 2,
                 "Pooled: scrolling must reuse slots, not accumulate them.");
+        }
+
+        // ── Reflow ───────────────────────────────────────────────────────────────
+
+        [Test]
+        public void WideningThePanel_AddsColumns_AndResizesTheSlotsThatExist()
+        {
+            Invoke("RefreshPicker");
+            int   colsBefore = _editor.PickerColumns;
+            float cellBefore = _editor.PickerCell;
+
+            _canvasRt.sizeDelta = new Vector2(CANVAS_W * 2f, CANVAS_H);
+            Invoke("UpdatePickerLayoutIfResized");
+
+            Assert.Greater(_editor.PickerColumns, colsBefore,
+                "Twice the width must show more buildings, not the same three columns and more emptiness.");
+
+            float used = BuildingsRuntimeEditor.PICKER_PAD * 2f
+                       + _editor.PickerColumns * _editor.PickerCell
+                       + (_editor.PickerColumns - 1) * BuildingsRuntimeEditor.PICKER_SPACING;
+            Assert.AreEqual(ContentWidth, used, 0.5f, "The wider row must fill the wider panel.");
+
+            var slot = (RectTransform)_editor.PickerSlotObjectAt(1).transform;
+            Assert.AreEqual(_editor.PickerCell, slot.rect.width, 0.01f,
+                "A pooled slot outlives the cell size it was built at; realise must re-size it.");
+            Assert.AreEqual(BuildingsRuntimeEditor.PICKER_PAD + _editor.PickerRowPitch,
+                slot.anchoredPosition.x, 0.01f, "…and re-place it.");
+            Assert.AreNotEqual(cellBefore, _editor.PickerCell, "Sanity: the cell really did change.");
+        }
+
+        [Test]
+        public void NarrowingThePanel_DropsColumns_AndKeepsEveryTemplateReachable()
+        {
+            Invoke("RefreshPicker");
+            int colsBefore = _editor.PickerColumns;
+
+            _canvasRt.sizeDelta = new Vector2(200f, CANVAS_H);
+            Invoke("UpdatePickerLayoutIfResized");
+
+            Assert.Less(_editor.PickerColumns, colsBefore);
+            Assert.GreaterOrEqual(_editor.PickerColumns, 1);
+
+            int rows = (TEMPLATE_COUNT + _editor.PickerColumns - 1) / _editor.PickerColumns;
+            float expected = BuildingsRuntimeEditor.PICKER_PAD * 2f
+                           + rows * _editor.PickerCell
+                           + (rows - 1) * BuildingsRuntimeEditor.PICKER_SPACING;
+            Assert.AreEqual(expected, _content.sizeDelta.y, 0.01f,
+                "Fewer columns means more rows; a content height left at the old row count " +
+                "makes the tail of the catalog unscrollable.");
+        }
+
+        [Test]
+        public void AnUnchangedWidth_CostsNothing()
+        {
+            Invoke("RefreshPicker");
+            var slotBefore = _editor.PickerSlotObjectAt(0);
+
+            Invoke("UpdatePickerLayoutIfResized");
+
+            Assert.AreSame(slotBefore, _editor.PickerSlotObjectAt(0),
+                "The per-frame check must early-out on an unchanged width, not rebuild the window.");
+        }
+
+        [Test]
+        public void WheelNotch_TracksTheLiveRowPitch()
+        {
+            Invoke("RefreshPicker");
+            Assert.AreEqual(_editor.PickerRowPitch, _scroll.scrollSensitivity, 0.01f,
+                "The default 20 px on a 41,000 px list was two thousand notches from top to bottom.");
+
+            _canvasRt.sizeDelta = new Vector2(CANVAS_W * 2f, CANVAS_H);
+            Invoke("UpdatePickerLayoutIfResized");
+            Assert.AreEqual(_editor.PickerRowPitch, _scroll.scrollSensitivity, 0.01f,
+                "A reflow changes the row pitch, and the wheel has to follow it.");
         }
 
         // ── Selection ────────────────────────────────────────────────────────────
@@ -243,14 +398,6 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
         {
             Invoke("RefreshPicker");
             Assert.AreEqual($"{TEMPLATE_COUNT} templates", _status.text);
-        }
-
-        [Test]
-        public void WheelNotch_MovesOneRow()
-        {
-            Invoke("RefreshPicker");
-            Assert.AreEqual(BuildingsRuntimeEditor.PickerRowPitch, _scroll.scrollSensitivity, 0.01f,
-                "The default 20 px on a 41,000 px list was two thousand notches from top to bottom.");
         }
     }
 }

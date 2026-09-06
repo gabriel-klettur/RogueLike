@@ -36,14 +36,10 @@ namespace Valkur.Gameplay.Buildings
             BuildPickerVisibleList();
             int shown = _pickerVisible.Count;
 
-            float contentH = PickerContentHeight(shown);
-            _pickerContent.sizeDelta = new Vector2(_pickerContent.sizeDelta.x, contentH);
-
-            // A filter that shortens the list must not leave the scroll parked past its end.
-            float maxScroll = Mathf.Max(0f, contentH - ResolvePickerViewportHeight());
-            var ap = _pickerContent.anchoredPosition;
-            ap.y = Mathf.Clamp(ap.y, 0f, maxScroll);
-            _pickerContent.anchoredPosition = ap;
+            // Columns and cell size come from the live width, so a resized panel — or one
+            // whose width the workspace just restored — lays out against what it actually is.
+            RecomputePickerMetrics();
+            ApplyPickerContentSize();
 
             RecycleAllPickerSlots();
             _pickerFirst = _pickerLast = -1;
