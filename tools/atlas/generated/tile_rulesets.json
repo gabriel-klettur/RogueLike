@@ -94,100 +94,164 @@
       "keyMeaning": "1 = corner is the SECONDARY terrain (matches TerrainTileResolver)",
       "slots": {
         "0010": [
-          "tileset4_r0_c0",
-          "tileset5_r0_c0",
+          "grass_rock_1_r01_c01",
+          "grass_rock_2_r01_c01",
+          "grass_rock_3_r01_c01",
+          "grass_rock_4_r01_c01",
           "tileset4_0_0",
-          "tileset5_0_0"
+          "tileset4_r0_c0",
+          "tileset5_0_0",
+          "tileset5_r0_c0"
         ],
         "0011": [
-          "tileset4_r0_c1",
-          "tileset5_r0_c1",
+          "grass_rock_1_r01_c02",
+          "grass_rock_2_r01_c02",
+          "grass_rock_3_r01_c02",
+          "grass_rock_4_r01_c02",
           "tileset4_32_0",
-          "tileset5_32_0"
+          "tileset4_r0_c1",
+          "tileset5_32_0",
+          "tileset5_r0_c1"
         ],
         "0001": [
-          "tileset4_r0_c2",
-          "tileset5_r0_c2",
+          "grass_rock_1_r01_c03",
+          "grass_rock_2_r01_c03",
+          "grass_rock_3_r01_c03",
+          "grass_rock_4_r01_c03",
           "tileset4_64_0",
-          "tileset5_64_0"
+          "tileset4_r0_c2",
+          "tileset5_64_0",
+          "tileset5_r0_c2"
         ],
         "1101": [
-          "tileset4_r0_c3",
-          "tileset5_r0_c3",
+          "grass_rock_1_r03_c04",
+          "grass_rock_2_r03_c04",
+          "grass_rock_3_r03_c04",
+          "grass_rock_4_r03_c04",
           "tileset4_96_0",
-          "tileset5_96_0"
+          "tileset4_r0_c3",
+          "tileset5_96_0",
+          "tileset5_r0_c3"
         ],
         "1110": [
-          "tileset4_r0_c4",
-          "tileset5_r0_c4",
+          "grass_rock_1_r04_c02",
+          "grass_rock_2_r04_c02",
+          "grass_rock_3_r04_c02",
+          "grass_rock_4_r04_c02",
           "tileset4_128_0",
-          "tileset5_128_0"
+          "tileset4_r0_c4",
+          "tileset5_128_0",
+          "tileset5_r0_c4"
         ],
         "0110": [
-          "tileset4_r1_c0",
-          "tileset5_r1_c0",
+          "grass_rock_1_r02_c01",
+          "grass_rock_2_r02_c01",
+          "grass_rock_3_r02_c01",
+          "grass_rock_4_r02_c01",
           "tileset4_0_32",
-          "tileset5_0_32"
+          "tileset4_r1_c0",
+          "tileset5_0_32",
+          "tileset5_r1_c0"
         ],
         "1111": [
-          "tileset4_r1_c1",
+          "grass_rock_1_r02_c02",
+          "grass_rock_2_r02_c02",
+          "grass_rock_3_r02_c02",
+          "grass_rock_4_r02_c02",
           "tileset4_0_96",
           "tileset4_32_32",
+          "tileset4_r1_c1",
           "tileset5_0_96"
         ],
         "1001": [
-          "tileset4_r1_c2",
-          "tileset5_r1_c2",
+          "grass_rock_1_r02_c06",
+          "grass_rock_2_r02_c06",
+          "grass_rock_3_r02_c06",
+          "grass_rock_4_r02_c06",
           "tileset4_64_32",
-          "tileset5_64_32"
+          "tileset4_r1_c2",
+          "tileset5_64_32",
+          "tileset5_r1_c2"
         ],
         "1011": [
-          "tileset4_r1_c3",
-          "tileset5_r1_c3",
+          "grass_rock_1_r02_c03",
+          "grass_rock_2_r02_c03",
+          "grass_rock_3_r02_c03",
+          "grass_rock_4_r02_c03",
           "tileset4_96_32",
-          "tileset5_96_32"
+          "tileset4_r1_c3",
+          "tileset5_96_32",
+          "tileset5_r1_c3"
         ],
         "0111": [
-          "tileset4_r1_c4",
-          "tileset5_r1_c4",
+          "grass_rock_1_r02_c04",
+          "grass_rock_2_r02_c04",
+          "grass_rock_3_r02_c04",
+          "grass_rock_4_r02_c04",
           "tileset4_128_32",
-          "tileset5_128_32"
+          "tileset4_r1_c4",
+          "tileset5_128_32",
+          "tileset5_r1_c4"
         ],
         "0100": [
-          "tileset4_r2_c0",
-          "tileset5_r2_c0",
+          "grass_rock_1_r04_c01",
+          "grass_rock_2_r04_c01",
+          "grass_rock_3_r04_c01",
+          "grass_rock_4_r04_c01",
           "tileset4_0_64",
-          "tileset5_0_64"
+          "tileset4_r2_c0",
+          "tileset5_0_64",
+          "tileset5_r2_c0"
         ],
         "1100": [
-          "tileset4_r2_c1",
-          "tileset5_r2_c1",
+          "grass_rock_1_r03_c05",
+          "grass_rock_2_r03_c05",
+          "grass_rock_3_r03_c05",
+          "grass_rock_4_r03_c05",
           "tileset4_32_64",
-          "tileset5_32_64"
+          "tileset4_r2_c1",
+          "tileset5_32_64",
+          "tileset5_r2_c1"
         ],
         "1000": [
-          "tileset4_r2_c2",
-          "tileset5_r2_c2",
+          "grass_rock_1_r03_c06",
+          "grass_rock_2_r03_c06",
+          "grass_rock_3_r03_c06",
+          "grass_rock_4_r03_c06",
           "tileset4_64_64",
-          "tileset5_64_64"
+          "tileset4_r2_c2",
+          "tileset5_64_64",
+          "tileset5_r2_c2"
         ],
         "1010": [
-          "tileset4_r2_c3",
-          "tileset5_r2_c3",
+          "grass_rock_1_r04_c04",
+          "grass_rock_2_r04_c04",
+          "grass_rock_3_r04_c04",
+          "grass_rock_4_r04_c04",
           "tileset4_96_64",
-          "tileset5_96_64"
+          "tileset4_r2_c3",
+          "tileset5_96_64",
+          "tileset5_r2_c3"
         ],
         "0101": [
-          "tileset4_r2_c4",
-          "tileset5_r2_c4",
+          "grass_rock_1_r05_c02",
+          "grass_rock_2_r05_c02",
+          "grass_rock_3_r05_c02",
+          "grass_rock_4_r05_c02",
           "tileset4_128_64",
-          "tileset5_128_64"
+          "tileset4_r2_c4",
+          "tileset5_128_64",
+          "tileset5_r2_c4"
         ],
         "0000": [
-          "tileset4_r3_c1",
-          "tileset5_r3_c1",
+          "grass_rock_1_r00_c00",
+          "grass_rock_2_r00_c00",
+          "grass_rock_3_r00_c00",
+          "grass_rock_4_r00_c00",
           "tileset4_32_96",
+          "tileset4_r3_c1",
           "tileset5_32_96",
+          "tileset5_r3_c1",
           "tileset6_32_96"
         ]
       },
@@ -252,7 +316,8 @@
           "tileset6_r2_c4",
           "tileset6_128_64"
         ]
-      }
+      },
+      "generator": "tools/atlas/wave8/new_tiles_ruleset.py"
     },
     "rock_water": {
       "materialA": "0",
@@ -579,6 +644,71 @@
           "rock_lava_r00_c00"
         ]
       }
+    },
+    "water_water_deep": {
+      "materialA": "water",
+      "materialB": "water_deep",
+      "primaryMaterial": 0,
+      "palette": {
+        "water": "#3490ce",
+        "water_deep": "#08538b"
+      },
+      "terrainPrimary": "water",
+      "terrainSecondary": "water_deep",
+      "cornerOrder": "NW,NE,SE,SW",
+      "keyMeaning": "1 = corner is the SECONDARY terrain (matches TerrainTileResolver)",
+      "slots": {
+        "0000": [
+          "water_deep_r02_c02"
+        ],
+        "0001": [
+          "water_deep_r04_c02"
+        ],
+        "0010": [
+          "water_deep_r03_c04"
+        ],
+        "0011": [
+          "water_deep_r03_c05"
+        ],
+        "0100": [
+          "water_deep_r02_c03"
+        ],
+        "0101": [
+          "water_deep_r04_c04"
+        ],
+        "0110": [
+          "water_deep_r02_c06"
+        ],
+        "0111": [
+          "water_deep_r03_c06"
+        ],
+        "1000": [
+          "water_deep_r02_c04"
+        ],
+        "1001": [
+          "water_deep_r02_c01"
+        ],
+        "1010": [
+          "water_deep_r05_c02"
+        ],
+        "1011": [
+          "water_deep_r04_c01"
+        ],
+        "1100": [
+          "water_deep_r01_c02"
+        ],
+        "1101": [
+          "water_deep_r01_c01"
+        ],
+        "1110": [
+          "water_deep_r01_c03"
+        ],
+        "1111": [
+          "water_deep_r00_c00"
+        ]
+      },
+      "extraSignatures": {},
+      "generator": "tools/atlas/wave8/new_tiles_ruleset.py"
     }
   }
 }

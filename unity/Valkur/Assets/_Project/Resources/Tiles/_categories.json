@@ -2,11 +2,12 @@
     "schemaVersion": 1,
     "folderCategories": [
         "castle_pandora",
+        "grass_rock",
         "sand_ocean_3",
         "dirt_sand",
-        "grass_rock",
         "grass_sand",
         "sand_grass",
+        "water_water_deep",
         "grass_dirt",
         "tileset_1",
         "rock_water",

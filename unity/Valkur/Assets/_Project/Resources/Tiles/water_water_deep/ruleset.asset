@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48079e4d271a435419c1acc1fe6bc71d, type: 3}
+  m_Name: ruleset
+  m_EditorClassIdentifier: 
+  folderName: water_water_deep
+  model: 2
+  terrainPrimary: water
+  terrainSecondary: water_deep
+  priority: 0
+  slots: []
+  cornerSlots:
+  - slot: 0
+    variants:
+    - {fileID: 21300000, guid: d447fc7f0b4bcf84197e112cd6b94b2a, type: 3}
+  - slot: 1
+    variants:
+    - {fileID: 21300000, guid: 1c84ccfbea6a74c468a02ba684943046, type: 3}
+  - slot: 2
+    variants:
+    - {fileID: 21300000, guid: 5e42ec221fd7f5a44994441415ed3c71, type: 3}
+  - slot: 3
+    variants:
+    - {fileID: 21300000, guid: 5398aa860b78ca34f9486e4e0d1fbc47, type: 3}
+  - slot: 4
+    variants:
+    - {fileID: 21300000, guid: e09a00301ab4b3e4d811088ee2f4c184, type: 3}
+  - slot: 5
+    variants:
+    - {fileID: 21300000, guid: 47580e622dbc1af42a92958c636297a8, type: 3}
+  - slot: 6
+    variants:
+    - {fileID: 21300000, guid: 1fc33a0b572458344b2d32c6fd3cf7b2, type: 3}
+  - slot: 7
+    variants:
+    - {fileID: 21300000, guid: 5caede93a8c17514f9298fe343eb9c4e, type: 3}
+  - slot: 8
+    variants:
+    - {fileID: 21300000, guid: 396b91e8b7cecab4bb0f23aeefd47240, type: 3}
+  - slot: 9
+    variants:
+    - {fileID: 21300000, guid: 782e5c2364c0ec947a8a8f7240b73626, type: 3}
+  - slot: 10
+    variants:
+    - {fileID: 21300000, guid: 5c11abfb604231044a7b6b75b9e6e17f, type: 3}
+  - slot: 11
+    variants:
+    - {fileID: 21300000, guid: 2ad4ea142ff80d64cbbdb5be7c0f614f, type: 3}
+  - slot: 12
+    variants:
+    - {fileID: 21300000, guid: ff1619ea16bf1014a9e02d9334420a80, type: 3}
+  - slot: 13
+    variants:
+    - {fileID: 21300000, guid: c86e0e71ac2adb246992f66a08af8635, type: 3}
+  - slot: 14
+    variants:
+    - {fileID: 21300000, guid: 5e6da425c643a34499cc1f0178237eed, type: 3}
+  - slot: 15
+    variants:
+    - {fileID: 21300000, guid: de49b757ccc6d52499134711f018e20e, type: 3}
+  hiddenLegacy: []
+  previewIcon: {fileID: 0}
