@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf47f96b746e7fb4c8573186b1994bae, type: 3}
+  m_Name: paella
+  m_EditorClassIdentifier: 
+  recipeId: paella
+  displayName: Paella
+  profession: {fileID: 11400000, guid: dc13ea869bb3ff346b818aba68a60db4, type: 2}
+  group: spain
+  output: {fileID: 11400000, guid: d231a5471b7465a4a977e60b9ebdde03, type: 2}
+  outputQuantity: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: 94f01cddf7c2632499d10b1361541c3b, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: fd2b1e7fb7963eb4a903853ace716be5, type: 2}
+    quantity: 2
+  - item: {fileID: 11400000, guid: d7a173f85bbbec144a1c0d3c4e738ac1, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: b1ce5cf92a8399f43ba8d4107a3e18e1, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: afd195c493ddc8646ac59c557c1ec1bf, type: 2}
+    quantity: 2
+  - item: {fileID: 11400000, guid: 598f070127058de45aaadddc174035c4, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: b285162ee84e36242aa975db9ff9b75f, type: 2}
+    quantity: 1
+  requiresStation: 1
+  requiredLevel: 1
+  xpReward: 29
+  craftSeconds: 1.88

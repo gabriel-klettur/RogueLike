@@ -1,0 +1,460 @@
+{
+  "source": "staging/items/cook/cook_ingredients_sheet.png",
+  "role": "ingredients",
+  "canvas": 288,
+  "maskAlpha": 8,
+  "seedAlpha": 64,
+  "trimAlpha": 24,
+  "items": [
+    {
+      "itemKey": "beef",
+      "displayName": "Carne de res",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/beef.png",
+      "row": 0,
+      "col": 0,
+      "sourceBox": [
+        17,
+        50,
+        259,
+        233
+      ],
+      "trimmed": [
+        242,
+        183
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "chicken",
+      "displayName": "Pollo",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/chicken.png",
+      "row": 0,
+      "col": 1,
+      "sourceBox": [
+        286,
+        42,
+        512,
+        242
+      ],
+      "trimmed": [
+        226,
+        200
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "fish",
+      "displayName": "Pescado",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/fish.png",
+      "row": 0,
+      "col": 2,
+      "sourceBox": [
+        548,
+        60,
+        788,
+        237
+      ],
+      "trimmed": [
+        240,
+        177
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "sausage",
+      "displayName": "Chorizo",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/sausage.png",
+      "row": 0,
+      "col": 3,
+      "sourceBox": [
+        810,
+        40,
+        1034,
+        247
+      ],
+      "trimmed": [
+        224,
+        207
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "egg",
+      "displayName": "Huevo",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/egg.png",
+      "row": 0,
+      "col": 4,
+      "sourceBox": [
+        1071,
+        65,
+        1300,
+        235
+      ],
+      "trimmed": [
+        229,
+        170
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "potato",
+      "displayName": "Patata",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/potato.png",
+      "row": 1,
+      "col": 0,
+      "sourceBox": [
+        16,
+        261,
+        269,
+        466
+      ],
+      "trimmed": [
+        253,
+        205
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "onion",
+      "displayName": "Cebolla",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/onion.png",
+      "row": 1,
+      "col": 1,
+      "sourceBox": [
+        295,
+        261,
+        511,
+        463
+      ],
+      "trimmed": [
+        216,
+        202
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "garlic",
+      "displayName": "Ajo",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/garlic.png",
+      "row": 1,
+      "col": 2,
+      "sourceBox": [
+        555,
+        274,
+        783,
+        465
+      ],
+      "trimmed": [
+        228,
+        191
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "tomato",
+      "displayName": "Tomate",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/tomato.png",
+      "row": 1,
+      "col": 3,
+      "sourceBox": [
+        808,
+        269,
+        1042,
+        460
+      ],
+      "trimmed": [
+        234,
+        191
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "bell_pepper",
+      "displayName": "Pimiento",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/bell_pepper.png",
+      "row": 1,
+      "col": 4,
+      "sourceBox": [
+        1069,
+        261,
+        1305,
+        467
+      ],
+      "trimmed": [
+        236,
+        206
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "carrot",
+      "displayName": "Zanahoria",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/carrot.png",
+      "row": 2,
+      "col": 0,
+      "sourceBox": [
+        17,
+        481,
+        272,
+        696
+      ],
+      "trimmed": [
+        255,
+        215
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "beet",
+      "displayName": "Remolacha",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/beet.png",
+      "row": 2,
+      "col": 1,
+      "sourceBox": [
+        281,
+        476,
+        525,
+        691
+      ],
+      "trimmed": [
+        244,
+        215
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "cabbage",
+      "displayName": "Repollo",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/cabbage.png",
+      "row": 2,
+      "col": 2,
+      "sourceBox": [
+        535,
+        489,
+        783,
+        694
+      ],
+      "trimmed": [
+        248,
+        205
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "corn",
+      "displayName": "Maiz",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/corn.png",
+      "row": 2,
+      "col": 3,
+      "sourceBox": [
+        797,
+        486,
+        1040,
+        697
+      ],
+      "trimmed": [
+        243,
+        211
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "avocado",
+      "displayName": "Aguacate",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/avocado.png",
+      "row": 2,
+      "col": 4,
+      "sourceBox": [
+        1069,
+        488,
+        1295,
+        692
+      ],
+      "trimmed": [
+        226,
+        204
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "cheese",
+      "displayName": "Queso",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/cheese.png",
+      "row": 3,
+      "col": 0,
+      "sourceBox": [
+        38,
+        716,
+        246,
+        919
+      ],
+      "trimmed": [
+        208,
+        203
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "butter",
+      "displayName": "Mantequilla",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/butter.png",
+      "row": 3,
+      "col": 1,
+      "sourceBox": [
+        302,
+        721,
+        523,
+        913
+      ],
+      "trimmed": [
+        221,
+        192
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "sour_cream",
+      "displayName": "Crema agria",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/sour_cream.png",
+      "row": 3,
+      "col": 2,
+      "sourceBox": [
+        560,
+        733,
+        778,
+        913
+      ],
+      "trimmed": [
+        218,
+        180
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "rice",
+      "displayName": "Arroz",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/rice.png",
+      "row": 3,
+      "col": 3,
+      "sourceBox": [
+        799,
+        695,
+        1035,
+        919
+      ],
+      "trimmed": [
+        236,
+        224
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "black_beans",
+      "displayName": "Frijoles negros",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/black_beans.png",
+      "row": 3,
+      "col": 4,
+      "sourceBox": [
+        1074,
+        721,
+        1297,
+        923
+      ],
+      "trimmed": [
+        223,
+        202
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "flour",
+      "displayName": "Harina",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/flour.png",
+      "row": 4,
+      "col": 0,
+      "sourceBox": [
+        20,
+        949,
+        265,
+        1161
+      ],
+      "trimmed": [
+        245,
+        212
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "cornmeal",
+      "displayName": "Harina de maiz",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/cornmeal.png",
+      "row": 4,
+      "col": 1,
+      "sourceBox": [
+        297,
+        952,
+        521,
+        1151
+      ],
+      "trimmed": [
+        224,
+        199
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "paprika",
+      "displayName": "Pimenton",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/paprika.png",
+      "row": 4,
+      "col": 2,
+      "sourceBox": [
+        553,
+        958,
+        774,
+        1151
+      ],
+      "trimmed": [
+        221,
+        193
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "herbs",
+      "displayName": "Hierbas",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/herbs.png",
+      "row": 4,
+      "col": 3,
+      "sourceBox": [
+        799,
+        921,
+        1056,
+        1170
+      ],
+      "trimmed": [
+        257,
+        249
+      ],
+      "canvas": 288
+    },
+    {
+      "itemKey": "plantain",
+      "displayName": "Platano maduro",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/ingredients/plantain.png",
+      "row": 4,
+      "col": 4,
+      "sourceBox": [
+        1068,
+        938,
+        1298,
+        1154
+      ],
+      "trimmed": [
+        230,
+        216
+      ],
+      "canvas": 288
+    }
+  ]
+}

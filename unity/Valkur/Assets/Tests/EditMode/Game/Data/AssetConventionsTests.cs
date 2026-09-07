@@ -59,6 +59,14 @@ namespace Valkur.Tests.EditMode.Game.Data
         {
             "Buildings",
             "Catalogs",
+            "Crafting",   // RecipeCatalog, loaded by CraftingPanelUI and the Skills
+                           // editor via Resources.Load("Crafting/RecipeCatalog"). Same
+                           // reason as Chat and Progression below: both readers are
+                           // reached from a panel and a station, neither of which is a
+                           // scene object anybody wires in the Inspector, so a
+                           // [SerializeField] on either could never be filled. One
+                           // asset — the profession and recipe assets it points at
+                           // live outside Resources and are pulled in by reference.
             "Chat",        // ChatAssignmentCatalog, loaded by ChatSystem.EnsureCatalog via
                            // Resources.Load("Chat/ChatAssignmentCatalog"). The ChatSystem is
                            // AddComponent-ed by GameplaySceneSetup onto a bare GameObject, so

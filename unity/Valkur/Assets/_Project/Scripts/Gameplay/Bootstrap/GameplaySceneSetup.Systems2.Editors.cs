@@ -119,6 +119,34 @@ namespace Valkur.Gameplay
             Debug.Log("[GameplaySceneSetup] ControlsEditor created. Open it from the General Editor (ESC).");
         }
 
+        /// <summary>
+        /// The Skills editor configures every trade — cooking, blacksmithing, mining,
+        /// woodcutting and the generic crafting bucket: each profession's level curve and each
+        /// recipe's requirements. No hotkey, like the Camera and Controls editors: the F-row is
+        /// retired and the General Editor (ESC) is the only way in, which is what
+        /// EditorReachabilityTests pins.
+        /// </summary>
+        private void EnsureSkillsEditor()
+        {
+            if (Valkur.Gameplay.Editors.Skills.SkillsRuntimeEditor.Instance != null) return;
+            var go = new GameObject("SkillsEditor");
+            go.AddComponent<Valkur.Gameplay.Editors.Skills.SkillsRuntimeEditor>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
+            Debug.Log("[GameplaySceneSetup] SkillsEditor created. Open it from the General Editor (ESC).");
+        }
+
+        /// <summary>
+        /// The pause key. <c>Gameplay/Pause</c> has been bound to <c>p</c> for the life of the
+        /// asset with no reader at all — see <see cref="PauseHotkeyReader"/>.
+        /// </summary>
+        private void EnsurePauseHotkeyReader()
+        {
+            if (Object.FindObjectOfType<PauseHotkeyReader>() != null) return;
+            var go = new GameObject("PauseHotkeyReader");
+            go.AddComponent<PauseHotkeyReader>();
+            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
+        }
+
         private void EnsureTimeWeatherEditor()
         {
             if (Valkur.Gameplay.TimeWeather.TimeWeatherEditor.Instance != null) return;

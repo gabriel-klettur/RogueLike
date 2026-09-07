@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf47f96b746e7fb4c8573186b1994bae, type: 3}
+  m_Name: asado_negro
+  m_EditorClassIdentifier: 
+  recipeId: asado_negro
+  displayName: Asado negro
+  profession: {fileID: 11400000, guid: dc13ea869bb3ff346b818aba68a60db4, type: 2}
+  group: venezuela
+  output: {fileID: 11400000, guid: 9e4d541504f6a4e4cbd9dc319bc96e7c, type: 2}
+  outputQuantity: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: 4df572ee30144c24eacd58438d913d2b, type: 2}
+    quantity: 3
+  - item: {fileID: 11400000, guid: 8b21f805d0c498945a1ae5a0f5f510da, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: d7a173f85bbbec144a1c0d3c4e738ac1, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: b1ce5cf92a8399f43ba8d4107a3e18e1, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: b285162ee84e36242aa975db9ff9b75f, type: 2}
+    quantity: 1
+  requiresStation: 0
+  requiredLevel: 1
+  xpReward: 28
+  craftSeconds: 1.64

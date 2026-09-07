@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf47f96b746e7fb4c8573186b1994bae, type: 3}
+  m_Name: pabellon_criollo
+  m_EditorClassIdentifier: 
+  recipeId: pabellon_criollo
+  displayName: Pabellon criollo
+  profession: {fileID: 11400000, guid: dc13ea869bb3ff346b818aba68a60db4, type: 2}
+  group: venezuela
+  output: {fileID: 11400000, guid: 50ff9e782a5e9d149a2e57632ba659f5, type: 2}
+  outputQuantity: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: 4df572ee30144c24eacd58438d913d2b, type: 2}
+    quantity: 2
+  - item: {fileID: 11400000, guid: 9091eb25806038e48a1e5f67fa6bd103, type: 2}
+    quantity: 2
+  - item: {fileID: 11400000, guid: d7a173f85bbbec144a1c0d3c4e738ac1, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: 78f53e4c080b0a44d80fd1527ad68bdb, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: afd195c493ddc8646ac59c557c1ec1bf, type: 2}
+    quantity: 2
+  requiresStation: 0
+  requiredLevel: 1
+  xpReward: 26
+  craftSeconds: 1.76

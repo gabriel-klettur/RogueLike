@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf47f96b746e7fb4c8573186b1994bae, type: 3}
+  m_Name: choripan
+  m_EditorClassIdentifier: 
+  recipeId: choripan
+  displayName: Choripan
+  profession: {fileID: 11400000, guid: dc13ea869bb3ff346b818aba68a60db4, type: 2}
+  group: argentina
+  output: {fileID: 11400000, guid: e1003792730d44643b000742ac8d3420, type: 2}
+  outputQuantity: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: 0e50a722c6402324f929eff1b3693257, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: 8b21f805d0c498945a1ae5a0f5f510da, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: a05115775e105804fbbf006f2da5a789, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: 598f070127058de45aaadddc174035c4, type: 2}
+    quantity: 2
+  requiresStation: 0
+  requiredLevel: 1
+  xpReward: 16
+  craftSeconds: 1.4

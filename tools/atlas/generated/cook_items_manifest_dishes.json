@@ -1,0 +1,694 @@
+{
+  "source": "staging/items/cook/cook_dishes_sheet.png",
+  "role": "dishes",
+  "canvas": 288,
+  "maskAlpha": 8,
+  "seedAlpha": 64,
+  "trimAlpha": 24,
+  "items": [
+    {
+      "itemKey": "borscht",
+      "displayName": "Borscht",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/borscht.png",
+      "row": 0,
+      "col": 0,
+      "sourceBox": [
+        31,
+        21,
+        235,
+        180
+      ],
+      "trimmed": [
+        204,
+        159
+      ],
+      "canvas": 288,
+      "cuisine": "ukraine"
+    },
+    {
+      "itemKey": "varenyky",
+      "displayName": "Varenyky",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/varenyky.png",
+      "row": 0,
+      "col": 1,
+      "sourceBox": [
+        257,
+        24,
+        502,
+        176
+      ],
+      "trimmed": [
+        245,
+        152
+      ],
+      "canvas": 288,
+      "cuisine": "ukraine"
+    },
+    {
+      "itemKey": "holubtsi",
+      "displayName": "Holubtsi",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/holubtsi.png",
+      "row": 0,
+      "col": 2,
+      "sourceBox": [
+        525,
+        19,
+        759,
+        170
+      ],
+      "trimmed": [
+        234,
+        151
+      ],
+      "canvas": 288,
+      "cuisine": "ukraine"
+    },
+    {
+      "itemKey": "deruny",
+      "displayName": "Deruny",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/deruny.png",
+      "row": 0,
+      "col": 3,
+      "sourceBox": [
+        775,
+        32,
+        1015,
+        170
+      ],
+      "trimmed": [
+        240,
+        138
+      ],
+      "canvas": 288,
+      "cuisine": "ukraine"
+    },
+    {
+      "itemKey": "chicken_kyiv",
+      "displayName": "Pollo Kiev",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/chicken_kyiv.png",
+      "row": 0,
+      "col": 4,
+      "sourceBox": [
+        1040,
+        19,
+        1263,
+        176
+      ],
+      "trimmed": [
+        223,
+        157
+      ],
+      "canvas": 288,
+      "cuisine": "ukraine"
+    },
+    {
+      "itemKey": "syrnyky",
+      "displayName": "Syrnyky",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/syrnyky.png",
+      "row": 0,
+      "col": 5,
+      "sourceBox": [
+        1289,
+        23,
+        1513,
+        176
+      ],
+      "trimmed": [
+        224,
+        153
+      ],
+      "canvas": 288,
+      "cuisine": "ukraine"
+    },
+    {
+      "itemKey": "empanada_de_pino",
+      "displayName": "Empanada de pino",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/empanada_de_pino.png",
+      "row": 1,
+      "col": 0,
+      "sourceBox": [
+        25,
+        193,
+        251,
+        337
+      ],
+      "trimmed": [
+        226,
+        144
+      ],
+      "canvas": 288,
+      "cuisine": "chile"
+    },
+    {
+      "itemKey": "pastel_de_choclo",
+      "displayName": "Pastel de choclo",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/pastel_de_choclo.png",
+      "row": 1,
+      "col": 1,
+      "sourceBox": [
+        268,
+        184,
+        502,
+        346
+      ],
+      "trimmed": [
+        234,
+        162
+      ],
+      "canvas": 288,
+      "cuisine": "chile"
+    },
+    {
+      "itemKey": "completo_chileno",
+      "displayName": "Completo chileno",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/completo_chileno.png",
+      "row": 1,
+      "col": 2,
+      "sourceBox": [
+        516,
+        190,
+        756,
+        339
+      ],
+      "trimmed": [
+        240,
+        149
+      ],
+      "canvas": 288,
+      "cuisine": "chile"
+    },
+    {
+      "itemKey": "cazuela_chilena",
+      "displayName": "Cazuela chilena",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/cazuela_chilena.png",
+      "row": 1,
+      "col": 3,
+      "sourceBox": [
+        781,
+        183,
+        1009,
+        345
+      ],
+      "trimmed": [
+        228,
+        162
+      ],
+      "canvas": 288,
+      "cuisine": "chile"
+    },
+    {
+      "itemKey": "humitas_chilenas",
+      "displayName": "Humitas",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/humitas_chilenas.png",
+      "row": 1,
+      "col": 4,
+      "sourceBox": [
+        1028,
+        183,
+        1270,
+        347
+      ],
+      "trimmed": [
+        242,
+        164
+      ],
+      "canvas": 288,
+      "cuisine": "chile"
+    },
+    {
+      "itemKey": "sopaipillas_chilenas",
+      "displayName": "Sopaipillas",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/sopaipillas_chilenas.png",
+      "row": 1,
+      "col": 5,
+      "sourceBox": [
+        1292,
+        191,
+        1506,
+        332
+      ],
+      "trimmed": [
+        214,
+        141
+      ],
+      "canvas": 288,
+      "cuisine": "chile"
+    },
+    {
+      "itemKey": "paella",
+      "displayName": "Paella",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/paella.png",
+      "row": 2,
+      "col": 0,
+      "sourceBox": [
+        16,
+        353,
+        260,
+        507
+      ],
+      "trimmed": [
+        244,
+        154
+      ],
+      "canvas": 288,
+      "cuisine": "spain"
+    },
+    {
+      "itemKey": "tortilla_espanola",
+      "displayName": "Tortilla espanola",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/tortilla_espanola.png",
+      "row": 2,
+      "col": 1,
+      "sourceBox": [
+        268,
+        352,
+        510,
+        513
+      ],
+      "trimmed": [
+        242,
+        161
+      ],
+      "canvas": 288,
+      "cuisine": "spain"
+    },
+    {
+      "itemKey": "gazpacho",
+      "displayName": "Gazpacho",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/gazpacho.png",
+      "row": 2,
+      "col": 2,
+      "sourceBox": [
+        537,
+        350,
+        735,
+        513
+      ],
+      "trimmed": [
+        198,
+        163
+      ],
+      "canvas": 288,
+      "cuisine": "spain"
+    },
+    {
+      "itemKey": "croquetas",
+      "displayName": "Croquetas",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/croquetas.png",
+      "row": 2,
+      "col": 3,
+      "sourceBox": [
+        764,
+        357,
+        1017,
+        505
+      ],
+      "trimmed": [
+        253,
+        148
+      ],
+      "canvas": 288,
+      "cuisine": "spain"
+    },
+    {
+      "itemKey": "jamon_iberico",
+      "displayName": "Jamon iberico",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/jamon_iberico.png",
+      "row": 2,
+      "col": 4,
+      "sourceBox": [
+        1024,
+        354,
+        1275,
+        507
+      ],
+      "trimmed": [
+        251,
+        153
+      ],
+      "canvas": 288,
+      "cuisine": "spain"
+    },
+    {
+      "itemKey": "churros_con_chocolate",
+      "displayName": "Churros con chocolate",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/churros_con_chocolate.png",
+      "row": 2,
+      "col": 5,
+      "sourceBox": [
+        1280,
+        342,
+        1505,
+        509
+      ],
+      "trimmed": [
+        225,
+        167
+      ],
+      "canvas": 288,
+      "cuisine": "spain"
+    },
+    {
+      "itemKey": "kjotsupa",
+      "displayName": "Kjotsupa",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/kjotsupa.png",
+      "row": 3,
+      "col": 0,
+      "sourceBox": [
+        20,
+        520,
+        229,
+        688
+      ],
+      "trimmed": [
+        209,
+        168
+      ],
+      "canvas": 288,
+      "cuisine": "iceland"
+    },
+    {
+      "itemKey": "plokkfiskur",
+      "displayName": "Plokkfiskur",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/plokkfiskur.png",
+      "row": 3,
+      "col": 1,
+      "sourceBox": [
+        264,
+        536,
+        511,
+        674
+      ],
+      "trimmed": [
+        247,
+        138
+      ],
+      "canvas": 288,
+      "cuisine": "iceland"
+    },
+    {
+      "itemKey": "icelandic_pylsa",
+      "displayName": "Pylsa islandesa",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/icelandic_pylsa.png",
+      "row": 3,
+      "col": 2,
+      "sourceBox": [
+        526,
+        530,
+        748,
+        683
+      ],
+      "trimmed": [
+        222,
+        153
+      ],
+      "canvas": 288,
+      "cuisine": "iceland"
+    },
+    {
+      "itemKey": "skyr",
+      "displayName": "Skyr",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/skyr.png",
+      "row": 3,
+      "col": 3,
+      "sourceBox": [
+        798,
+        527,
+        1007,
+        679
+      ],
+      "trimmed": [
+        209,
+        152
+      ],
+      "canvas": 288,
+      "cuisine": "iceland"
+    },
+    {
+      "itemKey": "kleinur",
+      "displayName": "Kleinur",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/kleinur.png",
+      "row": 3,
+      "col": 4,
+      "sourceBox": [
+        1038,
+        514,
+        1277,
+        682
+      ],
+      "trimmed": [
+        239,
+        168
+      ],
+      "canvas": 288,
+      "cuisine": "iceland"
+    },
+    {
+      "itemKey": "hakarl",
+      "displayName": "Hakarl",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/hakarl.png",
+      "row": 3,
+      "col": 5,
+      "sourceBox": [
+        1305,
+        518,
+        1513,
+        681
+      ],
+      "trimmed": [
+        208,
+        163
+      ],
+      "canvas": 288,
+      "cuisine": "iceland"
+    },
+    {
+      "itemKey": "asado_argentino",
+      "displayName": "Asado argentino",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/asado_argentino.png",
+      "row": 4,
+      "col": 0,
+      "sourceBox": [
+        17,
+        691,
+        256,
+        839
+      ],
+      "trimmed": [
+        239,
+        148
+      ],
+      "canvas": 288,
+      "cuisine": "argentina"
+    },
+    {
+      "itemKey": "empanadas_argentinas",
+      "displayName": "Empanadas argentinas",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/empanadas_argentinas.png",
+      "row": 4,
+      "col": 1,
+      "sourceBox": [
+        275,
+        691,
+        505,
+        835
+      ],
+      "trimmed": [
+        230,
+        144
+      ],
+      "canvas": 288,
+      "cuisine": "argentina"
+    },
+    {
+      "itemKey": "milanesa_napolitana",
+      "displayName": "Milanesa napolitana",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/milanesa_napolitana.png",
+      "row": 4,
+      "col": 2,
+      "sourceBox": [
+        521,
+        690,
+        766,
+        837
+      ],
+      "trimmed": [
+        245,
+        147
+      ],
+      "canvas": 288,
+      "cuisine": "argentina"
+    },
+    {
+      "itemKey": "choripan",
+      "displayName": "Choripan",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/choripan.png",
+      "row": 4,
+      "col": 3,
+      "sourceBox": [
+        782,
+        688,
+        1019,
+        849
+      ],
+      "trimmed": [
+        237,
+        161
+      ],
+      "canvas": 288,
+      "cuisine": "argentina"
+    },
+    {
+      "itemKey": "locro",
+      "displayName": "Locro",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/locro.png",
+      "row": 4,
+      "col": 4,
+      "sourceBox": [
+        1048,
+        687,
+        1256,
+        845
+      ],
+      "trimmed": [
+        208,
+        158
+      ],
+      "canvas": 288,
+      "cuisine": "argentina"
+    },
+    {
+      "itemKey": "alfajores",
+      "displayName": "Alfajores",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/alfajores.png",
+      "row": 4,
+      "col": 5,
+      "sourceBox": [
+        1288,
+        696,
+        1514,
+        835
+      ],
+      "trimmed": [
+        226,
+        139
+      ],
+      "canvas": 288,
+      "cuisine": "argentina"
+    },
+    {
+      "itemKey": "arepa",
+      "displayName": "Arepa",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/arepa.png",
+      "row": 5,
+      "col": 0,
+      "sourceBox": [
+        23,
+        848,
+        224,
+        1000
+      ],
+      "trimmed": [
+        201,
+        152
+      ],
+      "canvas": 288,
+      "cuisine": "venezuela"
+    },
+    {
+      "itemKey": "pabellon_criollo",
+      "displayName": "Pabellon criollo",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/pabellon_criollo.png",
+      "row": 5,
+      "col": 1,
+      "sourceBox": [
+        247,
+        842,
+        509,
+        1001
+      ],
+      "trimmed": [
+        262,
+        159
+      ],
+      "canvas": 288,
+      "cuisine": "venezuela"
+    },
+    {
+      "itemKey": "cachapa",
+      "displayName": "Cachapa",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/cachapa.png",
+      "row": 5,
+      "col": 2,
+      "sourceBox": [
+        521,
+        837,
+        752,
+        997
+      ],
+      "trimmed": [
+        231,
+        160
+      ],
+      "canvas": 288,
+      "cuisine": "venezuela"
+    },
+    {
+      "itemKey": "tequenos",
+      "displayName": "Tequenos",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/tequenos.png",
+      "row": 5,
+      "col": 3,
+      "sourceBox": [
+        775,
+        856,
+        1014,
+        990
+      ],
+      "trimmed": [
+        239,
+        134
+      ],
+      "canvas": 288,
+      "cuisine": "venezuela"
+    },
+    {
+      "itemKey": "hallaca",
+      "displayName": "Hallaca",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/hallaca.png",
+      "row": 5,
+      "col": 4,
+      "sourceBox": [
+        1025,
+        841,
+        1275,
+        1006
+      ],
+      "trimmed": [
+        250,
+        165
+      ],
+      "canvas": 288,
+      "cuisine": "venezuela"
+    },
+    {
+      "itemKey": "asado_negro",
+      "displayName": "Asado negro",
+      "path": "unity/Valkur/Assets/_Project/Art/Items/cook/dishes/asado_negro.png",
+      "row": 5,
+      "col": 5,
+      "sourceBox": [
+        1292,
+        849,
+        1517,
+        1001
+      ],
+      "trimmed": [
+        225,
+        152
+      ],
+      "canvas": 288,
+      "cuisine": "venezuela"
+    }
+  ]
+}

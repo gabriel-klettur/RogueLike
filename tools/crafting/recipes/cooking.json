@@ -1,0 +1,43 @@
+{
+  "borscht": { "beef": 1, "beet": 2, "cabbage": 1, "potato": 1, "carrot": 1, "onion": 1, "sour_cream": 1, "herbs": 1 },
+  "varenyky": { "flour": 2, "potato": 2, "onion": 1, "egg": 1, "butter": 1, "sour_cream": 1 },
+  "holubtsi": { "cabbage": 2, "beef": 1, "rice": 1, "onion": 1, "tomato": 1, "herbs": 1 },
+  "deruny": { "potato": 3, "onion": 1, "egg": 1, "flour": 1, "sour_cream": 1 },
+  "chicken_kyiv": { "chicken": 2, "butter": 1, "herbs": 1, "flour": 1, "egg": 1 },
+  "syrnyky": { "cheese": 2, "egg": 1, "flour": 1, "sour_cream": 1, "butter": 1 },
+
+  "empanada_de_pino": { "flour": 2, "beef": 2, "onion": 1, "egg": 1, "paprika": 1 },
+  "pastel_de_choclo": { "corn": 3, "beef": 1, "chicken": 1, "onion": 1, "egg": 1 },
+  "completo_chileno": { "flour": 1, "sausage": 1, "tomato": 1, "avocado": 1 },
+  "cazuela_chilena": { "beef": 1, "potato": 2, "corn": 1, "carrot": 1, "onion": 1, "herbs": 1 },
+  "humitas_chilenas": { "corn": 3, "onion": 1, "herbs": 1, "butter": 1 },
+  "sopaipillas_chilenas": { "flour": 2, "cornmeal": 1, "butter": 1, "egg": 1 },
+
+  "paella": { "rice": 2, "fish": 2, "sausage": 1, "bell_pepper": 1, "tomato": 1, "onion": 1, "paprika": 1 },
+  "tortilla_espanola": { "potato": 3, "egg": 2, "onion": 1, "butter": 1 },
+  "gazpacho": { "tomato": 3, "bell_pepper": 1, "garlic": 1, "onion": 1, "herbs": 1 },
+  "croquetas": { "chicken": 1, "flour": 2, "butter": 1, "egg": 1, "cheese": 1 },
+  "jamon_iberico": { "beef": 2, "paprika": 1, "herbs": 1 },
+  "churros_con_chocolate": { "flour": 2, "egg": 1, "butter": 1 },
+
+  "kjotsupa": { "beef": 2, "potato": 2, "carrot": 1, "cabbage": 1, "onion": 1, "herbs": 1 },
+  "plokkfiskur": { "fish": 2, "potato": 2, "onion": 1, "butter": 1, "sour_cream": 1 },
+  "icelandic_pylsa": { "flour": 1, "sausage": 1, "onion": 2, "tomato": 1 },
+  "skyr": { "sour_cream": 2, "cheese": 1 },
+  "kleinur": { "flour": 2, "egg": 1, "butter": 1 },
+  "hakarl": { "fish": 3 },
+
+  "asado_argentino": { "beef": 3, "sausage": 1, "garlic": 1, "herbs": 1 },
+  "empanadas_argentinas": { "flour": 2, "beef": 2, "onion": 1, "egg": 1, "paprika": 1 },
+  "milanesa_napolitana": { "beef": 2, "flour": 1, "egg": 1, "tomato": 1, "cheese": 2 },
+  "choripan": { "flour": 1, "sausage": 2, "garlic": 1, "herbs": 1 },
+  "locro": { "beef": 1, "sausage": 1, "corn": 2, "black_beans": 1, "onion": 1, "paprika": 1 },
+  "alfajores": { "flour": 2, "butter": 1, "egg": 1 },
+
+  "arepa": { "cornmeal": 2, "beef": 1, "cheese": 1 },
+  "pabellon_criollo": { "beef": 2, "rice": 2, "black_beans": 2, "plantain": 1, "onion": 1 },
+  "cachapa": { "corn": 3, "cornmeal": 1, "cheese": 2, "butter": 1 },
+  "tequenos": { "flour": 2, "cheese": 2, "butter": 1, "egg": 1 },
+  "hallaca": { "cornmeal": 2, "beef": 1, "chicken": 1, "onion": 1, "bell_pepper": 1, "paprika": 1, "egg": 1 },
+  "asado_negro": { "beef": 3, "onion": 1, "garlic": 1, "tomato": 1, "paprika": 1 }
+}

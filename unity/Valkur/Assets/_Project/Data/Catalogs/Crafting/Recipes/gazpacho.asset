@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf47f96b746e7fb4c8573186b1994bae, type: 3}
+  m_Name: gazpacho
+  m_EditorClassIdentifier: 
+  recipeId: gazpacho
+  displayName: Gazpacho
+  profession: {fileID: 11400000, guid: dc13ea869bb3ff346b818aba68a60db4, type: 2}
+  group: spain
+  output: {fileID: 11400000, guid: bf7260b29c5f57946b271f3efb311d9f, type: 2}
+  outputQuantity: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: 94f01cddf7c2632499d10b1361541c3b, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: 8b21f805d0c498945a1ae5a0f5f510da, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: a05115775e105804fbbf006f2da5a789, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: d7a173f85bbbec144a1c0d3c4e738ac1, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: b285162ee84e36242aa975db9ff9b75f, type: 2}
+    quantity: 3
+  requiresStation: 0
+  requiredLevel: 1
+  xpReward: 15
+  craftSeconds: 1.64

@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf47f96b746e7fb4c8573186b1994bae, type: 3}
+  m_Name: kleinur
+  m_EditorClassIdentifier: 
+  recipeId: kleinur
+  displayName: Kleinur
+  profession: {fileID: 11400000, guid: dc13ea869bb3ff346b818aba68a60db4, type: 2}
+  group: iceland
+  output: {fileID: 11400000, guid: d7754c4a62d55df42ab51712d7d354b8, type: 2}
+  outputQuantity: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: 2cdb2a3d05a20f140a397d61211984a5, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: cd2720ae883a32849b43a7cd4d3d82f8, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: 0e50a722c6402324f929eff1b3693257, type: 2}
+    quantity: 2
+  requiresStation: 0
+  requiredLevel: 1
+  xpReward: 9
+  craftSeconds: 1.28

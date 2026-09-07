@@ -115,12 +115,24 @@ namespace Valkur.Data
         public int arcanePoints;
         public int arcanePointsSpent;
 
+        // Profession progress, in the same parallel-list shape as the skills above and for the
+        // same reason recorded at the top of this file: a Dictionary does not survive every
+        // serializer this project has used, and three aligned lists do.
+        //
+        // Absent in a save written before professions existed, where all three deserialize as
+        // empty — which is correctly read as "this character has practised nothing", not as a
+        // missing field to warn about.
+        public List<string> professionKeys = new List<string>();
+        public List<int> professionLevels = new List<int>();
+        public List<int> professionXp = new List<int>();
+
         /// <summary>True when this document says nothing — a legacy save, or a character
         /// who has genuinely spent nothing. The two are indistinguishable and should be
         /// treated the same way.</summary>
         public bool IsEmpty =>
             (skillIds == null || skillIds.Count == 0) &&
             (grimoireNodeIds == null || grimoireNodeIds.Count == 0) &&
+            (professionKeys == null || professionKeys.Count == 0) &&
             skillPoints == 0 && arcanePoints == 0 &&
             skillPointsSpent == 0 && arcanePointsSpent == 0;
     }

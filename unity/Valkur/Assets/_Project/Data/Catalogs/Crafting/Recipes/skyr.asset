@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf47f96b746e7fb4c8573186b1994bae, type: 3}
+  m_Name: skyr
+  m_EditorClassIdentifier: 
+  recipeId: skyr
+  displayName: Skyr
+  profession: {fileID: 11400000, guid: dc13ea869bb3ff346b818aba68a60db4, type: 2}
+  group: iceland
+  output: {fileID: 11400000, guid: 98df7f8865f468e4987570d8fe9e198a, type: 2}
+  outputQuantity: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: b89a700dbdb7d0246a4965dcffbf1ef1, type: 2}
+    quantity: 1
+  - item: {fileID: 11400000, guid: a7baa3abe99c8ab44a25f6dc49ef1a2c, type: 2}
+    quantity: 2
+  requiresStation: 0
+  requiredLevel: 1
+  xpReward: 10
+  craftSeconds: 1.16

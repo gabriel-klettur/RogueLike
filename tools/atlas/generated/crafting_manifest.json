@@ -1,0 +1,2332 @@
+{
+  "generator": "tools/crafting/build_crafting_manifest.py",
+  "craftValueMultiplier": 1.75,
+  "stationIngredientThreshold": 6,
+  "professions": [
+    {
+      "professionKey": "cooking",
+      "displayName": "Cocina",
+      "description": "Oficio de cocina.",
+      "accentColor": {
+        "r": 0.93,
+        "g": 0.62,
+        "b": 0.28,
+        "a": 1.0
+      },
+      "sortOrder": 0,
+      "stationName": "una cocina",
+      "maxLevel": 20,
+      "baseXpPerLevel": 100,
+      "xpGrowth": 1.25
+    },
+    {
+      "professionKey": "blacksmith",
+      "displayName": "Herreria",
+      "description": "Oficio de herreria.",
+      "accentColor": {
+        "r": 0.72,
+        "g": 0.45,
+        "b": 0.3,
+        "a": 1.0
+      },
+      "sortOrder": 1,
+      "stationName": "una fragua",
+      "maxLevel": 20,
+      "baseXpPerLevel": 120,
+      "xpGrowth": 1.28
+    },
+    {
+      "professionKey": "mining",
+      "displayName": "Mineria",
+      "description": "Oficio de mineria.",
+      "accentColor": {
+        "r": 0.55,
+        "g": 0.6,
+        "b": 0.7,
+        "a": 1.0
+      },
+      "sortOrder": 2,
+      "stationName": "una mina",
+      "maxLevel": 20,
+      "baseXpPerLevel": 110,
+      "xpGrowth": 1.26
+    },
+    {
+      "professionKey": "lumberjack",
+      "displayName": "Talado",
+      "description": "Oficio de talado.",
+      "accentColor": {
+        "r": 0.45,
+        "g": 0.66,
+        "b": 0.38,
+        "a": 1.0
+      },
+      "sortOrder": 3,
+      "stationName": "un aserradero",
+      "maxLevel": 20,
+      "baseXpPerLevel": 110,
+      "xpGrowth": 1.26
+    },
+    {
+      "professionKey": "crafting",
+      "displayName": "Artesania",
+      "description": "Oficio de artesania.",
+      "accentColor": {
+        "r": 0.62,
+        "g": 0.55,
+        "b": 0.85,
+        "a": 1.0
+      },
+      "sortOrder": 4,
+      "stationName": "un banco de trabajo",
+      "maxLevel": 20,
+      "baseXpPerLevel": 100,
+      "xpGrowth": 1.25
+    }
+  ],
+  "items": [
+    {
+      "itemId": "avocado",
+      "displayName": "Aguacate",
+      "description": "Ingrediente de cocina (vegetable). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/avocado.png",
+      "value": 6,
+      "sellPrice": 3,
+      "weight": 0.2,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 5
+    },
+    {
+      "itemId": "beef",
+      "displayName": "Carne de res",
+      "description": "Ingrediente de cocina (protein). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/beef.png",
+      "value": 12,
+      "sellPrice": 5,
+      "weight": 0.6,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 8
+    },
+    {
+      "itemId": "beet",
+      "displayName": "Remolacha",
+      "description": "Ingrediente de cocina (vegetable). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/beet.png",
+      "value": 3,
+      "sellPrice": 1,
+      "weight": 0.2,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 3
+    },
+    {
+      "itemId": "bell_pepper",
+      "displayName": "Pimiento",
+      "description": "Ingrediente de cocina (vegetable). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/bell_pepper.png",
+      "value": 5,
+      "sellPrice": 2,
+      "weight": 0.15,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 3
+    },
+    {
+      "itemId": "black_beans",
+      "displayName": "Frijoles negros",
+      "description": "Ingrediente de cocina (staple). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/black_beans.png",
+      "value": 4,
+      "sellPrice": 2,
+      "weight": 0.3,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 5
+    },
+    {
+      "itemId": "butter",
+      "displayName": "Mantequilla",
+      "description": "Ingrediente de cocina (dairy). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/butter.png",
+      "value": 6,
+      "sellPrice": 3,
+      "weight": 0.15,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 4
+    },
+    {
+      "itemId": "cabbage",
+      "displayName": "Repollo",
+      "description": "Ingrediente de cocina (vegetable). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/cabbage.png",
+      "value": 3,
+      "sellPrice": 1,
+      "weight": 0.3,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 3
+    },
+    {
+      "itemId": "carrot",
+      "displayName": "Zanahoria",
+      "description": "Ingrediente de cocina (vegetable). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/carrot.png",
+      "value": 3,
+      "sellPrice": 1,
+      "weight": 0.15,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 3
+    },
+    {
+      "itemId": "cheese",
+      "displayName": "Queso",
+      "description": "Ingrediente de cocina (dairy). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/cheese.png",
+      "value": 8,
+      "sellPrice": 4,
+      "weight": 0.25,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 6
+    },
+    {
+      "itemId": "chicken",
+      "displayName": "Pollo",
+      "description": "Ingrediente de cocina (protein). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/chicken.png",
+      "value": 9,
+      "sellPrice": 4,
+      "weight": 0.45,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 7
+    },
+    {
+      "itemId": "corn",
+      "displayName": "Maiz",
+      "description": "Ingrediente de cocina (vegetable). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/corn.png",
+      "value": 4,
+      "sellPrice": 2,
+      "weight": 0.2,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 4
+    },
+    {
+      "itemId": "cornmeal",
+      "displayName": "Harina de maiz",
+      "description": "Ingrediente de cocina (staple). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/cornmeal.png",
+      "value": 3,
+      "sellPrice": 1,
+      "weight": 0.35,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 3
+    },
+    {
+      "itemId": "egg",
+      "displayName": "Huevo",
+      "description": "Ingrediente de cocina (protein). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/egg.png",
+      "value": 4,
+      "sellPrice": 2,
+      "weight": 0.1,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 4
+    },
+    {
+      "itemId": "fish",
+      "displayName": "Pescado",
+      "description": "Ingrediente de cocina (protein). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/fish.png",
+      "value": 9,
+      "sellPrice": 4,
+      "weight": 0.4,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 7
+    },
+    {
+      "itemId": "flour",
+      "displayName": "Harina",
+      "description": "Ingrediente de cocina (staple). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/flour.png",
+      "value": 3,
+      "sellPrice": 1,
+      "weight": 0.35,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 3
+    },
+    {
+      "itemId": "garlic",
+      "displayName": "Ajo",
+      "description": "Ingrediente de cocina (aromatic). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/garlic.png",
+      "value": 3,
+      "sellPrice": 1,
+      "weight": 0.05,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 1
+    },
+    {
+      "itemId": "herbs",
+      "displayName": "Hierbas",
+      "description": "Ingrediente de cocina (aromatic). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/herbs.png",
+      "value": 4,
+      "sellPrice": 2,
+      "weight": 0.05,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "onion",
+      "displayName": "Cebolla",
+      "description": "Ingrediente de cocina (vegetable). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/onion.png",
+      "value": 3,
+      "sellPrice": 1,
+      "weight": 0.15,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 2
+    },
+    {
+      "itemId": "paprika",
+      "displayName": "Pimenton",
+      "description": "Ingrediente de cocina (aromatic). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/paprika.png",
+      "value": 5,
+      "sellPrice": 2,
+      "weight": 0.05,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "plantain",
+      "displayName": "Platano maduro",
+      "description": "Ingrediente de cocina (vegetable). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/plantain.png",
+      "value": 4,
+      "sellPrice": 2,
+      "weight": 0.25,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 5
+    },
+    {
+      "itemId": "potato",
+      "displayName": "Patata",
+      "description": "Ingrediente de cocina (vegetable). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/potato.png",
+      "value": 3,
+      "sellPrice": 1,
+      "weight": 0.25,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 4
+    },
+    {
+      "itemId": "rice",
+      "displayName": "Arroz",
+      "description": "Ingrediente de cocina (staple). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/rice.png",
+      "value": 4,
+      "sellPrice": 2,
+      "weight": 0.3,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 5
+    },
+    {
+      "itemId": "sausage",
+      "displayName": "Chorizo",
+      "description": "Ingrediente de cocina (protein). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/sausage.png",
+      "value": 10,
+      "sellPrice": 4,
+      "weight": 0.35,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 7
+    },
+    {
+      "itemId": "sour_cream",
+      "displayName": "Crema agria",
+      "description": "Ingrediente de cocina (dairy). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/sour_cream.png",
+      "value": 5,
+      "sellPrice": 2,
+      "weight": 0.2,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 3
+    },
+    {
+      "itemId": "tomato",
+      "displayName": "Tomate",
+      "description": "Ingrediente de cocina (vegetable). Se usa para preparar platos.",
+      "role": "ingredient",
+      "profession": "cooking",
+      "art": "Assets/_Project/Art/Items/cook/ingredients/tomato.png",
+      "value": 4,
+      "sellPrice": 2,
+      "weight": 0.15,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 50,
+      "healing": 0,
+      "hunger": 0,
+      "rawHunger": 3
+    },
+    {
+      "itemId": "alfajores",
+      "displayName": "Alfajores",
+      "description": "Plato tradicional de Argentina. Restaura 6 de vida y 22 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "argentina",
+      "art": "Assets/_Project/Art/Items/cook/dishes/alfajores.png",
+      "value": 28,
+      "sellPrice": 13,
+      "weight": 0.49,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 6,
+      "hunger": 22,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "arepa",
+      "displayName": "Arepa",
+      "description": "Plato tradicional de Venezuela. Restaura 6 de vida y 32 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "venezuela",
+      "art": "Assets/_Project/Art/Items/cook/dishes/arepa.png",
+      "value": 46,
+      "sellPrice": 21,
+      "weight": 0.49,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 6,
+      "hunger": 32,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "asado_argentino",
+      "displayName": "Asado argentino",
+      "description": "Plato tradicional de Argentina. Restaura 16 de vida y 51 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "argentina",
+      "art": "Assets/_Project/Art/Items/cook/dishes/asado_argentino.png",
+      "value": 93,
+      "sellPrice": 42,
+      "weight": 0.61,
+      "rarity": 3,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 16,
+      "hunger": 51,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "asado_negro",
+      "displayName": "Asado negro",
+      "description": "Plato tradicional de Venezuela. Restaura 12 de vida y 48 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "venezuela",
+      "art": "Assets/_Project/Art/Items/cook/dishes/asado_negro.png",
+      "value": 89,
+      "sellPrice": 40,
+      "weight": 0.67,
+      "rarity": 3,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 12,
+      "hunger": 48,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "borscht",
+      "displayName": "Borscht",
+      "description": "Plato tradicional de Ucrania. Restaura 6 de vida y 46 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "ukraine",
+      "art": "Assets/_Project/Art/Items/cook/dishes/borscht.png",
+      "value": 68,
+      "sellPrice": 31,
+      "weight": 0.79,
+      "rarity": 2,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 6,
+      "hunger": 46,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "cachapa",
+      "displayName": "Cachapa",
+      "description": "Plato tradicional de Venezuela. Restaura 6 de vida y 50 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "venezuela",
+      "art": "Assets/_Project/Art/Items/cook/dishes/cachapa.png",
+      "value": 65,
+      "sellPrice": 29,
+      "weight": 0.67,
+      "rarity": 1,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 6,
+      "hunger": 50,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "cazuela_chilena",
+      "displayName": "Cazuela chilena",
+      "description": "Plato tradicional de Chile. Restaura 4 de vida y 40 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "chile",
+      "art": "Assets/_Project/Art/Items/cook/dishes/cazuela_chilena.png",
+      "value": 56,
+      "sellPrice": 25,
+      "weight": 0.67,
+      "rarity": 1,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 4,
+      "hunger": 40,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "chicken_kyiv",
+      "displayName": "Pollo Kiev",
+      "description": "Plato tradicional de Ucrania. Restaura 14 de vida y 40 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "ukraine",
+      "art": "Assets/_Project/Art/Items/cook/dishes/chicken_kyiv.png",
+      "value": 61,
+      "sellPrice": 27,
+      "weight": 0.61,
+      "rarity": 1,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 14,
+      "hunger": 40,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "choripan",
+      "displayName": "Choripan",
+      "description": "Plato tradicional de Argentina. Restaura 8 de vida y 29 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "argentina",
+      "art": "Assets/_Project/Art/Items/cook/dishes/choripan.png",
+      "value": 52,
+      "sellPrice": 23,
+      "weight": 0.55,
+      "rarity": 1,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 8,
+      "hunger": 29,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "churros_con_chocolate",
+      "displayName": "Churros con chocolate",
+      "description": "Plato tradicional de Espana. Restaura 6 de vida y 22 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "spain",
+      "art": "Assets/_Project/Art/Items/cook/dishes/churros_con_chocolate.png",
+      "value": 28,
+      "sellPrice": 13,
+      "weight": 0.49,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 6,
+      "hunger": 22,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "completo_chileno",
+      "displayName": "Completo chileno",
+      "description": "Plato tradicional de Chile. Restaura 4 de vida y 29 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "chile",
+      "art": "Assets/_Project/Art/Items/cook/dishes/completo_chileno.png",
+      "value": 40,
+      "sellPrice": 18,
+      "weight": 0.49,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 4,
+      "hunger": 29,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "croquetas",
+      "displayName": "Croquetas",
+      "description": "Plato tradicional de Espana. Restaura 12 de vida y 43 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "spain",
+      "art": "Assets/_Project/Art/Items/cook/dishes/croquetas.png",
+      "value": 58,
+      "sellPrice": 26,
+      "weight": 0.61,
+      "rarity": 1,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 12,
+      "hunger": 43,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "deruny",
+      "displayName": "Deruny",
+      "description": "Plato tradicional de Ucrania. Restaura 6 de vida y 38 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "ukraine",
+      "art": "Assets/_Project/Art/Items/cook/dishes/deruny.png",
+      "value": 42,
+      "sellPrice": 19,
+      "weight": 0.67,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 6,
+      "hunger": 38,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "empanada_de_pino",
+      "displayName": "Empanada de pino",
+      "description": "Plato tradicional de Chile. Restaura 12 de vida y 45 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "chile",
+      "art": "Assets/_Project/Art/Items/cook/dishes/empanada_de_pino.png",
+      "value": 74,
+      "sellPrice": 33,
+      "weight": 0.67,
+      "rarity": 2,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 12,
+      "hunger": 45,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "empanadas_argentinas",
+      "displayName": "Empanadas argentinas",
+      "description": "Plato tradicional de Argentina. Restaura 12 de vida y 45 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "argentina",
+      "art": "Assets/_Project/Art/Items/cook/dishes/empanadas_argentinas.png",
+      "value": 74,
+      "sellPrice": 33,
+      "weight": 0.67,
+      "rarity": 2,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 12,
+      "hunger": 45,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "gazpacho",
+      "displayName": "Gazpacho",
+      "description": "Plato tradicional de Espana. Restaura 2 de vida y 24 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "spain",
+      "art": "Assets/_Project/Art/Items/cook/dishes/gazpacho.png",
+      "value": 47,
+      "sellPrice": 21,
+      "weight": 0.67,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 2,
+      "hunger": 24,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "hakarl",
+      "displayName": "Hakarl",
+      "description": "Plato tradicional de Islandia. Restaura 12 de vida y 34 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "iceland",
+      "art": "Assets/_Project/Art/Items/cook/dishes/hakarl.png",
+      "value": 47,
+      "sellPrice": 21,
+      "weight": 0.43,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 12,
+      "hunger": 34,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "hallaca",
+      "displayName": "Hallaca",
+      "description": "Plato tradicional de Venezuela. Restaura 12 de vida y 48 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "venezuela",
+      "art": "Assets/_Project/Art/Items/cook/dishes/hallaca.png",
+      "value": 77,
+      "sellPrice": 35,
+      "weight": 0.73,
+      "rarity": 2,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 12,
+      "hunger": 48,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "holubtsi",
+      "displayName": "Holubtsi",
+      "description": "Plato tradicional de Ucrania. Restaura 4 de vida y 38 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "ukraine",
+      "art": "Assets/_Project/Art/Items/cook/dishes/holubtsi.png",
+      "value": 58,
+      "sellPrice": 26,
+      "weight": 0.67,
+      "rarity": 1,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 4,
+      "hunger": 38,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "humitas_chilenas",
+      "displayName": "Humitas",
+      "description": "Plato tradicional de Chile. Restaura 2 de vida y 29 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "chile",
+      "art": "Assets/_Project/Art/Items/cook/dishes/humitas_chilenas.png",
+      "value": 44,
+      "sellPrice": 20,
+      "weight": 0.61,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 2,
+      "hunger": 29,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "icelandic_pylsa",
+      "displayName": "Pylsa islandesa",
+      "description": "Plato tradicional de Islandia. Restaura 4 de vida y 27 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "iceland",
+      "art": "Assets/_Project/Art/Items/cook/dishes/icelandic_pylsa.png",
+      "value": 40,
+      "sellPrice": 18,
+      "weight": 0.55,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 4,
+      "hunger": 27,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "jamon_iberico",
+      "displayName": "Jamon iberico",
+      "description": "Plato tradicional de Espana. Restaura 8 de vida y 26 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "spain",
+      "art": "Assets/_Project/Art/Items/cook/dishes/jamon_iberico.png",
+      "value": 58,
+      "sellPrice": 26,
+      "weight": 0.49,
+      "rarity": 1,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 8,
+      "hunger": 26,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "kjotsupa",
+      "displayName": "Kjotsupa",
+      "description": "Plato tradicional de Islandia. Restaura 8 de vida y 51 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "iceland",
+      "art": "Assets/_Project/Art/Items/cook/dishes/kjotsupa.png",
+      "value": 75,
+      "sellPrice": 34,
+      "weight": 0.73,
+      "rarity": 2,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 8,
+      "hunger": 51,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "kleinur",
+      "displayName": "Kleinur",
+      "description": "Plato tradicional de Islandia. Restaura 6 de vida y 22 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "iceland",
+      "art": "Assets/_Project/Art/Items/cook/dishes/kleinur.png",
+      "value": 28,
+      "sellPrice": 13,
+      "weight": 0.49,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 6,
+      "hunger": 22,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "locro",
+      "displayName": "Locro",
+      "description": "Plato tradicional de Argentina. Restaura 8 de vida y 48 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "argentina",
+      "art": "Assets/_Project/Art/Items/cook/dishes/locro.png",
+      "value": 74,
+      "sellPrice": 33,
+      "weight": 0.67,
+      "rarity": 2,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 8,
+      "hunger": 48,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "milanesa_napolitana",
+      "displayName": "Milanesa napolitana",
+      "description": "Plato tradicional de Argentina. Restaura 16 de vida y 61 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "argentina",
+      "art": "Assets/_Project/Art/Items/cook/dishes/milanesa_napolitana.png",
+      "value": 89,
+      "sellPrice": 40,
+      "weight": 0.67,
+      "rarity": 3,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 16,
+      "hunger": 61,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "pabellon_criollo",
+      "displayName": "Pabellon criollo",
+      "description": "Plato tradicional de Venezuela. Restaura 8 de vida y 69 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "venezuela",
+      "art": "Assets/_Project/Art/Items/cook/dishes/pabellon_criollo.png",
+      "value": 82,
+      "sellPrice": 37,
+      "weight": 0.73,
+      "rarity": 2,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 8,
+      "hunger": 69,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "paella",
+      "displayName": "Paella",
+      "description": "Plato tradicional de Espana. Restaura 12 de vida y 62 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "spain",
+      "art": "Assets/_Project/Art/Items/cook/dishes/paella.png",
+      "value": 93,
+      "sellPrice": 42,
+      "weight": 0.79,
+      "rarity": 3,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 12,
+      "hunger": 62,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "pastel_de_choclo",
+      "displayName": "Pastel de choclo",
+      "description": "Plato tradicional de Chile. Restaura 12 de vida y 53 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "chile",
+      "art": "Assets/_Project/Art/Items/cook/dishes/pastel_de_choclo.png",
+      "value": 70,
+      "sellPrice": 32,
+      "weight": 0.67,
+      "rarity": 2,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 12,
+      "hunger": 53,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "plokkfiskur",
+      "displayName": "Plokkfiskur",
+      "description": "Plato tradicional de Islandia. Restaura 12 de vida y 50 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "iceland",
+      "art": "Assets/_Project/Art/Items/cook/dishes/plokkfiskur.png",
+      "value": 66,
+      "sellPrice": 30,
+      "weight": 0.67,
+      "rarity": 2,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 12,
+      "hunger": 50,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "skyr",
+      "displayName": "Skyr",
+      "description": "Plato tradicional de Islandia. Restaura 6 de vida y 19 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "iceland",
+      "art": "Assets/_Project/Art/Items/cook/dishes/skyr.png",
+      "value": 32,
+      "sellPrice": 14,
+      "weight": 0.43,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 6,
+      "hunger": 19,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "sopaipillas_chilenas",
+      "displayName": "Sopaipillas",
+      "description": "Plato tradicional de Chile. Restaura 6 de vida y 27 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "chile",
+      "art": "Assets/_Project/Art/Items/cook/dishes/sopaipillas_chilenas.png",
+      "value": 33,
+      "sellPrice": 15,
+      "weight": 0.55,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 6,
+      "hunger": 27,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "syrnyky",
+      "displayName": "Syrnyky",
+      "description": "Plato tradicional de Ucrania. Restaura 12 de vida y 42 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "ukraine",
+      "art": "Assets/_Project/Art/Items/cook/dishes/syrnyky.png",
+      "value": 60,
+      "sellPrice": 27,
+      "weight": 0.61,
+      "rarity": 1,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 12,
+      "hunger": 42,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "tequenos",
+      "displayName": "Tequenos",
+      "description": "Plato tradicional de Venezuela. Restaura 10 de vida y 42 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "venezuela",
+      "art": "Assets/_Project/Art/Items/cook/dishes/tequenos.png",
+      "value": 56,
+      "sellPrice": 25,
+      "weight": 0.61,
+      "rarity": 1,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 10,
+      "hunger": 42,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "tortilla_espanola",
+      "displayName": "Tortilla espanola",
+      "description": "Plato tradicional de Espana. Restaura 10 de vida y 42 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "spain",
+      "art": "Assets/_Project/Art/Items/cook/dishes/tortilla_espanola.png",
+      "value": 46,
+      "sellPrice": 21,
+      "weight": 0.67,
+      "rarity": 0,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 10,
+      "hunger": 42,
+      "rawHunger": 0
+    },
+    {
+      "itemId": "varenyky",
+      "displayName": "Varenyky",
+      "description": "Plato tradicional de Ucrania. Restaura 8 de vida y 43 de hambre.",
+      "role": "product",
+      "profession": "cooking",
+      "group": "ukraine",
+      "art": "Assets/_Project/Art/Items/cook/dishes/varenyky.png",
+      "value": 52,
+      "sellPrice": 23,
+      "weight": 0.73,
+      "rarity": 1,
+      "stackable": true,
+      "maxStack": 5,
+      "healing": 8,
+      "hunger": 43,
+      "rawHunger": 0
+    }
+  ],
+  "recipes": [
+    {
+      "recipeId": "alfajores",
+      "displayName": "Alfajores",
+      "profession": "cooking",
+      "group": "argentina",
+      "outputItemId": "alfajores",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 9,
+      "craftSeconds": 1.28,
+      "ingredients": [
+        {
+          "itemId": "butter",
+          "quantity": 1
+        },
+        {
+          "itemId": "egg",
+          "quantity": 1
+        },
+        {
+          "itemId": "flour",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "recipeId": "arepa",
+      "displayName": "Arepa",
+      "profession": "cooking",
+      "group": "venezuela",
+      "outputItemId": "arepa",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 14,
+      "craftSeconds": 1.28,
+      "ingredients": [
+        {
+          "itemId": "beef",
+          "quantity": 1
+        },
+        {
+          "itemId": "cheese",
+          "quantity": 1
+        },
+        {
+          "itemId": "cornmeal",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "recipeId": "asado_argentino",
+      "displayName": "Asado argentino",
+      "profession": "cooking",
+      "group": "argentina",
+      "outputItemId": "asado_argentino",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 29,
+      "craftSeconds": 1.52,
+      "ingredients": [
+        {
+          "itemId": "beef",
+          "quantity": 3
+        },
+        {
+          "itemId": "garlic",
+          "quantity": 1
+        },
+        {
+          "itemId": "herbs",
+          "quantity": 1
+        },
+        {
+          "itemId": "sausage",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "asado_negro",
+      "displayName": "Asado negro",
+      "profession": "cooking",
+      "group": "venezuela",
+      "outputItemId": "asado_negro",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 28,
+      "craftSeconds": 1.64,
+      "ingredients": [
+        {
+          "itemId": "beef",
+          "quantity": 3
+        },
+        {
+          "itemId": "garlic",
+          "quantity": 1
+        },
+        {
+          "itemId": "onion",
+          "quantity": 1
+        },
+        {
+          "itemId": "paprika",
+          "quantity": 1
+        },
+        {
+          "itemId": "tomato",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "borscht",
+      "displayName": "Borscht",
+      "profession": "cooking",
+      "group": "ukraine",
+      "outputItemId": "borscht",
+      "outputQuantity": 1,
+      "requiresStation": true,
+      "requiredLevel": 1,
+      "xpReward": 21,
+      "craftSeconds": 1.88,
+      "ingredients": [
+        {
+          "itemId": "beef",
+          "quantity": 1
+        },
+        {
+          "itemId": "beet",
+          "quantity": 2
+        },
+        {
+          "itemId": "cabbage",
+          "quantity": 1
+        },
+        {
+          "itemId": "carrot",
+          "quantity": 1
+        },
+        {
+          "itemId": "herbs",
+          "quantity": 1
+        },
+        {
+          "itemId": "onion",
+          "quantity": 1
+        },
+        {
+          "itemId": "potato",
+          "quantity": 1
+        },
+        {
+          "itemId": "sour_cream",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "cachapa",
+      "displayName": "Cachapa",
+      "profession": "cooking",
+      "group": "venezuela",
+      "outputItemId": "cachapa",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 20,
+      "craftSeconds": 1.64,
+      "ingredients": [
+        {
+          "itemId": "butter",
+          "quantity": 1
+        },
+        {
+          "itemId": "cheese",
+          "quantity": 2
+        },
+        {
+          "itemId": "corn",
+          "quantity": 3
+        },
+        {
+          "itemId": "cornmeal",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "cazuela_chilena",
+      "displayName": "Cazuela chilena",
+      "profession": "cooking",
+      "group": "chile",
+      "outputItemId": "cazuela_chilena",
+      "outputQuantity": 1,
+      "requiresStation": true,
+      "requiredLevel": 1,
+      "xpReward": 18,
+      "craftSeconds": 1.64,
+      "ingredients": [
+        {
+          "itemId": "beef",
+          "quantity": 1
+        },
+        {
+          "itemId": "carrot",
+          "quantity": 1
+        },
+        {
+          "itemId": "corn",
+          "quantity": 1
+        },
+        {
+          "itemId": "herbs",
+          "quantity": 1
+        },
+        {
+          "itemId": "onion",
+          "quantity": 1
+        },
+        {
+          "itemId": "potato",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "recipeId": "chicken_kyiv",
+      "displayName": "Pollo Kiev",
+      "profession": "cooking",
+      "group": "ukraine",
+      "outputItemId": "chicken_kyiv",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 19,
+      "craftSeconds": 1.52,
+      "ingredients": [
+        {
+          "itemId": "butter",
+          "quantity": 1
+        },
+        {
+          "itemId": "chicken",
+          "quantity": 2
+        },
+        {
+          "itemId": "egg",
+          "quantity": 1
+        },
+        {
+          "itemId": "flour",
+          "quantity": 1
+        },
+        {
+          "itemId": "herbs",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "choripan",
+      "displayName": "Choripan",
+      "profession": "cooking",
+      "group": "argentina",
+      "outputItemId": "choripan",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 16,
+      "craftSeconds": 1.4,
+      "ingredients": [
+        {
+          "itemId": "flour",
+          "quantity": 1
+        },
+        {
+          "itemId": "garlic",
+          "quantity": 1
+        },
+        {
+          "itemId": "herbs",
+          "quantity": 1
+        },
+        {
+          "itemId": "sausage",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "recipeId": "churros_con_chocolate",
+      "displayName": "Churros con chocolate",
+      "profession": "cooking",
+      "group": "spain",
+      "outputItemId": "churros_con_chocolate",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 9,
+      "craftSeconds": 1.28,
+      "ingredients": [
+        {
+          "itemId": "butter",
+          "quantity": 1
+        },
+        {
+          "itemId": "egg",
+          "quantity": 1
+        },
+        {
+          "itemId": "flour",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "recipeId": "completo_chileno",
+      "displayName": "Completo chileno",
+      "profession": "cooking",
+      "group": "chile",
+      "outputItemId": "completo_chileno",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 13,
+      "craftSeconds": 1.28,
+      "ingredients": [
+        {
+          "itemId": "avocado",
+          "quantity": 1
+        },
+        {
+          "itemId": "flour",
+          "quantity": 1
+        },
+        {
+          "itemId": "sausage",
+          "quantity": 1
+        },
+        {
+          "itemId": "tomato",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "croquetas",
+      "displayName": "Croquetas",
+      "profession": "cooking",
+      "group": "spain",
+      "outputItemId": "croquetas",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 18,
+      "craftSeconds": 1.52,
+      "ingredients": [
+        {
+          "itemId": "butter",
+          "quantity": 1
+        },
+        {
+          "itemId": "cheese",
+          "quantity": 1
+        },
+        {
+          "itemId": "chicken",
+          "quantity": 1
+        },
+        {
+          "itemId": "egg",
+          "quantity": 1
+        },
+        {
+          "itemId": "flour",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "recipeId": "deruny",
+      "displayName": "Deruny",
+      "profession": "cooking",
+      "group": "ukraine",
+      "outputItemId": "deruny",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 13,
+      "craftSeconds": 1.64,
+      "ingredients": [
+        {
+          "itemId": "egg",
+          "quantity": 1
+        },
+        {
+          "itemId": "flour",
+          "quantity": 1
+        },
+        {
+          "itemId": "onion",
+          "quantity": 1
+        },
+        {
+          "itemId": "potato",
+          "quantity": 3
+        },
+        {
+          "itemId": "sour_cream",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "empanada_de_pino",
+      "displayName": "Empanada de pino",
+      "profession": "cooking",
+      "group": "chile",
+      "outputItemId": "empanada_de_pino",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 23,
+      "craftSeconds": 1.64,
+      "ingredients": [
+        {
+          "itemId": "beef",
+          "quantity": 2
+        },
+        {
+          "itemId": "egg",
+          "quantity": 1
+        },
+        {
+          "itemId": "flour",
+          "quantity": 2
+        },
+        {
+          "itemId": "onion",
+          "quantity": 1
+        },
+        {
+          "itemId": "paprika",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "empanadas_argentinas",
+      "displayName": "Empanadas argentinas",
+      "profession": "cooking",
+      "group": "argentina",
+      "outputItemId": "empanadas_argentinas",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 23,
+      "craftSeconds": 1.64,
+      "ingredients": [
+        {
+          "itemId": "beef",
+          "quantity": 2
+        },
+        {
+          "itemId": "egg",
+          "quantity": 1
+        },
+        {
+          "itemId": "flour",
+          "quantity": 2
+        },
+        {
+          "itemId": "onion",
+          "quantity": 1
+        },
+        {
+          "itemId": "paprika",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "gazpacho",
+      "displayName": "Gazpacho",
+      "profession": "cooking",
+      "group": "spain",
+      "outputItemId": "gazpacho",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 15,
+      "craftSeconds": 1.64,
+      "ingredients": [
+        {
+          "itemId": "bell_pepper",
+          "quantity": 1
+        },
+        {
+          "itemId": "garlic",
+          "quantity": 1
+        },
+        {
+          "itemId": "herbs",
+          "quantity": 1
+        },
+        {
+          "itemId": "onion",
+          "quantity": 1
+        },
+        {
+          "itemId": "tomato",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "recipeId": "hakarl",
+      "displayName": "Hakarl",
+      "profession": "cooking",
+      "group": "iceland",
+      "outputItemId": "hakarl",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 15,
+      "craftSeconds": 1.16,
+      "ingredients": [
+        {
+          "itemId": "fish",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "recipeId": "hallaca",
+      "displayName": "Hallaca",
+      "profession": "cooking",
+      "group": "venezuela",
+      "outputItemId": "hallaca",
+      "outputQuantity": 1,
+      "requiresStation": true,
+      "requiredLevel": 1,
+      "xpReward": 24,
+      "craftSeconds": 1.76,
+      "ingredients": [
+        {
+          "itemId": "beef",
+          "quantity": 1
+        },
+        {
+          "itemId": "bell_pepper",
+          "quantity": 1
+        },
+        {
+          "itemId": "chicken",
+          "quantity": 1
+        },
+        {
+          "itemId": "cornmeal",
+          "quantity": 2
+        },
+        {
+          "itemId": "egg",
+          "quantity": 1
+        },
+        {
+          "itemId": "onion",
+          "quantity": 1
+        },
+        {
+          "itemId": "paprika",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "holubtsi",
+      "displayName": "Holubtsi",
+      "profession": "cooking",
+      "group": "ukraine",
+      "outputItemId": "holubtsi",
+      "outputQuantity": 1,
+      "requiresStation": true,
+      "requiredLevel": 1,
+      "xpReward": 18,
+      "craftSeconds": 1.64,
+      "ingredients": [
+        {
+          "itemId": "beef",
+          "quantity": 1
+        },
+        {
+          "itemId": "cabbage",
+          "quantity": 2
+        },
+        {
+          "itemId": "herbs",
+          "quantity": 1
+        },
+        {
+          "itemId": "onion",
+          "quantity": 1
+        },
+        {
+          "itemId": "rice",
+          "quantity": 1
+        },
+        {
+          "itemId": "tomato",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "humitas_chilenas",
+      "displayName": "Humitas",
+      "profession": "cooking",
+      "group": "chile",
+      "outputItemId": "humitas_chilenas",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 14,
+      "craftSeconds": 1.52,
+      "ingredients": [
+        {
+          "itemId": "butter",
+          "quantity": 1
+        },
+        {
+          "itemId": "corn",
+          "quantity": 3
+        },
+        {
+          "itemId": "herbs",
+          "quantity": 1
+        },
+        {
+          "itemId": "onion",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "icelandic_pylsa",
+      "displayName": "Pylsa islandesa",
+      "profession": "cooking",
+      "group": "iceland",
+      "outputItemId": "icelandic_pylsa",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 13,
+      "craftSeconds": 1.4,
+      "ingredients": [
+        {
+          "itemId": "flour",
+          "quantity": 1
+        },
+        {
+          "itemId": "onion",
+          "quantity": 2
+        },
+        {
+          "itemId": "sausage",
+          "quantity": 1
+        },
+        {
+          "itemId": "tomato",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "jamon_iberico",
+      "displayName": "Jamon iberico",
+      "profession": "cooking",
+      "group": "spain",
+      "outputItemId": "jamon_iberico",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 18,
+      "craftSeconds": 1.28,
+      "ingredients": [
+        {
+          "itemId": "beef",
+          "quantity": 2
+        },
+        {
+          "itemId": "herbs",
+          "quantity": 1
+        },
+        {
+          "itemId": "paprika",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "kjotsupa",
+      "displayName": "Kjotsupa",
+      "profession": "cooking",
+      "group": "iceland",
+      "outputItemId": "kjotsupa",
+      "outputQuantity": 1,
+      "requiresStation": true,
+      "requiredLevel": 1,
+      "xpReward": 24,
+      "craftSeconds": 1.76,
+      "ingredients": [
+        {
+          "itemId": "beef",
+          "quantity": 2
+        },
+        {
+          "itemId": "cabbage",
+          "quantity": 1
+        },
+        {
+          "itemId": "carrot",
+          "quantity": 1
+        },
+        {
+          "itemId": "herbs",
+          "quantity": 1
+        },
+        {
+          "itemId": "onion",
+          "quantity": 1
+        },
+        {
+          "itemId": "potato",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "recipeId": "kleinur",
+      "displayName": "Kleinur",
+      "profession": "cooking",
+      "group": "iceland",
+      "outputItemId": "kleinur",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 9,
+      "craftSeconds": 1.28,
+      "ingredients": [
+        {
+          "itemId": "butter",
+          "quantity": 1
+        },
+        {
+          "itemId": "egg",
+          "quantity": 1
+        },
+        {
+          "itemId": "flour",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "recipeId": "locro",
+      "displayName": "Locro",
+      "profession": "cooking",
+      "group": "argentina",
+      "outputItemId": "locro",
+      "outputQuantity": 1,
+      "requiresStation": true,
+      "requiredLevel": 1,
+      "xpReward": 23,
+      "craftSeconds": 1.64,
+      "ingredients": [
+        {
+          "itemId": "beef",
+          "quantity": 1
+        },
+        {
+          "itemId": "black_beans",
+          "quantity": 1
+        },
+        {
+          "itemId": "corn",
+          "quantity": 2
+        },
+        {
+          "itemId": "onion",
+          "quantity": 1
+        },
+        {
+          "itemId": "paprika",
+          "quantity": 1
+        },
+        {
+          "itemId": "sausage",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "milanesa_napolitana",
+      "displayName": "Milanesa napolitana",
+      "profession": "cooking",
+      "group": "argentina",
+      "outputItemId": "milanesa_napolitana",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 28,
+      "craftSeconds": 1.64,
+      "ingredients": [
+        {
+          "itemId": "beef",
+          "quantity": 2
+        },
+        {
+          "itemId": "cheese",
+          "quantity": 2
+        },
+        {
+          "itemId": "egg",
+          "quantity": 1
+        },
+        {
+          "itemId": "flour",
+          "quantity": 1
+        },
+        {
+          "itemId": "tomato",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "pabellon_criollo",
+      "displayName": "Pabellon criollo",
+      "profession": "cooking",
+      "group": "venezuela",
+      "outputItemId": "pabellon_criollo",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 26,
+      "craftSeconds": 1.76,
+      "ingredients": [
+        {
+          "itemId": "beef",
+          "quantity": 2
+        },
+        {
+          "itemId": "black_beans",
+          "quantity": 2
+        },
+        {
+          "itemId": "onion",
+          "quantity": 1
+        },
+        {
+          "itemId": "plantain",
+          "quantity": 1
+        },
+        {
+          "itemId": "rice",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "recipeId": "paella",
+      "displayName": "Paella",
+      "profession": "cooking",
+      "group": "spain",
+      "outputItemId": "paella",
+      "outputQuantity": 1,
+      "requiresStation": true,
+      "requiredLevel": 1,
+      "xpReward": 29,
+      "craftSeconds": 1.88,
+      "ingredients": [
+        {
+          "itemId": "bell_pepper",
+          "quantity": 1
+        },
+        {
+          "itemId": "fish",
+          "quantity": 2
+        },
+        {
+          "itemId": "onion",
+          "quantity": 1
+        },
+        {
+          "itemId": "paprika",
+          "quantity": 1
+        },
+        {
+          "itemId": "rice",
+          "quantity": 2
+        },
+        {
+          "itemId": "sausage",
+          "quantity": 1
+        },
+        {
+          "itemId": "tomato",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "pastel_de_choclo",
+      "displayName": "Pastel de choclo",
+      "profession": "cooking",
+      "group": "chile",
+      "outputItemId": "pastel_de_choclo",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 22,
+      "craftSeconds": 1.64,
+      "ingredients": [
+        {
+          "itemId": "beef",
+          "quantity": 1
+        },
+        {
+          "itemId": "chicken",
+          "quantity": 1
+        },
+        {
+          "itemId": "corn",
+          "quantity": 3
+        },
+        {
+          "itemId": "egg",
+          "quantity": 1
+        },
+        {
+          "itemId": "onion",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "plokkfiskur",
+      "displayName": "Plokkfiskur",
+      "profession": "cooking",
+      "group": "iceland",
+      "outputItemId": "plokkfiskur",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 21,
+      "craftSeconds": 1.64,
+      "ingredients": [
+        {
+          "itemId": "butter",
+          "quantity": 1
+        },
+        {
+          "itemId": "fish",
+          "quantity": 2
+        },
+        {
+          "itemId": "onion",
+          "quantity": 1
+        },
+        {
+          "itemId": "potato",
+          "quantity": 2
+        },
+        {
+          "itemId": "sour_cream",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "skyr",
+      "displayName": "Skyr",
+      "profession": "cooking",
+      "group": "iceland",
+      "outputItemId": "skyr",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 10,
+      "craftSeconds": 1.16,
+      "ingredients": [
+        {
+          "itemId": "cheese",
+          "quantity": 1
+        },
+        {
+          "itemId": "sour_cream",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "recipeId": "sopaipillas_chilenas",
+      "displayName": "Sopaipillas",
+      "profession": "cooking",
+      "group": "chile",
+      "outputItemId": "sopaipillas_chilenas",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 10,
+      "craftSeconds": 1.4,
+      "ingredients": [
+        {
+          "itemId": "butter",
+          "quantity": 1
+        },
+        {
+          "itemId": "cornmeal",
+          "quantity": 1
+        },
+        {
+          "itemId": "egg",
+          "quantity": 1
+        },
+        {
+          "itemId": "flour",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "recipeId": "syrnyky",
+      "displayName": "Syrnyky",
+      "profession": "cooking",
+      "group": "ukraine",
+      "outputItemId": "syrnyky",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 19,
+      "craftSeconds": 1.52,
+      "ingredients": [
+        {
+          "itemId": "butter",
+          "quantity": 1
+        },
+        {
+          "itemId": "cheese",
+          "quantity": 2
+        },
+        {
+          "itemId": "egg",
+          "quantity": 1
+        },
+        {
+          "itemId": "flour",
+          "quantity": 1
+        },
+        {
+          "itemId": "sour_cream",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "recipeId": "tequenos",
+      "displayName": "Tequenos",
+      "profession": "cooking",
+      "group": "venezuela",
+      "outputItemId": "tequenos",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 18,
+      "craftSeconds": 1.52,
+      "ingredients": [
+        {
+          "itemId": "butter",
+          "quantity": 1
+        },
+        {
+          "itemId": "cheese",
+          "quantity": 2
+        },
+        {
+          "itemId": "egg",
+          "quantity": 1
+        },
+        {
+          "itemId": "flour",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "recipeId": "tortilla_espanola",
+      "displayName": "Tortilla espanola",
+      "profession": "cooking",
+      "group": "spain",
+      "outputItemId": "tortilla_espanola",
+      "outputQuantity": 1,
+      "requiresStation": false,
+      "requiredLevel": 1,
+      "xpReward": 14,
+      "craftSeconds": 1.64,
+      "ingredients": [
+        {
+          "itemId": "butter",
+          "quantity": 1
+        },
+        {
+          "itemId": "egg",
+          "quantity": 2
+        },
+        {
+          "itemId": "onion",
+          "quantity": 1
+        },
+        {
+          "itemId": "potato",
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "recipeId": "varenyky",
+      "displayName": "Varenyky",
+      "profession": "cooking",
+      "group": "ukraine",
+      "outputItemId": "varenyky",
+      "outputQuantity": 1,
+      "requiresStation": true,
+      "requiredLevel": 1,
+      "xpReward": 16,
+      "craftSeconds": 1.76,
+      "ingredients": [
+        {
+          "itemId": "butter",
+          "quantity": 1
+        },
+        {
+          "itemId": "egg",
+          "quantity": 1
+        },
+        {
+          "itemId": "flour",
+          "quantity": 2
+        },
+        {
+          "itemId": "onion",
+          "quantity": 1
+        },
+        {
+          "itemId": "potato",
+          "quantity": 2
+        },
+        {
+          "itemId": "sour_cream",
+          "quantity": 1
+        }
+      ]
+    }
+  ]
+}
