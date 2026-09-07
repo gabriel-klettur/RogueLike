@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
 
@@ -74,6 +74,32 @@ namespace Valkur.Gameplay.World
             int spriteOriginX = Mathf.RoundToInt(spriteRect.x);
             int spriteOriginY = Mathf.RoundToInt(spriteRect.y);
 
+            // ── 2b. The size budget belongs to the BASE art, never to a swapped variant ──
+            //
+            // A lit fixture is the SAME artwork with a glow painted around it, and the art is
+            // trimmed to its alpha — so lamp_post_classic is 26x115 dark and 51x115 lit. Every
+            // measurement below (the aspect check, the fit, and the localScale that maps sprite
+            // pixels to world units) has to be taken against the base sprite, or the glow is
+            // read as the building having changed shape.
+            //
+            // Measured before this: at dusk the lit sprite's aspect (51/115) missed the
+            // template's (26/115) by more than the tolerance, so it took the aspect-DRIFT
+            // branch — written for templates whose authored originalScale disagrees with a
+            // re-exported PNG — and "fitted" the glow into the dark art's budget:
+            // fit = min(26/51, 115/115) = 0.51, giving localScale (0.51, 0.51). The lamp post
+            // halved in size every nightfall and grew back at dawn. Ten of the eleven shipped
+            // lit/unlit pairs differ in width, so this was nearly every fixture in the family.
+            int baseW = spriteW, baseH = spriteH;
+            if (!string.IsNullOrEmpty(assetPathOverride) && spritePath != template.assetPath)
+            {
+                var baseSprite = Resources.Load<Sprite>(template.assetPath);
+                if (baseSprite != null)
+                {
+                    baseW = Mathf.RoundToInt(baseSprite.textureRect.width);
+                    baseH = Mathf.RoundToInt(baseSprite.textureRect.height);
+                }
+            }
+
             // Authoring data drift: ~200 migrated templates have originalScale=(0,0)
             // because the field was missing from the source Python data and never
             // recomputed during migration. Fall back to the sprite's own dimensions
@@ -105,7 +131,7 @@ namespace Valkur.Gameplay.World
                 effW = scaleOverride.x;
                 effH = scaleOverride.y;
             }
-            else if (Mathf.Abs((float)origW / origH - (float)spriteW / spriteH) < 0.01f)
+            else if (Mathf.Abs((float)origW / origH - (float)baseW / baseH) < 0.01f)
             {
                 // Aspect ratios already match — render at the authored size verbatim.
                 effW = origW;
@@ -116,9 +142,9 @@ namespace Valkur.Gameplay.World
                 // Aspect drift between authored origScale and actual PNG. Fit the
                 // PNG into the authored bounds without squishing. Smaller scale
                 // factor wins so the result stays within the origScale budget.
-                float fit = Mathf.Min((float)origW / spriteW, (float)origH / spriteH);
-                effW = Mathf.Max(1, Mathf.RoundToInt(spriteW * fit));
-                effH = Mathf.Max(1, Mathf.RoundToInt(spriteH * fit));
+                float fit = Mathf.Min((float)origW / baseW, (float)origH / baseH);
+                effW = Mathf.Max(1, Mathf.RoundToInt(baseW * fit));
+                effH = Mathf.Max(1, Mathf.RoundToInt(baseH * fit));
             }
 
             // ── 3. Compute crop rects in TEXTURE-space (Unity Y=0 is BOTTOM of texture) ──
@@ -155,7 +181,7 @@ namespace Valkur.Gameplay.World
             // localScale maps from the raw sprite world-size to the desired display
             // size. Uses spriteW/spriteH (the sprite's own pixel size) — NOT the
             // backing texture, which can be the entire atlas page.
-            transform.localScale = new Vector3((float)effW / spriteW, (float)effH / spriteH, 1f);
+            transform.localScale = new Vector3((float)effW / baseW, (float)effH / baseH, 1f);
 
             // ── 4. Create / reuse child renderers ──────────────────────────────────
             // Parent transform sits at BOTTOM-CENTER of the full sprite.
