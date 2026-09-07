@@ -193,20 +193,41 @@ namespace Valkur.Tests.EditMode.Editors.FSM
         }
 
         [Test]
-        public void FleeAndAlertChase_AreReachableOnlyFromAuthoredData()
+        public void FleeState_IsReachableOnlyFromAuthoredData()
         {
-            // The load-bearing fact behind the whole honest-graph feature: the two halves of
-            // the machine do not overlap. If code ever grows its own path into these states,
-            // the graph's story ("dimmed edges are code, bright edges are yours") stops being
-            // the whole truth and this test should be the thing that says so.
+            // Half of the load-bearing fact behind the honest-graph feature: no code path
+            // enters FleeState, which is why deleting that transition in the editor removes
+            // the behaviour entirely. If code ever grows its own way in, the graph's story
+            // ("dimmed edges are code, bright edges are yours") stops being the whole truth
+            // and this test should be the thing that says so.
             var census = CensusFromSource();
 
             Assert.IsFalse(census.Any(e => e.To == "FleeState"),
                 "FleeState just became reachable from code. It used to be reachable ONLY " +
-                "through an authored transition, which is why deleting that transition in F12 " +
-                "removed the behaviour entirely.");
-            Assert.IsFalse(census.Any(e => e.To == "AlertChaseState"),
-                "AlertChaseState just became reachable from code — same story as FleeState.");
+                "through an authored transition.");
+        }
+
+        [Test]
+        public void AlertChaseState_IsEnteredFromCode_OnlyByTheTwoRestingStates()
+        {
+            // AlertChaseState USED to be authored-only alongside FleeState, and this test used
+            // to assert exactly that. AggroBroadcast changed it deliberately: a monster told by
+            // a neighbour has to be able to act on the shout, and the decision is taken on the
+            // LISTENER's own tick inside whichever resting state it is in — which is a coded
+            // edge, by construction.
+            //
+            // The rule that replaces "none" is "exactly these two". A third entry point means
+            // somebody found a new way into the alert without deciding to, and the alert is a
+            // state that ignores the aggro ring entirely — the one place where an accidental
+            // edge turns into monsters converging from off-screen.
+            var into = CensusFromSource()
+                .Where(e => e.To == "AlertChaseState")
+                .Select(e => e.From)
+                .ToList();
+
+            CollectionAssert.AreEquivalent(new[] { "IdleState", "PatrolState" }, into,
+                "Only the two resting states may take the shout. AlertChaseState remains " +
+                "unreachable from any state that is already committed to a target.");
         }
 
         [Test]

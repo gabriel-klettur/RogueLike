@@ -25,6 +25,12 @@ namespace Valkur.Gameplay.FSM
         public const string KeyFleeDuration         = "flee_duration";
         public const string KeyFleeSpeedMultiplier  = "flee_speed_multiplier";
         public const string KeyReswingRangeFactor   = "reswing_range_factor";
+        public const string KeyDesiredRange         = "desired_range";
+        public const string KeyFovDegrees           = "fov_degrees";
+        public const string KeySightMemory          = "sight_memory_seconds";
+        public const string KeySearchDuration       = "search_duration";
+        public const string KeyAggroShareRadius     = "aggro_share_radius";
+        public const string KeyRegroupSeconds       = "regroup_seconds";
 
         // ── Defaults ────────────────────────────────────────────────────────────
         //
@@ -57,6 +63,48 @@ namespace Valkur.Gameplay.FSM
         /// <summary>Re-swing while the target is within melee_range x this.</summary>
         public const float DefaultReswingRangeFactor = 1.5f;
 
+        /// <summary>
+        /// The distance a monster WANTS between itself and its target. Zero means "melee",
+        /// which is the historical behaviour and what every melee monster keeps: close all
+        /// the way and swing. A positive value makes the monster hold a standoff band and
+        /// back out of it when crowded, which is the whole difference between a caster and
+        /// a melee monster wearing a robe — before it existed, <c>ChaseState</c> closed to
+        /// <c>melee_range</c> unconditionally, so a caster walked into the player's face and
+        /// cast from there while its own <c>NPCAutoCast.minDistance</c> gate refused to fire.
+        /// </summary>
+        public const float DefaultDesiredRange = 0f;
+
+        /// <summary>
+        /// Field of view in degrees, centred on the facing. 360 is the historical
+        /// behaviour — omniscient in every direction — and is the default so a monster that
+        /// nobody has authored a cone for cannot silently go blind. See
+        /// <c>FSMPerception</c> for the rear-arc exemption that keeps a monster stabbed in
+        /// the back from being unable to turn around.
+        /// </summary>
+        public const float DefaultFovDegrees = 360f;
+
+        /// <summary>Seconds a chaser keeps going after losing sight of its target before it
+        /// falls back to searching the last place it saw them.</summary>
+        public const float DefaultSightMemorySeconds = 3f;
+
+        /// <summary>Seconds spent looking around at the last known position before giving up.</summary>
+        public const float DefaultSearchDuration = 6f;
+
+        /// <summary>
+        /// World units within which acquiring a target alerts other monsters. Zero disables
+        /// sharing entirely. A pack that does not share is twenty monsters that happen to
+        /// agree; this is the cheapest thing that makes them read as a pack.
+        /// </summary>
+        public const float DefaultAggroShareRadius = 8f;
+
+        /// <summary>
+        /// Seconds after a flee ends during which the monster refuses to re-acquire. Without
+        /// it <c>FleeState</c> hands control to <c>PatrolState</c>, which re-aggros on the
+        /// very next tick, and a monster below its flee threshold oscillates on the authored
+        /// transition cooldown forever.
+        /// </summary>
+        public const float DefaultRegroupSeconds = 2.5f;
+
         // ── Accessors ───────────────────────────────────────────────────────────
 
         public static float AggroExitHysteresis(StateMachine fsm)
@@ -79,6 +127,24 @@ namespace Valkur.Gameplay.FSM
 
         public static float ReswingRangeFactor(StateMachine fsm)
             => fsm.GetContextFloat(KeyReswingRangeFactor, DefaultReswingRangeFactor);
+
+        public static float DesiredRange(StateMachine fsm)
+            => fsm.GetContextFloat(KeyDesiredRange, DefaultDesiredRange);
+
+        public static float FovDegrees(StateMachine fsm)
+            => fsm.GetContextFloat(KeyFovDegrees, DefaultFovDegrees);
+
+        public static float SightMemorySeconds(StateMachine fsm)
+            => fsm.GetContextFloat(KeySightMemory, DefaultSightMemorySeconds);
+
+        public static float SearchDuration(StateMachine fsm)
+            => fsm.GetContextFloat(KeySearchDuration, DefaultSearchDuration);
+
+        public static float AggroShareRadius(StateMachine fsm)
+            => fsm.GetContextFloat(KeyAggroShareRadius, DefaultAggroShareRadius);
+
+        public static float RegroupSeconds(StateMachine fsm)
+            => fsm.GetContextFloat(KeyRegroupSeconds, DefaultRegroupSeconds);
 
         /// <summary>
         /// Leash distance in world units. An authored <c>leashRange</c> wins; otherwise it

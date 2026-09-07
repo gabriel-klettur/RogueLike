@@ -48,12 +48,15 @@ namespace Valkur.UI.HUD
         [SerializeField] private int playerDotSize  = 3;
         [SerializeField] private int monsterDotSize = 2;
         [SerializeField] private int npcDotSize     = 2;
+        [Tooltip("An ally is the player's own summon: drawn one pixel bigger than a monster so it can be picked out of a fight.")]
+        [SerializeField] private int allyDotSize    = 3;
 
         [Header("Colors")]
         [SerializeField] private Color bgColor      = new Color(0.06f, 0.06f, 0.10f, 0.85f);
         [SerializeField] private Color playerColor  = new Color(0.2f,  0.95f, 0.3f,  1f);
         [SerializeField] private Color monsterColor = new Color(0.9f,  0.2f,  0.2f,  1f);
         [SerializeField] private Color npcColor     = new Color(0.9f,  0.85f, 0.3f,  1f);
+        [SerializeField] private Color allyColor    = new Color(0.4f,  0.95f, 0.5f,  1f);
         [SerializeField] private Color borderColor  = new Color(0.3f,  0.3f,  0.35f, 1f);
         [SerializeField] private Color fogColor     = new Color(0.03f, 0.03f, 0.05f, 1f);
 

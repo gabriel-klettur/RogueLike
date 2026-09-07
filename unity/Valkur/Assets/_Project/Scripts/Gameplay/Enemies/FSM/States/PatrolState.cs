@@ -1,6 +1,4 @@
 using UnityEngine;
-using Valkur.Core;
-using Valkur.Gameplay.Combat.Death;
 
 namespace Valkur.Gameplay.FSM
 {
@@ -34,27 +32,22 @@ namespace Valkur.Gameplay.FSM
                 return;
             }
 
-            // Check aggro
-            float aggroRange = fsm.GetContextFloat("aggro_range", 5f);
-            var player = FactionTargeting.EnemyOf(fsm.Owner);
-            if (player != null)
+            // A neighbour's shout, before perception: a patrolling monster facing away from
+            // the fight still joins it, which is the whole point of the shout.
+            if (FSMAlert.IsPending(fsm) && fsm.IsStateAllowed(nameof(AlertChaseState)))
             {
-                var playerHealth = player.GetComponent<Health>();
-                bool playerAlive = playerHealth == null || !playerHealth.IsDead;
-                var playerSpirit = player.GetComponent<PlayerSpiritState>();
-                bool playerVisible = playerSpirit == null || !playerSpirit.IsSpirit;
-                if (playerAlive && playerVisible)
-                {
-                    Vector2 myPos = fsm.Owner.transform.position;
-                    Vector2 playerPos = player.transform.position;
-                    // Same acquisition rule as IdleState: in range AND in sight.
-                    if (Vector2.Distance(myPos, playerPos) <= aggroRange &&
-                        World.LineOfSight.IsClear(myPos, playerPos))
-                    {
-                        fsm.ChangeState(new ChaseState());
-                        return;
-                    }
-                }
+                fsm.ChangeState(new AlertChaseState());
+                return;
+            }
+
+            // Exactly the acquisition rule IdleState uses, because it IS that rule now —
+            // range, field of view, line of sight, target alive and solid. The two used to be
+            // separate spellings of the same intent and had already drifted.
+            if (FSMPerception.TryAcquire(fsm, out var spotted))
+            {
+                IdleState.OnAcquired(fsm, spotted);
+                fsm.ChangeState(new ChaseState());
+                return;
             }
 
             // No waypoints: stay idle

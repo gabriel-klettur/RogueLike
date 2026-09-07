@@ -116,6 +116,14 @@ namespace Valkur.Gameplay.Enemies.FSM
             new FSMBuiltInEdge("IdleState", "UnconsciousState", "dead",
                 "Health.IsDead, checked first thing in Execute.", DirStates + "IdleState.cs"),
 
+            new FSMBuiltInEdge("IdleState", "AlertChaseState", "a neighbour shouted",
+                "AggroBroadcast wrote an alert into this machine's context when another monster " +
+                "of the same side acquired a target within its aggro_share_radius. Checked " +
+                "BEFORE perception, so a monster facing the wrong way still joins the fight — " +
+                "which is the whole reason the shout exists. Refused, and therefore never " +
+                "written, for a set that does not declare AlertChaseState.",
+                DirStates + "IdleState.cs"),
+
             new FSMBuiltInEdge("IdleState", "ChaseState", "player in range + in sight",
                 "distance <= aggro_range AND LineOfSight is clear. Sight is checked on ACQUISITION " +
                 "only; ChaseState keeps a distance-based exit so a committed monster does not give " +
@@ -132,6 +140,11 @@ namespace Valkur.Gameplay.Enemies.FSM
             new FSMBuiltInEdge("PatrolState", "UnconsciousState", "dead",
                 "Health.IsDead, checked first thing in Execute.", DirStates + "PatrolState.cs"),
 
+            new FSMBuiltInEdge("PatrolState", "AlertChaseState", "a neighbour shouted",
+                "The same alert IdleState reads, for the same reason: which resting state a " +
+                "pack member happened to be in must not decide whether it hears the shout.",
+                DirStates + "PatrolState.cs"),
+
             new FSMBuiltInEdge("PatrolState", "ChaseState", "player in range + in sight",
                 "The same acquisition rule as IdleState. This is the edge that re-aggros after " +
                 "every de-aggro, because every hard-coded exit in the machine targets PatrolState.",
@@ -144,6 +157,14 @@ namespace Valkur.Gameplay.Enemies.FSM
             new FSMBuiltInEdge("ChaseState", "AttackState", "within melee range",
                 "distance <= melee_range. Tested BEFORE both range exits, so a monster that is " +
                 "simultaneously in melee range and past its leash attacks rather than going home.",
+                DirStates + "ChaseState.cs"),
+
+            new FSMBuiltInEdge("ChaseState", "SearchState", "lost sight for sight_memory",
+                "Line of sight is re-tested every tick and the last position it was clear at is " +
+                "recorded. Losing that line for longer than sightMemorySeconds sends the monster " +
+                "to investigate rather than tracking the target through a building, which is " +
+                "what it did for the life of the project: sight was checked on ACQUISITION only, " +
+                "so breaking line of sight was not a mechanic the player had.",
                 DirStates + "ChaseState.cs"),
 
             new FSMBuiltInEdge("ChaseState", "PatrolState", "lost target / de-aggro / leash",
@@ -183,6 +204,20 @@ namespace Valkur.Gameplay.Enemies.FSM
                 "melee_range x reswingRangeFactor. Inside it the state re-swings in place through " +
                 "BeginSwing without leaving; outside it, this edge fires.",
                 DirStates + "AttackState.cs"),
+
+            // ── SearchState ──────────────────────────────────────────────────────────────
+            new FSMBuiltInEdge("SearchState", "UnconsciousState", "dead",
+                "Health.IsDead, checked first thing in Execute.", DirStates + "SearchState.cs"),
+
+            new FSMBuiltInEdge("SearchState", "ChaseState", "found them again",
+                "The full acquisition test — range, field of view, line of sight — so a search " +
+                "cannot see through the wall it is walking around.",
+                DirStates + "SearchState.cs"),
+
+            new FSMBuiltInEdge("SearchState", "PatrolState", "search timed out",
+                "searchDuration elapsed with nothing found. The monster walked to the last place " +
+                "it saw the target, looked around, and gave up.",
+                DirStates + "SearchState.cs"),
 
             // ── FleeState ────────────────────────────────────────────────────────────────
             new FSMBuiltInEdge("FleeState", "UnconsciousState", "dead",

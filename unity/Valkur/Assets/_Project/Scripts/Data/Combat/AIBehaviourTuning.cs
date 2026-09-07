@@ -54,6 +54,37 @@ namespace Valkur.Data
                  "0 = default 1.5.")]
         [Min(0f)] public float fleeSpeedMultiplier;
 
+        [Tooltip("How far this monster WANTS to stay from its target, in world units. " +
+                 "0 = melee: close all the way and swing, which is every melee monster. A " +
+                 "positive value makes it hold a standoff band and back out when crowded — " +
+                 "this is what turns a caster into a caster rather than a melee monster that " +
+                 "happens to cast.")]
+        [Min(0f)] public float desiredRange;
+
+        [Tooltip("Field of view in degrees, centred on the facing, for ACQUIRING a target. " +
+                 "0 = default 360 (sees in every direction, the historical behaviour). The " +
+                 "cone is suspended for two seconds after any hit, so a cone can never make " +
+                 "a monster unable to react to being stabbed in the back.")]
+        [Range(0f, 360f)] public float fovDegrees;
+
+        [Tooltip("Seconds a chaser keeps going after losing line of sight before it falls " +
+                 "back to searching the last place it saw the target. 0 = default 3.")]
+        [Min(0f)] public float sightMemorySeconds;
+
+        [Tooltip("Seconds spent walking to and looking around the last known position before " +
+                 "giving up and patrolling. 0 = default 6.")]
+        [Min(0f)] public float searchDuration;
+
+        [Tooltip("World units within which spotting a target alerts other monsters of the " +
+                 "same side. 0 = default 8; set it explicitly to a tiny value for a monster " +
+                 "that should fight alone.")]
+        [Min(0f)] public float aggroShareRadius;
+
+        [Tooltip("Seconds after a flee ends during which this monster refuses to re-acquire, " +
+                 "so it actually disengages instead of turning straight back round. " +
+                 "0 = default 2.5.")]
+        [Min(0f)] public float regroupSeconds;
+
         [Header("Melee")]
         [Tooltip("How far past melee range the target may drift before the monster stops " +
                  "re-swinging and chases again, as a multiple. 0 = default 1.5.")]

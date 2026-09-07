@@ -17,13 +17,13 @@ MonoBehaviour:
   stats:
     hp: 10
     speed: 2
-    chasingSpeed: 2.25
+    chasingSpeed: 3
     defense: 5
     power: 10
     meleeRange: 3
     meleeDamage: 5
     meleeCooldown: 1
-    aggroRange: 10
+    aggroRange: 8
     damageDuration: 0.5
     damageStopProbability: 0.25
     attackWindupSeconds: 0
@@ -38,6 +38,21 @@ MonoBehaviour:
   fsmSet: Monster_Default
   patrolType: zigzag
   useAttackTelegraph: 0
+  aiTuning:
+    aggroExitHysteresis: 0
+    leashRange: 0
+    repathInterval: 0
+    waypointReachDistance: 0
+    alertDuration: 0
+    fleeDuration: 0
+    fleeSpeedMultiplier: 1.8
+    desiredRange: 0
+    fovDegrees: 320
+    sightMemorySeconds: 0
+    searchDuration: 0
+    aggroShareRadius: 10
+    regroupSeconds: 0
+    reswingRangeFactor: 0
   nextPhase: 
   phaseIndex: 0
   autoCast: 0

@@ -31,6 +31,7 @@ namespace Valkur.UI.HUD
             {
                 case MinimapDotType.Player:  return playerDotSize  / 2;
                 case MinimapDotType.Monster: return monsterDotSize / 2;
+                case MinimapDotType.Ally:    return allyDotSize    / 2;
                 default:                     return npcDotSize     / 2;
             }
         }
@@ -43,6 +44,7 @@ namespace Valkur.UI.HUD
             {
                 case MinimapDotType.Player:  return playerColor;
                 case MinimapDotType.Monster: return monsterColor;
+                case MinimapDotType.Ally:    return allyColor;
                 default:                     return npcColor;
             }
         }
@@ -149,5 +151,11 @@ namespace Valkur.UI.HUD
     }
 
     // ── Companion enum ────────────────────────────────────────────────────
-    public enum MinimapDotType { Player, Monster, NPC }
+    /// <summary>
+    /// APPEND ONLY, never renumber: the value is serialized on every <see cref="MinimapDot"/>
+    /// and is also reached BY NAME through reflection from Valkur.Gameplay
+    /// (<c>EntitySetup.ConfigureMinimapDot</c>), which the compiler cannot check —
+    /// <c>MinimapDotNameContractTests</c> asks that question instead.
+    /// </summary>
+    public enum MinimapDotType { Player, Monster, NPC, Ally }
 }

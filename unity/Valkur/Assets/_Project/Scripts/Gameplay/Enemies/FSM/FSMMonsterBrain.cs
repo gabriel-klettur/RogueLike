@@ -243,6 +243,12 @@ namespace Valkur.Gameplay.FSM
             Publish(Valkur.Gameplay.FSM.FSMTuning.KeyFleeDuration,        t.fleeDuration);
             Publish(Valkur.Gameplay.FSM.FSMTuning.KeyFleeSpeedMultiplier, t.fleeSpeedMultiplier);
             Publish(Valkur.Gameplay.FSM.FSMTuning.KeyReswingRangeFactor,  t.reswingRangeFactor);
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeyDesiredRange,        t.desiredRange);
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeyFovDegrees,          t.fovDegrees);
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeySightMemory,         t.sightMemorySeconds);
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeySearchDuration,      t.searchDuration);
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeyAggroShareRadius,    t.aggroShareRadius);
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeyRegroupSeconds,      t.regroupSeconds);
         }
 
         private void InitializeDefault()
@@ -348,6 +354,10 @@ namespace Valkur.Gameplay.FSM
                 // `_ =>` default, which answers the same thing for a different reason.
                 StrollState => DirectionalAnimator.AnimState.Idle,
                 PatrolState => DirectionalAnimator.AnimState.Walk,
+                // A search walks to the last sighting and then looks around from a standstill,
+                // so it enters on Walk exactly as a patrol does and drives its own Idle while
+                // it turns.
+                SearchState => DirectionalAnimator.AnimState.Walk,
                 ChaseState => DirectionalAnimator.AnimState.Chase,
                 AlertChaseState => DirectionalAnimator.AnimState.Chase,
                 AttackState => DirectionalAnimator.AnimState.Attack,

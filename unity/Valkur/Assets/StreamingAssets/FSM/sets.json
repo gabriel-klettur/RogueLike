@@ -107,6 +107,17 @@
           "w": 120,
           "x": -66,
           "y": 403
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "SearchState",
+          "label": "Search",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 760,
+          "y": 120
         }
       ],
       "transitions": [
@@ -266,6 +277,17 @@
           "w": 120,
           "x": 200,
           "y": 220
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "SearchState",
+          "label": "Search",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 760,
+          "y": 120
         }
       ],
       "transitions": [
@@ -304,30 +326,6 @@
           "label": "time_since_hit < 0.5 && distance_to_player > aggro_range",
           "priority": 200,
           "to": "AlertChaseState",
-          "when": ""
-        },
-        {
-          "actions": [],
-          "cooldown_frames": 90,
-          "event": "",
-          "from": "AttackState",
-          "guard": "distance_to_player < 1.5",
-          "id": "t_kite_attack",
-          "label": "distance_to_player < 1.5",
-          "priority": 120,
-          "to": "FleeState",
-          "when": ""
-        },
-        {
-          "actions": [],
-          "cooldown_frames": 90,
-          "event": "",
-          "from": "ChaseState",
-          "guard": "distance_to_player < 1.5",
-          "id": "t_kite_chase",
-          "label": "distance_to_player < 1.5",
-          "priority": 120,
-          "to": "FleeState",
           "when": ""
         }
       ]
@@ -438,6 +436,17 @@
           "w": 120,
           "x": 200,
           "y": 220
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "SearchState",
+          "label": "Search",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 760,
+          "y": 120
         }
       ],
       "transitions": [

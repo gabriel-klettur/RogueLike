@@ -15,18 +15,18 @@ MonoBehaviour:
   monsterKey: mon1
   displayName: mon1
   stats:
-    hp: 0
-    speed: 0
-    chasingSpeed: 0
-    defense: 0
+    hp: 40
+    speed: 1
+    chasingSpeed: 2.4
+    defense: 3
     power: 0
-    meleeRange: 0
-    meleeDamage: 0
-    meleeCooldown: 0
-    aggroRange: 0
-    damageDuration: 0
+    meleeRange: 1.8
+    meleeDamage: 6
+    meleeCooldown: 1
+    aggroRange: 8
+    damageDuration: 0.25
     damageStopProbability: 0.1
-    attackWindupSeconds: 0
+    attackWindupSeconds: 0.3
     spawnCount: 0
     spawnPadding: 0
     spawnMargin: 0
@@ -37,7 +37,22 @@ MonoBehaviour:
     chatRange: 0
   fsmSet: 
   patrolType: 
-  useAttackTelegraph: 0
+  useAttackTelegraph: 1
+  aiTuning:
+    aggroExitHysteresis: 0
+    leashRange: 0
+    repathInterval: 0
+    waypointReachDistance: 0
+    alertDuration: 0
+    fleeDuration: 0
+    fleeSpeedMultiplier: 0
+    desiredRange: 0
+    fovDegrees: 240
+    sightMemorySeconds: 0
+    searchDuration: 0
+    aggroShareRadius: 8
+    regroupSeconds: 0
+    reswingRangeFactor: 0
   nextPhase: 
   phaseIndex: 0
   autoCast: 0

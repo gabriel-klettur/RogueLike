@@ -16,17 +16,17 @@ MonoBehaviour:
   displayName: Barbol Oscuro
   stats:
     hp: 30
-    speed: 10
-    chasingSpeed: 2.25
+    speed: 1.6
+    chasingSpeed: 3.6
     defense: 5
     power: 10
     meleeRange: 3
     meleeDamage: 5
     meleeCooldown: 1
-    aggroRange: 10
+    aggroRange: 7
     damageDuration: 0.5
     damageStopProbability: 0.25
-    attackWindupSeconds: 0
+    attackWindupSeconds: 0.15
     spawnCount: 10
     spawnPadding: 3
     spawnMargin: 0
@@ -38,6 +38,21 @@ MonoBehaviour:
   fsmSet: Monster_Default
   patrolType: circle
   useAttackTelegraph: 0
+  aiTuning:
+    aggroExitHysteresis: 0
+    leashRange: 0
+    repathInterval: 0
+    waypointReachDistance: 0
+    alertDuration: 0
+    fleeDuration: 2
+    fleeSpeedMultiplier: 0
+    desiredRange: 0
+    fovDegrees: 360
+    sightMemorySeconds: 0
+    searchDuration: 0
+    aggroShareRadius: 6
+    regroupSeconds: 1.5
+    reswingRangeFactor: 0
   nextPhase: 
   phaseIndex: 0
   autoCast: 0

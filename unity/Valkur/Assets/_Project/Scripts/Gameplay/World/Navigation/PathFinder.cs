@@ -28,10 +28,16 @@ namespace Valkur.Gameplay.World
         [Tooltip("Maximum nodes expanded per search. Prevents freeze on huge open maps.")]
         [SerializeField] private int maxNodes = 2000;
 
-#pragma warning disable CS0414 // Serialized config field – used via Inspector
-        [Tooltip("Maximum path length in tiles.")]
+        [Tooltip("Maximum path length in tiles. A longer solution is truncated and the " +
+                 "follower repaths from where it gets to.")]
         [SerializeField] private int maxPathLength = 100;
-#pragma warning restore CS0414
+
+        [Tooltip("How many A* searches may run in one frame across ALL callers. A pack of " +
+                 "chasers repaths on independent timers that drift into alignment, so " +
+                 "without a ceiling twenty monsters can each spend maxNodes expansions in " +
+                 "the same frame. A refused search is not a lost path: the follower keeps " +
+                 "the one it has and asks again next frame.")]
+        [SerializeField] private int maxSearchesPerFrame = 4;
 
         // Layers that block NPC movement. World(11) + Building(14) alone see only
         // the building boxes — the painted collision cells live on WorldL0..WorldAll,
@@ -62,18 +68,83 @@ namespace Valkur.Gameplay.World
         /// </summary>
         public List<Vector2> FindPath(Vector2 start, Vector2 goal)
         {
+            var result = new List<Vector2>();
+            TryFindPath(start, goal, result);
+            return result;
+        }
+
+        /// <summary>
+        /// Frame budget. Reset lazily on the first request of each frame rather than from an
+        /// Update, so the ceiling holds even when this component is disabled or the caller
+        /// runs from FixedUpdate.
+        /// </summary>
+        private int _budgetFrame = -1;
+        private int _searchesThisFrame;
+
+        /// <summary>True when another search may run this frame.</summary>
+        public bool HasSearchBudget
+        {
+            get
+            {
+                if (maxSearchesPerFrame <= 0) return true;
+                if (Time.frameCount != _budgetFrame) return true;
+                return _searchesThisFrame < maxSearchesPerFrame;
+            }
+        }
+
+        /// <summary>
+        /// Non-allocating, budgeted <see cref="FindPath"/>.
+        ///
+        /// <para>Returns FALSE without touching <paramref name="into"/> when this frame's
+        /// search budget is already spent — which is the whole point: a follower that gets
+        /// false keeps the waypoints it already had and tries again next frame, instead of
+        /// the fight paying for twenty full searches in one frame the first time every
+        /// monster's repath timer lines up.</para>
+        ///
+        /// <para>Returns TRUE with an EMPTY list when the search ran and found nothing. The
+        /// two outcomes must be distinguishable: "no path exists" means fall back to direct
+        /// movement, "not this frame" means keep going as you were.</para>
+        /// </summary>
+        public bool TryFindPath(Vector2 start, Vector2 goal, List<Vector2> into)
+        {
+            if (into == null) return false;
+
+            if (maxSearchesPerFrame > 0)
+            {
+                if (Time.frameCount != _budgetFrame)
+                {
+                    _budgetFrame = Time.frameCount;
+                    _searchesThisFrame = 0;
+                }
+                else if (_searchesThisFrame >= maxSearchesPerFrame)
+                {
+                    return false;
+                }
+                _searchesThisFrame++;
+            }
+
+            into.Clear();
+            FillPath(start, goal, into);
+            return true;
+        }
+
+        private void FillPath(Vector2 start, Vector2 goal, List<Vector2> into)
+        {
             var startCell = WorldToCell(start);
             var goalCell  = WorldToCell(goal);
 
             if (startCell == goalCell)
-                return new List<Vector2> { goal };
+            {
+                into.Add(goal);
+                return;
+            }
 
             if (!IsWalkable(goalCell))
                 goalCell = FindNearestWalkable(goalCell, 3);
 
             var rawPath = AStar(startCell, goalCell);
             if (rawPath == null || rawPath.Count == 0)
-                return new List<Vector2>();
+                return;
 
             // Drop the start cell. Reconstruct returns the path INCLUDING the cell the
             // caller is already standing in, and its world centre is almost never where
@@ -81,16 +152,26 @@ namespace Valkur.Gameplay.World
             // tile centre, i.e. backwards, once per repath (every 0.5 s while chasing).
             int first = (rawPath[0] == startCell && rawPath.Count > 1) ? 1 : 0;
 
-            var waypoints = new List<Vector2>(rawPath.Count - first);
-            for (int i = first; i < rawPath.Count; i++)
-                waypoints.Add(CellToWorld(rawPath[i]));
+            // maxPathLength had been a serialized field with a #pragma silencing the
+            // "never used" warning around it — an authored ceiling that bounded nothing.
+            // Truncating is safe because the follower repaths on its own timer: it walks
+            // the part of the solution it was given and asks again from there.
+            int last = rawPath.Count;
+            if (maxPathLength > 0 && last - first > maxPathLength)
+                last = first + maxPathLength;
+            bool truncated = last < rawPath.Count;
 
-            // Always put actual goal position as last waypoint
-            if (waypoints.Count > 0)
-                waypoints[waypoints.Count - 1] = goal;
+            for (int i = first; i < last; i++)
+                into.Add(CellToWorld(rawPath[i]));
 
-            SmoothPath(start, waypoints);
-            return waypoints;
+            // The real goal replaces the last TILE CENTRE, but only when the path actually
+            // reaches it — on a truncated path the final waypoint is a place along the way,
+            // and overwriting it with the goal would teleport the follower's aim past every
+            // wall the truncation left unsolved.
+            if (into.Count > 0 && !truncated)
+                into[into.Count - 1] = goal;
+
+            SmoothPath(start, into);
         }
 
         /// <summary>

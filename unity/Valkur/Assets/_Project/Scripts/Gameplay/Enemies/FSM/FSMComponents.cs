@@ -1,5 +1,6 @@
 using UnityEngine;
 using Valkur.Gameplay.Combat;
+using Valkur.Gameplay.Combat.Death;
 
 namespace Valkur.Gameplay.FSM
 {
@@ -105,6 +106,71 @@ namespace Valkur.Gameplay.FSM
 
         /// <summary>Convenience for the many states that stop the body on Enter/Exit.</summary>
         public void StopMovement() => SetVelocity(Vector2.zero);
+
+        // ── Target resolution, cached for the frame ──────────────────────────────
+        //
+        // Four states asked FactionTargeting.EnemyOf every tick and then paid a
+        // GetComponent<Health> and a GetComponent<PlayerSpiritState> on whatever came
+        // back — AttackState asked up to four times in ONE frame (telegraph, facing,
+        // damage window, range re-check). None of those answers can change between two
+        // reads in the same frame, and the components on a target never change at all,
+        // so the whole thing collapses to one resolve per entity per frame plus a
+        // dictionary-free component cache keyed on the target itself.
+
+        private int _targetFrame = -1;
+        private GameObject _target;
+        private GameObject _cachedComponentsFor;
+        private Health _targetHealth;
+        private PlayerSpiritState _targetSpirit;
+
+        /// <summary>
+        /// This entity's current enemy, resolved at most once per frame.
+        /// Null when there is nothing to hunt.
+        /// </summary>
+        public GameObject Target(StateMachine fsm)
+        {
+            int frame = Time.frameCount;
+            if (_targetFrame == frame) return _target;
+
+            _targetFrame = frame;
+            _target = FactionTargeting.EnemyOf(fsm != null ? fsm.Owner : _owner);
+            return _target;
+        }
+
+        /// <summary>Health of the current target, or null. Resolved once per target.</summary>
+        public Health TargetHealth(StateMachine fsm)
+        {
+            CacheTargetComponents(Target(fsm));
+            return _targetHealth;
+        }
+
+        /// <summary>True while the target is a player in spirit form — unperceivable.</summary>
+        public bool TargetIsSpirit(StateMachine fsm)
+        {
+            CacheTargetComponents(Target(fsm));
+            return _targetSpirit != null && _targetSpirit.IsSpirit;
+        }
+
+        /// <summary>
+        /// The one question the hostile states actually ask: is there a target, is it alive,
+        /// and is it solid? Answers false for all three so a caller can bail with one test.
+        /// </summary>
+        public bool HasViableTarget(StateMachine fsm)
+        {
+            var t = Target(fsm);
+            if (t == null || !t.activeInHierarchy) return false;
+            CacheTargetComponents(t);
+            if (_targetHealth != null && _targetHealth.IsDead) return false;
+            return _targetSpirit == null || !_targetSpirit.IsSpirit;
+        }
+
+        private void CacheTargetComponents(GameObject target)
+        {
+            if (ReferenceEquals(_cachedComponentsFor, target)) return;
+            _cachedComponentsFor = target;
+            _targetHealth = target != null ? target.GetComponent<Health>() : null;
+            _targetSpirit = target != null ? target.GetComponent<PlayerSpiritState>() : null;
+        }
 
         private void ResolveExtras()
         {

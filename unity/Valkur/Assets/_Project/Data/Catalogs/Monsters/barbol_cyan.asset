@@ -17,7 +17,7 @@ MonoBehaviour:
   stats:
     hp: 100
     speed: 1
-    chasingSpeed: 2.25
+    chasingSpeed: 2.4
     defense: 5
     power: 10
     meleeRange: 3
@@ -38,6 +38,21 @@ MonoBehaviour:
   fsmSet: Monster_Default
   patrolType: 
   useAttackTelegraph: 0
+  aiTuning:
+    aggroExitHysteresis: 0
+    leashRange: 0
+    repathInterval: 0.35
+    waypointReachDistance: 0
+    alertDuration: 0
+    fleeDuration: 0
+    fleeSpeedMultiplier: 0
+    desiredRange: 7
+    fovDegrees: 240
+    sightMemorySeconds: 4
+    searchDuration: 0
+    aggroShareRadius: 12
+    regroupSeconds: 0
+    reswingRangeFactor: 0
   nextPhase: 
   phaseIndex: 0
   autoCast: 1

@@ -142,6 +142,7 @@ MonoBehaviour:
     directionLayout: 0
     attackVariants: []
     castVariants: []
+    statePacing: []
     loadouts: []
     scaleConfig:
       scaleIdle: 0.35

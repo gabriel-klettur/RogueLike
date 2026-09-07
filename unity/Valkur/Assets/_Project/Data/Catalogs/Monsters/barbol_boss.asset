@@ -26,7 +26,7 @@ MonoBehaviour:
     aggroRange: 20
     damageDuration: 0.5
     damageStopProbability: 0.05
-    attackWindupSeconds: 0
+    attackWindupSeconds: 0.6
     spawnCount: 10
     spawnPadding: 3
     spawnMargin: 0
@@ -37,7 +37,22 @@ MonoBehaviour:
     chatRange: 0
   fsmSet: Monster_Default
   patrolType: line
-  useAttackTelegraph: 0
+  useAttackTelegraph: 1
+  aiTuning:
+    aggroExitHysteresis: 0
+    leashRange: 60
+    repathInterval: 0
+    waypointReachDistance: 0
+    alertDuration: 8
+    fleeDuration: 0
+    fleeSpeedMultiplier: 0
+    desiredRange: 0
+    fovDegrees: 360
+    sightMemorySeconds: 6
+    searchDuration: 10
+    aggroShareRadius: 25
+    regroupSeconds: 0
+    reswingRangeFactor: 0
   bossDefinition: {fileID: 11400000, guid: 5c73276de984ab545b2cf2eaf1ba826b, type: 2}
   autoCast: 0
   autoCastList: []

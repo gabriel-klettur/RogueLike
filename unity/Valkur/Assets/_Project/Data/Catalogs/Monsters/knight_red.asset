@@ -40,6 +40,21 @@ MonoBehaviour:
   fsmSet: Monster_Default
   patrolType: line
   useAttackTelegraph: 1
+  aiTuning:
+    aggroExitHysteresis: 0
+    leashRange: 0
+    repathInterval: 0
+    waypointReachDistance: 0
+    alertDuration: 0
+    fleeDuration: 0
+    fleeSpeedMultiplier: 0
+    desiredRange: 0
+    fovDegrees: 200
+    sightMemorySeconds: 0
+    searchDuration: 0
+    aggroShareRadius: 10
+    regroupSeconds: 0
+    reswingRangeFactor: 1.4
   bossDefinition: {fileID: 0}
   autoCast: 0
   autoCastList: []

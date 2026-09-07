@@ -1,12 +1,10 @@
 using UnityEngine;
-using Valkur.Core;
-using Valkur.Gameplay.Combat.Death;
 
 namespace Valkur.Gameplay.FSM
 {
     /// <summary>
-    /// NPC idle state. Checks aggro range to transition to Chase.
-    /// Maps to Python's IdleState.
+    /// NPC idle state. Stands still, watches for something worth chasing, and reacts to a
+    /// neighbour's shout.
     /// </summary>
     public class IdleState : IState
     {
@@ -27,27 +25,40 @@ namespace Valkur.Gameplay.FSM
                 return;
             }
 
-            float aggroRange = fsm.GetContextFloat("aggro_range", 5f);
-            var player = FactionTargeting.EnemyOf(fsm.Owner);
-            if (player == null) return;
+            // Somebody shouted. Investigating what a neighbour saw beats standing here, and
+            // it is checked BEFORE perception so a monster facing the wrong way still joins
+            // the fight — which is the entire reason the shout exists.
+            if (FSMAlert.IsPending(fsm) && fsm.IsStateAllowed(nameof(AlertChaseState)))
+            {
+                fsm.ChangeState(new AlertChaseState());
+                return;
+            }
 
-            // Spirit-form players are invisible to NPC perception.
-            var spirit = player.GetComponent<PlayerSpiritState>();
-            if (spirit != null && spirit.IsSpirit) return;
+            // Range, then the field of view, then line of sight — all three live in
+            // FSMPerception so that this state, PatrolState and SearchState cannot drift
+            // apart on what "spotted" means. They already had: this one asked IsBlocked,
+            // PatrolState asked IsClear, and only one of them checked the target was alive.
+            if (!FSMPerception.TryAcquire(fsm, out var target)) return;
 
-            Vector2 myPos = fsm.Owner.transform.position;
-            Vector2 playerPos = player.transform.position;
-            float dist = Vector2.Distance(myPos, playerPos);
-            if (dist > aggroRange) return;
-
-            // Aggro requires an unobstructed line. Without it this was a naked
-            // distance test and everything behind a wall woke up when the player
-            // walked past it. Line of sight is checked on ACQUISITION only —
-            // ChaseState keeps its distance-based exit, so a monster that has already
-            // committed does not give up the instant you round a corner.
-            if (World.LineOfSight.IsBlocked(myPos, playerPos)) return;
-
+            OnAcquired(fsm, target);
             fsm.ChangeState(new ChaseState());
+        }
+
+        /// <summary>
+        /// What every acquisition does besides changing state: remember where the target was
+        /// (so losing it later has somewhere to search) and tell the neighbours.
+        ///
+        /// Shared by <see cref="IdleState"/> and <see cref="PatrolState"/> because an
+        /// acquisition that only shouted from one of them would make a pack's behaviour
+        /// depend on which resting state its members happened to be in.
+        /// </summary>
+        public static void OnAcquired(StateMachine fsm, GameObject target)
+        {
+            if (target == null) return;
+
+            Vector2 seenAt = target.transform.position;
+            FSMTargetMemory.Remember(fsm, seenAt);
+            AggroBroadcast.Alert(fsm.Owner, seenAt, FSMTuning.AggroShareRadius(fsm));
         }
 
         public void Exit(StateMachine fsm) { }

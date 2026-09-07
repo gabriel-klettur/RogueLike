@@ -1,34 +1,42 @@
-using System.Collections.Generic;
 using UnityEngine;
-using Valkur.Core;
-using Valkur.Gameplay.Combat.Death;
-using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.FSM
 {
     /// <summary>
-    /// Chase state: pursues player with A* pathfinding, transitions to Attack when in melee range.
-    /// Maps to Python's ChaseState with aggro exit hysteresis and leash support.
-    /// Falls back to direct movement when PathFinder is unavailable.
+    /// Chase state: closes on the target through <see cref="FSMPathFollower"/> and hands over
+    /// to <see cref="AttackState"/> when it is in reach. Honours the aggro-exit hysteresis and
+    /// the leash, both authorable per monster through <see cref="FSMTuning"/>.
+    ///
+    /// <para>Two things it now does that it did not. It holds a STANDOFF when the monster
+    /// declares a <c>desired_range</c> — every caster in the game used to walk into the
+    /// player's face because closing to <c>melee_range</c> was unconditional, which also made
+    /// <c>NPCAutoCast</c>'s per-entry <c>minDistance</c> gate refuse to fire the very spells
+    /// the standoff exists for. And it MEASURES SIGHT: the last position it could actually see
+    /// the target at is recorded every tick, and losing that line for longer than
+    /// <c>sight_memory_seconds</c> sends it to <see cref="SearchState"/> rather than letting
+    /// it track a target through a building forever.</para>
     /// </summary>
     public class ChaseState : IState
     {
         // Every feel knob this state used to hold as a private const now resolves through
-        // FSMTuning, which owns the key AND the default. Two of them — the repath interval
-        // and the waypoint reach distance — were also written out verbatim in
-        // AlertChaseState, free to drift apart the moment anyone edited one and not the
-        // other. Read once per Enter/Execute rather than cached in a field, because a
-        // live `reconfig` re-publishes the context and the state should pick that up.
+        // FSMTuning, which owns the key AND the default. Read once per Enter/Execute rather
+        // than cached in a field, because a live `reconfig` re-publishes the context and the
+        // state should pick that up.
 
-        private List<Vector2> _waypoints = new List<Vector2>();
-        private int _waypointIndex;
-        private float _repathTimer;
+        private readonly FSMPathFollower _path = new FSMPathFollower();
+        private float _blindTime;
+
+        /// <summary>
+        /// Half-width of the standoff band, as a fraction of the desired range. Inside it the
+        /// monster holds position: without a band it would alternate advance/retreat every
+        /// frame around the exact distance, which reads as a stutter rather than as aiming.
+        /// </summary>
+        private const float StandoffBand = 0.15f;
 
         public void Enter(StateMachine fsm)
         {
-            _waypoints.Clear();
-            _waypointIndex = 0;
-            _repathTimer = float.MaxValue; // force immediate repath on first frame
+            _path.Reset();
+            _blindTime = 0f;
         }
 
         public void Execute(StateMachine fsm, float dt)
@@ -40,39 +48,63 @@ namespace Valkur.Gameplay.FSM
                 return;
             }
 
-            var player = FactionTargeting.EnemyOf(fsm.Owner);
-            if (player == null)
+            // One question instead of four: no target, a dead one, or a player in spirit form
+            // all mean the same thing here, and the answer is cached for the frame so the
+            // three states that ask it do not each pay a GetComponent.
+            if (c == null || !c.HasViableTarget(fsm))
             {
                 fsm.ChangeState(new PatrolState());
                 return;
             }
 
-            var playerHealth = player.GetComponent<Health>();
-            if (playerHealth != null && playerHealth.IsDead)
-            {
-                fsm.ChangeState(new PatrolState());
-                return;
-            }
-
-            // Spirit-form players are invisible to NPC perception.
-            var playerSpirit = player.GetComponent<PlayerSpiritState>();
-            if (playerSpirit != null && playerSpirit.IsSpirit)
-            {
-                fsm.ChangeState(new PatrolState());
-                return;
-            }
-
+            var target = c.Target(fsm);
             Vector2 myPos = fsm.Owner.transform.position;
-            Vector2 playerPos = player.transform.position;
-            Vector2 delta = playerPos - myPos;
+            Vector2 targetPos = target.transform.position;
+            Vector2 delta = targetPos - myPos;
             float distSq = delta.sqrMagnitude;
 
-            // Check melee range
-            float meleeRange = fsm.GetContextFloat("melee_range", 1.5f);
-            if (distSq <= meleeRange * meleeRange)
+            // Sight memory. Seeing them refreshes both the remembered position and the clock;
+            // losing them starts it. The chase is NOT abandoned on the first blocked frame —
+            // a pillar, a corner or another monster crossing the line would otherwise reset
+            // the pursuit — it is abandoned when the target has been out of sight for as long
+            // as this monster is willing to guess.
+            if (FSMPerception.HasLineOfSight(fsm.Owner, target))
             {
-                fsm.ChangeState(new AttackState());
-                return;
+                _blindTime = 0f;
+                FSMTargetMemory.Remember(fsm, targetPos);
+            }
+            else
+            {
+                _blindTime += dt;
+                if (_blindTime >= FSMTuning.SightMemorySeconds(fsm))
+                {
+                    fsm.ChangeState(new SearchState());
+                    return;
+                }
+            }
+
+            float meleeRange = fsm.GetContextFloat("melee_range", 1.5f);
+            float desiredRange = FSMTuning.DesiredRange(fsm);
+            bool inMelee = distSq <= meleeRange * meleeRange;
+
+            // A melee monster in reach swings. A standoff monster in reach swings only when
+            // it has nowhere to give ground: a caster cornered against a wall that refused to
+            // fight would be a free kill, and it would look like the AI had hung.
+            Vector2 retreat = Vector2.zero;
+            if (inMelee)
+            {
+                if (desiredRange <= 0f)
+                {
+                    fsm.ChangeState(new AttackState());
+                    return;
+                }
+
+                retreat = FSMRetreat.Heading(myPos, targetPos, RetreatProbe(fsm));
+                if (retreat == Vector2.zero)
+                {
+                    fsm.ChangeState(new AttackState());
+                    return;
+                }
             }
 
             // Check aggro exit
@@ -84,17 +116,12 @@ namespace Valkur.Gameplay.FSM
                 return;
             }
 
-            // Leash. This class has documented "leash support" since it was written and
-            // never had any: the only exit was player distance, so a monster would follow
-            // across the whole map as long as the player stayed inside its aggro ring, and
-            // barbol_gigante's ring is 30 units wide. Breaking off returns it to
-            // PatrolState, whose waypoints are anchored at the spawn point, so it walks
-            // home on its own without needing a new state class.
-            //
-            // The range is authorable per monster (MonsterDefinition.aiTuning.leashRange);
-            // unset, it derives from this monster's own aggro range, so a wide-ranging
-            // monster gets a correspondingly long tether without anyone having to keep two
-            // numbers in agreement.
+            // Leash. This class had documented "leash support" since it was written and never
+            // had any: the only exit was player distance, so a monster would follow across the
+            // whole map as long as the player stayed inside its aggro ring, and
+            // barbol_gigante's ring is 30 units wide. Breaking off returns it to PatrolState,
+            // whose waypoints are anchored at the spawn point, so it walks home on its own
+            // without needing a new state class.
             if (fsm.Context.ContainsKey(FSMHomeAnchor.KeyX))
             {
                 float leash = FSMTuning.LeashRange(fsm, aggroRange);
@@ -107,52 +134,84 @@ namespace Valkur.Gameplay.FSM
                 }
             }
 
-            // chasing_speed IS the chase speed. It used to be multiplied by a hidden
-            // 1.5 here and in AlertChaseState, so every authored chasingSpeed in every
-            // monster asset understated the real value by a third and the two states
-            // would drift apart the moment one was edited. The assets were rebaselined
-            // (x1.5) when the multiplier was removed, so behaviour is unchanged.
+            // chasing_speed IS the chase speed. It used to be multiplied by a hidden 1.5 here
+            // and in AlertChaseState, so every authored chasingSpeed in every monster asset
+            // understated the real value by a third and the two states would drift apart the
+            // moment one was edited. The assets were rebaselined (x1.5) when the multiplier
+            // was removed, so behaviour is unchanged.
             float chaseSpeed = fsm.GetContextFloat("chasing_speed", 4.5f);
 
-            // Repath periodically
-            _repathTimer += dt;
-            if (_repathTimer >= FSMTuning.RepathInterval(fsm))
+            Vector2 moveDir = ResolveMove(fsm, c, myPos, targetPos, delta,
+                                          desiredRange, retreat, dt);
+
+            c.SetVelocity(moveDir * chaseSpeed);
+
+            // Drive the 8-direction animator each frame so the sprite faces where the monster
+            // is going — or, while holding a standoff, where it is aiming. flipX would corrupt
+            // directional sprites.
+            if (c.Animator != null)
             {
-                _repathTimer = 0f;
-                if (PathFinder.Instance != null)
+                Vector2 look = moveDir.sqrMagnitude > 0.0001f ? moveDir : delta;
+                if (look.sqrMagnitude > 0.0001f)
                 {
-                    _waypoints = PathFinder.Instance.FindPath(myPos, playerPos);
-                    _waypointIndex = 0;
+                    var dir = c.Animator.ResolveDirectionFromVector(look);
+                    c.Animator.SetState(
+                        moveDir.sqrMagnitude > 0.0001f
+                            ? DirectionalAnimator.AnimState.Chase
+                            : DirectionalAnimator.AnimState.Idle,
+                        dir);
                 }
             }
-
-            // Follow waypoints or fall back to direct movement
-            Vector2 moveDir;
-            if (_waypoints != null && _waypointIndex < _waypoints.Count)
-            {
-                Vector2 target = _waypoints[_waypointIndex];
-                Vector2 toTarget = target - myPos;
-                float reach = FSMTuning.WaypointReachDistance(fsm);
-                if (toTarget.sqrMagnitude < reach * reach)
-                    _waypointIndex++;
-                moveDir = toTarget.sqrMagnitude > 0.001f ? toTarget.normalized : delta.normalized;
-            }
-            else
-            {
-                moveDir = delta.normalized;
-            }
-
-            if (c?.Rb != null)
-                c.SetVelocity(moveDir * chaseSpeed);
-
-            // Drive 8-direction animator each frame so the sprite faces the
-            // movement direction. flipX would corrupt directional sprites.
-            if (c?.Animator != null && moveDir.sqrMagnitude > 0.0001f)
-            {
-                var dir = c.Animator.ResolveDirectionFromVector(moveDir);
-                c.Animator.SetState(DirectionalAnimator.AnimState.Chase, dir);
-            }
         }
+
+        /// <summary>
+        /// Advance, hold or give ground.
+        ///
+        /// A monster with no <c>desired_range</c> (every melee monster, and the historical
+        /// behaviour of all of them) always advances, and this collapses to the path follower.
+        /// </summary>
+        private Vector2 ResolveMove(StateMachine fsm, FSMComponents c,
+                                    Vector2 myPos, Vector2 targetPos, Vector2 delta,
+                                    float desiredRange, Vector2 retreat, float dt)
+        {
+            if (desiredRange <= 0f)
+                return _path.Steer(fsm, myPos, targetPos, dt);
+
+            float dist = delta.magnitude;
+            float near = desiredRange * (1f - StandoffBand);
+            float far  = desiredRange * (1f + StandoffBand);
+
+            if (dist > far)
+                return _path.Steer(fsm, myPos, targetPos, dt);
+
+            if (dist < near)
+            {
+                // Reuse the heading already probed for the melee test when there is one, so a
+                // frame does not pay for two fans.
+                if (retreat == Vector2.zero)
+                    retreat = FSMRetreat.Heading(myPos, targetPos, RetreatProbe(fsm));
+
+                // Cornered inside the band and out of melee: stand and let the spells fly
+                // rather than grinding into the wall.
+                if (retreat == Vector2.zero) return Vector2.zero;
+
+                // The path is stale the moment the monster walks backwards down it.
+                _path.Reset();
+                return retreat;
+            }
+
+            // In the band: hold still. Standing is what lets NPCAutoCast's distance gates pass
+            // and what gives the player a target that is doing something legible.
+            _path.Reset();
+            return Vector2.zero;
+        }
+
+        /// <summary>
+        /// How far ahead a retreat heading is probed for obstacles: about a second of travel,
+        /// so the monster commits only to ground it can actually cross before it re-decides.
+        /// </summary>
+        private static float RetreatProbe(StateMachine fsm)
+            => Mathf.Max(1f, fsm.GetContextFloat("chasing_speed", 4.5f));
 
         public void Exit(StateMachine fsm)
         {

@@ -114,6 +114,26 @@ namespace Valkur.Gameplay.FSM
         }
 
         /// <summary>
+        /// True when <paramref name="stateClassName"/> is in this machine's vocabulary.
+        /// A machine with no declared vocabulary allows everything, which is what the
+        /// hard-coded boot produces.
+        ///
+        /// Public because a CALLER sometimes needs to know before it acts:
+        /// <see cref="AggroBroadcast"/> refuses to hand an alert to a set that cannot enter
+        /// <see cref="AlertChaseState"/>, because the alternative is writing data whose only
+        /// effect is a refusal warning on the listener's next tick — a vendor being told
+        /// about a fight she has no state to join.
+        /// </summary>
+        public bool IsStateAllowed(string stateClassName)
+        {
+            if (string.IsNullOrEmpty(stateClassName)) return false;
+            if (_allowedStates == null) return true;
+            if (_allowedStates.Contains(stateClassName)) return true;
+            return stateClassName == "DeathState" || stateClassName == "DamageState" ||
+                   stateClassName == "UnconsciousState";
+        }
+
+        /// <summary>
         /// Change to a new state with guard checking.
         /// Maps to Python's FSM.change_state() with allowed_state_classes guard.
         /// </summary>
