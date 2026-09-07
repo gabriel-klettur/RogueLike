@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: vendor_lumberjack_pavel
   m_EditorClassIdentifier: 
   vendorKey: vendor_lumberjack_pavel
-  economyGroup: {fileID: 0}
+  economyGroup: {fileID: 11400000, guid: e1f6b2607f250254f9c4b24a7e8caca8, type: 2}
   persona: {fileID: 11400000, guid: a9cc28ba18c4e4f4796dd32b0004a7fd, type: 2}
   inventorySeed:
   - item: {fileID: 11400000, guid: db7fc73739160f14389efe2cb34f5cff, type: 2}
@@ -170,4 +170,6 @@ MonoBehaviour:
     quantity: 10
   - item: {fileID: 11400000, guid: 1417997205f67ee4ea03c9a05124c3cc, type: 2}
     quantity: 10
+  coinFloat: 400
+  restockSeconds: 600
   priceOverrides: []

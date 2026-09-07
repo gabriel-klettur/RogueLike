@@ -136,6 +136,26 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>
+        /// The Economy editor: the cycle's shape and live state, the coin faucet's heuristic,
+        /// every vendor's purse and margins, and the Bitcoin chart. No hotkey, like the Camera,
+        /// Controls and Skills editors — the F-row is retired and the General Editor (ESC) is
+        /// the only way in, which is what EditorReachabilityTests pins.
+        ///
+        /// <para>It creates NO network component. The Bitcoin price service is built on demand
+        /// by the editor's own Bitcoin tab, so a session where nobody opens that tab never has
+        /// one — a game that can reach the network should not exist in a session that never
+        /// asked it to.</para>
+        /// </summary>
+        private void EnsureEconomyEditor()
+        {
+            if (Valkur.Gameplay.Editors.Economy.EconomyRuntimeEditor.Instance != null) return;
+            var go = new GameObject("EconomyEditor");
+            go.AddComponent<Valkur.Gameplay.Editors.Economy.EconomyRuntimeEditor>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
+            Debug.Log("[GameplaySceneSetup] EconomyEditor created. Open it from the General Editor (ESC).");
+        }
+
+        /// <summary>
         /// The pause key. <c>Gameplay/Pause</c> has been bound to <c>p</c> for the life of the
         /// asset with no reader at all — see <see cref="PauseHotkeyReader"/>.
         /// </summary>

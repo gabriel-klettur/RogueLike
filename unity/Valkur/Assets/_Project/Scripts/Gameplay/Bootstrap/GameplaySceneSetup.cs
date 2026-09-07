@@ -263,6 +263,7 @@ namespace Valkur.Gameplay
             EnsureCameraEditor();
             EnsureControlsEditor();
             EnsureSkillsEditor();
+            EnsureEconomyEditor();
             EnsurePauseHotkeyReader();
             Report("Initializing time & weather editor"); yield return null;
 

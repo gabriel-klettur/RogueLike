@@ -10,7 +10,7 @@ namespace Valkur.Gameplay.NPC
     /// Maps to Python's vendor NPC system with buy/sell price support.
     /// </summary>
     [RequireComponent(typeof(NPCInteractable))]
-    public class VendorNPC : MonoBehaviour
+    public partial class VendorNPC : MonoBehaviour
     {
         [Header("Shop")]
         [SerializeField] private List<ShopEntry> shopInventory = new List<ShopEntry>();
@@ -131,6 +131,10 @@ namespace Valkur.Gameplay.NPC
                 }
             }
 
+            // After the shop list is seeded, because the purse is read from the same config
+            // and a vendor spawned from a MonsterDefinition only learns both here.
+            InitializePurse();
+
             EntitySetup.ConfigureMinimapMarker(
                 gameObject,
                 color: new Color(1.0f, 0.85f, 0.3f, 1f),
@@ -140,6 +144,8 @@ namespace Valkur.Gameplay.NPC
                 pulsePeriod: 1.4f,
                 label: DeriveRoleInitials(vendorConfig));
         }
+
+        private void Update() => TickRestock();
 
         private void OnEnable()
         {
@@ -172,11 +178,35 @@ namespace Valkur.Gameplay.NPC
             shopUI.OpenShop(this, playerInventory, playerWallet);
         }
 
+        /// <summary>
+        /// The standing discount this vendor's character gives on <paramref name="item"/>.
+        ///
+        /// <para><c>NPCPersonaDefinition.discountLimits</c> was imported from the Python build,
+        /// serialized on every persona and read by NOTHING: all six call sites of
+        /// <c>GetBuyPrice</c>/<c>GetSellPrice</c> took the parameter's <c>0f</c> default, so
+        /// every character in the game haggled identically. This is the reader that field was
+        /// always missing.</para>
+        ///
+        /// <para>It is a LIMIT in the persona's own vocabulary — the most that character will
+        /// ever come down — and it is applied as a standing rate rather than as the outcome of
+        /// a negotiation, because there is no negotiation state anywhere to hang it on. That
+        /// makes it a personality trait a player can feel (Gatita is softer than the smith)
+        /// rather than a number nobody can reach. When a real haggling loop exists, THIS is
+        /// the ceiling it should clamp to.</para>
+        /// </summary>
+        public float GetNegotiationDiscount(ItemDefinition item)
+        {
+            var persona = vendorConfig != null ? vendorConfig.persona : null;
+            if (persona == null || item == null) return 0f;
+            return persona.GetDiscountLimit(item.itemId);
+        }
+
         public int GetBuyPrice(ItemDefinition item)
         {
             // Economy-aware pipeline when VendorConfigDefinition is assigned
             if (vendorConfig != null && VendorEconomyService.Instance != null)
-                return VendorEconomyService.Instance.GetBuyPrice(vendorConfig, item);
+                return VendorEconomyService.Instance.GetBuyPrice(
+                    vendorConfig, item, GetNegotiationDiscount(item));
 
             foreach (var entry in shopInventory)
             {
@@ -190,7 +220,8 @@ namespace Valkur.Gameplay.NPC
         {
             // Economy-aware pipeline when VendorConfigDefinition is assigned
             if (vendorConfig != null && VendorEconomyService.Instance != null)
-                return VendorEconomyService.Instance.GetSellPrice(vendorConfig, item);
+                return VendorEconomyService.Instance.GetSellPrice(
+                    vendorConfig, item, GetNegotiationDiscount(item));
 
             if (item == null) return 0;
             int basePrice = item.sellPrice > 0 ? item.sellPrice : item.buyPrice;
@@ -251,6 +282,11 @@ namespace Valkur.Gameplay.NPC
                     shopInventory[i] = entry;
                     playerInventory.AddItem(item);
 
+                    // The player's coins go INTO the vendor's purse. Without this the money
+                    // leaves the world at the counter and a vendor's float only ever falls,
+                    // which makes a busy shop permanently insolvent instead of busy.
+                    CreditPurse(price);
+
                     // Hooked HERE, at the single point a purchase actually succeeds, rather
                     // than at the Buy button — a trade agreed in conversation goes through
                     // this same method and must look the same as one made at the counter.
@@ -263,11 +299,22 @@ namespace Valkur.Gameplay.NPC
             return false;
         }
 
-        /// <summary>Sell an item to this vendor using a CurrencyWallet.</summary>
+        /// <summary>
+        /// Sell an item to this vendor using a CurrencyWallet.
+        ///
+        /// <para>Refuses when the vendor cannot cover the price. The purse is debited FIRST,
+        /// before the item leaves the player's bag: the other order destroys the item on a
+        /// vendor who then turns out to be broke, which is the one failure a trade must never
+        /// have. Vendors with an unlimited purse are unaffected — <c>TrySpendFromPurse</c>
+        /// always succeeds for them and moves nothing.</para>
+        /// </summary>
         public bool TrySellItem(ItemDefinition item, Inventory.Inventory playerInventory, CurrencyWallet wallet)
         {
             if (!playerInventory.HasItem(item)) return false;
             int price = GetSellPrice(item);
+
+            if (!TrySpendFromPurse(price)) return false;
+
             playerInventory.RemoveItem(item);
             wallet.Add(price);
 

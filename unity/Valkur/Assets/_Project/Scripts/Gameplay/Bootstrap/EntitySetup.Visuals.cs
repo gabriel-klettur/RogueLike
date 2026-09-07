@@ -46,9 +46,14 @@ namespace Valkur.Gameplay
             if (go.GetComponent<BuildingHoverInteractor>() == null)
                 go.AddComponent<BuildingHoverInteractor>();
 
-            // Currency wallet (Python: gold field on player entity)
-            if (go.GetComponent<CurrencyWallet>() == null)
-                go.AddComponent<CurrencyWallet>();
+            // Currency wallet (Python: gold field on player entity). The starting purse
+            // comes from the PlayerDefinition rather than from the wallet's own
+            // startingCoins: this component is AddComponent-ed and has no inspector, so
+            // that field could never be authored and every character began at zero in a
+            // game whose only faucet was selling firewood.
+            var wallet = go.GetComponent<CurrencyWallet>();
+            if (wallet == null) wallet = go.AddComponent<CurrencyWallet>();
+            wallet.SetBalance(def != null ? def.startingCoins : 0);
 
             // Item consumer (Python: ConsumeSystem)
             if (go.GetComponent<Inventory.ItemConsumer>() == null)

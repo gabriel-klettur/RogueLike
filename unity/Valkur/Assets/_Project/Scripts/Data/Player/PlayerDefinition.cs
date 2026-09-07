@@ -68,6 +68,14 @@ namespace Valkur.Data
         public StatusEffectKind[] statusImmunities = System.Array.Empty<StatusEffectKind>();
 
         [Header("Interaction")]
+        [Tooltip("Coins the character carries at the start of a NEW run. Applied by " +
+                 "EntitySetup.InitPlayerStats; a loaded save overwrites it a moment later " +
+                 "(GameStateRestorer.RestoreCoins), so this is the fresh-character purse and " +
+                 "nothing else. It exists because CurrencyWallet's own startingCoins field is " +
+                 "unreachable: the wallet is AddComponent-ed onto the player and has no " +
+                 "inspector to be authored from, the same defect ChatSystem's catalog had.")]
+        [Min(0)] public int startingCoins = 25;
+
         public float dragDropRange;
 
         [Header("Assets")]

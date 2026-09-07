@@ -5,6 +5,8 @@ using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
 using Valkur.Data;
+using Valkur.Gameplay.Chat;
+using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.Inventory;
 
 namespace Valkur.Gameplay.NPC
@@ -150,7 +152,19 @@ namespace Valkur.Gameplay.NPC
         private void HandleSell(ItemDefinition item)
         {
             if (_currentVendor == null || _playerInventory == null || _playerWallet == null) return;
-            _currentVendor.TrySellItem(item, _playerInventory, _playerWallet);
+
+            // A refusal has to SAY something. This call could only fail on "you don't have
+            // it" until vendors got a finite purse; now a vendor can simply be out of coin,
+            // and a Sell button that does nothing at all reads as a broken button rather
+            // than as a shopkeeper who is short today. The chat path already explains
+            // itself (ChatLanguage.VendorCannotAfford) — this is the counter's version.
+            if (!_currentVendor.TrySellItem(item, _playerInventory, _playerWallet)
+                && _currentVendor.HasLimitedPurse)
+            {
+                ToastSystem.Show(ChatLanguage.VendorCannotAfford(
+                    _currentVendor.GetSellPrice(item), _currentVendor.Coins));
+            }
+
             RefreshVendorRows();
             RefreshPlayerRows();
         }

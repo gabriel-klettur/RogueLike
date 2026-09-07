@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: vendor_alchemist_valeria
   m_EditorClassIdentifier: 
   vendorKey: vendor_alchemist_valeria
-  economyGroup: {fileID: 0}
+  economyGroup: {fileID: 11400000, guid: 7e73f6ffe3e69bf458178db762f4c6f1, type: 2}
   persona: {fileID: 11400000, guid: 438eae9efcfd85f48ba4339308f8260f, type: 2}
   inventorySeed:
   - item: {fileID: 11400000, guid: 8a363782ca1a7a24a8c153036fddbdc1, type: 2}
@@ -28,4 +28,6 @@ MonoBehaviour:
     quantity: 10
   - item: {fileID: 11400000, guid: 9bdf969c9eda0a54aa25650c73ed6ed8, type: 2}
     quantity: 10
+  coinFloat: 400
+  restockSeconds: 600
   priceOverrides: []

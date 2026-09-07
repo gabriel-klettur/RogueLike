@@ -315,11 +315,26 @@ namespace Valkur.Gameplay
 
         private void EnsureVendorEconomyService()
         {
+            // The market first: VendorEconomyService reads it on every price, and while it is
+            // null-safe about that, building the two in the other order means the first
+            // prices of a session resolve at a flat multiplier and then move without the
+            // player doing anything.
+            EnsureMarketService();
+
             if (VendorEconomyService.Instance != null) return;
             var go = new GameObject("VendorEconomyService");
             go.AddComponent<VendorEconomyService>();
             go.transform.SetParent(GetSceneContainer("[Systems]"), false);
             Debug.Log("[GameplaySceneSetup] VendorEconomyService created.");
+        }
+
+        private void EnsureMarketService()
+        {
+            if (MarketService.Instance != null) return;
+            var go = new GameObject("MarketService");
+            go.AddComponent<MarketService>();
+            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
+            Debug.Log("[GameplaySceneSetup] MarketService created.");
         }
 
         private void EnsureWorldLightLoader()

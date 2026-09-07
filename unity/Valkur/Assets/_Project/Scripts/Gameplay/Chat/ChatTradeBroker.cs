@@ -124,7 +124,15 @@ namespace Valkur.Gameplay.Chat
             if (held <= 0) return TradeQuote.No(ChatLanguage.NotCarryingThat);
 
             int unitPrice = vendor.GetSellPrice(item);
-            int quantity = Mathf.Min(wanted, held);
+
+            // The mirror of the affordability cut QuoteBuy makes on the PLAYER's purse. A
+            // vendor with a finite float can run out, and "I can take two of those" is the
+            // answer a shopkeeper gives — refusing the whole trade because they cannot afford
+            // all five would be the same mistake in the other direction.
+            int affordable = vendor.AffordableUnits(unitPrice);
+            if (affordable <= 0) return TradeQuote.No(ChatLanguage.VendorCannotAfford(unitPrice, vendor.Coins));
+
+            int quantity = Mathf.Min(wanted, Mathf.Min(held, affordable));
 
             return TradeQuote.Ok(TradeIntent.Sell, item, quantity, unitPrice * quantity);
         }

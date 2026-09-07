@@ -29,8 +29,8 @@ MonoBehaviour:
   critMultiplier: 1
   durability: 0
   value: 0
-  buyPrice: 0
-  sellPrice: 0
+  buyPrice: 6
+  sellPrice: 3
   rarity: 0
   levelRequirement: 1
   weight: 0

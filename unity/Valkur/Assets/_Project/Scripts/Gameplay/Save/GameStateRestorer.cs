@@ -1,7 +1,9 @@
+using System.Globalization;
 using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Inventory;
+using Valkur.Gameplay.NPC;
 using Valkur.Gameplay.World.Layering;
 
 namespace Valkur.Gameplay.Save
@@ -17,6 +19,11 @@ namespace Valkur.Gameplay.Save
         /// </summary>
         public static void Restore(GameSaveData data)
         {
+            // Before the player guard: the market is WORLD state and a save whose player
+            // block is missing or malformed should still put the economy back rather than
+            // silently reseeding it, which would move every price in the world.
+            RestoreMarket(data);
+
             if (data.player == null) return;
 
             if (!string.IsNullOrWhiteSpace(data.player.playerClass))
@@ -48,6 +55,43 @@ namespace Valkur.Gameplay.Save
                       $"XP={data.player.experience}, Lv={data.player.level}, " +
                       $"Coins={data.player.coins}, " +
                       $"VisualLayer={data.player.visualLayer}");
+        }
+
+        /// <summary>
+        /// Puts the economic cycle back where the save left it.
+        ///
+        /// <para>Both halves matter and they fail differently. Losing the SEED reshapes the
+        /// cycle — different phase lengths, so a player who learned this run's rhythm is
+        /// reading a market that no longer exists. Losing the DAY rewinds it to Boom, which
+        /// is worse: it is not noticeable, it is not random, and it means the Peak can be
+        /// farmed by reloading.</para>
+        ///
+        /// <para>A save that carries neither key predates this layer. It is restored as
+        /// <c>(0, 0)</c>, which <c>MarketService.RestoreFrom</c> reads as "keep the seed you
+        /// derived, start the clock" — a fresh market rather than a refusal, because refusing
+        /// would leave the service holding whatever the previous save had loaded.</para>
+        /// </summary>
+        private static void RestoreMarket(GameSaveData data)
+        {
+            if (data == null || !MarketService.HasInstance) return;
+
+            int seed = ParseMeta(data, MarketService.SeedMetaKey);
+            int day = ParseMeta(data, MarketService.DayMetaKey);
+            string source = data.GetMeta(MarketService.SourceMetaKey, "");
+
+            MarketService.Instance.RestoreFrom(seed, day, source);
+        }
+
+        /// <summary>
+        /// Reads one integer out of the metadata bag, invariantly. Anything unparseable reads
+        /// as 0 — the same answer as absent, which is the right one: a corrupted market key is
+        /// not worth refusing a whole save load over.
+        /// </summary>
+        private static int ParseMeta(GameSaveData data, string key)
+        {
+            string raw = data.GetMeta(key, "");
+            return int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out int v)
+                ? v : 0;
         }
 
         private static void RestorePosition(GameObject player, PlayerSaveData psd)

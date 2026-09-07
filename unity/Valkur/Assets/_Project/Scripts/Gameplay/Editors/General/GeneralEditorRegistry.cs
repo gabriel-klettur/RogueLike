@@ -27,7 +27,7 @@ namespace Valkur.Gameplay.Editors.General
     /// Builds the static catalogue of buttons rendered in the General Editor
     /// (ESC) launcher. Three sections:
     /// <list type="bullet">
-    /// <item><b>Editors</b> – the seventeen runtime editors. Each entry calls
+    /// <item><b>Editors</b> – the eighteen runtime editors. Each entry calls
     /// <see cref="GameEditorManager.OpenExclusive"/>, which auto-closes the
     /// launcher (since the launcher is itself the active editor). Since the
     /// F-row was retired this list is the ONLY way into any of them, which is
@@ -63,6 +63,7 @@ namespace Valkur.Gameplay.Editors.General
             list.Add(MakeEditor("Controls",      () => Valkur.Gameplay.Editors.Controls.ControlsRuntimeEditor.Instance));
             list.Add(MakeEditor("Dungeon NodeGraph", () => Valkur.Gameplay.Editors.DungeonNodeGraph.DungeonNodeGraphEditor.Instance));
             list.Add(MakeEditor("Skills",        () => Valkur.Gameplay.Editors.Skills.SkillsRuntimeEditor.Instance));
+            list.Add(MakeEditor("Economy",       () => Valkur.Gameplay.Editors.Economy.EconomyRuntimeEditor.Instance));
 
             // ── Diagnostics (toggles, no exclusive activation) ──────────────
             list.Add(new GeneralEditorEntry(

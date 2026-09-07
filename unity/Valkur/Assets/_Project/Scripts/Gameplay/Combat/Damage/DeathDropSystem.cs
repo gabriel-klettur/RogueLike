@@ -2,6 +2,7 @@ using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Inventory;
+using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay
 {
@@ -72,6 +73,7 @@ namespace Valkur.Gameplay
             int lootDropped = TryDropLootTable(victim, deathPos);
             int bossLootDropped = TryDropBossLootTable(victim, deathPos);
             int totalLootDropped = lootDropped + bossLootDropped;
+            int coinsDropped = TryDropCoins(victim, deathPos);
 
             int xpValue = EstimateXpValue(victim);
             bool xpSpawned = false;
@@ -81,9 +83,10 @@ namespace Valkur.Gameplay
                 xpSpawned = true;
             }
 
-            if (itemsDropped > 0 || totalLootDropped > 0 || xpSpawned)
+            if (itemsDropped > 0 || totalLootDropped > 0 || xpSpawned || coinsDropped > 0)
                 Debug.Log($"[DeathDropSystem] {victim.name} died: dropped {itemsDropped} item(s)" +
                           $"{(totalLootDropped > 0 ? $" + {totalLootDropped} loot-table drop(s)" : "")}" +
+                          $"{(coinsDropped > 0 ? $" + {coinsDropped} coin(s)" : "")}" +
                           $"{(xpSpawned ? $" and {xpValue} XP orb" : "")} at {deathPos}");
         }
 
@@ -169,8 +172,97 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>
+        /// Mints this kill's coin reward and scatters it. Returns the coins dropped, 0 when
+        /// the victim pays nothing.
+        ///
+        /// <para>Gated to the same hostile-faction check the loot tables use, so no vendor or
+        /// friendly NPC can be farmed for currency — and that gate is what makes the fallback
+        /// heuristic safe to apply to every monster at once rather than asset by asset.</para>
+        ///
+        /// <para>This is the game's PRIMARY coin faucet and until it existed there was
+        /// effectively none: no monster in the shipped catalogue dropped currency, no quest
+        /// grants it, and the wallet starts at zero — so the only way to earn was felling
+        /// trees for a coin a swing. A faucet is not optional plumbing; a sink with nothing
+        /// flowing into it is a shop the player can look at.</para>
+        /// </summary>
+        private int TryDropCoins(GameObject victim, Vector3 deathPos)
+        {
+            var brain = victim.GetComponent<FSM.FSMMonsterBrain>();
+            var def = brain != null ? brain.Definition : null;
+            if (!IsHostileFaction(def != null ? def.stats.faction : null)) return 0;
+
+            int maxHpFallback = 0;
+            if (def == null)
+            {
+                var health = victim.GetComponent<Health>();
+                if (health != null) maxHpFallback = health.MaxHp;
+            }
+
+            int baseReward = ComputeCoinReward(def, maxHpFallback);
+            if (baseReward <= 0) return 0;
+
+            // Variance is rolled from the SAME generator as the loot pool, not from
+            // UnityEngine.Random: the day a run carries a seed, one field has to be reseeded
+            // for both to become reproducible together. Rolling one of them off the engine's
+            // global generator would make the pair permanently unseedable.
+            Valkur.Data.EconomyTuning.Active.ResolveCoinVariance(out double lo, out double hi);
+            double roll = lo + _lootRng.NextDouble() * (hi - lo);
+            int amount = Mathf.Max(1, Mathf.RoundToInt((float)(baseReward * roll)));
+
+            CoinDropSpawner.Spill(amount, deathPos, scatterRadius);
+            return amount;
+        }
+
+        /// <summary>
+        /// Pure computation seam, the twin of <see cref="ComputeXpReward"/> — what a kill is
+        /// worth in coins before variance. Order of precedence:
+        ///  1. <c>def.coinReward &lt; 0</c>: authored to pay nothing.
+        ///  2. <c>def.coinReward &gt; 0</c>: the designer's number.
+        ///  3. A definition with stats: <c>hp/40 + power/4</c>, on the SCALED stats for the
+        ///     same reason XP uses them — a levelled copy was a longer fight.
+        ///  4. Only a Health component known: <c>maxHp/40</c>.
+        ///  5. Nothing known: 1, so an unidentified hostile is still worth stooping for.
+        ///
+        /// <para>The divisors are the balance, and they are chosen against the shipped
+        /// catalogue rather than picked round: a trash barbol (hp 100, power 10) pays 4, a
+        /// knight_red 6, a dark_vampire 12, barbol_boss 52, barbol_gigante 252 — against a
+        /// knight_longsword at 120 coins and a wizard_staff_lvl_3 at 600. Roughly thirty
+        /// mid-tier kills for a real weapon.</para>
+        /// </summary>
+        public static int ComputeCoinReward(Valkur.Data.MonsterDefinition def, int maxHpFallback)
+        {
+            if (def != null && def.coinReward < 0) return 0;
+            if (def != null && def.coinReward > 0) return def.coinReward;
+            // The divisors are AUTHORED (EconomyTuning), because "how rich should the world
+            // be" is a judgement only playing can settle — but they are read through Active,
+            // which hands back the shipped defaults when no asset exists. A tuning layer that
+            // changes behaviour by being absent would be worse than no tuning layer.
+            var tuning = Valkur.Data.EconomyTuning.Active;
+            int perHp = Mathf.Max(1, tuning.coinPerHp);
+            int perPower = Mathf.Max(1, tuning.coinPerPower);
+
+            if (def != null)
+            {
+                var scaled = def.GetScaledStats();
+                return Mathf.Max(1, scaled.hp / perHp + scaled.power / perPower);
+            }
+            if (maxHpFallback > 0) return Mathf.Max(1, maxHpFallback / perHp);
+            return 1;
+        }
+
+        /// <summary>
         /// Mirrors <see cref="NPCRespawnSystem.HostileFaction"/>'s convention: empty faction
         /// defaults to hostile, comparison is case-insensitive.
+        ///
+        /// <para><b>This must keep reading the AUTHORED faction string and must not be
+        /// migrated to a derived allegiance</b> (the <c>EntityFaction</c> component now
+        /// answering "who does this fight", where <c>AlliedUnit</c> membership WINS over the
+        /// string). The two look like the same question and are not: "who does this fight" is
+        /// live and can flip, "did this thing pay out" is a property of what it IS. Routing
+        /// the loot and coin gates through the derived side would make a charmed EVIL monster
+        /// silently stop dropping both — a reward that vanishes on exactly the enemies the
+        /// player worked hardest for, with nothing logged. If a single call is wanted here it
+        /// is <c>EntityFaction.AuthoredFaction</c>, never <c>.Side</c>.</para>
         /// </summary>
         private static bool IsHostileFaction(string faction)
         {

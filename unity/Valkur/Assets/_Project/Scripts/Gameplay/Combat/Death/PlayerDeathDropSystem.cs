@@ -22,7 +22,6 @@ namespace Valkur.Gameplay.Combat.Death
     {
         private const float ItemScatterRadius = 1.5f;
         private const float CoinScatterRadius = 1.2f;
-        private const int   CoinChunkSize     = 25;
 
         public static void DropEverything(GameObject player)
         {
@@ -80,75 +79,14 @@ namespace Valkur.Gameplay.Combat.Death
             int total = wallet.Coins;
             wallet.SetBalance(0);
 
-            int spawned = 0;
-            int remaining = total;
-            while (remaining > 0)
-            {
-                int chunk = Mathf.Min(CoinChunkSize, remaining);
-                remaining -= chunk;
-
-                Vector2 offset = Random.insideUnitCircle * CoinScatterRadius;
-                Vector3 pos = deathPos + new Vector3(offset.x, offset.y, 0f);
-                SpawnCoinPickup(pos, chunk);
-                spawned++;
-            }
+            // The shell (layer, sprite, collider, sorting) and the chunking both live in
+            // CoinDropSpawner, which DeathDropSystem's monster reward also goes through —
+            // a purse spilled on death and a reward minted on a kill must look identical
+            // on the ground, and two copies of that shell is how they stop being.
+            int spawned = CoinDropSpawner.Spill(total, deathPos, CoinScatterRadius);
 
             if (spawned > 0)
                 Debug.Log($"[PlayerDeathDropSystem] Dropped {total} coin(s) across {spawned} pile(s).");
-        }
-
-        private static void SpawnCoinPickup(Vector3 position, int amount)
-        {
-            var go = new GameObject($"CoinDrop_{amount}");
-            int pickupLayer = LayerMask.NameToLayer("Pickup");
-            if (pickupLayer >= 0) go.layer = pickupLayer;
-
-            var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = CoinSpriteFactory.GetOrCreate();
-            sr.color = new Color(1f, 0.85f, 0.25f, 1f);
-            sr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
-
-            go.AddComponent<CircleCollider2D>(); // CoinPickup's RequireComponent
-            var coin = go.AddComponent<CoinPickup>();
-            coin.Initialize(amount, position);
-        }
-
-        private static class CoinSpriteFactory
-        {
-            private static Sprite s_Sprite;
-
-            public static Sprite GetOrCreate()
-            {
-                if (s_Sprite != null) return s_Sprite;
-                var tex = new Texture2D(8, 8, TextureFormat.RGBA32, false)
-                {
-                    filterMode = FilterMode.Point,
-                    wrapMode = TextureWrapMode.Clamp,
-                    name = "CoinDropPlaceholder",
-                    hideFlags = HideFlags.DontSave,
-                };
-                var pixels = new Color[64];
-                Color gold = new Color(1f, 0.85f, 0.2f, 1f);
-                Color empty = new Color(0f, 0f, 0f, 0f);
-                // Round-ish disc inside an 8×8 grid.
-                for (int y = 0; y < 8; y++)
-                for (int x = 0; x < 8; x++)
-                {
-                    float dx = x - 3.5f;
-                    float dy = y - 3.5f;
-                    float r = Mathf.Sqrt(dx * dx + dy * dy);
-                    pixels[y * 8 + x] = r <= 3.5f ? gold : empty;
-                }
-                tex.SetPixels(pixels);
-                tex.Apply(false);
-                s_Sprite = Sprite.Create(tex, new Rect(0, 0, 8, 8), new Vector2(0.5f, 0.5f), 16f);
-                s_Sprite.name = "CoinDropPlaceholderSprite";
-                s_Sprite.hideFlags = HideFlags.DontSave;
-                return s_Sprite;
-            }
-
-            [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-            private static void ResetStatics() => s_Sprite = null;
         }
     }
 }

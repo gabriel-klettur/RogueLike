@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: vendor_blacksmith_smith
   m_EditorClassIdentifier: 
   vendorKey: vendor_blacksmith_smith
-  economyGroup: {fileID: 0}
+  economyGroup: {fileID: 11400000, guid: 10efd13f13e1cf1458de5490f740d77f, type: 2}
   persona: {fileID: 11400000, guid: f086736a59fc319429be8ccbbaf31315, type: 2}
   inventorySeed:
   - item: {fileID: 11400000, guid: 33fd60cb0f08d85478c6cf4173e90e4c, type: 2}
@@ -52,4 +52,6 @@ MonoBehaviour:
     quantity: 2
   - item: {fileID: 11400000, guid: 1b8d6ae8be29d424e90806492e35b211, type: 2}
     quantity: 10
+  coinFloat: 400
+  restockSeconds: 600
   priceOverrides: []

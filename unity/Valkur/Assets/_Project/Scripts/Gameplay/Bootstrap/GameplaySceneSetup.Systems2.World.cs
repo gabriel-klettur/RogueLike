@@ -44,7 +44,13 @@ namespace Valkur.Gameplay
             // so a shipped player's F3 picker reported "No catalog assigned."
             mgr.SetCatalog(_spawnerTemplateCatalog);
 
-            Debug.Log("[GameplaySceneSetup] SpawnerEditorManager created. Press F3 to toggle.");
+            // The roster picker's source. Without it the Spawner editor can still place and
+            // retune, but cannot say WHICH creature a camp holds — which is the one question
+            // the editor exists to answer, and the reason the catalogue used to grow an asset
+            // per monster.
+            mgr.SetMonsterCatalog(_monsterCatalog);
+
+            Debug.Log("[GameplaySceneSetup] SpawnerEditorManager created. Open it from the General Editor (Escape).");
         }
 
         private void EnsureMonsterSpawner()

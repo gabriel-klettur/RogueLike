@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: vendor_cheff_gatita
   m_EditorClassIdentifier: 
   vendorKey: vendor_cheff_gatita
-  economyGroup: {fileID: 0}
+  economyGroup: {fileID: 11400000, guid: 792087b2ee41cfe449007164225f08d6, type: 2}
   persona: {fileID: 11400000, guid: aa4e40d436c11324bb8bf79cd20592ac, type: 2}
   inventorySeed:
   - item: {fileID: 11400000, guid: 704c018ddfd8c4a4fa10e0445c8c1e59, type: 2}
@@ -144,4 +144,6 @@ MonoBehaviour:
     quantity: 10
   - item: {fileID: 11400000, guid: f29dae2f820213041973211792bd3952, type: 2}
     quantity: 10
+  coinFloat: 400
+  restockSeconds: 600
   priceOverrides: []

@@ -239,6 +239,17 @@ namespace Valkur.Gameplay.Chat
                 ? $"You are short: it costs {unitPrice} and you carry {coins}."
                 : $"No te llega: cuesta {unitPrice} y llevas {coins}.";
 
+        /// <summary>
+        /// The vendor is out of money — the mirror of <see cref="CannotAfford"/>, and it has
+        /// to be its own line rather than a reused "no": a player told only "no" after being
+        /// quoted a price will keep asking, while "come back later" is the one refusal in the
+        /// shop that resolves by itself.
+        /// </summary>
+        public static string VendorCannotAfford(int unitPrice, int vendorCoins) =>
+            IsEnglish
+                ? $"They cannot cover that right now: it is worth {unitPrice} and they have {vendorCoins}. Try later."
+                : $"Ahora no puede pagarlo: vale {unitPrice} y le quedan {vendorCoins}. Vuelve más tarde.";
+
         public static string CarryingNothing =>
             IsEnglish ? "You are not carrying anything." : "No llevas nada.";
 

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: vendor_mague_roberto
   m_EditorClassIdentifier: 
   vendorKey: vendor_mague_roberto
-  economyGroup: {fileID: 0}
+  economyGroup: {fileID: 11400000, guid: 6b51696919bd2d643a344c05b115c81c, type: 2}
   persona: {fileID: 11400000, guid: 3a9f895aee49e8a41af2b2f699f846b4, type: 2}
   inventorySeed:
   - item: {fileID: 11400000, guid: f851cacc73963e4498ab378816fff85a, type: 2}
@@ -24,4 +24,6 @@ MonoBehaviour:
     quantity: 2
   - item: {fileID: 11400000, guid: fb4c1b6e003a43344b3b3ce1b0a19e98, type: 2}
     quantity: 2
+  coinFloat: 400
+  restockSeconds: 600
   priceOverrides: []

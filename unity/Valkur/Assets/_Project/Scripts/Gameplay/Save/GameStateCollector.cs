@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.FSM;
 using Valkur.Gameplay.Inventory;
+using Valkur.Gameplay.NPC;
 using Valkur.Gameplay.World;
 using Valkur.Gameplay.World.Layering;
 
@@ -42,8 +44,36 @@ namespace Valkur.Gameplay.Save
 
             data.player = CollectPlayerState(player);
             data.npcMemory = CollectNpcMemory();
+            CollectMarketState(data);
 
             return data;
+        }
+
+        /// <summary>
+        /// Writes the economic cycle's two integers into the metadata bag.
+        ///
+        /// <para>The bag rather than a typed field on <see cref="GameSaveData"/>, and that is
+        /// a deliberate call: this is WORLD state, not player state, so it does not belong on
+        /// <see cref="PlayerSaveData"/> where every other saved number lives; it is exactly
+        /// two ints; and the bag is already the project's answer for run-level facts
+        /// (<c>run_id</c>, <c>run_ordinal</c>). Going through it means no schema-version bump
+        /// and no migration path for saves that predate the market — they simply carry no
+        /// market keys, and <c>MarketService.RestoreFrom</c> reads that as a fresh one.</para>
+        ///
+        /// <para>Skipped entirely when no market is running, rather than writing zeros: a
+        /// seed of 0 is the "nobody set one" sentinel, and persisting it would make every
+        /// save taken in a market-less scene share one economy on the next load.</para>
+        /// </summary>
+        private static void CollectMarketState(GameSaveData data)
+        {
+            if (!MarketService.HasInstance) return;
+            var market = MarketService.Instance;
+
+            data.SetMeta(MarketService.SeedMetaKey,
+                market.Seed.ToString(CultureInfo.InvariantCulture));
+            data.SetMeta(MarketService.DayMetaKey,
+                market.Day.ToString(CultureInfo.InvariantCulture));
+            data.SetMeta(MarketService.SourceMetaKey, market.SeedSource);
         }
 
         private static PlayerSaveData CollectPlayerState(GameObject player)
