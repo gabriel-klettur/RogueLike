@@ -64,7 +64,7 @@ update, save it, and change nothing. All of that is deleted; the asset is the on
 | `InputBindingResolver` | `Core/Input/` | Resolves an action's live bindings and answers the OR-gate with them. Caches; call `Invalidate()` after any rebind. |
 | `InputBindingStore` | `Core/Input/` | Persists binding overrides + stance masks to `persistentDataPath/Input/controls.json`. Applied by `RuntimeInputBootstrap` on boot and on every scene load. |
 | `InputConflictScanner` | `Core/Input/` | Finds controls more than one action answers to, **map-aware and stance-aware**. |
-| `ControlsRuntimeEditor` | `Gameplay/Editors/Controls/` | The drawn keyboard + mouse. No hotkey; opened from the General Editor (ESC → Controls), same reasoning as the Camera editor. |
+| `ControlsRuntimeEditor` | `Gameplay/Editors/Controls/` | The drawn keyboard + mouse. No hotkey; opened from the General Editor (ESC → Controls), same reasoning as the Camera editor. Binds keyboard AND mouse, per binding SLOT, and can clear one. |
 | `KeyboardLayoutModel` / `ControlsKeyboardView` / `ControlsMouseView` | `Gameplay/UIKit/Controls/` | The board, in UIKit so both the editor and the menus can host it. |
 
 ### Contexts: the postures are for PLAYING, an editor owns everything
@@ -84,7 +84,7 @@ answers, and it READS `GameEditorManager.ActiveEditor` rather than being told: t
 written from six places, and pushing from all six is the shape that drifts.
 
 - **Shared vs owned is the whole design.** Selecting, drag-selecting, zoom, scroll, undo,
-  redo, save, close and delete must behave IDENTICALLY in all sixteen editors, so they are
+  redo, save, close and delete must behave IDENTICALLY in all seventeen editors, so they are
   declared once in the `EditorShared` map with no `OwnerEditor`. Everything else is one
   editor's tool: same `Editors` bit, plus an owner, so it is live in that editor and nowhere
   else. That is why the Tile brush and the Buildings collider brush can both be `B`.
@@ -141,10 +141,16 @@ QuickLoad — and while a perf-probe overlay was up, F2–F7 also fired the prob
 Thirteen keys carrying twenty meanings, three pairs separated only by a modifier that lived in
 C# rather than in the binding.
 
-- **The actions are NOT deleted, and that is the point.** They stay in the `Editors` map with
-  no binding, so the Controls editor lists them as "sin asignar" and a player who wants F8
-  back can put it there. Deleting them would make the menu the only possibility instead of the
-  default.
+- **The actions are NOT deleted, and they ship with an EMPTY BINDING rather than with none.**
+  That second half is load-bearing and shipped wrong: `ApplyBindingOverride` writes into a
+  binding SLOT and cannot create one, so fourteen actions with zero bindings were listed by the
+  Controls editor, could be clicked, and answered "no tiene ningun binding que reasignar" — the
+  panel refused the one thing this note promises. An empty-path binding is the InputSystem's own
+  "unbound": `effectivePath` is empty, the action resolves no controls, and an override moves it
+  onto a real key and persists by binding id like any other. Verified in both directions:
+  overriding an empty binding onto `<Keyboard>/f8` resolves 1 control, and overriding a bound
+  one to `""` resolves 0. `EditorEntryPointTests.EveryEditorToggle_ShipsUnboundButAssignable`
+  pins exactly one empty slot each.
 - **`EditorHotkeyBindings` no longer carries a `Hotkey → KeyCode` table.** It did, feeding
   `UnityEngine.Input` directly, which meant clearing a binding cleared none of the key — the
   legacy leg of the OR-gate went on answering for F1–F12 forever. Both halves come from the
@@ -183,10 +189,19 @@ by trying to trade. The freed-up keyboard is the consequence, not the reason.
 - **One gate, one place.** The entire war surface — LMB/RMB/MMB and the 24 spell hotkeys — lives
   in `PollCombatActions`. `MeleeCombat` reads no input at all.
 - **The whitelist is enforced at ASSIGNMENT and again at READ, and the two are not redundant.**
-  `StanceBindingPolicy.Evaluate` refuses to give a Peace binding to anything whose descriptor
+  `InputContextPolicy.Evaluate` refuses to give a Peace binding to anything whose descriptor
   says `ReachesDamage`; `IsLive` refuses it again at the reader, so a `controls.json` written
   by an older build — or by hand — cannot re-open the hole. That is what makes Peace a property
   rather than a convention: a guarantee the player can configure their way out of is not one.
+- **An action may be SILENCED (mask `None`), and five may not.** Silencing is what makes "turn
+  off one spell without leaving War" reachable, and it is only safe because the Controls editor
+  lists an action that BELONGS to the context (`InputContextPolicy.BelongsTo`) whether or not it
+  is live — a row that vanished when you switched it off would be a switch with no way back.
+  The exceptions are declared, not inferred: `InputActionDescriptor.ContextLocked` is true for
+  Move, Look, Dash, ToggleStance and `Editors/OpenGeneralEditor`, each of which is the only way
+  out of its own mode, and for every non-rebindable action (a path nobody may move is not a
+  preference in the other axis either). Damage actions stay ABSENT from the Peace list rather
+  than silenced-looking, which is the older decision and still the right one.
 - **A spell SLOT is the unit of trust, not the spell.** All 24 slots are marked as reaching
   damage, healing and warding ones included, because the executor dispatch is shared and a
   spell's type is data — a slot whitelisted for Peace today becomes a damage slot the moment
@@ -196,6 +211,15 @@ by trying to trade. The freed-up keyboard is the consequence, not the reason.
   per-slot mask on top of the coarse gate — so a player can silence one spell without leaving
   War, and can give a mouse button a harmless verb in Peace. The coarse gate stays as the fast
   path and as the thing `StanceGateTests` pins the ORDER of.
+  **Both halves of that sentence were unreachable until the mask surface was fixed**, and the
+  reasons are different. Silencing one spell needed mask `None`, which `Evaluate` refused
+  outright; giving a mouse button a Peace verb needed the editor to be able to bind a mouse
+  button at all, and its capture poll read only the keyboard. A chip is now drawn only where
+  something reads the mask, and it is drawn LOCKED rather than as a toggle that refuses — the
+  shipped panel offered eight interactive chips of which six had no reader, so it reported
+  changes it could not make. `Gameplay/Pause` and `Gameplay/DropItem` gained the readers they
+  never had (`PauseHotkeyReader`, and one line in `InventoryUI`); `Pause` had been bound to `p`
+  for the life of the asset with nothing reading it at all.
 - **The dash is NOT combat** and was extracted into `PollTraversal`, which runs on both sides of
   the gate. Nothing auto-switches, so a Peace stance that also removed the dash would have no
   recovery from being jumped.
@@ -378,7 +402,7 @@ Use the right agent for the right job. Each agent has a constrained scope and pr
 | `particles-editor` | Particle presets, `ParticleEmitter`, VFX beauty work, Particles Editor |
 | `spell-vfx-director` | Spell look & game-feel — slash/projectile/area silhouettes, timing, impact, hit-stop, camera shake |
 | `editor-ux-parity` | Audit / enforce UI/UX parity across in-game runtime editors — chrome, gestures, workspace persistence, theme, feedback |
-| `editor-workspace-architect` | The editor workspace persistence LAYER itself (`_Shared/Workspace/`, `DraggablePanel` state, the `GameEditorManager` hook, the store, the contract test). Never edits the sixteen editors |
+| `editor-workspace-architect` | The editor workspace persistence LAYER itself (`_Shared/Workspace/`, `DraggablePanel` state, the `GameEditorManager` hook, the store, the contract test). Never edits the seventeen editors |
 | `editor-wiring-auditor` | Audit how a runtime editor is wired into bootstrap, services, hotkeys |
 | `refactor-modularizer` | Split oversized files; extract reusable helpers; remove dead code |
 | `performance-optimizer` | Data-driven FPS / frame-time / GC optimization via Profiler + Recorder API |
@@ -475,6 +499,135 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   `sortingOrder` on the **Entities** layer, so every bolt drew under wall tops, decorations and
   all other VFX. World-space effects belong on `LAYER_VFX` with a small order. The same file
   also assigned `lr.material` (cloning the shared material once per bolt) — use `sharedMaterial`.
+- **The aim indicator has ONE job, and the interesting part is everything it was stopped from
+  doing.** `FacingIndicator` (`Combat/WorldUI/`) answers WHERE THE PLAYER IS POINTING and is not
+  allowed to answer anything else. It replaced a floating white chevron that sat on `Entities`
+  at `Z_SKY + 10` — the same Z-depth-as-order bug as `LightningBoltFX`, so nine sorting layers
+  drew over it — and pulsed its alpha with `sin(t*3)` forever, a lamp with a flicker. It now
+  lies on the floor: an unparented root that follows the feet, ONE `GroundPlane` squash with the
+  aim rotation as its CHILD, and TWO additive layers — a hard chevron and the glow around it.
+  **It had four, and the two that went are worth knowing about.** A light pool at the feet and a
+  60-degree wedge sweeping the ground between the pool and the tip read on screen as a cone of
+  particles growing out of the character's boots, and were cut for exactly that. The pool's JOB
+  survives the pool: without something joining marker to body, the tip is an arrowhead floating
+  a unit away with nothing connecting the two (measured on the first live capture), and the aura
+  carries that now by being large enough to belong to the chevron rather than to sit beside it.
+  The aura is generated from the SAME two segments as the tip with a wide falloff, so the glow
+  is chevron-SHAPED — a round halo behind an arrow reads as two objects that happen to overlap.
+  A dark ALPHA rim went with them, and that is a real trade rather than a tidy-up: it was the
+  only reason a white chevron kept a silhouette over pale stone, and a white aura cannot do that
+  job because white saturates all three channels at once while a dark additive pixel adds
+  nothing. On dark ground the glow reads better than the rim ever did; on a pale cobbled street
+  the chevron is softer than it was.
+  Test trap the redesign exposed: the aura's alpha MASS leans to -X (measured 0.523 against
+  0.479) because the two arms run back to the tails while the apex is a single point, so a
+  mass-comparison test FAILS the correct implementation. What separates a chevron glow from a
+  disc is that it follows the ARMS rather than the radius — sample two points equidistant from
+  the centre, one on an arm and one in the notch between the tails (measured 1.000 against
+  0.055).
+  **Three second jobs were built here and then deleted, and each was individually defensible**:
+  a sweep that dimmed while the primary recovered, a tip that contracted during a cast wind-up,
+  and a ring instead of a point in the Peace stance. Together they made the one shape under the
+  character mean four things at once, so no glance could separate "my spell is recovering" from
+  "I am unarmed" from "I turned". A fourth was rejected before it was written — leaning the tip
+  toward `MouseTargetDetector`'s target makes the rig point where the player is not.
+  `FacingIndicatorRigTests.Source_HasOneJob_*` reads the production source and fails on
+  `PlayerStance`, `SpellCaster`, `CastPhase`, `Cooldown`, `ElementPalette` or
+  `MouseTargetDetector`, because every one of those arrives looking small.
+  **The PULSE is the one thing that moves besides the heading, and the line it sits on is the
+  design.** A STATE has to be READ — a dimmed sweep meaning "your spell is recovering" is a
+  second readout competing with the first. An EVENT tells the player nothing they did not just
+  do: a flash on the frame they cast, and one on every blow of a pick or an axe, is
+  confirmation at the place they are already looking. The test is whether anyone would ever
+  have to LOOK at the rig to learn something. It is PUSHED IN — `FacingIndicator.Pulse()` is
+  called by whoever acted — so the rig still has no idea what a spell or a tree is, which is
+  what keeps the source guard green and is why the guard is the proof rather than a comment.
+  Both callers are single-fire and finding those points was the work: the cast pulse is gated
+  on `sameCastStillPlaying`, the flag `TriggerCastAnimation` already computes, because a
+  channelled beam re-enters that method EVERY FRAME while held and an ungated pulse holds the
+  rig lit for the whole beam instead of marking its start; the harvest pulse sits in
+  `PlayerController.PlayWorkSwing`, which `HarvestNode.LandBlow` calls once per blow and which
+  is the only harvest seam that is player-side by construction (`BlowLanded` fires on the NODE
+  and its `HarvestBlow` carries no attacker). One pulse for every action, deliberately: giving
+  a cast and a pick strike different looks would make the pulse a readout of WHICH action.
+  A pulse also repaints only while it is live — at rest the four colours are exactly what the
+  build painted and nothing writes them, because a `SpriteRenderer.color` set dirties URP's
+  batcher. Deleting readiness
+  also retired the `PlayerController.PrimaryCastKey` accessor that had been added for it — a
+  reader-less accessor is the authored-and-inert shape this file already records a dozen times.
+  Its RADIUS IS FIXED for the same reason: a size that tracked the primary's `range` would
+  resize on every spell swap and read as a glitch.
+  **It is WHITE, one shade per layer** (warm cream at the ground, near-neutral field, faintly
+  cool tip), and it used not to be: it took the primary spell's palette through the flourish's
+  `ResolveSwatch` line, so a fireball drew a red marker and the aim indicator became a readout
+  of a loadout choice. Three things follow. The gains are HALF what the coloured rig used, which
+  is arithmetic and not taste — the fireball red carries luminance 0.49 per unit of colour
+  against white's 1.00. The dark outline matters MORE, because a red glow blows out one channel
+  and leaves the ground texture legible through the other two while white saturates all three at
+  once. And because nothing can change a colour any more, the four are painted ONCE at build
+  (`PaintLayers`) rather than every frame — `TheLook_IsConstant_*` pins that only the heading
+  moves.
+  **Depth is the body's own sorting layer**, rebased on the feet every frame with `YSortEntity`'s
+  formula (COMPUTED, not read back — both run in `LateUpdate` in an undefined order, so a read
+  trails the body by a frame and the rig flickers across it while running), each aim piece
+  behind or in front by the SIGN of the aim, pool always behind. It shipped on `Overhead` first,
+  which made "always visible" literally true, and the first live report was the tip drawn over
+  the character's legs when aiming north; a decal north of the feet is farther from the camera
+  than the body standing on it, and only the body's layer can say so.
+  Related test trap: a 60-degree hollow sector's MEAN alpha is ~0.05 by construction, so a test
+  asserting the sprite is "mostly ink" fails a correct sprite — assert presence and side.
+- **A ring at the mouse pointer, and the OS cursor deliberately left alone.**
+  `CursorImpactFX` (`Combat/Feedback/`) opens a white ring at the pointer when the player casts
+  or lands a harvest blow. The alternative — hiding the OS pointer and drawing our own
+  crosshair, which is the only way a cursor can genuinely recoil — was rejected on its cost,
+  not its look: a frame of lag on the one thing the player aims with, stutter whenever the
+  framerate dips, handing the pointer back in seventeen runtime editors plus the inventory's
+  drag-and-drop, the chat and every menu, and it would put the documented InputSystem
+  mouse-freeze bug ON SCREEN, where today the OS pointer is ground truth and always right. A
+  transient effect has none of that: nobody can tell that a ring living a fifth of a second
+  started sixteen milliseconds late. It FOLLOWS the pointer for its whole life — anchored, it
+  reads as a mark on the ground you clicked rather than as the cursor reacting.
+  Three things about the canvas are load-bearing and all three are ABSENCES. No
+  `GraphicRaycaster`, and `raycastTarget = false` on both images: a full-screen click-eater
+  over every panel in the game would break the very action that spawned the ring, and only
+  while it was on screen. No `CanvasScaler`, because a cursor accent should be the size the OS
+  pointer is and not grow with the render resolution — and its absence is also what makes one
+  canvas unit one screen pixel, so the pointer position goes straight into `position`. And at
+  rest nothing is written at all, not even the position.
+  **Measuring it needs two tricks.** Its own `LateUpdate` overwrites any hand-set position on
+  the next frame, so a probe must disable the component before placing it (and restore that in
+  a `finally`). And in the Editor the pointer is routinely OUTSIDE the game view — measured at
+  (3326, 115) against a 1600x800 view — so the ring renders off-screen and a capture looks
+  empty for a reason that has nothing to do with the effect. What settles "is it drawing" is a
+  signed diff of two captures: measured, `min = 0.00` and `max = +169`, i.e. it only ever adds
+  light. That mattered because the first capture looked like it had a DARK core, which was a
+  round cobblestone in the tile art showing through.
+- **`SpellCastAnchor.Hands` is 72 % of the way up the body, and for a SWING that is the
+  head.** `ProjectileExecutor.ResolveCastOrigin` places a cast at the sprite's visual centre
+  plus `0.45 x half-height`, which is right for a conjuring — a fireball should leave the hands
+  — and wrong for a slash, which is swung from the trunk. Measured live on the shipped dwarf: a
+  1.86-unit body with Hands at 72 % and Center at 50 %, a drop of **0.42 u**. All thirteen
+  slashes shipped on Hands, twelve of them by omission (the field postdates the assets, and a
+  missing key deserialises as 0), so the blade appeared to grow out of the character's head.
+  The fix is the `castAnchor` field the data model already had, set to `Center` on all
+  thirteen — and it is DATA rather than an `if (type == Slash)` in the resolver on purpose,
+  because a hard-coded rule beside an authored field makes the field unfalsifiable: the Spells
+  Editor would show an Anchor dropdown that could not move the whole slash family, which is
+  `VortexFieldExecutor`'s `spawnAtMouse || isPull` bug wearing a different hat. What data
+  cannot do alone is survive the NEXT slash, which is created with the enum's default;
+  `SlashCastAnchorTests` walks the shipped catalogue for that. Both slash paths are safe to
+  change from one field because `SlashExecutor` resolves the origin ONCE and hands the same
+  point to `RegularSlashAttack.Spawn` and `SlashAttack.Spawn`, each of which does
+  `transform.position = origin` and derives every later sweep from it — so the drawn arc and
+  the damaged arc cannot separate.
+  **Two traps when verifying a data edit like this.** `refresh_unity(scope="scripts")` does not
+  reimport an edited `.asset` and `AssetDatabase.LoadAssetAtPath` returns Unity's IN-MEMORY
+  copy, so an EditMode test over shipped data measures the stale object and passes or fails for
+  the wrong reason — use `scope="all"` and assert the loaded value against the file's own text
+  in the same probe (measured here: 13 memory, 13 disk, 0 disagreements). And a slash cannot be
+  caught by a screenshot taken in the frame it is cast: `slash` authors `prepareDuration: 0.06`,
+  so the executor runs several frames later and the capture finds nothing. Drop
+  `Time.timeScale` to ~0.04, cast, capture on the next call, and restore it.
 - **A spell that can silently do nothing cannot be learned.** `lightning` shared the chain
   implementation, whose first act is `if (sorted.Count == 0) return;` — cast with no enemy in
   range it spent mana and drew nothing, which read as "the spell is invisible". Every executor
@@ -1430,6 +1583,127 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   exposed now; `WeaponLoadout` and `AnimationProbe` stay hidden, correctly, because `AppliesTo`
   refuses them. Note the meteors themselves were never violet — `MeteorMissileFX` hardcodes its
   own fire colours — so only the cast read wrong, which is exactly why it survived unnoticed.
+- **A RENDERED FRAME IS THE ONLY TEST FOR A LAYOUT, and this repo's own uGUI note says why.**
+  The Controls editor shipped a window that could not be read: the board panel was invisible,
+  the action list hung off the top of the screen with its header and search box above the
+  canvas, and GUARDAR and VALORES POR DEFECTO were printed one letter per line down a
+  one-character column, overlapping each other. Every structural probe was green — sibling
+  order, panel sizes, row counts, 914 passing tests — because **uGUI performs no layout in
+  EditMode**, so reading back `sizeDelta` returns the number that was written and never what a
+  layout pass would have made of it. Four separate defects hid behind that, and each is worth
+  recognising on its own:
+  - **`UIFactory.MakeScrollView` puts a `VerticalLayoutGroup` AND a `ContentSizeFitter` on the
+    content it returns.** Right for a list of rows, fatal for anything placed by hand: it deals
+    absolutely-positioned children out in one column and forces their width. Three surfaces
+    here used it — the drawn keyboard, the context strip, the legend — and all three carried a
+    comment claiming there was no layout group on them. A comment is not a removal.
+  - **Its content is STRETCH-anchored with a centre pivot**, so `sizeDelta.x = 1066` makes a
+    rect 1066 px WIDER THAN ITS PARENT — measured at 2072 — and a horizontal scroll has
+    nothing sane to scroll. Hand-placed content wants `anchorMin == anchorMax` at the top-left.
+  - **`ApplyPanelDock` negates the offsets it is given**, so `TopLeft, 16f, -56f` docks the
+    panel fifty-six pixels ABOVE the canvas. Every other editor passes a positive gap
+    (`Camera.TOP = MENUBAR_H + GAP`, `Boss.PANEL_TOP_OFFSET`); this one passed a negative and
+    lost both panels' headers off screen.
+  - **A button in a `HorizontalLayoutGroup` with `childControlWidth` and no
+    `childForceExpandWidth` is laid out at its MINIMUM unless it declares a width.** Two
+    unstyled buttons collapsed to a single character column and overprinted each other.
+- **A panel a runtime editor cannot reopen must not be closable, and `DraggablePanel` says so
+  in its own API.** `ShowCloseButton` exists for "a panel whose editor has no other way to
+  bring it back" — which is exactly the Controls editor, whose only toolbar lives INSIDE the
+  board panel. It shipped closable, the workspace layer faithfully persisted `"open": false`,
+  and the editor then opened forever with no keyboard, no mouse, no tabs, no legend and no
+  status line. A workspace document on this machine was found in that state, which is what
+  "the window makes no sense" turned out to mean. Two fixes, both needed: the close button is
+  gone, and the editor forces both panels open on restore so documents already poisoned heal
+  themselves.
+- **Persisted panel geometry can DRIFT, and each session saves the drift.** Measured across
+  three consecutive opens of the Controls editor: a panel docked at exactly 1092x424 came back
+  as 1089.20x545.34, and the list panel walked from 16 px inside the right edge to flush
+  against the LEFT one. Several passes each legitimately adjust geometry on restore — the
+  workspace service's off-screen rescue, `DraggablePanel`'s anchor normalize a frame later,
+  its canvas-resize clamp — and `CaptureOnClose` records whatever they left, so the error
+  accumulates rather than settling. A layout-version bump does not fix it: the drifted
+  geometry is simply saved under the new version. The Controls editor now re-docks to its
+  defaults three frames after restore and declines to remember geometry at all — one editor
+  opting out, not a change to the layer. **Anything that sets a panel's size during restore
+  must land after those passes, or it is setting a value rather than keeping one.**
+- **`UIInputField.AddCommit` builds NO placeholder**, only `MakeWithPlaceholder` does — and
+  that one takes no commit callback. Setting `.placeholder`'s text on a field from the first
+  is a write to null, and the row renders as a bare dark bar with nothing saying it is a
+  search box. Build the child yourself and assign it.
+- **A drawn control is invisible when its fill matches the surface behind it.** `INPUT_FREE`
+  (0.14) sat on `BG_SURFACE` (0.13) — one percent of a channel — so every unbound key vanished
+  and half the keyboard had no keys on it, which is precisely the question ("what is free") the
+  drawn board exists to answer. The drawn mouse's shell had the same collision and read as
+  buttons floating in the dark. `INPUT_BOARD_BG` and `INPUT_DEVICE_BODY` now separate the three
+  layers.
+- **On a 34 px key cap the OS legend is the wrong string.** `InputControl.displayName` is the
+  only thing that knows a Spanish ISO board prints n-tilde where Unity says `semicolon`, and
+  every such legend is one or two characters. The long ones are where it is unhelpful: it
+  answers "Print Screen", "Scroll Lock", "Page Down" and "Numpad 7", which truncate to
+  "Print Scree", "Scroll Loc" and a numpad where every key says "Numpad". Ask the device for
+  SHORT legends and fall back to the project's compact table ("Impr Pant", "Av Pag", "Num 7")
+  for the rest — the device owns what a key PRINTS, the table owns what it is CALLED. Pair it
+  with TMP auto-sizing rather than `TextOverflowModes.Ellipsis`: shrinking a long legend costs
+  size on keys nobody reads, truncating costs the word.
+- **A full-screen scrim that invites a click must be the FIRST sibling, not the last.** The
+  Controls editor's capture overlay shipped last: full-screen, a raycast target, carrying a
+  Button that cancels — over the drawn keyboard whose caps its own prompt told the author to
+  click. Every click on a key cancelled the capture instead of completing it, and the whole
+  feature the panel exists for was unreachable. It was INTERMITTENT, which is worse than
+  broken: `DraggablePanel.OnPointerDown` calls `SetAsLastSibling`, so an author who had dragged
+  the board panel once had raised it above the scrim and the click DID land — the bug came and
+  went with a gesture nobody connects to it. The shape that works is three objects with three
+  jobs: a scrim at sibling 0 (behind the panels, click-anywhere-to-cancel), the panels, and a
+  prompt banner raised to the top with `raycastTarget = false`. Re-assert the order on every
+  open, because one click on any panel reorders all of it.
+- **A capture poll that reads `Keyboard.current` directly cannot bind a mouse, and dies where
+  it is needed most.** The same overlay's poll walked `InputControlPaths.Entries` against the
+  raw device, so no mouse button could ever be assigned — and the raw InputSystem half is
+  exactly the one that stops delivering under the 2022.3 event-drop bug, i.e. in the session
+  where the player went looking for the Controls editor BECAUSE their keys had stopped working.
+  `KeyboardInputManager.WasKeyPressedThisFrame(Key, KeyCode)` ORs both backends and honours
+  `InputBlocker`; the mouse goes through `MouseInputManager`. The left button is deliberately
+  NOT polled — it is how the author clicks the drawn board, so polling it would bind LMB to
+  whatever they were pointing at; left click is bound by clicking the drawn mouse's own left
+  button. `InputCentralizationGuardTests` was blind to all of this because its regexes only
+  matched `kb.<name>Key.<state>` and the capture used the INDEXER form `kb[key]`; the indexer
+  pattern is in the guard now.
+- **A rebinding panel that writes slot 0 applies a fraction of what it says.** `Move` carries
+  eight controls (WASD plus the arrows) and `Dash` four; the shipped editor hardcoded binding
+  index 0, so "rebind Move" moved the W and left seven keys where they were, silently. Rows
+  expand into one row per SLOT now, each with its own assign and clear, and the ordinal is
+  translated to an index that skips composite headers — an override that lands on the
+  `2DVector` header moves nothing while reporting success.
+- **A conflict scanner that is map-aware but not CONTEXT-aware trains the reader to ignore
+  it.** Painted from `InputConflictScanner.Scan`, the Controls board rang FIFTEEN keys red in
+  the War view — WASD, the arrows, all three mouse buttons, space, Escape — because each is
+  both a gameplay verb and a UI verb, which is how the project has always shipped and has never
+  been a bug: only one consumer is listening at a time. Beside them sat a summary line reading
+  "Sin conflictos reales" in green. Fifteen permanent false positives next to a contradicting
+  summary is an alarm nobody reads. `ClashesInContext` / `Classify` grade each control in the
+  context being viewed and only a real double fire is red; measured after, every context is
+  0 red. Three things had to become DATA for that to be honest rather than merely quiet:
+  `RequiresCtrl` (Ctrl+S saves and bare S picks the select tool — five actions carry it, and
+  `EditorInput` reads the same field so the two cannot drift), `CoexistGroup` (Escape closes
+  the editor AND opens the launcher by design), and the UI map being arbitrated by focus.
+- **`EditorInput.Tool` refuses while Ctrl is held, and that closed a real double fire.** Every
+  shared editor shortcut is Ctrl+key with the Ctrl living in C#, and no editor tool is — so
+  a bare key and a Ctrl+key were competing for the same press. Measured on the shipped asset:
+  `EditorShared/Save` and `Editor.Tile/ToolSelect` are both on `s`, so Ctrl+S in the Tile
+  editor saved the map AND switched the active tool to Select, every time, in silence.
+- **A search box that rebuilds its list is a hitch per keystroke.** The Controls editor's 63
+  rows carry up to five buttons and seven TextMeshPro components each; building them measures
+  213 ms, and the shipped code paid it on every character typed. Rows are realised once per
+  CONTEXT and shown or hidden after that — 213 ms became 10 ms. Same shape and same fix as the
+  Items editor's 3.5 s table, at a tenth of the scale. Measured per-component: `MakeButton`
+  0.298 ms, a bare TMP 0.154 ms, a bare Image 0.068 ms — the cost is uGUI, not the row logic,
+  so the only lever is building fewer of them less often.
+- **`Object.Destroy` is an ERROR in Edit Mode, and a runtime editor's list rebuild hits it.**
+  Not a warning: seven `ControlsEditorTests` went red on the log line alone, with every
+  assertion passing. Any editor path that destroys UI — a row list, a tab strip, a redrawn
+  board — needs the `Application.isPlaying ? Destroy : DestroyImmediate` branch the Entities and
+  Buildings editors already carry.
 - **A `Health` on a Building-layer object is unreachable code.** Every damage path finds its
   victims through a `LayerMask` — the player's melee targets NPC(9), a monster's targets
   Player(8), and `Projectile.ObstacleLayers` stops a shot on World(11)/Building(14) WITHOUT
@@ -1742,6 +2016,41 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   raises the badge for a player standing on a roof two units above her head.
   `EntityColliderConfigurator.GetBodyCollider` is the same box the physics uses; `HarvestNode`
   records the identical rule for a tree canopy.
+- **A Button's tint is its ColorBlock, never its Graphic — and assigning the block does not
+  repaint.** Two bugs, opposite directions, same afternoon, both invisible to every EditMode
+  assertion and both found only by reading pixels out of a rendered frame.
+  `Selectable` on the default ColorTint transition drives its `targetGraphic`'s CanvasRenderer
+  to `colors.normalColor`, and the CanvasRenderer colour MULTIPLIES with `Graphic.color`. So
+  writing `btn.targetGraphic.color = x` renders `x * normalColor`, darker than either: measured
+  in the Skills editor, an "active" row painted ACCENT over `UIButton.Make`'s BTN_NORMAL came
+  out **(32,31,29)** against a **(31,33,42)** panel — invisible — while untouched rows sat at
+  BTN_NORMAL squared, near-black. The selection read BACKWARDS, the chosen row looking like a
+  gap and the unchosen ones looking solid.
+  The obvious fix is the second bug. Setting the block and pinning the graphic to white is
+  correct arithmetic and still renders nothing, because `Selectable` pushes the block to the
+  CanvasRenderer only when it EVALUATES a state transition — on enable, or on a pointer or
+  selection event. A button whose block changes while it sits idle keeps whatever the
+  CanvasRenderer last held, which after pinning the graphic is WHITE: measured, every button in
+  the same editor came back at **(202,202,205)**, pale cream, just as unreadable.
+  `UIButton.SetTint` is the single correct path — block, graphic held white, and an
+  `enabled` toggle to force an instant transition. After it, active-vs-inactive luminance went
+  from **3 to 108**. Note `CraftingPanelUI` was never affected: its local button factory never
+  assigns a ColorBlock, so Unity's default white block made the multiply a no-op — the trap
+  only bites buttons from `UIButton.Make`.
+  **Neither half is testable in EditMode.** A component added there never receives `OnEnable`,
+  so the CanvasRenderer holds its construction value whichever branch the code takes, and an
+  assertion on `colors.normalColor` passes with the window unreadable. `SkillsEditorTests` says
+  so in the fixture rather than implying more reach than it has.
+- **An `execute_code` probe that mutates a shipped asset has until the end of Play Mode to put
+  it back.** The idle probe every session shares answers "can a run start"
+  (`TestRuns.Count == 0 && !isPlayingOrWillChangePlaymode && !isCompiling`) — it does NOT answer
+  "is it safe to write", and those are different questions. Measured: a probe set
+  `paella.requiredLevel` from 1 to 4 to photograph a UI state, Play Mode ended first, and
+  `SkillsRuntimeEditor.Instance` was null — so the editor's own undo was gone and the only
+  recovery was writing the value back and verifying BOTH the loaded object and the file's own
+  text, because a domain reload does not reload assets. Prefer a probe that reads; if it must
+  write, restore in the SAME call, and verify on disk rather than in memory.
+
 - **A `LayoutElement` that sets only `preferredHeight` does NOT stop its row expanding.**
   uGUI resolves each layout property INDEPENDENTLY, taking it from the highest-priority
   component that supplies one — so a `LayoutElement` (priority 1) wins the preferred height
@@ -2555,6 +2864,87 @@ Health · Mana · MeleeCombat · PlayerController · Experience
   menu item behind a confirmation. Neither uses `Undo.RecordObject`, for the reason the
   building-template note in the gotchas records.
 
+## Crafting and professions
+
+Five trades — cooking, blacksmith, mining, lumberjack and a generic `crafting` bucket — share
+ONE recipe type, ONE service and ONE panel. Only cooking has recipes today; the other four are
+declared so the tab, the level curve and the station vocabulary exist the moment their recipes
+are written, and so that adding one is a data edit rather than a code change.
+
+```text
+tools/crafting/recipes/cooking.json        the authored recipe source
+tools/crafting/build_crafting_manifest.py  -> generated/crafting_manifest.json
+Valkur > Crafting > Import Crafting Content -> Data/Catalogs/Crafting/{Professions,Recipes}/*.asset
+                                              Resources/Crafting/RecipeCatalog.asset
+                                              Data/Catalogs/Items/{Material,Consumable}/Cook/*.asset
+ProfessionDefinition / RecipeDefinition    the data (Valkur.Data)
+RecipeCatalog                              professions + recipes, one asset, under Resources/
+CraftingService                            Evaluate / TryCraft / MaxBatches — pure, no MonoBehaviour
+PlayerProfessions                          per-trade level + xp, saved in ProgressionSaveData
+CraftingStation                            IPlayerInteractable, per trade; empty profession = workbench
+CraftingPanelUI                            the player's screen — HUD tray, or a station's badge
+SkillsRuntimeEditor                        the 17th runtime editor (ESC -> Skills)
+```
+
+- **The BALANCE is derived, in Python, from one authored ingredient price table.** 25 ingredient
+  rows produce all 36 dishes' value, healing, hunger, rarity, weight and xp, so retuning beef
+  re-prices the asado, the arepa and the milanesa in one edit. The importer does NO arithmetic —
+  that is what keeps the balance auditable from outside Unity.
+- **The importer's overwrite rule is NOT the usual one.** The persona and tileset importers fill
+  only empty fields because everything they carry is prose. Here the fields split: DERIVED
+  numbers are always rewritten (a generator that cannot propagate its own retune is not a
+  generator), PROSE is filled only when empty. The Skills editor owns EXCEPTIONS, the generator
+  owns balance, and the editor says so on screen — otherwise an author retunes a level, runs the
+  importer for an unrelated reason and silently loses it.
+- **`ItemCategory` is DERIVED, never stored, and that is the whole taxonomy.** An ingredient is
+  stackable with no consume effect, so it files as Material; a dish carries healing and hunger,
+  so it files as Consumable. The manifest carries a `rawHunger` per ingredient and the importer
+  deliberately DOES NOT write it: any non-zero hunger sends `ItemCategoryUtil.GetCategory` to
+  Consumable, which would put potatoes in the Consumables tab beside the finished plates and
+  collapse the split on its first import. Eating raw needs a separate consume path, not a value.
+- **The atomicity is the point of `CraftingService`.** A craft that takes the ingredients and
+  then fails to place the result has destroyed the player's materials. It cannot be avoided by
+  checking for room FIRST — the removal is what frees the slots, so a pre-check refuses most
+  legitimate crafts on a fullish bag. The order is remove, place, ROLL BACK on the remainder,
+  and experience is granted LAST so a full bag cannot farm levels off a button that yields
+  nothing. `CraftingServiceTests.FullBag_RollsBackEveryIngredient_AndYieldsNothing` reaches it
+  with deep stacks, because taking 2 off a stack of 20 frees no slot.
+- **An unknown trade reads as level 1, never 0.** Zero would refuse every recipe carrying the
+  default `requiredLevel = 1` and make the whole system inert on a fresh character, silently —
+  the authored-and-inert shape this file already records a dozen times.
+- **Refusals carry a REASON and every shortfall, not a bool and not the first one.** Same
+  argument `InteractionPromptInfo` makes: "you cannot make this" is not useful, and naming one
+  missing ingredient at a time makes the player walk back after each trip. The order the reasons
+  are tested in is a design decision — LEVEL first (the only refusal the player cannot fix by
+  walking or gathering), then ingredients, then the station, then room.
+- **A station belongs to ONE trade, and a station with NO profession serves every trade.** That
+  second case is a deliberate general workbench, not an unconfigured asset. Stations join TWO
+  registries and both are load-bearing: their own list answers "may this trade's harder recipes
+  be made here", `InteractableRegistry` is what puts a badge over the forge. Missing the second
+  is silent — the station works perfectly and nothing on screen says it is there.
+- **The panel lists recipes the player CANNOT make, on purpose.** Its job is "here is what you
+  could make IF", which is the only version of the screen that says what to go and collect. A
+  list filtered to the affordable rows is empty exactly when it would be most useful.
+- **The Skills editor shows malformed recipes; the player's panel hides them.** A broken row
+  sends a player looking for an ingredient that does not exist, but the editor is the one screen
+  where somebody can see the breakage and fix it.
+- **Tagging an item `food` does NOT stock a vendor on its own.**
+  `VendorConfigDefinition.inventorySeed` is a STATIC list, not a live filter over `itemType`, so
+  a newly imported ingredient is tagged correctly, sits in the item catalog, and is absent from
+  every shop until `Valkur > Chat > Wire Entities To Personas` is re-run — that rebuild clears
+  and repopulates the seed from the tag, so it is safe to re-run and is the second half of a
+  crafting import. Measured after doing so: Gatita's stock is 64 food slots.
+- Eight cooking recipes need a station (six or more distinct ingredients): borscht,
+  cazuela_chilena, hallaca, holubtsi, kjotsupa, locro, paella, varenyky.
+- The art is cut by `tools/atlas/wave10/build_cook_items.py` from two sheets in
+  `staging/items/cook/` — 5x5 ingredients, 6x6 dishes, one cuisine per row. Cells TOUCH, so an
+  alpha projection finds only three of the four row gaps; segmentation is core-seed clustering
+  plus nearest-core assignment, the same machinery as `wave7/build_spell_icons.py`. Six legacy
+  dishes (`borsh_01`, `perogi_01`, `completo_chileno_01`, `paella_01`, `tortilla_spain_01`,
+  `hakarl_01`) were retired by the importer — the new sheet draws the same six plates, and
+  keeping both put two borschts in the bag with different art and only one of them craftable.
+  `food_chicken` is deliberately kept: it is a distinct item the sheet does not draw.
+
 ## The FSM is two machines, and only one of them is authored
 
 A monster's state graph has two owners and they do not overlap:
@@ -2592,6 +2982,80 @@ Consequences worth knowing before editing any of it:
   tested before the cooldown, so the clock only advances on ticks spent in the edge's `from` state.
 - **`Actions`, `Blackboard` and per-state `props` round-trip to disk and reach no runtime code.**
 
+## Hostile AI: perception, standoff, the shout and the search
+
+Audited 2026-09-06 at **5.2/10** and rebuilt the same day to **7.1** — findings, per-axis
+scores and what is still open in `.github/HOSTILE_AI_AUDIT.md`. The layer that came out of it:
+
+| Piece | Location | What it owns |
+|---|---|---|
+| `FSMPerception` | `Enemies/FSM/` | THE acquisition rule — range, field of view, line of sight, target viability — plus the aggro-suppression window |
+| `FSMTargetMemory` | same file | Where the target was last SEEN, so losing it has somewhere to go |
+| `FSMRetreat` | `Enemies/FSM/` | "Get away from that without running into a wall": a nine-heading fan probed with `LineOfSight` |
+| `FSMPathFollower` | `Enemies/FSM/` | Repath timer + waypoint list + reach test, shared by Chase, AlertChase and Search |
+| `AggroBroadcast` / `FSMAlert` | `Enemies/FSM/` | One monster spotting the player tells the monsters around it |
+| `SearchState` | `Enemies/FSM/States/` | Walk to the last sighting, look around, give up |
+| `AIDebugOverlay` + `ai` | `Enemies/`, `Bootstrap/` | `ai` reports every monster; `ai on` draws aggro ring, leash ring, view cone and current target |
+
+- **Acquisition has ONE spelling now, and it had already drifted.** `IdleState` asked
+  `IsBlocked`, `PatrolState` asked `IsClear`, and only one of them checked the target was
+  alive. Everything goes through `FSMPerception.TryAcquire`, which is also why adding a cone
+  and a memory was a few lines rather than an edit to every hostile state.
+- **A field of view must never be a blind spot.** `fov_degrees` defaults to 360 (the
+  historical behaviour), and whatever it is authored to, it is SUSPENDED for two seconds
+  after any hit. Without that a melee attacker standing behind a monster is permanently
+  unperceivable: the flinch resumes the state it interrupted, and the authored `t_any_alert`
+  edge only fires when the attacker is BEYOND aggro range.
+- **`desired_range` is what makes a caster a caster.** `ChaseState` used to close to
+  `melee_range` unconditionally, so every caster walked into the player's face — and its own
+  `NPCAutoCast.minDistance` gate then refused the spells the standoff exists for. Zero means
+  melee and is every melee monster unchanged. A cornered standoff monster ATTACKS rather than
+  grinding into the wall, because a caster that refuses to fight when it cannot give ground is
+  a free kill that reads as a hang. `Monster_Caster`'s two `distance_to_player < 1.5` flee
+  edges were retired with it: they turned a repositioning into a three-second rout.
+- **Losing sight is now a mechanic.** Sight was checked on ACQUISITION only, so a committed
+  monster tracked the player through a building forever. `ChaseState` records the last position
+  it had line of sight on and, after `sight_memory_seconds`, hands over to `SearchState`. The
+  window matters in both directions: dropping the target on the first blocked frame would make
+  every pillar and every passing monster a hard reset.
+- **The shout writes DATA, never a state.** `AggroBroadcast` puts an alert in the listener's
+  context and the listener decides on its OWN tick, from `IdleState` or `PatrolState`. Changing
+  another entity's machine from outside would run its `Enter` mid-swing, and — this is the
+  half that bites — it would put a `ChangeState` in a file `FSMBuiltInTransitionRegistryTests`
+  does not scan, so F12 would be missing an edge that really fires. Listeners with no
+  `AlertChaseState` in their set are skipped through `StateMachine.IsStateAllowed`, which is
+  what keeps vendors out of fights; the alert is CONSUMED on entry, or the monster re-takes it
+  forever and never patrols again.
+- **`FleeState` was worse than not fleeing.** It ran in a straight line with no geometry test
+  (cornered monsters ground into walls for the whole window) and exited into `PatrolState`,
+  which re-acquires on the next tick — so a monster under its flee threshold oscillated on the
+  authored cooldown. It steers through `FSMRetreat` now, stands still when every escape is
+  blocked, and sets a regroup window through `FSMPerception.SuppressAggro`.
+- **`PathFinder` has a frame budget** (`maxSearchesPerFrame`, default 4) and a non-allocating
+  `TryFindPath`. **"Refused this frame" and "no path exists" are different answers and must
+  stay so**: a follower told "no path" walks straight at the target, which for a
+  refused-because-busy search means walking into the wall the path was routing around. A
+  refusal leaves the caller's list untouched and retries next tick. `maxPathLength` finally
+  has a reader (it truncates), and the truncated case deliberately does NOT overwrite the last
+  waypoint with the goal.
+- **`FSMComponents` resolves the target once per frame**, with its `Health` and
+  `PlayerSpiritState` cached per target. `AttackState` alone used to ask four times a frame.
+- **Data:** all twelve hostiles author `aiTuning` (the block had never been serialised at
+  all, so every knob ran on defaults); `mon1` was entirely zero while mapped to
+  `Monster_Default`; `barbol_oscuro` had `speed: 10` against `chasingSpeed: 2.25`, and `speed`
+  is the base `FleeState` multiplies. `ShippedMonsterDataSanityTests` pins the structural
+  rules — positive HP, reach inside the aggro ring, patrol no faster than chase, a telegraph
+  only where the windup clears `AttackState`'s floor, a standoff outside melee and inside
+  aggro.
+- **Test trap that cost a red suite:** both field-of-view fixtures set `Rigidbody2D.velocity`
+  as the monster's facing BEFORE `fsm.Begin()`, and entering `IdleState` calls `StopMovement`
+  — so the facing was zeroed and both tests measured the default east facing. Set it AFTER.
+- **`FSMBuiltInTransitionRegistryTests` was RIGHT to go red here.** It asserted `FleeState` and
+  `AlertChaseState` were reachable only from authored data, and the shout makes the second one
+  reachable from code by design. It is two tests now: Flee keeps the old guarantee, and
+  `AlertChaseState` must be entered from EXACTLY `IdleState` and `PatrolState`. Weakening it to
+  "some code edges exist" would have thrown away the thing it is for.
+
 ## Incident reports
 
 Past incidents that left investigation hooks behind. Read these first when a
@@ -2607,7 +3071,7 @@ related symptom reappears.
 ## Open work
 
 - **Editor UI/UX unification & persistence** — audited 2026-09-02, layer shipped 2026-09-03.
-  The sixteen editors are 319 files / ~77.6k LOC and drifted: three (Camera, DungeonNodeGraph,
+  The seventeen editors are 319 files / ~77.6k LOC and drifted: three (Camera, DungeonNodeGraph,
   General) carry NO chrome at all, `PanelChrome` is missing from six, the tutorial overlay from
   eight, `EditorCameraZoomController` from ten — and **459 raw `new Color(`** literals sit
   outside the theme (Map 90, Tile 85, Spells 68). Nothing persisted between sessions except
