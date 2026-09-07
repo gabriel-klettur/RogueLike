@@ -23,7 +23,15 @@ namespace Valkur.Editor
         private static readonly AtlasGroupDef[] AtlasGroups = new[]
         {
             new AtlasGroupDef("env-tiles",   2048, false, "Assets/_Project/Resources/Tiles"),
-            new AtlasGroupDef("characters",  2048, false, "Assets/_Project/Art/Characters"),
+            // 4096 rather than 2048 because of what this group actually holds. Five of the
+            // six character folders are claimed by players.spriteatlas, so the nested-overlap
+            // branch below hands this group the REMAINDER — today exactly the vampire, and
+            // she is the one character baked at her own pixel budget (256 px, not the shared
+            // 115) to keep the detail her 331-681 px source cells carry. That is 180 frames
+            // and ~11.7 Mpx, where a 2048 page holds 4.19. Unity picks the smallest power of
+            // two that fits, so this is a ceiling and not an allocation: the group would drop
+            // back to 2048 on its own if the vampire ever left it.
+            new AtlasGroupDef("characters",  4096, false, "Assets/_Project/Art/Characters"),
             new AtlasGroupDef("npc",         2048, false, "Assets/_Project/Art/NPC"),
             new AtlasGroupDef("spells",      2048, false, "Assets/_Project/Art/Spells"),
             new AtlasGroupDef("items",       2048, false, "Assets/_Project/Art/Items"),

@@ -111,8 +111,40 @@ ART_ROOT_UNITY = "Assets/_Project/Art/Characters"
 # (measured across all 40 frames of barbarian_idle.png). Matching it keeps every
 # range and offset tuned against the old art valid.
 TARGET_BODY_PX = 115
+# ``ValkurAssetPostprocessor.PLAYER_CHARACTER_PPU``. 115 / 64 = 1.797 world units,
+# which is what every melee range and camera lead in the project was tuned against.
+DEFAULT_CHARACTER_PPU = 64
 ALPHA_SOLID = 190     # the core threshold slice_prop_sheet segments on
 ALPHA_KEEP = 16       # keep soft edges, drop the haze
+
+# A character may be baked at its OWN pixel height and its OWN PPU, and the two are
+# not one dial -- which is the whole reason they are declared as a pair rather than
+# as a single "scale" number.
+#
+#   pixel height   is DETAIL. It is how many texels the art gets to keep, and it is
+#                  the only lever on quality: every frame is resampled from a source
+#                  cell 331-681 px tall, so 115 px throws away 3-5x linear. Measured
+#                  on the vampire's idle, the face, the gold filigree and the choker
+#                  survive at 256 px and are gone at 115.
+#   PPU            is DENSITY. Pixel height DIVIDED by it is the character's WORLD
+#                  height, so raising the pixel budget alone would make the character
+#                  physically bigger, and raising PPU alone would shrink it.
+#
+# Moving one without the other therefore changes two properties at once, silently:
+# a "quality" bump that forgets the PPU resizes the character, its collider (which
+# `EntityColliderConfigurator` derives from `renderer.bounds`) and every melee reach
+# tuned against it. Declaring the pair keeps each edit a statement about ONE of them.
+#
+# The vampire: 256 px / 96 PPU = 2.667 world units against the dwarf's 1.797, i.e.
+# 1.48x taller, at 4.9x the texels. 256 px is the memory ceiling, not a taste
+# decision -- the 180 shipped frames come to ~11.7 Mpx, which is one uncompressed
+# 4096 page of `characters.spriteatlas`; 320 px would need two.
+PLAYER_BODY_PX: dict[str, int] = {
+    "vampire": 256,
+}
+PLAYER_PPU: dict[str, int] = {
+    "vampire": 96,
+}
 
 # S, SE, E, NE, N, NW, W, SW -- the order BuildEightDirectionalSet slices, and the
 # order the manifest's sprite lists must be written in.
@@ -1056,12 +1088,26 @@ def main() -> int:
         "generator": "tools/atlas/wave3/build_player_frames.py",
         "generatedFrom": os.path.basename(args.slices_root.rstrip("/\\")),
         "targetBodyPx": TARGET_BODY_PX,
+        # Every character whose sprites must NOT import at the shared PPU 64, as a flat
+        # `playerKey -> ppu` map. `Valkur.Editor.CharacterSpritePpu` reads exactly this
+        # block and matches a sprite by its `Art/Characters/<playerKey>/` prefix, so it
+        # is deliberately ONE order-independent object rather than a field buried in each
+        # player entry -- the entries are read with a regex, and a per-entry field would
+        # bind to whichever neighbour happened to be adjacent.
+        #
+        # A character with no entry imports at PLAYER_CHARACTER_PPU exactly as it always
+        # did, which is why this map is written EMPTY rather than filled with defaults.
+        "characterPpu": {},
         "players": [],
     }
     total_pngs = 0
 
     for player_key, player in selected.items():
+        target_body_px = PLAYER_BODY_PX.get(player_key, TARGET_BODY_PX)
+        player_ppu = PLAYER_PPU.get(player_key, DEFAULT_CHARACTER_PPU)
         print(f"\n=== {player_key}  (from staging/players/{player['source']}/) ===")
+        print(f"  body {target_body_px}px @ PPU {player_ppu} "
+              f"= {target_body_px / player_ppu:.3f} world units")
         out_dir = os.path.join(ART_ROOT, player_key)
         if not args.dry_run:
             os.makedirs(out_dir, exist_ok=True)
@@ -1076,14 +1122,17 @@ def main() -> int:
         # `built` holds only the sprite-name templates, and the manifest path
         # needs the folder too.
         state_dirs: dict[str, str] = {}
-        entry = {"playerKey": player_key, "states": [],
+        entry = {"playerKey": player_key,
+                 "targetBodyPx": target_body_px, "ppu": player_ppu,
+                 "worldHeightUnits": round(target_body_px / player_ppu, 4),
+                 "states": [],
                  "attackVariants": [], "castVariants": [], "loadouts": []}
 
         for slot, stem in sheets_for(player).items():
             if stem in built:
                 continue
             canvases, body, (rows, cols), overhang, reserved = build_state(args.slices_root, stem)
-            scale = (TARGET_BODY_PX / body) * SCALE_OVERRIDE.get(stem, 1.0)
+            scale = (target_body_px / body) * SCALE_OVERRIDE.get(stem, 1.0)
             # Drop the source character prefix and the staging suffixes: the
             # staged name carries a frame count (`_8f`) and sometimes an alternate
             # take marker (`_v2`) that identify a FILE IN downloads/, not a
@@ -1189,6 +1238,8 @@ def main() -> int:
             })
 
         entry["stagedNotShipped"] = player["staged"]
+        if player_ppu != DEFAULT_CHARACTER_PPU:
+            manifest["characterPpu"][player_key] = player_ppu
         manifest["players"].append(entry)
 
     if not args.dry_run:
@@ -1208,6 +1259,18 @@ def main() -> int:
                 seen.add(pkey)
             merged.extend(pl for pl in manifest["players"] if pl["playerKey"] not in seen)
             manifest["players"] = merged
+            # `characterPpu` merges for the same reason the player list does, and it is the
+            # half that fails SILENTLY: a player left out of this run contributes no entry,
+            # so rewriting the map with only what was built would import that character at
+            # the default PPU -- resizing a character nobody touched, with nothing logged.
+            # A rebuilt player wins, because its run is the one that just measured it, and
+            # a rebuilt player that went back TO the default drops out rather than lingering.
+            carried = dict(previous.get("characterPpu") or {})
+            carried.update(manifest["characterPpu"])
+            for pkey in built_by_key:
+                if pkey not in manifest["characterPpu"]:
+                    carried.pop(pkey, None)
+            manifest["characterPpu"] = carried
             manifest["generatedFrom"] = (f"{previous.get('generatedFrom')} + "
                                          f"{manifest['generatedFrom']} "
                                          f"({', '.join(sorted(built_by_key))})")

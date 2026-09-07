@@ -116,7 +116,17 @@ namespace Valkur.Editor
                 // when the camera zooms in (zoom range 2..25 in CameraSetup), which
                 // ruins the pixel-art look the rest of the game uses. Tiles, NPCs,
                 // and items are all Point-filtered; characters must match.
-                importer.spritePixelsPerUnit = PLAYER_CHARACTER_PPU;
+                // PPU 64 against the frame builder's shared 115 px body is 1.797 world units,
+                // the height every melee range and camera lead was tuned against — and it is
+                // the right answer for the five characters drawn at one scale. A character
+                // baked at its OWN pixel height declares its OWN PPU in the frame manifest,
+                // because pixel height is DETAIL and the RATIO is world height: the vampire
+                // keeps 256 px of her 331-681 px source cells and divides by 96 to stand
+                // 2.667 units, 1.48x the dwarf. Everything else reports 0 and takes the
+                // shared default, so this line is a no-op for the whole existing roster.
+                float declaredPpu = CharacterSpritePpu.PpuFor(assetPath);
+                importer.spritePixelsPerUnit =
+                    declaredPpu > 0f ? declaredPpu : PLAYER_CHARACTER_PPU;
                 // The feet are normally the bottom row, so (0.5, 0) puts the pivot on them
                 // and the frame builder ends the canvas at the ground line precisely because
                 // of that. Two animations break the assumption: a dwarf chopping or mining
