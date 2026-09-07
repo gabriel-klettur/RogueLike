@@ -1,0 +1,319 @@
+{
+  "barbol_muscle": {
+    "barbol_muscle_attack": {
+      "frames": 6,
+      "rows": 1,
+      "perRow": [
+        6
+      ]
+    },
+    "barbol_muscle_attack_2": {
+      "frames": 6,
+      "rows": 1,
+      "perRow": [
+        6
+      ]
+    },
+    "barbol_muscle_attack_3": {
+      "frames": 6,
+      "rows": 1,
+      "perRow": [
+        6
+      ]
+    },
+    "barbol_muscle_attack_4": {
+      "frames": 6,
+      "rows": 1,
+      "perRow": [
+        6
+      ]
+    },
+    "barbol_muscle_die": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_muscle_hit": {
+      "frames": 4,
+      "rows": 1,
+      "perRow": [
+        4
+      ]
+    },
+    "barbol_muscle_idle": {
+      "frames": 6,
+      "rows": 1,
+      "perRow": [
+        6
+      ]
+    },
+    "barbol_muscle_kick": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_muscle_knockdown_recover": {
+      "frames": 7,
+      "rows": 1,
+      "perRow": [
+        7
+      ]
+    },
+    "barbol_muscle_roar": {
+      "frames": 6,
+      "rows": 1,
+      "perRow": [
+        6
+      ]
+    },
+    "barbol_muscle_roar_2": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_muscle_run": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_muscle_run_attack": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_muscle_run_attack_2": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_muscle_run_attack_3": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_muscle_run_attack_4": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_muscle_spellcast_1": {
+      "frames": 6,
+      "rows": 1,
+      "perRow": [
+        6
+      ]
+    },
+    "barbol_muscle_spellcast_2": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_muscle_spellcast_5": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_muscle_walk": {
+      "frames": 7,
+      "rows": 1,
+      "perRow": [
+        7
+      ]
+    },
+    "barbol_muscle_walk_2": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    }
+  },
+  "barbol_young": {
+    "barbol_attack": {
+      "frames": 6,
+      "rows": 1,
+      "perRow": [
+        6
+      ]
+    },
+    "barbol_die": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_heavy_attack": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_hit": {
+      "frames": 4,
+      "rows": 1,
+      "perRow": [
+        4
+      ]
+    },
+    "barbol_idle": {
+      "frames": 6,
+      "rows": 1,
+      "perRow": [
+        6
+      ]
+    },
+    "barbol_idle_2": {
+      "frames": 6,
+      "rows": 1,
+      "perRow": [
+        6
+      ]
+    },
+    "barbol_kick": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_knockdown_recovery": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_knockdown_recovery_2": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_roar": {
+      "frames": 6,
+      "rows": 1,
+      "perRow": [
+        6
+      ]
+    },
+    "barbol_roar_2": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_run": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_run_attack": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_run_attack_2": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_spellcast": {
+      "frames": 6,
+      "rows": 1,
+      "perRow": [
+        6
+      ]
+    },
+    "barbol_spellcast_1": {
+      "frames": 6,
+      "rows": 1,
+      "perRow": [
+        6
+      ]
+    },
+    "barbol_spellcast_2": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_spellcast_3": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    },
+    "barbol_walk": {
+      "frames": 7,
+      "rows": 1,
+      "perRow": [
+        7
+      ]
+    },
+    "barbol_walk_2": {
+      "frames": 8,
+      "rows": 1,
+      "perRow": [
+        8
+      ]
+    }
+  },
+  "red_dragon": {
+    "red_dragon_attack": {
+      "frames": 8,
+      "rows": 2,
+      "perRow": [
+        4,
+        4
+      ]
+    },
+    "red_dragon_idle": {
+      "frames": 6,
+      "rows": 2,
+      "perRow": [
+        3,
+        3
+      ]
+    },
+    "red_dragon_walking": {
+      "frames": 8,
+      "rows": 2,
+      "perRow": [
+        4,
+        4
+      ]
+    }
+  }
+}

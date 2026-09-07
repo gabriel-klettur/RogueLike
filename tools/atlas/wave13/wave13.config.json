@@ -1,0 +1,249 @@
+{
+  "_comment": [
+    "wave13 - three hostile monsters cut from Art/NPC/monsters/new.",
+    "",
+    "'frames' is a CHECK, not an override: slice_wave13_sheets.py finds the figures by",
+    "connected components and refuses to build if the count disagrees. Every number here",
+    "was produced by that segmentation and then spot-checked against a full-resolution",
+    "view of the sheet - which is how three of them were caught being wrong when they had",
+    "been read off a contact sheet by eye (walk is 7 not 6, heavy_attack is 8 not 6,",
+    "muscle_run is 8 not 6).",
+    "",
+    "targetBodyPx is a WORLD SIZE, because NPC art imports at PPU 64: 168px = 2.63 units,",
+    "240px = 3.75, 288px = 4.5. The player dwarf is 1.797 for comparison, so all three are",
+    "deliberately bigger than the player, as asked.",
+    "",
+    "chase draws from the RUN sheet on both barbols - that is the whole reason a chase",
+    "reads as a chase. The dragon has only three sheets, so it takes the binder's fallback",
+    "chain for cast/damage/death (chase->walk, damage->idle, death->idle) and leans on",
+    "GrayscaleDeath to sell dying, exactly as the barbarian player class does."
+  ],
+  "monsters": {
+    "barbol_muscle": {
+      "displayName": "Barbol Coloso",
+      "sourceDir": "barbol_muscle",
+      "targetBodyPx": 240,
+      "sheets": {
+        "barbol_muscle_idle": {
+          "frames": 6
+        },
+        "barbol_muscle_walk": {
+          "frames": 7
+        },
+        "barbol_muscle_run": {
+          "frames": 8
+        },
+        "barbol_muscle_attack": {
+          "frames": 6
+        },
+        "barbol_muscle_attack_2": {
+          "frames": 6
+        },
+        "barbol_muscle_attack_3": {
+          "frames": 6
+        },
+        "barbol_muscle_kick": {
+          "frames": 8
+        },
+        "barbol_muscle_run_attack": {
+          "frames": 8
+        },
+        "barbol_muscle_spellcast_1": {
+          "frames": 6
+        },
+        "barbol_muscle_spellcast_5": {
+          "frames": 8
+        },
+        "barbol_muscle_roar": {
+          "frames": 6
+        },
+        "barbol_muscle_hit": {
+          "frames": 4
+        },
+        "barbol_muscle_die": {
+          "frames": 8
+        }
+      },
+      "states": {
+        "idle": {
+          "sheet": "barbol_muscle_idle"
+        },
+        "walk": {
+          "sheet": "barbol_muscle_walk"
+        },
+        "chase": {
+          "sheet": "barbol_muscle_run"
+        },
+        "attack": {
+          "sheet": "barbol_muscle_attack"
+        },
+        "cast": {
+          "sheet": "barbol_muscle_spellcast_1"
+        },
+        "damage": {
+          "sheet": "barbol_muscle_hit"
+        },
+        "death": {
+          "sheet": "barbol_muscle_die"
+        }
+      },
+      "attackVariants": [
+        {
+          "key": "smash",
+          "sheet": "barbol_muscle_attack_2"
+        },
+        {
+          "key": "hook",
+          "sheet": "barbol_muscle_attack_3"
+        },
+        {
+          "key": "kick",
+          "sheet": "barbol_muscle_kick"
+        },
+        {
+          "key": "charge_slam",
+          "sheet": "barbol_muscle_run_attack"
+        }
+      ],
+      "castVariants": [
+        {
+          "key": "root_surge",
+          "sheet": "barbol_muscle_spellcast_5",
+          "scaleAdjust": 1.26
+        },
+        {
+          "key": "roar",
+          "sheet": "barbol_muscle_roar"
+        }
+      ],
+      "slicesRoot": "staging/monsters/wave13_slices/barbol_muscle"
+    },
+    "barbol_young": {
+      "displayName": "Barbol Retono",
+      "sourceDir": "barbol_young",
+      "targetBodyPx": 168,
+      "sheets": {
+        "barbol_idle": {
+          "frames": 6
+        },
+        "barbol_walk": {
+          "frames": 7
+        },
+        "barbol_run": {
+          "frames": 8
+        },
+        "barbol_attack": {
+          "frames": 6
+        },
+        "barbol_heavy_attack": {
+          "frames": 8
+        },
+        "barbol_kick": {
+          "frames": 8
+        },
+        "barbol_run_attack": {
+          "frames": 8
+        },
+        "barbol_spellcast": {
+          "frames": 6
+        },
+        "barbol_spellcast_2": {
+          "frames": 8
+        },
+        "barbol_roar": {
+          "frames": 6
+        },
+        "barbol_hit": {
+          "frames": 4
+        },
+        "barbol_die": {
+          "frames": 8
+        }
+      },
+      "states": {
+        "idle": {
+          "sheet": "barbol_idle"
+        },
+        "walk": {
+          "sheet": "barbol_walk"
+        },
+        "chase": {
+          "sheet": "barbol_run"
+        },
+        "attack": {
+          "sheet": "barbol_attack"
+        },
+        "cast": {
+          "sheet": "barbol_spellcast"
+        },
+        "damage": {
+          "sheet": "barbol_hit"
+        },
+        "death": {
+          "sheet": "barbol_die"
+        }
+      },
+      "attackVariants": [
+        {
+          "key": "overhead",
+          "sheet": "barbol_heavy_attack"
+        },
+        {
+          "key": "kick",
+          "sheet": "barbol_kick"
+        },
+        {
+          "key": "lunge",
+          "sheet": "barbol_run_attack"
+        }
+      ],
+      "castVariants": [
+        {
+          "key": "sap_bolt",
+          "sheet": "barbol_spellcast_2"
+        },
+        {
+          "key": "roar",
+          "sheet": "barbol_roar"
+        }
+      ],
+      "slicesRoot": "staging/monsters/wave13_slices/barbol_young"
+    },
+    "red_dragon": {
+      "displayName": "Dragon Rojo",
+      "sourceDir": "red_dragon",
+      "targetBodyPx": 288,
+      "sheets": {
+        "red_dragon_idle": {
+          "frames": 6,
+          "rows": 2
+        },
+        "red_dragon_walking": {
+          "frames": 8,
+          "rows": 2
+        },
+        "red_dragon_attack": {
+          "frames": 8,
+          "rows": 2
+        }
+      },
+      "states": {
+        "idle": {
+          "sheet": "red_dragon_idle"
+        },
+        "walk": {
+          "sheet": "red_dragon_walking"
+        },
+        "attack": {
+          "sheet": "red_dragon_attack"
+        },
+        "cast": {
+          "sheet": "red_dragon_attack"
+        }
+      },
+      "attackVariants": [],
+      "castVariants": [],
+      "slicesRoot": "staging/monsters/wave13_slices/red_dragon"
+    }
+  }
+}

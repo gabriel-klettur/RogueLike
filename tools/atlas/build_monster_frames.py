@@ -98,6 +98,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import sys
 from typing import Dict, List, Optional, Tuple
@@ -178,14 +179,28 @@ def build_state_canvases(slices_root: str, tag: str, stem: str, cols: int, rows:
     sheet_h, sheet_w = sheet.shape[:2]
     cell_w, cell_h = sheet_w / cols, sheet_h / rows
 
+    # A slicer may hand over the anchor and the row it MEASURED, instead of leaving them
+    # to be derived from an even grid. Some sheets simply are not on one: on the wave13
+    # monsters the figures are wider than their nominal cell and every one overlaps its
+    # neighbours', so 148 components straddle a cut line and the assertion below is not a
+    # safety check but a false alarm. When the slicer supplies `anchor_x` it has fitted an
+    # evenly spaced ladder through the measured figure centres, which is the same quantity
+    # the cell centre stands in for -- see slice_wave13_sheets.py. Slices without these
+    # fields take the original grid path unchanged.
+    explicit = all("anchor_x" in item for item in manifest["items"])
+
     frames = []
     for item in manifest["items"]:
         x0, y0, x1, y1 = item["sheet_box"]
         cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
-        col, row = int(cx // cell_w), int(cy // cell_h)
-        if row * cols + col != item["index"]:
-            raise SystemExit(f"{tag}/{stem}#{item['index']} does not sit in its own grid cell "
-                             f"(landed r{row}c{col}) - the even-grid assumption is wrong.")
+        if explicit:
+            row = int(item.get("row", 0))
+            col = None
+        else:
+            col, row = int(cx // cell_w), int(cy // cell_h)
+            if row * cols + col != item["index"]:
+                raise SystemExit(f"{tag}/{stem}#{item['index']} does not sit in its own grid cell "
+                                 f"(landed r{row}c{col}) - the even-grid assumption is wrong.")
         # The frame's own pixels only, read back out of the sheet through its box,
         # so a neighbouring frame's sword/cape never bleeds in.
         patch = sheet[y0:y1, x0:x1].copy()
@@ -194,7 +209,8 @@ def build_state_canvases(slices_root: str, tag: str, stem: str, cols: int, rows:
         if bb is None:
             raise SystemExit(f"{tag}/{stem}#{item['index']} has no solid body")
         frames.append({"index": item["index"], "row": row, "col": col, "patch": patch,
-                       "x0": x0, "y0": y0, "body": bb})
+                       "x0": x0, "y0": y0, "body": bb,
+                       "explicit_anchor_x": float(item["anchor_x"]) if explicit else None})
 
     # One ground line per row; one anchor column per cell.
     ground: Dict[int, float] = {}
@@ -202,22 +218,27 @@ def build_state_canvases(slices_root: str, tag: str, stem: str, cols: int, rows:
         gy = f["y0"] + f["body"][3]
         ground[f["row"]] = max(ground.get(f["row"], 0), gy)
     for f in frames:
-        f["anchor_x"] = (f["col"] + 0.5) * cell_w
+        f["anchor_x"] = f["explicit_anchor_x"] if f["explicit_anchor_x"] is not None             else (f["col"] + 0.5) * cell_w
         f["anchor_y"] = ground[f["row"]]
 
     # Canvas: the widest reach any frame needs from its anchor, in all four
     # directions, so every frame shares one geometry.
-    left = max(int(round(f["anchor_x"] - f["x0"])) for f in frames)
-    right = max(int(round(f["x0"] + f["patch"].shape[1] - f["anchor_x"])) for f in frames)
-    up = max(f["anchor_y"] - f["y0"] for f in frames)
-    down = max(f["y0"] + f["patch"].shape[0] - f["anchor_y"] for f in frames)
+    # CEIL, not round. The anchor is a float once a slicer supplies a fitted one, so a
+    # frame can need a fraction of a pixel more room than the rounded extent reserves --
+    # which lands as `could not broadcast (453,377) into (453,376)` on whichever frame sits
+    # furthest from its rung. Ceiling every extent costs at most one transparent column and
+    # cannot under-reserve.
+    left = max(int(math.ceil(f["anchor_x"] - f["x0"])) for f in frames)
+    right = max(int(math.ceil(f["x0"] + f["patch"].shape[1] - f["anchor_x"])) for f in frames)
+    up = max(int(math.ceil(f["anchor_y"] - f["y0"])) for f in frames)
+    down = max(int(math.ceil(f["y0"] + f["patch"].shape[0] - f["anchor_y"])) for f in frames)
 
     canvas_w, canvas_h = left + right, up + down
     out = []
     for f in sorted(frames, key=lambda x: x["index"]):
         canvas = np.zeros((canvas_h, canvas_w, 4), dtype=np.uint8)
-        px = int(round(f["x0"] - f["anchor_x"] + left))
-        py = int(round(f["y0"] - f["anchor_y"] + up))
+        px = int(math.floor(f["x0"] - f["anchor_x"] + left))
+        py = int(math.floor(f["y0"] - f["anchor_y"] + up))
         ph, pw = f["patch"].shape[:2]
         canvas[py:py + ph, px:px + pw] = f["patch"]
         out.append(canvas)
@@ -356,7 +377,8 @@ def process_monster(key: str, cfg: dict, out_root: str, allow_outside_assets: bo
 
     lines: List[str] = []
     entry = {"monsterKey": key, "displayName": cfg.get("displayName", key.replace("_", " ").title()),
-             "idle": [], "states": []}
+             "idle": [], "states": [], "attackVariants": [], "castVariants": [],
+             "targetBodyPx": target_body_px}
 
     idle_cfg = cfg.get("idle")
     if idle_cfg:
@@ -376,50 +398,84 @@ def process_monster(key: str, cfg: dict, out_root: str, allow_outside_assets: bo
             entry["idle"].append({"direction": direction, "path": _unity_asset_path(png_path)})
         lines.append(f"idle: 8 directions, body {body_px:.0f}px -> {target_body_px:.0f}px (x{scale:.3f})")
 
-    for state, state_cfg in cfg.get("states", {}).items():
-        stem, cols, rows = state_cfg["sheet"], int(state_cfg["cols"]), int(state_cfg.get("rows", 1))
+    def emit_cycle(slot: str, state_cfg: dict):
+        """One cyclic animation: cut, scale, mirror, and fill the eight direction buckets.
+
+        Shared by the seven base states and by every attack/cast VARIANT, because a
+        variant is the same animation in every respect that matters here - it differs
+        only in which list on EntityAssetConfig it lands in. A second copy of this loop
+        for variants is the shape that drifts.
+        """
+        stem = state_cfg["sheet"]
+        cols = int(state_cfg.get("cols", 1))
+        rows = int(state_cfg.get("rows", 1))
         mirror = bool(state_cfg.get("mirror", True))
         canvases, body_px = build_state_canvases(slices_root, key, stem, cols, rows)
-        scale = target_body_px / body_px
+
+        # `scaleAdjust` is the SCALE_OVERRIDE escape hatch the player pipeline documents,
+        # and it exists for one failure: `body_px` is the tallest body across the state, so
+        # a sheet whose tallest frame throws its arms overhead measures tall for its size
+        # and the whole animation is rendered too small. The tell is that the sheet's HEIGHT
+        # ratio and its AREA ratio against the same monster's idle disagree — measured on
+        # this wave, they agree within 6 % on twelve of thirteen barbol_muscle sheets and by
+        # 26 % on `spellcast_5`, which is the one that raises both arms.
+        scale = target_body_px / body_px * float(state_cfg.get("scaleAdjust", 1.0))
 
         west_paths: List[str] = []
         east_paths: List[str] = []
         for i, canvas in enumerate(canvases):
             img = resample(canvas, scale)
-            name_w = f"{key}_{state}_w{i}"
-            png_w = os.path.join(out_dir, f"{name_w}.png")
+            png_w = os.path.join(out_dir, f"{key}_{slot}_w{i}.png")
             if not dry_run:
                 img.save(png_w)
             west_paths.append(_unity_asset_path(png_w))
 
             if mirror:
-                mirrored = img.transpose(Image.FLIP_LEFT_RIGHT)
-                name_e = f"{key}_{state}_e{i}"
-                png_e = os.path.join(out_dir, f"{name_e}.png")
+                png_e = os.path.join(out_dir, f"{key}_{slot}_e{i}.png")
                 if not dry_run:
-                    mirrored.save(png_e)
+                    img.transpose(Image.FLIP_LEFT_RIGHT).save(png_e)
                 east_paths.append(_unity_asset_path(png_e))
 
-        frames_per_direction = len(canvases)
         sprites: List[str] = []
         for direction in DIRECTIONS:
             side = direction_map[direction] if mirror else "west"
             sprites.extend(east_paths if side == "east" else west_paths)
 
+        mirror_note = "west + mirrored east" if mirror else "west only (no mirror)"
+        lines.append(f"{slot:16s}: {len(canvases)} frames ({mirror_note}), "
+                     f"body {body_px:.0f}px -> {target_body_px:.0f}px (x{scale:.3f}), "
+                     f"frame {resample(canvases[0], scale).size}")
+        return len(canvases), sprites
+
+    for state, state_cfg in cfg.get("states", {}).items():
+        frames_per_direction, sprites = emit_cycle(state, state_cfg)
         entry["states"].append({
             "state": state,
             "framesPerDirection": frames_per_direction,
             "sprites": sprites,
         })
-        mirror_note = "west + mirrored east" if mirror else "west only (no mirror)"
-        lines.append(f"{state:11s}: {frames_per_direction} frames ({mirror_note}), "
-                     f"body {body_px:.0f}px -> {target_body_px:.0f}px (x{scale:.3f}), "
-                     f"frame {resample(canvases[0], scale).size}")
+
+    # Extra attacks are VARIANTS, never new AnimState values - CLAUDE.md records why: the
+    # seven states are enumerated positionally in four independent places, so an eighth
+    # pays that tax four times over, and PlayerController's locomotion whitelist would
+    # enter a state it never leaves. A variant index under the existing Attack state
+    # inherits both whitelists by construction.
+    for group, out_key in (("attackVariants", "attackVariants"),
+                           ("castVariants", "castVariants")):
+        for variant in cfg.get(group, []):
+            slot = f"{out_key[:-8]}_{variant['key']}"   # e.g. attack_kick / cast_roar
+            frames_per_direction, sprites = emit_cycle(slot, variant)
+            entry.setdefault(out_key, []).append({
+                "key": variant["key"],
+                "framesPerDirection": frames_per_direction,
+                "sprites": sprites,
+            })
 
     if not allow_outside_assets:
         bad = [p["path"] for p in entry["idle"] if not p["path"].startswith("Assets/")]
-        for s in entry["states"]:
-            bad += [p for p in s["sprites"] if not p.startswith("Assets/")]
+        for group in (entry["states"], entry["attackVariants"], entry["castVariants"]):
+            for s in group:
+                bad += [p for p in s["sprites"] if not p.startswith("Assets/")]
         if bad:
             raise SystemExit(
                 f"{key}: outDir does not resolve under Assets/ ({sorted(set(bad))[:1]}) - "

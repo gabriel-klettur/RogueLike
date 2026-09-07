@@ -1,0 +1,950 @@
+{
+  "barbol_muscle": {
+    "barbol_muscle_attack": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 2,
+      "colsPerRow": [
+        2
+      ],
+      "scorePerRow": [
+        0.024
+      ],
+      "rowBands": [
+        [
+          168,
+          563
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_attack_2": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 2,
+      "colsPerRow": [
+        2
+      ],
+      "scorePerRow": [
+        0.024
+      ],
+      "rowBands": [
+        [
+          168,
+          563
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_attack_3": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 2,
+      "colsPerRow": [
+        2
+      ],
+      "scorePerRow": [
+        0.024
+      ],
+      "rowBands": [
+        [
+          168,
+          563
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_attack_4": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 2,
+      "colsPerRow": [
+        2
+      ],
+      "scorePerRow": [
+        0.024
+      ],
+      "rowBands": [
+        [
+          168,
+          563
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_die": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 4,
+      "colsPerRow": [
+        4
+      ],
+      "scorePerRow": [
+        0.2484
+      ],
+      "rowBands": [
+        [
+          224,
+          506
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_hit": {
+      "size": [
+        2067,
+        761
+      ],
+      "rows": 1,
+      "cols": 2,
+      "colsPerRow": [
+        2
+      ],
+      "scorePerRow": [
+        0.0261
+      ],
+      "rowBands": [
+        [
+          32,
+          699
+        ]
+      ],
+      "source_mode": "RGBA"
+    },
+    "barbol_muscle_idle": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 3,
+      "colsPerRow": [
+        3
+      ],
+      "scorePerRow": [
+        0.1565
+      ],
+      "rowBands": [
+        [
+          135,
+          588
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_kick": {
+      "size": [
+        2103,
+        748
+      ],
+      "rows": 1,
+      "cols": 2,
+      "colsPerRow": [
+        2
+      ],
+      "scorePerRow": [
+        0.024
+      ],
+      "rowBands": [
+        [
+          214,
+          518
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_knockdown_recover": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 4,
+      "colsPerRow": [
+        4
+      ],
+      "scorePerRow": [
+        0.594
+      ],
+      "rowBands": [
+        [
+          190,
+          538
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_roar": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 2,
+      "colsPerRow": [
+        2
+      ],
+      "scorePerRow": [
+        0.1707
+      ],
+      "rowBands": [
+        [
+          148,
+          556
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_roar_2": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 2,
+      "colsPerRow": [
+        2
+      ],
+      "scorePerRow": [
+        0.024
+      ],
+      "rowBands": [
+        [
+          203,
+          516
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_run": {
+      "size": [
+        1855,
+        848
+      ],
+      "rows": 1,
+      "cols": 4,
+      "colsPerRow": [
+        4
+      ],
+      "scorePerRow": [
+        0.1309
+      ],
+      "rowBands": [
+        [
+          318,
+          585
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_run_attack": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 8,
+      "colsPerRow": [
+        8
+      ],
+      "scorePerRow": [
+        0.364
+      ],
+      "rowBands": [
+        [
+          233,
+          518
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_run_attack_2": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 8,
+      "colsPerRow": [
+        8
+      ],
+      "scorePerRow": [
+        0.364
+      ],
+      "rowBands": [
+        [
+          233,
+          518
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_run_attack_3": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 8,
+      "colsPerRow": [
+        8
+      ],
+      "scorePerRow": [
+        0.364
+      ],
+      "rowBands": [
+        [
+          233,
+          518
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_run_attack_4": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 8,
+      "colsPerRow": [
+        8
+      ],
+      "scorePerRow": [
+        0.364
+      ],
+      "rowBands": [
+        [
+          233,
+          518
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_spellcast_1": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 3,
+      "colsPerRow": [
+        3
+      ],
+      "scorePerRow": [
+        0.1681
+      ],
+      "rowBands": [
+        [
+          215,
+          572
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_spellcast_2": {
+      "size": [
+        2040,
+        771
+      ],
+      "rows": 1,
+      "cols": 2,
+      "colsPerRow": [
+        2
+      ],
+      "scorePerRow": [
+        0.024
+      ],
+      "rowBands": [
+        [
+          197,
+          547
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_spellcast_5": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 2,
+      "colsPerRow": [
+        2
+      ],
+      "scorePerRow": [
+        0.024
+      ],
+      "rowBands": [
+        [
+          143,
+          580
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_walk": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 7,
+      "colsPerRow": [
+        7
+      ],
+      "scorePerRow": [
+        0.087
+      ],
+      "rowBands": [
+        [
+          181,
+          565
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_muscle_walk_2": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 2,
+      "colsPerRow": [
+        2
+      ],
+      "scorePerRow": [
+        0.024
+      ],
+      "rowBands": [
+        [
+          237,
+          484
+        ]
+      ],
+      "source_mode": "RGB"
+    }
+  },
+  "barbol_young": {
+    "barbol_attack": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 3,
+      "colsPerRow": [
+        3
+      ],
+      "scorePerRow": [
+        0.2309
+      ],
+      "rowBands": [
+        [
+          187,
+          598
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_die": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 2,
+      "colsPerRow": [
+        2
+      ],
+      "scorePerRow": [
+        0.0797
+      ],
+      "rowBands": [
+        [
+          206,
+          537
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_heavy_attack": {
+      "size": [
+        2048,
+        768
+      ],
+      "rows": 1,
+      "cols": 8,
+      "colsPerRow": [
+        8
+      ],
+      "scorePerRow": [
+        0.3256
+      ],
+      "rowBands": [
+        [
+          185,
+          550
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_hit": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 2,
+      "colsPerRow": [
+        2
+      ],
+      "scorePerRow": [
+        0.024
+      ],
+      "rowBands": [
+        [
+          150,
+          608
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_idle": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 2,
+      "colsPerRow": [
+        2
+      ],
+      "scorePerRow": [
+        0.1197
+      ],
+      "rowBands": [
+        [
+          157,
+          615
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_idle_2": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 3,
+      "colsPerRow": [
+        3
+      ],
+      "scorePerRow": [
+        0.2039
+      ],
+      "rowBands": [
+        [
+          161,
+          596
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_kick": {
+      "size": [
+        2079,
+        756
+      ],
+      "rows": 1,
+      "cols": 4,
+      "colsPerRow": [
+        4
+      ],
+      "scorePerRow": [
+        0.1593
+      ],
+      "rowBands": [
+        [
+          210,
+          549
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_knockdown_recovery": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 4,
+      "colsPerRow": [
+        4
+      ],
+      "scorePerRow": [
+        0.6661
+      ],
+      "rowBands": [
+        [
+          182,
+          571
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_knockdown_recovery_2": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 3,
+      "colsPerRow": [
+        3
+      ],
+      "scorePerRow": [
+        0.7628
+      ],
+      "rowBands": [
+        [
+          202,
+          558
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_roar": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 6,
+      "colsPerRow": [
+        6
+      ],
+      "scorePerRow": [
+        0.1954
+      ],
+      "rowBands": [
+        [
+          159,
+          569
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_roar_2": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 8,
+      "colsPerRow": [
+        8
+      ],
+      "scorePerRow": [
+        0.1639
+      ],
+      "rowBands": [
+        [
+          219,
+          543
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_run": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 4,
+      "colsPerRow": [
+        4
+      ],
+      "scorePerRow": [
+        0.5086
+      ],
+      "rowBands": [
+        [
+          224,
+          527
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_run_attack": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 8,
+      "colsPerRow": [
+        8
+      ],
+      "scorePerRow": [
+        0.5312
+      ],
+      "rowBands": [
+        [
+          227,
+          509
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_run_attack_2": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 8,
+      "colsPerRow": [
+        8
+      ],
+      "scorePerRow": [
+        0.6761
+      ],
+      "rowBands": [
+        [
+          205,
+          509
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_spellcast": {
+      "size": [
+        2106,
+        747
+      ],
+      "rows": 1,
+      "cols": 3,
+      "colsPerRow": [
+        3
+      ],
+      "scorePerRow": [
+        0.2126
+      ],
+      "rowBands": [
+        [
+          223,
+          569
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_spellcast_1": {
+      "size": [
+        2103,
+        748
+      ],
+      "rows": 1,
+      "cols": 6,
+      "colsPerRow": [
+        6
+      ],
+      "scorePerRow": [
+        0.2942
+      ],
+      "rowBands": [
+        [
+          198,
+          585
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_spellcast_2": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 2,
+      "colsPerRow": [
+        2
+      ],
+      "scorePerRow": [
+        0.0397
+      ],
+      "rowBands": [
+        [
+          139,
+          578
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_spellcast_3": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 2,
+      "colsPerRow": [
+        2
+      ],
+      "scorePerRow": [
+        0.0777
+      ],
+      "rowBands": [
+        [
+          209,
+          555
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_walk": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 6,
+      "colsPerRow": [
+        6
+      ],
+      "scorePerRow": [
+        0.8006
+      ],
+      "rowBands": [
+        [
+          186,
+          561
+        ]
+      ],
+      "source_mode": "RGB"
+    },
+    "barbol_walk_2": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 1,
+      "cols": 2,
+      "colsPerRow": [
+        2
+      ],
+      "scorePerRow": [
+        0.024
+      ],
+      "rowBands": [
+        [
+          201,
+          542
+        ]
+      ],
+      "source_mode": "RGB"
+    }
+  },
+  "red_dragon": {
+    "red_dragon_attack": {
+      "size": [
+        1774,
+        887
+      ],
+      "rows": 2,
+      "cols": 2,
+      "colsPerRow": [
+        2,
+        2
+      ],
+      "scorePerRow": [
+        0.4164,
+        0.2676
+      ],
+      "rowBands": [
+        [
+          128,
+          405
+        ],
+        [
+          520,
+          766
+        ]
+      ],
+      "source_mode": "RGBA"
+    },
+    "red_dragon_idle": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 2,
+      "cols": 3,
+      "colsPerRow": [
+        3,
+        3
+      ],
+      "scorePerRow": [
+        0.0361,
+        0.036
+      ],
+      "rowBands": [
+        [
+          19,
+          328
+        ],
+        [
+          402,
+          692
+        ]
+      ],
+      "source_mode": "RGBA"
+    },
+    "red_dragon_walking": {
+      "size": [
+        2172,
+        724
+      ],
+      "rows": 2,
+      "cols": 4,
+      "colsPerRow": [
+        4,
+        2
+      ],
+      "scorePerRow": [
+        0.3552,
+        0.207
+      ],
+      "rowBands": [
+        [
+          44,
+          335
+        ],
+        [
+          393,
+          682
+        ]
+      ],
+      "source_mode": "RGBA"
+    }
+  }
+}
