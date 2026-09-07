@@ -27,7 +27,7 @@ MonoBehaviour:
   damageStopProbability: 0.25
   manaRegenPerSecond: 1
   dashCharges: 2
-  meleeRange: 1.5
+  meleeRange: 2.16
   meleeCooldown: 0.5
   baseCritChance: 0.05
   baseCritMultiplier: 1.5

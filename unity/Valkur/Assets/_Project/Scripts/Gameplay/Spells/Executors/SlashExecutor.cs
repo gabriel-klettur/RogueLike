@@ -71,6 +71,17 @@ namespace Valkur.Gameplay.Spells
             float hitRadius = ctx.Spell.hitRadius > 0f ? ctx.Spell.hitRadius : ctx.Spell.range;
             if (hitRadius <= 0f) hitRadius = DEFAULT_HIT_RADIUS;
 
+            // A SpellDefinition knows nothing about who casts it, so every playable class
+            // swung this at the same radius however big it is. Scaled by the caster's own
+            // MeleeRange stat against the 1.5 baseline every class authors, so this is
+            // exactly 1.0 for the whole shipped roster and moves only for a class tuned
+            // away from it. Monsters are refused inside the helper — their reach is already
+            // expressed in their own slash asset, and scaling it twice takes barbol_boss to
+            // 30 units. Applied BEFORE the arc is spawned so damage and the drawn edge take
+            // the same number: SlashAttack derives its sweep from this radius, so the two
+            // cannot separate.
+            hitRadius *= MeleeReachScale.For(ctx.Caster);
+
             // The arc begins at Fireball's canonical hand point. Gameplay geometry and the
             // visual share it, so the swing cannot detach from its damage area.
             Vector2 castStart = ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell);
