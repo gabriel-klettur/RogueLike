@@ -2277,6 +2277,56 @@ resliced without its `--config` and quietly reshipped.
   postprocessor's `(0.5, 0)` pivot lands on the feet.
 - **`TARGET_BODY_PX` is 115** because that is what the five legacy characters measure. Every
   melee range, projectile offset and camera lead tuned against the old art still reads.
+- **A character's size is a PAIR — baked pixel height and PPU — and neither number means
+  anything alone.** The pixel height is the only lever on QUALITY: every frame is resampled
+  from a source cell 331-681 px tall, so the shared 115 px throws away three to five times
+  linear, and measured on the vampire's idle the face, the choker and the gold filigree are
+  simply gone at 115 and legible at 256. The RATIO of the two is the character's WORLD
+  HEIGHT. So raising the pixel budget alone makes the character physically bigger, and
+  raising the PPU alone shrinks her — one edit, two properties, silently. `PLAYER_BODY_PX`
+  and `PLAYER_PPU` in `build_player_frames.py` are therefore declared together, and the
+  vampire ships **256 px at PPU 96 = 2.667 world units**, 1.48x the dwarf's 1.797, at 4.9x
+  the texels. A character with no entry takes 115 / 64 and imports exactly as it always did.
+  - **The PPU rides the MANIFEST, not the `.meta`**, for the reason `CharacterSpritePivots`
+    already records: the builder rewrites the manifest for a whole player on every run, so a
+    value stored beside the texture is silently correct until somebody rebuilds an unrelated
+    sheet. `CharacterSpritePpu` reads the flat top-level `characterPpu` map and matches by
+    `Art/Characters/<playerKey>/` PREFIX rather than by listing sprite paths — a frame on
+    disk but not yet named in the manifest would otherwise import at the default and come
+    back the wrong size. It is a top-level block rather than a field inside each player entry
+    because those entries are read with a regex, and a nested object binds to whichever
+    neighbour happens to be adjacent.
+  - **`--only` must merge `characterPpu`, and that is the half that fails silently.** A
+    player left out of a run contributes no entry, so rewriting the map with only what was
+    built imports that character at the default PPU — resizing somebody nobody touched, with
+    nothing logged. Same argument as the player-list merge directly above it.
+  - **REBUILDING IS TWO STEPS AND THE SECOND IS SILENT.** The Python run rewrites 180 PNGs
+    and the manifest; nothing reimports them. Measured live during this change: the pixels
+    were 256 px and the metas still said 64, so the vampire rendered **4.047 units instead of
+    2.667** — every number self-consistent, disagreeing only on screen, exactly the shape
+    `SPAWNER_COORDINATE_SPACE_DRIFT` records. `refresh_unity(scope="all")` is not enough on
+    its own either: if the textures are imported in the same pass that first compiles
+    `CharacterSpritePpu`, the postprocessor runs before the class exists. Force-reimport
+    `Art/Characters/<key>/` AFTER the compile lands, then re-run the atlas build — the
+    packed sprite keeps the old PPU until the atlas is repacked, which is a third way to be
+    stale. `PlayerFramesManifestBindingTests.EveryPlayerFrame_CarriesItsDeclaredPpu_AndTheDeclaredWorldHeight`
+    asserts the COMPOSITION and catches all three.
+  - **The atlas capacity is a real constraint, not a formality.** `characters.spriteatlas`
+    holds the REMAINDER after `players.spriteatlas` claims five folders — today exactly the
+    vampire — and 180 frames at 256 px come to **11.67 Mpx against a 4096 page's 16.78**,
+    which packs into ONE page at 70% fill. 320 px would be 18.3 Mpx and spill to two pages,
+    134 MB of uncompressed VRAM and a page swap mid-draw. The pixel budget is chosen from
+    that arithmetic, not from taste.
+- **`AssetDatabase.GetAssetPath` returns EMPTY for an atlas-packed sprite**, so any test that
+  resolves a packed sprite back to its source path checks nothing at all. Measured: 0 of 1016
+  players and 0 of 180 characters resolved. It is the vacuous-fixture shape this file records
+  for `EditorReachabilityTests` — worse than an absent test, because it reports coverage it
+  does not have. Match a packed sprite by its NAME against the real folder list, longest name
+  first so a key that is a prefix of another never wins, and pair it with a
+  `Assert.That(inspected, Is.GreaterThan(0))` guard. The same fixture had a second vacuity: its
+  `AtlasPath` constant names `players.spriteatlas` only, and the one character not on the
+  shared PPU is not in that atlas — so it would have been green for the only character it
+  needed to see. Both atlases are walked now.
 - **A wave OWNS the whole character.** `PlayerFramesImporter.ClearUnlistedStates` empties any
   state the manifest does not name — unlike `MonsterFramesImporter`, which leaves unnamed
   slots alone. A monster manifest is often a partial refresh of a hand-authored asset; a
@@ -2848,6 +2898,46 @@ Health · Mana · MeleeCombat · PlayerController · Experience
   component. That test is the whole point: it is what stops this becoming the twelfth
   authored-and-inert layer beside `animation_map.json`, the FSM's `Actions` block and the
   four casting flags nothing reads.
+  **It passed for `StatKind.MeleeRange` while that stat reached no player damage at all**, and
+  the reason is worth knowing because the test cannot be strengthened to catch it: it asks
+  whether a stat reaches a COMPONENT, and MeleeRange genuinely did — `PlayerStats.Consumers`
+  pushes it into `MeleeCombat.SetRange`. What it cannot ask is whether that component then
+  does anything with it *for a player*. `MeleeCombat.TryAttack` is called from exactly one
+  place, the monster FSM's `AttackState`; the player never melees through it (`PollCombatActions`
+  owns the whole war surface and `MeleeCombat` reads no input). So for a player the chain
+  terminated at `CombatRangeVisualizer`, a debug overlay — a stat with a display name, a
+  description and 0.2 units per point in `StatCatalog`, moving a debug circle.
+- **A slash's reach is the SPELL's, and a `SpellDefinition` knows nothing about who casts it.**
+  All five playable classes swung `slash_regular` at its authored 2.6 units regardless of
+  size, which was invisible while every character was 1.797 units tall and stopped being
+  invisible when the vampire shipped at 2.698: the same arc is 1.40x the dwarf's body height
+  and 0.96x hers, so one reads as an extended sweep and the other as a tight jab, from a number
+  neither can influence. `MeleeReachScale.For(caster)` multiplies `hitRadius` by the caster's
+  own MeleeRange against the 1.5 baseline every class authors — so it is exactly 1.0 for the
+  whole shipped roster and moves only for a class tuned away from it, and it makes the stat
+  above live for the first time (talents and equipment included, because `MeleeCombat.Range`
+  holds the COMPOSED value).
+  - **Monsters are excluded, and the shipped data makes that non-negotiable.** They already
+    express per-creature reach the only way that was available — by authoring a separate
+    slash asset (`hostile_slash` 2.4, `hostile_slash_giant` 5.0, `boss_barbol_slash` 6.5) —
+    so scaling by their own `meleeRange` applies the same quantity twice. That range runs
+    **0 to 7** across the catalogue: the seven vendors (0) would swing at radius ZERO and
+    `barbol_boss` (7) would take its 6.5 u slash to **30.3 u**, most of the screen. The gate
+    is the `Player` tag, the same test `SpellTargeting.ResolveGroundTarget` uses.
+  - **Reach is quadratic in swept area**, so it is not a free dial: the vampire's 1.44x is
+    2.07x the area. `MeleeReachScaleTests` refuses a class authored over twice the baseline
+    for that reason, and refuses one BELOW it, which would shorten a reach the whole
+    catalogue was tuned at.
+  - **The scale is applied before the slash is spawned**, because `SlashAttack` derives its
+    sweep from the radius it is handed — a late multiply would leave the drawn arc and the
+    damaged arc at different sizes, which is the one failure this file already records for
+    the legacy slash path. Pinned by a source scan, because a correct helper nobody calls is
+    precisely the shape the bullet above describes.
+  - **The factor is MEASURED, not the height ratio assumed.** Limb extension is pose-dependent
+    and does not track height: measured on the shipped frames, the vampire's punch reaches
+    1.176x the dwarf's and her kick 1.684x, against a height ratio of 1.451. The two
+    approaches agree only in the mean (1.430), which is what makes 1.44 defensible — a single
+    move would have argued for anything between 1.18 and 1.68.
 - **Spells are earned now.** `EntitySetup` still registers the whole catalogue, then
   `PlayerProgression.SyncSpellBook` REPLACES the book with exactly what the character
   knows — measured live, 77 registered spells become 2 on a fresh dwarf. Replacement, not
