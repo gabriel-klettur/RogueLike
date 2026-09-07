@@ -587,6 +587,176 @@
         }
       ],
       "transitions": []
+    },
+    {
+      "blackboard": {},
+      "id": "Monster_Dark",
+      "initial": "IdleState",
+      "label": "Dark Hunter (dodges, no flee)",
+      "states": [
+        {
+          "class": "",
+          "h": 60,
+          "id": "IdleState",
+          "label": "Idle",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 665,
+          "y": 310
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "PatrolState",
+          "label": "Patrol",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 249,
+          "y": 47
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "ChaseState",
+          "label": "Chase",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 520,
+          "y": 80
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "AlertChaseState",
+          "label": "Alert Chase",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": -223,
+          "y": 240
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "AttackState",
+          "label": "Attack",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 188,
+          "y": 166
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "DodgeState",
+          "label": "Dodge",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 360,
+          "y": 300
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "NPCCastState",
+          "label": "Cast",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 60,
+          "y": 120
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "SearchState",
+          "label": "Search",
+          "props": {},
+          "terminal": false,
+          "w": 120,
+          "x": 760,
+          "y": 120
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "UnconsciousState",
+          "label": "Unconscious",
+          "props": {},
+          "terminal": true,
+          "w": 120,
+          "x": 300,
+          "y": 400
+        },
+        {
+          "class": "",
+          "h": 60,
+          "id": "DeathState",
+          "label": "Death",
+          "props": {},
+          "terminal": true,
+          "w": 120,
+          "x": 520,
+          "y": 400
+        },
+        {
+          "class": "DamageState",
+          "external_entry": true,
+          "h": 60,
+          "id": "DamageState",
+          "label": "Damage",
+          "props": {},
+          "special": "damage",
+          "terminal": false,
+          "w": 120,
+          "x": -66,
+          "y": 403
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [],
+          "cooldown_frames": 120,
+          "event": "",
+          "from": "ChaseState",
+          "guard": "time_since_hit < 0.35",
+          "id": "t_dark_chase_dodge",
+          "label": "time_since_hit < 0.35",
+          "priority": 120,
+          "to": "DodgeState",
+          "when": ""
+        },
+        {
+          "actions": [],
+          "cooldown_frames": 120,
+          "event": "",
+          "from": "AttackState",
+          "guard": "time_since_hit < 0.35",
+          "id": "t_dark_attack_dodge",
+          "label": "time_since_hit < 0.35",
+          "priority": 120,
+          "to": "DodgeState",
+          "when": ""
+        },
+        {
+          "actions": [],
+          "cooldown_frames": 300,
+          "event": "",
+          "from": "*",
+          "global": true,
+          "guard": "time_since_hit < 0.5 && distance_to_player > aggro_range",
+          "id": "t_any_alert",
+          "label": "time_since_hit < 0.5 && distance_to_player > aggro_range",
+          "priority": 200,
+          "to": "AlertChaseState",
+          "when": ""
+        }
+      ]
     }
   ],
   "version": 1

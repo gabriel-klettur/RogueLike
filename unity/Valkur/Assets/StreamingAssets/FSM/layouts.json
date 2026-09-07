@@ -1,5 +1,53 @@
 ﻿{
   "by_set": {
+    "Monster_Dark": {
+      "nodes": {
+        "AlertChaseState": {
+          "x": -223,
+          "y": 240
+        },
+        "AttackState": {
+          "x": 188,
+          "y": 166
+        },
+        "ChaseState": {
+          "x": 520,
+          "y": 80
+        },
+        "DamageState": {
+          "x": -66,
+          "y": 403
+        },
+        "DeathState": {
+          "x": 520,
+          "y": 400
+        },
+        "DodgeState": {
+          "x": 360,
+          "y": 300
+        },
+        "IdleState": {
+          "x": 665,
+          "y": 310
+        },
+        "NPCCastState": {
+          "x": 60,
+          "y": 120
+        },
+        "PatrolState": {
+          "x": 249,
+          "y": 47
+        },
+        "SearchState": {
+          "x": 760,
+          "y": 120
+        },
+        "UnconsciousState": {
+          "x": 300,
+          "y": 400
+        }
+      }
+    },
     "Monster_Default": {
       "nodes": {
         "AlertChaseState": {

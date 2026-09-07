@@ -4,7 +4,8 @@
     "Monster_Caster",
     "Monster_Boss",
     "NPC_Passive",
-    "NPC_Stroller"
+    "NPC_Stroller",
+    "Monster_Dark"
   ],
   "STATES_BY_SET": {
     "Monster_Boss": [
@@ -26,6 +27,19 @@
       "AttackState",
       "FleeState",
       "NPCCastState",
+      "UnconsciousState",
+      "DeathState",
+      "DamageState"
+    ],
+    "Monster_Dark": [
+      "IdleState",
+      "PatrolState",
+      "ChaseState",
+      "AlertChaseState",
+      "AttackState",
+      "DodgeState",
+      "NPCCastState",
+      "SearchState",
       "UnconsciousState",
       "DeathState",
       "DamageState"
