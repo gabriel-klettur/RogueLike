@@ -11,6 +11,24 @@ namespace Valkur.Gameplay.Save
 
         public static void EnsureSaveDirectory()
         {
+            EnsureSaveDirectoriesExist();
+
+            MigrateLegacyRecoveryFiles();
+            MigrateLegacyFlatSaves();
+            PruneEmptyRunFolders();
+        }
+
+        /// <summary>
+        /// Just the directories — no migration, no pruning.
+        ///
+        /// The position checkpoint writes several times a second and used to go
+        /// through the full <see cref="EnsureSaveDirectory"/>, paying a whole-tree
+        /// scan and a recursive delete pass on every write. That was the cost;
+        /// the defect was that one of those passes deleted the live run's folder.
+        /// A writer that only needs its directory to exist asks for that.
+        /// </summary>
+        internal static void EnsureSaveDirectoriesExist()
+        {
             string dir = GetSaveDirectory();
             if (!Directory.Exists(dir))
             {
@@ -19,10 +37,6 @@ namespace Valkur.Gameplay.Save
             }
             if (!Directory.Exists(GetRecoveryDirectory()))
                 Directory.CreateDirectory(GetRecoveryDirectory());
-
-            MigrateLegacyRecoveryFiles();
-            MigrateLegacyFlatSaves();
-            PruneEmptyRunFolders();
         }
 
         /// <summary>
@@ -48,6 +62,13 @@ namespace Valkur.Gameplay.Save
                 if (string.IsNullOrEmpty(folder)) continue;
                 if (folder.StartsWith(".")) continue; // .recovery, etc.
                 if (string.Equals(folder, LEGACY_SUBDIR, StringComparison.OrdinalIgnoreCase)) continue;
+
+                // The live run is never prunable, however empty it looks. Its
+                // autosave may be a thread-pool task away from existing, and
+                // deleting the folder under that write is what produced the
+                // "Access to the path is denied" / "Could not find file .tmp"
+                // pair — see the active-run guard in SaveFileManager.cs.
+                if (IsActiveRun(folder)) continue;
 
                 try
                 {

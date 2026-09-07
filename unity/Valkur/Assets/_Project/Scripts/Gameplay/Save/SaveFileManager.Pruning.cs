@@ -36,6 +36,13 @@ namespace Valkur.Gameplay.Save
         /// </param>
         public static int PrunePhantomRuns(string activeRunIdToPreserve = null)
         {
+            // A caller that names no run still must not wipe the live one.
+            // MainMenuUI prunes with no argument on every return to the menu,
+            // and a SaveService whose last autosave is still on the thread pool
+            // is exactly the case an explicit argument would have to remember.
+            if (string.IsNullOrEmpty(activeRunIdToPreserve))
+                activeRunIdToPreserve = ActiveRunId;
+
             int prunedCount = 0;
             var groups = ListSavesByRun();
             foreach (var group in groups)

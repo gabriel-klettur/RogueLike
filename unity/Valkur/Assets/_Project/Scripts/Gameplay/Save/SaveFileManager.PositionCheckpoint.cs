@@ -22,18 +22,31 @@ namespace Valkur.Gameplay.Save
         private static string GetLegacyPositionCheckpointBakPath() =>
             Path.Combine(GetSaveDirectory(), POSITION_CHECKPOINT_BAK_FILE + SAVE_EXTENSION);
 
+        /// <summary>
+        /// Writes the crash-recovery position checkpoint.
+        ///
+        /// Deliberately calls <see cref="EnsureSaveDirectoriesExist"/> and NOT
+        /// <c>EnsureSaveDirectory</c>. This runs several times a second and every
+        /// full save mirrors it, so it used to drag the whole maintenance pass —
+        /// legacy migration plus <c>PruneEmptyRunFolders</c> — along with it. The
+        /// cost was a directory scan per checkpoint; the DEFECT was that the prune
+        /// deleted the live run's folder while the async autosave was still on its
+        /// way into it. A writer that only needs its directory to exist asks for
+        /// exactly that.
+        ///
+        /// The write goes through <see cref="WriteTextAtomic"/> for the reason the
+        /// save files do: a fixed "<c>.tmp</c>" name is one handle shared by every
+        /// writer of this path, and the hand-rolled delete-then-move it replaces
+        /// left the checkpoint existing nowhere for the width of the rename.
+        /// </summary>
         public static void WritePositionCheckpoint(PositionCheckpointData data)
         {
-            EnsureSaveDirectory();
+            EnsureSaveDirectoriesExist();
             string json = JsonUtility.ToJson(data, false);
-            string path = GetPositionCheckpointPath();
-            string tmp  = path + ".tmp";
 
-            File.WriteAllText(tmp, json);
-            if (File.Exists(path)) File.Delete(path);
-            File.Move(tmp, path);
+            WriteTextAtomic(GetPositionCheckpointPath(), json);
 
-            try { File.WriteAllText(GetPositionCheckpointBakPath(), json); }
+            try { WriteTextAtomic(GetPositionCheckpointBakPath(), json); }
             catch { /* backup is best-effort */ }
         }
 

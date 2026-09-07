@@ -76,14 +76,51 @@ namespace Valkur.Gameplay.Save
                 string from = Path.Combine(backupsDir, $"{AUTOSAVE_NAME}_{i - 1}" + SAVE_EXTENSION);
                 string to   = Path.Combine(backupsDir, $"{AUTOSAVE_NAME}_{i}"     + SAVE_EXTENSION);
                 if (!File.Exists(from)) continue;
-                if (File.Exists(to)) File.Delete(to);
-                File.Move(from, to);
+                RetryFileOp(() =>
+                {
+                    if (File.Exists(to)) File.Delete(to);
+                    File.Move(from, to);
+                });
             }
 
-            // Copy current autosave → autosave_1
+            // Copy current autosave -> autosave_1
             string firstBackup = Path.Combine(backupsDir, $"{AUTOSAVE_NAME}_1" + SAVE_EXTENSION);
-            if (File.Exists(firstBackup)) File.Delete(firstBackup);
-            File.Copy(srcAutosavePath, firstBackup, overwrite: true);
+            RetryFileOp(() =>
+            {
+                if (File.Exists(firstBackup)) File.Delete(firstBackup);
+                File.Copy(srcAutosavePath, firstBackup, overwrite: true);
+            });
+        }
+
+        /// <summary>
+        /// True when an exception is the file system saying somebody else is touching
+        /// the same path right now, rather than saying the path is unusable. The two
+        /// are not separable by TYPE on Windows - a handle held by another writer, a
+        /// reader, or a scanner comes back as UnauthorizedAccessException with the
+        /// message "Access to the path is denied", which is also what a genuinely
+        /// read-only file says - so this only ever decides whether it is worth LOOKING
+        /// AGAIN. The final attempt always rethrows.
+        /// </summary>
+        private static bool IsTransientFileRace(Exception ex)
+            => ex is IOException || ex is UnauthorizedAccessException;
+
+        /// <summary>
+        /// Run a small file operation, retrying while it looks like a race with
+        /// another writer. Rotation is a delete-then-move over files the async autosave
+        /// chain and the backup browser can both be reading, and a whole save used to
+        /// be lost to one contended millisecond.
+        /// </summary>
+        private static void RetryFileOp(Action op)
+        {
+            const int MAX_ATTEMPTS = 8;
+            for (int attempt = 1; ; attempt++)
+            {
+                try { op(); return; }
+                catch (Exception ex) when (attempt < MAX_ATTEMPTS && IsTransientFileRace(ex))
+                {
+                    System.Threading.Thread.Sleep(2);
+                }
+            }
         }
 
         // Temp-write + rename + checksum. Pure file IO, safe to call from any thread.
@@ -91,21 +128,33 @@ namespace Valkur.Gameplay.Save
         // does and does not guarantee.
         internal static void WriteSerializedJsonAtomic(string path, string json)
         {
+            WriteTextAtomic(path, json);
+            WriteChecksum(path, json);
+        }
+
+        /// <summary>
+        /// Temp-write + rename, with no checksum sidecar. Pure file IO, safe to call
+        /// from any thread. Every writer of a document under persistentDataPath goes
+        /// through here rather than writing its target directly, so a reader never
+        /// sees a half-written file.
+        /// </summary>
+        internal static void WriteTextAtomic(string path, string text)
+        {
             string dir = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
 
-            // Unique per write. The temp used to be "<path>.tmp" for EVERY writer of the
-            // same file, so two writes in flight at once opened the same temp handle and
-            // the loser died with "Access to the path is denied" — which is how this was
-            // found, one error on leaving Play. SaveService chains its autosaves through
-            // _pendingWrite, but WriteAutosaveAsync's Task.Run does not join that chain,
-            // so two writers really can overlap.
+            // Unique per write. The temp used to be a fixed "<path>" plus ".tmp" for
+            // EVERY writer of the same file, so two writes in flight at once opened the
+            // same temp handle and the loser died with "Access to the path is denied" -
+            // which is how this was found, one error on leaving Play. SaveService chains
+            // its autosaves through _pendingWrite, but nothing forces every other writer
+            // of the same file into that chain, so two writers really can overlap.
             string tempPath = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
 
             try
             {
-                File.WriteAllText(tempPath, json);
+                File.WriteAllText(tempPath, text);
                 SwapIntoPlace(tempPath, path);
             }
             catch
@@ -114,8 +163,6 @@ namespace Valkur.Gameplay.Save
                 try { if (File.Exists(tempPath)) File.Delete(tempPath); } catch { /* best effort */ }
                 throw;
             }
-
-            WriteChecksum(path, json);
         }
 
         /// <summary>
@@ -148,13 +195,19 @@ namespace Valkur.Gameplay.Save
                     else File.Move(tempPath, path);
                     return;
                 }
-                catch (IOException) when (attempt < MAX_ATTEMPTS)
+                catch (Exception ex) when (attempt < MAX_ATTEMPTS && IsTransientFileRace(ex))
                 {
                     // The other writer got there first, either way round: Move found the
                     // name taken, or Replace found it gone. Both are worth another look
                     // rather than failing a save over a race we can just retry out of.
-                    // UnauthorizedAccessException is deliberately NOT caught — that one is
-                    // a real permissions problem and must surface.
+                    //
+                    // UnauthorizedAccessException is retried too, and used not to be. On
+                    // Windows a file another handle is holding - a scanner, a reader, or
+                    // a delete that has not landed yet - fails with ERROR_ACCESS_DENIED,
+                    // which surfaces here as "Access to the path is denied" and is
+                    // indistinguishable in TYPE from a real permissions problem. Retrying
+                    // does not hide the real one: the final attempt still throws, so a
+                    // genuinely unwritable path fails as loudly as before, 16 ms later.
                     System.Threading.Thread.Sleep(2);
                 }
             }

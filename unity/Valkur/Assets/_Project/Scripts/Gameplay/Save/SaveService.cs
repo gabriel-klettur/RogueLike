@@ -53,7 +53,24 @@ namespace Valkur.Gameplay
         private float _positionCheckpointTimer;
         private string _currentSavePath;
         private string _lastLoadedTimestamp;
-        private string _currentRunId = "";
+        private string _runIdBacking = "";
+
+        // Every assignment to the run id must ALSO tell SaveFileManager which run
+        // folder is live, or its pruners delete that folder out from under the
+        // async autosave heading into it — measured, the active run was pruned
+        // before every QuickSave and the write died on the missing directory.
+        // Routing the field through a property is what makes that impossible to
+        // forget at a new assignment site; there are four today (BeginNewRun,
+        // EnsureRunId, and two in Load) and a fifth would silently reopen the bug.
+        private string _currentRunId
+        {
+            get => _runIdBacking;
+            set
+            {
+                _runIdBacking = value;
+                SaveFileManager.SetActiveRunId(value);
+            }
+        }
         // Monotonic per-profile run ordinal (1, 2, 3, …) — minted by
         // ProfileTelemetrySystem at run start and propagated here via
         // SetRunOrdinal so every save written by this service carries it
@@ -185,6 +202,20 @@ namespace Valkur.Gameplay
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
             UnbindGameEvents();
+
+            // The run ends with the service that owns it. Flush FIRST and only
+            // then drop the prune guard: releasing it while a write is still on
+            // the thread pool is the very race the guard exists for, and the main
+            // menu prunes the moment it loads. Only THIS instance's guard is
+            // dropped — a singleton handover that already installed a new run id
+            // must not have it cleared from under it.
+            if (Instance == null || ReferenceEquals(Instance, this))
+            {
+                FlushPendingWrites();
+                if (SaveFileManager.ActiveRunId == _currentRunId)
+                    SaveFileManager.SetActiveRunId(null);
+            }
+
             base.OnDestroy();
         }
 

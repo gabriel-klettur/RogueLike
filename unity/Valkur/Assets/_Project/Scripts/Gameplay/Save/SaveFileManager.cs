@@ -58,6 +58,58 @@ namespace Valkur.Gameplay.Save
             "autosave_0", "autosave_1", "autosave_2", "autosave_3", "autosave_4",
         };
 
+        // ── Active-run guard ─────────────────────────────────────────────────
+        //
+        // WHICH run folder is live right now. Every pruning pass consults it and
+        // refuses to touch that folder.
+        //
+        // It exists because the maintenance pass and the async autosave really do
+        // run at the same time on the same directory. WriteAutosaveToDisk queues
+        // the autosave onto the thread pool and then, on the SAME tick, writes the
+        // position checkpoint — which used to call EnsureSaveDirectory, whose
+        // PruneEmptyRunFolders saw a run folder with no autosave.json in it yet
+        // (the thread pool had not got there) and deleted it, recursively, out
+        // from under the write in flight. Measured on the shipped build: the
+        // ACTIVE run was pruned before every single QuickSave and the write then
+        // died with either "Access to the path is denied" (the delete caught the
+        // temp mid-write) or "Could not find file …tmp" (the delete won). The run
+        // never reached disk at all — data loss that surfaced as two console
+        // errors.
+        //
+        // An empty folder is not evidence that a run is dead while a writer is on
+        // its way to it, so the pruner is TOLD which run is live rather than being
+        // made to infer it from the file system.
+        private static string _activeRunId;
+
+        /// <summary>
+        /// Registers the run whose folder must survive every pruning pass.
+        /// Written by <see cref="SaveService"/> on every run-id change;
+        /// null/empty clears the guard.
+        /// </summary>
+        public static void SetActiveRunId(string runId)
+            => _activeRunId = string.IsNullOrEmpty(runId) ? null : runId;
+
+        /// <summary>The run folder currently protected from pruning, or null.</summary>
+        public static string ActiveRunId => _activeRunId;
+
+        /// <summary>True when <paramref name="runId"/> is the live run.</summary>
+        internal static bool IsActiveRun(string runId)
+        {
+            if (string.IsNullOrEmpty(_activeRunId) || string.IsNullOrEmpty(runId)) return false;
+            return string.Equals(SanitizeRunIdComponent(runId),
+                                 SanitizeRunIdComponent(_activeRunId),
+                                 StringComparison.OrdinalIgnoreCase);
+        }
+
+        // Domain Reload is OFF, so without this the guard would still name the
+        // previous session's run on the next Play — and would then protect a
+        // folder that really is dead while leaving the new run unguarded.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRunGuard()
+        {
+            _activeRunId = null;
+        }
+
         // ── Path helpers ─────────────────────────────────────────────────────
 
         public static string GetSaveDirectory()      => System.IO.Path.Combine(Application.persistentDataPath, SAVE_DIR);
