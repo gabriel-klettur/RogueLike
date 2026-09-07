@@ -110,7 +110,14 @@ namespace Valkur.Tests.EditMode.Game.Data
         {
             // Two atlases over the same sprites makes Unity warn once per sprite and ships
             // the atlas twice — the 3077-warning incident that killed Art/Tiles/Atlas_Tiles.
-            var claims = new Dictionary<string, string>();
+            //
+            // This asserted only EXACT path equality for the life of the project, while its
+            // own name promised the containment case — so it stayed green through a second
+            // sighting of the very incident it was written for: characters.spriteatlas
+            // packed Art/Characters and players.spriteatlas packed five of its subfolders,
+            // double-packing 780 player sprites. A test that compares the same thing the
+            // production check compares cannot catch what the production check misses.
+            var claims = new List<(string path, string atlas)>();
             var conflicts = new List<string>();
 
             foreach (var atlas in AllAtlases())
@@ -121,16 +128,24 @@ namespace Valkur.Tests.EditMode.Game.Data
                     if (packable == null) continue;
                     var p = AssetDatabase.GetAssetPath(packable);
                     if (string.IsNullOrEmpty(p)) continue;
+                    claims.Add((p, atlasPath));
+                }
+            }
 
-                    if (claims.TryGetValue(p, out var owner) && owner != atlasPath)
-                        conflicts.Add($"{p} claimed by both {Path.GetFileName(owner)} and {Path.GetFileName(atlasPath)}");
-                    else
-                        claims[p] = atlasPath;
+            for (int i = 0; i < claims.Count; i++)
+            {
+                for (int j = i + 1; j < claims.Count; j++)
+                {
+                    if (claims[i].atlas == claims[j].atlas) continue;
+                    if (!Overlaps(claims[i].path, claims[j].path)) continue;
+                    conflicts.Add(
+                        $"{claims[i].path} ({Path.GetFileName(claims[i].atlas)}) overlaps " +
+                        $"{claims[j].path} ({Path.GetFileName(claims[j].atlas)})");
                 }
             }
 
             Assert.IsEmpty(conflicts,
-                "The same folder is packed by more than one atlas:\n  " + string.Join("\n  ", conflicts));
+                "The same sprites are packed by more than one atlas:\n  " + string.Join("\n  ", conflicts));
         }
 
         [Test]
@@ -149,6 +164,19 @@ namespace Valkur.Tests.EditMode.Game.Data
                 "Packing the whole Art/VFX tree is what pulled the SlashVFX demo art into the " +
                 "build. List the texture folders explicitly so adding a vendor pack does not " +
                 "silently add its demo scene's art to the atlas.");
+        }
+
+        /// <summary>
+        /// True when two packable paths cover any sprite in common — the same path, or
+        /// one being a folder that contains the other. Containment is the half that
+        /// matters: a parent folder and a child folder look completely different as
+        /// strings and pack exactly the same art.
+        /// </summary>
+        private static bool Overlaps(string a, string b)
+        {
+            if (string.Equals(a, b, System.StringComparison.Ordinal)) return true;
+            return a.StartsWith(b + "/", System.StringComparison.Ordinal)
+                || b.StartsWith(a + "/", System.StringComparison.Ordinal);
         }
     }
 }

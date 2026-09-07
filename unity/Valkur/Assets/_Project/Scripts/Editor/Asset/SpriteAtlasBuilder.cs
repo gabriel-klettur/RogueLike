@@ -116,7 +116,22 @@ namespace Valkur.Editor
                         break;
                     }
 
-                    validFolders.Add(sourceFolder);
+                    // The two checks above compare PATHS FOR EQUALITY, and the overlap
+                    // that actually shipped is a NESTED one: 'characters' packed
+                    // Art/Characters while players.spriteatlas packed five of its
+                    // subfolders, so 780 player sprites lived in two atlases at once and
+                    // every one of them logged "matches more than one built-in atlases".
+                    // Neither exact-match test can see that, and it survived for as long
+                    // as the two builders existed.
+                    //
+                    // A nested overlap is not the same problem as an identical one and
+                    // must not get the same answer. Two atlases claiming the SAME folder
+                    // is a contradiction only a human can settle; a folder whose CHILD
+                    // somebody else owns is a division of labour, so this group takes
+                    // what is left rather than dropping the lot — aborting would leave
+                    // the non-player characters (vampire, 180 sprites) in no atlas at
+                    // all, silently.
+                    ExpandAroundForeignAtlases(sourceFolder, atlasPath, validFolders);
                 }
 
                 if (abortGroup || validFolders.Count == 0)
@@ -163,12 +178,17 @@ namespace Valkur.Editor
                 atlas.SetPlatformSettings(platformSettings);
 
                 // Set every valid source folder as a packable.
+                // Entries may be folders OR individual sprites: a group narrowed around
+                // another atlas keeps the loose art at a level whose siblings it gave up,
+                // and DefaultAsset only loads the folders.
                 var folderObjs = new List<Object>(validFolders.Count);
                 foreach (var sourceFolder in validFolders)
                 {
-                    var folderObj = AssetDatabase.LoadAssetAtPath<DefaultAsset>(sourceFolder);
-                    if (folderObj != null)
-                        folderObjs.Add(folderObj);
+                    Object packable = AssetDatabase.IsValidFolder(sourceFolder)
+                        ? AssetDatabase.LoadAssetAtPath<DefaultAsset>(sourceFolder)
+                        : AssetDatabase.LoadAssetAtPath<Sprite>(sourceFolder) as Object;
+                    if (packable != null)
+                        folderObjs.Add(packable);
                 }
 
                 atlas.Remove(atlas.GetPackables());
@@ -207,6 +227,76 @@ namespace Valkur.Editor
                 this.sourceFolders = sourceFolders;
             }
         }
+        /// <summary>
+        /// Adds <paramref name="folderPath"/> to <paramref name="results"/> when no other
+        /// atlas packs anything inside it, and otherwise adds the parts of it that nobody
+        /// else owns: the sprite assets sitting directly in it, plus each subfolder that
+        /// is not itself claimed, resolved the same way.
+        ///
+        /// This is what keeps "one owner per sprite" true under NESTING. The equality
+        /// checks in the caller only see an atlas naming the very same folder; the
+        /// overlap this project shipped was a parent/child pair, which they cannot
+        /// detect at all.
+        /// </summary>
+        private static void ExpandAroundForeignAtlases(string folderPath, string selfPath,
+                                                       List<string> results)
+        {
+            if (!AnyForeignAtlasPacksInside(folderPath, selfPath))
+            {
+                results.Add(folderPath);
+                return;
+            }
+
+            // Loose sprites at this level belong to nobody else — take them individually
+            // so narrowing a folder never silently drops the art sitting directly in it.
+            foreach (string guid in AssetDatabase.FindAssets("t:Sprite", new[] { folderPath }))
+            {
+                string assetPath = AssetDatabase.GUIDToAssetPath(guid);
+                string parent = Path.GetDirectoryName(assetPath)?.Replace('\\', '/');
+                if (parent == folderPath && !results.Contains(assetPath))
+                    results.Add(assetPath);
+            }
+
+            foreach (string sub in AssetDatabase.GetSubFolders(folderPath))
+            {
+                string owner = FindForeignAtlasPacking(sub, selfPath);
+                if (owner != null)
+                {
+                    Debug.Log(
+                        $"[SpriteAtlasBuilder] '{sub}' is packed by '{owner}' — left out of " +
+                        "this group so the sprites under it have exactly one atlas.");
+                    continue;
+                }
+                ExpandAroundForeignAtlases(sub, selfPath, results);
+            }
+        }
+
+        /// <summary>
+        /// True when some other atlas packs a folder at or below
+        /// <paramref name="folderPath"/>. Answers "is this folder partially spoken for",
+        /// which is the question the equality checks cannot ask.
+        /// </summary>
+        private static bool AnyForeignAtlasPacksInside(string folderPath, string selfPath)
+        {
+            string prefix = folderPath + "/";
+            foreach (var guid in AssetDatabase.FindAssets("t:SpriteAtlas"))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (path == selfPath) continue;
+                var other = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(path);
+                if (other == null) continue;
+                foreach (var packable in other.GetPackables())
+                {
+                    if (packable == null) continue;
+                    string packed = AssetDatabase.GetAssetPath(packable);
+                    if (!string.IsNullOrEmpty(packed) && packed.StartsWith(prefix,
+                            System.StringComparison.Ordinal))
+                        return true;
+                }
+            }
+            return false;
+        }
+
         /// <summary>
         /// Returns the path of any SpriteAtlas OTHER than <paramref name="selfPath"/>
         /// that lists <paramref name="folderPath"/> among its packables, or null when
