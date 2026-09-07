@@ -19,6 +19,14 @@ namespace Valkur.Gameplay.FSM
 
         private StateMachine _fsm;
         private Health _health;
+
+        /// <summary>
+        /// Who has been hurting this monster. Created here rather than left to EntitySetup so
+        /// a hand-placed entity, a prefab and a test double all get one — a monster whose
+        /// targeting silently degrades to "nearest" depending on which pipeline spawned it is
+        /// two behaviours wearing one name.
+        /// </summary>
+        private ThreatMemory _threat;
         private DirectionalAnimator _animator;
         private EntityCulling _culling;
         private SpriteRenderer _sr;
@@ -74,6 +82,8 @@ namespace Valkur.Gameplay.FSM
         private void Awake()
         {
             _health = GetComponent<Health>();
+            _threat = GetComponent<ThreatMemory>();
+            if (_threat == null) _threat = gameObject.AddComponent<ThreatMemory>();
             _animator = GetComponent<DirectionalAnimator>();
             _culling = GetComponent<EntityCulling>();
             if (_culling == null)
@@ -100,8 +110,10 @@ namespace Valkur.Gameplay.FSM
             // Subscribe events only if not already subscribed
             _health.OnDeath -= OnDeath;
             _health.OnDamaged -= OnDamaged;
+            _health.OnDamagedBy -= OnDamagedBy;
             _health.OnDeath += OnDeath;
             _health.OnDamaged += OnDamaged;
+            _health.OnDamagedBy += OnDamagedBy;
         }
 
         private void OnDestroy()
@@ -110,7 +122,24 @@ namespace Valkur.Gameplay.FSM
             {
                 _health.OnDeath -= OnDeath;
                 _health.OnDamaged -= OnDamaged;
+                _health.OnDamagedBy -= OnDamagedBy;
             }
+        }
+
+        /// <summary>
+        /// Records who is hurting this monster, so <c>FactionTargeting</c> can answer with the
+        /// attacker rather than with whoever happens to be closest.
+        ///
+        /// <para>Separate from <see cref="OnDamaged"/> rather than folded into it: that handler
+        /// owns the flinch and the corpse-fall direction, both of which fire for a hazard with
+        /// no attacker at all, and threading a null through them to reach one line would make
+        /// three unrelated things share a branch. This one returns on a null attacker, which is
+        /// most of the ways an entity takes damage.</para>
+        /// </summary>
+        private void OnDamagedBy(int amount, GameObject attacker)
+        {
+            if (attacker == null || _threat == null) return;
+            _threat.Record(attacker, amount);
         }
 
         /// <summary>
@@ -148,7 +177,10 @@ namespace Valkur.Gameplay.FSM
             // other stat below is read off `def.stats` on purpose, so a levelled copy
             // still moves, reaches and times exactly like the monster it is a copy of.
             // Level <= 1 (every shipped monster today) returns `stats` unchanged.
-            var scaled = def.GetScaledStats();
+            // SpawnLevel.Of, not def.GetScaledStats(), for the same reason EntitySetup asks it:
+            // the level belongs to THIS spawn, and both readers have to get it from one place
+            // or a levelled monster ends up with scaled hp and unscaled damage.
+            var scaled = def.GetScaledStats(SpawnLevel.Of(gameObject, def));
             _health.Initialize(scaled.hp);
 
             var combat = GetComponent<MeleeCombat>();
@@ -166,7 +198,11 @@ namespace Valkur.Gameplay.FSM
             // def.fsmSet is passed as the LAST-RESORT hint. It is authored on assets and was
             // read by nothing: knight_red says "Monster_Default" and still booted a bare
             // IdleState because only assignments.json resolved. See TryBuildForEntity.
-            if (!FSMRuntimeFactory.TryBuildForEntity(_placementId, def.monsterKey, def.fsmSet,
+            // SpawnBrain is what the ENCOUNTER asked for — stamped by MonsterSpawner before
+            // EntitySetup ran, and absent on every spawn path that predates it, so this reads
+            // null for a hand-placed entity, a console spawn, a summon or a boss add.
+            if (!FSMRuntimeFactory.TryBuildForEntity(_placementId, SpawnBrain.FsmSetOf(gameObject),
+                                                     def.monsterKey, def.fsmSet,
                                                      gameObject, out _fsm))
             {
                 _fsm = new StateMachine(gameObject, new IdleState());
@@ -183,6 +219,13 @@ namespace Valkur.Gameplay.FSM
             _fsm.SetContext("faction", def.stats.faction);
             _fsm.SetContext("use_attack_telegraph", def.useAttackTelegraph);
             PublishBehaviourTuning(def.aiTuning);
+
+            // AFTER the definition's own tuning, which publishes leash_range from aiTuning.
+            // An encounter's leash has to be the last word or a monster whose asset authors
+            // one would silently ignore the camp it was placed in — and the failure would be
+            // invisible, because both values are plausible and only their order decides.
+            float spawnLeash = SpawnBrain.LeashOf(gameObject);
+            if (spawnLeash > 0f) _fsm.SetContext(FSMTuning.KeyLeashRange, spawnLeash);
 
             // The authored moveset, so AttackState can weigh and gate its variants instead
             // of rolling a uniform Random over whatever the animator happens to hold.
@@ -249,6 +292,12 @@ namespace Valkur.Gameplay.FSM
             Publish(Valkur.Gameplay.FSM.FSMTuning.KeySearchDuration,      t.searchDuration);
             Publish(Valkur.Gameplay.FSM.FSMTuning.KeyAggroShareRadius,    t.aggroShareRadius);
             Publish(Valkur.Gameplay.FSM.FSMTuning.KeyRegroupSeconds,      t.regroupSeconds);
+
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeyDodgeChance,          t.dodgeChance);
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeyDodgeCooldownSeconds, t.dodgeCooldownSeconds);
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeyDodgeThreatRadius,    t.dodgeThreatRadius);
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeyDodgeDistance,        t.dodgeDistance);
+            Publish(Valkur.Gameplay.FSM.FSMTuning.KeyDodgeSpeedMultiplier, t.dodgeSpeedMultiplier);
         }
 
         private void InitializeDefault()
@@ -360,6 +409,11 @@ namespace Valkur.Gameplay.FSM
                 SearchState => DirectionalAnimator.AnimState.Walk,
                 ChaseState => DirectionalAnimator.AnimState.Chase,
                 AlertChaseState => DirectionalAnimator.AnimState.Chase,
+                // A sidestep is a RUN, and it has to be listed here or the `_ =>` default
+                // answers Idle — this handler fires AFTER the state's own Enter, so the
+                // default silently overwrote the Chase pose DodgeState had just set and the
+                // burst rendered as a monster standing still while sliding sideways.
+                DodgeState => DirectionalAnimator.AnimState.Chase,
                 AttackState => DirectionalAnimator.AnimState.Attack,
                 NPCCastState => DirectionalAnimator.AnimState.Cast,
                 DamageState => DirectionalAnimator.AnimState.Damage,

@@ -35,6 +35,19 @@ namespace Valkur.Gameplay.Enemies
         private static readonly Color TargetColor = new Color(1f, 0.2f, 0.2f, 0.9f);
         private static readonly Color SearchColor = new Color(0.6f, 0.3f, 1f, 0.9f);
 
+        /// <summary>Who has earned this monster's attention by hurting it, as opposed to by
+        /// being nearest. Drawn thicker than the target line, because when the two disagree the
+        /// threat one is the reason.</summary>
+        private static readonly Color ThreatColor = new Color(1f, 0.15f, 0.6f, 0.95f);
+
+        /// <summary>The slot on the ring this monster is steering at, rather than the target
+        /// itself. Answers "why is it walking AROUND me".</summary>
+        private static readonly Color RingColor   = new Color(0.35f, 1f, 0.55f, 0.7f);
+
+        /// <summary>A sidestep in progress. Short-lived by construction, which is exactly why
+        /// it was impossible to see without this.</summary>
+        private static readonly Color DodgeColor  = new Color(0.2f, 1f, 1f, 1f);
+
         private static Material s_material;
 
         /// <summary>The live overlay, or null when the feature is off.</summary>
@@ -138,8 +151,35 @@ namespace Valkur.Gameplay.Enemies
             // thing no HUD in the project could answer once allied summons existed.
             var components = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
             var target = components?.Target(fsm);
-            if (target != null && fsm.CurrentState is ChaseState)
+            bool engaged = fsm.CurrentState is ChaseState || fsm.CurrentState is AttackState
+                        || fsm.CurrentState is DodgeState || fsm.CurrentState is NPCCastState;
+            if (target != null && engaged)
                 Segment(pos, target.transform.position, TargetColor);
+
+            // WHY that target, when it is not the nearest one. A threat leader and a target line
+            // that point at different things is the single most confusing thing this layer can
+            // do, and until the table existed the question could not even be asked.
+            var threat = monster.GetComponent<ThreatMemory>();
+            var leader = threat != null ? threat.CurrentLeader : null;
+            if (leader != null) Segment(pos, leader.transform.position, ThreatColor);
+
+            // Where on the ring it is heading, when that is not simply the target. Drawn only
+            // while more than one attacker is engaged, which is exactly when the ring is doing
+            // anything — a lone chaser steers at the target and the marker would be a lie.
+            if (target != null && fsm.CurrentState is ChaseState &&
+                EngagementRing.OccupancyOf(target) > 1)
+            {
+                float standoff = FSMTuning.DesiredRange(fsm);
+                if (standoff <= 0f) standoff = fsm.GetContextFloat("melee_range", 1.5f);
+                Vector2 slot = EngagementRing.ApproachPoint(monster, target, standoff);
+                Circle(slot, 0.35f, RingColor);
+                Segment(pos, slot, RingColor);
+            }
+
+            // The sidestep. It lives about a third of a second, so without a marker the only
+            // evidence a dodge happened at all is the monster being somewhere else.
+            if (fsm.CurrentState is DodgeState)
+                Circle(pos, 0.7f, DodgeColor);
 
             // Where a searching monster thinks the target went.
             if (fsm.CurrentState is SearchState && FSMTargetMemory.Has(fsm))

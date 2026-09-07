@@ -40,7 +40,8 @@ namespace Valkur.Gameplay
                     bool on = mode == "on";
                     int drawn = AIDebugOverlay.SetEnabled(on);
                     Log(on
-                        ? $"[ai] overlay ON — aggro ring, leash ring, view cone and current target for {drawn} monster(s)."
+                        ? $"[ai] overlay ON — aggro ring, leash ring, view cone, current target, " +
+                          $"threat leader (pink), ring slot (green) and dodges (cyan) for {drawn} monster(s)."
                         : "[ai] overlay OFF.");
                     return;
                 }
@@ -98,6 +99,37 @@ namespace Valkur.Gameplay
                 if (fov < 360f) sb.Append(" fov=").Append(fov.ToString("0"));
                 float desired = FSMTuning.DesiredRange(fsm);
                 if (desired > 0f) sb.Append(" standoff=").Append(desired.ToString("0.#"));
+                // WHY this target. A threat leader that disagrees with the target line is the
+                // whole reason the table exists, and the disagreement is invisible otherwise.
+                var threat = m.GetComponent<ThreatMemory>();
+                if (threat != null && threat.TrackedCount > 0)
+                {
+                    sb.Append(" threat=").Append(threat.TrackedCount);
+                    var leader = threat.CurrentLeader;
+                    if (leader != null && leader != target)
+                        sb.Append('(').Append(leader == player ? "player" : leader.name).Append(')');
+                }
+
+                // How crowded the target is. Explains a monster walking AROUND rather than in.
+                if (target != null)
+                {
+                    int ring = EngagementRing.OccupancyOf(target);
+                    if (ring > 1) sb.Append(" ring=").Append(ring);
+                }
+
+                // Side, and the level it actually spawned at. Neither is what the asset says any
+                // more: allegiance is derived, and the level travels with the spawn.
+                var faction = m.GetComponent<EntityFaction>();
+                if (faction != null && faction.Side != FactionSide.Hostile)
+                    sb.Append(' ').Append(faction.Side.ToString().ToUpperInvariant());
+                var spawnLevel = m.GetComponent<SpawnLevel>();
+                if (spawnLevel != null && spawnLevel.Level > 1)
+                    sb.Append(" L").Append(spawnLevel.Level);
+
+                float dodgeChance = FSMTuning.DodgeChance(fsm);
+                if (dodgeChance > 0f)
+                    sb.Append(" dodge=").Append((dodgeChance * 100f).ToString("0")).Append('%');
+
                 if (FSMPerception.AggroSuppressed(fsm)) sb.Append(" REGROUPING");
                 if (FSMAlert.IsPending(fsm)) sb.Append(" ALERTED");
                 sb.Append('\n');

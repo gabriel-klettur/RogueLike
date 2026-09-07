@@ -71,8 +71,15 @@ namespace Valkur.Gameplay.FSM
             // Found them again. Acquisition runs the full perception test, so re-finding the
             // target obeys the same range, cone and line-of-sight rules as spotting it the
             // first time — the search cannot see through the wall it is walking around.
-            if (FSMPerception.TryAcquire(fsm, out _))
+            if (FSMPerception.TryAcquire(fsm, out var found))
             {
+                // Through the SHARED acquisition hook, not straight into Chase. This state
+                // used to be the one place that re-found a target and told nobody: it neither
+                // shouted nor refreshed the last-known position, so a monster that lost the
+                // player, hunted them down and caught them again was the only one in the pack
+                // that knew — and if it then lost them a second time it searched the position
+                // from the FIRST sighting, which it had already walked to and abandoned.
+                IdleState.OnAcquired(fsm, found);
                 fsm.ChangeState(new ChaseState());
                 return;
             }

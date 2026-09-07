@@ -46,6 +46,22 @@ namespace Valkur.Gameplay.FSM
         private const float WANDER_RADIUS = 2f;
 
         /// <summary>
+        /// How far she drifts once the light goes. A villager who wanders the same two metres
+        /// at midnight as at noon is a prop with an animation; one who settles by her own door
+        /// after dusk is somebody who lives there — and it costs one number, because
+        /// <see cref="HOME_KEY"/> already remembers where that is.
+        /// </summary>
+        private const float NIGHT_WANDER_RADIUS = 0.7f;
+
+        /// <summary>
+        /// Idle cycles held between walks after dusk. Wider AND longer than the daytime
+        /// 1 to 5: the change a player actually reads is not the shorter leash, it is that she
+        /// mostly stops moving.
+        /// </summary>
+        private const int NIGHT_IDLE_CYCLES_MIN = 3;
+        private const int NIGHT_IDLE_CYCLES_MAX = 9;
+
+        /// <summary>
         /// Spread either side of the homeward bearing, in radians (+/- 50 degrees), so the
         /// way back is a drift rather than a beeline.
         /// </summary>
@@ -95,6 +111,42 @@ namespace Valkur.Gameplay.FSM
         private float _phaseRemaining;
         private Vector2 _heading;
 
+        /// <summary>
+        /// Whether the last bout began after dusk. Sampled once per BOUT rather than per frame:
+        /// the clock is a singleton lookup, the answer changes a handful of times a day, and
+        /// re-reading it mid-bout would let a character stop dead halfway through a step
+        /// because the sun happened to set.
+        /// </summary>
+        private bool _settledForNight;
+
+        /// <summary>
+        /// True after dusk and before dawn.
+        ///
+        /// <para>POLLED, never subscribed. <c>DayNightCycle</c>'s phase change is a STATIC
+        /// event and Domain Reload is off, so a state instance that subscribed would keep a
+        /// destroyed NPC alive for the session — and a state object does not survive a detour
+        /// through <c>DamageState</c>, so it would have nowhere reliable to unsubscribe. A read
+        /// per bout is cheaper than getting that right.</para>
+        ///
+        /// <para>No cycle in the scene reads as daytime, which is what a test scene and the
+        /// Spells-editor sandbox both are.</para>
+        /// </summary>
+        private static bool IsNight()
+        {
+            var cycle = World.DayNightCycle.Instance;
+            if (cycle == null) return false;
+
+            switch (cycle.CurrentPhase)
+            {
+                case World.DayNightCycle.DayPhase.Night:
+                case World.DayNightCycle.DayPhase.Dusk:
+                case World.DayNightCycle.DayPhase.BlueHour:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         public void Enter(StateMachine fsm)
         {
             var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
@@ -138,8 +190,13 @@ namespace Valkur.Gameplay.FSM
             _heading = Vector2.zero;
             c?.StopMovement();
 
+            // Sampled here, once per bout, and held for the whole of it — see IsNight.
+            _settledForNight = IsNight();
+
             float cycle = CycleLength(c, DirectionalAnimator.AnimState.Idle, IDLE_FALLBACK_SECONDS);
-            _phaseRemaining = cycle * Random.Range(IDLE_CYCLES_MIN, IDLE_CYCLES_MAX + 1);
+            int minCycles = _settledForNight ? NIGHT_IDLE_CYCLES_MIN : IDLE_CYCLES_MIN;
+            int maxCycles = _settledForNight ? NIGHT_IDLE_CYCLES_MAX : IDLE_CYCLES_MAX;
+            _phaseRemaining = cycle * Random.Range(minCycles, maxCycles + 1);
 
             PlayFromFrameZero(c, DirectionalAnimator.AnimState.Idle,
                               c != null && c.Animator != null
@@ -191,7 +248,12 @@ namespace Valkur.Gameplay.FSM
         private Vector2 PickHeading(Vector2 pos, float distance)
         {
             Vector2 toHome = _home - pos;
-            bool outside = toHome.sqrMagnitude > WANDER_RADIUS * WANDER_RADIUS;
+
+            // The leash tightens after dusk, so the same wander that reads as ambling around a
+            // market square by day reads as staying by the door at night. Nothing else about
+            // the bout changes: it is the same walk over less ground.
+            float leash = _settledForNight ? NIGHT_WANDER_RADIUS : WANDER_RADIUS;
+            bool outside = toHome.sqrMagnitude > leash * leash;
             float homeward = outside ? Mathf.Atan2(toHome.y, toHome.x) : 0f;
 
             for (int attempt = 0; attempt < HEADING_ATTEMPTS; attempt++)

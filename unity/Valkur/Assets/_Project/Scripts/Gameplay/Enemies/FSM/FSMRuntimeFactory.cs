@@ -100,6 +100,30 @@ namespace Valkur.Gameplay.Enemies.FSM
         public static bool TryBuildForEntity(
             string placementId, string archetypeKey, string fsmSetHint,
             GameObject owner, out StateMachine fsm)
+            => TryBuildForEntity(placementId, null, archetypeKey, fsmSetHint, owner, out fsm);
+
+        /// <summary>
+        /// The full order, with the encounter's own say added:
+        /// <c>by_eid</c> → <paramref name="spawnSetOverride"/> → <c>by_archetype</c> →
+        /// <paramref name="fsmSetHint"/> → failure.
+        ///
+        /// <paramref name="spawnSetOverride"/> is <see cref="SpawnBrain.FsmSet"/> — what the
+        /// SPAWNER that produced this entity asked for. It sits where it does deliberately.
+        /// Below <c>by_eid</c>, because that is a hand-authored statement about one specific
+        /// placement and is the more specific claim. Above <c>by_archetype</c>, because
+        /// otherwise a camp asking for <c>Monster_Caster</c> would be silently overruled by
+        /// the archetype mapping for every monster that has one — which is every shipped
+        /// monster, so the override would do nothing at all and would be the thirteenth
+        /// authored-and-inert field in this subsystem.
+        ///
+        /// A name no set declares warns once and falls through rather than failing the spawn:
+        /// a typo in a config must not cost the entity its brain. It is still LOUD, which is
+        /// the half that matters — a spawner quietly ignoring its authored brain is the
+        /// failure this whole parameter exists to make impossible.
+        /// </summary>
+        public static bool TryBuildForEntity(
+            string placementId, string spawnSetOverride, string archetypeKey, string fsmSetHint,
+            GameObject owner, out StateMachine fsm)
         {
             fsm = null;
             if (owner == null) return false;
@@ -120,6 +144,23 @@ namespace Valkur.Gameplay.Enemies.FSM
                     WarnOnce($"[FSMRuntimeFactory] Placement '{placementId}' is mapped by " +
                              $"by_eid to set '{eidSetId}', which does not exist in sets.json — " +
                              "using the archetype's set instead.");
+                }
+            }
+
+            if (!string.IsNullOrEmpty(spawnSetOverride))
+            {
+                if (_setsById.ContainsKey(spawnSetOverride))
+                {
+                    if (TryBuildFromSet(spawnSetOverride, $"Spawner override for '{archetypeKey}'",
+                                        owner, out fsm))
+                        return true;
+                }
+                else
+                {
+                    WarnOnce($"[FSMRuntimeFactory] A spawner asked for FSM set " +
+                             $"'{spawnSetOverride}' for '{archetypeKey}', which does not exist " +
+                             "in sets.json — falling back to the archetype's set. Check the " +
+                             "spelling against the set list in the FSM editor.");
                 }
             }
 

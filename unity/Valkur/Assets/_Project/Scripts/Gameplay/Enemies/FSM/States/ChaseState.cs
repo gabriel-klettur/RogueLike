@@ -57,6 +57,17 @@ namespace Valkur.Gameplay.FSM
                 return;
             }
 
+            // The one thing in this state that is not a question about DISTANCE. Asked before
+            // the sight, leash and reach arithmetic because a sidestep overrides all of it and
+            // none of those answers changes in the fifth of a second it takes. Costs nothing
+            // on a monster that does not dodge: FSMDodge returns on its first line when
+            // dodge_chance is unset, which is every monster shipped before it existed.
+            if (FSMDodge.ShouldDodgeProjectile(fsm, out var dodgeHeading))
+            {
+                fsm.ChangeState(new DodgeState(dodgeHeading));
+                return;
+            }
+
             var target = c.Target(fsm);
             Vector2 myPos = fsm.Owner.transform.position;
             Vector2 targetPos = target.transform.position;
@@ -141,7 +152,14 @@ namespace Valkur.Gameplay.FSM
             // was removed, so behaviour is unchanged.
             float chaseSpeed = fsm.GetContextFloat("chasing_speed", 4.5f);
 
-            Vector2 moveDir = ResolveMove(fsm, c, myPos, targetPos, delta,
+            // Where on the ring around the target this monster belongs, so six chasers
+            // surround it instead of arriving down one bearing and stacking. Falls back to the
+            // target's own position for a lone attacker, so a solo monster does not walk a
+            // circle before engaging.
+            Vector2 approach = EngagementRing.ApproachPoint(
+                fsm.Owner, target, desiredRange > 0f ? desiredRange : meleeRange);
+
+            Vector2 moveDir = ResolveMove(fsm, c, myPos, approach, delta,
                                           desiredRange, retreat, dt);
 
             c.SetVelocity(moveDir * chaseSpeed);
@@ -217,6 +235,11 @@ namespace Valkur.Gameplay.FSM
         {
             var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
             c?.StopMovement();
+
+            // Hand the ring slot back. It would time out on its own in a couple of seconds, but
+            // until it did, the monsters still engaged would fan around a place nobody is
+            // standing — a gap in the circle exactly where the one that just died used to be.
+            EngagementRing.Release(fsm.Owner, c != null ? c.Target(fsm) : null);
         }
     }
 }

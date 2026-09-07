@@ -191,6 +191,20 @@ namespace Valkur.Gameplay.Spells
         /// </summary>
         public void SetCaster(Transform caster) => _caster = caster;
 
+        /// <summary>
+        /// Who fired this. Read by <c>FSMThreatSense</c>, which must never make a monster
+        /// dodge its own shot — the ONE case where a projectile is inside its owner's threat
+        /// ring and closing on it is the frame it leaves the hand.
+        /// </summary>
+        public Transform Caster => _caster;
+
+        /// <summary>
+        /// The layers this projectile can damage. A monster asking "is this aimed at ME"
+        /// has no other honest way to tell a hostile shot from an allied one: nothing in
+        /// the damage path reads a faction (see CLAUDE.md), so the mask IS the allegiance.
+        /// </summary>
+        public LayerMask TargetLayers => targetLayers;
+
         /// <summary>Damage type consulted against the victim's Health.resistances on impact.</summary>
         public void SetElement(SpellElement? element) => _element = element;
 

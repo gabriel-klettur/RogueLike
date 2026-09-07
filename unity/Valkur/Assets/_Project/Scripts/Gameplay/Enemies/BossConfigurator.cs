@@ -207,12 +207,108 @@ namespace Valkur.Gameplay
             ConfigureRotation(newPhase);
             ApplyPhaseMusic(phase);
             ConfigureChart(phase);
+            ApplyPhaseAi(phase);
+            SpawnPhaseAdds(phase);
 
             // Activation SFX (if any) — fired through the existing audio service.
             if (!string.IsNullOrEmpty(phase.activationSfxId))
             {
                 var audio = ServiceLocator.Get<IAudioService>();
                 audio?.PlaySfxById(phase.activationSfxId);
+            }
+        }
+
+        /// <summary>
+        /// Makes a phase change the boss's BEHAVIOUR, not just its spell list.
+        ///
+        /// <para>Every phase knob writes into the FSM context, which is where <c>FSMTuning</c>
+        /// already reads every feel value from — so a phase can move the standoff, the chase
+        /// speed and the dodge chance without any state class knowing phases exist. Publishing
+        /// only what the phase authored keeps the neutral case exact: an unset knob leaves
+        /// whatever the boss's own <c>aiTuning</c> put there.</para>
+        ///
+        /// <para>The chase multiplier is applied against the DEFINITION's speed rather than
+        /// against the live context value, or two phase changes would compound and phase three
+        /// would arrive at eight times the authored speed.</para>
+        /// </summary>
+        private void ApplyPhaseAi(BossDefinition.Phase phase)
+        {
+            if (phase == null) return;
+
+            var brain = GetComponent<FSMMonsterBrain>();
+            var fsm = brain != null ? brain.FSM : null;
+            if (fsm == null) return;
+
+            if (phase.desiredRange > 0f)
+                fsm.SetContext(FSMTuning.KeyDesiredRange, phase.desiredRange);
+
+            if (phase.chaseSpeedMultiplier > 0f && definition != null && definition.baseMonster != null)
+                fsm.SetContext("chasing_speed",
+                    definition.baseMonster.stats.chasingSpeed * phase.chaseSpeedMultiplier);
+
+            if (phase.dodgeChance > 0f)
+            {
+                fsm.SetContext(FSMTuning.KeyDodgeChance, phase.dodgeChance);
+
+                // A chance with no DodgeState in the set is a knob that does nothing, and it
+                // would do nothing SILENTLY — FSMDodge simply returns. Say so once.
+                if (!fsm.IsStateAllowed("DodgeState"))
+                    Debug.LogWarning($"[BossConfigurator] Phase '{phase.label}' authors a dodge " +
+                                     $"chance but the boss's FSM set does not declare DodgeState, " +
+                                     "so it can never dodge. Add the state to the set or clear " +
+                                     "the knob.");
+            }
+        }
+
+        /// <summary>
+        /// Brings the phase's minions in.
+        ///
+        /// <para>Through the ordinary <c>MonsterSpawner</c>, so an add is a normal monster: it
+        /// gets a brain, a faction, a threat table and a place on the engagement ring, and the
+        /// difficulty layer levels it like anything else. A boss-specific spawn path would have
+        /// been a second way to create a monster and would have drifted from the first one.</para>
+        ///
+        /// <para>Placed on a RING rather than at a random offset, for the same reason
+        /// <c>EngagementRing</c> exists: four adds dropped at random around a boss routinely
+        /// arrive stacked, and the separation system then spends the phase transition pushing
+        /// them apart in front of the player.</para>
+        /// </summary>
+        private void SpawnPhaseAdds(BossDefinition.Phase phase)
+        {
+            if (phase == null || phase.adds == null || phase.adds.Length == 0) return;
+
+            var spawner = FindObjectOfType<MonsterSpawner>();
+            if (spawner == null)
+            {
+                Debug.LogWarning("[BossConfigurator] Phase authors adds but there is no " +
+                                 "MonsterSpawner in the scene; none were summoned.");
+                return;
+            }
+
+            Vector2 origin = transform.position;
+            for (int g = 0; g < phase.adds.Length; g++)
+            {
+                var group = phase.adds[g];
+                if (group == null || string.IsNullOrWhiteSpace(group.monsterKey)) continue;
+
+                var def = spawner.GetDefinition(group.monsterKey);
+                if (def == null)
+                {
+                    Debug.LogWarning($"[BossConfigurator] Phase '{phase.label}' summons unknown " +
+                                     $"monster '{group.monsterKey}'.");
+                    continue;
+                }
+
+                int count = Mathf.Max(1, group.count);
+                int level = EncounterDifficulty.ResolveLevel(def, group.levelBonus, 0f);
+
+                for (int i = 0; i < count; i++)
+                {
+                    float angle = (i / (float)count) * Mathf.PI * 2f;
+                    Vector2 at = origin + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle))
+                                        * Mathf.Max(0.5f, group.spawnRadius);
+                    spawner.SpawnEntity(def, at, persistent: false, resolvedLevel: level);
+                }
             }
         }
 

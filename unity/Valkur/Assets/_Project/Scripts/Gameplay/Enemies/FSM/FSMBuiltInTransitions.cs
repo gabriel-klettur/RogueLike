@@ -205,6 +205,39 @@ namespace Valkur.Gameplay.Enemies.FSM
                 "BeginSwing without leaving; outside it, this edge fires.",
                 DirStates + "AttackState.cs"),
 
+            // ── DodgeState ───────────────────────────────────────────────────────────────
+            // The only behaviour in the machine that answers a PROJECTILE rather than a
+            // position. Both entries are gated twice: dodge_chance must be authored above 0
+            // AND the set's allowed-state list must declare DodgeState, so no monster shipped
+            // before it existed can reach these edges however its tuning is edited.
+            new FSMBuiltInEdge("ChaseState", "DodgeState", "bolt inbound",
+                "FSMThreatSense found a projectile inside dodge_threat_radius that can damage this " +
+                "entity, is not its own, and is closing on it; the dodge cooldown was ready and the " +
+                "dodge_chance roll passed. Asked before every distance test in ChaseState, because a " +
+                "sidestep overrides all of them.",
+                DirStates + "ChaseState.cs"),
+
+            new FSMBuiltInEdge("AttackState", "DodgeState", "bolt inbound, mid-windup",
+                "Same test as from Chase, but refused once the swing has landed its damage " +
+                "(_attacked). A monster that could cancel any frame of any attack would be " +
+                "untouchable at range and its windup would stop being a tell.",
+                DirStates + "AttackState.cs"),
+
+            new FSMBuiltInEdge("DodgeState", "UnconsciousState", "dead",
+                "Health.IsDead, checked first thing in Execute.", DirStates + "DodgeState.cs"),
+
+            new FSMBuiltInEdge("DodgeState", "AttackState", "landed inside reach",
+                "The sidestep finished with the target within melee_range. Going straight to the " +
+                "swing rather than through Chase saves a frame spent walking nowhere before " +
+                "ChaseState decides the same thing.",
+                DirStates + "DodgeState.cs"),
+
+            new FSMBuiltInEdge("DodgeState", "ChaseState", "sidestep over",
+                "The burst covered dodge_distance (or was refused a clear heading and stood still). " +
+                "Back to the fight with the target kept — a dodge suppresses no acquisition, which " +
+                "is the whole difference between it and a flee.",
+                DirStates + "DodgeState.cs"),
+
             // ── SearchState ──────────────────────────────────────────────────────────────
             new FSMBuiltInEdge("SearchState", "UnconsciousState", "dead",
                 "Health.IsDead, checked first thing in Execute.", DirStates + "SearchState.cs"),

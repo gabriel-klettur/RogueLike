@@ -89,5 +89,29 @@ namespace Valkur.Data
         [Tooltip("How far past melee range the target may drift before the monster stops " +
                  "re-swinging and chases again, as a multiple. 0 = default 1.5.")]
         [Min(0f)] public float reswingRangeFactor;
+
+        [Header("Dodge")]
+        [Tooltip("Probability 0..1 that an inbound projectile is answered with a sidestep. " +
+                 "0 = this monster never dodges, which is every monster shipped before the " +
+                 "behaviour existed. A set whose allowed-state list has no DodgeState cannot " +
+                 "dodge however this is set — the two gates are deliberate.")]
+        [Range(0f, 1f)] public float dodgeChance;
+
+        [Tooltip("Seconds between dodge DECISIONS. Spent whether the roll passed or failed, " +
+                 "so this is what stops a per-frame sense turning any non-zero chance into " +
+                 "certainty — and it is the player's counterplay, since a second shot inside " +
+                 "the window cannot be dodged. 0 = default 1.6.")]
+        [Min(0f)] public float dodgeCooldownSeconds;
+
+        [Tooltip("World units within which an inbound projectile is noticed. 0 = default 6.")]
+        [Min(0f)] public float dodgeThreatRadius;
+
+        [Tooltip("World units the sidestep covers. The state derives its own duration from " +
+                 "this and the speed it is actually travelling at, so retuning chasingSpeed " +
+                 "never silently changes how far the dodge goes. 0 = default 2.2.")]
+        [Min(0f)] public float dodgeDistance;
+
+        [Tooltip("Sidestep speed as a multiple of chasingSpeed. 0 = default 2.2.")]
+        [Min(0f)] public float dodgeSpeedMultiplier;
     }
 }

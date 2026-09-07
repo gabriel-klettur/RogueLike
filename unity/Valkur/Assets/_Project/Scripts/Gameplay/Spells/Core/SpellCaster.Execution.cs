@@ -165,6 +165,11 @@ namespace Valkur.Gameplay.Spells
             // Broadcast cast for HUD overlays (cooldown countdown stack, etc.).
             // Primitive payload keeps Valkur.Core free of Valkur.Data references.
             GameEvents.FireSpellCast(gameObject, spell.spellKey, spell.displayName, spell.cooldownDuration);
+
+            // Casting is loud, and louder than a swing. This is the single seam every cast in
+            // the game passes through — monsters included — which is why the noise is raised
+            // here rather than at any of the ~70 call sites that start one.
+            Valkur.Gameplay.FSM.NoiseEvents.EmitAt(gameObject, Valkur.Gameplay.FSM.NoiseEvents.LoudnessSpell);
         }
 
         private void StartCooldown(SpellDefinition spell, int slotIndex)

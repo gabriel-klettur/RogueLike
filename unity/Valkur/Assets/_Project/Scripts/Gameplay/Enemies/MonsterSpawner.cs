@@ -112,13 +112,41 @@ namespace Valkur.Gameplay
         /// template spawns (vendors, "defend the spawn point forever" packs). Defaults to false
         /// so every other caller (F5 drag, BossCueDispatcher) is unaffected.
         /// </param>
-        public GameObject SpawnEntity(MonsterDefinition def, Vector2 position, bool persistent = false)
+        /// <param name="resolvedLevel">
+        /// The level this particular spawn arrives at, from <see cref="EncounterDifficulty"/>.
+        /// 0 (every caller that predates encounter difficulty) means "the definition's own
+        /// level", which for every shipped monster is 1 and therefore unscaled.
+        /// </param>
+        /// <param name="fsmSetOverride">
+        /// The FSM set this ENCOUNTER wants, overriding the archetype's and the definition's.
+        /// Null/empty (every caller that predates it) resolves exactly as before. See
+        /// <see cref="SpawnBrain"/> for why this travels on the object rather than being
+        /// written onto the shared <see cref="MonsterDefinition"/>.
+        /// </param>
+        /// <param name="leashOverride">
+        /// How far from home this spawn chases before breaking off, in world units. 0 keeps
+        /// the monster's own default. This is the live half of the spawner's old
+        /// <c>defendSpawn</c>/<c>defendLeash</c> pair, which had no reader at all.
+        /// </param>
+        public GameObject SpawnEntity(MonsterDefinition def, Vector2 position, bool persistent = false,
+                                      int resolvedLevel = 0, string fsmSetOverride = null,
+                                      float leashOverride = 0f)
         {
             if (monsterPrefab == null) return null;
 
             var go = Instantiate(monsterPrefab, position, Quaternion.identity);
             var container = GetEntitiesContainer();
             if (container != null) go.transform.SetParent(container, true);
+
+            // BEFORE ConfigureMonster, which is the first of the two places that scale stats
+            // off it. Stamping afterwards would give the entity a level nothing had read.
+            SpawnLevel.Stamp(go, resolvedLevel);
+
+            // Same ordering constraint, and a stricter one: ConfigureMonster is where
+            // FSMMonsterBrain builds the machine and fills the context, so a brain stamped
+            // after this line is read by nobody and fails in silence.
+            SpawnBrain.Stamp(go, fsmSetOverride, leashOverride);
+
             EntitySetup.ConfigureMonster(go, def);
             if (persistent) go.AddComponent<PersistentSpawnMarker>();
 

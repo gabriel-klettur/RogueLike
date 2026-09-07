@@ -187,6 +187,17 @@ namespace Valkur.Gameplay.FSM
                 return;
             }
 
+            // Break off the WINDUP to get out of the way, but never a swing that has already
+            // landed its damage: a monster that could cancel any frame of any attack would be
+            // untouchable by a ranged player, and the tell the windup exists to give would
+            // stop meaning anything. Interrupting the wind-up is the readable version — the
+            // player sees the blow abandoned.
+            if (!_attacked && FSMDodge.ShouldDodgeProjectile(fsm, out var dodgeHeading))
+            {
+                fsm.ChangeState(new DodgeState(dodgeHeading));
+                return;
+            }
+
             _timer += dt;
 
             // Keep facing the player throughout the swing.

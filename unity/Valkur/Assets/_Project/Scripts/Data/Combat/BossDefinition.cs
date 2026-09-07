@@ -89,6 +89,58 @@ namespace Valkur.Data
                      "while a chart is actively driving casts. Prevents the boss " +
                      "from double-casting when a chart already covers the phase.")]
             public bool suppressAutoCastWhenChartActive = true;
+
+            [Header("Adds")]
+            [Tooltip("Monsters summoned when this phase begins. Empty (every phase shipped " +
+                     "before this field) summons nothing. \n\n" +
+                     "A boss fight with no adds is a duel, and a duel is the one encounter " +
+                     "shape where none of the group layer does anything: no shout, no ring, no " +
+                     "threat contest, no reason to look away from the boss. Adds are the " +
+                     "cheapest thing that makes a phase a different FIGHT rather than a " +
+                     "different spell list.")]
+            public AddSpawn[] adds = Array.Empty<AddSpawn>();
+
+            [Header("Phase AI")]
+            [Tooltip("Standoff this phase wants, in world units. 0 keeps whatever the boss's " +
+                     "own aiTuning says. A boss that closes in phase 1 and kites in phase 2 is " +
+                     "two fights out of one asset, and it is the knob ChaseState already reads.")]
+            [Min(0f)] public float desiredRange;
+
+            [Tooltip("Chase speed multiplier for this phase. 0 or 1 keeps the authored speed. " +
+                     "The plainest way to say 'it is angry now'.")]
+            [Min(0f)] public float chaseSpeedMultiplier;
+
+            [Tooltip("Probability 0..1 that this phase answers an inbound projectile with a " +
+                     "sidestep. 0 keeps the boss's own dodgeChance, which for every shipped " +
+                     "boss is 0 — a boss that starts dodging only once it is hurt is a " +
+                     "readable escalation that costs one number.")]
+            [Range(0f, 1f)] public float dodgeChance;
+        }
+
+        /// <summary>
+        /// One group of minions a phase brings with it.
+        ///
+        /// <para>Spawned through the ordinary <c>MonsterSpawner</c> rather than a boss-specific
+        /// path, so an add is a normal monster in every respect: it has a brain, a faction, a
+        /// threat table, a slot on the engagement ring, and it can be levelled by the same
+        /// difficulty layer as anything else. A bespoke spawner would have been a second way to
+        /// create a monster, and the two would have drifted the first time either changed.</para>
+        /// </summary>
+        [Serializable]
+        public class AddSpawn
+        {
+            [Tooltip("monsterKey from the MonsterCatalog.")]
+            public string monsterKey;
+
+            [Tooltip("How many. Spawned in a ring around the boss so they do not arrive stacked.")]
+            [Min(1)] public int count = 1;
+
+            [Tooltip("World units from the boss they appear at.")]
+            [Min(0.5f)] public float spawnRadius = 4f;
+
+            [Tooltip("Levels added on top of the add's own. The boss's phase is already a " +
+                     "difficulty statement; this lets late-phase adds be worse than early ones.")]
+            [Min(0)] public int levelBonus;
         }
     }
 }

@@ -94,6 +94,25 @@ namespace Valkur.Gameplay
         public event Action<int> OnDamaged;
 
         /// <summary>
+        /// The same blow as <see cref="OnDamaged"/>, plus WHO threw it — mitigated amount and
+        /// attacker, which may be null for a hazard, a burn tick or anything with no source.
+        ///
+        /// <para>It is a second event rather than a wider signature on the first because the
+        /// three existing listeners genuinely do not want the attacker: a floating damage
+        /// number and a hit flash are properties of the blow, not of who landed it, and
+        /// widening the signature would make every one of them carry an argument it ignores.
+        /// It mirrors <see cref="OnDamageBlocked"/>, which already pairs an amount with a
+        /// source for exactly the same reason.</para>
+        ///
+        /// <para>What needed it: <c>ThreatMemory</c>. Until this existed the only channel
+        /// carrying an attacker was <c>GameEvents.OnEntityDamaged</c>, a STATIC event fired for
+        /// every hit in the game — so thirty monsters would each subscribe and filter, thirty
+        /// delegate calls per blow, on a class whose static handlers survive a Play-mode restart
+        /// because Domain Reload is off. A local event costs one call and cannot leak.</para>
+        /// </summary>
+        public event Action<int, GameObject> OnDamagedBy;
+
+        /// <summary>
         /// A real hit was refused because this entity is invincible. Carries what WOULD have
         /// been dealt (before mitigation — nothing was mitigated, nothing was dealt) and who
         /// threw it, which may be null.
@@ -203,6 +222,7 @@ namespace Valkur.Gameplay
 
             currentHp = Mathf.Max(0, currentHp - mitigated);
             OnDamaged?.Invoke(mitigated);
+            OnDamagedBy?.Invoke(mitigated, attacker);
             OnHpChanged?.Invoke(currentHp, maxHp);
 
             GameEvents.FireEntityDamaged(gameObject, attacker, mitigated);

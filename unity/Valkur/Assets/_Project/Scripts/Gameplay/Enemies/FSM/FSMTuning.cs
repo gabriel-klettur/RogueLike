@@ -31,6 +31,11 @@ namespace Valkur.Gameplay.FSM
         public const string KeySearchDuration       = "search_duration";
         public const string KeyAggroShareRadius     = "aggro_share_radius";
         public const string KeyRegroupSeconds       = "regroup_seconds";
+        public const string KeyDodgeChance          = "dodge_chance";
+        public const string KeyDodgeCooldownSeconds = "dodge_cooldown_seconds";
+        public const string KeyDodgeThreatRadius    = "dodge_threat_radius";
+        public const string KeyDodgeDistance        = "dodge_distance";
+        public const string KeyDodgeSpeedMultiplier = "dodge_speed_multiplier";
 
         // ── Defaults ────────────────────────────────────────────────────────────
         //
@@ -105,6 +110,37 @@ namespace Valkur.Gameplay.FSM
         /// </summary>
         public const float DefaultRegroupSeconds = 2.5f;
 
+        /// <summary>
+        /// Probability that an inbound projectile is answered with a sidestep. ZERO is the
+        /// default and it is what makes this whole layer invisible to every monster shipped
+        /// before it: an unset knob publishes nothing, <c>FSMDodge</c> returns on its first
+        /// line, and the sweep that would look for a projectile never runs. Dodging is opt-in
+        /// per monster, twice over — this number AND a set whose allowed-state list declares
+        /// DodgeState.
+        /// </summary>
+        public const float DefaultDodgeChance = 0f;
+
+        /// <summary>
+        /// Seconds between dodge DECISIONS — spent whether the roll passed or failed, which
+        /// is what stops a per-frame sense turning any non-zero chance into certainty. It is
+        /// also the player's counterplay: a second shot inside this window cannot be dodged,
+        /// so baiting one out is a real answer to an evasive enemy.
+        /// </summary>
+        public const float DefaultDodgeCooldownSeconds = 1.6f;
+
+        /// <summary>
+        /// How far out a projectile is noticed. Wide enough to leave time to move at the
+        /// speeds this project's bolts travel; narrow enough that a monster is not reacting
+        /// to a fight happening somewhere else.
+        /// </summary>
+        public const float DefaultDodgeThreatRadius = 6f;
+
+        /// <summary>World units the sidestep covers. The one number an author tunes by eye.</summary>
+        public const float DefaultDodgeDistance = 2.2f;
+
+        /// <summary>Sidestep speed as a multiple of chase speed. A dodge is a burst, not a walk.</summary>
+        public const float DefaultDodgeSpeedMultiplier = 2.2f;
+
         // ── Accessors ───────────────────────────────────────────────────────────
 
         public static float AggroExitHysteresis(StateMachine fsm)
@@ -145,6 +181,21 @@ namespace Valkur.Gameplay.FSM
 
         public static float RegroupSeconds(StateMachine fsm)
             => fsm.GetContextFloat(KeyRegroupSeconds, DefaultRegroupSeconds);
+
+        public static float DodgeChance(StateMachine fsm)
+            => fsm.GetContextFloat(KeyDodgeChance, DefaultDodgeChance);
+
+        public static float DodgeCooldownSeconds(StateMachine fsm)
+            => fsm.GetContextFloat(KeyDodgeCooldownSeconds, DefaultDodgeCooldownSeconds);
+
+        public static float DodgeThreatRadius(StateMachine fsm)
+            => fsm.GetContextFloat(KeyDodgeThreatRadius, DefaultDodgeThreatRadius);
+
+        public static float DodgeDistance(StateMachine fsm)
+            => fsm.GetContextFloat(KeyDodgeDistance, DefaultDodgeDistance);
+
+        public static float DodgeSpeedMultiplier(StateMachine fsm)
+            => fsm.GetContextFloat(KeyDodgeSpeedMultiplier, DefaultDodgeSpeedMultiplier);
 
         /// <summary>
         /// Leash distance in world units. An authored <c>leashRange</c> wins; otherwise it

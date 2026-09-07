@@ -37,6 +37,9 @@ MonoBehaviour:
     chatRange: 0
     resistances: []
     statusImmunities: 
+  level: 1
+  levelScaling: {fileID: 0}
+  levelHpGrowth: 0.12
   fsmSet: Monster_Default
   patrolType: line
   useAttackTelegraph: 1
@@ -55,11 +58,19 @@ MonoBehaviour:
     aggroShareRadius: 10
     regroupSeconds: 0
     reswingRangeFactor: 1.4
+    dodgeChance: 0
+    dodgeCooldownSeconds: 0
+    dodgeThreatRadius: 0
+    dodgeDistance: 0
+    dodgeSpeedMultiplier: 0
   bossDefinition: {fileID: 0}
   autoCast: 0
   autoCastList: []
   xpReward: 60
+  coinReward: 0
   lootTable: {fileID: 0}
+  chatPersona: {fileID: 0}
+  vendorConfig: {fileID: 0}
   assetConfig:
     idle:
       south: {fileID: 21300000, guid: 360280247afde2144a03218402a99ca1, type: 3}
@@ -116,6 +127,15 @@ MonoBehaviour:
       west: {fileID: 0}
       southWest: {fileID: 0}
     death:
+      south: {fileID: 0}
+      southEast: {fileID: 0}
+      east: {fileID: 0}
+      northEast: {fileID: 0}
+      north: {fileID: 0}
+      northWest: {fileID: 0}
+      west: {fileID: 0}
+      southWest: {fileID: 0}
+    recover:
       south: {fileID: 0}
       southEast: {fileID: 0}
       east: {fileID: 0}
@@ -387,6 +407,8 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 98659b53710a7e04fa0844eadea5658c, type: 3}
     damageSheets: []
     deathSheets: []
+    recoverSheets: []
+    directionLayout: 0
     attackVariants:
     - key: slash
       damageMultiplier: 1
@@ -469,6 +491,9 @@ MonoBehaviour:
       - {fileID: 21300000, guid: 9220951e713b5e743be002dccfe91757, type: 3}
       - {fileID: 21300000, guid: 5f2b1d273ebaad44f87f5463a3d40aa1, type: 3}
       - {fileID: 21300000, guid: 98659b53710a7e04fa0844eadea5658c, type: 3}
+      spellKeys: []
+      animationSpeedMultiplier: 1
+      holdLastFrame: 0
     - key: shieldbash
       damageMultiplier: 0.7
       rangeMultiplier: 0.8
@@ -550,6 +575,9 @@ MonoBehaviour:
       - {fileID: 21300000, guid: 8aa9086cfa82fb84e8012fbf2fa6a7d2, type: 3}
       - {fileID: 21300000, guid: 3efa8e49916a95947a72e9f52376cb92, type: 3}
       - {fileID: 21300000, guid: e1478f51697d03143a92abc4b4326ddb, type: 3}
+      spellKeys: []
+      animationSpeedMultiplier: 1
+      holdLastFrame: 0
     - key: punch
       damageMultiplier: 0.6
       rangeMultiplier: 0.7
@@ -631,6 +659,9 @@ MonoBehaviour:
       - {fileID: 21300000, guid: 806c63d6b9535424e82611443a2cfbfc, type: 3}
       - {fileID: 21300000, guid: 9e4b1e83e5f44634ba006780057d0b5d, type: 3}
       - {fileID: 21300000, guid: ba01b24ea5d91164d9f95612c0d85289, type: 3}
+      spellKeys: []
+      animationSpeedMultiplier: 1
+      holdLastFrame: 0
     - key: kick
       damageMultiplier: 1.1
       rangeMultiplier: 1
@@ -712,6 +743,9 @@ MonoBehaviour:
       - {fileID: 21300000, guid: 0fe7e190a7b56e147b4841531acd95d7, type: 3}
       - {fileID: 21300000, guid: 2c2a866362c0af44e8b0d57913550033, type: 3}
       - {fileID: 21300000, guid: 3e97ae7b99ef9dc49a4205feac42390a, type: 3}
+      spellKeys: []
+      animationSpeedMultiplier: 1
+      holdLastFrame: 0
     - key: jumpkick
       damageMultiplier: 1.6
       rangeMultiplier: 1.6
@@ -793,12 +827,13 @@ MonoBehaviour:
       - {fileID: 21300000, guid: 32914cad3b403a4408941858b0021635, type: 3}
       - {fileID: 21300000, guid: b24e35f66033c8d4c837d1a655cef078, type: 3}
       - {fileID: 21300000, guid: 76f0be684c0ec5c46b87918624b77cfe, type: 3}
+      spellKeys: []
+      animationSpeedMultiplier: 1
+      holdLastFrame: 0
+    castVariants: []
+    statePacing: []
+    loadouts: []
     scaleConfig:
       scaleIdle: 0
-      scaleWalk: 0
-      scaleChase: 0
-      scaleCast: 0
-      scaleAttack: 0
-      scaleDamage: 0
-      scaleDeath: 0
       tint: {r: 1, g: 1, b: 1, a: 1}
+      animationSpeedMultiplier: 0

@@ -10,12 +10,22 @@ using Valkur.Gameplay.Spells;
 namespace Valkur.Tests.EditMode.Game.AI
 {
     /// <summary>
-    /// Pins the NPC cast state lifecycle: enter zeroes velocity, execute
-    /// holds it at zero, the state pops back to Chase / Attack when the
-    /// SpellCaster returns to Ready, and the safety timeout prevents
-    /// infinite freezes if the caster is misconfigured. Without these
-    /// invariants, NPCs that start a cast can either keep walking
-    /// (visual bug) or freeze forever (logic bug).
+    /// Pins the NPC cast state lifecycle: enter zeroes velocity, execute holds it at zero, the
+    /// state pops back to Chase / Attack when the spell's ACTION is over, and the safety timeout
+    /// prevents an infinite freeze if the caster is misconfigured.
+    ///
+    /// <para>THE EXIT CONDITION CHANGED, AND THAT IS THE POINT OF HALF THESE TESTS. The state
+    /// used to wait for <c>CurrentPhase == Ready</c>, which <c>SpellCaster</c> only reaches after
+    /// <c>prepare + channel + cooldownDuration</c> — so a monster was rooted for the spell's
+    /// whole rate limit. Measured live with 31 monsters on the field: 9 in this state at velocity
+    /// 0.00, worst 10.3 s, three frozen simultaneously mid-<c>leap_slam</c>. It now leaves as
+    /// soon as the caster is out of Prepare/Channel, and the cooldown is what it always should
+    /// have been — a limit on the ABILITY, not a duration for the caster.</para>
+    ///
+    /// <para>What replaced the wait is a POSE FLOOR: half the shipped hostile spells author
+    /// <c>prepare: 0, channel: 0</c>, so without one a monster would fire spells out of nowhere
+    /// while walking. The tests below therefore tick past the floor rather than expecting an
+    /// exit on the first frame, and one of them pins that the floor exists at all.</para>
     /// </summary>
     [TestFixture]
     public class NPCCastStateTests
@@ -64,6 +74,21 @@ namespace Valkur.Tests.EditMode.Game.AI
             f.SetValue(caster, phase);
         }
 
+        /// <summary>
+        /// Ticks past the cast pose floor. Deliberately NOT a single big step: the state
+        /// accumulates its own timer from the deltas it is given, and one 10-second tick would
+        /// also clear the safety timeout, so a test using it could pass for the wrong reason.
+        /// </summary>
+        private void TickPastPose()
+        {
+            // Stops the moment the state pops, rather than ticking a fixed count. Ticking on
+            // blindly runs whatever state was entered NEXT, and ChaseState correctly drops to
+            // Patrol against this fixture's target — so the assertion would be about Chase's
+            // behaviour rather than about the exit under test.
+            for (int i = 0; i < 60 && _fsm.CurrentState is NPCCastState; i++)
+                _fsm.Update(0.016f);
+        }
+
         // ── Behaviours ──────────────────────────────────────────────────────────
 
         [Test]
@@ -103,9 +128,10 @@ namespace Valkur.Tests.EditMode.Game.AI
             _playerGo.transform.position = new Vector3(10f, 0f, 0f);
             _fsm.ChangeState(new NPCCastState());
 
-            // Cooldown finished — caster signals ready.
+            // The spell's ACTION is over. Cooldown is irrelevant here now — Cooldown and Ready
+            // both mean "not casting any more", and only Prepare/Channel hold the monster.
             ForceCasterPhase(_caster, SpellCaster.CastPhase.Ready);
-            _fsm.Update(0.016f);
+            TickPastPose();
 
             Assert.IsInstanceOf<ChaseState>(_fsm.CurrentState,
                 "When the caster returns to Ready and the player is far, " +
@@ -120,11 +146,58 @@ namespace Valkur.Tests.EditMode.Game.AI
             _fsm.ChangeState(new NPCCastState());
             ForceCasterPhase(_caster, SpellCaster.CastPhase.Ready);
 
-            _fsm.Update(0.016f);
+            TickPastPose();
 
             Assert.IsInstanceOf<AttackState>(_fsm.CurrentState,
                 "If the player closed the gap during the cast, the NPC must " +
                 "swing immediately on cast end rather than re-running chase.");
+        }
+
+        [Test]
+        public void Cooldown_DoesNotHoldTheCaster()
+        {
+            // THE REGRESSION THIS FIXTURE EXISTS FOR. war_cry authors a 20 s cooldown; under the
+            // old exit test a monster that cast it stood motionless for twenty seconds. Cooldown
+            // must read exactly like Ready here: the spell has happened.
+            _playerGo.transform.position = new Vector3(10f, 0f, 0f);
+            _fsm.ChangeState(new NPCCastState());
+            ForceCasterPhase(_caster, SpellCaster.CastPhase.Cooldown);
+
+            TickPastPose();
+
+            Assert.IsInstanceOf<ChaseState>(_fsm.CurrentState,
+                "A cooldown is a rate limit on the ABILITY, not a duration for the caster. " +
+                "Holding the monster through it is what made every caster in the game a statue.");
+        }
+
+        [Test]
+        public void ThePoseHoldsForAMoment_EvenWhenTheSpellWasInstant()
+        {
+            // Half the shipped hostile spells author prepare 0 / channel 0, so the action is over
+            // one frame after it starts. Exiting on that frame would mean spells appearing out of
+            // nowhere from a monster that never stopped walking.
+            _fsm.ChangeState(new NPCCastState());
+            ForceCasterPhase(_caster, SpellCaster.CastPhase.Ready);
+
+            _fsm.Update(0.016f);
+
+            Assert.IsInstanceOf<NPCCastState>(_fsm.CurrentState,
+                "There must be a readable cast pose even for an instant spell.");
+        }
+
+        [Test]
+        public void ThePoseIsShort_NotAnotherFreeze()
+        {
+            // The floor is a tell, not a re-run of the defect it replaced. One second is far
+            // above the authored floor and below anything a player would read as a hang.
+            _playerGo.transform.position = new Vector3(10f, 0f, 0f);
+            _fsm.ChangeState(new NPCCastState());
+            ForceCasterPhase(_caster, SpellCaster.CastPhase.Ready);
+
+            for (int i = 0; i < 63; i++) _fsm.Update(0.016f);   // ~1.0 s
+
+            Assert.IsNotInstanceOf<NPCCastState>(_fsm.CurrentState,
+                "A cast pose longer than a second is the old freeze in a smaller size.");
         }
 
         [Test]
@@ -153,8 +226,8 @@ namespace Valkur.Tests.EditMode.Game.AI
             // Caster is stuck in Channel forever (misconfigured spell).
             ForceCasterPhase(_caster, SpellCaster.CastPhase.Channel);
 
-            // Drive enough simulated time to exceed the 30s cap.
-            for (int i = 0; i < 35; i++)
+            // Past the 8 s deadlock breaker.
+            for (int i = 0; i < 12; i++)
                 _fsm.Update(1f);
 
             Assert.IsNotInstanceOf<NPCCastState>(_fsm.CurrentState,

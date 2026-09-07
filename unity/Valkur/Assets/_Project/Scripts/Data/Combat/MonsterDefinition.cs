@@ -43,6 +43,21 @@ namespace Valkur.Data
                  "the monster it is a scaled copy of.")]
         public LevelStatCurve levelScaling;
 
+        [Tooltip("Fraction of BASE hp added per level above 1. 0.12 means a level-5 monster has " +
+                 "1 + 4x0.12 = 1.48x its authored hp. 0 (every monster shipped before this " +
+                 "field) means no growth, so nothing changes until an author asks for it. \n\n" +
+                 "This exists BESIDE levelScaling rather than instead of it because the two " +
+                 "answer different questions and this bestiary needs the second one. " +
+                 "LevelStatCurve is ABSOLUTE — a flat hpPerLevel, or an explicit table — which " +
+                 "is right for the player, who has one hp scale. Monsters span 10 hp " +
+                 "(barbol_baby) to 10,000 (barbol_gigante): a shared absolute curve at +18/level " +
+                 "nearly triples the baby by level 2 and is a rounding error on the colossus, so " +
+                 "one authored number cannot serve the roster. A proportional growth can, which " +
+                 "is what makes difficulty authorable at all rather than needing eighteen curve " +
+                 "assets that drift apart. \n\n" +
+                 "An authored curve WINS, so anything already using levelScaling is untouched.")]
+        [Min(0f)] public float levelHpGrowth;
+
         [Header("AI")]
         public string fsmSet;
         public string patrolType;
@@ -74,6 +89,18 @@ namespace Valkur.Data
                  "Designers should set this to a positive value for tunable " +
                  "balance.")]
         public int xpReward;
+
+        [Tooltip("Coins granted when this monster is killed, before the per-kill variance " +
+                 "DeathDropSystem rolls. 0 = fall back to the heuristic (hp/40 + power/4), " +
+                 "which is why every monster shipped before this field existed starts paying " +
+                 "out without a data edit — the same contract xpReward already uses. " +
+                 "Deliberately NOT derived from xpReward: that is a difficulty knob a designer " +
+                 "sets to say how much a kill is worth as PROGRESS, and tying wealth to it " +
+                 "would make every XP retune a silent economy retune. -1 is the explicit " +
+                 "'this one pays nothing' — needed because 0 is already spoken for by the " +
+                 "fallback, and a monster that should drop no coins must be sayable without " +
+                 "editing its faction, which decides four other things.")]
+        [Min(-1)] public int coinReward;
 
         [Tooltip("Optional weighted drop table rolled on death by " +
                  "DeathDropSystem, in addition to XP and any Inventory " +
@@ -114,13 +141,41 @@ namespace Valkur.Data
         /// before this method existed byte-identical. See the class doc on
         /// <see cref="levelScaling"/> for exactly which fields scale and why.
         /// </summary>
-        public EntityStats GetScaledStats()
-        {
-            if (levelScaling == null || level <= 1) return stats;
+        public EntityStats GetScaledStats() => GetScaledStats(level);
 
-            int hpBonus = 0;
-            for (int lvl = 2; lvl <= level; lvl++)
-                hpBonus += levelScaling.HpDelta(lvl);
+        /// <summary>
+        /// The same scaling at an ARBITRARY level, so a spawn can be levelled without touching
+        /// the asset.
+        ///
+        /// <para>This overload is the whole reason encounter difficulty is possible at all. A
+        /// <c>MonsterDefinition</c> is a ScriptableObject SHARED by every instance of that
+        /// monster in the scene, so raising <c>level</c> at spawn time to make one camp harder
+        /// would raise it for every barbol in the world — and, because Unity persists a
+        /// ScriptableObject edited in Play Mode until the next domain reload, it would follow
+        /// the author back into the Editor and quietly rewrite the shipped balance. The level
+        /// has to travel WITH the spawn, not on the definition.</para>
+        /// </summary>
+        public EntityStats GetScaledStats(int atLevel)
+        {
+            if (atLevel <= 1) return stats;
+
+            int hpBonus;
+            if (levelScaling != null)
+            {
+                // The authored table wins. Cumulative from level 2, exactly as a player
+                // levelling one at a time through this same asset type would accumulate.
+                hpBonus = 0;
+                for (int lvl = 2; lvl <= atLevel; lvl++)
+                    hpBonus += levelScaling.HpDelta(lvl);
+            }
+            else
+            {
+                // Proportional growth. Linear in levels rather than compounding: compounding
+                // makes the last few levels of a long run dwarf every one before them, and the
+                // clamp in EncounterDifficulty is a ceiling on the level, not on the curve.
+                hpBonus = Mathf.RoundToInt(stats.hp * levelHpGrowth * (atLevel - 1));
+            }
+
             if (hpBonus <= 0) return stats;
 
             var scaled = stats;

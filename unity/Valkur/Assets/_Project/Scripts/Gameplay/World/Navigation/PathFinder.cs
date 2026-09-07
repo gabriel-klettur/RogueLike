@@ -442,15 +442,43 @@ namespace Valkur.Gameplay.World
         /// </summary>
         private readonly Dictionary<Vector2Int, bool> _walkCache = new Dictionary<Vector2Int, bool>(4096);
 
+        /// <summary>
+        /// Cells kept before the cache is dropped and rebuilt.
+        ///
+        /// <para>It used to have no ceiling at all, which is fine for one zone and is not what
+        /// this game does: the world streams, and a session that walks across it probes a new
+        /// patch of terrain at every step while never invalidating — <c>InvalidateWalkability</c>
+        /// fires on a collision REBAKE, not on movement. So the dictionary grew for the length
+        /// of the session, holding an answer for every cell the player had ever been near,
+        /// almost none of which any monster will ask about again.</para>
+        ///
+        /// <para>65,536 is about twenty-six 50x50 zones' worth of cells and roughly a megabyte
+        /// of dictionary — far more than a fight ever touches, so the eviction below is a
+        /// backstop against an all-day session rather than something that fires in play.</para>
+        /// </summary>
+        private const int WalkCacheMax = 1 << 16;
+
         private bool IsWalkable(Vector2Int cell)
         {
             if (_walkCache.TryGetValue(cell, out bool cached)) return cached;
 
             Vector2 center = CellToWorld(cell);
             bool walkable = Physics2D.OverlapCircle(center, walkableRadius, BlockingMask) == null;
+
+            // Dropped WHOLESALE rather than evicting a least-recently-used entry, and that is
+            // the cheap answer being the right one here. Every value in this dictionary is a
+            // pure function of the collision world, so throwing all of it away costs only the
+            // re-probing — there is nothing to lose and no correctness question, unlike an LRU
+            // which would need a second structure and a touch on every read, on the hottest
+            // path in the solver.
+            if (_walkCache.Count >= WalkCacheMax) _walkCache.Clear();
+
             _walkCache[cell] = walkable;
             return walkable;
         }
+
+        /// <summary>How many cells are memoised right now. For diagnostics and tests.</summary>
+        public int WalkCacheCount => _walkCache.Count;
 
         private Vector2Int FindNearestWalkable(Vector2Int cell, int searchRadius)
         {

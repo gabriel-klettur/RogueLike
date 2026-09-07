@@ -132,6 +132,12 @@ namespace Valkur.Gameplay
 
             PerformAttack(direction, swingDamage, swingRange);
             SpawnSlashVFX(direction, swingRange);
+
+            // A swing is audible. Perception used to be entirely visual, so a monster facing a
+            // wall was deaf to a fight happening behind it and the only way to start one was to
+            // walk into somebody's cone. NoiseEvents raises the same alert the aggro shout does
+            // and only reaches the OTHER side, so a monster swinging never summons its own pack.
+            FSM.NoiseEvents.EmitAt(gameObject, FSM.NoiseEvents.LoudnessSwing);
         }
 
         private void PerformAttack(Vector2 direction, int swingDamage, float swingRange)

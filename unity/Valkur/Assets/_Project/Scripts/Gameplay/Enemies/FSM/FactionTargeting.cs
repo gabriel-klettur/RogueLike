@@ -39,9 +39,48 @@ namespace Valkur.Gameplay.FSM
         {
             if (seeker == null) return EntityRegistry.Player;
 
-            return AlliedUnit.IsAllied(seeker)
+            // WHO HURT ME beats WHO IS NEAREST. Checked first because it is the only input
+            // that carries intent: distance is a fact about the world, threat is a record of
+            // what has actually happened in this fight. It answers null for a monster nobody
+            // has hit — which is every monster before a fight starts — so the distance rule
+            // below is still what opens every engagement, and a monster with no ThreatMemory
+            // at all behaves exactly as it did before the component existed.
+            var threatened = TopThreatFor(seeker);
+            if (threatened != null) return threatened;
+
+            var side = EntityFaction.SideOf(seeker);
+
+            // A neutral hunts nobody. This used to be true only by the accident of every
+            // vendor's aggroRange being 0 — one edit in the Entities editor away from a
+            // shopkeeper chasing the player down the street.
+            if (side == FactionSide.Neutral) return null;
+
+            return side == FactionSide.PlayerSide
                 ? NearestHostileTo(seeker)
                 : NearestPlayerSideTo(seeker);
+        }
+
+        /// <summary>
+        /// The attacker this entity has decided to answer, or null when its table is empty,
+        /// faded, or holding somebody it has no business fighting.
+        ///
+        /// <para>The faction re-check matters: an area spell can put an ally's damage in a
+        /// monster's table when both sides are standing in it, and a monster that turned on its
+        /// own side because of friendly splash would be an in-fight bug nobody could reproduce.
+        /// The table records what happened; this decides whether it is actionable.</para>
+        /// </summary>
+        private static GameObject TopThreatFor(GameObject seeker)
+        {
+            var memory = seeker.GetComponent<ThreatMemory>();
+            if (memory == null) return null;
+
+            var top = memory.Top();
+            if (top == null) return null;
+
+            if (!IsViableTarget(top)) { memory.Forget(top); return null; }
+            if (!EntityFaction.AreEnemies(seeker, top)) { memory.Forget(top); return null; }
+
+            return top;
         }
 
         /// <summary>Transform form of <see cref="EnemyOf"/>, for the call sites that only
@@ -113,7 +152,12 @@ namespace Valkur.Gameplay.FSM
             {
                 var monster = monsters[i];
                 if (monster == null || monster == seeker) continue;
-                if (AlliedUnit.IsAllied(monster)) continue;      // never turn on our own side
+
+                // Faction, not just allied membership. `AlliedUnit.IsAllied` answers "is this
+                // one of MY summons"; it cannot tell a hostile monster from a vendor, so an
+                // ally used to march across town and kill the blacksmith — the one entity in
+                // the game whose whole design is that nobody fights her.
+                if (!EntityFaction.AreEnemies(seeker, monster)) continue;
                 if (!IsViableTarget(monster)) continue;
 
                 float sq = ((Vector2)monster.transform.position - from).sqrMagnitude;

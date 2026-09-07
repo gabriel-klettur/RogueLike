@@ -41,6 +41,9 @@ namespace Valkur.Gameplay.Combat
         /// <summary>Owner: <c>TotemController.HealTick</c> — the healing totem's sweep.</summary>
         public static Collider2D[] TotemHeal = new Collider2D[16];
 
+        /// <summary>Owner: <c>FSMThreatSense.TryFindIncomingProjectile</c> — the dodge sweep.</summary>
+        public static Collider2D[] DodgeThreats = new Collider2D[16];
+
         /// <summary>
         /// Domain Reload is OFF, so every one of these would survive a Play-mode restart still
         /// holding <c>Collider2D</c> references to objects destroyed with the previous scene.
@@ -55,6 +58,7 @@ namespace Valkur.Gameplay.Combat
             HomingAcquire = new Collider2D[16];
             AuraTargets = new Collider2D[24];
             TotemHeal = new Collider2D[16];
+            DodgeThreats = new Collider2D[16];
         }
     }
 }

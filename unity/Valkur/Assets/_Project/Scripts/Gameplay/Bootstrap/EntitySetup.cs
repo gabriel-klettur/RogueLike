@@ -148,7 +148,7 @@ namespace Valkur.Gameplay
             // hp / defense / meleeDamage are the three stats MonsterDefinition.level scales;
             // everything else is read straight off def.stats on purpose. Level <= 1 — every
             // shipped monster today — returns the authored struct unchanged.
-            var scaled = def.GetScaledStats();
+            var scaled = def.GetScaledStats(SpawnLevel.Of(go, def));
             InitHealth(go, scaled.hp);
 
             // Defensive stats are pushed onto the live components here because Health owns
@@ -181,6 +181,7 @@ namespace Valkur.Gameplay
             if (go.GetComponent<GrayscaleDeath>() == null)
                 go.AddComponent<GrayscaleDeath>();
 
+            ConfigureFactionAndThreat(go, def);
             ConfigureMonsterAutoCast(go, def);
             ConfigureBoss(go, def);
             ConfigureChat(go, def);
@@ -385,6 +386,37 @@ namespace Valkur.Gameplay
         //
         // No-op for monsters where autoCast is false or autoCastList is empty,
         // so existing melee-only NPCs are not affected.
+        /// <summary>
+        /// Publishes the two facts every targeting decision needs: whose side this entity is on,
+        /// and how far its grudges reach.
+        ///
+        /// <para><c>stats.faction</c> was authored on all twenty-five shipped definitions and
+        /// reached no AI decision — it fed the loot roll, the respawn system and one
+        /// <c>SetContext</c> nobody read. Copying it onto <see cref="EntityFaction"/> is what
+        /// turns it into the thing it always looked like.</para>
+        ///
+        /// <para>The threat range is DERIVED from the monster's own aggro ring rather than
+        /// authored, because a second number that has to stay in step with the first is a
+        /// number that eventually will not. Twice the ring: far enough that being shot from
+        /// outside it still earns an answer (which is what the retaliation edge is for), close
+        /// enough that one arrow from a rooftop cannot own the monster forever.</para>
+        /// </summary>
+        internal static void ConfigureFactionAndThreat(GameObject go, MonsterDefinition def)
+        {
+            if (go == null) return;
+
+            var faction = go.GetComponent<EntityFaction>();
+            if (faction == null) faction = go.AddComponent<EntityFaction>();
+            faction.SetAuthoredFaction(def != null ? def.stats.faction : null);
+
+            var threat = go.GetComponent<ThreatMemory>();
+            if (threat == null) threat = go.AddComponent<ThreatMemory>();
+            threat.SetMaxRange(def != null ? def.stats.aggroRange * ThreatRangeFactor : 0f);
+        }
+
+        /// <summary>Threat reach as a multiple of the aggro ring. See ConfigureFactionAndThreat.</summary>
+        private const float ThreatRangeFactor = 2f;
+
         internal static void ConfigureMonsterAutoCast(GameObject go, MonsterDefinition def)
         {
             if (def == null || !def.autoCast) return;
@@ -428,14 +460,68 @@ namespace Valkur.Gameplay
                 if (registered < slotCount)
                 {
                     caster.SetSpell(registered, spell);
-                    auto.AddEntry(registered, periodSeconds: 3f, jitter: 0.5f);
+                    auto.AddEntry(BuildAutoCastEntry(registered, spell));
                     registered++;
                 }
             }
 
-            Debug.Log($"[EntitySetup] Monster '{def.monsterKey}' auto-cast: " +
+            Valkur.Core.VerboseLog.Log(Valkur.Core.VerboseLog.Category.Bootstrap,
+                () => $"[EntitySetup] Monster '{def.monsterKey}' auto-cast: " +
                       $"{registered}/{def.autoCastList.Length} spell(s) wired.");
         }
+
+        /// <summary>
+        /// One auto-cast entry, sized from the SPELL rather than from a constant.
+        ///
+        /// <para>Every monster used to get <c>periodSeconds: 3f</c>, hard-coded, whatever it was
+        /// casting. Two clocks then ran with nothing relating them: a <c>war_cry</c> on a 20 s
+        /// cooldown was ATTEMPTED every three seconds and refused six times out of seven, while
+        /// a <c>fireball</c> on 0.4 s was held back to a seventh of the rate its own data asks
+        /// for. The cooldown is the ability's authored rate limit — it is the right period, and
+        /// deriving it here means retuning a spell retunes every monster that carries it.</para>
+        ///
+        /// <para><see cref="MinAutoCastPeriod"/> is the floor for a spell with no cooldown at
+        /// all, so a 0 does not turn into a cast attempt every frame.</para>
+        ///
+        /// <para>The distance gate comes from the spell's own <c>range</c> for the same reason:
+        /// <c>NPCAutoCast.castRange</c> is a single global 8 units, so before this a monster
+        /// holding a 16-unit <c>seeking_shard</c> refused to fire it past 8, and one holding a
+        /// self-centred nova tried to cast it from across the street. A spell that authors no
+        /// range keeps the global.</para>
+        /// </summary>
+        private static NPCAutoCast.AutoCastEntry BuildAutoCastEntry(int slot, SpellDefinition spell)
+        {
+            float period = Mathf.Max(MinAutoCastPeriod, spell.cooldownDuration);
+
+            return new NPCAutoCast.AutoCastEntry
+            {
+                spellSlot     = slot,
+                periodSeconds = period,
+
+                // Proportional, not constant: a 0.5 s jitter on a 20 s ability is no
+                // de-synchronisation at all, and on a 0.4 s one it is longer than the period.
+                periodJitter  = period * AutoCastJitterFraction,
+
+                // Staggered by slot so a monster with four spells does not open the fight by
+                // rolling all four in the same frame and picking whichever the loop reached
+                // first. It is a fight opening, not a queue.
+                initialDelaySeconds = slot * AutoCastSlotStagger,
+
+                maxDistance = spell.range > 0f ? spell.range : 0f,
+                minDistance = 0f,
+                hpLossStep  = 0f,
+            };
+        }
+
+        /// <summary>Floor on an auto-cast period. A spell with cooldown 0 would otherwise be
+        /// attempted every frame.</summary>
+        private const float MinAutoCastPeriod = 0.75f;
+
+        /// <summary>Jitter as a fraction of the period, so it scales with the ability.</summary>
+        private const float AutoCastJitterFraction = 0.2f;
+
+        /// <summary>Seconds of opening stagger per slot index.</summary>
+        private const float AutoCastSlotStagger = 0.6f;
 
         // ── Boss wiring ──────────────────────────────────────────────────────
         // MonsterDefinition.bossDefinition is the single opt-in flag: when set,
