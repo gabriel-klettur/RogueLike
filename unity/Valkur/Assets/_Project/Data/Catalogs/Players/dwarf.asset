@@ -33,6 +33,7 @@ MonoBehaviour:
   baseCritMultiplier: 1.5
   resistances: []
   statusImmunities: 
+  startingCoins: 25
   dragDropRange: 128
   assetConfig:
     idle:
@@ -1784,6 +1785,7 @@ MonoBehaviour:
       - anim_charging_sprint
       animationSpeedMultiplier: 4
       holdLastFrame: 1
+    stateVariants: []
     statePacing: []
     loadouts:
     - key: armed
@@ -1847,6 +1849,7 @@ MonoBehaviour:
         - {fileID: 21300000, guid: 060a3c014c5ddbf49b782fb78399e894, type: 3}
         - {fileID: 21300000, guid: 20be9206056354c43bca921f981176e3, type: 3}
         - {fileID: 21300000, guid: 3803fceb78fe1ed42bd918dca2ad8bdd, type: 3}
+        variants: []
       - state: walk
         directional:
           south: {fileID: 0}
@@ -1922,6 +1925,7 @@ MonoBehaviour:
         - {fileID: 21300000, guid: 788e82463ef3209458bbacc554a24b2c, type: 3}
         - {fileID: 21300000, guid: 22c3b4e81b9571e418fda77fac866879, type: 3}
         - {fileID: 21300000, guid: 39665be7be5e89a42bb6d3e99f784ece, type: 3}
+        variants: []
       - state: chase
         directional:
           south: {fileID: 0}
@@ -1997,6 +2001,7 @@ MonoBehaviour:
         - {fileID: 21300000, guid: 4577c875838e86640a711f8afde50dea, type: 3}
         - {fileID: 21300000, guid: ec1f32c309436d2439de2e458fa3c4fb, type: 3}
         - {fileID: 21300000, guid: bf727ad4c97b39543af3d4caeb01b803, type: 3}
+        variants: []
       - state: attack
         directional:
           south: {fileID: 0}
@@ -2072,6 +2077,9 @@ MonoBehaviour:
         - {fileID: 21300000, guid: ba2bccc3921633d4283bb6103ae717fa, type: 3}
         - {fileID: 21300000, guid: 01bc21ca8fe1a3a40b987f9d101a5c11, type: 3}
         - {fileID: 21300000, guid: 1c2e23906d9634a4f88c352e856cbd18, type: 3}
+        variants: []
+      attackVariants: []
+      castVariants: []
     scaleConfig:
       scaleIdle: 0
       tint: {r: 0, g: 0, b: 0, a: 0}

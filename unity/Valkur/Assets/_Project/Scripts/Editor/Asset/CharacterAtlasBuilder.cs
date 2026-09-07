@@ -133,6 +133,28 @@ namespace Valkur.Editor
                     continue;
 
                 string folderPath = $"{CharactersFolder}/{classKey}";
+
+                // A character baked at its OWN pixel budget does not belong here, and this
+                // is the only place that rule is enforceable. `players.spriteatlas` exists to
+                // pack the roster that shares 115 px / PPU 64; the vampire and the mague are
+                // baked at 256 px / PPU 96, which is 4.9x the texels each, and adding either
+                // would push this atlas from one 4096 page to three. They are packed instead
+                // by the `characters` group in SpriteAtlasBuilder, whose whole job is the
+                // REMAINDER of Art/Characters — see the comment on that group.
+                //
+                // Asked of CharacterSpritePpu rather than hard-coded as a name list, because
+                // that class already reads the one place the answer is written down (the
+                // frame manifest's `characterPpu` block) and a second list would drift from
+                // it silently: the next character baked large would be added to the manifest,
+                // import at its own PPU, and quietly land in the wrong atlas.
+                //
+                // This is also a REAL divergence being closed, not a hypothetical: the
+                // shipped players.spriteatlas never contained the vampire, but this method
+                // would have re-added her on the next run, moving 180 sprites into an atlas
+                // that CharacterSpriteQualityTests reads as the shared-budget roster.
+                if (CharacterSpritePpu.PpuFor($"{folderPath}/probe.png") > 0f)
+                    continue;
+
                 var folder = AssetDatabase.LoadAssetAtPath<DefaultAsset>(folderPath);
                 if (folder == null)
                     continue;

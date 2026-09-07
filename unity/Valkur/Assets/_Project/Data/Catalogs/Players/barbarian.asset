@@ -33,6 +33,7 @@ MonoBehaviour:
   baseCritMultiplier: 1.5
   resistances: []
   statusImmunities: 
+  startingCoins: 25
   dragDropRange: 128
   assetConfig:
     idle:
@@ -980,6 +981,7 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+    stateVariants: []
     statePacing: []
     loadouts: []
     scaleConfig:

@@ -318,10 +318,11 @@ namespace Valkur.Tests.EditMode.Game.Data
         ///
         /// <para>It is here rather than in <c>CharacterSpriteQualityTests</c> because that
         /// fixture's case source is a hardcoded list of the two LEGACY strip characters and
-        /// its atlas constant points at <c>players.spriteatlas</c>, which the vampire is not
-        /// in — so both of its PPU invariants are green for every character they cannot
-        /// see. This one is driven by the manifest, so a character is covered the moment the
-        /// builder writes it.</para>
+        /// its atlas constant points at <c>players.spriteatlas</c>, which neither the vampire
+        /// nor the mague is in — they are the two baked at their own pixel budget, and
+        /// SpriteAtlasBuilder hands both to characters.spriteatlas — so both of its PPU
+        /// invariants are green for every character they cannot see. This one is driven by
+        /// the manifest, so a character is covered the moment the builder writes it.</para>
         /// </summary>
         [Test]
         public void EveryPlayerFrame_CarriesItsDeclaredPpu_AndTheDeclaredWorldHeight()

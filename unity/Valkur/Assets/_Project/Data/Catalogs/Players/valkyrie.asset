@@ -27,6 +27,7 @@ MonoBehaviour:
   damageStopProbability: 0.25
   manaRegenPerSecond: 1
   dashCharges: 1
+  startingCoins: 25
   dragDropRange: 128
   assetConfig:
     idle:

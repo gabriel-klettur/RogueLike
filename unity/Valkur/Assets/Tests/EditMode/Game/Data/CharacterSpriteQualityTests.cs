@@ -372,11 +372,12 @@ namespace Valkur.Tests.EditMode.Game.Data
         /// hypothetical `vampire_lord`'s frames.</para>
         ///
         /// <para>Second, this fixture's atlas constant is <c>players.spriteatlas</c>, and the
-        /// one character who does not import at the shared PPU is not in it: five character
+        /// characters who do not import at the shared PPU are not in it: FOUR character
         /// folders are claimed by that atlas and <c>SpriteAtlasBuilder</c> hands the REMAINDER
-        /// to <c>characters.spriteatlas</c>, which today is exactly the vampire. Checking one
-        /// atlas would have been green for the only character it needed to see. Both are
-        /// walked, and a missing one is a failure rather than a skip.</para>
+        /// to <c>characters.spriteatlas</c>, today the vampire and the mague — the two baked
+        /// at 256 px / PPU 96 rather than the shared 115 / 64. Checking one atlas would have
+        /// been green for exactly the characters it needed to see. Both are walked, and a
+        /// missing one is a failure rather than a skip.</para>
         /// </summary>
         [Test]
         public void SpriteAtlas_AllPackedSprites_HaveTheirDeclaredPixelsPerUnit()
@@ -407,8 +408,9 @@ namespace Valkur.Tests.EditMode.Game.Data
                 var atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(atlasPath);
                 Assert.IsNotNull(atlas,
                     $"SpriteAtlas not found at '{atlasPath}'. Both character atlases must exist: " +
-                    "players.spriteatlas claims five character folders and characters.spriteatlas " +
-                    "takes the remainder, so checking only one leaves characters uncovered.");
+                    "players.spriteatlas claims the shared-budget character folders and " +
+                    "characters.spriteatlas takes the remainder, so checking only one leaves " +
+                    "characters uncovered.");
 
                 var sprites = new Sprite[atlas.spriteCount];
                 atlas.GetSprites(sprites);

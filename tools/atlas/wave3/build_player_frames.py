@@ -141,9 +141,28 @@ ALPHA_KEEP = 16       # keep soft edges, drop the haze
 # 4096 page of `characters.spriteatlas`; 320 px would need two.
 PLAYER_BODY_PX: dict[str, int] = {
     "vampire": 256,
+    # Same pair as the vampire, and for the same two reasons stacked. The HEIGHT was the
+    # ask -- 256/96 = 2.667 world units, against the 1.797 the shared 115/64 gives, so the
+    # mague stands exactly as tall as she does instead of at 67% of her. The PPU is what
+    # makes that readable rather than merely bigger: `CameraSetup` runs the game at ortho 5
+    # on a 960 px viewport, i.e. 96 screen pixels per world unit, so PPU 96 is EXACTLY one
+    # texel per screen pixel and PPU 64 is a 1.5x upscale. At 2.667 units the character
+    # covers 256 screen pixels either way; the only question is whether the texture has 256
+    # texels to fill them or 171 stretched over them, and his source cells are ~470 px tall,
+    # so the detail exists and 115 px was throwing 4x of it away.
+    "mague": 256,
+    # The elf joins them, and his source carries it: measured over his nineteen staged
+    # sheets the foot-to-crown body runs 323 px (spellcasting_3) to 723 px (the idle), so
+    # 256 is a DOWNSCALE on every one of them and the detail is recovered rather than
+    # invented. That check is the one worth repeating before raising anybody else -- a
+    # character whose sheets measured under 256 would be upscaled into a bigger atlas for
+    # no added detail at all.
+    "elven": 256,
 }
 PLAYER_PPU: dict[str, int] = {
     "vampire": 96,
+    "mague": 96,
+    "elven": 96,
 }
 
 # S, SE, E, NE, N, NW, W, SW -- the order BuildEightDirectionalSet slices, and the
@@ -654,6 +673,136 @@ PLAYERS = {
                                   "locomotion; same reason as the archer's",
         },
     },
+    # mague -> mague. A wave12 set of thirty-one sheets, and the first character in the
+    # project whose art arrives as TWO nearly complete loadouts: an unarmed wizard (walk,
+    # run, punch, kick, hurt, death, rise, five spellcasts) and a staff wizard (idle, walk,
+    # run, attack, three spellcasts, a draw and a sheathe).
+    #
+    # WHICH ONE IS THE BASE was forced by one gap, and it is worth writing down because the
+    # obvious reading is the other way round. There is exactly ONE idle sheet in the wave and
+    # it holds the staff; `EntityAnimationBinder.ApplyVisuals` opens with
+    # `if (!HasFrames(idleSet)) return false;`, so a character with no idle binds NO art at
+    # all. Making the staff the base and unarmed a loadout would have satisfied that -- and
+    # would have inverted `weapon_toggle`: `PlayerLoadoutController.ToggleLoadout` treats
+    # PUTTING THE LOADOUT ON as the draw (immediate, flare forward) and TAKING IT OFF as the
+    # stow (deferred, equip animation played REVERSED). With the staff as the loadout those
+    # two land the right way round and the shipped spell, its innate grant and its key
+    # binding all work untouched. So: base is the unarmed wizard, `armed` is the staff, and
+    # the price is one wrong frame-set -- the unarmed IDLE shows the staff, because no other
+    # idle exists. It is the single honest gap in the wave and it closes the day someone
+    # draws six frames of a wizard standing still with his hands empty.
+    #
+    # Every sheet in the wave faces WEST, including the two the eye reads as front-on
+    # (`mague_spellcast_1`, and frame 0 of `mague_die_2`): a mirrored front pose is still a
+    # front pose, so no EAST_FACING_SHEETS entry is needed -- the same call the vampire's
+    # camera-facing casts got.
+    "mague": {
+        "source": "mague_wave12",
+        "states": {
+            # The staff idle, wearing the base slot it cannot vacate. See the note above.
+            "idle":    "mague_staff_idle",
+            "walk":    "mague_walk",
+            "chase":   "mague_run",
+            "cast":    "mague_spellcast_1",
+            "attack":  "mague_punch",
+            "damage":  "mague_hit",
+            "death":   "mague_die",
+            "recover": "mague_knockdown_recovery",
+        },
+        # The first character to use these. Idle, walk, chase, damage, death and recover have
+        # no ACTION to hang a choice off -- nothing "casts" a walk -- so an alternative for
+        # one of them is picked on ENTRY to the state and held for as long as the state lasts
+        # (DirectionalAnimator.ResolveEntryVariant). The state's own sheet is variant 0 and is
+        # NOT repeated here; the builder prepends it, because a state that carries variants
+        # never renders its base set and a declaration listing only the alternates would
+        # silently retire the default cycle.
+        #
+        # idle and chase carry one sheet each and are absent rather than listed with an empty
+        # list, which would install a one-entry rotation and mean the same thing more loudly.
+        "state_variants": {
+            "walk":   ["mague_walk_2", "mague_walk_3"],
+            "damage": ["mague_hit_2"],
+            "death":  ["mague_die_2", "mague_die_3"],
+        },
+        # Rotated per swing by PlayerController.NextVariant; index 0 is the fallback.
+        # `staff_swing` is RESERVED rather than rotated, so an ordinary bare-handed swing
+        # never makes the staff appear -- it plays only for slash_regular, the one slash that
+        # runs through AnimState.Attack, and a slash is the one action that must never render
+        # empty-handed. That leaves punch and kick as the unarmed rotation, which is the whole
+        # unarmed melee this character has.
+        "variants": [
+            ("punch",       "mague_punch"),
+            ("kick",        "mague_kick"),
+            ("staff_swing", "mague_staff_attack", ["slash_regular"]),
+        ],
+        # The five bare-handed casts rotate; spellcast_1 doubles as the base `cast` slot so
+        # the character still casts with real art if the variants are ever lost.
+        #
+        # Two reservations sit beside them and neither may be dropped. `armed_equip` is the
+        # DRAW, cast by weapon_toggle -- without it the toggle animates as an ordinary
+        # spellcast. `run_cast` is the one sheet in the wave that casts while running, which
+        # is what a dash is; it is compressed 4x and held on the last frame for exactly the
+        # reason the dwarf's `charge` is, since DashExecutor teleports the body in a single
+        # MovePosition and its wake lasts 0.14 s against eight frames of 1.2 s.
+        "cast_variants": [
+            ("spell_1",     "mague_spellcast_1"),
+            ("spell_2",     "mague_spellcast_2"),
+            ("spell_3",     "mague_spellcast_3"),
+            ("spell_4",     "mague_spellcast_4"),
+            ("spell_5",     "mague_spellcast_5"),
+            ("armed_equip", "mague_staff_equip",   ["weapon_toggle"]),
+            ("run_cast",    "mague_run_spellcast", ["dash"], {"speed": 4.0, "hold": True}),
+        ],
+        # The staff. It overrides five states AND brings its own swings and casts, which is
+        # what makes it a loadout rather than a re-skin of the walk: attack and cast variants
+        # are chosen by an ACTION, so leaving them at base level would rotate five bare-handed
+        # casts while the character is visibly holding a staff.
+        #
+        # It re-declares `armed_equip` because the SHEATHE is cast from inside the loadout --
+        # a loadout whose cast list forgets it stows the staff to a spellcasting pose. The
+        # same sheet in both lists, played forward to draw and reversed to stow, which is the
+        # contract PlayerLoadoutController.ShouldPlayCastReversed already owns.
+        "loadouts": [
+            ("armed", {
+                "idle":   "mague_staff_idle",
+                "walk":   "mague_staff_walk",
+                "chase":  "mague_staff_run",
+                "cast":   "mague_staff_spellcast",
+                "attack": "mague_staff_attack",
+            }, {
+                "state_variants": {
+                    "walk": ["mague_staff_walk_2", "mague_staff_walk_4", "mague_staff_walk_5"],
+                },
+                "variants": [
+                    ("staff_swing",  "mague_staff_attack"),
+                    ("staff_thrust", "mague_armed_1"),
+                ],
+                "cast_variants": [
+                    ("staff_cast_1", "mague_staff_spellcast"),
+                    ("staff_cast_2", "mague_staff_spellcast_2"),
+                    ("staff_cast_5", "mague_staff_spellcast_5"),
+                    ("staff_slash",  "mague_armed_1",
+                     ["slash", "slash_cleave", "slash_combo", "slash_stab"]),
+                    ("armed_equip",  "mague_staff_equip", ["weapon_toggle"]),
+                ],
+            }),
+        ],
+        "staged": {
+            "mague_staff_unequip": "a purpose-drawn SHEATHE, and there is no selector for it. "
+                                   "PlayerLoadoutController stows by playing the equip variant "
+                                   "REVERSED -- one sheet, one motion, read either way -- and a "
+                                   "variant is chosen by spell key, so both directions of "
+                                   "weapon_toggle resolve to the same one. Shipping this would "
+                                   "need the controller to name a second variant on the stow, "
+                                   "which is a runtime change rather than an art import",
+            "an unarmed idle": "DOES NOT EXIST in the wave. The base idle therefore holds the "
+                               "staff, which is visible for as long as the character stands "
+                               "still with the `armed` loadout off. Six frames of a wizard "
+                               "standing still, empty-handed, closes it",
+            "legacy mague_idle / _walking / _casting": "the previous 8-direction 128px strips, "
+                                                       "superseded wholesale by this wave",
+        },
+    },
     # vampire -> vampire. A wave6 set of eighteen sheets, all drawn for ONE character
     # and the first player wave that is NOT uniformly side-view: the locomotion, both
     # melees, the running strike, the hit, the death and the rise all face WEST, while
@@ -1047,6 +1196,38 @@ def declared(player: dict, field: str):
         yield key, stem, spells, pacing
 
 
+def loadouts_of(player: dict):
+    """Normalise a loadout row to (key, states, extras).
+
+    A row is ``(key, states)`` or ``(key, states, extras)``. ``extras`` may carry
+    ``state_variants``, ``variants`` and ``cast_variants`` in exactly the shapes the base
+    player uses -- a loadout REPLACES those lists rather than extending them, because a
+    rotation that mixed the two looks is the pop the whole loadout mechanism exists to
+    avoid.
+    """
+    for row in player.get("loadouts", []):
+        key, states = row[0], row[1]
+        extras = dict(row[2]) if len(row) > 2 else {}
+        yield key, states, extras
+
+
+def variant_stems(container: dict, states: dict):
+    """(state, [stem, ...]) for every state whose alternatives are declared.
+
+    The state's OWN sheet is prepended as variant 0 rather than being repeated in the
+    declaration. Two reasons, and the first is not cosmetic: a state that carries variants
+    NEVER renders its base set -- ``ResolveEntryVariant`` always answers an index in range --
+    so a declaration that listed only the alternates would silently retire the default cycle.
+    Deriving it here makes that impossible to get wrong, and index 0 stays the sheet the
+    ``states`` map already calls this character's default.
+    """
+    for state, alternates in (container.get("state_variants") or {}).items():
+        base = states.get(state)
+        if base is None:
+            raise SystemExit(f"state_variants names '{state}', which has no sheet in states")
+        yield state, [base] + list(alternates)
+
+
 def sheets_for(player: dict) -> dict:
     """Every distinct sheet stem this player needs, state slots and variants alike."""
     stems = dict(player["states"])
@@ -1054,9 +1235,19 @@ def sheets_for(player: dict) -> dict:
         stems[f"variant:{key}"] = stem
     for key, stem, _spells, _pacing in declared(player, "cast_variants"):
         stems[f"cast:{key}"] = stem
-    for key, states in player.get("loadouts", []):
+    for state, group in variant_stems(player, player["states"]):
+        for stem in group:
+            stems[f"statevariant:{state}:{stem}"] = stem
+    for key, states, extras in loadouts_of(player):
         for slot, stem in states.items():
             stems[f"loadout:{key}:{slot}"] = stem
+        for state, group in variant_stems(extras, states):
+            for stem in group:
+                stems[f"loadout:{key}:statevariant:{state}:{stem}"] = stem
+        for vkey, stem, _spells, _pacing in declared(extras, "variants"):
+            stems[f"loadout:{key}:variant:{vkey}"] = stem
+        for vkey, stem, _spells, _pacing in declared(extras, "cast_variants"):
+            stems[f"loadout:{key}:cast:{vkey}"] = stem
     return stems
 
 
@@ -1126,7 +1317,8 @@ def main() -> int:
                  "targetBodyPx": target_body_px, "ppu": player_ppu,
                  "worldHeightUnits": round(target_body_px / player_ppu, 4),
                  "states": [],
-                 "attackVariants": [], "castVariants": [], "loadouts": []}
+                 "attackVariants": [], "castVariants": [],
+                 "stateVariants": [], "loadouts": []}
 
         for slot, stem in sheets_for(player).items():
             if stem in built:
@@ -1226,7 +1418,32 @@ def main() -> int:
                 "holdLastFrame": bool(pacing.get("hold", False)),
             })
 
-        for key, states in player.get("loadouts", []):
+        def variant_rows(stems: list[str]) -> list[dict]:
+            """One manifest row per alternative, keyed by its own shipped folder name."""
+            return [{
+                "key": state_dirs[stem],
+                "framesPerDirection": len(built[stem]),
+                "pivotY": round(pivot_y_by_stem.get(stem, 0.0), 6),
+                "sprites": bucket_list(stem),
+                "animationSpeedMultiplier": 1.0,
+                "holdLastFrame": False,
+            } for stem in stems]
+
+        def declared_rows(container: dict, field: str) -> list[dict]:
+            return [{
+                "key": key,
+                "framesPerDirection": len(built[stem]),
+                "pivotY": round(pivot_y_by_stem.get(stem, 0.0), 6),
+                "sprites": bucket_list(stem),
+                "spellKeys": spells,
+                "animationSpeedMultiplier": pacing.get("speed", 1.0),
+                "holdLastFrame": bool(pacing.get("hold", False)),
+            } for key, stem, spells, pacing in declared(container, field)]
+
+        for state, group in variant_stems(player, player["states"]):
+            entry["stateVariants"].append({"state": state, "variants": variant_rows(group)})
+
+        for key, states, extras in loadouts_of(player):
             entry["loadouts"].append({
                 "key": key,
                 "states": [{
@@ -1235,6 +1452,12 @@ def main() -> int:
                     "pivotY": round(pivot_y_by_stem.get(stem, 0.0), 6),
                     "sprites": bucket_list(stem),
                 } for slot, stem in states.items()],
+                "stateVariants": [
+                    {"state": state, "variants": variant_rows(group)}
+                    for state, group in variant_stems(extras, states)
+                ],
+                "attackVariants": declared_rows(extras, "variants"),
+                "castVariants": declared_rows(extras, "cast_variants"),
             })
 
         entry["stagedNotShipped"] = player["staged"]

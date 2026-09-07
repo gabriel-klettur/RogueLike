@@ -23,14 +23,22 @@ namespace Valkur.Editor
         private static readonly AtlasGroupDef[] AtlasGroups = new[]
         {
             new AtlasGroupDef("env-tiles",   2048, false, "Assets/_Project/Resources/Tiles"),
-            // 4096 rather than 2048 because of what this group actually holds. Five of the
+            // 4096 rather than 2048 because of what this group actually holds. Four of the
             // six character folders are claimed by players.spriteatlas, so the nested-overlap
-            // branch below hands this group the REMAINDER — today exactly the vampire, and
-            // she is the one character baked at her own pixel budget (256 px, not the shared
-            // 115) to keep the detail her 331-681 px source cells carry. That is 180 frames
-            // and ~11.7 Mpx, where a 2048 page holds 4.19. Unity picks the smallest power of
-            // two that fits, so this is a ceiling and not an allocation: the group would drop
-            // back to 2048 on its own if the vampire ever left it.
+            // branch below hands this group the REMAINDER — today the vampire and the mague,
+            // the two characters baked at their own pixel budget (256 px at PPU 96, not the
+            // shared 115 at 64) to keep the detail their 331-681 px source cells carry. That
+            // pair is 630 frames and ~44.9 Mpx, where a 2048 page holds 4.19 and a 4096 page
+            // 16.78, so it spans three pages. Unity picks the smallest power of two that
+            // fits, so this is a ceiling and not an allocation: the group would drop back on
+            // its own if either character left it.
+            //
+            // The split is not cosmetic. Those two are 2.667 world units against the
+            // roster's 1.797, and at the shipped camera (ortho 5, 960 px viewport = 96 screen
+            // px per world unit) PPU 96 is exactly one texel per screen pixel while PPU 64 is
+            // a 1.5x upscale. Packing them beside the shared-budget four would take
+            // players.spriteatlas from one page to three and put a 256 px character in the
+            // same draw as a 115 px one.
             new AtlasGroupDef("characters",  4096, false, "Assets/_Project/Art/Characters"),
             new AtlasGroupDef("npc",         2048, false, "Assets/_Project/Art/NPC"),
             new AtlasGroupDef("spells",      2048, false, "Assets/_Project/Art/Spells"),
