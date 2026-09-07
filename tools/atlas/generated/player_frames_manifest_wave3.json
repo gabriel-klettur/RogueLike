@@ -1,7 +1,10 @@
 {
   "generator": "tools/atlas/wave3/build_player_frames.py",
-  "generatedFrom": "_slices5 + slices5 (dwarf) + slices5 (dwarf) + slices5 (dwarf) + slices5 (dwarf) + slices5 (dwarf) + slices (dwarf) + slices (dwarf) + _slices (dwarf) + _slices (dwarf) + _slices (dwarf) + _slices (dwarf) + _slices (dwarf) + _slices (dwarf) + slices (dwarf) + slices (dwarf) + slices (dwarf) + _slices (vampire) + _slices (vampire) + _slices (vampire) + _slices (vampire)",
+  "generatedFrom": "_slices5 + slices5 (dwarf) + slices5 (dwarf) + slices5 (dwarf) + slices5 (dwarf) + slices5 (dwarf) + slices (dwarf) + slices (dwarf) + _slices (dwarf) + _slices (dwarf) + _slices (dwarf) + _slices (dwarf) + _slices (dwarf) + _slices (dwarf) + slices (dwarf) + slices (dwarf) + slices (dwarf) + _slices (vampire) + _slices (vampire) + _slices (vampire) + _slices (vampire) + _slices (vampire)",
   "targetBodyPx": 115,
+  "characterPpu": {
+    "vampire": 96
+  },
   "players": [
     {
       "playerKey": "dwarf",
@@ -4169,6 +4172,9 @@
     },
     {
       "playerKey": "vampire",
+      "targetBodyPx": 256,
+      "ppu": 96,
+      "worldHeightUnits": 2.6667,
       "states": [
         {
           "state": "idle",
@@ -4827,7 +4833,7 @@
         {
           "key": "lunge",
           "framesPerDirection": 8,
-          "pivotY": 0.152,
+          "pivotY": 0.151079,
           "sprites": [
             "Assets/_Project/Art/Characters/vampire/running_attack/vampire_running_attack_e0.png",
             "Assets/_Project/Art/Characters/vampire/running_attack/vampire_running_attack_e1.png",
