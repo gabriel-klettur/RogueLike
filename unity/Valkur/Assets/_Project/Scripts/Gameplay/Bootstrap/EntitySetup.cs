@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Combat;
@@ -8,7 +8,6 @@ using Valkur.Gameplay.FSM;
 using Valkur.Gameplay.World;
 using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.Spells;
-using TMPro;
 
 namespace Valkur.Gameplay
 {
@@ -93,13 +92,12 @@ namespace Valkur.Gameplay
             InitPlayerSpells(go);
         }
 
-        /// <summary>Mana/XP/inventory + death/spirit flow + class marker + register.</summary>
+        /// <summary>Mana/XP/inventory + death/spirit flow + register.</summary>
         internal static void ConfigurePlayerStats(GameObject go, PlayerDefinition def)
         {
             InitPlayerStats(go, def);
             InitSharedVisuals(go);
             InitSpiritDeathFlow(go);
-            ApplyPlayerClassInitialMarker(go, def.playerKey);
 
             // The single reader of the interact key: works a registered interactable if one
             // is in range, and otherwise opens a conversation. Without it

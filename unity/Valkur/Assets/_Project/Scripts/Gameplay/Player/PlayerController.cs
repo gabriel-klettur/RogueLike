@@ -48,6 +48,32 @@ namespace Valkur.Gameplay
         private MeleeCombat _meleeCombat;
         private DashAbility _dashAbility;
         private SpellCaster _spellCaster;
+        /// <summary>The ground aim marker. Told when the player ACTS along the aim — it is
+        /// pushed at, and deliberately never asked anything, so it stays ignorant of spells
+        /// and harvest nodes alike.</summary>
+        private FacingIndicator _facingIndicator;
+
+        /// <summary>The ring at the mouse pointer, fired by the same acts. Pushed at for the
+        /// same reason and on the same seam.</summary>
+        private CursorImpactFX _cursorImpact;
+
+        /// <summary>
+        /// The player did something deliberate along their aim — cast a spell, swung a pick.
+        ///
+        /// <para>ONE seam for every reaction to that fact, rather than each system being poked
+        /// from each call site. There are two call sites today and two listeners, so a
+        /// three-line method saves nothing yet; what it buys is that the THIRD reaction is one
+        /// line here instead of a hunt for every place an action is raised, which is how a set
+        /// of feedback effects ends up firing on different subsets of the same event.</para>
+        ///
+        /// <para>Both listeners are PUSHED at and neither is asked anything, so the aim marker
+        /// and the cursor ring stay ignorant of what a spell or a harvest node is.</para>
+        /// </summary>
+        private void NotifyPlayerActed()
+        {
+            if (_facingIndicator != null) _facingIndicator.Pulse();
+            if (_cursorImpact != null) _cursorImpact.Fire();
+        }
         private StatusEffectManager _statusEffects;
         private PlayerSpiritState _spiritState;
         private Vector2 _moveInput;
@@ -91,6 +117,8 @@ namespace Valkur.Gameplay
             _meleeCombat = GetComponent<MeleeCombat>();
             _dashAbility = GetComponent<DashAbility>();
             _spellCaster = GetComponent<SpellCaster>();
+            _facingIndicator = GetComponent<FacingIndicator>();
+            _cursorImpact = GetComponent<CursorImpactFX>();
             _statusEffects = GetComponent<StatusEffectManager>();
             _spiritState = GetComponent<PlayerSpiritState>();
             _mainCamera = Camera.main;

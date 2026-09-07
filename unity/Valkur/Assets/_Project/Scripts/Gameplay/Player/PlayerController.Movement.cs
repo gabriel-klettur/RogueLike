@@ -596,6 +596,13 @@ namespace Valkur.Gameplay
                 ? _animator.ActiveVariant
                 : ResolveCastVariant(state, spellKey);
 
+            // Acknowledge the cast. Gated on the SAME flag the variant is, and that gate is the
+            // whole reason this line is here rather than at the call sites: a channelled spell
+            // re-enters this method every frame while the trigger is held, so an ungated
+            // notification would hold every reaction lit for the length of a beam instead of
+            // marking the moment it started.
+            if (!sameCastStillPlaying) NotifyPlayerActed();
+
             _animator.SetState(state, dir, variant, ShouldPlayCastReversed());
             _castAnimSpellKey = spellKey;
             // Remembered so the revert below can hand back control from WHATEVER state this

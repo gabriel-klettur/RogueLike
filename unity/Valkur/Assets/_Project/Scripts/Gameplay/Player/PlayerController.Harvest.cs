@@ -40,6 +40,11 @@ namespace Valkur.Gameplay
         public void PlayWorkSwing(Vector2 towards, string animationKey = null,
                                   float blowSeconds = 0f)
         {
+            // One blow, one beat. BEFORE the animator guard on purpose: a character with no
+            // work-swing art still lands real blows on the node, and these reactions are then
+            // the only feedback that the shift is running at all.
+            NotifyPlayerActed();
+
             if (_animator == null) return;
 
             var aim = towards.sqrMagnitude > 0.0001f ? towards : _facingDirection;

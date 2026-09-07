@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Combat;
@@ -6,7 +6,6 @@ using Valkur.Gameplay.FSM;
 using Valkur.Gameplay.World;
 using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.Spells;
-using TMPro;
 
 namespace Valkur.Gameplay
 {
@@ -103,48 +102,16 @@ namespace Valkur.Gameplay
             if (go.GetComponent<FacingIndicator>() == null)
                 go.AddComponent<FacingIndicator>();
 
+            // The ring at the mouse pointer, fired by the same acts as the aim marker.
+            // Player-only: it decorates the POINTER, and no NPC has one.
+            if (go.CompareTag("Player") && go.GetComponent<CursorImpactFX>() == null)
+                go.AddComponent<CursorImpactFX>();
+
             // Mana-regen silhouette halo: blue rim around the player's body
             // sprite that fades in only while Mana.IsRegenerating is true,
             // matching the trigger used by ManaRegenAura's particles.
             if (go.CompareTag("Player") && go.GetComponent<ManaRegenSilhouette>() == null)
                 go.AddComponent<ManaRegenSilhouette>();
-        }
-
-        private static void ApplyPlayerClassInitialMarker(GameObject go, string playerKey)
-        {
-            if (go == null || string.IsNullOrWhiteSpace(playerKey))
-                return;
-
-            var markerTransform = go.transform.Find("PlayerClassInitialMarker");
-            TextMeshPro markerText;
-            if (markerTransform == null)
-            {
-                var markerGo = new GameObject("PlayerClassInitialMarker");
-                markerGo.transform.SetParent(go.transform, false);
-                markerGo.transform.localPosition = new Vector3(0f, 0f, 0f);
-                markerGo.transform.localRotation = Quaternion.identity;
-                markerGo.transform.localScale = Vector3.one * 0.18f;
-                markerText = markerGo.AddComponent<TextMeshPro>();
-            }
-            else
-            {
-                markerText = markerTransform.GetComponent<TextMeshPro>();
-                if (markerText == null)
-                    markerText = markerTransform.gameObject.AddComponent<TextMeshPro>();
-            }
-
-            markerText.text = char.ToUpperInvariant(playerKey[0]).ToString();
-            markerText.alignment = TextAlignmentOptions.Center;
-            markerText.enableWordWrapping = false;
-            markerText.fontSize = 20f;
-            markerText.color = new Color(0.95f, 0.96f, 1f, 0.95f);
-
-            var renderer = markerText.GetComponent<MeshRenderer>();
-            if (renderer != null)
-            {
-                renderer.sortingLayerName = SortingConfig.LAYER_ENTITIES;
-                renderer.sortingOrder = SortingConfig.Z_SKY + 20;
-            }
         }
 
         private static void EnsureInventoryUI()
@@ -185,6 +152,15 @@ namespace Valkur.Gameplay
 
         // ── Minimap dot helper (reflection to avoid Gameplay→UI circular dep) ──
 
+        /// <summary>Bad dot-type names already reported, so a per-spawn miss is one line, not a flood.</summary>
+        private static readonly System.Collections.Generic.HashSet<string> _warnedDotTypeNames
+            = new System.Collections.Generic.HashSet<string>();
+
+        // Domain Reload is OFF, so a set that remembers what it has already warned about
+        // would go on suppressing across Play sessions and hide a name that broke since.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetMinimapDotWarnings() => _warnedDotTypeNames.Clear();
+
         private static System.Type _minimapDotType;
         private static System.Type _minimapDotEnumType;
         private static System.Reflection.MethodInfo _configureMethod;
@@ -215,11 +191,32 @@ namespace Valkur.Gameplay
             var dot = go.GetComponent(_minimapDotType);
             if (dot == null) dot = go.AddComponent(_minimapDotType);
 
-            if (_configureMethod != null)
+            if (_configureMethod == null) return;
+
+            // The dot type crosses an assembly boundary AS A STRING, so nothing the compiler
+            // can see relates this name to the enum -- `Ally` was passed for the whole life of
+            // the allied-summon feature against an enum that only had Player/Monster/NPC, and
+            // Enum.Parse threw out of the middle of AlliedSummonService.Adopt, leaving a
+            // half-adopted ally with no tint, no health bar and no dismissal hook. A name that
+            // does not resolve must cost the DOT, never the spawn.
+            if (!TryParseDotType(dotTypeName, out var enumVal)) return;
+            _configureMethod.Invoke(dot, new object[] { enumVal, color });
+        }
+
+        /// <summary>Resolve a dot-type name against the UI enum, warning once per bad name.</summary>
+        private static bool TryParseDotType(string dotTypeName, out object value)
+        {
+            value = null;
+            if (string.IsNullOrEmpty(dotTypeName)) return false;
+            if (!System.Enum.IsDefined(_minimapDotEnumType, dotTypeName))
             {
-                var enumVal = System.Enum.Parse(_minimapDotEnumType, dotTypeName);
-                _configureMethod.Invoke(dot, new object[] { enumVal, color });
+                if (_warnedDotTypeNames.Add(dotTypeName))
+                    Debug.LogWarning($"[EntitySetup] Minimap dot type '{dotTypeName}' is not a " +
+                                     "MinimapDotType value — dot skipped.");
+                return false;
             }
+            value = System.Enum.Parse(_minimapDotEnumType, dotTypeName);
+            return true;
         }
 
         // ── Minimap marker helper (same reflection trick as ConfigureMinimapDot) ──
