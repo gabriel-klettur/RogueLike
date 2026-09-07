@@ -72,7 +72,13 @@ namespace Valkur.Data
             new PlayerClassPreset("elven", "Elven", 70, 55, 100, 45, 45, 45, 6f, 2, 1, 8f, 0.25f, 1f, 1, 128f),
             new PlayerClassPreset("mague", "Mague", 100, 100, 25, 45, 45, 25, 5f, 1, 0, 8f, 0.25f, 1f, 1, 128f),
             new PlayerClassPreset("valkyrie", "Valkyrie", 90, 35, 100, 45, 35, 45, 7f, 2, 1, 8f, 0.25f, 1f, 1, 128f),
-            new PlayerClassPreset("dwarf", "Dwarf", 200, 35, 90, 45, 35, 45, 4f, 1, 5, 10f, 0.25f, 1f, 4, 128f)
+            new PlayerClassPreset("dwarf", "Dwarf", 200, 35, 90, 45, 35, 45, 4f, 1, 5, 10f, 0.25f, 1f, 4, 128f),
+            // The wave6 art set. Deliberately the softest class in the list -- 80 max HP
+            // against the dwarf's 200 -- and the only one that is BOTH a caster and quick:
+            // mague trades speed for its 100 intelligence and valkyrie trades intelligence
+            // for its 7 speed, so the niche between them was empty. No armour and eight
+            // seconds on the death timer are the price.
+            new PlayerClassPreset("vampire", "Vampire", 80, 95, 110, 45, 45, 45, 7f, 2, 0, 8f, 0.25f, 1f, 2, 128f)
         };
 
         public static IReadOnlyList<PlayerClassPreset> AllPresets => Presets;

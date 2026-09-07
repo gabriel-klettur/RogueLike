@@ -18,6 +18,7 @@ namespace Valkur.UI.MainMenu
                 { "mague",     new Color(255f / 255f, 220f / 255f, 90f / 255f) },
                 { "valkyrie",  new Color(255f / 255f, 105f / 255f, 180f / 255f) },
                 { "dwarf",     new Color(70f / 255f, 120f / 255f, 255f / 255f) },
+                { "vampire",   new Color(215f / 255f, 45f / 255f, 75f / 255f) },
             };
 
         // Per-class portrait image Resource paths
@@ -29,6 +30,13 @@ namespace Valkur.UI.MainMenu
                 { "mague",     "UI/CharacterSelection/character_selection_mague" },
                 { "valkyrie",  "UI/CharacterSelection/character_selection_valkyrie" },
                 { "dwarf",     "UI/CharacterSelection/character_selection_drwaft" },
+                // TEMPORARY. The five above are one painted tavern GROUP, re-lit per
+                // class -- a sixth character cannot join that scene without it being
+                // repainted. This one is composed from the shipped empty plate
+                // (taberna.png) with the vampire's own idle frame standing in it, by
+                // tools/atlas/wave11/build_vampire_portrait.py. Delete both when the
+                // group plate is repainted with six figures.
+                { "vampire",   "UI/CharacterSelection/character_selection_vampire" },
             };
 
         // UI colors matching Python ClassSelectorManager

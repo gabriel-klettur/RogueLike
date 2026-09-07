@@ -27,6 +27,12 @@ MonoBehaviour:
   damageStopProbability: 0.25
   manaRegenPerSecond: 1
   dashCharges: 1
+  meleeRange: 1.5
+  meleeCooldown: 0.5
+  baseCritChance: 0.05
+  baseCritMultiplier: 1.5
+  resistances: []
+  statusImmunities: 
   dragDropRange: 128
   assetConfig:
     idle:

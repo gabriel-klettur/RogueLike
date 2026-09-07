@@ -276,6 +276,15 @@ RESERVE_OVERHANG_SHEETS: set[str] = {
     "knight_lumberjack",
     "knight_fishing",
     "knight_mining",
+    # A different cause, the same remedy. Nothing is held in this character's hands;
+    # what defeats `foot_line` here is that the threshold is a fraction of the body's
+    # WIDEST row, and a lunge is a horizontal pose -- streaming hair one way, a cape
+    # the other -- so the widest row is nearly the whole frame and 15% of it is a bar
+    # no pair of boots can clear. The ground line then lands at the torso and the legs
+    # are sheared off below it: measured, 16 output px of a 73px body, in all eight
+    # frames. Reserving the overhang keeps the legs and leaves the pivot on the line
+    # the rest of the state is anchored to.
+    "vampire_running_attack",
 }
 
 
@@ -310,6 +319,46 @@ SCALE_OVERRIDE: dict[str, float] = {
     "barbarian_spellcasting_3": 0.933,
     "barbarian_spellcasting_4": 0.956,
     "barbarian_spellcasting_5": 0.936,
+
+    # -- vampire wave6 -------------------------------------------------------
+    # This wave breaks the frame-0 reference in both of the ways it can break at
+    # once: every sheet is drawn at its own ZOOM, and several open on a pose that is
+    # not standing, so the single number the reference is read from carries the two
+    # errors mixed together. Measured over the eighteen staged sheets, frame 0 runs
+    # 279px (the running strike, which opens mid-lunge) to 676px (the second idle).
+    #
+    # These come from tools/atlas/wave11/calibrate_vampire_scale.py, which measures
+    # the character's FACE -- crown to chin, the largest skin-coloured component in
+    # the top sixth of the body. A face is invariant to yaw (this wave is front-on in
+    # some sheets and in full profile in others, which moves a face's width and not
+    # its height) and invariant to the pose, which is the property the whole
+    # correction needs and which no silhouette statistic has. It is also what the
+    # frame-0 reference is MISSING: that reference is hair-inclusive, and this
+    # character's hair changes volume every frame, so a sheet whose hair blows upward
+    # measures taller than the character is and gets scaled down for it.
+    #
+    # The control is `vampire_punch`, whose frame 0 is a clean standing pose and which
+    # therefore already knows its own answer: it comes back at 1.003 without having
+    # been used to calibrate anything. Three more upright sheets land at 1.014, 1.037
+    # and 1.048, the last against an independently known 1.030 -- so the method's noise
+    # floor is about 5%, and only corrections larger than that are written down here.
+    # Everything omitted below measured inside it: punch 1.003, hit_reaction 1.014,
+    # kick 1.034, spellcasting_2 1.043, spellcasting_3 0.961.
+    #
+    # Two other methods were tried and rejected, recorded so nobody re-derives them.
+    # HEAD CROSS-CORRELATION, the way the barbarian's numbers were measured, fails its
+    # own control here: the idle scored 0.98 against ITSELF and the second idle 0.92
+    # against a known 1.030, because the hair is most of the head's silhouette and the
+    # scale search rails to the low end of its sweep. SAME CANVAS, SAME ZOOM -- sheets
+    # sharing a cell size were rendered as one batch -- is directionally right and too
+    # loose to ship: walking and running share a 312.5x724 cell and their faces differ
+    # by 11%.
+    "vampire_walking": 1.083,             # face 49.0 -> a 536px character, f0 reads 580
+    "vampire_running": 0.814,             # face 43.5 -> 476, f0 reads 387 (opens leaning)
+    "vampire_die": 1.110,                 # face 36.0 -> 394, f0 reads 437
+    "vampire_knockdown_recovery": 0.947,  # face 39.0 -> 426, f0 reads 404
+    "vampire_spellcasting_1": 0.854,      # face 39.0 -> 426, f0 reads 364
+    "vampire_running_attack": 0.740,      # face 34.5 -> 377, f0 reads 279 (opens airborne)
 }
 
 
@@ -571,6 +620,66 @@ PLAYERS = {
                                   "import",
             "elf_bard_idle / _walking / _walking_2 / _running": "the bard loadout's "
                                   "locomotion; same reason as the archer's",
+        },
+    },
+    # vampire -> vampire. A wave6 set of eighteen sheets, all drawn for ONE character
+    # and the first player wave that is NOT uniformly side-view: the locomotion, both
+    # melees, the running strike, the hit, the death and the rise all face WEST, while
+    # the idle and two of the three spellcasts face the CAMERA. That mismatch is in the
+    # art and no cut recovers it, so it is taken deliberately and the cheapest half is
+    # paid: the FRONT-facing sheets go where the pose is a moment rather than a heading
+    # (the idle, and two of five casts), and every sheet that carries a direction --
+    # walk, run, punch, kick, lunge, hurt, death, rise -- is one of the side-view ones.
+    # A mirrored front pose is still a front pose, so no EAST_FACING_SHEETS entry is
+    # needed for them: the east half of the rig is a valid flip of the same drawing.
+    "vampire": {
+        "source": "vampire",
+        "states": {
+            "idle":    "vampire_idle",
+            "walk":    "vampire_walking",
+            "chase":   "vampire_running",
+            # The most side-facing of the three casting sheets, so the base cast slot --
+            # the one an unpinned spell falls back to -- still points somewhere.
+            "cast":    "vampire_spellcasting_1",
+            "attack":  "vampire_punch",
+            "damage":  "vampire_hit_reaction",
+            "death":   "vampire_die",
+            "recover": "vampire_knockdown_recovery",
+        },
+        # Rotated per swing by PlayerController.NextVariant; index 0 is the fallback, so
+        # the plain punch goes first. Nothing is reserved: the dwarf pins punch and kick
+        # to vortex_push / vortex_pull because it also carries four harvest swings that
+        # must never be rotated past, and this character has none -- a reservation here
+        # would only take a pose OUT of the rotation it exists to be in.
+        "variants": [
+            ("punch", "vampire_punch"),
+            ("kick",  "vampire_kick"),
+            # A running strike. It is an attack rather than locomotion -- vampire_running
+            # is the cycle -- so it belongs here, the same call the dwarf's
+            # charging_sprint gets.
+            ("lunge", "vampire_running_attack"),
+        ],
+        # Rotated per cast. spellcasting_1 doubles as the base `cast` slot so the
+        # character still casts with real art if the variants are ever lost.
+        "cast_variants": [
+            ("spell_1", "vampire_spellcasting_1"),
+            ("spell_2", "vampire_spellcasting_2"),
+            ("spell_3", "vampire_spellcasting_3"),
+        ],
+        "staged": {
+            "vampire_idle_2": "the second take on the idle. Both are clean; this one "
+                              "holds its arms closer and reads as the same pose six "
+                              "times, where the shipped sheet moves a hand to the hair",
+            "vampire_running_3": "the second take on the run, drawn 4x2. vampire_running "
+                                 "is one row of eight with a wider stride and more even "
+                                 "cell margins, so it wins the `chase` slot",
+            "vampire_kick_2": "the second take on the kick; the shipped one has ten "
+                              "frames against this one's eight and a longer wind-up",
+            "vampire_running_attack_2": "the second take on the running strike",
+            "vampire_hit_2": "the second take on the hit reaction",
+            "vampire_knockdown_recovery_2": "the second take on the rise. The shipped "
+                                            "one opens on the blow that puts her down, "
+                                            "so the state reads from standing to standing",
         },
     },
 }
