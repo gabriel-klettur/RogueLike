@@ -113,18 +113,14 @@ namespace Valkur.Tests.EditMode.Game.Terrain
         [Test]
         public void Corner16Model_UsesCornerMaskAgainstSecondaryTerrain_NotCardinalMaskAgainstPassedTerrain()
         {
-            // Center is "grass" (primary); ALL 8 neighbours (cardinal AND
-            // diagonal) are "dirt" (secondary). If this were wrongly dispatched
-            // through the cardinal path against the PASSED terrain ("grass"), no
-            // neighbour would match it -> Isolated/CornerNone. The correct
-            // Corner16 dispatch tests corners against ruleset.TerrainSecondary
-            // ("dirt") instead, which every corner's 2x2 block satisfies 3-of-4 ->
-            // CornerFull.
+            // Corner16 terrain is keyed by VERTEX: the four corners of the tile at (0,0)
+            // are the vertices (0,1) NW, (1,1) NE, (1,0) SE and (0,0) SW. All four hold
+            // the SECONDARY terrain here, so the mask is CornerFull. If this were wrongly
+            // dispatched through the cardinal path against the PASSED terrain ("grass"),
+            // nothing would match and it would resolve to Isolated/CornerNone instead.
             var rs = NewCornerRuleset("grass_dirt", "grass", "dirt");
             var grid = Grid(
-                (0, 0, "grass"),
-                (0, 1, "dirt"), (1, 0, "dirt"), (0, -1, "dirt"), (-1, 0, "dirt"),
-                (1, 1, "dirt"), (-1, 1, "dirt"), (1, -1, "dirt"), (-1, -1, "dirt"));
+                (0, 0, "dirt"), (1, 0, "dirt"), (0, 1, "dirt"), (1, 1, "dirt"));
 
             var result = TerrainTileResolver.ResolveVariantForCell(rs, grid, new Vector2Int(0, 0), "grass", 0);
             Assert.AreSame(rs.GetVariants(Corner16Slot.CornerFull)[0], result,

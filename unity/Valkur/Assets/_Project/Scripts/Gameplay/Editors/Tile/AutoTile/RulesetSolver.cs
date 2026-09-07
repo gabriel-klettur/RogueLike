@@ -31,11 +31,25 @@ namespace Valkur.Gameplay.TileEditor
         /// When a slot has multiple variants, the choice is deterministic in
         /// <paramref name="hashSeed"/> so the same cell always renders the same variant.
         /// </summary>
-        public static Sprite ResolveVariant(TilesetRuleset ruleset, Blob16Slot slot, int hashSeed)
+        public static Sprite ResolveVariant(TilesetRuleset ruleset, Blob16Slot slot, int hashSeed,
+                                    AutoTileSheetFilter filter = null)
         {
             if (ruleset == null) return null;
             var variants = ruleset.GetVariants(slot);
             if (variants == null || variants.Length == 0) return null;
+
+            if (filter != null)
+            {
+                // Prefer the author's own sheet. A slot with nothing from it falls through to
+                // the whole list: a hole mid-stroke reads as a broken editor, a neighbouring
+                // sheet's tile reads as a variant.
+                int allowed = filter.CountAllowed(variants);
+                if (allowed > 0)
+                {
+                    int pick = ((hashSeed % allowed) + allowed) % allowed;
+                    return filter.NthAllowed(variants, pick);
+                }
+            }
 
             if (variants.Length == 1) return variants[0];
 
@@ -46,9 +60,10 @@ namespace Valkur.Gameplay.TileEditor
         /// <summary>
         /// Convenience helper: combines <see cref="ComputeSlot"/> and <see cref="ResolveVariant(TilesetRuleset, Blob16Slot, int)"/>.
         /// </summary>
-        public static Sprite Resolve(TilesetRuleset ruleset, byte cardinalMask, int hashSeed)
+        public static Sprite Resolve(TilesetRuleset ruleset, byte cardinalMask, int hashSeed,
+                                     AutoTileSheetFilter filter = null)
         {
-            return ResolveVariant(ruleset, ComputeSlot(cardinalMask), hashSeed);
+            return ResolveVariant(ruleset, ComputeSlot(cardinalMask), hashSeed, filter);
         }
 
         /// <summary>
@@ -66,11 +81,25 @@ namespace Valkur.Gameplay.TileEditor
         /// unassigned-slot / deterministic-seed rules as
         /// <see cref="ResolveVariant(TilesetRuleset, Blob16Slot, int)"/>.
         /// </summary>
-        public static Sprite ResolveVariant(TilesetRuleset ruleset, Corner16Slot slot, int hashSeed)
+        public static Sprite ResolveVariant(TilesetRuleset ruleset, Corner16Slot slot, int hashSeed,
+                                    AutoTileSheetFilter filter = null)
         {
             if (ruleset == null) return null;
             var variants = ruleset.GetVariants(slot);
             if (variants == null || variants.Length == 0) return null;
+
+            if (filter != null)
+            {
+                // Prefer the author's own sheet. A slot with nothing from it falls through to
+                // the whole list: a hole mid-stroke reads as a broken editor, a neighbouring
+                // sheet's tile reads as a variant.
+                int allowed = filter.CountAllowed(variants);
+                if (allowed > 0)
+                {
+                    int pick = ((hashSeed % allowed) + allowed) % allowed;
+                    return filter.NthAllowed(variants, pick);
+                }
+            }
 
             if (variants.Length == 1) return variants[0];
 
@@ -82,9 +111,10 @@ namespace Valkur.Gameplay.TileEditor
         /// Convenience helper: combines <see cref="ComputeCornerSlot"/> and
         /// <see cref="ResolveVariant(TilesetRuleset, Corner16Slot, int)"/>.
         /// </summary>
-        public static Sprite ResolveCorner(TilesetRuleset ruleset, byte cornerMask, int hashSeed)
+        public static Sprite ResolveCorner(TilesetRuleset ruleset, byte cornerMask, int hashSeed,
+                                           AutoTileSheetFilter filter = null)
         {
-            return ResolveVariant(ruleset, ComputeCornerSlot(cornerMask), hashSeed);
+            return ResolveVariant(ruleset, ComputeCornerSlot(cornerMask), hashSeed, filter);
         }
     }
 }

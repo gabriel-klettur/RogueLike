@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -8,13 +10,25 @@ using Valkur.Gameplay.TileEditor;
 namespace Valkur.Tests.EditMode.Editors.TileEditor.Brush
 {
     /// <summary>
-    /// Reproduces <c>TileEditorManager.ResolveAutoBrushTerrain</c>'s exact
-    /// algorithm against real <see cref="TerrainCatalog"/> / <see cref="TilesetRuleset"/>
-    /// objects. The manager itself is a MonoBehaviour that needs a full Grid +
-    /// WorldGridBuilder scene to spin up in EditMode — see
-    /// <c>AutoTileRegionUndoTests</c>'s class doc (Editors/TileEditor/Undo) for
-    /// the project's standing rationale on why it isn't instantiated for this
-    /// kind of test.
+    /// Drives the REAL <c>TileEditorManager.ResolveAutoBrushTerrain</c> against synthetic
+    /// <see cref="TerrainCatalog"/> / <see cref="TilesetRuleset"/> objects.
+    ///
+    /// <para><b>It used to reproduce that method's body instead, and that is how a live
+    /// defect shipped.</b> A copy of production logic inside a test compares one half of
+    /// the project against itself: when the real lookup changed from matching a folder
+    /// NAME to reading the pack off the selected SPRITE, the copy kept answering the old
+    /// question and every test here stayed green while the AUTO brush was dead on seven
+    /// picker tabs. The helper's own comment had already recorded the same trap happening
+    /// once before, with FindBaseRuleset. Calling the shipped method is the only version
+    /// of this fixture that can fail for the right reason.</para>
+    ///
+    /// <para>Two seams make that possible in EditMode. A component added from script never
+    /// receives <c>Awake</c>, so the manager can be hosted for a pure lookup without a Grid
+    /// or a WorldGridBuilder; and <see cref="TerrainCatalogLoader"/>'s cache is written
+    /// directly so the production path reads THIS catalog instead of the shipped asset. The
+    /// cache is a global, so <c>TearDown</c> already invalidates it — a probe that changes
+    /// global editor state and does not restore it has changed it for every test that
+    /// follows.</para>
     ///
     /// This is the guard that exists specifically because a Corner16 pack is BY
     /// DEFINITION a two-material transition ruleset, so
@@ -100,43 +114,64 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Brush
             return tilemapGo.AddComponent<Tilemap>();
         }
 
-        /// <summary>Reproduces TileEditorManager.ResolveAutoBrushTerrain's body
-        /// verbatim, minus the TerrainCatalogLoader.Load() call — the caller
-        /// supplies the catalog directly here for testability, same pattern as
-        /// AutoTileRegionUndoTests.CommitAutoTileRegionLike.</summary>
-        private static (string Terrain, string Reason) ResolveAutoBrushTerrainLike(TerrainCatalog catalog, string category)
-        {
-            if (string.IsNullOrEmpty(category))
-                return (null, TileEditorConstants.NoTileSelectedHint);
+        private static readonly FieldInfo CatalogCache = typeof(TerrainCatalogLoader)
+            .GetField("_cached", BindingFlags.NonPublic | BindingFlags.Static);
 
-            string primary = null;
-            var rulesets = catalog.Rulesets;
-            for (int i = 0; i < rulesets.Count; i++)
+        /// <summary>
+        /// Calls the shipped resolver with <paramref name="catalog"/> in place of the
+        /// project asset and <paramref name="selected"/> as the picked tile.
+        /// </summary>
+        private (TilesetRuleset Ruleset, string Terrain, string Reason) Resolve(
+            TerrainCatalog catalog, Sprite selected)
+        {
+            Assert.IsNotNull(CatalogCache, "TerrainCatalogLoader._cached is the injection seam.");
+            CatalogCache.SetValue(null, catalog);
+
+            var host = new GameObject(nameof(AutoBrushTerrainResolutionTests));
+            _created.Add(host);
+            var manager = host.AddComponent<TileEditorManager>();
+
+            if (selected != null)
             {
-                var r = rulesets[i];
-                if (r != null && r.FolderName == category)
-                {
-                    primary = r.TerrainPrimary;
-                    break;
-                }
+                var tile = ScriptableObject.CreateInstance<Tile>();
+                _scriptableObjects.Add(tile);
+                tile.sprite = selected;
+                manager.State.SelectedTile = tile;
             }
 
-            // Mirrors the production gate. It must call the SAME selector the paint
-            // path uses (FindPaintRuleset), not a copy of an older rule: this helper
-            // duplicated FindBaseRuleset and therefore kept passing after the paint
-            // path moved on, which is exactly how a test starts guarding the wrong
-            // contract without anyone noticing.
-            if (string.IsNullOrEmpty(primary) || catalog.FindPaintRuleset(primary) == null)
-                return (null, TileEditorConstants.NoRulesetForCategoryHint);
+            var method = typeof(TileEditorManager).GetMethod(
+                "ResolveAutoBrushTerrain", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.IsNotNull(method,
+                "ResolveAutoBrushTerrain is what the AUTO toggle and every AUTO stroke ask. " +
+                "If it moved, point this fixture at the new owner — never re-implement it here.");
 
-            return (primary, null);
+            object boxed = method.Invoke(manager, null);
+            var t = boxed.GetType();
+            return ((TilesetRuleset)t.GetField("Item1").GetValue(boxed),
+                    (string)t.GetField("Item2").GetValue(boxed),
+                    (string)t.GetField("Item3").GetValue(boxed));
+        }
+
+        /// <summary>A sprite the pack itself holds — the solid-primary tile for a Corner16
+        /// pack, or any populated slot for a Blob16 one.</summary>
+        private static Sprite PureTileOf(TilesetRuleset ruleset)
+        {
+            var fromCorners = ruleset.CornerSlots
+                .Where(c => (byte)c.slot == 0 && c.variants != null)
+                .SelectMany(c => c.variants).FirstOrDefault(v => v != null);
+            if (fromCorners != null) return fromCorners;
+
+            return ruleset.Slots
+                .Where(b => b.variants != null)
+                .SelectMany(b => b.variants).FirstOrDefault(v => v != null);
         }
 
         [Test]
         public void EmptyCategory_ReturnsNoTileSelectedHint()
         {
             var catalog = NewCatalog();
-            var (terrain, reason) = ResolveAutoBrushTerrainLike(catalog, "");
+            var (ruleset, terrain, reason) = Resolve(catalog, null);
+            Assert.IsNull(ruleset);
             Assert.IsNull(terrain);
             Assert.AreEqual(TileEditorConstants.NoTileSelectedHint, reason);
         }
@@ -144,8 +179,12 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Brush
         [Test]
         public void CategoryMatchesNoRuleset_ReturnsNoRulesetHint()
         {
+            // A tile no registered pack holds. The lookup must refuse it rather than
+            // fall back on anything — a wrong pack paints the wrong terrain silently.
+            var orphan = NewRuleset("unregistered_pack", "grass", "dirt", AutoTileModel.Corner16);
             var catalog = NewCatalog();
-            var (terrain, reason) = ResolveAutoBrushTerrainLike(catalog, "nonexistent_pack");
+            var (ruleset, terrain, reason) = Resolve(catalog, PureTileOf(orphan));
+            Assert.IsNull(ruleset);
             Assert.IsNull(terrain);
             Assert.AreEqual(TileEditorConstants.NoRulesetForCategoryHint, reason);
         }
@@ -155,8 +194,8 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Brush
         {
             var rs = NewRuleset("broken_pack", "", null, AutoTileModel.Blob16);
             var catalog = NewCatalog(rs);
-            var (terrain, reason) = ResolveAutoBrushTerrainLike(catalog, "broken_pack");
-            Assert.IsNull(terrain);
+            var (ruleset, terrain, reason) = Resolve(catalog, PureTileOf(rs));
+            Assert.IsNull(terrain, "A pack that names no terrain can paint nothing.");
             Assert.AreEqual(TileEditorConstants.NoRulesetForCategoryHint, reason);
         }
 
@@ -171,9 +210,17 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Brush
             // unreachable; FindPaintRuleset is the selector that accepts it.
             var rs = NewRuleset("grass_dirt", "grass", "dirt", AutoTileModel.Corner16);
             var catalog = NewCatalog(rs);
-            var (terrain, reason) = ResolveAutoBrushTerrainLike(catalog, "grass_dirt");
+            var (resolved, terrain, reason) = Resolve(catalog, PureTileOf(rs));
+            Assert.AreSame(rs, resolved);
             Assert.AreEqual("grass", terrain, "A Corner16 pack must be paintable — it is the whole point of the model.");
             Assert.IsNull(reason);
+
+            // And its OTHER terrain must be reachable from its own solid tile, or an author
+            // can only ever lay down one side of the boundary the pack exists to draw.
+            var secondaryTile = rs.CornerSlots
+                .Where(c => (byte)c.slot == 15 && c.variants != null)
+                .SelectMany(c => c.variants).FirstOrDefault(v => v != null);
+            Assert.AreEqual("dirt", Resolve(catalog, secondaryTile).Terrain);
         }
 
         [Test]
@@ -181,7 +228,8 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Brush
         {
             var rs = NewRuleset("solid_grass", "grass", null, AutoTileModel.Blob16);
             var catalog = NewCatalog(rs);
-            var (terrain, reason) = ResolveAutoBrushTerrainLike(catalog, "solid_grass");
+            var (resolved, terrain, reason) = Resolve(catalog, PureTileOf(rs));
+            Assert.AreSame(rs, resolved);
             Assert.AreEqual("grass", terrain);
             Assert.IsNull(reason);
         }
@@ -196,7 +244,10 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Brush
             var baseGrass = NewRuleset("solid_grass2", "grass", null, AutoTileModel.Blob16);
             var catalog = NewCatalog(transition, baseGrass);
 
-            var (terrain, reason) = ResolveAutoBrushTerrainLike(catalog, "grass_dirt2");
+            var (resolved, terrain, reason) = Resolve(catalog, PureTileOf(transition));
+            Assert.AreSame(transition, resolved,
+                "The pack the author clicked must win, not whichever ruleset happens to own " +
+                "the terrain NAME — that name lookup is what made shadowed packs unreachable.");
             Assert.AreEqual("grass", terrain);
             Assert.IsNull(reason);
         }
@@ -211,7 +262,8 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Brush
             // unconfigured pack.
             var rs = NewRuleset("grass_rock", "grass", "rock", AutoTileModel.Corner16);
             var catalog = NewCatalog(rs);
-            var (terrain, reason) = ResolveAutoBrushTerrainLike(catalog, "grass_rock");
+            var (resolved, terrain, reason) = Resolve(catalog, PureTileOf(rs));
+            Assert.AreSame(rs, resolved);
             Assert.AreEqual("grass", terrain);
             Assert.IsNull(reason);
 
@@ -220,7 +272,12 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Brush
             var rect = new BoundsInt(0, 0, 0, 2, 2, 1);
             var (edits, metadataEdits) = TerrainPainter.PaintRegion(tilemap, rect, "grass", catalog, terrainMap);
 
-            Assert.AreEqual(4, metadataEdits.Count, "Every cell in the rect records its terrain for undo.");
+            // Corner16 terrain is keyed by VERTEX, and a 2x2 rect of cells is bounded by
+            // 3x3 of them. The far corners belong to the stroke as much as the near ones —
+            // leaving them out is what would make the region's own outer row read as a
+            // boundary against itself.
+            Assert.AreEqual(9, metadataEdits.Count,
+                "Every vertex the rect spans records its terrain for undo.");
             Assert.IsNotEmpty(edits,
                 "A ruleset with populated slots must place sprites. Empty here means the resolver " +
                 "found no tile for the computed corner signature — a silent no-op wearing a success badge.");

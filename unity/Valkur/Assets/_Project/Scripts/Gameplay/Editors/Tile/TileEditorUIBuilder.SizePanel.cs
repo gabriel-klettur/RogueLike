@@ -53,7 +53,7 @@ namespace Valkur.Gameplay.TileEditor
             var go = CreateUI("Value", parent);
             go.AddComponent<LayoutElement>().preferredHeight = 32f;
             refs.BrushSizeLabel = go.AddComponent<TextMeshProUGUI>();
-            refs.BrushSizeLabel.text = $"{state.BrushSize}x{state.BrushSize}";
+            refs.BrushSizeLabel.text = $"{state.ActiveBrushSize}x{state.ActiveBrushSize}";
             refs.BrushSizeLabel.fontSize = 22f;
             refs.BrushSizeLabel.fontStyle = FontStyles.Bold;
             refs.BrushSizeLabel.alignment = TextAlignmentOptions.Center;
@@ -102,7 +102,7 @@ namespace Valkur.Gameplay.TileEditor
             refs.BrushSizeSlider = UISlider.MakeSlimTrack(sliderHost.transform, "Slider",
                 min: TileEditorConstants.MinBrushSize,
                 max: TileEditorConstants.MaxBrushSize,
-                initial: state.BrushSize,
+                initial: state.ActiveBrushSize,
                 onValueChanged: v => onBrushSizeChanged?.Invoke(Mathf.RoundToInt(v)),
                 hitHeight:   SIZE_SLIDER_ROW_H,
                 trackHeight: SIZE_SLIDER_TRACK_H,

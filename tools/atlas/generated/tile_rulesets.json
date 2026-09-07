@@ -14,72 +14,160 @@
       "keyMeaning": "1 = corner is the SECONDARY terrain (matches TerrainTileResolver)",
       "slots": {
         "0010": [
-          "tileset3_r0_c0",
-          "tileset3_0_0"
+          "grass_dirt2_r01_c01",
+          "grass_dirt3_r01_c01",
+          "grass_dirt4_r01_c01",
+          "grass_dirt5_r01_c01",
+          "grass_dirt6_r01_c01",
+          "tileset3_0_0",
+          "tileset3_r0_c0"
         ],
         "0011": [
-          "tileset3_r0_c1",
-          "tileset3_32_0"
+          "grass_dirt2_r01_c02",
+          "grass_dirt3_r01_c02",
+          "grass_dirt4_r01_c02",
+          "grass_dirt5_r01_c02",
+          "grass_dirt6_r01_c02",
+          "tileset3_32_0",
+          "tileset3_r0_c1"
         ],
         "0001": [
-          "tileset3_r0_c2",
-          "tileset3_64_0"
+          "grass_dirt2_r01_c03",
+          "grass_dirt3_r01_c03",
+          "grass_dirt4_r01_c03",
+          "grass_dirt5_r01_c03",
+          "grass_dirt6_r01_c03",
+          "tileset3_64_0",
+          "tileset3_r0_c2"
         ],
         "1101": [
-          "tileset3_r0_c3",
-          "tileset3_96_0"
+          "grass_dirt2_r03_c04",
+          "grass_dirt3_r03_c04",
+          "grass_dirt4_r03_c04",
+          "grass_dirt5_r03_c04",
+          "grass_dirt6_r03_c04",
+          "tileset3_96_0",
+          "tileset3_r0_c3"
         ],
         "1110": [
-          "tileset3_r0_c4",
-          "tileset3_128_0"
+          "grass_dirt2_r04_c02",
+          "grass_dirt3_r04_c02",
+          "grass_dirt4_r04_c02",
+          "grass_dirt5_r04_c02",
+          "grass_dirt6_r04_c02",
+          "tileset3_128_0",
+          "tileset3_r0_c4"
         ],
         "0110": [
-          "tileset3_r1_c0",
-          "tileset3_0_32"
+          "grass_dirt2_r02_c01",
+          "grass_dirt3_r02_c01",
+          "grass_dirt4_r02_c01",
+          "grass_dirt5_r02_c01",
+          "grass_dirt6_r02_c01",
+          "tileset3_0_32",
+          "tileset3_r1_c0"
         ],
         "1111": [
-          "tileset3_r1_c1",
+          "grass_dirt2_r02_c02",
+          "grass_dirt3_r02_c02",
+          "grass_dirt4_r02_c02",
+          "grass_dirt5_r02_c02",
+          "grass_dirt6_r02_c02",
           "tileset3_0_96",
-          "tileset3_32_32"
+          "tileset3_32_32",
+          "tileset3_r1_c1"
         ],
         "1001": [
-          "tileset3_r1_c2",
-          "tileset3_64_32"
+          "grass_dirt2_r02_c06",
+          "grass_dirt3_r02_c06",
+          "grass_dirt4_r02_c06",
+          "grass_dirt5_r02_c06",
+          "grass_dirt6_r02_c06",
+          "tileset3_64_32",
+          "tileset3_r1_c2"
         ],
         "1011": [
-          "tileset3_r1_c3",
-          "tileset3_96_32"
+          "grass_dirt2_r02_c03",
+          "grass_dirt3_r02_c03",
+          "grass_dirt4_r02_c03",
+          "grass_dirt5_r02_c03",
+          "grass_dirt6_r02_c03",
+          "tileset3_96_32",
+          "tileset3_r1_c3"
         ],
         "0111": [
-          "tileset3_r1_c4",
-          "tileset3_128_32"
+          "grass_dirt2_r02_c04",
+          "grass_dirt3_r02_c04",
+          "grass_dirt4_r02_c04",
+          "grass_dirt5_r02_c04",
+          "grass_dirt6_r02_c04",
+          "tileset3_128_32",
+          "tileset3_r1_c4"
         ],
         "0100": [
-          "tileset3_r2_c0",
-          "tileset3_0_64"
+          "grass_dirt2_r04_c01",
+          "grass_dirt3_r04_c01",
+          "grass_dirt4_r04_c01",
+          "grass_dirt5_r04_c01",
+          "grass_dirt6_r04_c01",
+          "tileset3_0_64",
+          "tileset3_r2_c0"
         ],
         "1100": [
-          "tileset3_r2_c1",
-          "tileset3_32_64"
+          "grass_dirt2_r03_c05",
+          "grass_dirt3_r03_c05",
+          "grass_dirt4_r03_c05",
+          "grass_dirt5_r03_c05",
+          "grass_dirt6_r03_c05",
+          "tileset3_32_64",
+          "tileset3_r2_c1"
         ],
         "1000": [
-          "tileset3_r2_c2",
-          "tileset3_64_64"
+          "grass_dirt2_r03_c06",
+          "grass_dirt3_r03_c06",
+          "grass_dirt4_r03_c06",
+          "grass_dirt5_r03_c06",
+          "grass_dirt6_r03_c06",
+          "tileset3_64_64",
+          "tileset3_r2_c2"
         ],
         "1010": [
-          "tileset3_r2_c3",
-          "tileset3_96_64"
+          "grass_dirt2_r04_c04",
+          "grass_dirt3_r04_c04",
+          "grass_dirt4_r04_c04",
+          "grass_dirt5_r04_c04",
+          "grass_dirt6_r04_c04",
+          "tileset3_96_64",
+          "tileset3_r2_c3"
         ],
         "0101": [
-          "tileset3_r2_c4",
-          "tileset3_128_64"
+          "grass_dirt2_r05_c02",
+          "grass_dirt3_r05_c02",
+          "grass_dirt4_r05_c02",
+          "grass_dirt5_r05_c02",
+          "grass_dirt6_r05_c02",
+          "tileset3_128_64",
+          "tileset3_r2_c4"
         ],
         "0000": [
-          "tileset3_r3_c1",
-          "tileset3_32_96"
+          "grass_dirt2_r00_c00",
+          "grass_dirt3_r00_c00",
+          "grass_dirt4_r00_c00",
+          "grass_dirt5_r00_c00",
+          "grass_dirt6_r00_c00",
+          "tileset3_32_96",
+          "tileset3_r3_c1"
         ]
       },
-      "extraSignatures": {}
+      "extraSignatures": {},
+      "sheetFolders": [
+        "grass_dirt2",
+        "grass_dirt3",
+        "grass_dirt4",
+        "grass_dirt5",
+        "grass_dirt6"
+      ],
+      "generator": "tools/atlas/wave9/grass_dirt_sheets.py"
     },
     "grass_rock": {
       "materialA": "0",
@@ -92,6 +180,15 @@
       },
       "cornerOrder": "NW,NE,SE,SW",
       "keyMeaning": "1 = corner is the SECONDARY terrain (matches TerrainTileResolver)",
+      "sheetFolders": [
+        "grass_rock_1",
+        "grass_rock_2",
+        "grass_rock_3",
+        "grass_rock_4",
+        "tileset4",
+        "tileset5",
+        "tileset6"
+      ],
       "slots": {
         "0010": [
           "grass_rock_1_r01_c01",

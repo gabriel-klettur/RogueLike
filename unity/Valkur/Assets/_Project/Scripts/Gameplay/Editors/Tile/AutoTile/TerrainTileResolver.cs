@@ -112,7 +112,8 @@ namespace Valkur.Gameplay.TileEditor
             IReadOnlyDictionary<Vector2Int, string> grid,
             Vector2Int cell,
             string terrain,
-            int hashSeed)
+            int hashSeed,
+            AutoTileSheetFilter filter = null)
         {
             if (ruleset == null) return null;
 
@@ -120,11 +121,11 @@ namespace Valkur.Gameplay.TileEditor
             {
                 if (string.IsNullOrEmpty(ruleset.TerrainSecondary)) return null;
                 byte cornerMask = BitmaskCalculator.CornerMask(grid, cell, ruleset.TerrainSecondary);
-                return RulesetSolver.ResolveCorner(ruleset, cornerMask, hashSeed);
+                return RulesetSolver.ResolveCorner(ruleset, cornerMask, hashSeed, filter);
             }
 
             byte cardinalMask = BitmaskCalculator.CardinalMask(grid, cell, terrain);
-            return RulesetSolver.Resolve(ruleset, cardinalMask, hashSeed);
+            return RulesetSolver.Resolve(ruleset, cardinalMask, hashSeed, filter);
         }
     }
 }

@@ -239,7 +239,7 @@ namespace Valkur.Gameplay.TileEditor
             var val = CreateUI("Val", group.transform);
             val.AddComponent<LayoutElement>().flexibleWidth = 1f;
             refs.BrushSizeLabel = val.AddComponent<TextMeshProUGUI>();
-            refs.BrushSizeLabel.text = $"{state.BrushSize}x{state.BrushSize}";
+            refs.BrushSizeLabel.text = $"{state.ActiveBrushSize}x{state.ActiveBrushSize}";
             refs.BrushSizeLabel.fontSize = 11f;
             refs.BrushSizeLabel.fontStyle = FontStyles.Bold;
             refs.BrushSizeLabel.alignment = TextAlignmentOptions.Center;

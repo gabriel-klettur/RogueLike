@@ -354,56 +354,49 @@ namespace Valkur.Gameplay.TileEditor
 
             sb.Append("\n  }");
 
-            if (terrainMatrix != null)
-            {
-                sb.Append(",\n  \"terrains\": [");
-                for (int row = 0; row < h; row++)
-                {
-                    sb.Append(row == 0 ? "\n    [" : ",\n    [");
-                    for (int col = 0; col < w; col++)
-                    {
-                        if (col > 0) sb.Append(", ");
-                        sb.Append('"').Append(EscapeJson(terrainMatrix[row, col] ?? string.Empty)).Append('"');
-                    }
-                    sb.Append(']');
-                }
-                sb.Append("\n  ]");
-            }
-
-            if (collisionTagMatrix != null)
-            {
-                sb.Append(",\n  \"collisionTags\": [");
-                for (int row = 0; row < h; row++)
-                {
-                    sb.Append(row == 0 ? "\n    [" : ",\n    [");
-                    for (int col = 0; col < w; col++)
-                    {
-                        if (col > 0) sb.Append(", ");
-                        sb.Append('"').Append(EscapeJson(collisionTagMatrix[row, col] ?? string.Empty)).Append('"');
-                    }
-                    sb.Append(']');
-                }
-                sb.Append("\n  ]");
-            }
-
-            if (layerJumpsMatrix != null)
-            {
-                sb.Append(",\n  \"layerJumps\": [");
-                for (int row = 0; row < h; row++)
-                {
-                    sb.Append(row == 0 ? "\n    [" : ",\n    [");
-                    for (int col = 0; col < w; col++)
-                    {
-                        if (col > 0) sb.Append(", ");
-                        sb.Append('"').Append(EscapeJson(layerJumpsMatrix[row, col] ?? string.Empty)).Append('"');
-                    }
-                    sb.Append(']');
-                }
-                sb.Append("\n  ]");
-            }
+            AppendMetadataMatrix(sb, "terrains", terrainMatrix);
+            AppendMetadataMatrix(sb, "collisionTags", collisionTagMatrix);
+            AppendMetadataMatrix(sb, "layerJumps", layerJumpsMatrix);
 
             sb.Append("\n}");
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Write one of the three optional parallel matrices, AT THE MATRIX'S OWN DIMENSIONS.
+        ///
+        /// <para>That is the whole point of this helper, and it used to be three copies of the
+        /// loop above bounded by the ZONE's <c>w</c>/<c>h</c> instead. It agreed with every
+        /// matrix while all three were cell-keyed, and stopped agreeing the moment
+        /// <see cref="TerrainMap"/> — which is keyed by VERTEX and therefore spans
+        /// (w+1) x (h+1) — started emitting its full span: the writer silently truncated it back
+        /// to the cell count, dropping the LAST row it was handed. Because row 0 is the top of
+        /// the zone, the row it dropped was the BOTTOM one, and the reader (which does take the
+        /// matrix's own row count) then placed every remaining row one tile too high. A whole
+        /// zone shifted by one on every save, with nothing logged.</para>
+        ///
+        /// <para>The tile layers above stay on <c>w</c>/<c>h</c> deliberately: those are cell
+        /// matrices and the zone's cell count is exactly their extent.</para>
+        /// </summary>
+        private static void AppendMetadataMatrix(StringBuilder sb, string field, string[,] matrix)
+        {
+            if (matrix == null) return;
+
+            int rows = matrix.GetLength(0);
+            int cols = matrix.GetLength(1);
+
+            sb.Append(",\n  \"").Append(EscapeJson(field)).Append("\": [");
+            for (int row = 0; row < rows; row++)
+            {
+                sb.Append(row == 0 ? "\n    [" : ",\n    [");
+                for (int col = 0; col < cols; col++)
+                {
+                    if (col > 0) sb.Append(", ");
+                    sb.Append('"').Append(EscapeJson(matrix[row, col] ?? string.Empty)).Append('"');
+                }
+                sb.Append(']');
+            }
+            sb.Append("\n  ]");
         }
 
         private static string EscapeJson(string s)

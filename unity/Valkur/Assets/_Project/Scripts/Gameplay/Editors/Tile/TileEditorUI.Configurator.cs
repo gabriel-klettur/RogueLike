@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Valkur.Data;
@@ -73,10 +74,61 @@ namespace Valkur.Gameplay.TileEditor
             _configuratorPanel = go.AddComponent<TilesetConfiguratorPanel>();
         }
 
-        private static TilesetRuleset LoadRulesetForCategory(string category)
+        /// <summary>
+        /// The ruleset that governs a picker category, or null when the category is not
+        /// part of an auto-tile pack.
+        /// </summary>
+        private TilesetRuleset LoadRulesetForCategory(string category)
         {
             if (string.IsNullOrEmpty(category)) return null;
-            return Resources.Load<TilesetRuleset>($"Tiles/{category}/ruleset");
+
+            var own = Resources.Load<TilesetRuleset>($"Tiles/{category}/ruleset");
+            if (own != null) return own;
+
+            return FindOwningRuleset(category);
+        }
+
+        /// <summary>
+        /// A pack cut from several sheets shows ONE picker category per sheet but keeps a
+        /// single ruleset, in the pack folder. Four rulesets all claiming &apos;grass&apos; would
+        /// leave three of them permanently unreachable from the auto-brush, silently, because
+        /// <c>TerrainCatalog.FindPaintRuleset</c> resolves a terrain NAME to exactly one
+        /// ruleset (highest priority, ties by list order). So a sheet category has no
+        /// <c>ruleset.asset</c> of its own and the owner is answered from the DATA — the
+        /// ruleset whose slots hold this category&apos;s sprites — rather than from a folder-name
+        /// convention, which is the half that drifts the moment a sheet is renamed.
+        /// </summary>
+        private TilesetRuleset FindOwningRuleset(string category)
+        {
+            var catalog = TerrainCatalogLoader.Load();
+            if (catalog == null || _catalog == null) return null;
+
+            var tiles = _catalog.GetTilesForCategory(category);
+            if (tiles == null || tiles.Count == 0) return null;
+
+            var names = new HashSet<string>(tiles.Count);
+            for (int i = 0; i < tiles.Count; i++)
+                if (!string.IsNullOrEmpty(tiles[i].tileName)) names.Add(tiles[i].tileName);
+
+            for (int i = 0; i < catalog.Rulesets.Count; i++)
+            {
+                var ruleset = catalog.Rulesets[i];
+                if (ruleset == null) continue;
+
+                for (int s = 0; s < ruleset.Slots.Count; s++)
+                    if (HoldsAny(ruleset.Slots[s].variants, names)) return ruleset;
+                for (int s = 0; s < ruleset.CornerSlots.Count; s++)
+                    if (HoldsAny(ruleset.CornerSlots[s].variants, names)) return ruleset;
+            }
+            return null;
+        }
+
+        private static bool HoldsAny(Sprite[] variants, HashSet<string> names)
+        {
+            if (variants == null) return false;
+            for (int i = 0; i < variants.Length; i++)
+                if (variants[i] != null && names.Contains(variants[i].name)) return true;
+            return false;
         }
     }
 }

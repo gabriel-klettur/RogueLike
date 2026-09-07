@@ -243,8 +243,15 @@ namespace Valkur.Tests.EditMode.Game.Terrain
         }
 
         [Test]
-        public void Resolve_WithKnownTerrain_AppliesVariant()
+        public void Resolve_OnAnEmptyCell_PaintsNothing_EvenWhereTerrainIsKnown()
         {
+            // Resolve is the auto-CURATION step: it repairs art that disagrees with the terrain
+            // it carries. It cannot create art, because the terrain NAME does not identify a
+            // pack — two shipped packs claim 'grass' — so filling an empty cell from the name
+            // would stamp whichever ruleset happened to win the lookup. That ambiguity is what
+            // made opening the editor repaint 1,072 of Forest's 1,879 auto-tiled cells with the
+            // wrong pack's art. The pack now comes from the tile that is THERE, and where there
+            // is none there is nothing to say.
             var rs = NewRulesetWithAllSlots("grass", "grass", 0);
             var catalog = NewCatalog(rs);
             var map = new TerrainMap();
@@ -252,10 +259,9 @@ namespace Valkur.Tests.EditMode.Game.Terrain
             map.SetTerrain(new Vector2Int(0, 0), "grass");
 
             var edit = TerrainPainter.Resolve(tilemap, new Vector3Int(0, 0, 0), catalog, map);
-            Assert.IsTrue(edit.HasValue);
-            var t = tilemap.GetTile(new Vector3Int(0, 0, 0)) as UnityEngine.Tilemaps.Tile;
-            Assert.IsNotNull(t);
-            Assert.AreEqual("grass_slot0", t.sprite.name);
+
+            Assert.IsFalse(edit.HasValue, "curation must not invent art for an empty cell");
+            Assert.IsNull(tilemap.GetTile(new Vector3Int(0, 0, 0)));
         }
     }
 }

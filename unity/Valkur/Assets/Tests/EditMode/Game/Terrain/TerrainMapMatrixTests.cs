@@ -16,11 +16,15 @@ namespace Valkur.Tests.EditMode.Game.Terrain
         public void BuildMatrix_Empty_ReturnsAllEmptyStrings()
         {
             var m = new TerrainMap();
+            // A w x h block of CELLS is bounded by (w+1) x (h+1) VERTICES, and this map is keyed
+            // by vertex. The matrix spanning only w x h dropped every vertex on the zone's top
+            // and right edge — 101 of them per shipped 50x50 zone, measured — so the cells there
+            // came back with unknown corners.
             var matrix = m.BuildMatrix(0, 0, 3, 2);
-            Assert.AreEqual(2, matrix.GetLength(0));
-            Assert.AreEqual(3, matrix.GetLength(1));
-            for (int r = 0; r < 2; r++)
-            for (int c = 0; c < 3; c++)
+            Assert.AreEqual(3, matrix.GetLength(0), "h + 1 rows of vertices");
+            Assert.AreEqual(4, matrix.GetLength(1), "w + 1 columns of vertices");
+            for (int r = 0; r < matrix.GetLength(0); r++)
+            for (int c = 0; c < matrix.GetLength(1); c++)
                 Assert.AreEqual("", matrix[r, c]);
         }
 
@@ -28,14 +32,17 @@ namespace Valkur.Tests.EditMode.Game.Terrain
         public void BuildMatrix_RowZeroIsTopOfZone()
         {
             var m = new TerrainMap();
-            // origin (0,0) and h=2 → unityY for row 0 = 0 + (2-1-0) = 1.
-            // Stamp 'grass' at (0,1) so it should land at matrix[0,0].
+            // h=2 spans THREE rows of vertices (y = 2, 1, 0), so row 0 is y=2 — the top edge of
+            // the top row of cells, which belongs to the zone as much as its bottom edge does.
+            m.SetTerrain(new Vector2Int(0, 2), "top_edge");
             m.SetTerrain(new Vector2Int(0, 1), "grass");
             m.SetTerrain(new Vector2Int(0, 0), "dirt");
 
             var matrix = m.BuildMatrix(0, 0, 1, 2);
-            Assert.AreEqual("grass", matrix[0, 0], "row 0 = top of zone (highest unity y).");
-            Assert.AreEqual("dirt", matrix[1, 0]);
+            Assert.AreEqual(3, matrix.GetLength(0), "h + 1 rows of vertices");
+            Assert.AreEqual("top_edge", matrix[0, 0], "row 0 = top of zone (highest unity y).");
+            Assert.AreEqual("grass", matrix[1, 0]);
+            Assert.AreEqual("dirt", matrix[2, 0], "the last row is the lowest unity y.");
         }
 
         [Test]

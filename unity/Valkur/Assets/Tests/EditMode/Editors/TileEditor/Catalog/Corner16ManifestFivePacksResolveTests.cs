@@ -57,16 +57,49 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Catalog
         }
 
         /// <summary>Same lookup <see cref="TilesetRulesetImporter"/> itself uses:
-        /// search recursively under the pack folder for an exact-basename Sprite.</summary>
-        private static bool SpriteExistsOnDisk(string packFolder, string spriteName)
+        /// search recursively under each of the pack's folders for an exact-basename Sprite.</summary>
+        private static bool SpriteExistsOnDisk(string[] searchFolders, string spriteName)
         {
-            foreach (var guid in AssetDatabase.FindAssets($"{spriteName} t:Sprite", new[] { packFolder }))
+            foreach (var guid in AssetDatabase.FindAssets($"{spriteName} t:Sprite", searchFolders))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 if (string.Equals(Path.GetFileNameWithoutExtension(path), spriteName, StringComparison.Ordinal))
                     return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// The folders a pack's sprites may live in: its own, plus every folder its optional
+        /// <c>sheetFolders</c> array names. A pack cut from several sheets shows one picker
+        /// CATEGORY per sheet — a category is a folder — so its sheets sit beside it at the
+        /// Tiles root while the ruleset stays single, because FindPaintRuleset resolves a
+        /// terrain NAME to exactly one ruleset and a second pack claiming the same primary
+        /// would be unreachable in silence.
+        /// </summary>
+        private static string[] SearchFoldersFor(string packName, Dictionary<string, object> packData)
+        {
+            var folders = new List<string> { $"{TILES_ROOT}/{packName}" };
+            if (!packData.TryGetValue("sheetFolders", out object declaredObj)) return folders.ToArray();
+
+            var declared = declaredObj as List<object>;
+            Assert.IsNotNull(declared, $"[{packName}] 'sheetFolders' is present but is not an array.");
+
+            foreach (var entry in declared)
+            {
+                string name = entry as string;
+                Assert.IsFalse(string.IsNullOrWhiteSpace(name),
+                    $"[{packName}] 'sheetFolders' holds an empty entry.");
+
+                string folder = $"{TILES_ROOT}/{name}";
+                Assert.IsTrue(AssetDatabase.IsValidFolder(folder),
+                    $"[{packName}] 'sheetFolders' names '{name}', which is not a folder under " +
+                    "Resources/Tiles/. The importer aborts the whole pack on this, and the message " +
+                    "it prints names the 98 missing sprites rather than the typo.");
+
+                if (!folders.Contains(folder)) folders.Add(folder);
+            }
+            return folders.ToArray();
         }
 
         [Test]
@@ -122,6 +155,8 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Catalog
                 Assert.IsTrue(AssetDatabase.IsValidFolder(packFolder),
                     $"[{packName}] folder '{packFolder}' does not exist under Resources/Tiles/.");
 
+                var searchFolders = SearchFoldersFor(packName, packData);
+
                 var slots = (Dictionary<string, object>)packData["slots"];
                 foreach (var slotKv in slots)
                 {
@@ -132,7 +167,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Catalog
                     foreach (var nameObj in spriteNames)
                     {
                         string name = nameObj as string;
-                        if (string.IsNullOrEmpty(name) || !SpriteExistsOnDisk(packFolder, name))
+                        if (string.IsNullOrEmpty(name) || !SpriteExistsOnDisk(searchFolders, name))
                             failures.Add($"[{packName}] slot {slotKv.Key}: '{name ?? "<null>"}'");
                     }
                 }

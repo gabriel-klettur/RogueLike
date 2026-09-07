@@ -78,32 +78,30 @@ namespace Valkur.Tests.EditMode.Game.Terrain
             return (rs, bySlot);
         }
 
-        // ── Independent oracle — re-derived from CornerMask's own doc comment,
-        // never calls into BitmaskCalculator. ──────────────────────────────────
+        // ── Independent oracle — re-derived from the dual-grid definition, never
+        // calls into BitmaskCalculator. ────────────────────────────────────────
+        //
+        // The terrain grid is keyed by VERTEX and sits half a cell off the render
+        // grid, so the tile at cell (x, y) takes its four corners from the four
+        // vertices (x, y+1) NW, (x+1, y+1) NE, (x+1, y) SE and (x, y) SW. One vertex
+        // per corner: no vote, no tie-break, and no reading of the cell's "own"
+        // terrain, which in this model it does not have.
+        //
+        // This oracle used to re-derive a majority vote over the 2x2 block of CELLS
+        // touching each corner. That convention could not draw a border: measured on
+        // the shipped water pack, a straight boundary produced only the two pure
+        // signatures and no transition tile anywhere along it.
 
-        private static string TerrainAt(IReadOnlyDictionary<Vector2Int, string> grid, Vector2Int cell)
-            => grid.TryGetValue(cell, out var t) ? t : null;
-
-        private static bool BlockIsSecondary(IReadOnlyDictionary<Vector2Int, string> grid, Vector2Int cell,
-            Vector2Int vertical, Vector2Int horizontal, string secondary, string center)
-        {
-            int count = center == secondary ? 1 : 0;
-            if (TerrainAt(grid, cell + vertical) == secondary) count++;
-            if (TerrainAt(grid, cell + horizontal) == secondary) count++;
-            if (TerrainAt(grid, cell + vertical + horizontal) == secondary) count++;
-            if (count >= 3) return true;
-            if (count <= 1) return false;
-            return center == secondary; // exact 2-2 tie: broken by the cell's own terrain
-        }
+        private static string TerrainAt(IReadOnlyDictionary<Vector2Int, string> grid, Vector2Int vertex)
+            => grid.TryGetValue(vertex, out var t) ? t : null;
 
         private static byte ExpectedCornerMask(IReadOnlyDictionary<Vector2Int, string> grid, Vector2Int cell, string secondary)
         {
-            string center = TerrainAt(grid, cell);
             byte mask = 0;
-            if (BlockIsSecondary(grid, cell, Vector2Int.up, Vector2Int.left, secondary, center)) mask |= 0b1000;    // NW
-            if (BlockIsSecondary(grid, cell, Vector2Int.up, Vector2Int.right, secondary, center)) mask |= 0b0100;   // NE
-            if (BlockIsSecondary(grid, cell, Vector2Int.down, Vector2Int.right, secondary, center)) mask |= 0b0010; // SE
-            if (BlockIsSecondary(grid, cell, Vector2Int.down, Vector2Int.left, secondary, center)) mask |= 0b0001;  // SW
+            if (TerrainAt(grid, new Vector2Int(cell.x,     cell.y + 1)) == secondary) mask |= 0b1000; // NW
+            if (TerrainAt(grid, new Vector2Int(cell.x + 1, cell.y + 1)) == secondary) mask |= 0b0100; // NE
+            if (TerrainAt(grid, new Vector2Int(cell.x + 1, cell.y))     == secondary) mask |= 0b0010; // SE
+            if (TerrainAt(grid, new Vector2Int(cell.x,     cell.y))     == secondary) mask |= 0b0001; // SW
             return mask;
         }
 
@@ -176,10 +174,11 @@ namespace Valkur.Tests.EditMode.Game.Terrain
         [Test]
         public void CellAtGridBoundary_MissingNeighborsExcluded_DoesNotThrow()
         {
-            // Only a 3x3 patch of the world is known at all; every cell outside it
-            // is simply absent from the dictionary (not "primary", not
-            // "secondary" — unknown). The corner cell (0,0) has 5 of its 8
-            // neighbours off-grid.
+            // Only a 3x3 patch of VERTICES is known at all; everything outside it is
+            // simply absent from the dictionary (not "primary", not "secondary" —
+            // unknown). The tile at (0,0) has all four of its corners inside that
+            // patch; the tiles below and to the left of it read absent vertices,
+            // which must resolve as primary rather than throw.
             var grid = new Dictionary<Vector2Int, string>();
             for (int x = 0; x <= 2; x++)
             for (int y = 0; y <= 2; y++)

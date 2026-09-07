@@ -62,7 +62,37 @@ namespace Valkur.Gameplay.TileEditor
         public TileBase SelectedTile;
         public int SelectedCatalogIndex = -1;
         public string SelectedCategory = "";
+        /// <summary>Footprint of the MANUAL brush, and of every other sized tool (eraser,
+        /// collider paint, layer jumps, select). Never touched by the AUTO toggle.</summary>
         public int BrushSize = 1;
+
+        /// <summary>
+        /// Footprint of the AUTO brush, remembered separately from <see cref="BrushSize"/>.
+        ///
+        /// <para>The two tools want different sizes and neither should have to give way. A
+        /// corner tile's four corners are VERTICES shared by four cells each, so an AUTO stroke
+        /// under 2x2 leaves three of the four cells meeting at every corner it moved unpainted —
+        /// hence the default. The manual brush has no such constraint and an author who paints
+        /// single tiles wants 1x1. One shared number made using AUTO once overwrite the manual
+        /// size, in memory and then on disk, and the manual brush looked like it had stopped
+        /// responding to its own control.</para>
+        /// </summary>
+        public int AutoBrushSize = TileEditorConstants.AutoBrushSize;
+
+        /// <summary>
+        /// True while the AUTO brush is the tool actually being driven. AUTO is a modifier on
+        /// the Brush tool alone, so the eraser, the collider paint and the layer-jump stamp keep
+        /// using <see cref="BrushSize"/> even with the checkbox lit.
+        /// </summary>
+        public bool IsAutoBrushActive => AutoBrushMode && CurrentTool == Tool.Brush;
+
+        /// <summary>The footprint the author is currently driving — what the +/- buttons move,
+        /// what the label shows and what the cursor draws.</summary>
+        public int ActiveBrushSize
+        {
+            get => IsAutoBrushActive ? AutoBrushSize : BrushSize;
+            set { if (IsAutoBrushActive) AutoBrushSize = value; else BrushSize = value; }
+        }
         public bool IsDragging;
 
         /// <summary>

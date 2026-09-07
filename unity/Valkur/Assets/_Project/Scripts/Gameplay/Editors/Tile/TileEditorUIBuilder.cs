@@ -39,6 +39,14 @@ namespace Valkur.Gameplay.TileEditor
             // Menu bar controls
             public TextMeshProUGUI LayerLabel;
             public TextMeshProUGUI BrushSizeLabel;
+
+            // The AUTO checkbox. Held here because the editor's STATE is what decides
+            // whether it is lit — the workspace restores AutoBrushMode without anyone
+            // clicking, and a checkbox that only its own click can repaint then shows OFF
+            // while the brush is in AUTO. That is a control lying about the mode the
+            // editor is actually in, which is worse than no control at all.
+            public Image AutoToggleBox;
+            public TextMeshProUGUI AutoToggleLabel;
             public TextMeshProUGUI StatusText;
 
             // Tile picker (inside TilesDropdown)

@@ -131,7 +131,14 @@ namespace Valkur.Tests.EditMode.Game.Terrain
             Assert.IsEmpty(edits,
                 "KNOWN GAP: FindBaseRuleset excludes every transition ruleset, so a Corner16-only " +
                 "catalog entry is never selected by PaintRegion today — see class doc.");
-            Assert.AreEqual(9, metadataEdits.Count, "Terrain is still stamped even though no sprite resolves.");
+            // NINE, not sixteen: the stamp is in CELL space here because no pack resolved.
+            // PaintRegion keys terrain by VERTEX only for a Corner16 pack, and this stroke
+            // paints the SECONDARY terrain while FindPaintRuleset resolves by PRIMARY — so
+            // it finds nothing, and a stroke with no pack still records the author intent,
+            // which is about cells. The vertex-keyed count for a 3x3 rect is 4x4 = 16, and
+            // TerrainPainterTests covers that side.
+            Assert.AreEqual(9, metadataEdits.Count,
+                "Terrain is still stamped even though no sprite resolves.");
             Assert.AreEqual(Secondary, map.GetTerrain(new Vector2Int(1, 1)));
         }
 

@@ -12,8 +12,13 @@ a sheet that does not achieve it is refused rather than emitted with holes.
   grass_rock_1..4   four VARIANTS of the grass/rock pair
   water_water_deep  a new pair, water over deep water
 
-Why the four grass_rock sheets do not become four packs
--------------------------------------------------------
+Why the four grass_rock sheets are four CATEGORIES but one PACK
+---------------------------------------------------------------
+Each sheet is its own tab in the Tile editor's picker — a category is a folder
+under ``Resources/Tiles/``, and one tileset per tab is what an author browses
+by. That is a presentation split and it costs the auto-brush nothing. Turning
+them into four RULESETS would, and here is why:
+
 ``TerrainCatalog.FindPaintRuleset`` resolves a terrain NAME to exactly ONE
 Corner16 ruleset (highest Priority, ties by list order), so four packs all
 claiming ``grass`` would leave three of them permanently unreachable from the
@@ -75,12 +80,17 @@ def shallow_mask(rgb: np.ndarray) -> np.ndarray:
 
 
 SHEETS = [
-    # (pack, slices subdir, sheet prefix, primary-terrain mask)
-    ("grass_rock",       "grass_rock_1_slices", "grass_rock_1", grass_mask),
-    ("grass_rock",       "grass_rock_2_slices", "grass_rock_2", grass_mask),
-    ("grass_rock",       "grass_rock_3_slices", "grass_rock_3", grass_mask),
-    ("grass_rock",       "grass_rock_4_slices", "grass_rock_4", grass_mask),
-    ("water_water_deep", "",                    "water_deep",   shallow_mask),
+    # (ruleset pack, sheet folder under Resources/Tiles/, sheet prefix, primary-terrain mask)
+    #
+    # The pack and the folder are separate on purpose. Each sheet is its OWN picker
+    # category (one tab per tileset), so it lives at the Tiles root and carries its own
+    # _manifest.json; the RULESET they all feed is still the single `grass_rock` one,
+    # for the reason in the module docstring.
+    ("grass_rock",       "grass_rock_1",     "grass_rock_1", grass_mask),
+    ("grass_rock",       "grass_rock_2",     "grass_rock_2", grass_mask),
+    ("grass_rock",       "grass_rock_3",     "grass_rock_3", grass_mask),
+    ("grass_rock",       "grass_rock_4",     "grass_rock_4", grass_mask),
+    ("water_water_deep", "water_water_deep", "water_deep",   shallow_mask),
 ]
 
 NEW_PACKS = {
@@ -116,9 +126,9 @@ def signature(rgb: np.ndarray, mask_fn, inset: int, size: int) -> str:
     return "".join("0" if q.mean() > 0.5 else "1" for q in quadrants)
 
 
-def slots_for_sheet(pack: str, subdir: str, prefix: str, mask_fn) -> dict[str, list[str]] | None:
+def slots_for_sheet(folder: str, prefix: str, mask_fn) -> dict[str, list[str]] | None:
     """Signature -> sprite names for one sheet, or None when it is not a clean Corner16."""
-    sheet_dir = os.path.join(TILES, pack, subdir) if subdir else os.path.join(TILES, pack)
+    sheet_dir = os.path.join(TILES, folder)
     manifest_path = os.path.join(sheet_dir, "_manifest.json")
     if not os.path.exists(manifest_path):
         print(f"ERROR {prefix}: no manifest at {manifest_path}", file=sys.stderr)
@@ -157,8 +167,8 @@ def main() -> int:
     combos = ["".join(c) for c in itertools.product("01", repeat=4)]
 
     per_pack: dict[str, dict[str, list[str]]] = {}
-    for pack, subdir, prefix, mask_fn in SHEETS:
-        slots = slots_for_sheet(pack, subdir, prefix, mask_fn)
+    for pack, folder, prefix, mask_fn in SHEETS:
+        slots = slots_for_sheet(folder, prefix, mask_fn)
         if slots is None:
             return 1
         print(f"{prefix}: 16/16 corner slots")
@@ -183,6 +193,20 @@ def main() -> int:
                   f"secondary='{entry['terrainSecondary']}'")
 
         entry["generator"] = "tools/atlas/wave8/new_tiles_ruleset.py"
+
+        # Where TilesetRulesetImporter must look for this pack's sprites. It scopes the
+        # search to the pack's own folder — deliberately, so a sprite name that exists in
+        # two packs cannot be taken from the wrong one — and a sheet that is its own picker
+        # category lives at the Tiles root instead. Declaring the folders keeps the scoping
+        # while letting the category split and the pack split differ. Only folders that
+        # really sit outside the pack are listed; a pack whose sheets are still nested needs
+        # no entry and gets the old behaviour exactly.
+        outside = sorted({
+            folder for pack_name, folder, _, _ in SHEETS
+            if pack_name == pack and folder != pack
+        })
+        if outside:
+            entry["sheetFolders"] = outside
         existing = entry.setdefault("slots", {})
         for sig in combos:
             have = list(existing.get(sig, []))

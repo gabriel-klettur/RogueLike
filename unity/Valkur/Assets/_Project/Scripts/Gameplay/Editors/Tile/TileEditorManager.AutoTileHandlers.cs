@@ -185,7 +185,7 @@ namespace Valkur.Gameplay.TileEditor
                 for (int x = 0; x < w; x++)
                 {
                     var cell = new Vector3Int(zone.gridOffset.x + x, zone.gridOffset.y + y, 0);
-                    var edit = TerrainPainter.Resolve(groundTilemap, cell, catalog, terrainMap);
+                    var edit = TerrainPainter.Resolve(groundTilemap, cell, catalog, terrainMap, tileCatalog);
                     if (edit.HasValue) totalCured++;
                 }
             }

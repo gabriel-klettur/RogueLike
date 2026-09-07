@@ -13,9 +13,9 @@ namespace Valkur.Gameplay.TileEditor
     /// whether the layer holds: 78 files, 15k LOC, and the only editor whose state is big
     /// enough that "just persist everything" is the wrong answer.
     ///
-    /// Three things are deliberately NOT persisted, and each is a decision rather than an
+    /// Four things are deliberately NOT persisted, and each is a decision rather than an
     /// omission — see the individual notes below: the collider / layer-jump paint modes,
-    /// the clipboard, and the camera zoom.
+    /// the AUTO brush modifier, the clipboard, and the camera zoom.
     /// </summary>
     public partial class TileEditorManager : IProvidesWorkspaceState
     {
@@ -24,7 +24,7 @@ namespace Valkur.Gameplay.TileEditor
         private const string WS_TOOL          = "tool";
         private const string WS_LAYER         = "layer";
         private const string WS_BRUSH_SIZE    = "brushSize";
-        private const string WS_AUTO_BRUSH    = "autoBrush";
+        private const string WS_AUTO_BRUSH_SIZE = "autoBrushSize";
         private const string WS_CATEGORY      = "tileCategory";
         private const string WS_TILE_NAME     = "tileName";
         private const string WS_TERRAIN       = "terrain";
@@ -60,7 +60,7 @@ namespace Valkur.Gameplay.TileEditor
             ws.SetString(WS_TOOL,  _state.CurrentTool.ToString());
             ws.SetString(WS_LAYER, _state.CurrentLayer.ToString());
             ws.SetInt(WS_BRUSH_SIZE, _state.BrushSize);
-            ws.SetBool(WS_AUTO_BRUSH, _state.AutoBrushMode);
+            ws.SetInt(WS_AUTO_BRUSH_SIZE, _state.AutoBrushSize);
 
             // A tile's stable identity is (category, name). Neither half alone is unique:
             // TileCategoryManifest generation reuses names across packs, and a category
@@ -87,9 +87,21 @@ namespace Valkur.Gameplay.TileEditor
             //
             // • CurrentColliderMode / CurrentLayerJumpMode — HandleToggle resets both to
             //   None on every activate. That is a safety decision, not an oversight:
-            //   opening F8 straight into a destructive paint mode is how an author paints
-            //   collision over a map they only meant to look at. Restoring them would
+            //   opening the editor straight into a destructive paint mode is how an author
+            //   paints collision over a map they only meant to look at. Restoring them would
             //   override a deliberate reset.
+            // • AutoBrushMode — the same decision, for the same reason. AUTO silently changes
+            //   what a click MEANS: instead of stamping the tile that is selected in the
+            //   picker, it paints that tile's pack TERRAIN and re-resolves a whole
+            //   neighbourhood around the cursor, so one click on a 2x2 footprint rewrites 16
+            //   cells. Reopening straight into that is how an author overwrites work they
+            //   only meant to look at, and it is not visible in the picker preview, which
+            //   goes on showing the single tile they picked. It also gave a live defect its
+            //   most confusing shape: an editor that opened in AUTO while the checkbox was
+            //   drawn OFF and the size panel showed the manual footprint, so three controls
+            //   disagreed with the tool actually in hand and each disagreement read as its
+            //   own bug. AutoBrushSize IS persisted — the footprint an author chose for AUTO
+            //   is theirs and costs nothing to remember; only the MODE resets.
             // • Clipboard — TileEditorState documents it as OS-clipboard semantics, lost
             //   when the editor closes. Persisting it would also mean serializing tile
             //   references, which are assets, not data.
@@ -162,8 +174,19 @@ namespace Valkur.Gameplay.TileEditor
 
         private void RestoreBrush(EditorWorkspace ws)
         {
-            OnBrushSizeChanged(ws.GetInt(WS_BRUSH_SIZE, _state.BrushSize));
-            _state.AutoBrushMode = ws.GetBool(WS_AUTO_BRUSH, _state.AutoBrushMode);
+            // Both footprints are restored as themselves. Assigning the fields directly rather
+            // than through OnBrushSizeChanged, because that routes to whichever is ACTIVE and
+            // would write one of them over the other depending on the order they arrive in.
+            _state.BrushSize = Mathf.Clamp(ws.GetInt(WS_BRUSH_SIZE, _state.BrushSize),
+                TileEditorConstants.MinBrushSize, TileEditorConstants.MaxBrushSize);
+            _state.AutoBrushSize = Mathf.Clamp(ws.GetInt(WS_AUTO_BRUSH_SIZE, _state.AutoBrushSize),
+                TileEditorConstants.MinBrushSize, TileEditorConstants.MaxBrushSize);
+            // AUTO itself is NOT restored — see the note in CaptureWorkspaceState. Both
+            // controls are still repainted, so the checkbox and the number agree with the
+            // OFF the editor actually opens in rather than with whatever the panel was
+            // built showing.
+            _ui?.RefreshBrushSizeLabel();
+            _ui?.RefreshAutoToggle();
 
             if (Enum.TryParse(ws.GetString(WS_LAYER, null), out TilemapLayerSetup.TilemapLayer layer))
                 OnLayerChanged(layer);

@@ -41,77 +41,75 @@ namespace Valkur.Gameplay.TileEditor
         }
 
         /// <summary>
-        /// Computes the 4-bit CORNER mask for <paramref name="cell"/> under the
-        /// Corner16 auto-tile model — see <see cref="Valkur.Data.Corner16Slot"/> for
-        /// the bit layout this returns.
+        /// The 4-bit CORNER mask for the tile drawn at <paramref name="cell"/> under the
+        /// Corner16 model — see <see cref="Valkur.Data.Corner16Slot"/> for the bit layout.
         ///
-        /// <para>
-        /// <b>Why this is not a dual grid.</b> A <c>TerrainMap</c> stores one terrain
-        /// per CELL, but corner-Wang art is authored per grid POINT (the vertex shared
-        /// by 4 cells). The textbook fix for that mismatch is a dual grid: render each
-        /// corner tile offset by half a cell so it's centered on a vertex instead of a
-        /// cell. Valkur can't do that here — tiles are painted onto a Unity
-        /// <c>Tilemap</c> in whole integer cells, so every visual tile drawn for cell
-        /// <c>C</c> must still occupy exactly cell <c>C</c>. Instead, each of C's 4
-        /// corners is derived from the 2x2 block of cells that TOUCH that corner's
-        /// vertex:
-        /// </para>
-        /// <list type="bullet">
-        /// <item>NW corner &lt;- block { C, N, W, NW }</item>
-        /// <item>NE corner &lt;- block { C, N, E, NE }</item>
-        /// <item>SE corner &lt;- block { C, S, E, SE }</item>
-        /// <item>SW corner &lt;- block { C, S, W, SW }</item>
-        /// </list>
-        /// <para>
-        /// A corner reads as <paramref name="terrain"/> when a MAJORITY (3 or 4 of the
-        /// 4 cells) of its block matches. When the block is split exactly 2-2, the tie
-        /// is resolved by cell C's own terrain — an ambiguous checkerboard corner
-        /// renders as whatever the painted cell itself is, rather than an arbitrary
-        /// pick. Cells outside the grid do NOT count as <paramref name="terrain"/> —
-        /// same convention <see cref="CardinalMask"/> already uses — so the world edge
-        /// behaves identically under both models.
-        /// </para>
+        /// <para><b>The grid is keyed by VERTEX, not by cell.</b> Corner-Wang art is authored
+        /// per grid POINT: each of a tile's four corners is one terrain, and the four corners
+        /// of the tile at cell <c>(x, y)</c> are the four vertices <c>(x, y+1)</c>,
+        /// <c>(x+1, y+1)</c>, <c>(x+1, y)</c>, <c>(x, y)</c>. So the terrain layer is offset
+        /// half a cell from the render layer — the textbook dual grid — while every drawn tile
+        /// still occupies exactly one whole Unity <c>Tilemap</c> cell, which is the constraint
+        /// that made this look impossible.</para>
+        ///
+        /// <para><b>What it replaced, and why.</b> This used to store one terrain per CELL and
+        /// derive each corner from a MAJORITY VOTE over the 2x2 block of cells touching that
+        /// corner, with a 2-2 tie broken by the painted cell itself. Both halves were
+        /// internally consistent and the result disagreed only with the screen. Measured over
+        /// all 512 two-terrain 3x3 neighbourhoods, flipping ONLY the centre cell changed the
+        /// signature in 508 of them — the tile drawn was very nearly a function of the cell's
+        /// own terrain. The consequence is the one thing the model exists for: a straight
+        /// border between two areas of the same pack produced exactly TWO signatures, 0000 and
+        /// 1111, i.e. solid primary butted against solid secondary with no transition art at
+        /// all. Measured live on the shipped <c>water_water_deep</c> pack over a 10x6 field
+        /// split down the middle: 30 cells of 0000, 26 of 1111, and the only four boundary
+        /// tiles were the outer corners of the painted rectangle. Reading vertices makes the
+        /// boundary tile half one terrain and half the other by construction, because its two
+        /// left corners and its two right corners really are different vertices.</para>
+        ///
+        /// <para>A vertex with no entry counts as NOT the secondary terrain, so an unpainted
+        /// world reads as solid primary and painting the secondary carves into it.</para>
         /// </summary>
         public static byte CornerMask(IReadOnlyDictionary<Vector2Int, string> grid,
-                                       Vector2Int cell, string terrain)
+                                      Vector2Int cell, string terrain)
         {
             if (grid == null) return 0;
 
-            string center = CellTerrain(grid, cell);
-
             byte mask = 0;
-            if (CornerBlockMatches(grid, cell, Vector2Int.up,   Vector2Int.left,  terrain, center)) mask |= BitCornerNW;
-            if (CornerBlockMatches(grid, cell, Vector2Int.up,   Vector2Int.right, terrain, center)) mask |= BitCornerNE;
-            if (CornerBlockMatches(grid, cell, Vector2Int.down, Vector2Int.right, terrain, center)) mask |= BitCornerSE;
-            if (CornerBlockMatches(grid, cell, Vector2Int.down, Vector2Int.left,  terrain, center)) mask |= BitCornerSW;
+            if (VertexIs(grid, cell.x,     cell.y + 1, terrain)) mask |= BitCornerNW;
+            if (VertexIs(grid, cell.x + 1, cell.y + 1, terrain)) mask |= BitCornerNE;
+            if (VertexIs(grid, cell.x + 1, cell.y,     terrain)) mask |= BitCornerSE;
+            if (VertexIs(grid, cell.x,     cell.y,     terrain)) mask |= BitCornerSW;
             return mask;
         }
 
-        private static bool CornerBlockMatches(IReadOnlyDictionary<Vector2Int, string> grid, Vector2Int cell,
-                                                Vector2Int vertical, Vector2Int horizontal,
-                                                string terrain, string centerTerrain)
+        /// <summary>The four vertices that are the corners of the tile at <paramref name="cell"/>,
+        /// in the bit order NW, NE, SE, SW. Painting all four is what fully determines one tile,
+        /// and is why the AUTO brush forces a 2x2 footprint.</summary>
+        public static void CornersOf(Vector2Int cell, Vector2Int[] into)
         {
-            int matches = centerTerrain == terrain ? 1 : 0;
-            if (NeighborMatches(grid, cell + vertical, terrain)) matches++;
-            if (NeighborMatches(grid, cell + horizontal, terrain)) matches++;
-            if (NeighborMatches(grid, cell + vertical + horizontal, terrain)) matches++;
-
-            if (matches >= 3) return true;
-            if (matches <= 1) return false;
-            // Exactly 2 of 4 match (a diagonal split): the painted cell's own terrain
-            // breaks the tie instead of an arbitrary majority pick.
-            return centerTerrain == terrain;
+            if (into == null || into.Length < 4) return;
+            into[0] = new Vector2Int(cell.x,     cell.y + 1); // NW
+            into[1] = new Vector2Int(cell.x + 1, cell.y + 1); // NE
+            into[2] = new Vector2Int(cell.x + 1, cell.y);     // SE
+            into[3] = new Vector2Int(cell.x,     cell.y);     // SW
         }
 
-        private static string CellTerrain(IReadOnlyDictionary<Vector2Int, string> grid, Vector2Int cell)
+        private static bool VertexIs(IReadOnlyDictionary<Vector2Int, string> grid,
+                                     int x, int y, string terrain)
         {
-            return grid.TryGetValue(cell, out var value) ? value : null;
+            return grid.TryGetValue(new Vector2Int(x, y), out var t) && t == terrain;
         }
 
+        /// <summary>
+        /// True when the grid holds <paramref name="terrain"/> at <paramref name="neighbor"/>.
+        /// A key that is absent does NOT count as a match — used by the cardinal
+        /// (Blob16) mask, which still reads one entry per CELL.
+        /// </summary>
         private static bool NeighborMatches(IReadOnlyDictionary<Vector2Int, string> grid,
-                                             Vector2Int key, string terrain)
+                                            Vector2Int neighbor, string terrain)
         {
-            return grid.TryGetValue(key, out var value) && value == terrain;
+            return grid.TryGetValue(neighbor, out var t) && t == terrain;
         }
     }
 }

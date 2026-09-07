@@ -114,8 +114,12 @@ namespace Valkur.Gameplay.TileEditor
 
         private void OnBrushSizeChanged(int newSize)
         {
-            _state.BrushSize = Mathf.Clamp(newSize, TileEditorConstants.MinBrushSize, TileEditorConstants.MaxBrushSize);
-            _ui.RefreshBrushSizeLabel();
+            // Writes whichever footprint the author is driving — see TileEditorState.ActiveBrushSize.
+            _state.ActiveBrushSize = Mathf.Clamp(newSize, TileEditorConstants.MinBrushSize, TileEditorConstants.MaxBrushSize);
+            // Null-conditional like every other callback here: the AUTO toggle now routes
+            // through this method, and it is reachable before the panel exists (and from a
+            // test that hosts the manager without building one).
+            _ui?.RefreshBrushSizeLabel();
         }
 
         /// <summary>
@@ -140,16 +144,22 @@ namespace Valkur.Gameplay.TileEditor
 
             if (_state.AutoBrushMode)
             {
-                var (terrain, reason) = ResolveAutoBrushTerrain();
+                var (ruleset, terrain, reason) = ResolveAutoBrushTerrain();
                 _ui?.SetStatus(string.IsNullOrEmpty(terrain)
                     ? $"AUTO brush ON - {reason}"
-                    : $"AUTO brush ON - painting terrain '{terrain}'.");
+                    : $"AUTO brush ON ({TileEditorConstants.AutoBrushSize}x{TileEditorConstants.AutoBrushSize}) - " +
+                      $"'{ResolveAutoBrushSheet(ruleset)?.Category ?? ruleset.FolderName}', painting '{terrain}'. " +
+                      $"Pick the other terrain's tile to paint '{AutoBrushPackLookup.OtherTerrain(ruleset, terrain)}'.");
             }
             else
             {
                 _ui?.SetStatus("AUTO brush OFF - painting raw tiles again.");
             }
 
+            // The active footprint just changed owner, so the label and the slider have to
+            // follow or the number on screen belongs to the other tool.
+            _ui?.RefreshBrushSizeLabel();
+            _ui?.RefreshAutoToggle();
             return _state.AutoBrushMode;
         }
 

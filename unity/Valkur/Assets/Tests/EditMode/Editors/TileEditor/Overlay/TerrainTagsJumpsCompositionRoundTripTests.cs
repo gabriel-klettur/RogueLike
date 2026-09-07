@@ -127,6 +127,41 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Overlay
         }
 
         [Test]
+        public void TheEmittedTerrainMatrix_SpansTheZonesVERTICES()
+        {
+            // The terrain layer is keyed by VERTEX and the zone is measured in CELLS, so its
+            // matrix is one row and one column LARGER than the tile layers'. The writer used to
+            // bound all three metadata matrices by the zone's cell count, which silently
+            // truncated this one — and because row 0 is the top, the row it dropped was the
+            // BOTTOM one, so the reader (which takes the matrix's own row count) placed every
+            // surviving row one tile too high. A whole zone shifted by one on every save.
+            int w = _zones.ZoneWidthTiles;
+            int h = _zones.ZoneHeightTiles;
+
+            _terrainMap.SetTerrain(new Vector2Int(OFFSET.x, OFFSET.y), "bottom_left");
+            _terrainMap.SetTerrain(new Vector2Int(OFFSET.x + w, OFFSET.y + h), "far_corner");
+
+            var ground = _grid.GetTilemap(TilemapLayerSetup.TilemapLayer.Ground);
+            ground.SetTile(new Vector3Int(OFFSET.x, OFFSET.y, 0), _groundTile);
+            _persistence.MarkCellDirty(new Vector3Int(OFFSET.x, OFFSET.y, 0));
+            Assert.IsTrue(_persistence.SaveZone(ZONE));
+
+            var root = OverlayLoader.ParseOverlay(TileOverlayPersistence.OverridePathForZone(ZONE));
+            var rows = root["terrains"] as System.Collections.Generic.List<object>;
+            Assert.IsNotNull(rows, "the terrains field must be a matrix");
+            Assert.AreEqual(h + 1, rows.Count, "h + 1 rows of vertices reach disk");
+            Assert.AreEqual(w + 1, (rows[0] as System.Collections.Generic.List<object>).Count,
+                "w + 1 columns of vertices reach disk");
+
+            var fresh = new TerrainMap();
+            OverlayLoader.ApplyTerrains(root, fresh, OFFSET.x, OFFSET.y);
+            Assert.AreEqual("bottom_left", fresh.GetTerrain(new Vector2Int(OFFSET.x, OFFSET.y)),
+                "the zone's own origin came back somewhere else — the matrix was truncated");
+            Assert.AreEqual("far_corner", fresh.GetTerrain(new Vector2Int(OFFSET.x + w, OFFSET.y + h)),
+                "the vertex on the zone's far corner did not survive the save");
+        }
+
+        [Test]
         public void SaveWithEmptyTerrainMap_DoesNotEmitField()
         {
             var ground = _grid.GetTilemap(TilemapLayerSetup.TilemapLayer.Ground);

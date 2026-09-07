@@ -296,8 +296,9 @@ namespace Valkur.Gameplay.TileEditor
         /// <summary>Mark all cells in the brush footprint anchored at <paramref name="anchor"/> (cursor cell = top-left, footprint extends right + down).</summary>
         private void AddCellsToBrushStroke(Vector3Int anchor)
         {
-            for (int dy = 0; dy < _state.BrushSize; dy++)
-                for (int dx = 0; dx < _state.BrushSize; dx++)
+            int size = _state.ActiveBrushSize;
+            for (int dy = 0; dy < size; dy++)
+                for (int dx = 0; dx < size; dx++)
                     _state.BrushStrokeCells.Add(new Vector3Int(anchor.x + dx, anchor.y - dy, 0));
         }
 
@@ -322,7 +323,7 @@ namespace Valkur.Gameplay.TileEditor
         {
             if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame())
             {
-                var (terrain, reason) = ResolveAutoBrushTerrain();
+                var (ruleset, terrain, reason) = ResolveAutoBrushTerrain();
                 if (string.IsNullOrEmpty(terrain))
                 {
                     _ui?.SetStatus(reason);
@@ -332,17 +333,17 @@ namespace Valkur.Gameplay.TileEditor
                 _state.BrushStrokeCells.Clear();
                 _state.SelectedCellPos = cellPos;
                 _undo.StartStroke(tilemap);
-                PaintAutoBrushFootprint(tilemap, cellPos, terrain);
+                PaintAutoBrushFootprint(tilemap, cellPos, terrain, ruleset, ResolveAutoBrushSheet(ruleset));
                 AddCellsToBrushStroke(cellPos);
                 _state.IsDragging = true;
             }
             else if (Valkur.Core.Input.MouseInputManager.IsLeftMouseButtonPressed() && _state.IsDragging)
             {
-                var (terrain, _) = ResolveAutoBrushTerrain();
+                var (ruleset, terrain, _) = ResolveAutoBrushTerrain();
                 if (!string.IsNullOrEmpty(terrain))
                 {
                     _state.SelectedCellPos = cellPos;
-                    PaintAutoBrushFootprint(tilemap, cellPos, terrain);
+                    PaintAutoBrushFootprint(tilemap, cellPos, terrain, ruleset, ResolveAutoBrushSheet(ruleset));
                     AddCellsToBrushStroke(cellPos);
                 }
             }
@@ -369,15 +370,22 @@ namespace Valkur.Gameplay.TileEditor
         /// <c>TerrainMap</c> and the visual tilemap disagreeing the moment Ctrl+Z fires,
         /// and that mismatch is exactly what gets written to the .overlay.json next.
         /// </summary>
-        private void PaintAutoBrushFootprint(Tilemap tilemap, Vector3Int cursorCell, string terrain)
+        private void PaintAutoBrushFootprint(
+            Tilemap tilemap, Vector3Int cursorCell, string terrain, TilesetRuleset ruleset,
+            AutoTileSheetFilter filter)
         {
             var catalog = TerrainCatalogLoader.Load();
             if (catalog == null) return; // already explained on press; nothing to do mid-drag
 
-            int size = _state.BrushSize;
+            int size = _state.AutoBrushSize;
             var rect = new BoundsInt(cursorCell.x, cursorCell.y - (size - 1), 0, size, size, 1);
-            var (edits, metadataEdits) = TerrainPainter.PaintRegion(
-                tilemap, rect, terrain, catalog, TerrainMap, CanEditCell);
+
+            // AUTO ANALYSES rather than stamps: it reads the tiles already under the
+            // footprint, recovers what terrain each of their corners stands for, and
+            // re-resolves so the seam between them is drawn. The selected tile's terrain
+            // only breaks ties, which is how the author steers which way a boundary leans.
+            var (edits, metadataEdits) = TerrainPainter.ConnectRegion(
+                tilemap, rect, ruleset, tileCatalog, TerrainMap, terrain, CanEditCell, filter);
 
             _undo.RecordEdits(edits);
             _undo.RecordMetadataEdits(metadataEdits);
@@ -405,31 +413,70 @@ namespace Valkur.Gameplay.TileEditor
         /// pack whose primary terrain has no separate base ruleset registered would
         /// otherwise look fine here and then paint nothing on every single stroke).
         /// </summary>
-        private (string Terrain, string Reason) ResolveAutoBrushTerrain()
+        /// <summary>
+        /// The sheet every cell of an AUTO stroke resolves from: the picker category of the
+        /// tile the author picked. A pack merged from several sheets otherwise scatters all
+        /// of them across one stroke — measured on grass_rock, seven different arts cell by
+        /// cell. Null when the tile belongs to no category, which restores the unfiltered
+        /// behaviour rather than refusing the stroke.
+        /// </summary>
+        internal AutoTileSheetFilter ResolveAutoBrushSheet(TilesetRuleset pack = null)
         {
-            if (string.IsNullOrEmpty(_state.SelectedCategory))
-                return (null, TileEditorConstants.NoTileSelectedHint);
+            var sprite = (_state.SelectedTile as Tile)?.sprite;
+            if (ReferenceEquals(sprite, _autoCacheSprite) && ReferenceEquals(pack, _autoCachePack))
+                return _autoCacheFilter;
 
+            _autoCacheFilter = AutoTileSheetFilter.ForSprite(tileCatalog, sprite, pack);
+            _autoCacheSprite = sprite;
+            _autoCachePack = pack;
+            return _autoCacheFilter;
+        }
+
+        // ── One-entry memo for the two AUTO lookups ─────────────────────────
+        //
+        // Both walk the picker catalog, which is 3,765 entries on the shipped project, and
+        // both are called on mouse-down AND on every frame of a drag — measured at 1.1 ms a
+        // call, so a stroke was paying over 2 ms per frame to re-derive an answer that cannot
+        // change while the author holds the button. A stroke uses ONE tile, so a single-entry
+        // memo removes all of it. Keyed on the sprite and the pack by REFERENCE, and the
+        // terrain memo also on the catalog instance, so a ruleset re-import (which hands back
+        // a different TerrainCatalog through TerrainCatalogLoader) is a miss rather than a
+        // stale answer.
+        private Sprite _autoCacheSprite;
+        private TilesetRuleset _autoCachePack;
+        private AutoTileSheetFilter _autoCacheFilter;
+
+        private Sprite _autoTerrainCacheSprite;
+        private TerrainCatalog _autoTerrainCacheCatalog;
+        private (TilesetRuleset Ruleset, string Terrain, string Reason) _autoTerrainCache;
+        private bool _autoTerrainCacheValid;
+
+        private (TilesetRuleset Ruleset, string Terrain, string Reason) ResolveAutoBrushTerrain()
+        {
             var catalog = TerrainCatalogLoader.Load();
             if (catalog == null)
-                return (null, "No TerrainCatalog found in Resources/. Configure tilesets first.");
+                return (null, null, "No TerrainCatalog found in Resources/. Configure tilesets first.");
 
-            string primary = null;
-            var rulesets = catalog.Rulesets;
-            for (int i = 0; i < rulesets.Count; i++)
-            {
-                var r = rulesets[i];
-                if (r != null && r.FolderName == _state.SelectedCategory)
-                {
-                    primary = r.TerrainPrimary;
-                    break;
-                }
-            }
+            var sprite = (_state.SelectedTile as Tile)?.sprite;
+            if (sprite == null)
+                return (null, null, TileEditorConstants.NoTileSelectedHint);
 
-            if (string.IsNullOrEmpty(primary) || catalog.FindPaintRuleset(primary) == null)
-                return (null, TileEditorConstants.NoRulesetForCategoryHint);
+            if (_autoTerrainCacheValid &&
+                ReferenceEquals(sprite, _autoTerrainCacheSprite) &&
+                ReferenceEquals(catalog, _autoTerrainCacheCatalog))
+                return _autoTerrainCache;
 
-            return (primary, null);
+            var (ruleset, slot) = AutoBrushPackLookup.FindPackAndSlot(catalog, sprite, tileCatalog);
+            string terrain = ruleset == null ? null : AutoBrushPackLookup.TerrainForSlot(ruleset, slot);
+            var answer = string.IsNullOrEmpty(terrain)
+                ? (null, null, TileEditorConstants.NoRulesetForCategoryHint)
+                : (ruleset, terrain, (string)null);
+
+            _autoTerrainCache = answer;
+            _autoTerrainCacheSprite = sprite;
+            _autoTerrainCacheCatalog = catalog;
+            _autoTerrainCacheValid = true;
+            return answer;
         }
 
     }

@@ -44,16 +44,27 @@ namespace Valkur.Gameplay.TileEditor
             RefreshClipboardButtons();
         }
 
+        /// <summary>
+        /// Repaints the AUTO checkbox from the editor's STATE. Needed because the state can
+        /// change without a click — the workspace restores AutoBrushMode on open — and a
+        /// checkbox that only its own click can repaint then advertises the wrong mode.
+        /// </summary>
+        public void RefreshAutoToggle()
+        {
+            TileEditorUIBuilder.ApplyAutoToggleVisual(
+                _refs.AutoToggleBox, _refs.AutoToggleLabel, _state != null && _state.AutoBrushMode);
+        }
+
         public void RefreshBrushSizeLabel()
         {
             if (_refs.BrushSizeLabel != null)
-                _refs.BrushSizeLabel.text = $"{_state.BrushSize}x{_state.BrushSize}";
+                _refs.BrushSizeLabel.text = $"{_state.ActiveBrushSize}x{_state.ActiveBrushSize}";
 
             // Sync the slider when the brush size changed from somewhere else
             // (menu-bar −/+, hotkeys). SetValueWithoutNotify avoids re-firing the
             // onValueChanged callback that would re-enter OnBrushSizeChanged.
             if (_refs.BrushSizeSlider != null)
-                _refs.BrushSizeSlider.SetValueWithoutNotify(_state.BrushSize);
+                _refs.BrushSizeSlider.SetValueWithoutNotify(_state.ActiveBrushSize);
         }
 
         /// <summary>

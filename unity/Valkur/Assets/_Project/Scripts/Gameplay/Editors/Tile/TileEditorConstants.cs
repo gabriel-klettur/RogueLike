@@ -12,6 +12,17 @@ namespace Valkur.Gameplay.TileEditor
         public const int MaxBrushSize = 25;
 
         /// <summary>
+        /// Footprint the AUTO brush forces when it is switched on.
+        ///
+        /// <para>A corner tile's four corners are VERTICES, each shared by four cells, so
+        /// with a 1x1 stroke every corner of the cell the author just painted still
+        /// depends on three cells they did not. 2x2 is the smallest footprint whose unit
+        /// of action matches the model's unit of decision, which is why it is a constant
+        /// rather than a default the author is left to discover.</para>
+        /// </summary>
+        public const int AutoBrushSize = 2;
+
+        /// <summary>
         /// Shown when Brush or Fill is clicked with no tile picked. Both tools
         /// used to return silently in that state, which reads as "the editor is
         /// broken" rather than "you have not chosen what to paint yet".

@@ -156,7 +156,7 @@ namespace Valkur.Gameplay.TileEditor
 
             BuildSelectedTilePreview(col.transform, ref refs);
             BuildConfigureRow(col.transform, ref refs);
-            BuildAutoToggleRow(col.transform);
+            BuildAutoToggleRow(col.transform, ref refs);
         }
 
         private static void BuildTopRowRightColumn(Transform parent, ref UIRefs refs)
@@ -417,15 +417,16 @@ namespace Valkur.Gameplay.TileEditor
         /// AUTO paints the TERRAIN of the selected tile's pack, which needs that
         /// pack's ruleset to resolve a variant.
         ///
-        /// Self-contained on purpose — the box/label refs are captured directly by
-        /// the click closure below instead of being threaded through
-        /// <see cref="UIRefs"/>, because nothing outside this row ever needs to read
-        /// or repaint it. <see cref="TileEditorManager.OnAutoBrushToggleClicked"/>
-        /// (Instance, singleton — same pattern as <c>BuildTerrainChip</c>'s
-        /// <c>SelectTerrain</c> call below) flips the state and returns the new
-        /// value so the repaint happens right here, synchronously with the click.
+        /// The box and label ARE threaded through <see cref="UIRefs"/>, and used not to be.
+        /// The row was self-contained on the reasoning that nothing outside it ever needs to
+        /// repaint the checkbox — but the workspace restores <c>AutoBrushMode</c> with nobody
+        /// clicking anything, so on reopening with AUTO saved ON the box was drawn in its
+        /// build-time OFF colours while the brush really was in AUTO. The author then sees a
+        /// control that disagrees with the tool they are holding, and every downstream symptom
+        /// (a footprint that is not the one the label shows, a stroke that paints terrain
+        /// instead of the picked tile) reads as a separate bug.
         /// </summary>
-        private static void BuildAutoToggleRow(Transform parent)
+        private static void BuildAutoToggleRow(Transform parent, ref UIRefs refs)
         {
             var row = CreateUI("AutoToggleRow", parent);
             var rowLe = row.AddComponent<LayoutElement>();
@@ -461,7 +462,6 @@ namespace Valkur.Gameplay.TileEditor
             boxLe.flexibleWidth   = 0f;
             boxLe.flexibleHeight  = 0f;
             var boxImg = boxGo.AddComponent<Image>();
-            boxImg.color = SLOT_BG;
             var boxOutline = boxGo.AddComponent<Outline>();
             boxOutline.effectColor = TEXT_MUTED;
             boxOutline.effectDistance = new Vector2(1f, 1f);
@@ -472,9 +472,18 @@ namespace Valkur.Gameplay.TileEditor
             labelTmp.text = "AUTO";
             labelTmp.fontSize = 11f;
             labelTmp.fontStyle = FontStyles.Bold;
-            labelTmp.color = TEXT_SECONDARY;
             labelTmp.alignment = TextAlignmentOptions.Left;
             labelTmp.raycastTarget = false;
+
+            refs.AutoToggleBox = boxImg;
+            refs.AutoToggleLabel = labelTmp;
+            // Built from the STATE, not from a constant: the editor can already be in AUTO
+            // by the time this row exists — the workspace restores the flag on open. Read
+            // through the singleton like the click closure below, since neither this method
+            // nor its callers carry the state. TileEditorUI.RefreshAutoToggle repaints it
+            // afterwards for the case where the restore lands after the build.
+            ApplyAutoToggleVisual(boxImg, labelTmp,
+                TileEditorManager.HasInstance && TileEditorManager.Instance.State.AutoBrushMode);
 
             btn.onClick.AddListener(() =>
             {
@@ -485,7 +494,7 @@ namespace Valkur.Gameplay.TileEditor
         }
 
         /// <summary>Repaints the AUTO checkbox's box fill + label colour to reflect ON/OFF.</summary>
-        private static void ApplyAutoToggleVisual(Image box, TextMeshProUGUI label, bool on)
+        internal static void ApplyAutoToggleVisual(Image box, TextMeshProUGUI label, bool on)
         {
             if (box != null)   box.color   = on ? ACCENT : SLOT_BG;
             if (label != null) label.color = on ? ACCENT : TEXT_SECONDARY;

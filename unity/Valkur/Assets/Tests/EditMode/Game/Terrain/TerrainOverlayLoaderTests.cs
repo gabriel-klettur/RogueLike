@@ -114,17 +114,24 @@ namespace Valkur.Tests.EditMode.Game.Terrain
             src.SetTerrain(new Vector2Int(0, 0), "dirt");   // bottom-left
             // bottom-right left empty
 
+            // Emit the matrix AT ITS OWN DIMENSIONS, exactly as the production serializer's
+            // AppendMetadataMatrix does. Bounding this loop by the zone's cell count instead is
+            // the defect that shipped: BuildMatrix spans (w+1) x (h+1) vertices, so a w x h
+            // writer truncates the LAST row — which, with row 0 as the top, is the BOTTOM one —
+            // and the reader, which does take the matrix's own row count, then places every
+            // remaining row one tile too high.
             var matrix = src.BuildMatrix(0, 0, 2, 2);
+            int rows = matrix.GetLength(0), cols = matrix.GetLength(1);
             string json = "{\n  \"layers\": {},\n  \"terrains\": [\n";
-            for (int row = 0; row < 2; row++)
+            for (int row = 0; row < rows; row++)
             {
                 json += "    [";
-                for (int col = 0; col < 2; col++)
+                for (int col = 0; col < cols; col++)
                 {
                     if (col > 0) json += ", ";
                     json += "\"" + (matrix[row, col] ?? "") + "\"";
                 }
-                json += row == 1 ? "]\n" : "],\n";
+                json += row == rows - 1 ? "]\n" : "],\n";
             }
             json += "  ]\n}";
             File.WriteAllText(_tempPath, json);

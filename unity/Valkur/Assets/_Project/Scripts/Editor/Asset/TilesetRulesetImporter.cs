@@ -53,7 +53,8 @@ namespace Valkur.Editor
     ///
     /// <para>
     /// <b>All-or-nothing per pack.</b> If even one listed sprite fails to resolve under
-    /// its <c>Resources/Tiles/&lt;pack&gt;/</c> folder, the whole pack is aborted and
+    /// its <c>Resources/Tiles/&lt;pack&gt;/</c> folder — or under any folder the pack's
+    /// <c>sheetFolders</c> array names — the whole pack is aborted and
     /// nothing is written for it — a half-written slot table reads in-game as a missing
     /// tile in exactly the configuration an author is trying to paint, which looks like
     /// a bug rather than an incomplete import.
@@ -244,6 +245,9 @@ namespace Valkur.Editor
                 return false;
             }
 
+            if (!TryResolveSearchFolders(packData, packFolder, out string[] searchFolders, out error))
+                return false;
+
             var slotVariants = new Dictionary<byte, Sprite[]>(SLOT_COUNT);
             var missingSprites = new List<string>();
 
@@ -272,7 +276,7 @@ namespace Valkur.Editor
                 for (int i = 0; i < spriteNames.Count; i++)
                 {
                     string spriteName = spriteNames[i] as string;
-                    Sprite sprite = string.IsNullOrEmpty(spriteName) ? null : FindSpriteInFolder(packFolder, spriteName);
+                    Sprite sprite = string.IsNullOrEmpty(spriteName) ? null : FindSpriteInFolders(searchFolders, spriteName);
                     if (sprite == null)
                         missingSprites.Add($"slot {slotKv.Key}: '{spriteName ?? "<null>"}'");
                     else
@@ -284,7 +288,8 @@ namespace Valkur.Editor
 
             if (missingSprites.Count > 0)
             {
-                error = $"{missingSprites.Count} sprite(s) not found under '{packFolder}' (searched recursively) — " +
+                error = $"{missingSprites.Count} sprite(s) not found under " +
+                        $"{string.Join(" / ", searchFolders)} (searched recursively) — " +
                         string.Join("; ", missingSprites);
                 return false;
             }
@@ -328,13 +333,70 @@ namespace Valkur.Editor
         }
 
         /// <summary>
-        /// Looks up a sprite by exact file base-name, searched recursively under
-        /// <paramref name="folder"/> (packs keep a legacy "*_slices" subfolder whose
-        /// files are still valid variant sources).
+        /// Where this pack's sprites live: its own folder, plus any folder named in the
+        /// manifest's optional <c>sheetFolders</c> array.
+        ///
+        /// <para>A pack used to be exactly one folder, and that assumption is load-bearing
+        /// here in a way it is nowhere else — the search is SCOPED, so a sprite name that
+        /// exists in two packs cannot be taken from the wrong one. But a picker CATEGORY is
+        /// also a folder, and one tab per tileset puts a pack's sheets beside it at the Tiles
+        /// root rather than inside it. Declaring the folders keeps the scoping while letting
+        /// the two splits differ; a missing or empty array is the old behaviour exactly, so
+        /// every pack that never moved is untouched.</para>
+        ///
+        /// <para>A declared folder that does not exist is an ERROR rather than a skip. The
+        /// alternative is a pack that aborts later with 98 sprites not found, which names the
+        /// symptom instead of the typo.</para>
         /// </summary>
-        private static Sprite FindSpriteInFolder(string folder, string spriteName)
+        private static bool TryResolveSearchFolders(
+            Dictionary<string, object> packData, string packFolder, out string[] folders, out string error)
         {
-            foreach (string guid in AssetDatabase.FindAssets($"{spriteName} t:Sprite", new[] { folder }))
+            error = null;
+            folders = new[] { packFolder };
+
+            if (!packData.TryGetValue("sheetFolders", out object sheetFoldersObj) || sheetFoldersObj == null)
+                return true;
+
+            if (!(sheetFoldersObj is List<object> declared))
+            {
+                error = "'sheetFolders' is present but is not a JSON array.";
+                return false;
+            }
+
+            var resolved = new List<string> { packFolder };
+            var missing = new List<string>();
+            foreach (object entry in declared)
+            {
+                if (!(entry is string name) || string.IsNullOrWhiteSpace(name))
+                {
+                    error = "'sheetFolders' holds an entry that is not a non-empty string.";
+                    return false;
+                }
+
+                string folder = $"{TILES_ROOT}/{name}";
+                if (!AssetDatabase.IsValidFolder(folder)) missing.Add(name);
+                else if (!resolved.Contains(folder)) resolved.Add(folder);
+            }
+
+            if (missing.Count > 0)
+            {
+                error = $"'sheetFolders' names {missing.Count} folder(s) that do not exist under " +
+                        $"Resources/Tiles/: {string.Join(", ", missing)}.";
+                return false;
+            }
+
+            folders = resolved.ToArray();
+            return true;
+        }
+
+        /// <summary>
+        /// Looks up a sprite by exact file base-name, searched recursively under each of
+        /// <paramref name="folders"/> (a pack folder may still keep a legacy "*_slices"
+        /// subfolder whose files are valid variant sources).
+        /// </summary>
+        private static Sprite FindSpriteInFolders(string[] folders, string spriteName)
+        {
+            foreach (string guid in AssetDatabase.FindAssets($"{spriteName} t:Sprite", folders))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 if (!string.Equals(Path.GetFileNameWithoutExtension(path), spriteName, StringComparison.Ordinal))
