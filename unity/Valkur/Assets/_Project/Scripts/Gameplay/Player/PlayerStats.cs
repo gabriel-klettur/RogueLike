@@ -49,6 +49,27 @@ namespace Valkur.Gameplay
         private bool _dirty = true;
 
         /// <summary>
+        /// Whether any base has been AUTHORED yet — by <see cref="ApplyClassBase"/> in the
+        /// game, or by <see cref="SetBase"/> in a test. Until one has, every base is its
+        /// NEUTRAL value and pushing those into the live components writes a character
+        /// nobody authored — a max mana of 0, a move speed of 0, no melee damage.
+        ///
+        /// This exists because that push is not merely wasted: for mana it is
+        /// UNRECOVERABLE. <c>Health.SetMaxHp</c> floors its argument at 1, so a neutral
+        /// push cannot empty the HP pool; <c>Mana.SetMaxMana</c> accepts 0, which is
+        /// correct in isolation for a class that has no mana. The push used to be guarded
+        /// by <c>_mana.MaxMana &gt; 0</c> — the VALUE standing in for "has Initialize
+        /// run" — so once a neutral push had zeroed the pool, every later recompute was
+        /// skipped by that same guard and the class's real number never arrived. Measured
+        /// on the shipped game: the dwarf spawned with Mana 0/0 and regen 0 while
+        /// PlayerStats resolved MaxMana 35, and no player class could cast at all.
+        ///
+        /// A state flag rather than a value test is the whole fix: neither half above is
+        /// wrong on its own, and only the composition is.
+        /// </summary>
+        private bool _basesSeeded;
+
+        /// <summary>
         /// Fires after a recompute has been pushed to the live components. Carries no
         /// payload on purpose: a listener that cares about one stat should read it, and
         /// a listener that redraws a sheet needs all of them anyway.
@@ -72,6 +93,11 @@ namespace Valkur.Gameplay
         /// </summary>
         public void SetBase(StatKind stat, float value)
         {
+            // Authoring one base counts as seeding, exactly as ApplyClassBase does. The
+            // state the gate exists to refuse is bases NOBODY has written — where a push
+            // would write neutral values into the live components — not bases written one
+            // at a time. Tests seed this way; EntitySetup seeds through ApplyClassBase.
+            _basesSeeded = true;
             _base[(int)stat] = value;
             _dirty = true;
         }
@@ -86,6 +112,11 @@ namespace Valkur.Gameplay
         /// </summary>
         public void ApplyClassBase(PlayerDefinition def)
         {
+            // Set BEFORE the recompute at the end of this method, so the push it triggers
+            // is the first one that reaches the components — and the one that carries the
+            // class's real numbers.
+            _basesSeeded = true;
+
             for (int i = 0; i < StatCount; i++)
                 _base[i] = StatCatalog.NeutralBase(StatCatalog.All[i]);
 

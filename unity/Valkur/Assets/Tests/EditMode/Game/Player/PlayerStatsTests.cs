@@ -233,21 +233,55 @@ namespace Valkur.Tests.EditMode.Game.Player
         }
 
         [Test]
-        public void PushIsRefused_WhenTheTargetComponentHasAZeroPool()
+        public void PushIsRefused_UntilABaseHasBeenAuthored()
         {
-            // The guard is `MaxHp > 0`, and it protects against the one state that means
-            // "nothing has configured this yet". Note it does NOT trigger on a freshly added
-            // Health: the serialized field defaults to 100, so an un-Initialize()d component
-            // looks configured. What actually guarantees the class definition wins is the
-            // ORDER in EntitySetup — progression is installed last, after InitHealth — and
-            // this guard is the backstop for a component that really is at zero.
+            // The state worth refusing is bases NOBODY has written. Until then every base is
+            // its neutral value, and pushing those seats a character no designer authored.
+            //
+            // This replaces a test that pinned the previous guard, `MaxHp > 0` — a VALUE
+            // standing in for "has this component been configured". That proxy could not
+            // tell an uninitialised pool from a legitimately empty one, and its own comment
+            // conceded the first half was unreachable anyway (Health's serialized field
+            // defaults to 100, so a freshly added component already looks configured). The
+            // half that was reachable is the one that shipped the bug: see
+            // ManaPoolIsRepaired_AfterANeutralPushEmptiedIt below.
             var health = _go.AddComponent<Health>();
-            health.Initialize(0, 0);
-            _stats.SetBase(StatKind.MaxHp, 250f);
+            var mana = _go.AddComponent<Mana>();
+            health.Initialize(100);
+            mana.Initialize(60);
+
+            _stats.SetLayer(StatLayer.Equipment, Mods(StatModifier.Flat(StatKind.MaxHp, 40f)));
             _stats.ForcePush();
 
-            Assert.AreEqual(0, health.MaxHp,
-                "PlayerStats must not seat a max into a component that has none.");
+            Assert.AreEqual(100, health.MaxHp,
+                "A layer alone must not push: with no base authored the resolved MaxHp is " +
+                "the neutral 0 plus the layer, which is not a character anyone asked for.");
+            Assert.AreEqual(60, mana.MaxMana,
+                "And the mana pool must still be the one Initialize seated.");
+        }
+
+        [Test]
+        public void ManaPoolIsRepaired_AfterANeutralPushEmptiedIt()
+        {
+            // The regression. Health.SetMaxHp floors its argument at 1, so a push carrying
+            // unseeded bases cannot empty the HP pool; Mana.SetMaxMana accepts 0, which is
+            // correct on its own — a class with no mana is a legitimate thing to author.
+            // Paired with a `MaxMana > 0` push guard those two made an unrecoverable state:
+            // the pool went to 0 and every later recompute was then skipped by the very
+            // guard that had just been satisfied. Measured in the shipped game, every player
+            // class spawned with Mana 0/0 and could not cast at all.
+            var mana = _go.AddComponent<Mana>();
+            mana.Initialize(0, 0f);
+            Assert.AreEqual(0, mana.MaxMana, "Sanity: the pool starts empty.");
+
+            _stats.SetBase(StatKind.MaxMana, 95f);
+            _stats.SetBase(StatKind.ManaRegen, 1f);
+            _stats.ForcePush();
+
+            Assert.AreEqual(95, mana.MaxMana,
+                "An empty pool must be repairable — that is the whole difference between " +
+                "a state flag and a value test.");
+            Assert.AreEqual(1f, mana.RegenPerSecond, 0.001f);
         }
     }
 }

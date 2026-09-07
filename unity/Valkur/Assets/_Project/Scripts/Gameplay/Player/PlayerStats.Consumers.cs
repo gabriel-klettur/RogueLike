@@ -68,16 +68,31 @@ namespace Valkur.Gameplay
         {
             ResolveComponents();
 
-            // A component whose Initialize has not run yet has maxHp 0. Pushing into it
-            // would seat a max before the class definition does, so the spawn order would
-            // silently decide the character's hit points.
-            if (_health != null && _health.MaxHp > 0)
+            // Nothing is pushed until a base has actually been authored. Before that every
+            // base is its NEUTRAL value, and writing those into the live components does not
+            // merely waste a pass — for mana it is unrecoverable. See the note on
+            // PlayerStats._basesSeeded for the measurement; the short version is that
+            // Health.SetMaxHp floors at 1 while Mana.SetMaxMana correctly accepts 0 (a class
+            // with no mana is a legitimate thing to author), so a neutral push emptied the
+            // mana pool and the old MaxMana > 0 guard below then latched it shut forever.
+            if (!_basesSeeded) return;
+
+            // The guard these two used to carry was `MaxHp > 0` / `MaxMana > 0`, standing in
+            // for "has Initialize run yet" so that spawn order could not silently decide the
+            // character's pools. The intent was right and the proxy was not: a VALUE cannot
+            // distinguish an uninitialised pool from a legitimately empty one, so the test
+            // is unfalsifiable from outside — and for mana it was self-latching, since a pool
+            // this push had zeroed could never be pushed to again. `_basesSeeded` answers the
+            // question the comment was actually asking, and answers it about the right
+            // object: what must have happened first is the class seeding, not the component's
+            // own Initialize.
+            if (_health != null)
             {
                 _health.SetMaxHp(GetInt(StatKind.MaxHp));
                 _health.SetDefense(GetInt(StatKind.Defense));
             }
 
-            if (_mana != null && _mana.MaxMana > 0)
+            if (_mana != null)
             {
                 _mana.SetMaxMana(GetInt(StatKind.MaxMana));
                 _mana.SetRegenPerSecond(Get(StatKind.ManaRegen));
