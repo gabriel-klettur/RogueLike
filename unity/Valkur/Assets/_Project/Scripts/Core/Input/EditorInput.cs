@@ -34,13 +34,13 @@ namespace Valkur.Core.Input
         // ── Shared verbs ─────────────────────────────────────────────────────
 
         /// <summary>Ctrl+Z. The Ctrl half is a held modifier, not part of the binding.</summary>
-        public static bool UndoPressed() => WithCtrl("Undo");
+        public static bool UndoPressed() => Shared("Undo");
 
         /// <summary>Ctrl+Y.</summary>
-        public static bool RedoPressed() => WithCtrl("Redo");
+        public static bool RedoPressed() => Shared("Redo");
 
         /// <summary>Ctrl+S.</summary>
-        public static bool SavePressed() => WithCtrl("Save");
+        public static bool SavePressed() => Shared("Save");
 
         /// <summary>The editor's own close. Escape by default, and it stays on
         /// <see cref="InputBlocker"/>'s always-allowed list whatever it is bound to.</summary>
@@ -76,14 +76,28 @@ namespace Valkur.Core.Input
         {
             var descriptor = InputActionCatalog.Find(map, action);
             if (!InputContextPolicy.IsLive(descriptor)) return false;
+            if (KeyboardInputManager.IsCtrlHeld()) return false;   // see ToolHeld
+
             return InputBindingResolver.WasPerformedThisFrame(Resolve(map, action));
         }
 
-        /// <summary>The held form of <see cref="Tool"/>.</summary>
+        /// <summary>
+        /// The held form of <see cref="Tool"/>.
+        ///
+        /// <para>BOTH REFUSE WHILE CTRL IS HELD, and that is not tidiness. Every shared
+        /// shortcut in this project is Ctrl+key with the Ctrl living in C# rather than in the
+        /// binding, and no editor tool is — so a bare key and a Ctrl+key were competing for
+        /// the same press. Measured on the shipped asset: <c>EditorShared/Save</c> and
+        /// <c>Editor.Tile/ToolSelect</c> are both on <c>s</c>, so Ctrl+S in the Tile editor
+        /// saved the map AND switched the active tool to Select, every time, in silence.
+        /// Ruling it out here rather than per tool means the next editor cannot reintroduce
+        /// it, and it costs nothing a tool could want: a tool is a bare key by construction.</para>
+        /// </summary>
         public static bool ToolHeld(string map, string action)
         {
             var descriptor = InputActionCatalog.Find(map, action);
             if (!InputContextPolicy.IsLive(descriptor)) return false;
+            if (KeyboardInputManager.IsCtrlHeld()) return false;
             return InputBindingResolver.IsPressed(Resolve(map, action));
         }
 
@@ -96,10 +110,21 @@ namespace Valkur.Core.Input
             return m?.FindAction(action, throwIfNotFound: false);
         }
 
+        /// <summary>
+        /// Is this shared verb answerable right now — the right context, and the right
+        /// modifier state?
+        ///
+        /// <para>The Ctrl half comes from the DESCRIPTOR rather than from a list here. It used
+        /// to be a private <c>WithCtrl</c> wrapper naming undo, redo and save, which meant the
+        /// conflict scanner had no way to know that <c>EditorShared/Save</c> and
+        /// <c>Editor.Tile/ToolSelect</c> — both on <c>s</c> — are told apart by a modifier.
+        /// One fact, one place.</para>
+        /// </summary>
         private static bool Live(string action)
         {
             var descriptor = InputActionCatalog.Find(InputActionCatalog.MapEditorShared, action);
-            return InputContextPolicy.IsLive(descriptor);
+            if (!InputContextPolicy.IsLive(descriptor)) return false;
+            return descriptor.RequiresCtrl == KeyboardInputManager.IsCtrlHeld();
         }
 
         private static bool Shared(string action) =>
@@ -118,12 +143,5 @@ namespace Valkur.Core.Input
             InputBindingResolver.WasReleasedThisFrame(
                 Resolve(InputActionCatalog.MapEditorShared, action));
 
-        /// <summary>
-        /// A shortcut whose key is data and whose Ctrl is not. Ten editors read
-        /// <c>IsCtrlHeld()</c> for gestures that are not shortcuts, so the modifier is asked
-        /// separately rather than folded into a composite binding nobody could then reuse.
-        /// </summary>
-        private static bool WithCtrl(string action) =>
-            KeyboardInputManager.IsCtrlHeld() && Shared(action);
     }
 }

@@ -61,13 +61,36 @@ namespace Valkur.Core.Input
         /// <summary>Prefix for an editor context. <c>editor/Tile</c>, <c>editor/Buildings</c>.</summary>
         public const string EditorPrefix = "editor/";
 
+        /// <summary>
+        /// "Any editor" — the context that carries the SHARED verbs and no editor's own tools.
+        ///
+        /// <para>It exists because twelve of the sixteen editors own no tools at all, so a tab
+        /// per editor showed twelve identical boards and buried the four that differ. This one
+        /// answers "what do select, zoom, undo, save and close do inside an editor", which is
+        /// the question those twelve were being asked. It needs no special case in
+        /// <see cref="InputContextPolicy.IsLive"/>: <see cref="EditorNameOf"/> returns "*",
+        /// which matches no <c>OwnerEditor</c>, so every owned tool falls out on its own.</para>
+        ///
+        /// <para>It is never <see cref="Current"/> — the live context always names the editor
+        /// that is actually open. This is a VIEW, and only the Controls editor uses it.</para>
+        /// </summary>
+        public const string EditorsAny = EditorPrefix + "*";
+
         /// <summary>Test-only override. Null means "ask the manager", which is what production
         /// always does.</summary>
         private static string _activeEditorOverride;
         private static bool _hasOverride;
 
-        /// <summary>Raised after <see cref="Current"/> changes. The Controls editor and any
-        /// prompt overlay listen; the gameplay loop does not.</summary>
+        /// <summary>
+        /// Raised after <see cref="Current"/> changes — which, in practice, only
+        /// <see cref="SetActiveEditorOverride"/> does, because <see cref="Current"/> is COMPUTED
+        /// from the editor registry and the posture rather than pushed.
+        ///
+        /// <para>It has NO subscribers, and the comment used to claim two. Kept because the
+        /// test override raises it and a future prompt overlay is the obvious caller; what it
+        /// must not do is name readers it does not have. Anything that needs the live context
+        /// today asks <see cref="Current"/>, which cannot go stale.</para>
+        /// </summary>
         public static event Action<string> OnChanged;
 
         /// <summary>The context id for an editor by its <c>EditorName</c>.</summary>
@@ -138,6 +161,7 @@ namespace Valkur.Core.Input
         {
             if (string.Equals(contextId, War, StringComparison.OrdinalIgnoreCase))   return "Guerra";
             if (string.Equals(contextId, Peace, StringComparison.OrdinalIgnoreCase)) return "Paz";
+            if (string.Equals(contextId, EditorsAny, StringComparison.Ordinal)) return "Editores";
             var editor = EditorNameOf(contextId);
             return editor ?? contextId ?? "";
         }

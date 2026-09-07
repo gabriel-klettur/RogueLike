@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.Linq;
 using UnityEngine;
@@ -317,36 +317,12 @@ namespace Valkur.Gameplay
             return null;
         }
 
-        private void Log(string msg)
-        {
-            _log.Add(msg);
-            while (_log.Count > LOG_MAX_LINES) _log.RemoveAt(0);
-        }
-
-        private void EnsureStyles()
-        {
-            if (_stylesBuilt) return;
-            _stylesBuilt = true;
-            _boxStyle = new GUIStyle(GUI.skin.box);
-            _boxStyle.normal.background = MakeTex(new Color(0.05f, 0.05f, 0.08f, 0.95f));
-            _labelStyle = new GUIStyle(GUI.skin.label);
-            _labelStyle.fontSize = 11;
-            _labelStyle.normal.textColor = new Color(0.85f, 0.95f, 0.85f);
-            _labelStyle.wordWrap = false;
-            _labelStyle.richText = false;
-            _inputStyle = new GUIStyle(GUI.skin.textField);
-            _inputStyle.fontSize = 12;
-            _inputStyle.normal.textColor = Color.white;
-        }
-
-        private static Texture2D MakeTex(Color col)
-        {
-            var tex = new Texture2D(2, 2);
-            tex.SetPixels(new[] { col, col, col, col });
-            tex.Apply();
-            tex.hideFlags = HideFlags.HideAndDontSave;
-            return tex;
-        }
+        /// <summary>
+        /// What every command prints. Kept as the one-argument method every command partial
+        /// already calls; the typing and the trimming live with the log itself now
+        /// (DevConsole.UI.Log.cs), so a command does not have to know a line has a kind.
+        /// </summary>
+        private void Log(string msg) => AppendLine(msg, ConsoleLineKind.Output);
 
         // ── Spell Debug Commands ──
 

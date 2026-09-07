@@ -380,7 +380,13 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             if (action == null)
                 Assert.Pass("Ships unbound and resolves to no action without InputService.");
 
-            Assert.AreEqual(0, action.bindings.Count,
+            // ONE binding slot, empty — not zero. ApplyBindingOverride writes into a
+            // slot and cannot create one, so a toggle with no binding was listed by
+            // the Controls editor and then refused the key the player tried to give it.
+            Assert.AreEqual(1, action.bindings.Count,
+                "The Map toggle needs exactly one binding slot, empty — with none it "
+                + "cannot be given a key from the Controls editor at all.");
+            Assert.IsEmpty(action.bindings[0].effectivePath,
                 "The Map toggle must ship unbound — F11 is free now.");
         }
 

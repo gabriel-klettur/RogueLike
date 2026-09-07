@@ -132,14 +132,20 @@ namespace Valkur.Tests.EditMode.Editors.Entities
 
             // The editor toggles ship UNBOUND: every runtime editor is reached from the
             // General Editor on Escape, and the F-row was the source of every same-map
-            // collision in the project. The action still EXISTS so the Controls editor can
-            // offer it and a player can assign a key — which is why this asserts "no
-            // bindings" rather than "no action". Reachability is pinned centrally by
-            // EditorEntryPointTests.EveryRetiredToggle_HasAGeneralEditorEntry.
+            // collision in the project. The action still EXISTS, with ONE binding whose path
+            // is empty, so the Controls editor can offer it and a player can assign a key —
+            // ApplyBindingOverride writes into a SLOT and cannot create one, so a toggle with
+            // zero bindings was listed by that panel and then refused. Reachability is pinned
+            // centrally by EditorEntryPointTests.EveryRetiredToggle_HasAGeneralEditorEntry.
             var action = (InputAction) GetFieldValue(ed, "_toggleAction");
             if (action != null)
-                Assert.AreEqual(0, action.bindings.Count,
+            {
+                Assert.AreEqual(1, action.bindings.Count,
+                    "The Entities toggle needs exactly one binding slot, empty — with none "
+                    + "it cannot be given a key from the Controls editor at all.");
+                Assert.IsEmpty(action.bindings[0].effectivePath,
                     "The Entities toggle must ship unbound — F5 is free now.");
+            }
         }
 
         [Test]

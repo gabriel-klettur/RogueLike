@@ -47,12 +47,26 @@ namespace Valkur.Tests.EditMode.Game.Bootstrap
 
         // ── The F-row is free ────────────────────────────────────────────────
 
+        /// <summary>
+        /// Each retired toggle ships with exactly ONE binding whose path is empty — not with no
+        /// binding at all, which is what it used to be and which made it unassignable.
+        ///
+        /// <para>The distinction is the whole feature. <c>ApplyBindingOverride</c> writes into a
+        /// binding SLOT; it cannot create one. So an action with zero bindings could be listed
+        /// by the Controls editor, could be clicked, and answered "no tiene ningun binding que
+        /// reasignar" — the panel offered fourteen controls that could not do the one thing the
+        /// panel is for, while CLAUDE.md, this fixture and the <c>editors</c> console command
+        /// all told the player that a key they wanted back could be put there. An empty-path
+        /// binding is the InputSystem's own representation of "unbound": <c>effectivePath</c> is
+        /// empty, the action resolves no controls, and an override can move it onto a real key
+        /// and be persisted by binding id like any other.</para>
+        /// </summary>
         [Test]
-        public void EveryEditorToggle_ShipsUnbound()
+        public void EveryEditorToggle_ShipsUnboundButAssignable()
         {
             var map = EditorsMap();
 
-            var stillBound = new List<string>();
+            var wrong = new List<string>();
             foreach (var name in RetiredToggles)
             {
                 var action = map.FindAction(name, throwIfNotFound: false);
@@ -60,13 +74,22 @@ namespace Valkur.Tests.EditMode.Game.Bootstrap
                     $"'{name}' must still EXIST — it ships unbound so the Controls editor can " +
                     "offer it, which deleting it would prevent.");
 
-                if (action.bindings.Count > 0)
-                    stillBound.Add($"{name} -> {string.Join(", ", action.bindings.Select(b => b.effectivePath))}");
+                int slots = action.bindings.Count(b => !b.isComposite);
+                if (slots != 1)
+                {
+                    wrong.Add($"{name} has {slots} bindable slots; it needs exactly one, empty.");
+                    continue;
+                }
+
+                var path = action.bindings.First(b => !b.isComposite).effectivePath;
+                if (!string.IsNullOrEmpty(path))
+                    wrong.Add($"{name} -> {path} (the F-row is meant to be free)");
             }
 
-            Assert.IsEmpty(stillBound,
-                "Editors are reached from the General Editor (Escape), not from the F-row:\n" +
-                string.Join("\n", stillBound));
+            Assert.IsEmpty(wrong,
+                "Editors are reached from the General Editor (Escape), not from the F-row — and " +
+                "a toggle with no binding slot cannot be given a key at all:" +
+                string.Join(" | ", wrong));
         }
 
         [Test]

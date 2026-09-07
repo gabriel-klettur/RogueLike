@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Core;
@@ -26,9 +25,6 @@ namespace Valkur.Gameplay
 
         /// <summary>Whether the dev console is currently visible.</summary>
         public bool IsOpen => _open;
-        private const float CONSOLE_WIDTH = 640f;
-        private const float CONSOLE_HEIGHT = 280f;
-        private const int LOG_MAX_LINES = 80;
 
         // ── Command history ────────────────────────────────────────────────────
         private readonly List<string> _commandHistory = new List<string>();
@@ -36,17 +32,9 @@ namespace Valkur.Gameplay
         private const int MAX_HISTORY = 50;
 
         private bool _open;
-        private string _inputBuffer = "";
-        private readonly List<string> _log = new List<string>();
-        private Vector2 _logScroll;
-        private bool _focusInput;
 
         private InputAction _toggleAction;
         private bool _ownsToggleAction;
-        private GUIStyle _boxStyle;
-        private GUIStyle _labelStyle;
-        private GUIStyle _inputStyle;
-        private bool _stylesBuilt;
         private bool _godMode;
 
         // ── Noclip state ───────────────────────────────────────────────────────
@@ -62,11 +50,16 @@ namespace Valkur.Gameplay
             _toggleAction = EditorHotkeyBindings.Resolve(
                 EditorHotkeyBindings.Hotkey.ToggleDevConsole, out _ownsToggleAction);
 
+            // Before RegisterDefaults, and not gated on the panel being open: an error that
+            // fires during boot is exactly the one worth having in the buffer by the time
+            // anybody thinks to press ~.
+            BeginCapturingEngineLogs();
             RegisterDefaults();
         }
 
         protected override void OnDestroy()
         {
+            StopCapturingEngineLogs();
             if (_ownsToggleAction) { _toggleAction?.Disable(); _toggleAction?.Dispose(); }
             base.OnDestroy();
         }
@@ -74,74 +67,145 @@ namespace Valkur.Gameplay
         private void Update()
         {
             if (EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleDevConsole))
-            {
-                bool wasOpen = _open;
-                _open = !_open;
-                if (_open)
-                {
-                    _focusInput = true;
-                    if (!wasOpen) OnOpened?.Invoke();
-                }
-                else
-                {
-                    OnClosed?.Invoke();
-                }
-            }
+                SetOpen(!_open);
 
             if (!_open) return;
 
-            // Arrow history navigation — handled in Update so IMGUI event timing
-            // does not steal the key from the text field on the wrong frame.
-            if (KeyboardInputManager.WasArrowUpPressedThisFrame())
-            {
-                if (_commandHistory.Count > 0)
-                {
-                    _historyCursor = Mathf.Min(_historyCursor + 1, _commandHistory.Count - 1);
-                    _inputBuffer = _commandHistory[_commandHistory.Count - 1 - _historyCursor];
-                    _focusInput = true;
-                }
-            }
-            else if (KeyboardInputManager.WasArrowDownPressedThisFrame())
-            {
-                if (_historyCursor > 0)
-                {
-                    _historyCursor--;
-                    _inputBuffer = _commandHistory[_commandHistory.Count - 1 - _historyCursor];
-                }
-                else
-                {
-                    _historyCursor = -1;
-                    _inputBuffer = "";
-                }
-                _focusInput = true;
-            }
+            PollPanelKeys();
+            RefreshLog(scrollToBottom: false);
+            TickLayoutPersistence();
+        }
 
-            // Tab autocomplete
-            if (KeyboardInputManager.WasTabPressedThisFrame() &&
-                !string.IsNullOrWhiteSpace(_inputBuffer))
-            {
-                _inputBuffer = TryAutocomplete(_inputBuffer);
-                _focusInput = true;
-            }
+        /// <summary>
+        /// The single owner of "is the console up". The panel, the open flag and the two
+        /// public events move together here and nowhere else — the IMGUI version flipped
+        /// <c>_open</c> in three places (the toggle, the click-outside branch in OnGUI, and
+        /// the toggle's own else-arm) and each raised the events slightly differently.
+        /// </summary>
+        private void SetOpen(bool open)
+        {
+            if (open == _open) return;
+            _open = open;
 
-            // Enter submits — executed directly here in Update() because IMGUI's
-            // TextField was eating the Return event in OnGUI even with the
-            // pending-flag indirection (Repaint pass never fired the consumer
-            // when the user expected). Same pattern Up/Down/Tab use above:
-            // detect via KeyboardInputManager (which polls both InputSystem
-            // backends) and mutate state immediately, before OnGUI runs.
-            // Enter submits — primary path, runs before any IMGUI control sees
-            // the key. OnGUI has a fallback path (intercept on KeyDown event)
-            // for cases where the InputSystem helper missed the press.
-            if (KeyboardInputManager.WasEnterPressedThisFrame())
+            if (open)
             {
-                SubmitInputBuffer();
+                ShowPanel();
+                OnOpened?.Invoke();
+            }
+            else
+            {
+                HidePanel();
+                OnClosed?.Invoke();
             }
         }
 
-        // Frame-guard to keep SubmitInputBuffer idempotent within a frame —
-        // both Update() and OnGUI's KeyDown intercept can call it on the same
-        // press; without this guard we'd execute the command twice.
+        // ------------------------------------------------------------------
+        // Keyboard
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// Tab, the arrows and Escape, read while the console itself is holding the input
+        /// block up.
+        ///
+        /// <para>This is where a long-standing silent defect was: opening the console raises
+        /// <see cref="InputBlocker"/> through ChatInputGate, and Tab / Up / Down are not on
+        /// the always-allowed list, so <see cref="KeyboardInputManager"/> refused them for
+        /// exactly as long as the panel was up. Autocomplete and history had no way to fire,
+        /// and a refused read logs nothing. They go through the explicit
+        /// block-ignoring read now, which is safe here for the one reason that matters: this
+        /// component is the one that raised the block.</para>
+        /// </summary>
+        private void PollPanelKeys()
+        {
+            if (KeyboardInputManager.WasEscapePressedThisFrame())
+            {
+                // Escape narrows before it closes: dismissing the popup is what the user
+                // means when the popup is the thing that is up.
+                if (SuggestionsVisible) { HideSuggestions(); return; }
+                SetOpen(false);
+                return;
+            }
+
+            // The search box is a text field too, and every key below belongs to the COMMAND
+            // line. Without this, typing a search term and pressing Enter runs whatever is
+            // sitting in the other box, and Tab pops an autocomplete list over a search.
+            if (SearchFieldFocused) return;
+
+            if (ConsoleKey(Key.UpArrow, KeyCode.UpArrow))
+            {
+                if (SuggestionsVisible) MoveSuggestion(-1);
+                else RecallHistory(1);
+            }
+            else if (ConsoleKey(Key.DownArrow, KeyCode.DownArrow))
+            {
+                if (SuggestionsVisible) MoveSuggestion(1);
+                else RecallHistory(-1);
+            }
+
+            if (ConsoleKey(Key.Tab, KeyCode.Tab))
+            {
+                if (SuggestionsVisible) AcceptSuggestion();
+                else RecomputeSuggestions(InputText);
+            }
+
+            // Enter is on the always-allowed list, so it needs no exemption. It is polled
+            // here as well as bound to the field's onSubmit because the InputSystem can drop
+            // the key event that would have reached the field; SubmitInputBuffer is
+            // idempotent per frame, so both paths firing is harmless.
+            if (KeyboardInputManager.WasEnterPressedThisFrame())
+                SubmitInputBuffer();
+        }
+
+        private static bool ConsoleKey(Key newKey, KeyCode legacyKey)
+            => KeyboardInputManager.WasKeyPressedThisFrameIgnoringBlock(newKey, legacyKey);
+
+        /// <summary>
+        /// Walks the command history. Positive is older, which is what Up means.
+        /// </summary>
+        private void RecallHistory(int direction)
+        {
+            if (_commandHistory.Count == 0) return;
+
+            if (direction > 0)
+            {
+                _historyCursor = Mathf.Min(_historyCursor + 1, _commandHistory.Count - 1);
+            }
+            else
+            {
+                _historyCursor--;
+                if (_historyCursor < 0)
+                {
+                    _historyCursor = -1;
+                    SetInputText(string.Empty);
+                    return;
+                }
+            }
+
+            SetInputText(_commandHistory[_commandHistory.Count - 1 - _historyCursor]);
+        }
+
+        // ------------------------------------------------------------------
+        // Input line
+        // ------------------------------------------------------------------
+
+        private string InputText => _inputField != null ? _inputField.text : string.Empty;
+
+        /// <summary>
+        /// Writes the input line WITHOUT notifying, then dismisses the popup by hand. The
+        /// change callback would rebuild the candidate list from text the console just put
+        /// there, which pops a list open over a line the user did not type.
+        /// </summary>
+        private void SetInputText(string text)
+        {
+            if (_inputField == null) return;
+            _inputField.SetTextWithoutNotify(text ?? string.Empty);
+            _inputField.caretPosition = _inputField.text.Length;
+            HideSuggestions();
+            FocusInput();
+        }
+
+        // Frame-guard: the Enter poll and the field's own onSubmit can both land on the same
+        // press, and without this the command would run twice.
         private int _lastSubmitFrame = -1;
 
         private void SubmitInputBuffer()
@@ -149,100 +213,12 @@ namespace Valkur.Gameplay
             if (_lastSubmitFrame == Time.frameCount) return;
             _lastSubmitFrame = Time.frameCount;
 
-            if (!string.IsNullOrWhiteSpace(_inputBuffer))
-            {
-                ExecuteCommand(_inputBuffer.Trim());
-            }
-            _inputBuffer = "";
-            _logScroll.y = float.MaxValue;
-            _focusInput = true;
-        }
+            string raw = InputText;
+            if (!string.IsNullOrWhiteSpace(raw))
+                ExecuteCommand(raw.Trim());
 
-        // ------------------------------------------------------------------
-        // IMGUI
-        // ------------------------------------------------------------------
-
-        private void OnGUI()
-        {
-            if (!_open) return;
-
-            EnsureStyles();
-
-            float x = (Screen.width - CONSOLE_WIDTH) * 0.5f;
-            float y = Screen.height - CONSOLE_HEIGHT - 8f;
-            var consoleRect = new Rect(x - 4f, y - 4f, CONSOLE_WIDTH + 8f, CONSOLE_HEIGHT + 8f);
-
-            // Modal click-outside: if the user clicks outside the console box,
-            // close it. Must run BEFORE the GUI controls so it doesn't consume
-            // events the input field / submit button rely on.
-            if (Event.current.type == EventType.MouseDown &&
-                !consoleRect.Contains(Event.current.mousePosition))
-            {
-                _open = false;
-                OnClosed?.Invoke();
-                Event.current.Use();
-                return;
-            }
-
-            GUI.Box(consoleRect, "", _boxStyle);
-
-            // Log area
-            float logH = CONSOLE_HEIGHT - 32f;
-            _logScroll = GUI.BeginScrollView(
-                new Rect(x, y, CONSOLE_WIDTH, logH),
-                _logScroll,
-                new Rect(0f, 0f, CONSOLE_WIDTH - 16f, Mathf.Max(logH, _log.Count * 16f)));
-
-            var sb = new StringBuilder();
-            for (int i = 0; i < _log.Count; i++)
-                sb.AppendLine(_log[i]);
-
-            GUI.Label(new Rect(4f, 4f, CONSOLE_WIDTH - 20f, Mathf.Max(logH, _log.Count * 16f)), sb.ToString(), _labelStyle);
-            GUI.EndScrollView();
-
-            // Input field
-            float inputY = y + logH + 4f;
-
-            // Fallback Enter intercept: if the InputSystem helper in Update()
-            // missed the press (Editor InputSystem hiccup, focus race, etc.),
-            // the IMGUI KeyDown event is still delivered here. Consume it
-            // BEFORE the TextField is drawn so the TextField doesn't process
-            // it first and swallow the event. SubmitInputBuffer is idempotent
-            // per frame, so calling it from both paths is safe.
-            bool enterFromImgui = false;
-            if (Event.current.type == EventType.KeyDown &&
-                (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter))
-            {
-                enterFromImgui = true;
-                Event.current.Use();
-            }
-
-            GUI.SetNextControlName("ConsoleInput");
-            _inputBuffer = GUI.TextField(new Rect(x, inputY, CONSOLE_WIDTH - 60f, 24f), _inputBuffer, _inputStyle);
-
-            if (enterFromImgui) SubmitInputBuffer();
-
-            // IMGUI focus must be requested AFTER the named control is laid out —
-            // calling GUI.FocusControl before the TextField is registered is a
-            // no-op. Keep the flag set until focus actually lands so the first
-            // OnGUI pass after open (which runs through Layout/Repaint events)
-            // is guaranteed to land focus by the next pass at the latest.
-            if (_focusInput)
-            {
-                GUI.FocusControl("ConsoleInput");
-                if (Event.current.type == EventType.Repaint &&
-                    GUI.GetNameOfFocusedControl() == "ConsoleInput")
-                {
-                    _focusInput = false;
-                }
-            }
-
-            // Submit button — Enter-key submission is handled in Update() above
-            // (see SubmitInputBuffer). This branch only covers a mouse click.
-            if (GUI.Button(new Rect(x + CONSOLE_WIDTH - 56f, inputY, 56f, 24f), "Submit"))
-            {
-                SubmitInputBuffer();
-            }
+            SetInputText(string.Empty);
+            RefreshLog(scrollToBottom: true);
         }
 
         // ------------------------------------------------------------------
@@ -261,7 +237,7 @@ namespace Valkur.Gameplay
 
         private void ExecuteCommand(string raw)
         {
-            Log($"> {raw}");
+            AppendLine($"> {raw}", ConsoleLineKind.Echo);
             PushHistory(raw);
 
             var parts = raw.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -297,75 +273,6 @@ namespace Valkur.Gameplay
         }
 
         // ------------------------------------------------------------------
-        // Tab autocomplete
-        // ------------------------------------------------------------------
-
-        private string TryAutocomplete(string input)
-        {
-            var tokens = input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if (tokens.Length == 0) return input;
-
-            // Completing the command name itself (first token, no space after it yet).
-            bool completingCommand = tokens.Length == 1 && !input.EndsWith(" ");
-            if (completingCommand)
-            {
-                string prefix = tokens[0].TrimStart('/');
-                var matches = new List<string>();
-                foreach (var kv in _commands)
-                    if (kv.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                        matches.Add(kv.Value.Name); // use canonical name
-                matches.Sort(StringComparer.OrdinalIgnoreCase);
-                // Deduplicate (aliases map to the same Name).
-                var deduped = new List<string>();
-                for (int i = 0; i < matches.Count; i++)
-                    if (deduped.Count == 0 || deduped[deduped.Count - 1] != matches[i])
-                        deduped.Add(matches[i]);
-
-                if (deduped.Count == 1) return deduped[0];
-                if (deduped.Count > 1)
-                {
-                    Log($"  Matches: {string.Join(", ", deduped)}");
-                    // Return the longest common prefix.
-                    return LongestCommonPrefix(deduped);
-                }
-                return input;
-            }
-
-            // Completing an argument — delegate to the resolved command's Completer.
-            string cmdName = tokens[0].TrimStart('/');
-            if (!TryResolve(cmdName, out var cmd) || cmd.Completer == null) return input;
-
-            var argMatches = cmd.Completer(tokens);
-            if (argMatches == null || argMatches.Length == 0) return input;
-            if (argMatches.Length == 1)
-            {
-                // Replace the last token with the match.
-                var rebuilt = new StringBuilder();
-                for (int i = 0; i < tokens.Length - 1; i++)
-                    rebuilt.Append(tokens[i]).Append(' ');
-                rebuilt.Append(argMatches[0]);
-                return rebuilt.ToString();
-            }
-            Log($"  Matches: {string.Join(", ", argMatches)}");
-            return input;
-        }
-
-        private static string LongestCommonPrefix(List<string> words)
-        {
-            if (words.Count == 0) return "";
-            string first = words[0];
-            int len = first.Length;
-            for (int i = 1; i < words.Count; i++)
-            {
-                len = Mathf.Min(len, words[i].Length);
-                for (int c = 0; c < len; c++)
-                    if (char.ToLower(first[c]) != char.ToLower(words[i][c]))
-                    { len = c; break; }
-            }
-            return first.Substring(0, len);
-        }
-
-        // ------------------------------------------------------------------
         // Default registration (called from OnSingletonAwake)
         // ------------------------------------------------------------------
 
@@ -398,7 +305,7 @@ namespace Valkur.Gameplay
                 Name = "clear",
                 Usage = "clear", Help = "clear the console log",
                 Category = "core",
-                Handler = _ => _log.Clear()
+                Handler = _ => ClearLog()
             });
 
             // ── cheats ────────────────────────────────────────────────────────
@@ -624,6 +531,7 @@ namespace Valkur.Gameplay
 
             // Re-read authored data into the live scene — see DevConsole.Commands.Reload.cs.
             RegisterReloadCommands();
+            RegisterAICommands();
             RegisterEditorCommands();
 
             // Placed-building rendering audit — see DevConsole.Commands.Buildings.cs.

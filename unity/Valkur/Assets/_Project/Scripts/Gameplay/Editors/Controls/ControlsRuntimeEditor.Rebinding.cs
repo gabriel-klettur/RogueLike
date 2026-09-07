@@ -16,68 +16,276 @@ namespace Valkur.Gameplay.Editors.Controls
     /// </summary>
     public partial class ControlsRuntimeEditor
     {
-        private readonly List<GameObject> _rows = new List<GameObject>();
+        private const float ROW_H       = 26f;
+        private const float CHIP_W      = 118f;
+        private const float SLOT_NAME_W = 66f;
+        private const float SUB_INDENT  = 20f;
+
+        /// <summary>
+        /// One realised row and everything filtering it needs, so a keystroke can HIDE rows
+        /// instead of destroying and rebuilding them.
+        ///
+        /// <para>That split is worth 213 ms per keystroke, measured. Every row carries up to
+        /// five buttons and seven TextMeshPro components, so building the sixty-three of them
+        /// costs about as much as opening the editor — and the shipped code paid it on every
+        /// character typed into the search box. Rows are built once per CONTEXT (a human-scale
+        /// event) and shown or hidden after that.</para>
+        /// </summary>
+        private sealed class RowEntry
+        {
+            public GameObject Go;
+            public string ActionId;
+
+            /// <summary>True for a per-slot row, which is additionally gated on its action
+            /// being expanded.</summary>
+            public bool IsSlotRow;
+
+            /// <summary>Lowercased name, action, payload key and every key it is bound to.
+            /// Slot rows inherit their action's, so a filter keeps a row and its slots
+            /// together.</summary>
+            public string SearchBlob;
+
+            /// <summary>The expander's own label, so opening a row does not need a rebuild.</summary>
+            public TextMeshProUGUI ExpanderLabel;
+        }
+
+        private readonly List<RowEntry> _entries = new List<RowEntry>();
+        private GameObject _emptyNotice;
+
+        /// <summary>Action ids whose per-slot rows are open. An action with one binding never
+        /// enters this set — it has nothing to expand into.</summary>
+        private readonly HashSet<string> _expanded = new HashSet<string>(StringComparer.Ordinal);
 
         private InputActionDescriptor _capturing;
         private int _captureBindingIndex = -1;
 
         internal bool IsCapturing => _capturing != null;
+        internal InputActionDescriptor CapturingAction => _capturing;
+        internal int CapturingSlot => _captureBindingIndex;
 
         // ── The list ─────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Realises every row this CONTEXT can show — the action rows and, for a multi-control
+        /// action, its per-slot rows — and then applies the search filter by visibility.
+        ///
+        /// <para>Called when the underlying facts change: a context switch, a rebind, a mask
+        /// change, a reset. NOT on a keystroke: see <see cref="ApplyFilter"/>.</para>
+        /// </summary>
         private void RebuildActionList()
         {
             if (_ui?.ListContent == null) return;
 
-            foreach (var row in _rows) if (row != null) Destroy(row);
-            _rows.Clear();
+            foreach (var entry in _entries) DestroySafely(entry.Go);
+            _entries.Clear();
 
-            string needle = _search?.Trim().ToLowerInvariant() ?? "";
             var svc = InputService.Instance;
 
             foreach (var descriptor in InputActionCatalog.All)
             {
-                if (!Matches(descriptor, needle)) continue;
-                if (!ShownInContext(descriptor)) continue;
-                _rows.Add(BuildRow(descriptor, svc));
+                if (!InputContextPolicy.BelongsTo(descriptor, _viewContext)) continue;
+
+                var action = ResolveAction(svc, descriptor);
+                var slots = SlotsOf(action);
+                string blob = SearchBlobFor(descriptor, slots);
+
+                var row = BuildRow(descriptor, action, slots, out var expanderLabel);
+                _entries.Add(new RowEntry
+                {
+                    Go = row, ActionId = descriptor.Id, IsSlotRow = false,
+                    SearchBlob = blob, ExpanderLabel = expanderLabel,
+                });
+
+                if (slots.Count <= 1) continue;
+                for (int i = 0; i < slots.Count; i++)
+                    _entries.Add(new RowEntry
+                    {
+                        Go = BuildSlotRow(descriptor, action, slots, i),
+                        ActionId = descriptor.Id, IsSlotRow = true, SearchBlob = blob,
+                    });
             }
 
-            if (_rows.Count == 0)
-                _rows.Add(BuildEmptyNotice(needle));
-        }
-
-        private static bool Matches(InputActionDescriptor d, string needle)
-        {
-            if (string.IsNullOrEmpty(needle)) return true;
-            return d.DisplayName.ToLowerInvariant().Contains(needle)
-                || d.Action.ToLowerInvariant().Contains(needle)
-                || d.PayloadKey.ToLowerInvariant().Contains(needle);
+            ApplyFilter();
         }
 
         /// <summary>
-        /// Which actions the list offers in the context being viewed.
-        ///
-        /// <para>In Peace the damage actions are not greyed out, they are ABSENT. A disabled
-        /// row is a control the author keeps trying, and this refusal is not a limitation to be
-        /// worked around — it is the property the stance exists to provide.</para>
-        ///
-        /// <para>In an editor context the list is that editor's world: the shared verbs plus
-        /// its OWN tools, and nothing from gameplay or from another editor. That is the rule
-        /// stated plainly — an open editor takes the whole keyboard, so what it can bind is
-        /// only what it can do.</para>
+        /// Shows the rows that match the search box and are not folded away, and hides the
+        /// rest. No allocation and no rebuild, which is why the search box is usable at all.
         /// </summary>
-        private bool ShownInContext(InputActionDescriptor d) =>
-            InputContextPolicy.IsLive(d, _viewContext);
-
-        private GameObject BuildRow(InputActionDescriptor d, InputService svc)
+        private void ApplyFilter()
         {
-            var go = UIFactory.CreateUI("Row_" + d.Action, _ui.ListContent);
+            if (_ui?.ListContent == null) return;
+
+            string needle = _search?.Trim().ToLowerInvariant() ?? "";
+            int shown = 0;
+
+            foreach (var entry in _entries)
+            {
+                bool matches = needle.Length == 0 || entry.SearchBlob.Contains(needle);
+                bool visible = matches && (!entry.IsSlotRow || _expanded.Contains(entry.ActionId));
+                if (entry.Go != null && entry.Go.activeSelf != visible) entry.Go.SetActive(visible);
+                if (visible && !entry.IsSlotRow) shown++;
+
+                if (entry.ExpanderLabel != null)
+                    entry.ExpanderLabel.text = _expanded.Contains(entry.ActionId) ? "v" : ">";
+            }
+
+            ShowEmptyNotice(shown == 0, needle);
+        }
+
+        private void ShowEmptyNotice(bool visible, string needle)
+        {
+            if (!visible)
+            {
+                if (_emptyNotice != null) _emptyNotice.SetActive(false);
+                return;
+            }
+
+            if (_emptyNotice == null) _emptyNotice = BuildEmptyNotice();
+            _emptyNotice.SetActive(true);
+            _emptyNotice.transform.SetAsLastSibling();
+            var label = _emptyNotice.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (label != null)
+                label.text = needle.Length == 0
+                    ? "Nada que mostrar en este contexto."
+                    : $"Ninguna accion coincide con '{needle}'.";
+        }
+
+        /// <summary>Everything a search can match this action on, lowercased once at build time
+        /// rather than on every keystroke. Searching by KEY is half of what a rebinding surface
+        /// is for — "what is on F5" is the question an author asks before moving something onto
+        /// it — and it was the half that was missing, while the dev console's own
+        /// <c>binding</c> command had it.</summary>
+        private static string SearchBlobFor(InputActionDescriptor d, List<InputBindingSlot> slots)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append(d.DisplayName).Append(' ').Append(d.Action).Append(' ').Append(d.PayloadKey);
+            foreach (var slot in slots)
+            {
+                if (!slot.IsBound) continue;
+                sb.Append(' ').Append(slot.Label).Append(' ').Append(slot.Path);
+            }
+            return sb.ToString().ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// The bindable slots of an action: every non-composite binding, in asset order.
+        ///
+        /// <para>Composite HEADERS are skipped and composite PARTS are kept, which is the only
+        /// arrangement in which Move can be rebound at all: it is one action with eight real
+        /// controls, and a rebind that could only reach "slot 0" moved the W of WASD and left
+        /// the other seven exactly where they were. That was the shipped behaviour.</para>
+        /// </summary>
+        private static List<InputBindingSlot> SlotsOf(InputAction action)
+        {
+            var slots = new List<InputBindingSlot>(4);
+            if (action == null) return slots;
+
+            var bindings = action.bindings;
+            for (int i = 0; i < bindings.Count; i++)
+            {
+                var b = bindings[i];
+                if (b.isComposite) continue;
+                slots.Add(new InputBindingSlot(i, b.isPartOfComposite ? b.name : "", b.effectivePath));
+            }
+            return slots;
+        }
+
+        /// <summary>One rebindable control of one action.</summary>
+        internal readonly struct InputBindingSlot
+        {
+            /// <summary>Index into <c>action.bindings</c> — what ApplyBindingOverride needs.</summary>
+            public readonly int Index;
+
+            /// <summary>Composite part name ("up", "left"), or empty for a plain binding.</summary>
+            public readonly string Part;
+
+            /// <summary>The live path, override first. Empty means unassigned.</summary>
+            public readonly string Path;
+
+            public InputBindingSlot(int index, string part, string path)
+            {
+                Index = index; Part = part ?? ""; Path = path ?? "";
+            }
+
+            public bool IsBound => !string.IsNullOrEmpty(Path);
+
+            public string Label => IsBound ? InputControlPaths.LabelForPath(Path) : "sin asignar";
+
+            /// <summary>What to call this slot in a per-slot row. The InputSystem fixes a
+            /// 2DVector's part names, so they are the same four words on every composite.</summary>
+            public string SlotName => Part switch
+            {
+                "up"    => "Arriba",
+                "down"  => "Abajo",
+                "left"  => "Izq.",
+                "right" => "Der.",
+                ""      => "",
+                _       => Part,
+            };
+        }
+
+        // ── Rows ─────────────────────────────────────────────────────────────
+
+        private GameObject BuildRow(InputActionDescriptor d, InputAction action,
+                                    List<InputBindingSlot> slots,
+                                    out TextMeshProUGUI expanderLabel)
+        {
+            expanderLabel = null;
+            bool live = InputContextPolicy.IsLive(d, _viewContext);
+            var go = MakeRowShell("Row_" + d.Action, 0f);
+
+            var name = AddText(go.transform, d.DisplayName, 11f,
+                               live ? UITheme.TEXT_PRIMARY : UITheme.TEXT_MUTED, flexibleWidth: 1f);
+            if (!live) name.text = d.DisplayName + "  (silenciado)";
+
+            AddText(go.transform, ChipTextFor(slots), 10f,
+                    slots.Count == 0 || !slots[0].IsBound ? UITheme.TEXT_MUTED : UITheme.ACCENT,
+                    preferredWidth: CHIP_W);
+
+            AddContextChips(go.transform, d);
+
+            if (slots.Count > 1)
+            {
+                bool open = _expanded.Contains(d.Id);
+                var expander = SmallButton(go.transform, open ? "v" : ">", 26f,
+                                           () => ToggleExpanded(d));
+                expanderLabel = expander.GetComponentInChildren<TextMeshProUGUI>(true);
+                UIHoverText.Attach(expander.gameObject, _ui.Status,
+                    $"{d.DisplayName} tiene {slots.Count} teclas. Abre la fila para cambiar cada una por separado.");
+            }
+            else
+            {
+                AddSlotButtons(go.transform, d, action, slots, slots.Count == 1 ? 0 : -1);
+            }
+
+            return go;
+        }
+
+        private GameObject BuildSlotRow(InputActionDescriptor d, InputAction action,
+                                        List<InputBindingSlot> slots, int ordinal)
+        {
+            var slot = slots[ordinal];
+            var go = MakeRowShell($"Slot_{d.Action}_{ordinal}", SUB_INDENT);
+
+            string slotName = string.IsNullOrEmpty(slot.SlotName) ? $"#{ordinal + 1}" : slot.SlotName;
+            AddText(go.transform, slotName, 10f, UITheme.TEXT_SECONDARY, preferredWidth: SLOT_NAME_W);
+            AddText(go.transform, slot.Label, 10f,
+                    slot.IsBound ? UITheme.ACCENT : UITheme.TEXT_MUTED, flexibleWidth: 1f);
+
+            AddSlotButtons(go.transform, d, action, slots, ordinal);
+            return go;
+        }
+
+        private GameObject MakeRowShell(string name, float indent)
+        {
+            var go = UIFactory.CreateUI(name, _ui.ListContent);
             var bg = go.AddComponent<Image>();
-            bg.color = UITheme.SLOT_BG;
+            bg.color = indent > 0f ? UITheme.BG_SURFACE : UITheme.SLOT_BG;
 
             var hlg = go.AddComponent<HorizontalLayoutGroup>();
             hlg.spacing = 4f;
-            hlg.padding = new RectOffset(6, 6, 3, 3);
+            hlg.padding = new RectOffset(6 + (int)indent, 6, 3, 3);
             hlg.childForceExpandWidth = false;
             hlg.childForceExpandHeight = true;
             hlg.childControlWidth = true;
@@ -85,72 +293,138 @@ namespace Valkur.Gameplay.Editors.Controls
             hlg.childAlignment = TextAnchor.MiddleLeft;
 
             var le = go.AddComponent<LayoutElement>();
-            le.preferredHeight = 26f;
+            le.preferredHeight = ROW_H;
             le.flexibleHeight = 0f;
-
-            AddText(go.transform, d.DisplayName, 11f, UITheme.TEXT_PRIMARY, flexibleWidth: 1f);
-
-            var action = ResolveAction(svc, d);
-            string chip = action == null ? "?" : InputBindingResolver.PrimaryLabel(action);
-            if (string.IsNullOrEmpty(chip)) chip = "sin asignar";
-            AddText(go.transform, chip, 10f,
-                    string.IsNullOrEmpty(chip) ? UITheme.TEXT_MUTED : UITheme.ACCENT,
-                    preferredWidth: 96f);
-
-            // Posture chips, for gameplay actions that could legally differ. An editor action
-            // gets none: its context is decided by which editor owns it, and a chip that could
-            // only ever be on would be a control that does nothing.
-            if (d.Map == InputActionCatalog.MapGameplay && !d.ReachesDamage)
-                AddStanceChips(go.transform, d);
-
-            var assign = EditorUIHelpers.MakeButton(go.transform, "...",
-                () => BeginCapture(d), 20f, 10f);
-            var assignLe = assign.gameObject.GetComponent<LayoutElement>()
-                        ?? assign.gameObject.AddComponent<LayoutElement>();
-            assignLe.preferredWidth = 28f;
-            assignLe.flexibleWidth = 0f;
-            assign.interactable = d.Rebindable;
-
             return go;
         }
 
-        private GameObject BuildEmptyNotice(string needle)
+        /// <summary>
+        /// The "..." (assign) and "x" (clear) pair. <paramref name="ordinal"/> is -1 for an
+        /// action the asset gives no bindable slot at all, where both are dead.
+        /// </summary>
+        private void AddSlotButtons(Transform parent, InputActionDescriptor d, InputAction action,
+                                    List<InputBindingSlot> slots, int ordinal)
+        {
+            bool rebindable = d.Rebindable && ordinal >= 0 && action != null;
+
+            var assign = SmallButton(parent, "...", 28f, () => BeginCapture(d, ordinal));
+            assign.interactable = rebindable;
+            UIHoverText.Attach(assign.gameObject, _ui.Status, rebindable
+                ? $"Asignar una tecla o un boton del raton a «{d.DisplayName}»."
+                : InputContextPolicy.Explain(InputContextPolicy.EvaluateRebind(d)));
+
+            bool clearable = rebindable && ordinal < slots.Count && slots[ordinal].IsBound;
+            var clear = SmallButton(parent, "x", 22f, () => ClearBinding(d, ordinal));
+            clear.interactable = clearable;
+            UIHoverText.Attach(clear.gameObject, _ui.Status,
+                $"Dejar «{d.DisplayName}» sin tecla. Sigue en la lista, para poder devolversela.");
+        }
+
+        private void ToggleExpanded(InputActionDescriptor d)
+        {
+            if (!_expanded.Remove(d.Id)) _expanded.Add(d.Id);
+            ApplyFilter();
+        }
+
+        /// <summary>
+        /// The chip on the main row. One binding prints its key; several print the first and a
+        /// count, because the joined form ("W S A D Arriba Abajo Izq. Der.") is 42 characters
+        /// in a 118 px chip and arrives as an ellipsis that says nothing at all.
+        /// </summary>
+        private static string ChipTextFor(List<InputBindingSlot> slots)
+        {
+            if (slots.Count == 0) return "sin binding";
+            if (slots.Count == 1) return slots[0].Label;
+
+            int bound = 0;
+            foreach (var s in slots) if (s.IsBound) bound++;
+            return bound == 0 ? "sin asignar" : $"{slots[0].Label}  +{slots.Count - 1}";
+        }
+
+        /// <summary>
+        /// <c>Object.Destroy</c> is an outright ERROR in Edit Mode, not a warning, and it is
+        /// the same trap the Entities and Buildings editors already carry this branch for. It
+        /// matters here because the row list is rebuilt from an EditMode fixture on every
+        /// context switch and every rebind — seven tests went red on the log line alone.
+        /// </summary>
+        private static void DestroySafely(GameObject go)
+        {
+            if (go == null) return;
+            if (Application.isPlaying) Destroy(go);
+            else                       DestroyImmediate(go);
+        }
+
+        private GameObject BuildEmptyNotice()
         {
             var go = UIFactory.CreateUI("Empty", _ui.ListContent);
             var le = go.AddComponent<LayoutElement>();
             le.preferredHeight = 40f;
             le.flexibleHeight = 0f;
-            AddText(go.transform,
-                string.IsNullOrEmpty(needle)
-                    ? "Nada que mostrar en este contexto."
-                    : $"Ninguna accion coincide con '{needle}'.",
-                11f, UITheme.TEXT_MUTED, flexibleWidth: 1f);
+            AddText(go.transform, "", 11f, UITheme.TEXT_MUTED, flexibleWidth: 1f);
             return go;
         }
 
-        private void AddStanceChips(Transform parent, InputActionDescriptor d)
+        // ── Context chips ────────────────────────────────────────────────────
+
+        /// <summary>
+        /// The posture chips, for the gameplay tabs only.
+        ///
+        /// <para>THREE STATES, AND THE THIRD IS WHY THIS IS NOT A PAIR OF TOGGLES. A chip is
+        /// ON, OFF, or LOCKED — and a locked chip is drawn differently and does nothing, rather
+        /// than being drawn as a toggle that refuses. Four actions are locked because switching
+        /// them off is a soft lock (walking, aiming, the dash, the stance toggle), and the Peace
+        /// half of every damage action is locked because Peace is a safe posture rather than a
+        /// second key layout. The version that shipped drew an interactive chip on eight
+        /// actions of which six had no reader at all, so the panel reported a change it could
+        /// not make.</para>
+        ///
+        /// <para>An editor context gets no chips: what decides whether an editor's tool is live
+        /// is which editor is open, and a chip that could only ever be on is a control that
+        /// does nothing.</para>
+        /// </summary>
+        private void AddContextChips(Transform parent, InputActionDescriptor d)
         {
+            if (!InputContexts.IsGameplay(_viewContext)) return;
+            if (d.Map != InputActionCatalog.MapGameplay) return;
+
+            // A locked action draws the SAME TWO CHIPS, both in the refused state, rather than a
+            // single glyph standing in for them. The glyph was one more symbol to learn, and it
+            // hid the thing worth reading: that walking lives in both postures and will go on
+            // doing so. Chip() already renders and explains a refusal, so there is no branch.
             var mask = InputContextPolicy.ContextsOf(d);
-            Chip(parent, "G", (mask & InputContextMask.War) != 0,
-                 () => ToggleStanceBit(d, InputContextMask.War));
-            Chip(parent, "P", (mask & InputContextMask.Peace) != 0,
-                 () => ToggleStanceBit(d, InputContextMask.Peace));
+            Chip(parent, "G", d, InputContextMask.War, mask);
+            Chip(parent, "P", d, InputContextMask.Peace, mask);
         }
 
-        private void Chip(Transform parent, string label, bool on, Action onClick)
+        private void Chip(Transform parent, string label, InputActionDescriptor d,
+                          InputContextMask bit, InputContextMask mask)
         {
-            var btn = EditorUIHelpers.MakeButton(parent, label, () => onClick?.Invoke(), 20f, 10f);
-            var le = btn.gameObject.GetComponent<LayoutElement>()
-                  ?? btn.gameObject.AddComponent<LayoutElement>();
-            le.preferredWidth = 22f;
-            le.flexibleWidth = 0f;
+            bool on = (mask & bit) != 0;
+
+            // Whether TOGGLING is allowed, which is the only question a toggle can ask. Testing
+            // "either direction is allowed" instead would light the Peace chip on all 24 spell
+            // slots — turning it OFF is legal there, and it is already off — so the panel would
+            // show an interactive control whose only possible action is refused.
+            bool allowed = InputContextPolicy.Evaluate(d, mask ^ bit) == InputAssignmentVerdict.Allowed;
+
+            var btn = SmallButton(parent, label, 22f, allowed ? (Action)(() => ToggleContextBit(d, bit)) : null);
+            btn.interactable = allowed;
+
             var img = btn.GetComponent<Image>();
-            if (img != null) img.color = on ? UITheme.BTN_ACTIVE : UITheme.BTN_NORMAL;
+            if (img != null)
+                img.color = !allowed ? UITheme.DANGER_IDLE : on ? UITheme.BTN_ACTIVE : UITheme.BTN_NORMAL;
+
+            string where = bit == InputContextMask.War ? "Guerra" : "Paz";
+            UIHoverText.Attach(btn.gameObject, _ui.Status, allowed
+                ? $"«{d.DisplayName}» {(on ? "esta" : "no esta")} viva en {where}. Click para cambiarlo."
+                : $"«{d.DisplayName}» no puede vivir en {where}. " +
+                  InputContextPolicy.Explain(InputContextPolicy.Evaluate(d, mask ^ bit)));
         }
 
-        private void ToggleStanceBit(InputActionDescriptor d, InputContextMask bit)
+        private void ToggleContextBit(InputActionDescriptor d, InputContextMask bit)
         {
-            var next = InputContextPolicy.ContextsOf(d) ^ bit;
+            var before = InputContextPolicy.ContextsOf(d);
+            var next = before ^ bit;
             var verdict = InputContextPolicy.SetContexts(d, next);
             if (verdict != InputAssignmentVerdict.Allowed)
             {
@@ -158,32 +432,45 @@ namespace Valkur.Gameplay.Editors.Controls
                 return;
             }
 
-            _dirty = true;
+            PushEdit(new ControlsEdit
+            {
+                Label = $"{d.DisplayName} en {Describe(next)}",
+                ActionId = d.Id,
+                BindingIndex = -1,
+                MaskBefore = before,
+                MaskAfter = next,
+            });
+            InputBindingStore.MarkDirty();
             RebuildActionList();
             RepaintAll();
             SetStatus($"{d.DisplayName}: ahora vive en {Describe(InputContextPolicy.ContextsOf(d))}.");
         }
 
-        private static string Describe(InputContextMask mask) => mask switch
+        private static string Describe(InputContextMask mask)
         {
-            InputContextMask.Gameplay  => "Guerra y Paz",
-            InputContextMask.War   => "Guerra",
-            InputContextMask.Peace => "Paz",
-            _                => "ninguna postura",
-        };
+            var play = mask & InputContextMask.Gameplay;
+            return play switch
+            {
+                InputContextMask.Gameplay => "Guerra y Paz",
+                InputContextMask.War      => "Guerra",
+                InputContextMask.Peace    => "Paz",
+                _                         => "ninguna postura (silenciada)",
+            };
+        }
 
         // ── Capture ──────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Starts "press a key". Deliberately NOT Unity's
+        /// Starts "press a key" for one SLOT of one action.
+        ///
+        /// <para>Deliberately NOT Unity's
         /// <c>InputActionRebindingExtensions.PerformInteractiveRebinding</c>: that listens to
-        /// raw devices, so it happily captures a key this project cannot express as a
+        /// raw devices, so it happily captures a control this project cannot express as an
         /// <see cref="InputControlEntry"/> — and a binding whose legacy half resolves to
         /// <see cref="KeyCode.None"/> works in the editor and dies the first time the 2022.3
-        /// event-drop bug fires. Clicking a drawn cap is the primary path and this poll is the
-        /// secondary one; both funnel through <see cref="CompleteCaptureWithPath"/>.
+        /// event-drop bug fires.</para>
         /// </summary>
-        private void BeginCapture(InputActionDescriptor d)
+        private void BeginCapture(InputActionDescriptor d, int ordinal)
         {
             var verdict = InputContextPolicy.EvaluateRebind(d);
             if (verdict != InputAssignmentVerdict.Allowed)
@@ -193,34 +480,46 @@ namespace Valkur.Gameplay.Editors.Controls
             }
 
             _capturing = d;
-            _captureBindingIndex = 0;
+            _captureBindingIndex = ordinal;
 
-            if (_ui?.CaptureOverlay != null)
-            {
-                _ui.CaptureOverlay.SetActive(true);
-                _ui.CaptureText.text =
-                    $"Pulsa la tecla o el boton para «{d.DisplayName}».\n" +
-                    "Tambien puedes hacer click en una tecla del teclado dibujado.\n" +
-                    "Click fuera o Escape para cancelar.";
-            }
+            // Escape cancels the capture and must not ALSO reach the General Editor, which
+            // reads the same press in the same frame and would close this editor out from
+            // under the author. Update order between the two is undefined, so the claim is the
+            // only thing that makes the outcome deterministic.
+            EscapeOwnership.Claim(this);
+
+            ControlsEditorUIBuilder.SetCaptureVisible(_ui, true,
+                $"Pulsa la tecla para «{d.DisplayName}».\n" +
+                "Tambien vale una tecla del teclado dibujado, un boton del raton dibujado, " +
+                "o el boton derecho / central / la rueda directamente.\n" +
+                "Click fuera o Escape para cancelar.");
         }
 
         internal void CancelCapture()
         {
             _capturing = null;
             _captureBindingIndex = -1;
-            if (_ui?.CaptureOverlay != null) _ui.CaptureOverlay.SetActive(false);
+            EscapeOwnership.Release(this);
+            ControlsEditorUIBuilder.SetCaptureVisible(_ui, false);
         }
 
         /// <summary>
-        /// Polls for a real key press while capturing.
+        /// Polls for a real press while capturing — both backends, through the centralized
+        /// helpers.
         ///
-        /// <para>The SCAN reads the device directly, which is one of the documented exceptions
-        /// to this project's input rule: the job is "which physical control was pressed", and
-        /// every centralized helper answers about a control the caller has already named — so
-        /// there is nothing to route through. The CANCEL is not an exception and goes through
-        /// <see cref="KeyboardInputManager"/>, which also means Escape keeps working while a
-        /// modal holds input (it is on the always-allowed list).</para>
+        /// <para>It used to read <c>Keyboard.current</c> directly, which is a raw device read
+        /// of exactly the kind this project bans, and it cost more than tidiness: the raw
+        /// InputSystem half is the one that DIES under the 2022.3 event-drop bug, so a capture
+        /// could stop answering in the very session where the player had gone looking for the
+        /// Controls editor because their keys had stopped working.
+        /// <see cref="KeyboardInputManager"/> ORs the legacy backend and honours
+        /// <see cref="InputBlocker"/>, which is also the reason a capture cannot fire while the
+        /// chat or the console holds focus.</para>
+        ///
+        /// <para>THE LEFT MOUSE BUTTON IS NOT POLLED, on purpose: it is how the author clicks
+        /// the drawn board, so polling it would bind LMB to whatever they were trying to point
+        /// at. Left click reaches this through the drawn mouse's own left-button cap, which is
+        /// the one place where clicking it MEANS "the left button".</para>
         /// </summary>
         private void TickCapture()
         {
@@ -233,17 +532,27 @@ namespace Valkur.Gameplay.Editors.Controls
                 return;
             }
 
-            var kb = Keyboard.current;
-            if (kb == null) return;
-
             foreach (var entry in InputControlPaths.Entries)
             {
                 if (entry.Key == Key.Escape) continue;   // handled above, as the cancel
-                if (!kb[entry.Key].wasPressedThisFrame) continue;
+                if (!KeyboardInputManager.WasKeyPressedThisFrame(entry.Key, entry.Legacy)) continue;
                 CompleteCaptureWithPath(entry.Path);
                 return;
             }
+
+            if (MouseInputManager.WasRightMouseButtonPressedThisFrame())
+            { CompleteCaptureWithMouse(MouseControl.Right); return; }
+
+            if (MouseInputManager.WasMiddleMouseButtonPressedThisFrame())
+            { CompleteCaptureWithMouse(MouseControl.Middle); return; }
+
+            float wheel = MouseInputManager.GetMouseWheelDelta();
+            if (wheel > 0f) { CompleteCaptureWithMouse(MouseControl.WheelUp); return; }
+            if (wheel < 0f) { CompleteCaptureWithMouse(MouseControl.WheelDown); return; }
         }
+
+        private void CompleteCaptureWithMouse(MouseControl control) =>
+            CompleteCaptureWithPath(InputControlPaths.PathForMouse(control));
 
         private void CompleteCaptureWithPath(string path)
         {
@@ -258,7 +567,7 @@ namespace Valkur.Gameplay.Editors.Controls
                 return;
             }
 
-            int index = ResolveOverridableBindingIndex(action, _captureBindingIndex);
+            int index = ResolveBindingIndex(action, _captureBindingIndex);
             if (index < 0)
             {
                 SetStatus($"'{d.DisplayName}' no tiene ningun binding que reasignar.");
@@ -266,40 +575,89 @@ namespace Valkur.Gameplay.Editors.Controls
                 return;
             }
 
-            InputActionRebindingExtensions.ApplyBindingOverride(action, index, path);
-            InputBindingResolver.Invalidate();
-            _dirty = true;
-
+            ApplyOverride(d, action, index, path, $"{d.DisplayName} → {InputControlPaths.LabelForPath(path)}");
             CancelCapture();
             RebuildActionList();
             RepaintAll();
 
             string label = InputControlPaths.LabelForPath(path);
-            var clash = LiveOn(path);
-            SetStatus(clash.Count > 1
-                ? $"{d.DisplayName} → {label}. OJO: esa tecla ya tiene {clash.Count} acciones vivas en esta postura."
-                : $"{d.DisplayName} → {label}. Recuerda GUARDAR.");
+            var live = LiveOn(path);
+            var severity = InputConflictScanner.Classify(live);
+            SetStatus(severity >= InputClashSeverity.Modifier
+                ? $"{d.DisplayName} → {label}. OJO: {SubtitleFor(live)} responden a esa tecla aqui."
+                : $"{d.DisplayName} → {label}. Ctrl+S para guardar.");
         }
 
         /// <summary>
-        /// Which binding slot a rebind writes. Composite headers name no control and must be
-        /// skipped, or an override lands on the "2DVector" row and moves nothing while
-        /// reporting success.
+        /// Drops a binding without dropping the action, by overriding its path with the empty
+        /// string — the InputSystem's own way of saying "no control".
+        ///
+        /// <para>The action stays in the list, silenced-looking rather than gone, which is what
+        /// makes clearing a key a decision the player can take back. It is also how the
+        /// fourteen retired editor toggles reach a key at all: they ship with an empty binding
+        /// for exactly this reason.</para>
         /// </summary>
-        private static int ResolveOverridableBindingIndex(InputAction action, int preferred)
+        private void ClearBinding(InputActionDescriptor d, int ordinal)
         {
+            var action = ResolveAction(InputService.Instance, d);
+            int index = ResolveBindingIndex(action, ordinal);
+            if (action == null || index < 0) return;
+
+            ApplyOverride(d, action, index, "", $"{d.DisplayName} sin tecla");
+            RebuildActionList();
+            RepaintAll();
+            SetStatus($"{d.DisplayName}: sin tecla. Sigue en la lista para poder devolversela.");
+        }
+
+        /// <summary>
+        /// Writes a binding override and records it so Ctrl+Z can take it back.
+        ///
+        /// <para>The BEFORE value is the binding's <c>overridePath</c>, not its
+        /// <c>effectivePath</c>, and the difference is the whole correctness of undo: null
+        /// means "no override, use the asset's own path" while the empty string means "cleared".
+        /// Recording the effective path would turn every undo of a first edit into a hard-coded
+        /// override of the shipped key — indistinguishable on screen, and it would survive a
+        /// reset-to-defaults of everything else.</para>
+        /// </summary>
+        private void ApplyOverride(InputActionDescriptor d, InputAction action, int index,
+                                   string path, string label)
+        {
+            var edit = new ControlsEdit
+            {
+                Label = label,
+                ActionId = d.Id,
+                BindingIndex = index,
+                PathBefore = OverridePathOf(action, index),
+                PathAfter = path,
+            };
+
+            InputActionRebindingExtensions.ApplyBindingOverride(action, index, path);
+            InputBindingResolver.Invalidate();
+            InputBindingStore.MarkDirty();
+            PushEdit(edit);
+        }
+
+        /// <summary>
+        /// Turns a slot ORDINAL — what the row shows — into an index into
+        /// <c>action.bindings</c>, which is what <c>ApplyBindingOverride</c> takes.
+        ///
+        /// <para>Composite headers name no control and must be skipped, or an override lands on
+        /// the "2DVector" row and moves nothing while reporting success. The ordinal is what
+        /// makes a multi-control action rebindable at all: the shipped code hardcoded slot 0,
+        /// so Move offered eight keys and could only ever move the W.</para>
+        /// </summary>
+        private static int ResolveBindingIndex(InputAction action, int ordinal)
+        {
+            if (action == null || ordinal < 0) return -1;
+
             var bindings = action.bindings;
             int seen = 0;
             for (int i = 0; i < bindings.Count; i++)
             {
                 if (bindings[i].isComposite) continue;
-                if (seen == preferred) return i;
+                if (seen == ordinal) return i;
                 seen++;
             }
-            // Fall back to the first real binding rather than refusing: a caller asking for
-            // slot 2 of a one-binding action means "move it", not "do nothing".
-            for (int i = 0; i < bindings.Count; i++)
-                if (!bindings[i].isComposite) return i;
             return -1;
         }
 
@@ -310,6 +668,16 @@ namespace Valkur.Gameplay.Editors.Controls
         }
 
         // ── Row primitives ───────────────────────────────────────────────────
+
+        private Button SmallButton(Transform parent, string label, float width, Action onClick)
+        {
+            var btn = EditorUIHelpers.MakeButton(parent, label, () => onClick?.Invoke(), 20f, 10f);
+            var le = btn.gameObject.GetComponent<LayoutElement>()
+                  ?? btn.gameObject.AddComponent<LayoutElement>();
+            le.preferredWidth = width;
+            le.flexibleWidth = 0f;
+            return btn;
+        }
 
         private static TextMeshProUGUI AddText(Transform parent, string text, float size,
                                                Color color, float flexibleWidth = 0f,

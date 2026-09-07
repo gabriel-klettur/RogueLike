@@ -57,6 +57,9 @@ namespace Valkur.Gameplay.Inventory
         private static InputActionDescriptor _descInventory =>
             InputActionCatalog.Find(InputActionCatalog.MapGameplay, "Inventory");
 
+        private static InputActionDescriptor _descDropItem =>
+            InputActionCatalog.Find(InputActionCatalog.MapGameplay, "DropItem");
+
         private bool _visible;
         private int  _selectedSlot = -1;
 
@@ -117,7 +120,10 @@ namespace Valkur.Gameplay.Inventory
 
             if (_visible)
             {
-                if (InputBindingResolver.WasPerformedThisFrame(_dropAction) && _selectedSlot >= 0)
+                // The context mask as well as the binding: without it the Controls editor
+                // drew posture chips on this row that reported a change nothing honoured.
+                if (InputContextPolicy.IsLive(_descDropItem) &&
+                    InputBindingResolver.WasPerformedThisFrame(_dropAction) && _selectedSlot >= 0)
                     DropSelectedItem();
             }
         }

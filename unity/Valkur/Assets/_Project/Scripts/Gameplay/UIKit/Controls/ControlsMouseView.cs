@@ -53,7 +53,10 @@ namespace Valkur.UIKit
             _root.pivot = new Vector2(0f, 1f);
             _root.anchoredPosition = Vector2.zero;
             _root.sizeDelta = new Vector2(width, height);
-            go.GetComponent<Image>().color = UITheme.BG_SURFACE;
+            // A shell that reads as an object. It used to be BG_SURFACE, one percent of a
+            // channel away from the board behind it, so the silhouette the whole class exists
+            // to draw was invisible and the buttons floated in the dark.
+            go.GetComponent<Image>().color = UITheme.INPUT_DEVICE_BODY;
 
             float pad     = 8f;
             float inner   = width - pad * 2f;
@@ -113,12 +116,19 @@ namespace Valkur.UIKit
 
             var tmp = labelGo.GetComponent<TextMeshProUGUI>();
             tmp.text = "";
-            tmp.fontSize = 9f;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.enableWordWrapping = true;
-            tmp.overflowMode = TextOverflowModes.Ellipsis;
             tmp.color = UITheme.ACCENT;
             tmp.raycastTarget = false;
+
+            // Two actions on one button is the normal case here — the left button really is
+            // "Ataque primario + Click de interfaz" — and that string in a 60x78 box at a fixed
+            // 9 px wrapped past the bottom edge. Auto-sizing keeps a one-word label big and
+            // shrinks the doubled ones to fit rather than cutting them off.
+            tmp.enableAutoSizing = true;
+            tmp.fontSizeMax = 9f;
+            tmp.fontSizeMin = 5.5f;
+            tmp.overflowMode = TextOverflowModes.Truncate;
 
             if (onClicked != null)
             {
@@ -150,7 +160,13 @@ namespace Valkur.UIKit
 
         public void Destroy()
         {
-            if (_root != null) UnityEngine.Object.Destroy(_root.gameObject);
+            // Object.Destroy is an ERROR in Edit Mode, and Build/Destroy is exactly the pair an
+            // EditMode fixture exercises when it switches the drawn layout.
+            if (_root != null)
+            {
+                if (Application.isPlaying) UnityEngine.Object.Destroy(_root.gameObject);
+                else                       UnityEngine.Object.DestroyImmediate(_root.gameObject);
+            }
             _root = null;
             _parts.Clear();
         }

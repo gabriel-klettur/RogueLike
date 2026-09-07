@@ -244,14 +244,82 @@ namespace Valkur.Tests.EditMode.Game.Input
                 "Writing the shipped default must REMOVE the override, not store it.");
         }
 
+        /// <summary>
+        /// An ordinary action MAY be silenced, and a locked one may not.
+        ///
+        /// <para>This used to be one rule — an empty mask was refused outright — for a real
+        /// reason: an action live nowhere is a control the player cannot find and cannot switch
+        /// back on. What removed that reason is the LIST. The Controls editor shows every
+        /// action that BELONGS to the context being viewed, silenced ones marked as such, so
+        /// switching one back on is a click on the row it was always on. Keeping the blanket
+        /// rule instead cost the feature CLAUDE.md promises in as many words — "a player can
+        /// silence one spell without leaving War" — which was unreachable while every mask had
+        /// to keep at least one bit.</para>
+        ///
+        /// <para>What survives is the set that is genuinely unrecoverable, refused BY NAME:
+        /// see <see cref="InputActionDescriptor.ContextLocked"/>.</para>
+        /// </summary>
         [Test]
-        public void AnActionMustBeLiveSomewhere()
+        public void SilencingIsAllowed_ExceptForTheActionsThatAreTheirOwnWayBack()
         {
-            var interact = InputActionCatalog.Find("Gameplay/Interact");
-            Assert.AreEqual(InputAssignmentVerdict.RefusedEmptyMask,
-                InputContextPolicy.SetContexts(interact, InputContextMask.None),
-                "An action live in no stance is a control the player cannot find and cannot " +
-                "switch back on from anywhere except this same editor.");
+            var darkball = InputActionCatalog.Find("Gameplay/SpellDarkball");
+            Assert.AreEqual(InputAssignmentVerdict.Allowed,
+                InputContextPolicy.SetContexts(darkball, InputContextMask.None),
+                "A spell slot must be silenceable, or 'silence one spell without leaving War' " +
+                "is a feature with no way to reach it.");
+            Assert.IsFalse(InputContextPolicy.IsLive(darkball, InputContexts.War));
+            Assert.IsTrue(InputContextPolicy.BelongsTo(darkball, InputContexts.War),
+                "A silenced action must stay in the War list, or it cannot be switched back on.");
+
+            foreach (var locked in InputActionCatalog.All)
+            {
+                if (!locked.ContextLocked) continue;
+                Assert.AreEqual(InputAssignmentVerdict.RefusedContextLocked,
+                    InputContextPolicy.Evaluate(locked, InputContextMask.None),
+                    $"{locked.Id} is context-locked and must refuse an empty mask.");
+            }
+        }
+
+        /// <summary>
+        /// Every non-rebindable action is also context-locked.
+        ///
+        /// <para>The two axes are independent by design — the dash may be moved to any key and
+        /// may not be taken away — but the converse is not: a path nobody may move is
+        /// structural, and a structural action that can be silenced is a mechanism with an off
+        /// switch. Silencing UI/Submit would leave the player unable to confirm the dialog
+        /// asking them to confirm it.</para>
+        /// </summary>
+        [Test]
+        public void EveryStructuralAction_IsAlsoContextLocked()
+        {
+            var loose = InputActionCatalog.All
+                .Where(d => !d.Rebindable && !d.ContextLocked)
+                .Select(d => d.Id)
+                .ToList();
+
+            Assert.IsEmpty(loose,
+                "A path nobody may move is not a preference in the other axis either: " +
+                string.Join(" | ", loose));
+        }
+
+        /// <summary>
+        /// The soft-lock set, named rather than derived — a test that read the flag off the
+        /// catalog would pass whatever the catalog said.
+        /// </summary>
+        [TestCase("Gameplay/Move")]
+        [TestCase("Gameplay/Look")]
+        [TestCase("Gameplay/Dash")]
+        [TestCase("Gameplay/ToggleStance")]
+        [TestCase("Editors/OpenGeneralEditor")]
+        public void TheSoftLockSet_IsContextLocked(string id)
+        {
+            var d = InputActionCatalog.Find(id);
+            Assert.IsNotNull(d, id + " is gone from the catalog.");
+            Assert.IsTrue(d.ContextLocked,
+                $"{id} must be context-locked: nothing auto-switches out of a posture, the " +
+                "stance toggle is the only way out of one, and since the F-row was retired the " +
+                "General Editor key is the only way into any editor including the one that " +
+                "would switch it back on.");
         }
 
         // ── Conflicts ────────────────────────────────────────────────────────
@@ -274,31 +342,26 @@ namespace Valkur.Tests.EditMode.Game.Input
         }
 
         /// <summary>
-        /// The Editors map's known collisions, held as a ratchet rather than fixed.
+        /// The Editors map has NO same-map collisions left, and the allowlist that used to
+        /// excuse four of them is gone.
         ///
-        /// <para>All four are old and three survive because one half is reached with a
-        /// modifier that lives in C# rather than in the binding — Lighting is Ctrl+F3, and the
-        /// asset says plain F3. Which half should move is a design decision about hotkeys, not
-        /// something a test should force. What the list DOES buy is that a fifth one fails
-        /// here instead of being discovered by a user pressing F6.</para>
+        /// <para>F2 held Combat Ranges and Time &amp; Weather, F3 Spawner and Lighting, F5
+        /// Entities and QuickSave, F9 Debug HUD and QuickLoad. Retiring the F-row took all four
+        /// with it, so the ratchet was excusing collisions that no longer exist — and a stale
+        /// allowlist is worse than none, because it would go on excusing those four paths if a
+        /// future binding landed on one.</para>
         /// </summary>
         [Test]
-        public void EditorsMap_HasOnlyTheKnownCollisions()
+        public void EditorsMap_HasNoSameMapCollisions()
         {
-            var known = new HashSet<string>
-            {
-                "<Keyboard>/f2", "<Keyboard>/f3", "<Keyboard>/f5", "<Keyboard>/f9",
-            };
-
-            var unexpected = InputConflictScanner.Scan(_svc.Asset)
+            var offenders = InputConflictScanner.Scan(_svc.Asset)
                 .Where(c => c.Severity == InputConflictSeverity.SameMap)
                 .Where(c => c.A.Map == InputActionCatalog.MapEditors)
-                .Where(c => !known.Contains(c.Path))
                 .Select(c => c.Describe())
                 .ToList();
 
-            Assert.IsEmpty(unexpected,
-                "A new editor-hotkey collision:\n" + string.Join("\n", unexpected));
+            Assert.IsEmpty(offenders,
+                "Two editor hotkeys on one key, both live at once: " + string.Join(" | ", offenders));
         }
 
         // ── The drawn board ──────────────────────────────────────────────────

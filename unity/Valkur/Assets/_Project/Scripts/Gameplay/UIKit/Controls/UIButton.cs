@@ -107,5 +107,63 @@ namespace Valkur.UIKit
 
             return (btn, icon, labelTmp);
         }
+
+        /// <summary>
+        /// Repaint a button built by this factory — the ONLY correct way to show selection
+        /// state on one.
+        ///
+        /// <para>WHY <c>btn.targetGraphic.color = x</c> DOES NOT WORK, measured rather than
+        /// assumed. Every button here ships with <c>Selectable</c> on its default ColorTint
+        /// transition, which drives the target graphic's CanvasRenderer to
+        /// <c>colors.normalColor</c> — and the CanvasRenderer colour MULTIPLIES with
+        /// <c>Graphic.color</c> rather than replacing it. So a caller who writes the graphic
+        /// gets <c>written × normalColor</c>, which is darker than either and is not the
+        /// colour they asked for.</para>
+        ///
+        /// <para>The arithmetic, off a captured frame of the Skills editor: an "active" tab
+        /// written as ACCENT-over-BTN_NORMAL rendered <c>(32,31,29)</c> against a panel
+        /// background of <c>(31,33,42)</c> — invisible — while untouched buttons rendered
+        /// <c>(6,6,11)</c>, i.e. <c>BTN_NORMAL squared</c>, near-black. The selection read
+        /// BACKWARDS: the chosen row looked like a gap and the unchosen ones looked solid.
+        /// Nothing failed, because uGUI performs no layout in EditMode and a structural probe
+        /// reads back the value the caller wrote, not the one on screen.</para>
+        ///
+        /// <para>Setting the ColorBlock instead makes the tint exact: the graphic is held at
+        /// white so the product is the requested colour, and hover/press stay proportional to
+        /// it rather than to the old palette.</para>
+        /// </summary>
+        public static void SetTint(Button button, Color tint)
+        {
+            if (button == null) return;
+
+            if (button.targetGraphic != null) button.targetGraphic.color = Color.white;
+
+            var c = button.colors;
+            c.normalColor = tint;
+            c.selectedColor = tint;
+            // Hover and press are derived so a caller only ever names one colour; a fixed pair
+            // would fight whatever tint was just applied.
+            c.highlightedColor = Color.Lerp(tint, Color.white, 0.18f);
+            c.pressedColor = Color.Lerp(tint, Color.black, 0.22f);
+            c.disabledColor = new Color(tint.r, tint.g, tint.b, tint.a * 0.4f);
+            button.colors = c;
+
+            // ASSIGNING colors DOES NOT REPAINT. Selectable pushes its ColorBlock to the
+            // graphic's CanvasRenderer only when it evaluates a state transition — on enable,
+            // or on a pointer/selection event — so a button whose block is changed while it
+            // sits idle keeps whatever the CanvasRenderer last held. With the graphic pinned to
+            // white above, that is WHITE, and the whole strip renders as pale cream.
+            //
+            // Measured on the first pass of this method: every button in the Skills editor came
+            // back at ~(202,202,205) against a (33,32,39) panel — the exact inverse of the bug
+            // it was written to fix, and just as unreadable. Toggling `enabled` re-enters
+            // OnEnable, which transitions to the current state INSTANTLY, so the tint lands in
+            // the same frame. `interactable` is a separate flag and is not disturbed.
+            if (button.gameObject.activeInHierarchy)
+            {
+                button.enabled = false;
+                button.enabled = true;
+            }
+        }
     }
 }

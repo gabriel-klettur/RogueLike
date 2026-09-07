@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Valkur.UIKit
 {
@@ -74,6 +74,16 @@ namespace Valkur.UIKit
         public static readonly Color DANGER_IDLE   = new Color(0.55f, 0.15f, 0.15f, 1f);
         public static readonly Color SUCCESS       = new Color(0.30f, 0.90f, 0.45f, 1f);
 
+        /// <summary>
+        /// "This is real, and it is probably what you meant." The middle rung between
+        /// <see cref="SUCCESS"/> and <see cref="DANGER"/>, for a state that is worth seeing and
+        /// is not a defect — the Controls board rings a key amber when one of the two actions
+        /// on it is a held modifier rather than a gesture, which fires together by design far
+        /// more often than by mistake. Amber rather than a dimmed red, because a dimmed red
+        /// reads as a red that has been turned down and invites the author to fix it.
+        /// </summary>
+        public static readonly Color WARNING       = new Color(0.95f, 0.68f, 0.22f, 1f);
+
         // ── Modal scrim ──────────────────────────────────────────────────────
         /// <summary>Full-screen dim behind a capture or a modal. Dark enough that the panel
         /// below stops competing, light enough that the author can still see what they are
@@ -86,7 +96,22 @@ namespace Valkur.UIKit
         // before the reader has parsed the label. Deliberately low-saturation, with ACCENT
         // and DANGER left free for selection and conflict: a board where every key shouts is
         // a board where the two things that matter do not.
-        public static readonly Color INPUT_FREE       = new Color(0.14f, 0.14f, 0.18f, 1f);
+        /// <summary>
+        /// The backdrop the drawn keyboard and mouse sit ON. Darker than everything placed on
+        /// it, which is the whole job: with the board scrolling over the generic
+        /// <see cref="BG_SURFACE"/> (0.13) and an unbound cap painted
+        /// <see cref="INPUT_FREE"/> (0.14), the two differed by ONE PERCENT of a channel and
+        /// every free key vanished into the panel. Half a keyboard with no keys on it does not
+        /// read as a keyboard, and "what is free" is the question the drawn board exists to
+        /// answer.
+        /// </summary>
+        public static readonly Color INPUT_BOARD_BG   = new Color(0.07f, 0.07f, 0.09f, 1f);
+
+        /// <summary>The drawn mouse's shell — a physical object on the backdrop, so it needs to
+        /// be lighter than the board and darker than the buttons moulded into it.</summary>
+        public static readonly Color INPUT_DEVICE_BODY = new Color(0.17f, 0.17f, 0.21f, 1f);
+
+        public static readonly Color INPUT_FREE       = new Color(0.20f, 0.20f, 0.25f, 1f);
         public static readonly Color INPUT_MOVEMENT   = new Color(0.18f, 0.30f, 0.24f, 1f);
         public static readonly Color INPUT_TRAVERSAL  = new Color(0.18f, 0.32f, 0.34f, 1f);
         public static readonly Color INPUT_COMBAT     = new Color(0.36f, 0.18f, 0.18f, 1f);
@@ -95,6 +120,33 @@ namespace Valkur.UIKit
         public static readonly Color INPUT_INTERFACE  = new Color(0.24f, 0.24f, 0.30f, 1f);
         public static readonly Color INPUT_EDITOR     = new Color(0.32f, 0.28f, 0.16f, 1f);
         public static readonly Color INPUT_SYSTEM     = new Color(0.22f, 0.22f, 0.26f, 1f);
+
+        // ── World-space instance markers (the Alt overlays) ───────────────────
+        //
+        // Several editors hide something the player never sees and reveal it on Alt: the
+        // Spawner editor its spawners, the Lighting editor the reach of each placed light. The
+        // shape is one ring per instance plus a centre dot that lights up under the cursor, and
+        // the dot pair was copied verbatim into the second editor before it became a token —
+        // the same route SCROLL_TRACK and DANGER_IDLE took. Tokens rather than constants
+        // because two overlays whose click affordance is a different yellow teach the author
+        // two things where there is one.
+
+        /// <summary>A marker ring around an instance this editor can move, delete and save.</summary>
+        public static readonly Color MARKER_RING        = new Color(1f, 0.82f, 0.30f, 0.85f);
+
+        /// <summary>
+        /// A marker ring around an instance the editor will REFUSE to edit — a light owned by
+        /// a building, say. Drawn, because the author wondering why a corner is bright needs to
+        /// see it; drawn differently, because a marker identical to the editable one promises
+        /// an edit that cannot happen.
+        /// </summary>
+        public static readonly Color MARKER_RING_LOCKED = new Color(0.45f, 0.70f, 1f, 0.55f);
+
+        /// <summary>The clickable centre of a marker, at rest.</summary>
+        public static readonly Color MARKER_DOT         = new Color(1f, 0.95f, 0.30f, 1f);
+
+        /// <summary>The same centre with the cursor on it — "click to select".</summary>
+        public static readonly Color MARKER_DOT_HOVER   = new Color(0.40f, 1f, 1f, 1f);
 
         // ── Layout ──
         public const float PANEL_PAD       = 10f;

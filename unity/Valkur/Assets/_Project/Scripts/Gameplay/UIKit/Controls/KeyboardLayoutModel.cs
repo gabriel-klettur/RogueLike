@@ -182,21 +182,35 @@ namespace Valkur.UIKit
         /// shows <c>ñ</c> on the key Unity calls <c>semicolon</c>; falls back to the project's
         /// own label table when there is no device.
         /// </summary>
+        /// <summary>Longest OS legend a 34 px cap can carry. Above it the project's own
+        /// compact label wins.</summary>
+        private const int MaxOsLegendLength = 3;
+
         public static string CapLabel(string controlName)
         {
             if (string.IsNullOrEmpty(controlName)) return "";
 
+            bool hasOwn = InputControlPaths.TryResolveControlName(controlName, out var e);
+
+            // ASK THE OS FIRST, BUT ONLY FOR SHORT LEGENDS. The device is the only thing that
+            // knows a Spanish ISO board prints n-tilde on the key Unity calls "semicolon", and
+            // that is why this lookup exists at all — but every such legend is one or two
+            // characters. The long ones are exactly where the OS is unhelpful on a key-sized
+            // cap: it answers "Print Screen", "Scroll Lock", "Numpad 7" and "Page Down", which
+            // at 34 px rendered as "Print Scree", "Scroll Loc" and a numpad where every key
+            // said "Numpad". The project's own table has the compact forms for precisely those
+            // ("Impr Pant", "Bloq Despl", "Num 7", "Av Pag"), so the rule is: the device owns
+            // what a key PRINTS, the table owns what a key is CALLED.
             var kb = Keyboard.current;
             if (kb != null)
             {
                 var control = kb.TryGetChildControl(controlName);
-                if (control != null && !string.IsNullOrEmpty(control.displayName))
-                    return control.displayName;
+                var os = control != null ? control.displayName : null;
+                if (!string.IsNullOrEmpty(os) && (os.Length <= MaxOsLegendLength || !hasOwn))
+                    return os;
             }
 
-            return InputControlPaths.TryResolveControlName(controlName, out var e)
-                ? e.Label
-                : controlName;
+            return hasOwn ? e.Label : controlName;
         }
 
         /// <summary>Every control name the layout draws, for the audit that asks whether the

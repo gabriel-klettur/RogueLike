@@ -216,7 +216,13 @@ namespace Valkur.Tests.EditMode.Editors.Inventory
             if (action == null) Assert.Pass("Ships unbound and resolves to no action here.");
 
             Assert.AreEqual(InputActionType.Button, action.type, "Action must be a Button type.");
-            Assert.AreEqual(0, action.bindings.Count,
+            // ONE binding slot, empty — not zero. ApplyBindingOverride writes into a
+            // slot and cannot create one, so a toggle with no binding was listed by
+            // the Controls editor and then refused the key the player tried to give it.
+            Assert.AreEqual(1, action.bindings.Count,
+                "The Inventory toggle needs exactly one binding slot, empty — with none it "
+                + "cannot be given a key from the Controls editor at all.");
+            Assert.IsEmpty(action.bindings[0].effectivePath,
                 "The Inventory toggle must ship unbound — F6 is free now.");
             Assert.IsTrue(action.enabled, "Action must be enabled after OnSingletonAwake.");
         }

@@ -32,9 +32,17 @@ namespace Valkur.Core.Input
         private const string FolderName = "Input";
         private const string FileName   = "controls.json";
 
-        /// <summary>Raised after a successful <see cref="Save"/> or <see cref="Apply"/>, so the
-        /// Controls editor can redraw from the file rather than from what it thinks it
-        /// wrote.</summary>
+        /// <summary>
+        /// Raised after a successful <see cref="Save"/> or <see cref="Apply"/>.
+        ///
+        /// <para>NOTHING SUBSCRIBES TODAY, and that is deliberate rather than an oversight the
+        /// comment used to paper over: it claimed the Controls editor redraws from it, and the
+        /// editor does no such thing — it repaints from the live asset, which is the same data
+        /// one step earlier and cannot disagree with what the game reads. The event stays for
+        /// the caller that does not exist yet (a HUD chip, a settings screen); what it must not
+        /// do is describe a reader it does not have. <see cref="OnDirtyChanged"/> is the one
+        /// with a live subscriber.</para>
+        /// </summary>
         public static event Action OnApplied;
 
         public static string Directory =>
@@ -46,6 +54,42 @@ namespace Valkur.Core.Input
         {
             try { return File.Exists(FilePath); }
             catch { return false; }
+        }
+
+        // ── Unsaved changes ──────────────────────────────────────────────────
+
+        private static bool _dirty;
+
+        /// <summary>True while the live bindings or stance masks differ from what is on disk.</summary>
+        public static bool IsDirty => _dirty;
+
+        /// <summary>Raised whenever <see cref="IsDirty"/> changes, so a panel can paint an
+        /// indicator without polling.</summary>
+        public static event Action OnDirtyChanged;
+
+        /// <summary>
+        /// Records that something in the live bindings is not on disk yet. Called by whoever
+        /// rebinds — the Controls editor today.
+        ///
+        /// <para>The flag is HERE rather than on the editor because it has a second job that
+        /// the editor cannot do: <see cref="Apply"/> refuses to run while it is set.
+        /// <c>RuntimeInputBootstrap</c> re-applies the file on EVERY scene load, so before
+        /// this a rebind that had not been saved was silently reverted the next time the
+        /// player walked through a door — the edit was still on screen in the editor's chip
+        /// and gone from the asset.</para>
+        /// </summary>
+        public static void MarkDirty()
+        {
+            if (_dirty) return;
+            _dirty = true;
+            OnDirtyChanged?.Invoke();
+        }
+
+        private static void ClearDirty()
+        {
+            if (!_dirty) return;
+            _dirty = false;
+            OnDirtyChanged?.Invoke();
         }
 
         // ── Document ─────────────────────────────────────────────────────────
@@ -98,6 +142,7 @@ namespace Valkur.Core.Input
             {
                 System.IO.Directory.CreateDirectory(Directory);
                 WriteAtomic(FilePath, JsonUtility.ToJson(doc, true));
+                ClearDirty();
                 OnApplied?.Invoke();
                 return true;
             }
@@ -120,6 +165,19 @@ namespace Valkur.Core.Input
             var svc = InputService.Instance;
             if (svc?.Asset == null) return false;
             if (!Exists()) return false;
+
+            // Unsaved live edits win over the file. Both halves of this method REPLACE rather
+            // than merge — LoadBindingOverridesFromJson removes the existing overrides and
+            // LoadOverrides clears the table — so re-applying on top of an edit in progress
+            // destroys it. And it is not a rare path: RuntimeInputBootstrap calls Apply on
+            // every scene load, so a player who rebinds and then walks through a door loses it
+            // with nothing said.
+            if (_dirty)
+            {
+                VerboseLog.Log(VerboseLog.Category.Settings,
+                    () => "[InputBindingStore] Skipping Apply: the live controls carry unsaved changes.");
+                return false;
+            }
 
             Document doc;
             try
@@ -179,6 +237,7 @@ namespace Valkur.Core.Input
             svc?.Asset?.RemoveAllBindingOverrides();
             InputContextPolicy.ResetToDefaults();
 
+            ClearDirty();
             try { if (File.Exists(FilePath)) File.Delete(FilePath); }
             catch (Exception ex)
             {
@@ -222,8 +281,18 @@ namespace Valkur.Core.Input
         /// <summary>Domain Reload is OFF, so the subscriber list survives into the next Play
         /// session carrying delegates that point at destroyed panels.</summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState() => OnApplied = null;
+        private static void ResetStaticState()
+        {
+            OnApplied = null;
+            OnDirtyChanged = null;
+            _dirty = false;
+        }
 
-        public static void ResetForTests() => OnApplied = null;
+        public static void ResetForTests()
+        {
+            OnApplied = null;
+            OnDirtyChanged = null;
+            _dirty = false;
+        }
     }
 }

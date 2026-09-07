@@ -84,11 +84,65 @@ namespace Valkur.Core.Input
         /// </summary>
         public string PayloadKey { get; }
 
+        /// <summary>
+        /// True for an action whose context mask is a MECHANISM rather than a preference, so
+        /// <see cref="InputContextPolicy"/> refuses every change to it and the Controls editor
+        /// draws no context chips for it.
+        ///
+        /// <para>Each one is a soft lock if it can be switched off. Walking and aiming.
+        /// The dash — nothing auto-switches out of Peace, so a player who loses it there has
+        /// no recovery from being jumped. The stance toggle, which is the only way OUT of a
+        /// posture: a control that can be disabled from inside the mode it escapes is a trap
+        /// with the door locked behind it. The General Editor key, which since the F-row was
+        /// retired is the only way into ANY editor — including this one, so silencing it
+        /// would make itself unrecoverable. And every UI verb, because a player who silences
+        /// Submit can no longer confirm the dialog asking them to confirm it.</para>
+        ///
+        /// <para>It is a separate fact from <see cref="Rebindable"/>: the first four may be
+        /// moved to any key the player likes, they simply may not be taken away. Every
+        /// non-rebindable action IS context-locked, though, and
+        /// <c>InputActionCatalogTests</c> asserts that — a path nobody may move is not a
+        /// preference in the other axis either.</para>
+        /// </summary>
+        public bool ContextLocked { get; }
+
+        /// <summary>
+        /// A non-empty tag shared by actions that are DESIGNED to answer the same control at
+        /// the same time. Two actions in one group on one path are not a clash.
+        ///
+        /// <para>It exists because exactly one such pair is real and deliberate: Escape both
+        /// closes the open editor (<c>EditorShared/Close</c>) and opens the launcher
+        /// (<c>Editors/OpenGeneralEditor</c>), which is the documented one-press UX. Without a
+        /// declared group the context scanner is right to call that a double fire, and it
+        /// would paint Escape red in all sixteen editor tabs — a permanent false positive is
+        /// how a warning stops being read. Declaring it is data, so a THIRD action arriving on
+        /// Escape still lights up.</para>
+        /// </summary>
+        public string CoexistGroup { get; }
+
+        /// <summary>
+        /// True for an action that only fires while CTRL is held.
+        ///
+        /// <para>Five do: undo, redo and save in every editor, plus quick save and quick load.
+        /// The Ctrl half deliberately lives in C# rather than in the binding — ten editors read
+        /// <c>IsCtrlHeld()</c> as a STATE for gestures that are not shortcuts at all (Ctrl-drag,
+        /// Ctrl-click), so folding it into a composite would make the modifier unreadable for
+        /// those. The cost of that choice is that no scan over the asset can see it, which is
+        /// how the shipped project ended up with <c>Editor.Tile/ToolSelect</c> and
+        /// <c>EditorShared/Save</c> both on <c>s</c>, and <c>Editors/QuickSave</c> and
+        /// <c>Editor.Tile/ProbeVolumes</c> both on <c>f5</c>, with no audit able to say whether
+        /// either was a double fire. Declaring it here gives the scanner the missing half, and
+        /// <see cref="EditorInput"/> reads THIS rather than a list of its own so the two cannot
+        /// drift.</para>
+        /// </summary>
+        public bool RequiresCtrl { get; }
+
         public InputActionDescriptor(
             string map, string action, string displayName,
             InputActionCategory category, InputContextMask defaultContexts,
             bool reachesDamage, bool rebindable = true, string payloadKey = "",
-            string ownerEditor = "")
+            string ownerEditor = "", bool contextLocked = false, string coexistGroup = "",
+            bool requiresCtrl = false)
         {
             Map            = map;
             Action         = action;
@@ -100,6 +154,9 @@ namespace Valkur.Core.Input
             Rebindable     = rebindable;
             PayloadKey     = payloadKey ?? "";
             OwnerEditor    = ownerEditor ?? "";
+            ContextLocked  = contextLocked;
+            CoexistGroup   = coexistGroup ?? "";
+            RequiresCtrl   = requiresCtrl;
         }
 
         public bool IsSpell => !string.IsNullOrEmpty(PayloadKey);
@@ -156,6 +213,10 @@ namespace Valkur.Core.Input
         public const string MapMapEditor       = "Editor.Map";
         public const string MapBossEditor      = "Editor.Boss";
 
+        /// <summary>Escape closes the open editor AND opens the launcher, by design. See
+        /// <see cref="InputActionDescriptor.CoexistGroup"/>.</summary>
+        public const string CoexistEscapeChain = "escape-chain";
+
         [SelfHealingStatic("Immutable table built once in the static constructor from constants. Holds no Unity object and is never mutated after init, so it cannot carry a destroyed reference or a stale registration across a Play session.")]
         private static readonly InputActionDescriptor[] _all;
         [SelfHealingStatic("Immutable table built once in the static constructor from constants. Holds no Unity object and is never mutated after init, so it cannot carry a destroyed reference or a stale registration across a Play session.")]
@@ -202,13 +263,13 @@ namespace Valkur.Core.Input
             // Move and Look are live in every stance and are not a preference the stance
             // layer may touch: a stance that could take away walking or aiming is a soft lock,
             // and Peace exists so the player can WALK UP TO a vendor.
-            list.Add(G("Move", "Mover", InputActionCategory.Movement, both, false));
-            list.Add(G("Look", "Apuntar", InputActionCategory.Movement, both, false, rebindable: false));
+            list.Add(G("Move", "Mover", InputActionCategory.Movement, both, false, contextLocked: true));
+            list.Add(G("Look", "Apuntar", InputActionCategory.Movement, both, false, rebindable: false, contextLocked: true));
 
             // The dash is NOT combat. It is extracted into PollTraversal and runs on both
             // sides of the stance gate, because nothing auto-switches and a Peace stance that
             // also removed the dash would leave a player who got jumped with no recovery.
-            list.Add(G("Dash", "Esquiva", InputActionCategory.Traversal, both, false));
+            list.Add(G("Dash", "Esquiva", InputActionCategory.Traversal, both, false, contextLocked: true));
 
             // ── Gameplay: the war surface ────────────────────────────────────
             list.Add(G("PrimaryAttack",   "Ataque primario",  InputActionCategory.Combat, war, true));
@@ -220,7 +281,10 @@ namespace Valkur.Core.Input
             list.Add(G("Inventory",    "Inventario",       InputActionCategory.Interface,   both, false));
             list.Add(G("DropItem",     "Soltar objeto",    InputActionCategory.Interface,   both, false));
             list.Add(G("Pause",        "Pausa",            InputActionCategory.System,      both, false));
-            list.Add(G("ToggleStance", "Cambiar postura",  InputActionCategory.System,      both, false));
+            // The stance toggle is the only way OUT of a posture, so it is stance-locked: a
+            // control that can be switched off from inside the mode it escapes is a soft lock.
+            list.Add(G("ToggleStance", "Cambiar postura",  InputActionCategory.System,      both, false,
+                       contextLocked: true));
 
             // ── Gameplay: the 24 spell slots ─────────────────────────────────
             // Every one reaches the damage path through SpellCaster, INCLUDING the ones that
@@ -285,16 +349,24 @@ namespace Valkur.Core.Input
             list.Add(Ed("ToggleBuildings",    "Editor de edificios"));
             list.Add(Ed("ToggleMap",          "Editor de mapa"));
             list.Add(Ed("ToggleFSM",          "Editor de FSM"));
-            list.Add(Ed("QuickSave",          "Guardado rapido"));
-            list.Add(Ed("QuickLoad",          "Carga rapida"));
+            // Ctrl+F5 / Ctrl+F9 — SaveLoadInputHandler tests the modifier itself, which is why
+            // bare F5 reaches the Tile editor's sprite probe without saving the game.
+            list.Add(Ed("QuickSave",          "Guardado rapido", requiresCtrl: true));
+            list.Add(Ed("QuickLoad",          "Carga rapida",    requiresCtrl: true));
             list.Add(Ed("ToggleDevConsole",   "Consola"));
-            list.Add(Ed("OpenGeneralEditor",  "Editor general"));
+            // Escape is deliberately answered TWICE inside an editor — it closes the editor and
+            // opens the launcher, which is the documented one-press UX (see
+            // GeneralEditorManager.Update). The group says so in data, so the context scanner
+            // stops reporting a false clash in all sixteen editor tabs while still lighting up
+            // if a THIRD action ever lands on Escape.
+            list.Add(Ed("OpenGeneralEditor",  "Editor general", coexistGroup: CoexistEscapeChain,
+                        contextLocked: true));
 
             // The two modifier probes are read as HELD STATE by ten editors, never as a
             // gesture. Rebinding one moves every Ctrl-drag and Ctrl+S in the project at once,
             // which is a mechanism and not a preference.
-            list.Add(Ed("CtrlModifier", "Modificador Ctrl", rebindable: false));
-            list.Add(Ed("AltModifier",  "Modificador Alt",  rebindable: false));
+            list.Add(Ed("CtrlModifier", "Modificador Ctrl", rebindable: false, contextLocked: true));
+            list.Add(Ed("AltModifier",  "Modificador Alt",  rebindable: false, contextLocked: true));
 
             // ── Shared editor verbs ──────────────────────────────────────────
             // Declared ONCE and live in every editor context, which is the whole point: some
@@ -303,10 +375,10 @@ namespace Valkur.Core.Input
             // Before this they were 85 raw KeyboardInputManager / MouseInputManager calls
             // spread over 48 files, so "the same everywhere" was a convention maintained by
             // hand, and an author could not change any of them.
-            list.Add(Sh("Undo",   "Deshacer"));
-            list.Add(Sh("Redo",   "Rehacer"));
-            list.Add(Sh("Save",   "Guardar"));
-            list.Add(Sh("Close",  "Cerrar editor"));
+            list.Add(Sh("Undo",   "Deshacer", requiresCtrl: true));
+            list.Add(Sh("Redo",   "Rehacer",  requiresCtrl: true));
+            list.Add(Sh("Save",   "Guardar",  requiresCtrl: true));
+            list.Add(Sh("Close",  "Cerrar editor", coexistGroup: CoexistEscapeChain));
             list.Add(Sh("Delete", "Borrar seleccion"));
             // One Select, not a separate drag-select: they are the same button, told apart by
             // whether the pointer moved. Two actions on one control would be a conflict the
@@ -383,9 +455,11 @@ namespace Valkur.Core.Input
 
         private static InputActionDescriptor G(
             string action, string label, InputActionCategory category,
-            InputContextMask contexts, bool reachesDamage, bool rebindable = true) =>
+            InputContextMask contexts, bool reachesDamage, bool rebindable = true,
+            bool contextLocked = false) =>
             new InputActionDescriptor(MapGameplay, action, label, category, contexts,
-                reachesDamage, rebindable);
+                reachesDamage, rebindable, payloadKey: "", ownerEditor: "",
+                contextLocked: contextLocked);
 
         private static void AddSpell(List<InputActionDescriptor> list,
             string action, string spellKey, string label) =>
@@ -395,13 +469,18 @@ namespace Valkur.Core.Input
 
         private static InputActionDescriptor U(string action, string label) =>
             new InputActionDescriptor(MapUI, action, label, InputActionCategory.Interface,
-                InputContextMask.Everywhere, reachesDamage: false, rebindable: false);
+                InputContextMask.Everywhere, reachesDamage: false, rebindable: false,
+                payloadKey: "", ownerEditor: "", contextLocked: true);
 
         /// <summary>A verb shared by every editor: <see cref="InputContextMask.Editors"/>
         /// with no owner.</summary>
-        private static InputActionDescriptor Sh(string action, string label) =>
+        private static InputActionDescriptor Sh(string action, string label,
+                                                string coexistGroup = "",
+                                                bool requiresCtrl = false) =>
             new InputActionDescriptor(MapEditorShared, action, label, InputActionCategory.Editor,
-                InputContextMask.Editors, reachesDamage: false, rebindable: true);
+                InputContextMask.Editors, reachesDamage: false, rebindable: true,
+                payloadKey: "", ownerEditor: "", contextLocked: false,
+                coexistGroup: coexistGroup, requiresCtrl: requiresCtrl);
 
         /// <summary>
         /// One editor's own tool: <see cref="InputContextMask.Editors"/> plus the owner, so it
@@ -422,8 +501,13 @@ namespace Valkur.Core.Input
                 InputContextMask.Editors, reachesDamage: false, rebindable: true,
                 payloadKey: "", ownerEditor: ownerEditor);
 
-        private static InputActionDescriptor Ed(string action, string label, bool rebindable = true) =>
+        private static InputActionDescriptor Ed(string action, string label,
+                                                bool rebindable = true, string coexistGroup = "",
+                                                bool contextLocked = false,
+                                                bool requiresCtrl = false) =>
             new InputActionDescriptor(MapEditors, action, label, InputActionCategory.Editor,
-                InputContextMask.Everywhere, reachesDamage: false, rebindable);
+                InputContextMask.Everywhere, reachesDamage: false, rebindable,
+                payloadKey: "", ownerEditor: "", contextLocked: contextLocked,
+                coexistGroup: coexistGroup, requiresCtrl: requiresCtrl);
     }
 }

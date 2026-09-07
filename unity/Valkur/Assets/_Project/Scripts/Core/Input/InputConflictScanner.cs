@@ -53,6 +53,65 @@ namespace Valkur.Core.Input
     }
 
     /// <summary>
+    /// How badly two actions that answer one control in ONE CONTEXT collide.
+    ///
+    /// <para>Ordered so a path's verdict is the MAX over its pairs: the worst pair is what the
+    /// player experiences.</para>
+    /// </summary>
+    public enum InputClashSeverity
+    {
+        /// <summary>Fewer than two live actions, or every pair is a declared coexist group.</summary>
+        None = 0,
+
+        /// <summary>
+        /// One side is a UI verb. Both are enabled, and the EventSystem decides which consumes
+        /// the press from what has focus — WASD is Move and Navigate at once, space is Dash
+        /// and Submit, and neither has ever been a bug. Shown, not flagged.
+        /// </summary>
+        Arbitrated = 1,
+
+        /// <summary>
+        /// One side is a non-rebindable probe read as HELD STATE rather than as a gesture —
+        /// the Ctrl and Alt modifiers, the pointer. Both really do answer, and it is usually
+        /// what the author wanted, but not always: Alt is both the modifier probe and
+        /// <c>ToggleOutlines</c>, so every Alt-drag flips the outlines on the way in.
+        /// </summary>
+        Modifier = 2,
+
+        /// <summary>
+        /// Two real gestures, both live in this context, on one control. One press fires both.
+        /// This is the state the editor exists to make visible.
+        /// </summary>
+        Blocking = 3,
+    }
+
+    /// <summary>Everything a control's clash is, in the context being viewed.</summary>
+    public readonly struct InputContextClash
+    {
+        public readonly string Path;
+        public readonly InputClashSeverity Severity;
+        public readonly IReadOnlyList<InputActionDescriptor> Live;
+
+        public InputContextClash(string path, InputClashSeverity severity,
+                                 IReadOnlyList<InputActionDescriptor> live)
+        {
+            Path = path; Severity = severity; Live = live;
+        }
+
+        public string Describe()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append(InputControlPaths.LabelForPath(Path)).Append(": ");
+            for (int i = 0; i < Live.Count; i++)
+            {
+                if (i > 0) sb.Append(" + ");
+                sb.Append(Live[i].DisplayName);
+            }
+            return sb.ToString();
+        }
+    }
+
+    /// <summary>
     /// Finds every physical control that more than one action answers to.
     ///
     /// <para>WHY IT IS STANCE-AWARE AND MAP-AWARE. A naive "same path twice" scan reports the
@@ -63,11 +122,18 @@ namespace Valkur.Core.Input
     /// and that is precisely the arrangement the Controls editor exists to let a player
     /// build.</para>
     ///
-    /// <para>The shipped asset does have genuine same-map collisions on the editor F-keys —
+    /// <para>The shipped asset USED to carry four same-map collisions on the editor F-keys —
     /// F2 (Combat Ranges + Time &amp; Weather), F3 (Spawner + Lighting), F5 (Entities +
-    /// QuickSave), F9 (Debug HUD + QuickLoad) — and three of those four have survived because
-    /// one half is reached with a modifier that lives in C# rather than in the binding. They
-    /// are reported rather than fixed here: which one should move is a design decision.</para>
+    /// QuickSave), F9 (Debug HUD + QuickLoad). Retiring the F-row took all four with it, and
+    /// <c>ControlsBindingLayerTests.EditorsMap_HasNoSameMapCollisions</c> now asserts zero
+    /// rather than excusing a list — a stale allowlist is worse than none, because it would go
+    /// on excusing those four paths if a future binding landed on one.</para>
+    ///
+    /// <para>THIS IS THE ASSET AUDIT, NOT THE BOARD. It answers "is the asset sane" and is
+    /// map-based, which is right for a test and wrong for a picture: two actions on one key in
+    /// different contexts are not a collision, and a UI verb sharing a key with its gameplay
+    /// counterpart never has been. The Controls editor paints from
+    /// <see cref="ClashesInContext"/> instead.</para>
     /// </summary>
     public static class InputConflictScanner
     {
@@ -110,6 +176,98 @@ namespace Valkur.Core.Input
                 return s != 0 ? s : string.CompareOrdinal(x.Path, y.Path);
             });
             return conflicts;
+        }
+
+        // ── Context-aware clashes ────────────────────────────────────────────
+        //
+        // Scan(asset) above answers "is the ASSET sane" and is deliberately map-based: it is
+        // the audit a test runs. The three methods below answer a different question — "what
+        // happens when I press this key, HERE" — and they are what the drawn board paints
+        // from. Keeping them separate is what stops the board reporting a design as broken:
+        // two actions on one key in different contexts are not a collision, they are the whole
+        // point of the context layer, and a map-based scan cannot tell those apart.
+
+        /// <summary>
+        /// Which actions are LIVE on each control in <paramref name="contextId"/> — the map the
+        /// drawn board tints and labels from.
+        /// </summary>
+        public static Dictionary<string, List<InputActionDescriptor>> LiveByPath(
+            InputActionAsset asset, string contextId)
+        {
+            var live = new Dictionary<string, List<InputActionDescriptor>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var kv in BindingsByPath(asset))
+            {
+                List<InputActionDescriptor> kept = null;
+                foreach (var d in kv.Value)
+                {
+                    if (!InputContextPolicy.IsLive(d, contextId)) continue;
+                    (kept ??= new List<InputActionDescriptor>(2)).Add(d);
+                }
+                if (kept != null) live[kv.Key] = kept;
+            }
+            return live;
+        }
+
+        /// <summary>
+        /// The verdict for one control, given everything live on it. The MAX over the pairs,
+        /// because the worst pair is what the player experiences.
+        /// </summary>
+        public static InputClashSeverity Classify(IReadOnlyList<InputActionDescriptor> live)
+        {
+            if (live == null || live.Count < 2) return InputClashSeverity.None;
+
+            var worst = InputClashSeverity.None;
+            for (int i = 0; i < live.Count; i++)
+            for (int j = i + 1; j < live.Count; j++)
+            {
+                var s = ClassifyPair(live[i], live[j]);
+                if (s > worst) worst = s;
+            }
+            return worst;
+        }
+
+        private static InputClashSeverity ClassifyPair(InputActionDescriptor a, InputActionDescriptor b)
+        {
+            // Declared to fire together. Escape closing the editor AND opening the launcher is
+            // the documented one-press UX, and without this it would paint red in all sixteen
+            // editor tabs forever — a warning that is always on is a warning nobody reads.
+            if (!string.IsNullOrEmpty(a.CoexistGroup) &&
+                string.Equals(a.CoexistGroup, b.CoexistGroup, StringComparison.Ordinal))
+                return InputClashSeverity.None;
+
+            // Told apart by the modifier. Ctrl+S saves and bare S picks the select tool, and
+            // they are two different presses however much they share a key — which is only
+            // true because EditorInput refuses a bare-key tool while Ctrl is held AND refuses
+            // a Ctrl verb while it is not. Both halves are in InputActionDescriptor.RequiresCtrl,
+            // so this cannot claim a separation the readers do not make.
+            if (a.RequiresCtrl != b.RequiresCtrl) return InputClashSeverity.None;
+
+            if (string.Equals(a.Map, InputActionCatalog.MapUI, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(b.Map, InputActionCatalog.MapUI, StringComparison.OrdinalIgnoreCase))
+                return InputClashSeverity.Arbitrated;
+
+            if (!a.Rebindable || !b.Rebindable) return InputClashSeverity.Modifier;
+
+            return InputClashSeverity.Blocking;
+        }
+
+        /// <summary>Every control that clashes in this context, worst first.</summary>
+        public static IReadOnlyList<InputContextClash> ClashesInContext(
+            InputActionAsset asset, string contextId)
+        {
+            var result = new List<InputContextClash>();
+            foreach (var kv in LiveByPath(asset, contextId))
+            {
+                var severity = Classify(kv.Value);
+                if (severity == InputClashSeverity.None) continue;
+                result.Add(new InputContextClash(kv.Key, severity, kv.Value));
+            }
+            result.Sort((x, y) =>
+            {
+                int s = y.Severity.CompareTo(x.Severity);
+                return s != 0 ? s : string.CompareOrdinal(x.Path, y.Path);
+            });
+            return result;
         }
 
         /// <summary>

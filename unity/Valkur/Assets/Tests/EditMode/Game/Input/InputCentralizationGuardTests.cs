@@ -122,6 +122,17 @@ namespace Valkur.Tests.EditMode.Game.Input
             // anyKey on either form.
             (new Regex(@"(Keyboard\.current\??\.|kb\.)anyKey\.(isPressed|wasPressedThisFrame|wasReleasedThisFrame)"),
              "Keyboard.current.anyKey.* — use KeyboardInputManager.WasAnyKeyPressedThisFrame() or InputCompat.AnyKeyPressed()"),
+
+            // The INDEXER form: `kb[someKey].wasPressedThisFrame`. It is what you write when
+            // the key is a variable rather than a literal, which is exactly the shape a
+            // rebinding capture loop takes — and the guard was blind to it for the life of the
+            // project, so the Controls editor's own capture poll read the raw device while
+            // every other file was held to the rule. Being a variable makes it MORE dangerous,
+            // not less: it is the InputSystem half that dies under the 2022.3 event-drop bug,
+            // so a capture written this way stops answering in the one session where the player
+            // came looking for the Controls editor because their keys had stopped working.
+            (new Regex(@"(Keyboard\.current\??|kb)\s*\[[^\]]+\]\s*\.(isPressed|wasPressedThisFrame|wasReleasedThisFrame)"),
+             "indexer read `kb[key].*` — use KeyboardInputManager.{Is,Was}Key* which ORs the legacy backend"),
         };
 
         [Test]

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Valkur.Core.Input
@@ -77,6 +77,29 @@ namespace Valkur.Core.Input
             if (InputBlocker.IsGameplayBlocked && !InputBlocker.IsAlwaysAllowedKey(legacyKey))
                 return false;
             return UnityEngine.Input.GetKeyDown(legacyKey);
+        }
+
+        /// <summary>
+        /// The same OR-gated read as <see cref="WasKeyPressedThisFrame(Key, KeyCode)"/>, with
+        /// the modal check deliberately skipped — for the ONE caller that OWNS the block.
+        ///
+        /// <para>The DevConsole raises <see cref="InputBlocker"/> on open (through
+        /// ChatInputGate) and then polls Tab, Up and Down for its own autocomplete and
+        /// history. Those three are not on the always-allowed list, so the console was
+        /// suppressing its own keyboard: Tab completed nothing and the arrows walked no
+        /// history for as long as the panel was up, silently, since a refused read logs
+        /// nothing. Widening <see cref="InputBlocker.IsAlwaysAllowedKey"/> is the wrong fix —
+        /// Tab is the stance toggle and the arrows are gameplay, so it would re-open them for
+        /// the chat panel too.</para>
+        ///
+        /// <para>Reserved for a component that raised the block itself. Anything else calling
+        /// this is reading gameplay keys out of a text field.</para>
+        /// </summary>
+        public static bool WasKeyPressedThisFrameIgnoringBlock(Key newKey, KeyCode legacyKey)
+        {
+            var kb = Keyboard.current;
+            bool n = kb != null && kb[newKey].wasPressedThisFrame;
+            return n || UnityEngine.Input.GetKeyDown(legacyKey);
         }
 
         /// <summary>

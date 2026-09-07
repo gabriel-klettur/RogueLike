@@ -180,12 +180,20 @@ namespace Valkur.UIKit
 
             var tmp = go.GetComponent<TextMeshProUGUI>();
             tmp.text = text;
-            tmp.fontSize = size;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.enableWordWrapping = false;
-            tmp.overflowMode = TextOverflowModes.Ellipsis;
             tmp.color = UITheme.TEXT_PRIMARY;
             tmp.raycastTarget = false;   // the cap's own Button owns the click
+
+            // AUTO-SIZE, not ellipsis. A cap is 34 px and the label table holds "Bloq Mayus",
+            // "Impr Pant", "Num 7" and "Re Pag" — at a fixed size every one of them rendered as
+            // "Nu…", "Ho…", "Pa…", so a third of the board was three dots. Shrinking a long
+            // legend costs a little size on the keys nobody looks at and keeps the letter keys
+            // at full size, which is the opposite trade to truncating.
+            tmp.enableAutoSizing = true;
+            tmp.fontSizeMax = size;
+            tmp.fontSizeMin = Mathf.Max(6f, size * 0.55f);
+            tmp.overflowMode = TextOverflowModes.Truncate;
             return tmp;
         }
 
@@ -209,18 +217,6 @@ namespace Valkur.UIKit
             }
         }
 
-        /// <summary>Refreshes exactly one cap — what a rebind needs, so a 105-key repaint is
-        /// not the cost of moving one binding.</summary>
-        public void RefreshOne(string controlName, KeyCapVisual visual)
-        {
-            if (_root == null || !_caps.TryGetValue(controlName, out var cap)) return;
-            cap.Background.color = visual.Fill;
-            cap.Legend.color = visual.Legend;
-            cap.Subtitle.text = visual.Subtitle;
-            cap.Ring.effectColor = visual.Ring;
-            cap.Ring.enabled = visual.Ring.a > 0.001f;
-        }
-
         /// <summary>Re-reads every cap's legend from the OS. Needed when the layout kind
         /// changes and after a device change — a board drawn before the keyboard arrived shows
         /// the fallback labels.</summary>
@@ -234,7 +230,13 @@ namespace Valkur.UIKit
 
         public void Destroy()
         {
-            if (_root != null) UnityEngine.Object.Destroy(_root.gameObject);
+            // Object.Destroy is an ERROR in Edit Mode, and Build/Destroy is exactly the pair an
+            // EditMode fixture exercises when it switches the drawn layout.
+            if (_root != null)
+            {
+                if (Application.isPlaying) UnityEngine.Object.Destroy(_root.gameObject);
+                else                       UnityEngine.Object.DestroyImmediate(_root.gameObject);
+            }
             _root = null;
             _caps.Clear();
         }

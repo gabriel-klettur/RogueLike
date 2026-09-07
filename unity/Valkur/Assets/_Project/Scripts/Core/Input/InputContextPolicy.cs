@@ -16,9 +16,13 @@ namespace Valkur.Core.Input
         RefusedNotRebindable,
         /// <summary>No descriptor: the action is not in <see cref="InputActionCatalog"/>.</summary>
         RefusedUnknownAction,
-        /// <summary>An action must be live somewhere; clearing both stances would hide it
-        /// from the player with no way back except this same editor.</summary>
-        RefusedEmptyMask,
+        /// <summary>
+        /// The action's mask is a mechanism rather than a preference — see
+        /// <see cref="InputActionDescriptor.ContextLocked"/>. Walking, aiming, the dash, the
+        /// stance toggle, the General Editor key and every UI verb: switching any of them off
+        /// is a soft lock, and three of the six would make themselves unrecoverable.
+        /// </summary>
+        RefusedContextLocked,
     }
 
     /// <summary>
@@ -57,8 +61,10 @@ namespace Valkur.Core.Input
         private static readonly Dictionary<string, InputContextMask> _overrides =
             new Dictionary<string, InputContextMask>(StringComparer.OrdinalIgnoreCase);
 
-        /// <summary>Raised whenever any action's mask changes. The Controls editor and the
-        /// stance HUD listen; nothing in the gameplay loop does.</summary>
+        /// <summary>Raised whenever any action's mask changes. The Controls editor is the only
+        /// subscriber — the comment used to name the stance HUD as well, which reads
+        /// <see cref="PlayerStance.OnChanged"/> and has never touched this. Nothing in the
+        /// gameplay loop listens: the masks are read where they are used.</summary>
         public static event Action OnChanged;
 
         /// <summary>True when the player has moved at least one action off its shipped mask.</summary>
@@ -130,10 +136,62 @@ namespace Valkur.Core.Input
         public static InputAssignmentVerdict Evaluate(InputActionDescriptor descriptor, InputContextMask mask)
         {
             if (descriptor == null) return InputAssignmentVerdict.RefusedUnknownAction;
-            if (mask == InputContextMask.None) return InputAssignmentVerdict.RefusedEmptyMask;
+
+            // A locked action accepts exactly its shipped mask and nothing else — including
+            // None. Tested BEFORE the damage rule so a locked damage action reports the reason
+            // that actually applies to it.
+            if (descriptor.ContextLocked && mask != descriptor.DefaultContexts)
+                return InputAssignmentVerdict.RefusedContextLocked;
+
             if ((mask & InputContextMask.Peace) != 0 && descriptor.ReachesDamage)
                 return InputAssignmentVerdict.RefusedDamageInPeace;
+
+            // None is ALLOWED for anything not locked, and that is what makes "silence one
+            // spell without leaving War" possible. It used to be refused outright, for a real
+            // reason — an action live nowhere is a control the player cannot find and cannot
+            // switch back on. What removes that reason is the LIST: the Controls editor now
+            // shows every action that BELONGS to the context being viewed (see
+            // <see cref="BelongsTo"/>) and marks the silenced ones, so switching one back on
+            // is a click on the row it was always on. The locked set above is what remains
+            // genuinely unrecoverable, and it is refused by name rather than by a blanket rule.
             return InputAssignmentVerdict.Allowed;
+        }
+
+        /// <summary>
+        /// Is this action part of the vocabulary of <paramref name="contextId"/> — whether or
+        /// not it is live there right now?
+        ///
+        /// <para>The distinction is what lets the Controls editor list a SILENCED action
+        /// instead of hiding it, which is the whole reason an empty mask is allowed at all.
+        /// It reads the SHIPPED mask, never the live one: a player who silences a spell has
+        /// not moved it out of the War vocabulary, they have switched it off inside it.</para>
+        ///
+        /// <para>The one thing that really is absent rather than silenced is a damage action
+        /// in Peace. That is deliberate and predates this method: a greyed row is a control
+        /// the player keeps trying, and Peace's promise is not "combat is off", it is
+        /// "combat is not here".</para>
+        /// </summary>
+        public static bool BelongsTo(InputActionDescriptor descriptor, string contextId)
+        {
+            if (descriptor == null) return false;
+
+            var bit = InputContexts.MaskOf(contextId);
+            if (bit == InputContextMask.None) return false;
+
+            if (bit == InputContextMask.Peace && descriptor.ReachesDamage) return false;
+
+            if (bit == InputContextMask.Editors)
+            {
+                if ((descriptor.DefaultContexts & InputContextMask.Editors) == 0) return false;
+                if (string.IsNullOrEmpty(descriptor.OwnerEditor)) return true;
+                return string.Equals(descriptor.OwnerEditor, InputContexts.EditorNameOf(contextId),
+                                     StringComparison.OrdinalIgnoreCase);
+            }
+
+            // Both play postures share one vocabulary: a spell belongs to the War tab and to
+            // the Peace tab's "not permitted here" answer, and it is the ReachesDamage check
+            // above that separates the two.
+            return (descriptor.DefaultContexts & InputContextMask.Gameplay) != 0;
         }
 
         /// <summary>Would this action accept a rebind at all?</summary>
@@ -229,7 +287,7 @@ namespace Valkur.Core.Input
             InputAssignmentVerdict.RefusedDamageInPeace => "En Paz no se puede asignar nada que haga dano.",
             InputAssignmentVerdict.RefusedNotRebindable => "Esta accion es estructural y no se puede reasignar.",
             InputAssignmentVerdict.RefusedUnknownAction => "Accion desconocida.",
-            InputAssignmentVerdict.RefusedEmptyMask     => "Una accion tiene que estar viva en alguna postura.",
+            InputAssignmentVerdict.RefusedContextLocked  => "Esta accion vive siempre donde vive: quitarla dejaria al jugador sin forma de recuperarla.",
             _                                            => "Rechazado.",
         };
 
