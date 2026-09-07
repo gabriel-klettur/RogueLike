@@ -1,10 +1,11 @@
-using System.IO;
-using System.Text;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using Valkur.Core.Coordinates;
 using Valkur.Core.Input;
 using Valkur.Data;
 using Valkur.Gameplay.Spawners;
+using Valkur.Infrastructure.Persistence.Repositories;
 using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Spawners
@@ -22,8 +23,6 @@ namespace Valkur.Gameplay.Spawners
         // wins for clicks on empty tiles around the spawner. Kept in sync with
         // <see cref="HoverHelpStatus"/> for the cursor affordance.
         internal const float CENTER_HIT_RADIUS_WORLD = 0.55f;
-        private const string STREAMING_SUBFOLDER     = "Spawners";
-        private const string INSTANCES_FILENAME      = "spawners_instances.json";
 
         // ── Map interaction (called every Update while active) ───────────────────
 
@@ -97,9 +96,17 @@ namespace Valkur.Gameplay.Spawners
         private void PlaceSpawner(SpawnerTemplateData template, Vector3 worldPos)
         {
             string zone = ResolveZone(worldPos);
-            int col = Mathf.RoundToInt(worldPos.x);
-            int row = Mathf.RoundToInt(worldPos.y);
-            string instanceId = $"{template.templateId}_{zone}_{col}_{row}";
+
+            // The id encodes the tile, so it has to be the SAME tile the file stores —
+            // zone-relative with the row axis flipped, not the rounded world position. Minting
+            // it from world coordinates is why 6 of the 20 shipped rows carry an id that
+            // disagrees with their own `tile` field: `survival_10_forest_14_9` sits at
+            // [25, 18]. Harmless while nothing parses an id, and a trap the moment anything
+            // does — which is exactly the shape of SPAWNER_COORDINATE_SPACE_DRIFT, where the
+            // save and the loader each used a different space and only the composition was
+            // wrong. SpawnerTileMapping owns that conversion for both directions.
+            var tile = ResolveTileForSave(zone, worldPos);
+            string instanceId = $"{template.templateId}_{zone}_{tile.x}_{tile.y}";
 
             var go = new GameObject($"Spawner_{instanceId}");
             go.transform.position = worldPos;
@@ -323,10 +330,6 @@ namespace Valkur.Gameplay.Spawners
 
             var all = FindObjectsOfType<SpawnerInstance>();
 
-            string path = Path.Combine(
-                Valkur.Core.MapEditorActiveSlot.DirForActiveSlot(STREAMING_SUBFOLDER),
-                INSTANCES_FILENAME);
-
             // Refuse to replace a populated file with an empty one.
             //
             // Saving used to happen only when the user pressed the toolbar button, so an empty
@@ -338,21 +341,19 @@ namespace Valkur.Gameplay.Spawners
             // Same shape as the Buildings save-collapse incident, and cheap to make impossible:
             // an empty save over a non-empty file is never what anyone wanted, and the manual
             // route out is to delete the file.
-            if (all.Length == 0 && FileHasEntries(path))
+            if (all.Length == 0 && RepositoryHasEntries())
             {
                 SetStatus("ABORTING save — 0 spawners in scene but the file is not empty.");
-                Debug.LogWarning($"[SpawnerEditor] ABORTING save — 0 instances in scene but " +
-                                 $"'{path}' still holds spawners. Refusing to erase it. If you " +
-                                 "really meant to clear the map, delete the file by hand.");
+                Debug.LogWarning("[SpawnerEditor] ABORTING save — 0 instances in scene but the " +
+                                 "instances file still holds spawners. Refusing to erase it. If " +
+                                 "you really meant to clear the map, delete the file by hand.");
                 return false;
             }
 
-            var sb = new StringBuilder();
-            sb.AppendLine("[");
-            for (int i = 0; i < all.Length; i++)
+            var records = new List<SpawnerInstanceRecord>(all.Length);
+            foreach (var si in all)
             {
-                var si  = all[i];
-                var pos = si.transform.position;
+                if (si == null) continue;
 
                 // The file stores tiles ZONE-RELATIVE with the row axis flipped; world space
                 // is absolute with y growing upward. Writing RoundToInt(position) here — as
@@ -361,29 +362,26 @@ namespace Valkur.Gameplay.Spawners
                 // Lobby is at (150, 50), which is why spawners marched 150 tiles right per
                 // restart until they left the map. SpawnerTileMapping owns both directions
                 // now, so they cannot disagree again.
-                var tile = ResolveTileForSave(si, pos);
-                int col = tile.x;
-                int row = tile.y;
-
-                sb.Append("  {");
-                sb.Append($"\"template_id\": \"{si.Template?.templateId ?? "?"}\", ");
-                sb.Append($"\"zone\": \"{si.Zone}\", ");
-                sb.Append($"\"tile\": [{col}, {row}], ");
-                sb.Append($"\"id\": \"{si.InstanceId}\"");
-                sb.Append('}');
-                if (i < all.Length - 1) sb.Append(',');
-                sb.AppendLine();
+                records.Add(new SpawnerInstanceRecord
+                {
+                    TemplateId = si.Preset != null ? si.Preset.templateId : "?",
+                    Zone       = si.Zone,
+                    Tile       = ResolveTileForSave(si, si.transform.position),
+                    InstanceId = si.InstanceId,
+                    Config     = si.Config,
+                    HadConfig  = true
+                });
             }
-            sb.AppendLine("]");
 
-            // The path is map-slot aware: the default slot keeps the legacy
-            // StreamingAssets/Spawners/ location, custom maps authored from the F11 Map Editor
-            // write under persistentDataPath/Maps/<slot>/Spawners/. Placing a spawner on one
-            // map must never overwrite another's file.
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-            File.WriteAllText(path, sb.ToString());
-            SetStatus($"Saved {all.Length} instance(s).");
-            Debug.Log($"[SpawnerEditor] Saved {all.Length} instance(s) → {path}");
+            // One serializer for both directions, and one write path: the repository is
+            // map-slot aware (the default slot keeps StreamingAssets/Spawners/, a map
+            // authored in the Map Editor writes under persistentDataPath/Maps/<slot>/) and
+            // its write is atomic, so a crash mid-save cannot leave half a map on disk.
+            ResolveRepository().WriteRawJson(
+                WorldId.Base, SpawnerInstanceSerializer.Serialize(records));
+
+            SetStatus($"Saved {records.Count} instance(s).");
+            Debug.Log($"[SpawnerEditor] Saved {records.Count} instance(s).");
             return true;
         }
 
@@ -438,39 +436,61 @@ namespace Valkur.Gameplay.Spawners
         /// such an entry with a warning either way.
         /// </summary>
         private Vector2Int ResolveTileForSave(SpawnerInstance si, Vector3 worldPos)
+            => ResolveTileForSave(si.Zone, worldPos, si.InstanceId);
+
+        /// <summary>
+        /// Shared by the save and by <see cref="PlaceSpawner"/>'s id minting, so the id a
+        /// placement is born with and the tile that placement is written at cannot name
+        /// different coordinates.
+        /// </summary>
+        private Vector2Int ResolveTileForSave(string zone, Vector3 worldPos, string subject = null)
         {
             var zoneManager = FindObjectOfType<Valkur.Gameplay.World.ZoneManager>();
-            if (zoneManager != null && !string.IsNullOrEmpty(si.Zone)
-                && zoneManager.TryGetZone(si.Zone, out var zoneDef))
+            if (zoneManager != null && !string.IsNullOrEmpty(zone)
+                && zoneManager.TryGetZone(zone, out var zoneDef))
             {
                 return SpawnerTileMapping.WorldToTile(
                     worldPos, zoneDef.gridOffset, zoneManager.ZoneHeightTiles);
             }
 
-            Debug.LogWarning($"[SpawnerEditor] Zone '{si.Zone}' could not be resolved for " +
-                             $"'{si.InstanceId}'; persisting its raw world position.");
+            Debug.LogWarning($"[SpawnerEditor] Zone '{zone}' could not be resolved for " +
+                             $"'{subject ?? "a new placement"}'; using its raw world position.");
             return new Vector2Int(Mathf.RoundToInt(worldPos.x), Mathf.RoundToInt(worldPos.y));
         }
 
         /// <summary>
-        /// Whether the instances file on disk currently holds at least one spawner.
+        /// Whether the instances file currently holds at least one spawner.
         ///
         /// Deliberately crude — it looks for an object brace rather than parsing — because it
         /// only ever gates a refusal. A malformed file reads as "has entries" and blocks the
         /// save, which is the safe direction: the user still has whatever was there.
         /// </summary>
-        private static bool FileHasEntries(string path)
+        private bool RepositoryHasEntries()
         {
             try
             {
-                return File.Exists(path) && File.ReadAllText(path).Contains("{");
+                string existing = ResolveRepository().ReadRawJson(WorldId.Base);
+                return existing != null && existing.Contains("{");
             }
             catch (System.Exception e)
             {
-                Debug.LogWarning($"[SpawnerEditor] Could not read '{path}' to check it before " +
-                                 $"saving ({e.Message}). Treating it as populated.");
+                Debug.LogWarning("[SpawnerEditor] Could not read the instances file to check it " +
+                                 $"before saving ({e.Message}). Treating it as populated.");
                 return true;
             }
         }
+
+        // ── Repository handle ───────────────────────────────────────────────────
+        //
+        // Mirrors SpawnerInstanceLoader's: the two write and read one file, so they resolve
+        // it the same way and tests can point both at an in-memory backend without touching
+        // StreamingAssets.
+
+        private ISpawnerInstanceRepository _repository;
+
+        internal void SetRepository(ISpawnerInstanceRepository repository) => _repository = repository;
+
+        private ISpawnerInstanceRepository ResolveRepository()
+            => _repository ?? (_repository = new JsonFileSpawnerInstanceRepository());
     }
 }

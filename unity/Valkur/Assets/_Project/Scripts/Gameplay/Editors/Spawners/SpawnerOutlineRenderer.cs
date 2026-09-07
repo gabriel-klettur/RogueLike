@@ -30,13 +30,22 @@ namespace Valkur.Gameplay.Spawners
         private static readonly Color CENTER_DOT_COLOR       = UITheme.MARKER_DOT;
         private static readonly Color CENTER_DOT_HOVER_COLOR = UITheme.MARKER_DOT_HOVER;
 
+        // The SPAWN ring is a second, distinct colour on purpose. Two rings in one hue read
+        // as one thick band at the zoom an author places at, and the two answer different
+        // questions: the trigger ring is where the player sets the camp off, the spawn ring is
+        // where bodies land — the area that has to be clear of walls.
+        private static readonly Color SPAWN_RING_COLOR = new Color(0.35f, 0.90f, 0.55f, 0.55f);
+        private const float SPAWN_RING_THICKNESS_FACTOR = 0.7f;
+
         private LineRenderer _ring;
+        private LineRenderer _spawnRing;
         private LineRenderer _centerDot;
 
         private static Material s_lineMat;
 
         private Transform _target;
         private float     _radius          = DEFAULT_RADIUS;
+        private float     _spawnRadius;
         private float     _thicknessWorld  = 0.06f;
         private Color     _color           = new Color(1f, 0.65f, 0.20f, 0.85f);
         private bool      _hovered;
@@ -52,9 +61,19 @@ namespace Valkur.Gameplay.Spawners
 
         public void Follow(Transform target) => _target = target;
 
-        public void SetRadius(float radius)
+        public void SetRadius(float radius) => SetRadius(radius, 0f);
+
+        /// <summary>
+        /// Both rings at once: the trigger radius and the spawn radius.
+        ///
+        /// <para><paramref name="spawnRadius"/> of 0 means unbounded — the config's own
+        /// "no clamp" value — and hides the ring rather than drawing a circle at the minimum,
+        /// which would claim a bound that does not exist.</para>
+        /// </summary>
+        public void SetRadius(float radius, float spawnRadius)
         {
-            _radius = radius > 0f ? Mathf.Max(radius, MIN_RADIUS) : DEFAULT_RADIUS;
+            _radius      = radius > 0f ? Mathf.Max(radius, MIN_RADIUS) : DEFAULT_RADIUS;
+            _spawnRadius = spawnRadius > 0f ? Mathf.Max(spawnRadius, MIN_RADIUS) : 0f;
         }
 
         /// <summary>
@@ -74,6 +93,8 @@ namespace Valkur.Gameplay.Spawners
         {
             if (_ring      != null) _ring.enabled      = visible;
             if (_centerDot != null) _centerDot.enabled = visible;
+            // The spawn ring is additionally gated on having a bound to show at all.
+            if (_spawnRing != null) _spawnRing.enabled = visible && _spawnRadius > 0f;
         }
 
         private void EnsureChildren()
@@ -85,6 +106,15 @@ namespace Valkur.Gameplay.Spawners
                 var go = new GameObject("Ring");
                 go.transform.SetParent(transform, false);
                 _ring = ConfigureLineRenderer(go, CIRCLE_SEGMENTS, sortingOrder: 5000);
+            }
+
+            if (_spawnRing == null)
+            {
+                var go = new GameObject("SpawnRing");
+                go.transform.SetParent(transform, false);
+                // Under the trigger ring, over nothing: when the two radii coincide the
+                // trigger ring is the one that must stay readable.
+                _spawnRing = ConfigureLineRenderer(go, CIRCLE_SEGMENTS, sortingOrder: 4999);
             }
 
             if (_centerDot == null)
@@ -138,6 +168,12 @@ namespace Valkur.Gameplay.Spawners
             _ring.endColor   = _color;
             _ring.startWidth = _thicknessWorld;
             _ring.endWidth   = _thicknessWorld;
+
+            if (_spawnRing == null) return;
+            _spawnRing.startColor = SPAWN_RING_COLOR;
+            _spawnRing.endColor   = SPAWN_RING_COLOR;
+            _spawnRing.startWidth = _thicknessWorld * SPAWN_RING_THICKNESS_FACTOR;
+            _spawnRing.endWidth   = _thicknessWorld * SPAWN_RING_THICKNESS_FACTOR;
         }
 
         private void LateUpdate()
@@ -150,6 +186,7 @@ namespace Valkur.Gameplay.Spawners
             Vector3 center = new Vector3(_target.position.x, _target.position.y, 0f);
 
             DrawCircle(_ring,      center, _radius,                                          CIRCLE_SEGMENTS);
+            if (_spawnRadius > 0f) DrawCircle(_spawnRing, center, _spawnRadius, CIRCLE_SEGMENTS);
             DrawCircle(_centerDot, center, _hovered ? CENTER_DOT_HOVER_RADIUS : CENTER_DOT_RADIUS, CENTER_SEGMENTS);
         }
 

@@ -1,28 +1,25 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Core;
 using Valkur.Core.Coordinates;
 using Valkur.Data;
-using Valkur.Gameplay.World;
 using Valkur.Infrastructure.Persistence.Repositories;
 
 namespace Valkur.Gameplay.Spawners
 {
     /// <summary>
-    /// Loads spawner instances from StreamingAssets/Spawners/spawners_instances.json,
-    /// resolves templates from a SpawnerTemplateCatalog, and spawns SpawnerInstance
-    /// GameObjects into the scene.
+    /// Loads spawner instances from the active map slot's <c>spawners_instances.json</c>,
+    /// resolves presets from a <see cref="SpawnerTemplateCatalog"/>, and spawns
+    /// <see cref="SpawnerInstance"/> GameObjects into the scene.
     ///
-    /// Maps to Python's load of spawners_instances.json + spawners_templates.json.
+    /// <para>It also owns the <b>v1 → v2 migration</b>: a row with no <c>config</c> block is
+    /// frozen against its preset as it loads and the file is written back once. See
+    /// <see cref="MigrateIfNeeded"/> for why the write-back is not optional.</para>
     /// </summary>
     public class SpawnerInstanceLoader : MonoBehaviour
     {
-        private const float PPU = 32f;
-        // Subdir + filename now owned by JsonFileSpawnerInstanceRepository.
-
         [Header("References")]
-        [Tooltip("Catalog of all SpawnerTemplateData SOs.")]
+        [Tooltip("Catalog of all SpawnerTemplateData presets.")]
         [SerializeField] private SpawnerTemplateCatalog _catalog;
 
         [Tooltip("ZoneManager for coordinate conversion.")]
@@ -93,24 +90,66 @@ namespace Valkur.Gameplay.Spawners
                 return;
             }
 
-            var rawList = MiniJsonRuntime.Deserialize(json) as List<object>;
-            if (rawList == null)
+            var records = SpawnerInstanceSerializer.ParseAll(json);
+            if (records == null)
             {
                 Debug.LogError("[SpawnerInstanceLoader] Failed to parse instances JSON.");
                 return;
             }
 
+            // BEFORE spawning, so a frozen row and the object built from it cannot disagree.
+            bool migrated = SpawnerInstanceSerializer.Freeze(records, _catalog);
+
             int loaded = 0;
-            foreach (var item in rawList)
+            foreach (var record in records)
             {
-                if (item is Dictionary<string, object> dict)
-                {
-                    if (TryCreateInstance(dict))
-                        loaded++;
-                }
+                if (TryCreateInstance(record))
+                    loaded++;
             }
 
-            Debug.Log($"[SpawnerInstanceLoader] Loaded {loaded}/{rawList.Count} spawner instances.");
+            Debug.Log($"[SpawnerInstanceLoader] Loaded {loaded}/{records.Count} spawner instances.");
+
+            if (migrated) MigrateIfNeeded(records);
+        }
+
+        /// <summary>
+        /// Writes the migrated records back, once.
+        ///
+        /// <para><b>Why the write is mandatory.</b> Freezing in memory alone lasts one
+        /// session, so retuning a preset and restarting would re-snapshot every un-migrated
+        /// placement from the new values — the very coupling copy-on-place removes, coming
+        /// back in through the file. The Particles loader carries the identical note.</para>
+        ///
+        /// <para>It emits every record that was READ, including the ones
+        /// <see cref="TryCreateInstance"/> refused, so a placement whose zone is not
+        /// registered survives a migration instead of being quietly dropped. That is also why
+        /// it needs no anti-wipe guard: it cannot write fewer rows than it read.</para>
+        ///
+        /// <para>Editor + Play Mode only. In a build StreamingAssets is read-only on several
+        /// platforms; in EditMode the test runner would replace shipped data with whatever a
+        /// fixture had loaded — the same pollution guard the editor's save carries. Authors on
+        /// other machines migrate the first time they press Play; shipped data is migrated
+        /// deterministically by <c>Valkur &gt; Spawners &gt; Migrate Instances To v2</c>.</para>
+        /// </summary>
+        private void MigrateIfNeeded(IReadOnlyList<SpawnerInstanceRecord> records)
+        {
+            if (!Application.isEditor || !Application.isPlaying) return;
+
+            try
+            {
+                ResolveRepository().WriteRawJson(WorldId.Base,
+                                                 SpawnerInstanceSerializer.Serialize(records));
+                Debug.Log($"[SpawnerInstanceLoader] Migrated {records.Count} spawner record(s) " +
+                          $"to schema v{SpawnerInstanceSerializer.SchemaVersion} — each placement " +
+                          "now owns its own configuration.");
+            }
+            catch (System.Exception e)
+            {
+                // A failed migration is not a failed load: the records are frozen in memory
+                // and this session behaves correctly either way.
+                Debug.LogWarning($"[SpawnerInstanceLoader] Could not write the v2 migration " +
+                                 $"({e.Message}). The spawners loaded normally; the file stays v1.");
+            }
         }
 
         public void ClearInstances()
@@ -118,7 +157,7 @@ namespace Valkur.Gameplay.Spawners
             // Every SpawnerInstance in the scene, not only the ones this loader created.
             //
             // There are exactly two creators: this loader, which tracks what it makes in
-            // _instances, and the F3 editor, which builds spawners directly and never
+            // _instances, and the Spawner editor, which builds spawners directly and never
             // registers them here. SpawnerEditorManager persists by FindObjectsOfType, so the
             // editor's spawners DO reach the file — and clearing only the tracked set left
             // them alive across a reload while the file recreated them, so the map doubled on
@@ -130,66 +169,48 @@ namespace Valkur.Gameplay.Spawners
             foreach (var si in FindObjectsOfType<SpawnerInstance>())
             {
                 if (si != null)
-                    Valkur.Core.SafeDestroy.Of(si.gameObject);
+                    SafeDestroy.Of(si.gameObject);
             }
             _instances.Clear();
         }
 
-        private bool TryCreateInstance(Dictionary<string, object> dict)
+        private bool TryCreateInstance(SpawnerInstanceRecord record)
         {
-            string templateId = GetString(dict, "template_id");
-            string zone = GetString(dict, "zone", "Lobby");
-            string instanceId = GetString(dict, "id");
+            if (record == null) return false;
 
-            var template = _catalog != null ? _catalog.GetById(templateId) : null;
-            if (template == null)
+            var preset = _catalog != null ? _catalog.GetById(record.TemplateId) : null;
+
+            // A missing preset is only fatal when the row has no config of its own. Once a
+            // placement owns its configuration it no longer needs the asset it came from —
+            // which is the whole point of copy-on-place, and it means deleting a preset from
+            // the catalogue can no longer silently unplace every spawner made from it.
+            if (preset == null && record.Config == null)
             {
-                Debug.LogWarning($"[SpawnerInstanceLoader] Template '{templateId}' not found (instance '{instanceId}').");
+                Debug.LogWarning($"[SpawnerInstanceLoader] Preset '{record.TemplateId}' not found " +
+                                 $"and instance '{record.InstanceId}' carries no config of its own.");
                 return false;
             }
 
-            if (!_zoneManager.TryGetZone(zone, out var zoneDef))
+            if (!_zoneManager.TryGetZone(record.Zone, out var zoneDef))
             {
-                Debug.LogWarning($"[SpawnerInstanceLoader] Zone '{zone}' not registered (instance '{instanceId}').");
+                Debug.LogWarning($"[SpawnerInstanceLoader] Zone '{record.Zone}' not registered (instance '{record.InstanceId}').");
                 return false;
             }
 
-            // Tile coords → world position
-            int tileCol = 0, tileRow = 0;
-            if (dict.TryGetValue("tile", out var tileObj) && tileObj is List<object> tileList && tileList.Count >= 2)
-            {
-                tileCol = Convert.ToInt32(tileList[0]);
-                tileRow = Convert.ToInt32(tileList[1]);
-            }
-
-            // Shared with the F3 editor's save, so the round trip cannot drift. See
+            // Shared with the editor's save, so the round trip cannot drift. See
             // SpawnerTileMapping for what happened when only this side did the conversion.
             Vector2 world = SpawnerTileMapping.TileToWorld(
-                tileCol, tileRow, zoneDef.gridOffset, _zoneManager.ZoneHeightTiles);
+                record.Tile.x, record.Tile.y, zoneDef.gridOffset, _zoneManager.ZoneHeightTiles);
 
-            // Create SpawnerInstance GO
-            var go = new GameObject($"Spawner_{instanceId}");
+            var go = new GameObject($"Spawner_{record.InstanceId}");
             go.transform.SetParent(transform, worldPositionStays: false);
             go.transform.position = new Vector3(world.x, world.y, 0f);
 
             var si = go.AddComponent<SpawnerInstance>();
-            si.Initialize(template, instanceId, zone, _monsterSpawner);
-
-            // Parse per-instance overrides
-            if (dict.TryGetValue("overrides", out var ovObj) && ovObj is Dictionary<string, object> overrides)
-            {
-                si.ApplyOverrides(overrides);
-            }
+            si.Initialize(preset, record.Config, record.InstanceId, record.Zone, _monsterSpawner);
 
             _instances.Add(si);
             return true;
-        }
-
-        private static string GetString(Dictionary<string, object> d, string key, string fallback = "")
-        {
-            if (d.TryGetValue(key, out var v) && v is string s)
-                return s;
-            return fallback;
         }
     }
 }

@@ -33,6 +33,23 @@ namespace Valkur.Tests.EditMode.Game.Spawners
             _instance.Initialize(_template, "test_instance", "Lobby", spawner: null);
         }
 
+        /// <summary>
+        /// Author the spawn area and hand it to the placement.
+        ///
+        /// <para>These tests used to mutate <c>_template</c> AFTER <c>Initialize</c> and
+        /// expect the live spawner to follow — which is exactly the coupling copy-on-place
+        /// removed. A placement snapshots its preset when it is made and reads its own
+        /// <see cref="SpawnerInstanceConfig"/> from then on, so the preset edit has to be
+        /// re-applied to reach it. Three of these went red on that and were right to: the
+        /// measured values were the CONFIG defaults, not the values the test had set.</para>
+        /// </summary>
+        private void Arm(int spawnRadius, SpawnerShape shape)
+        {
+            _template.spawnRadius  = spawnRadius;
+            _template.spawnerShape = shape;
+            _instance.ApplyConfig(SpawnerInstanceConfig.SnapshotOf(_template));
+        }
+
         [TearDown]
         public void TearDown()
         {
@@ -51,7 +68,7 @@ namespace Valkur.Tests.EditMode.Game.Spawners
         [Test]
         public void ZeroSpawnRadiusIsUnbounded()
         {
-            _template.spawnRadius = 0;
+            Arm(0, SpawnerShape.Square);
             var result = Clamp(new Vector2(500f, 500f));
             Assert.AreEqual(new Vector2(500f, 500f), result,
                 "spawnRadius <= 0 must mean unbounded — reproduces the exact pre-fix " +
@@ -62,8 +79,7 @@ namespace Valkur.Tests.EditMode.Game.Spawners
         [Test]
         public void CircleShapeClampsMagnitudeToRadius()
         {
-            _template.spawnRadius = 10;
-            _template.spawnerShape = SpawnerShape.Circle;
+            Arm(10, SpawnerShape.Circle);
             var result = Clamp(new Vector2(20f, 0f));
             Assert.AreEqual(10f, result.magnitude, 0.001f,
                 "A Circle-shaped area must clamp the offset's magnitude to spawnRadius.");
@@ -72,8 +88,7 @@ namespace Valkur.Tests.EditMode.Game.Spawners
         [Test]
         public void CircleShapeLeavesInBoundsOffsetsUntouched()
         {
-            _template.spawnRadius = 10;
-            _template.spawnerShape = SpawnerShape.Circle;
+            Arm(10, SpawnerShape.Circle);
             var offset = new Vector2(3f, 4f); // magnitude 5, within 10
             Assert.AreEqual(offset, Clamp(offset));
         }
@@ -81,8 +96,7 @@ namespace Valkur.Tests.EditMode.Game.Spawners
         [Test]
         public void SquareShapeClampsEachAxisIndependently()
         {
-            _template.spawnRadius = 10;
-            _template.spawnerShape = SpawnerShape.Square;
+            Arm(10, SpawnerShape.Square);
             var result = Clamp(new Vector2(20f, -20f));
             Assert.AreEqual(new Vector2(10f, -10f), result);
         }

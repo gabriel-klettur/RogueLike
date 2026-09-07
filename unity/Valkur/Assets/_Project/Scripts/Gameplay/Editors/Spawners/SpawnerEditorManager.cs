@@ -51,6 +51,24 @@ namespace Valkur.Gameplay.Spawners
                 _catalog = catalog;
         }
 
+        [Tooltip("Monster catalog backing the roster picker — what a spawner may be told to " +
+                 "spawn. Without it the roster falls back to read-only, never to free text: " +
+                 "an unvalidated entityId is how a camp ends up silently never filling.")]
+        [SerializeField] private MonsterCatalog _monsterCatalog;
+
+        /// <summary>Injected by the bootstrap. Twin of <see cref="SetCatalog"/>.</summary>
+        internal void SetMonsterCatalog(MonsterCatalog catalog)
+        {
+            if (catalog != null) _monsterCatalog = catalog;
+        }
+
+        private void ResolveMonsterCatalogFallback()
+        {
+            if (_monsterCatalog != null) return;
+            if (ServiceLocator.TryGet<MonsterCatalog>(out var catalog) && catalog != null)
+                _monsterCatalog = catalog;
+        }
+
         [Tooltip("Camera used for screen-to-world conversion.")]
         [SerializeField] private Camera _camera;
 

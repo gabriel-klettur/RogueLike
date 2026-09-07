@@ -224,5 +224,99 @@ namespace Valkur.Tests.EditMode.Editors.Spawners
             Assert.Greater(stored, 0f,
                 "SetRadius(0) must clamp upward to a sensible default so a ring is still drawn.");
         }
+
+        // ── The spawn ring ───────────────────────────────────────────────────
+        //
+        // The trigger ring says where the player sets the camp off; the SPAWN ring says
+        // where bodies actually land, and is therefore the area an author has to keep clear
+        // of walls. Only the first was ever drawn here — the second lived in an
+        // OnDrawGizmosSelected under UNITY_EDITOR, which needs the GameObject selected in
+        // the Hierarchy mid-play, while three shipped placements sit inside colliders.
+
+        [Test]
+        public void Configure_CreatesTheSpawnRing()
+        {
+            _outline.Configure(Color.cyan, 0.06f, 1f);
+
+            Assert.IsNotNull(GetFieldValue<LineRenderer>(_outline, "_spawnRing"),
+                "Configure must create the spawn-radius LineRenderer alongside the trigger ring.");
+        }
+
+        [Test]
+        public void TheSpawnRing_StoresItsOwnRadius()
+        {
+            _outline.Configure(Color.cyan, 0.06f, 1f);
+            _outline.SetRadius(10f, 4f);
+
+            Assert.AreEqual(10f, GetFieldValue<float>(_outline, "_radius"), 0.0001f);
+            Assert.AreEqual(4f,  GetFieldValue<float>(_outline, "_spawnRadius"), 0.0001f,
+                "The two radii are independent — a camp may trigger far and spawn tight.");
+        }
+
+        /// <summary>
+        /// Zero is the config's own "unbounded" value, so the ring must VANISH rather than
+        /// clamp up to the minimum the way the trigger ring does. A circle drawn at the
+        /// minimum would promise a bound that does not exist.
+        /// </summary>
+        [Test]
+        public void ASpawnRadiusOfZero_HidesTheRingRatherThanClampingIt()
+        {
+            _outline.Configure(Color.cyan, 0.06f, 1f);
+            _outline.SetRadius(10f, 0f);
+
+            Assert.AreEqual(0f, GetFieldValue<float>(_outline, "_spawnRadius"), 0.0001f);
+
+            _outline.SetVisible(true);
+            var spawnRing = GetFieldValue<LineRenderer>(_outline, "_spawnRing");
+            Assert.IsFalse(spawnRing.enabled,
+                "An unbounded spawn area must draw no ring even while the outline is shown.");
+        }
+
+        [Test]
+        public void TheSpawnRing_ShowsWhenItHasABound()
+        {
+            _outline.Configure(Color.cyan, 0.06f, 1f);
+            _outline.SetRadius(10f, 4f);
+            _outline.SetVisible(true);
+
+            Assert.IsTrue(GetFieldValue<LineRenderer>(_outline, "_spawnRing").enabled);
+        }
+
+        [Test]
+        public void TheSpawnRing_SortsBelowTheTriggerRing()
+        {
+            // When the two radii coincide the trigger ring is the one that must stay readable.
+            _outline.Configure(Color.cyan, 0.06f, 1f);
+
+            var ring      = GetFieldValue<LineRenderer>(_outline, "_ring");
+            var spawnRing = GetFieldValue<LineRenderer>(_outline, "_spawnRing");
+
+            Assert.Less(spawnRing.sortingOrder, ring.sortingOrder);
+        }
+
+        [Test]
+        public void TheSpawnRing_IsADifferentColourFromTheTriggerRing()
+        {
+            // Two rings in one hue read as a single thick band at authoring zoom, which
+            // forfeits the whole reason there are two.
+            _outline.Configure(Color.cyan, 0.06f, 1f);
+
+            var ring      = GetFieldValue<LineRenderer>(_outline, "_ring");
+            var spawnRing = GetFieldValue<LineRenderer>(_outline, "_spawnRing");
+
+            Assert.AreNotEqual(ring.startColor, spawnRing.startColor);
+        }
+
+        [Test]
+        public void TheOneArgSetRadius_LeavesTheSpawnRingUnbounded()
+        {
+            // Every pre-existing caller passes one argument and must keep drawing exactly one
+            // ring.
+            _outline.Configure(Color.cyan, 0.06f, 1f);
+            _outline.SetRadius(10f, 4f);
+            _outline.SetRadius(10f);
+
+            Assert.AreEqual(0f, GetFieldValue<float>(_outline, "_spawnRadius"), 0.0001f);
+        }
     }
 }

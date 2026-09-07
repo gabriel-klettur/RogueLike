@@ -176,9 +176,12 @@ namespace Valkur.Tests.EditMode.Editors.Spawners
                 "refusal, closing the editor after a failed load erases every spawner ever " +
                 "authored. That is the Buildings save-collapse incident, in a second editor.");
 
-            Assert.IsTrue(src.Contains("all.Length == 0 && FileHasEntries(path)"),
+            Assert.IsTrue(src.Contains("all.Length == 0 && RepositoryHasEntries()"),
                 "The guard must compare the scene against what is actually on disk. Refusing " +
-                "every empty save would make clearing a map impossible.");
+                "every empty save would make clearing a map impossible. (The check reads " +
+                "through the repository now rather than a hand-built path, so the save and the " +
+                "load cannot disagree about WHICH file they mean — but it still has to be a " +
+                "comparison against disk, not a blanket refusal.)");
         }
 
         [Test]
@@ -256,14 +259,30 @@ namespace Valkur.Tests.EditMode.Editors.Spawners
             // Both sides are map-slot aware, and they have to stay that way together: if the
             // writer routes per slot and the reader does not, spawners save successfully and
             // silently never come back — which is indistinguishable from not saving at all.
+            // The writer used to build its own path with MapEditorActiveSlot.DirForActiveSlot
+            // and write it with File.WriteAllText — two write paths to one file, agreeing only
+            // because both happened to spell the routing the same way. It goes through the
+            // repository now, which is a STRONGER guarantee than the one this test was
+            // written to hold: there is one resolver, and its write is atomic. Pointing the
+            // fixture at the new owner is the fix; re-inlining the old call to satisfy the
+            // grep would demand a duplicate that the change exists to remove.
             string save = Read("Spawners", "SpawnerEditorManager.Modes.cs");
-            Assert.IsTrue(save.Contains("MapEditorActiveSlot.DirForActiveSlot"),
-                "The writer must route through the active map slot.");
+            Assert.IsTrue(save.Contains("ResolveRepository().WriteRawJson"),
+                "The writer must go through the repository rather than build its own path.");
+            Assert.IsFalse(save.Contains("File.WriteAllText"),
+                "A second, hand-rolled write path to the same file is how the two sides drift.");
 
             string loader = File.ReadAllText(Path.Combine(Application.dataPath, "_Project",
                 "Scripts", "Gameplay", "Spawners", "SpawnerInstanceLoader.cs"));
             Assert.IsTrue(loader.Contains("JsonFileSpawnerInstanceRepository"),
                 "The reader must go through the repository, which applies the same slot routing.");
+
+            string repoBase = File.ReadAllText(Path.Combine(Application.dataPath, "_Project",
+                "Scripts", "Infrastructure", "Persistence", "Repositories",
+                "WorldStreamingFileRepositoryBase.cs"));
+            Assert.IsTrue(repoBase.Contains("MapEditorActiveSlot.DirForActiveSlot"),
+                "The slot routing has to live SOMEWHERE, and now it lives in the one place " +
+                "both sides ask.");
 
             string repo = File.ReadAllText(Path.Combine(Application.dataPath, "_Project",
                 "Scripts", "Infrastructure", "Persistence", "Repositories",

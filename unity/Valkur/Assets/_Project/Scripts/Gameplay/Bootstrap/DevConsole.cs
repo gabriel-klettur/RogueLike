@@ -531,6 +531,7 @@ namespace Valkur.Gameplay
 
             // Re-read authored data into the live scene — see DevConsole.Commands.Reload.cs.
             RegisterReloadCommands();
+            RegisterSpawnerCommands();
             RegisterAICommands();
             RegisterEditorCommands();
 
@@ -545,6 +546,9 @@ namespace Valkur.Gameplay
 
             // Stats, talents, grimoire — see DevConsole.Commands.Progression.cs.
             RegisterProgressionCommands();
+
+            // The economic cycle and the purse — see DevConsole.Commands.Economy.cs.
+            RegisterEconomyCommands();
 
             // Which provider answers NPC chat — see DevConsole.Commands.Chat.cs.
             RegisterChatCommands();

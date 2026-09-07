@@ -1,9 +1,150 @@
 [
-  {"template_id": "vendor_pavel_respawn_5m", "zone": "zone_100_50", "tile": [12, 6], "id": "vendor_pavel_respawn_5m_zone_100_50_12_6"},
-  {"template_id": "vendor_valeria_respawn_5m", "zone": "lobby", "tile": [44, 6], "id": "vendor_valeria_respawn_5m_lobby_44_7"},
-  {"template_id": "vendor_roberto_respawn_5m", "zone": "lobby", "tile": [11, 20], "id": "vendor_roberto_respawn_5m_lobby_21_42"},
-  {"template_id": "vendor_abigail_respawn_5m", "zone": "lobby", "tile": [43, 22], "id": "vendor_abigail_respawn_5m_lobby_17_39"},
-  {"template_id": "vendor_smith_respawn_5m", "zone": "lobby", "tile": [13, 7], "id": "vendor_smith_respawn_5m_lobby_22_40"},
-  {"template_id": "vendor_gatita_respawn_5m", "zone": "lobby", "tile": [18, 38], "id": "vendor_gatita_respawn_5m_lobby_20_38"},
-  {"template_id": "survival_10", "zone": "Forest", "tile": [25, 18], "id": "survival_10_forest_14_9"}
+  {"template_id": "vendor_pavel_respawn_5m", "zone": "zone_100_50", "tile": [12, 6], "id": "vendor_pavel_respawn_5m_zone_100_50_12_6",
+   "config": {"v": 2, "trigger": "Auto", "cooldown": 0, "maxActive": 1, "persistent": true, "restartOnDone": true, "restartCooldown": 300, "spawnRadius": 0, "shape": "Circle",
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "vendor_lumberjack_pavel", "count": 1, "spread": 0}
+     ]}
+  },
+  {"template_id": "vendor_valeria_respawn_5m", "zone": "lobby", "tile": [44, 6], "id": "vendor_valeria_respawn_5m_lobby_44_7",
+   "config": {"v": 2, "trigger": "Auto", "cooldown": 0, "maxActive": 1, "persistent": true, "restartOnDone": true, "restartCooldown": 300, "spawnRadius": 0, "shape": "Circle",
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "vendor_alchemist_valeria", "count": 1, "spread": 0}
+     ]}
+  },
+  {"template_id": "vendor_roberto_respawn_5m", "zone": "lobby", "tile": [11, 20], "id": "vendor_roberto_respawn_5m_lobby_21_42",
+   "config": {"v": 2, "trigger": "Auto", "cooldown": 0, "maxActive": 1, "persistent": true, "restartOnDone": true, "restartCooldown": 300, "spawnRadius": 0, "shape": "Circle",
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "vendor_mague_roberto", "count": 1, "spread": 0}
+     ]}
+  },
+  {"template_id": "vendor_abigail_respawn_5m", "zone": "lobby", "tile": [43, 22], "id": "vendor_abigail_respawn_5m_lobby_17_39",
+   "config": {"v": 2, "trigger": "Auto", "cooldown": 0, "maxActive": 1, "persistent": true, "restartOnDone": true, "restartCooldown": 300, "spawnRadius": 0, "shape": "Circle",
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "vendor_banker_abigail", "count": 1, "spread": 0}
+     ]}
+  },
+  {"template_id": "vendor_smith_respawn_5m", "zone": "lobby", "tile": [13, 7], "id": "vendor_smith_respawn_5m_lobby_22_40",
+   "config": {"v": 2, "trigger": "Auto", "cooldown": 0, "maxActive": 1, "persistent": true, "restartOnDone": true, "restartCooldown": 300, "spawnRadius": 0, "shape": "Circle",
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "vendor_blacksmith_smith", "count": 1, "spread": 0}
+     ]}
+  },
+  {"template_id": "vendor_gatita_respawn_5m", "zone": "lobby", "tile": [18, 38], "id": "vendor_gatita_respawn_5m_lobby_20_38",
+   "config": {"v": 2, "trigger": "Auto", "cooldown": 0, "maxActive": 1, "persistent": true, "restartOnDone": true, "restartCooldown": 300, "spawnRadius": 0, "shape": "Circle",
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "vendor_cheff_gatita", "count": 1, "spread": 0}
+     ]}
+  },
+  {"template_id": "survival_10", "zone": "Forest", "tile": [25, 18], "id": "survival_10_forest_14_9",
+   "config": {"v": 2, "spawnMode": "Burst", "betweenWaves": 8, "scaleWithPlayerLevel": 0.5,
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "mon1", "count": 3, "spread": 5},
+       {"wave": 1, "kind": "monster", "entityId": "mon1", "count": 4, "spread": 6},
+       {"wave": 1, "kind": "monster", "entityId": "barbol", "count": 1, "spread": 4},
+       {"wave": 2, "kind": "monster", "entityId": "barbol", "count": 3, "spread": 5},
+       {"wave": 3, "kind": "monster", "entityId": "barbol", "count": 2, "spread": 5},
+       {"wave": 3, "kind": "monster", "entityId": "barbol_cyan", "count": 1, "spread": 3},
+       {"wave": 4, "kind": "monster", "entityId": "dark_elven", "count": 2, "spread": 5},
+       {"wave": 4, "kind": "monster", "entityId": "mon1", "count": 3, "spread": 6},
+       {"wave": 5, "kind": "monster", "entityId": "barbol_oscuro", "count": 3, "spread": 6},
+       {"wave": 5, "kind": "monster", "entityId": "barbol_musgo", "count": 1, "spread": 4},
+       {"wave": 6, "kind": "monster", "entityId": "dark_mague", "count": 1, "spread": 3},
+       {"wave": 6, "kind": "monster", "entityId": "dark_dwarf", "count": 2, "spread": 5},
+       {"wave": 7, "kind": "monster", "entityId": "knight_red", "count": 2, "spread": 5},
+       {"wave": 7, "kind": "monster", "entityId": "dark_elven", "count": 2, "spread": 6},
+       {"wave": 8, "kind": "monster", "entityId": "dark_barbarian", "count": 1, "spread": 3},
+       {"wave": 8, "kind": "monster", "entityId": "dark_valkyrie", "count": 2, "spread": 5},
+       {"wave": 8, "kind": "monster", "entityId": "barbol", "count": 2, "spread": 7},
+       {"wave": 9, "kind": "monster", "entityId": "dark_vampire", "count": 1, "spread": 3},
+       {"wave": 9, "kind": "monster", "entityId": "dark_valkyrie", "count": 2, "spread": 6},
+       {"wave": 9, "kind": "monster", "entityId": "dark_elven", "count": 2, "spread": 7}
+     ]}
+  },
+  {"template_id": "mon1_scouts", "zone": "zone_100_50", "tile": [34, 8], "id": "mon1_scouts_zone_100_50_34_8",
+   "config": {"v": 2, "triggerRadius": 8, "spawnMode": "Burst", "cooldown": 3, "betweenWaves": 6, "restartOnDone": true, "restartCooldown": 90, "spawnRadius": 12, "shape": "Circle", "scaleWithPlayerLevel": 0.2,
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "mon1", "count": 3, "spread": 4}
+     ]}
+  },
+  {"template_id": "barbol_grove", "zone": "zone_100_50", "tile": [40, 24], "id": "barbol_grove_zone_100_50_40_24",
+   "config": {"v": 2, "spawnMode": "Burst", "cooldown": 3, "betweenWaves": 6, "restartOnDone": true, "restartCooldown": 120, "spawnRadius": 12, "shape": "Circle", "levelBonus": 1, "scaleWithPlayerLevel": 0.3,
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "barbol", "count": 3, "spread": 4},
+       {"wave": 0, "kind": "monster", "entityId": "barbol_musgo", "count": 1, "spread": 3}
+     ]}
+  },
+  {"template_id": "dark_scout_pair", "zone": "zone_100_50", "tile": [24, 40], "id": "dark_scout_pair_zone_100_50_24_40",
+   "config": {"v": 2, "triggerRadius": 9, "spawnMode": "Burst", "cooldown": 3, "betweenWaves": 6, "restartOnDone": true, "restartCooldown": 120, "spawnRadius": 12, "shape": "Circle", "levelBonus": 2, "scaleWithPlayerLevel": 0.35,
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "dark_elven", "count": 2, "spread": 3}
+     ]}
+  },
+  {"template_id": "dark_shield_line", "zone": "zone_100_50", "tile": [42, 42], "id": "dark_shield_line_zone_100_50_42_42",
+   "config": {"v": 2, "spawnMode": "Burst", "cooldown": 3, "betweenWaves": 6, "restartOnDone": true, "restartCooldown": 150, "spawnRadius": 12, "shape": "Circle", "levelBonus": 3, "scaleWithPlayerLevel": 0.35,
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "dark_dwarf", "count": 2, "spread": 3},
+       {"wave": 0, "kind": "monster", "entityId": "mon1", "count": 2, "spread": 4}
+     ]}
+  },
+  {"template_id": "mon1_scouts", "zone": "Forest", "tile": [8, 8], "id": "mon1_scouts_Forest_8_8",
+   "config": {"v": 2, "triggerRadius": 8, "spawnMode": "Burst", "cooldown": 3, "betweenWaves": 6, "restartOnDone": true, "restartCooldown": 90, "spawnRadius": 12, "shape": "Circle", "scaleWithPlayerLevel": 0.2,
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "mon1", "count": 3, "spread": 4}
+     ]}
+  },
+  {"template_id": "barbol_grove", "zone": "Forest", "tile": [40, 10], "id": "barbol_grove_Forest_40_10",
+   "config": {"v": 2, "spawnMode": "Burst", "cooldown": 3, "betweenWaves": 6, "restartOnDone": true, "restartCooldown": 120, "spawnRadius": 12, "shape": "Circle", "levelBonus": 1, "scaleWithPlayerLevel": 0.3,
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "barbol", "count": 3, "spread": 4},
+       {"wave": 0, "kind": "monster", "entityId": "barbol_musgo", "count": 1, "spread": 3}
+     ]}
+  },
+  {"template_id": "barbol_raiders", "zone": "Forest", "tile": [9, 40], "id": "barbol_raiders_Forest_9_40",
+   "config": {"v": 2, "spawnMode": "Burst", "cooldown": 3, "betweenWaves": 6, "restartOnDone": true, "restartCooldown": 120, "spawnRadius": 12, "shape": "Circle", "levelBonus": 2, "scaleWithPlayerLevel": 0.3,
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "barbol_oscuro", "count": 2, "spread": 4},
+       {"wave": 0, "kind": "monster", "entityId": "barbol_cyan", "count": 1, "spread": 3}
+     ]}
+  },
+  {"template_id": "dark_coven", "zone": "Forest", "tile": [41, 39], "id": "dark_coven_Forest_41_39",
+   "config": {"v": 2, "triggerRadius": 11, "spawnMode": "Burst", "cooldown": 3, "betweenWaves": 6, "restartOnDone": true, "restartCooldown": 180, "spawnRadius": 12, "shape": "Circle", "levelBonus": 4, "scaleWithPlayerLevel": 0.4,
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "dark_mague", "count": 1, "spread": 2},
+       {"wave": 0, "kind": "monster", "entityId": "dark_dwarf", "count": 2, "spread": 4}
+     ]}
+  },
+  {"template_id": "dark_warband", "zone": "Forest", "tile": [25, 44], "id": "dark_warband_Forest_25_44",
+   "config": {"v": 2, "triggerRadius": 12, "spawnMode": "Burst", "cooldown": 3, "betweenWaves": 6, "restartOnDone": true, "restartCooldown": 210, "spawnRadius": 12, "shape": "Circle", "levelBonus": 5, "scaleWithPlayerLevel": 0.4,
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "dark_barbarian", "count": 1, "spread": 2},
+       {"wave": 0, "kind": "monster", "entityId": "dark_valkyrie", "count": 2, "spread": 4}
+     ]}
+  },
+  {"template_id": "dark_vampire_court", "zone": "Forest", "tile": [44, 25], "id": "dark_vampire_court_Forest_44_25",
+   "config": {"v": 2, "triggerRadius": 12, "spawnMode": "Burst", "cooldown": 3, "betweenWaves": 6, "restartOnDone": true, "restartCooldown": 300, "spawnRadius": 12, "shape": "Circle", "levelBonus": 7, "scaleWithPlayerLevel": 0.45,
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "dark_vampire", "count": 1, "spread": 2},
+       {"wave": 0, "kind": "monster", "entityId": "dark_elven", "count": 2, "spread": 5}
+     ]}
+  },
+  {"template_id": "barbol_saplings", "zone": "Forest", "tile": [20, 10], "id": "barbol_saplings_Forest_20_10",
+   "config": {"v": 2, "spawnMode": "Burst", "cooldown": 3, "betweenWaves": 6, "restartOnDone": true, "restartCooldown": 150, "spawnRadius": 14, "shape": "Circle", "levelBonus": 1, "scaleWithPlayerLevel": 0.3,
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "barbol_young", "count": 5, "spread": 6}
+     ]}
+  },
+  {"template_id": "barbol_grove_elder", "zone": "Forest", "tile": [33, 30], "id": "barbol_grove_elder_Forest_33_30",
+   "config": {"v": 2, "triggerRadius": 12, "spawnMode": "Burst", "cooldown": 3, "betweenWaves": 6, "restartOnDone": true, "restartCooldown": 240, "spawnRadius": 14, "shape": "Circle", "levelBonus": 3, "scaleWithPlayerLevel": 0.35,
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "barbol_muscle", "count": 1, "spread": 3},
+       {"wave": 0, "kind": "monster", "entityId": "barbol_young", "count": 4, "spread": 6}
+     ]}
+  },
+  {"template_id": "red_dragon_lair", "zone": "Forest", "tile": [14, 24], "id": "red_dragon_lair_Forest_14_24",
+   "config": {"v": 2, "triggerRadius": 14, "spawnMode": "Burst", "cooldown": 3, "betweenWaves": 6, "spawnRadius": 14, "shape": "Circle", "levelBonus": 8, "scaleWithPlayerLevel": 0.45,
+     "roster": [
+       {"wave": 0, "kind": "monster", "entityId": "red_dragon", "count": 1, "spread": 2},
+       {"wave": 0, "kind": "monster", "entityId": "barbol_muscle", "count": 1, "spread": 7}
+     ]}
+  }
 ]

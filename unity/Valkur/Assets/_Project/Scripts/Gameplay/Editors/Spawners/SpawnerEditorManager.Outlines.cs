@@ -107,12 +107,23 @@ namespace Valkur.Gameplay.Spawners
 
                 if (i < all.Length && all[i] != null && all[i].gameObject.activeInHierarchy)
                 {
-                    var si       = all[i];
-                    var template = si.Template;
-                    float radius = (template != null && template.triggerRadius > 0f)
-                        ? template.triggerRadius
+                    var si     = all[i];
+                    var config = si.Config;
+                    float radius = (config != null && config.triggerRadius > 0f)
+                        ? config.triggerRadius
                         : OUTLINE_FALLBACK_RADIUS;
-                    fx.SetRadius(radius);
+
+                    // Two rings, not one. The trigger ring is where the player sets the camp
+                    // off; the SPAWN ring is where bodies actually land, and therefore the
+                    // area an author has to keep clear of walls. Only the first was ever
+                    // drawn here — the second existed solely in an OnDrawGizmosSelected under
+                    // UNITY_EDITOR, which needs the GameObject selected in the Hierarchy
+                    // mid-play. Three shipped placements sit inside colliders and this editor
+                    // had no way to show it.
+                    float spawnRadius = config != null && config.spawnRadius > 0
+                        ? config.spawnRadius
+                        : 0f;
+                    fx.SetRadius(radius, spawnRadius);
                     fx.Follow(si.transform);
                     fx.SetHovered(false); // reset; the hover pass below sets the right one
                     fx.SetVisible(true);

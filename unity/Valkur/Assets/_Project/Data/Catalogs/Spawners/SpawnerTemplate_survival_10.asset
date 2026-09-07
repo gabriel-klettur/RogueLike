@@ -23,16 +23,148 @@ MonoBehaviour:
   triggerType: 0
   triggerRadius: 10
   autoStart: 1
-  spawnMode: 0
+  spawnMode: 1
   cooldownSeconds: 1
   proximityInitialOnly: 1
-  betweenWavesCooldownSeconds: 5
+  betweenWavesCooldownSeconds: 8
+  advanceOn: 0
   maxActive: 0
   persistent: 0
   restartOnDone: 0
   restartCooldownSeconds: 0
-  wavesId: waves_survival_10
-  waves: []
+  waves:
+  - spawns:
+    - kind: monster
+      entityId: mon1
+      count: 3
+      spreadRadius: 5
+      spreadFallbackMax: 14
+      minDistance: 0
+  - spawns:
+    - kind: monster
+      entityId: mon1
+      count: 4
+      spreadRadius: 6
+      spreadFallbackMax: 14
+      minDistance: 0
+    - kind: monster
+      entityId: barbol
+      count: 1
+      spreadRadius: 4
+      spreadFallbackMax: 14
+      minDistance: 0
+  - spawns:
+    - kind: monster
+      entityId: barbol
+      count: 3
+      spreadRadius: 5
+      spreadFallbackMax: 14
+      minDistance: 0
+  - spawns:
+    - kind: monster
+      entityId: barbol
+      count: 2
+      spreadRadius: 5
+      spreadFallbackMax: 14
+      minDistance: 0
+    - kind: monster
+      entityId: barbol_cyan
+      count: 1
+      spreadRadius: 3
+      spreadFallbackMax: 14
+      minDistance: 0
+  - spawns:
+    - kind: monster
+      entityId: dark_elven
+      count: 2
+      spreadRadius: 5
+      spreadFallbackMax: 14
+      minDistance: 0
+    - kind: monster
+      entityId: mon1
+      count: 3
+      spreadRadius: 6
+      spreadFallbackMax: 14
+      minDistance: 0
+  - spawns:
+    - kind: monster
+      entityId: barbol_oscuro
+      count: 3
+      spreadRadius: 6
+      spreadFallbackMax: 14
+      minDistance: 0
+    - kind: monster
+      entityId: barbol_musgo
+      count: 1
+      spreadRadius: 4
+      spreadFallbackMax: 14
+      minDistance: 0
+  - spawns:
+    - kind: monster
+      entityId: dark_mague
+      count: 1
+      spreadRadius: 3
+      spreadFallbackMax: 14
+      minDistance: 0
+    - kind: monster
+      entityId: dark_dwarf
+      count: 2
+      spreadRadius: 5
+      spreadFallbackMax: 14
+      minDistance: 0
+  - spawns:
+    - kind: monster
+      entityId: knight_red
+      count: 2
+      spreadRadius: 5
+      spreadFallbackMax: 14
+      minDistance: 0
+    - kind: monster
+      entityId: dark_elven
+      count: 2
+      spreadRadius: 6
+      spreadFallbackMax: 14
+      minDistance: 0
+  - spawns:
+    - kind: monster
+      entityId: dark_barbarian
+      count: 1
+      spreadRadius: 3
+      spreadFallbackMax: 14
+      minDistance: 0
+    - kind: monster
+      entityId: dark_valkyrie
+      count: 2
+      spreadRadius: 5
+      spreadFallbackMax: 14
+      minDistance: 0
+    - kind: monster
+      entityId: barbol
+      count: 2
+      spreadRadius: 7
+      spreadFallbackMax: 14
+      minDistance: 0
+  - spawns:
+    - kind: monster
+      entityId: dark_vampire
+      count: 1
+      spreadRadius: 3
+      spreadFallbackMax: 14
+      minDistance: 0
+    - kind: monster
+      entityId: dark_valkyrie
+      count: 2
+      spreadRadius: 6
+      spreadFallbackMax: 14
+      minDistance: 0
+    - kind: monster
+      entityId: dark_elven
+      count: 2
+      spreadRadius: 7
+      spreadFallbackMax: 14
+      minDistance: 0
+  levelBonus: 0
+  scaleWithPlayerLevel: 0.5
   damageable: 0
   maxHp: 1000
   flashOnHit: 1
