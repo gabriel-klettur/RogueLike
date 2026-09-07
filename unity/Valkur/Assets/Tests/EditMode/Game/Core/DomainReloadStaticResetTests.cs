@@ -248,8 +248,14 @@ namespace Valkur.Tests.EditMode.Game.Core
                 int operandSize;
                 switch (op.OperandType)
                 {
-                    case OperandType.InlineNone:
-                    case OperandType.InlinePhi: operandSize = 0; break;
+                    // InlinePhi was listed here and is [Obsolete] in current .NET, so it
+                    // warned on every compile of this assembly. Nothing emits it — it is a
+                    // reserved value no opcode in the table carries — and dropping it sends
+                    // the impossible case to `default: return null`, i.e. "cannot decode
+                    // this method". That is the conservative answer: an undecodable hook
+                    // resets nothing, so the ratchet fails loudly rather than passing a
+                    // field it never actually saw reset.
+                    case OperandType.InlineNone: operandSize = 0; break;
                     case OperandType.ShortInlineBrTarget:
                     case OperandType.ShortInlineI:
                     case OperandType.ShortInlineVar: operandSize = 1; break;

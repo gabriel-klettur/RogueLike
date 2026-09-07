@@ -507,18 +507,6 @@
       ],
       "grid_ref_size": [216, 256]
     },
-  "assets/buildings/statues/statue_king_crowned.png": {
-      "width": 3,
-      "height": 5,
-      "collision": [
-        [".", ".", "."],
-        [".", ".", "."],
-        [".", ".", "."],
-        [".", ".", "."],
-        [".", ".", "."]
-      ],
-      "grid_ref_size": [77, 141]
-    },
   "assets/buildings/vegetation/tree_1.png": {
       "width": 6,
       "height": 8,
