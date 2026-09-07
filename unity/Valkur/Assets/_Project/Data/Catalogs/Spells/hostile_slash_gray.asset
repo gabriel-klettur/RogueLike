@@ -27,6 +27,7 @@ MonoBehaviour:
   prepareDuration: 0.14
   channelDuration: 0
   cooldownDuration: 0.85
+  castAnchor: 2
   speed: 0
   damage: 20
   range: 0

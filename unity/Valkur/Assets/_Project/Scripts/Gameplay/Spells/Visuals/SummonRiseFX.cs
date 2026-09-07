@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Combat;
@@ -180,6 +180,13 @@ namespace Valkur.Gameplay.Spells
                 float away = Mathf.Sign(spread == 0f ? 1f : spread);
                 _clodVelocity[i] = new Vector2(away * Random.Range(1.1f, 2.9f),
                                                Random.Range(1.8f, 3.6f));
+                // Storing the renderer is the whole point of the array. It was missed here,
+                // and the ten clods were built, parented and never referenced again: the mound
+                // that OCCLUDES the rise stayed at alpha 0 and UpdateClods threw a
+                // NullReferenceException on its first element every frame -- which also meant
+                // the `_age >= T_END` teardown at the foot of Update was never reached, so one
+                // missing assignment leaked a rig that logged an error a frame, forever.
+                _clods[i] = sr;
             }
         }
 

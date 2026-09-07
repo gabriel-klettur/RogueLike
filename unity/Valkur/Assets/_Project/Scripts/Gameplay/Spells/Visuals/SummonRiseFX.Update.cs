@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using Valkur.Gameplay.Combat;
 
 namespace Valkur.Gameplay.Spells
@@ -13,6 +13,17 @@ namespace Valkur.Gameplay.Spells
         {
             _age += Time.deltaTime;
 
+            // The teardown is decided BEFORE the layers are drawn, never after them. A throw
+            // in any one layer used to skip the destroy at the foot of this method, so a rig
+            // that had failed once went on failing every frame for the rest of the session --
+            // the flood of NullReferenceExceptions the missing `_clods[i] = sr` produced was
+            // one broken summon, not one per cast.
+            if (_age >= T_END)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
             if (!_spawned && _age >= T_SPAWN) SpawnBody();
             if (!_released && _age >= T_STANDING) ReleaseBody();
 
@@ -22,8 +33,6 @@ namespace Valkur.Gameplay.Spells
             UpdateClods();
             UpdateMotes();
             UpdateLight();
-
-            if (_age >= T_END) Destroy(gameObject);
         }
 
         private void SpawnBody()
