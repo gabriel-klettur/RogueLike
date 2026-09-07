@@ -85,6 +85,8 @@ namespace Valkur.Editor.Monsters
             public string displayName;
             public List<DirectionalFrameEntry> idle = new List<DirectionalFrameEntry>();
             public List<StateSheetEntry> states = new List<StateSheetEntry>();
+            public List<VariantSheetEntry> attackVariants = new List<VariantSheetEntry>();
+            public List<VariantSheetEntry> castVariants = new List<VariantSheetEntry>();
         }
 
         [Serializable]
@@ -100,6 +102,26 @@ namespace Valkur.Editor.Monsters
             public string state;              // one of KNOWN_STATES
             public int framesPerDirection;
             public List<string> sprites = new List<string>();  // framesPerDirection * 8, S,SE,E,NE,N,NW,W,SW order
+        }
+
+        /// <summary>
+        /// One alternative attack or cast animation, in exactly the sprite layout a state
+        /// uses. It differs from a state only in which LIST on
+        /// <see cref="EntityAssetConfig"/> it lands in.
+        ///
+        /// <para>Extra attacks are VARIANTS and never new <c>AnimState</c> values, for the
+        /// reason CLAUDE.md records: the seven states are enumerated positionally in four
+        /// independent places, so an eighth pays that tax four times over and again for the
+        /// ninth — and <c>PlayerController</c>'s locomotion whitelist would enter a state it
+        /// never leaves. A variant index under the existing Attack state inherits both
+        /// whitelists by construction.</para>
+        /// </summary>
+        [Serializable]
+        private class VariantSheetEntry
+        {
+            public string key;
+            public int framesPerDirection;
+            public List<string> sprites = new List<string>();
         }
 
         // ── Menu entry points ─────────────────────────────────────────────────────────
@@ -195,6 +217,10 @@ namespace Valkur.Editor.Monsters
                 // deciding new-vs-update.
                 DirectionalSprites resolvedIdle = ResolveIdle(entry.idle, entry.monsterKey, missingSprites);
                 var resolvedStates = ResolveStates(entry.states, entry.monsterKey, missingSprites);
+                var resolvedAttackVariants = ResolveVariants(entry.attackVariants, entry.monsterKey,
+                                                             "attackVariant", missingSprites);
+                var resolvedCastVariants = ResolveVariants(entry.castVariants, entry.monsterKey,
+                                                           "castVariant", missingSprites);
 
                 if (!apply) continue;
 
@@ -223,6 +249,9 @@ namespace Valkur.Editor.Monsters
                     def.assetConfig.idle = resolvedIdle;
                 foreach ((string state, List<Sprite> frames) in resolvedStates)
                     AssignStateSheet(def.assetConfig, state, frames);
+
+                ApplyAttackVariants(def.assetConfig, resolvedAttackVariants);
+                ApplyCastVariants(def.assetConfig, resolvedCastVariants);
 
                 EditorUtility.SetDirty(def);
                 catalog.UpsertDefinition(def);
@@ -287,6 +316,100 @@ namespace Valkur.Editor.Monsters
                 result.Add((s.state, frames));
             }
             return result;
+        }
+
+        private static List<(string key, List<Sprite> frames)> ResolveVariants(
+            List<VariantSheetEntry> variants, string monsterKey, string what,
+            List<string> missingSprites)
+        {
+            var result = new List<(string, List<Sprite>)>();
+            if (variants == null) return result;
+
+            foreach (VariantSheetEntry v in variants)
+            {
+                if (string.IsNullOrWhiteSpace(v.key))
+                {
+                    missingSprites.Add($"{monsterKey} {what}: an entry has no key");
+                    continue;
+                }
+
+                var frames = new List<Sprite>(v.sprites?.Count ?? 0);
+                if (v.sprites != null)
+                {
+                    foreach (string path in v.sprites)
+                    {
+                        Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                        if (sprite == null)
+                        {
+                            missingSprites.Add($"{monsterKey} {what} '{v.key}': {path}");
+                            continue;
+                        }
+                        frames.Add(sprite);
+                    }
+                }
+                result.Add((v.key, frames));
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Refreshes each named attack variant's SHEETS and leaves everything a designer
+        /// authored on it alone.
+        ///
+        /// <para>Matched BY KEY, never by position — matching by index moves every
+        /// reservation and every damage multiplier onto its neighbour the first time a wave
+        /// adds a variant in the middle, which is the failure
+        /// <c>PlayerFramesImporter.ApplyCastVariants</c> already documents. A variant the
+        /// manifest does not name is left in place: the manifest is one wave's output, not a
+        /// declaration of everything this monster may ever have.</para>
+        ///
+        /// <para>The combat fields (<c>damageMultiplier</c>, <c>rangeMultiplier</c>,
+        /// <c>cooldownMultiplier</c>, <c>weight</c>, the distance gates) are DESIGN and this
+        /// importer never touches them — the same line the class doc draws around
+        /// <c>stats</c> and <c>fsmSet</c>. A newly created variant gets the class defaults,
+        /// which are the neutral 1x everywhere.</para>
+        /// </summary>
+        private static void ApplyAttackVariants(EntityAssetConfig config,
+                                                List<(string key, List<Sprite> frames)> variants)
+        {
+            if (config.attackVariants == null) config.attackVariants = new List<AttackVariant>();
+
+            foreach ((string key, List<Sprite> frames) in variants)
+            {
+                AttackVariant existing = config.attackVariants
+                    .Find(v => v != null && string.Equals(v.key, key, StringComparison.OrdinalIgnoreCase));
+
+                if (existing == null)
+                {
+                    existing = new AttackVariant { key = key };
+                    config.attackVariants.Add(existing);
+                }
+
+                existing.directional = default;   // sheets win; a stale directional set would shadow them
+                existing.sheets = frames;
+            }
+        }
+
+        /// <summary>Same contract as <see cref="ApplyAttackVariants"/>, for the cast list.</summary>
+        private static void ApplyCastVariants(EntityAssetConfig config,
+                                              List<(string key, List<Sprite> frames)> variants)
+        {
+            if (config.castVariants == null) config.castVariants = new List<CastVariant>();
+
+            foreach ((string key, List<Sprite> frames) in variants)
+            {
+                CastVariant existing = config.castVariants
+                    .Find(v => v != null && string.Equals(v.key, key, StringComparison.OrdinalIgnoreCase));
+
+                if (existing == null)
+                {
+                    existing = new CastVariant { key = key };
+                    config.castVariants.Add(existing);
+                }
+
+                existing.directional = default;
+                existing.sheets = frames;
+            }
         }
 
         private static void AssignDirection(ref DirectionalSprites d, string direction, Sprite sprite)

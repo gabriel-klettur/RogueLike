@@ -349,8 +349,40 @@ namespace Valkur.Gameplay.Spells
         {
             if (caster == null) return Vector3.zero;
 
+            if (WantsMuzzle(anchor) && TryResolveMuzzle(caster, out Vector3 muzzle))
+                return muzzle;
+
             Vector3 center = ResolveCasterCenter(caster);
             return center + new Vector3(0f, ResolveCasterHalfHeight(caster) * AnchorFraction(anchor), 0f);
+        }
+
+        /// <summary>
+        /// Whether a caster's own <see cref="CastMuzzle"/> may answer for this anchor.
+        ///
+        /// <para>Only Hands and Head, and the exclusion is the design rather than caution.
+        /// Those two mean "out of the upper body" — a phrase a humanoid can answer with a
+        /// height and a dragon cannot — so they are the ones a muzzle exists to say better.
+        /// <c>Feet</c> and <c>Center</c> are EXPLICIT requests for the body itself:
+        /// <c>thunderclap</c> authors Center because it is a clap AROUND the caster, and
+        /// letting a muzzle move it would put the ring three units in front of the dragon
+        /// and out of the fight it is meant to be standing in. Every already-authored
+        /// intent therefore survives untouched, which is also why no existing asset had to
+        /// change for this.</para>
+        /// </summary>
+        private static bool WantsMuzzle(SpellCastAnchor anchor)
+            => anchor == SpellCastAnchor.Hands || anchor == SpellCastAnchor.Head;
+
+        /// <summary>
+        /// The caster's authored muzzle, when it has one. Looked up on the caster rather
+        /// than passed in, because every one of the ~70 casts in the project resolves
+        /// through here with nothing but a Transform, and threading a new argument through
+        /// all of them is how half of them end up passing null.
+        /// </summary>
+        private static bool TryResolveMuzzle(Transform caster, out Vector3 world)
+        {
+            world = default;
+            var muzzle = caster.GetComponent<CastMuzzle>();
+            return muzzle != null && muzzle.TryResolve(out world);
         }
 
         /// <summary>

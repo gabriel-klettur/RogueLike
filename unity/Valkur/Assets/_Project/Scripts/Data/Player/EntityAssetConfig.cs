@@ -280,6 +280,74 @@ namespace Valkur.Data
     }
 
     /// <summary>
+    /// One alternative animation for a state that is neither Attack nor Cast — a second
+    /// walk cycle, a third way to fall over.
+    ///
+    /// Those two states already have <see cref="AttackVariant"/> and
+    /// <see cref="CastVariant"/>, and this is deliberately NOT a third copy of either.
+    /// What separates it is that both of those are SELECTED BY AN ACTION: a swing picks
+    /// its variant, a spell reserves one by key. A locomotion variant has no action to
+    /// hang off — nothing "casts" a walk — so it carries no <c>spellKeys</c>, no distance
+    /// gate and no combat multipliers, and it is chosen on ENTRY to the state instead
+    /// (<c>DirectionalAnimator.SetState</c>'s two-argument overload).
+    ///
+    /// Giving it those fields anyway would be the authored-and-inert shape this project has
+    /// paid for repeatedly: a <c>damageMultiplier</c> on a walk cycle round-trips, shows in
+    /// the Inspector and reaches no code.
+    /// </summary>
+    [Serializable]
+    public class StateVariant
+    {
+        [Tooltip("Identifier used in logs, e.g. \"walk_2\".")]
+        public string key;
+
+        [Tooltip("Directional sprites for this variant. Takes precedence over sheets, " +
+                 "exactly as the base slots do.")]
+        public DirectionalSprites directional;
+
+        [Tooltip("Linear frame list: eight contiguous per-direction buckets in the order " +
+                 "S, SE, E, NE, N, NW, W, SW.")]
+        public List<Sprite> sheets;
+
+        [Header("Pacing")]
+        [Tooltip("Scales this variant's playback speed. 1 = the state's normal frame rate. " +
+                 "Multiplies with the entity-wide and per-state multipliers rather than " +
+                 "replacing them.")]
+        [Min(0.05f)] public float animationSpeedMultiplier = 1f;
+
+        [Tooltip("Play the frames once and hold the last one, instead of looping. A second " +
+                 "death animation wants this; a second walk cycle does not.")]
+        public bool holdLastFrame;
+    }
+
+    /// <summary>
+    /// The alternative animations for ONE state, grouped under the state they belong to.
+    ///
+    /// Grouped rather than flat because the alternative — a <c>state</c> field on every
+    /// <see cref="StateVariant"/> — is a field that means something at the top level and
+    /// nothing at all inside a <see cref="Loadout"/>, where the state is already named by
+    /// the entry that owns the list. One redundant field on every variant of every
+    /// character is exactly the kind of thing that later gets set wrong and ignored.
+    ///
+    /// Keyed by a STRING for the same two reasons <see cref="LoadoutStateSheets"/> is:
+    /// the base slots are already enumerated positionally in four places, and
+    /// <c>AnimState</c> lives in <c>Valkur.Gameplay</c>, which <c>Valkur.Data</c> may not
+    /// reference.
+    /// </summary>
+    [Serializable]
+    public class StateVariantGroup
+    {
+        [Tooltip("Which state these vary: idle, walk, chase, damage, death or recover. " +
+                 "attack and cast are REFUSED here — they have attackVariants and " +
+                 "castVariants, whose selection rules are different.")]
+        public string state;
+
+        [Tooltip("The alternatives, in authored order. Index 0 is where the rotation " +
+                 "starts, so put the character's default cycle first.")]
+        public List<StateVariant> variants = new List<StateVariant>();
+    }
+
+    /// <summary>
     /// One state's art inside a <see cref="Loadout"/>.
     ///
     /// Keyed by a STRING rather than by a position or an enum, for two reasons. The seven
@@ -304,6 +372,10 @@ namespace Valkur.Data
         [Tooltip("Linear frame list: eight contiguous per-direction buckets in the order " +
                  "S, SE, E, NE, N, NW, W, SW.")]
         public List<Sprite> sheets;
+
+        [Tooltip("Alternative animations for THIS state while THIS loadout is worn. " +
+                 "Empty means the single set above is all there is.")]
+        public List<StateVariant> variants = new List<StateVariant>();
     }
 
     /// <summary>
@@ -357,6 +429,19 @@ namespace Valkur.Data
     /// belong to the spell or the variant that uses them, and a loadout that quietly changed
     /// combat numbers would make the same swing hit differently depending on an animation
     /// toggle.
+    ///
+    /// It DOES carry its own <see cref="attackVariants"/> and <see cref="castVariants"/>,
+    /// and that is not a stat block either — it is the same "which art plays" question the
+    /// state overrides answer, asked for the two states whose art is chosen by an ACTION.
+    /// Without them a rotation is global while the look is not, which is visibly wrong in
+    /// both directions: the mague's five bare-handed casts would keep rotating while he is
+    /// holding his staff, and his three staff casts would put it back in his empty hands.
+    /// They REPLACE rather than extend, for the same reason
+    /// <see cref="LoadoutStateSheets.variants"/> does — a rotation mixing the two looks is
+    /// the exact pop this whole mechanism exists to avoid — which is why a loadout that
+    /// overrides casting must re-declare any reservation it still needs, the
+    /// <c>weapon_toggle</c> sheathe above all: it is cast FROM inside the loadout, so a
+    /// loadout whose cast list forgets it stows the weapon to a spellcasting pose.
     /// </summary>
     [Serializable]
     public class Loadout
@@ -366,6 +451,14 @@ namespace Valkur.Data
 
         [Tooltip("The states this loadout replaces. Any state not listed keeps the base art.")]
         public List<LoadoutStateSheets> states = new List<LoadoutStateSheets>();
+
+        [Tooltip("The swings this loadout uses instead of the base attackVariants. Empty " +
+                 "means the base rotation stands.")]
+        public List<AttackVariant> attackVariants = new List<AttackVariant>();
+
+        [Tooltip("The casting animations this loadout uses instead of the base " +
+                 "castVariants. Empty means the base rotation stands.")]
+        public List<CastVariant> castVariants = new List<CastVariant>();
 
         /// <summary>The override for <paramref name="state"/>, or null when this loadout
         /// does not replace it and the base art stands.</summary>
@@ -380,6 +473,36 @@ namespace Valkur.Data
             }
             return null;
         }
+    }
+
+    /// <summary>
+    /// The muzzle for ONE drawn frame, keyed by that frame's sprite name.
+    ///
+    /// <para>Per FRAME rather than per entity because the head MOVES. Measured on the red
+    /// dragon's eight cast frames, the mouth travels from (2.82, 1.31) to (4.09, 3.98) world
+    /// units as it rears — 1.3 units of sweep forward and 2.7 up — so a single pair lands on
+    /// the mouth in four frames and in open air in the other four. It is cheap because the
+    /// mirrors are baked: an entity drawn in one direction has two halves and its eight
+    /// direction buckets are filled from them, so a full sheet is a couple of dozen rows.</para>
+    /// </summary>
+    [Serializable]
+    public class CastMuzzleFrame
+    {
+        [Tooltip("Sprite name this measurement belongs to, e.g. red_dragon_cast_e3.")]
+        public string frame;
+
+        [Tooltip("X is FORWARD along the drawn facing and is always positive here — the " +
+                 "sign comes from which half is being rendered, so the two mirrored halves " +
+                 "share one number. Y is height above the sprite's vertical centre. Both " +
+                 "are fractions of that frame's own sprite bounds.")]
+        public Vector2 offset;
+
+        [Tooltip("Set when a human placed this row by looking at the frame. The baker " +
+                 "KEEPS it and re-measures everything else, because the measurement is a " +
+                 "silhouette heuristic and a few poses defeat it — on the red dragon's " +
+                 "cast_e6 the foreleg reaches further forward than the snout, so the " +
+                 "automatic answer follows the leg.")]
+        public bool handTuned;
     }
 
     /// <summary>
@@ -435,6 +558,33 @@ namespace Valkur.Data
         // SpellDefinition — so this is purely which animation plays.
         public List<CastVariant> castVariants = new List<CastVariant>();
 
+        [Header("State Variants")]
+        // Alternative animations for the states that are neither Attack nor Cast: a second
+        // walk cycle, a third death. Empty for every entity that draws each state once,
+        // which is all of them but the mague.
+        //
+        // A loadout that overrides a state REPLACES that state's variants with its own
+        // (LoadoutStateSheets.variants), rather than adding to these. It has to: the mague's
+        // base walk carries four staff cycles, and rotating those while the `unarmed`
+        // loadout is worn would put the staff back in his hands one step in four.
+        public List<StateVariantGroup> stateVariants = new List<StateVariantGroup>();
+
+        /// <summary>
+        /// The alternatives authored for <paramref name="state"/>, or null when this entity
+        /// draws it once — which is the answer for every state of nearly every entity.
+        /// </summary>
+        public List<StateVariant> FindStateVariants(string state)
+        {
+            if (stateVariants == null || string.IsNullOrEmpty(state)) return null;
+            for (int i = 0; i < stateVariants.Count; i++)
+            {
+                if (stateVariants[i] != null &&
+                    string.Equals(stateVariants[i].state, state, StringComparison.OrdinalIgnoreCase))
+                    return stateVariants[i].variants;
+            }
+            return null;
+        }
+
         [Header("Per-State Pacing")]
         // Empty for every entity that plays all its states at one speed, which is nearly all
         // of them. Gatita is the case it exists for: her idle is a slow breath and her walk
@@ -477,6 +627,29 @@ namespace Valkur.Data
             }
             return null;
         }
+
+        [Header("Cast Muzzle")]
+        [Tooltip("Where a cast leaves this body, as a fraction of the CURRENT frame's own " +
+                 "sprite bounds. X is forward along the drawn facing (1 = the leading edge " +
+                 "of the sprite), Y is height above the sprite's vertical centre " +
+                 "(0 = centre, 1 = the top). Leave at (0,0) — the default — and the entity " +
+                 "keeps the shared SpellCastAnchor behaviour.")]
+        public Vector2 castMuzzle = Vector2.zero;
+
+        [Tooltip("Per-frame muzzle measurements, which OVERRIDE castMuzzle for any frame " +
+                 "they name. Baked by Valkur > Monsters > Bake Cast Muzzles; castMuzzle " +
+                 "stays as the answer for a frame the bake did not cover.")]
+        public List<CastMuzzleFrame> castMuzzleFrames = new List<CastMuzzleFrame>();
+
+        /// <summary>
+        /// True when this entity declares its own muzzle. (0,0) is the "nobody authored one"
+        /// sentinel, the same shape as <c>scaleConfig.tint</c>'s alpha-zero and
+        /// <c>particleColor</c>'s opaque white — and it is safe here because the sprite's own
+        /// centre is never a mouth: an entity that really wanted to cast from its navel
+        /// authors <c>SpellCastAnchor.Center</c>, which is what that enum is for.
+        /// </summary>
+        public bool HasCastMuzzle =>
+            !Mathf.Approximately(castMuzzle.x, 0f) || !Mathf.Approximately(castMuzzle.y, 0f);
 
         [Header("Scale & Tint")]
         public AnimationScaleConfig scaleConfig;

@@ -293,6 +293,9 @@ namespace Valkur.Gameplay
                 _variantPacingByState[index] = CopyPacing(variants.Count, variantPacing);
             }
 
+            if (_entryVariantCursor != null && index < _entryVariantCursor.Length)
+                _entryVariantCursor[index] = 0;
+
             _activeVariant = -1;
         }
 
@@ -631,7 +634,80 @@ namespace Valkur.Gameplay
         /// Maps to Python's set_mapped_anim / Animator.current_state assignment.
         /// </summary>
         public void SetState(AnimState state, Direction direction)
-            => SetState(state, direction, _activeVariant);
+            => SetState(state, direction, ResolveEntryVariant(state));
+
+        /// <summary>
+        /// Which alternative animation a state ENTERED without one named should play.
+        ///
+        /// Attack and Cast are chosen by the ACTION — a swing rotates, a spell reserves by
+        /// key — and both go through the three-argument overload, so they never reach here.
+        /// Everything else has no action to hang a choice off: nothing "casts" a walk. So a
+        /// locomotion or reaction variant is picked on ENTRY, which is the only moment that
+        /// exists, and held for as long as the state does.
+        ///
+        /// Two guarantees, and both are load-bearing:
+        ///
+        /// * <b>Nothing re-rolls mid-state.</b> <c>PlayerController.Movement</c> re-asserts
+        ///   the walk state every frame and every direction change comes through here too,
+        ///   so re-rolling would restart the cycle on each step and the character would
+        ///   twitch instead of walking.
+        /// * <b>A state with no variants answers -1, never the previous state's index.</b>
+        ///   The old body returned <c>_activeVariant</c> unconditionally, which was harmless
+        ///   only because Attack and Cast were the sole states carrying variants and
+        ///   <c>GetSpriteSet</c> falls an out-of-range index back to the base set. The moment
+        ///   walk carries four of them, a 3 left over from a spellcast selects walk variant 3.
+        ///
+        /// Rotation, not a random pick: a random one repeats the same cycle back to back
+        /// about one entry in N, which reads as the animation having failed to change — the
+        /// same call <c>PlayerController.NextVariant</c> makes for swings.
+        /// </summary>
+        private int ResolveEntryVariant(AnimState state)
+        {
+            // "Already in this state" keeps whatever is playing. The one moment that LOOKS
+            // like a re-entry and is not is the very first call of an entity's life:
+            // `_currentState` reads Idle because that is the field's default, so an idle
+            // rotation would never install at all. `_stateEverSet` separates the two.
+            //
+            // The tempting shortcut — "re-select whenever `_activeVariant` is -1" — is WRONG,
+            // and the caller that proves it is `NPCCastState`. It resolves a spell's reserved
+            // cast animation and passes -1 when the spell reserves none, meaning "use the base
+            // set"; `FSMMonsterBrain.OnFSMStateChanged` then calls this two-argument overload
+            // right after `Enter`. Under that shortcut the -1 would be overwritten with a
+            // rotation index and the next `FaceTarget` would put it back, restarting the frame
+            // cursor both times. -1 is a CHOICE, not an absence.
+            if (state == _currentState && _stateEverSet)
+                return _activeVariant;
+
+            int count = VariantCount(state);
+            if (count <= 0) return -1;
+
+            int stateCount = Enum.GetValues(typeof(AnimState)).Length;
+            if (_entryVariantCursor == null || _entryVariantCursor.Length != stateCount)
+                _entryVariantCursor = new int[stateCount];
+
+            int i = (int)state;
+            if (i < 0 || i >= stateCount) return -1;
+
+            // Post-increment: the FIRST entry plays variant 0, which is the character's
+            // default cycle and the one an author puts first for exactly that reason.
+            int chosen = _entryVariantCursor[i] % count;
+            _entryVariantCursor[i] = (_entryVariantCursor[i] + 1) % count;
+            return chosen;
+        }
+
+        /// <summary>Where each state's entry rotation stands. Per state rather than one
+        /// shared counter, or entering walk would advance the death rotation with it.</summary>
+        private int[] _entryVariantCursor;
+
+        /// <summary>
+        /// Whether <see cref="SetState"/> has ever run on this animator.
+        ///
+        /// It exists because <see cref="_currentState"/> cannot say so: its default is
+        /// <see cref="AnimState.Idle"/>, which is indistinguishable from an entity genuinely
+        /// standing in Idle, and the difference decides whether the first call selects a
+        /// variant or keeps the -1 it was born with.
+        /// </summary>
+        private bool _stateEverSet;
 
         /// <summary>
         /// True while the active playback is running its frames back to front. Read by
@@ -684,6 +760,7 @@ namespace Valkur.Gameplay
 
             _activeVariant = attackVariant;
             _playReversed = reversed;
+            _stateEverSet = true;
 
             if (!stateChanged && !directionChanged && !variantChanged && !reversedChanged)
                 return;

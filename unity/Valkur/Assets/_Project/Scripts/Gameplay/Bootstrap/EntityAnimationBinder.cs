@@ -125,16 +125,18 @@ namespace Valkur.Gameplay
             bool preferCardinalDirectionSampling = idleUsesFourDirectionalLayout || walkUsesFourDirectionalLayout;
             animator.SetSpriteSets(idleSet, walkSet, chaseSet, castSet, attackSet, damageSet, deathSet, preferCardinalDirectionSampling);
             animator.SetRecoverSprites(recoverSet);
-            var attackSets = BuildAttackVariants(assetConfig, layout, out var attackSpellKeys,
-                                                out var attackPacing);
+            var attackSets = BuildAttackVariants(assetConfig, loadout, layout,
+                                                 out var attackSpellKeys, out var attackPacing);
             animator.SetVariants(DirectionalAnimator.AnimState.Attack, attackSets,
                                  attackSpellKeys, attackPacing);
-            var castSets = BuildCastVariants(assetConfig, layout, out var castSpellKeys,
-                                             out var castPacing);
+            var castSets = BuildCastVariants(assetConfig, loadout, layout,
+                                             out var castSpellKeys, out var castPacing);
             animator.SetVariants(DirectionalAnimator.AnimState.Cast, castSets,
                                  castSpellKeys, castPacing);
+            ApplyStateVariants(animator, assetConfig, loadout, layout);
             animator.SetAnimationSpeedMultiplier(assetConfig.scaleConfig.animationSpeedMultiplier);
             ApplyStatePacing(animator, assetConfig);
+            ApplyCastMuzzle(go, assetConfig, animator, renderer);
             var initialFrame = animator.PeekFirstFrame(idleSet);
             if (initialFrame != null)
                 renderer.sprite = initialFrame;
@@ -163,11 +165,50 @@ namespace Valkur.Gameplay
 
         private static void ApplyHdrTint(SpriteRenderer renderer, Color tint)
         {
-            renderer.color = Color.white;
+            bool isHdr = tint.r > 1f || tint.g > 1f || tint.b > 1f;
+
+            // A DARKENING tint goes on the renderer colour, not into the material.
+            //
+            // The MPB was the right home for the case this method was written for — a
+            // saturated boost that vertex colour would clamp — and it is the wrong home for
+            // anything at or below 1, because the two multiply and the material half is
+            // downstream of everything. SpriteTintStack composes hit flashes, burn, poison,
+            // freeze and GrayscaleDeath into renderer.color; multiply that product by a
+            // near-black _Color and every one of them is annihilated. Measured on the Dark
+            // roster, whose tint is (0,0,0): a white hit flash reached the screen as black, so
+            // the one signal that says "your shot connected" was invisible on exactly the
+            // enemies hardest to see.
+            //
+            // On renderer.color instead, black becomes the tint stack's BASE and the flash
+            // lerps FROM it toward white — visible again — while the composed product for an
+            // untinted or HDR-tinted entity is bit-for-bit what it always was. Every shipped
+            // asset carrying an LDR tint carries opaque white, so nothing changes for them
+            // either; this is a new road, not a diversion of the old one.
+            // White is the "no tint" value every unauthored asset resolves to, and it is
+            // deliberately NOT routed here: it would attach a SpriteTintStack to every entity
+            // in the game at bind time to declare a base the stack already defaults to.
+            bool isNeutral = !isHdr && tint == Color.white;
+
+            if (!isHdr && !isNeutral)
+            {
+                renderer.color = tint;
+
+                // Rebase EXPLICITLY rather than relying on the stack reading the renderer on
+                // its own Awake: the stack is attached lazily by whichever effect fires first,
+                // so whether it captured the tint or the white before it would depend on
+                // component order — and a stack that captured white would restore white after
+                // the first burn ended and un-darken the body permanently.
+                var stack = Combat.SpriteTintStack.Attach(renderer.gameObject);
+                if (stack != null) stack.Rebase(tint);
+            }
+            else
+            {
+                renderer.color = Color.white;
+            }
 
             var mpb = new MaterialPropertyBlock();
             renderer.GetPropertyBlock(mpb);
-            mpb.SetColor(HdrColorPropertyId, tint);
+            mpb.SetColor(HdrColorPropertyId, isHdr ? tint : Color.white);
             renderer.SetPropertyBlock(mpb);
         }
 
@@ -178,6 +219,38 @@ namespace Valkur.Gameplay
         /// goes through this same path — resets a state whose entry was removed instead of
         /// leaving the previous binding's multiplier in place.
         /// </summary>
+        /// <summary>
+        /// Installs (or removes) this entity's <see cref="CastMuzzle"/>.
+        ///
+        /// <para>Re-stated on every bind for the same reason <see cref="ApplyStatePacing"/>
+        /// is: a loadout swap re-enters this method, and a component left behind from the
+        /// previous art would go on answering for a body that is no longer drawn. The
+        /// unauthored case DESTROYS rather than leaving an inert component, so
+        /// <c>ProjectileExecutor</c> can decide on a null check instead of having to ask a
+        /// present component whether it means anything.</para>
+        /// </summary>
+        private static void ApplyCastMuzzle(GameObject go, EntityAssetConfig assetConfig,
+                                            DirectionalAnimator animator, SpriteRenderer renderer)
+        {
+            var existing = go.GetComponent<CastMuzzle>();
+            bool wanted = assetConfig != null &&
+                          (assetConfig.HasCastMuzzle ||
+                           (assetConfig.castMuzzleFrames != null && assetConfig.castMuzzleFrames.Count > 0));
+            if (!wanted)
+            {
+                if (existing != null)
+                {
+                    if (Application.isPlaying) Object.Destroy(existing);
+                    else Object.DestroyImmediate(existing);
+                }
+                return;
+            }
+
+            if (existing == null) existing = go.AddComponent<CastMuzzle>();
+            existing.Configure(assetConfig.castMuzzle, assetConfig.castMuzzleFrames,
+                               renderer, animator);
+        }
+
         private static void ApplyStatePacing(DirectionalAnimator animator, EntityAssetConfig assetConfig)
         {
             for (int i = 0; i < StateNames.Length; i++)
@@ -260,26 +333,33 @@ namespace Valkur.Gameplay
         /// what every entity but the knight does today.
         /// </summary>
         private static List<DirectionalAnimator.DirectionalSpriteSet> BuildAttackVariants(
-            EntityAssetConfig assetConfig, EntitySheetDirectionLayout layout,
+            EntityAssetConfig assetConfig, Loadout loadout, EntitySheetDirectionLayout layout,
             out List<IReadOnlyList<string>> spellKeys,
             out List<DirectionalAnimator.VariantPacing> pacing)
         {
             spellKeys = null;
             pacing = null;
-            if (assetConfig.attackVariants == null || assetConfig.attackVariants.Count == 0)
+            // The loadout's own swings REPLACE the base rotation when it declares any, so a
+            // character holding a staff never rotates into a bare-handed punch. An empty list
+            // is "this loadout does not change how I swing", not "I swing once".
+            List<AttackVariant> authored =
+                loadout != null && loadout.attackVariants != null && loadout.attackVariants.Count > 0
+                    ? loadout.attackVariants
+                    : assetConfig.attackVariants;
+            if (authored == null || authored.Count == 0)
                 return null;
 
-            var sets = new List<DirectionalAnimator.DirectionalSpriteSet>(assetConfig.attackVariants.Count);
+            var sets = new List<DirectionalAnimator.DirectionalSpriteSet>(authored.Count);
             // Appended in lockstep with `sets`, for the reason BuildCastVariants gives: the
             // loop drops variants that resolved to no frames, so a table indexed by the
             // authored list would point one variant off from the first empty one onwards.
-            var keys = new List<IReadOnlyList<string>>(assetConfig.attackVariants.Count);
-            var paces = new List<DirectionalAnimator.VariantPacing>(assetConfig.attackVariants.Count);
+            var keys = new List<IReadOnlyList<string>>(authored.Count);
+            var paces = new List<DirectionalAnimator.VariantPacing>(authored.Count);
             bool anyReserved = false;
 
-            for (int i = 0; i < assetConfig.attackVariants.Count; i++)
+            for (int i = 0; i < authored.Count; i++)
             {
-                AttackVariant variant = assetConfig.attackVariants[i];
+                AttackVariant variant = authored[i];
                 if (variant == null) continue;
 
                 var set = BuildSet(variant.directional, variant.sheets, layout, out _);
@@ -313,27 +393,35 @@ namespace Valkur.Gameplay
         /// doc for why sharing a base would change how the shipped attack variants serialize.
         /// </summary>
         private static List<DirectionalAnimator.DirectionalSpriteSet> BuildCastVariants(
-            EntityAssetConfig assetConfig, EntitySheetDirectionLayout layout,
+            EntityAssetConfig assetConfig, Loadout loadout, EntitySheetDirectionLayout layout,
             out List<IReadOnlyList<string>> spellKeys,
             out List<DirectionalAnimator.VariantPacing> pacing)
         {
             spellKeys = null;
             pacing = null;
-            if (assetConfig.castVariants == null || assetConfig.castVariants.Count == 0)
+            // Same replacement rule as the swings, and the reason bites harder here: the
+            // sheathe is a CAST, reserved to weapon_toggle, and it is cast from inside the
+            // loadout. A loadout that overrides casting and forgets to re-declare it stows
+            // the weapon to whatever pose the rotation happened to land on.
+            List<CastVariant> authored =
+                loadout != null && loadout.castVariants != null && loadout.castVariants.Count > 0
+                    ? loadout.castVariants
+                    : assetConfig.castVariants;
+            if (authored == null || authored.Count == 0)
                 return null;
 
-            var sets = new List<DirectionalAnimator.DirectionalSpriteSet>(assetConfig.castVariants.Count);
+            var sets = new List<DirectionalAnimator.DirectionalSpriteSet>(authored.Count);
             // Appended in lockstep with `sets`, NOT indexed by the authored list: the loop
             // below drops any variant that resolved to no frames, so the two lists would
             // slide apart by one from the first empty slot onwards and every spell after it
             // would reserve its neighbour's animation.
-            var keys = new List<IReadOnlyList<string>>(assetConfig.castVariants.Count);
-            var paces = new List<DirectionalAnimator.VariantPacing>(assetConfig.castVariants.Count);
+            var keys = new List<IReadOnlyList<string>>(authored.Count);
+            var paces = new List<DirectionalAnimator.VariantPacing>(authored.Count);
             bool anyReserved = false;
 
-            for (int i = 0; i < assetConfig.castVariants.Count; i++)
+            for (int i = 0; i < authored.Count; i++)
             {
-                CastVariant variant = assetConfig.castVariants[i];
+                CastVariant variant = authored[i];
                 if (variant == null) continue;
 
                 var set = BuildSet(variant.directional, variant.sheets, layout, out _);
@@ -347,6 +435,95 @@ namespace Valkur.Gameplay
 
             if (sets.Count == 0) return null;
             if (anyReserved) spellKeys = keys;
+            pacing = paces;
+            return sets;
+        }
+
+        /// <summary>
+        /// Installs the alternative animations for every state that is neither Attack nor
+        /// Cast — a second walk cycle, a third death.
+        ///
+        /// Pushed for ALL of those states, not only the authored ones, for the same reason
+        /// <see cref="ApplyStatePacing"/> is: a loadout swap re-enters this method, and a
+        /// state whose variants the new loadout does not carry has to be CLEARED rather than
+        /// left holding the previous binding's array. Leaving it is not a cosmetic bug — the
+        /// mague's base walk carries four staff cycles, so a stale array would put the staff
+        /// back in his hands one step in four while the `unarmed` loadout is worn.
+        ///
+        /// Attack and Cast are skipped because they were installed above from
+        /// <c>attackVariants</c> / <c>castVariants</c>, whose selection rules are different
+        /// (an action picks those; these are picked on entry to the state). Authoring either
+        /// name in <c>stateVariants</c> is refused loudly rather than silently losing to
+        /// whichever call ran last.
+        /// </summary>
+        private static void ApplyStateVariants(DirectionalAnimator animator,
+                                               EntityAssetConfig assetConfig, Loadout loadout,
+                                               EntitySheetDirectionLayout layout)
+        {
+            for (int i = 0; i < StateNames.Length; i++)
+            {
+                var state = (DirectionalAnimator.AnimState)i;
+                if (state == DirectionalAnimator.AnimState.Attack ||
+                    state == DirectionalAnimator.AnimState.Cast)
+                {
+                    if (assetConfig.FindStateVariants(StateNames[i]) != null)
+                    {
+                        Debug.LogWarning(
+                            $"[EntityAnimationBinder] stateVariants declares '{StateNames[i]}', " +
+                            "which is owned by attackVariants/castVariants. Ignored — move it there.");
+                    }
+                    continue;
+                }
+
+                var sets = BuildStateVariants(assetConfig, loadout, StateNames[i], layout,
+                                              out var pacing);
+                animator.SetVariants(state, sets, null, pacing);
+            }
+        }
+
+        /// <summary>
+        /// One state's alternatives, taken from the LOADOUT when it overrides that state and
+        /// from the base config otherwise.
+        ///
+        /// The loadout REPLACES rather than extends, and an override that lists no variants
+        /// therefore means "this loadout draws this state exactly once". That is the only
+        /// reading that works: a loadout overrides the state's single set, so keeping the
+        /// base variants beside it would rotate the character between the loadout's art and
+        /// the base character's.
+        ///
+        /// A variant that resolved to no frames is dropped, exactly as
+        /// <see cref="BuildAttackVariants"/> drops one: an empty slot in the rotation renders
+        /// the fallback pose one entry in N, which reads as the state failing to animate.
+        /// </summary>
+        private static List<DirectionalAnimator.DirectionalSpriteSet> BuildStateVariants(
+            EntityAssetConfig assetConfig, Loadout loadout, string state,
+            EntitySheetDirectionLayout layout,
+            out List<DirectionalAnimator.VariantPacing> pacing)
+        {
+            pacing = null;
+
+            LoadoutStateSheets over = loadout?.Find(state);
+            List<StateVariant> authored = over != null
+                ? over.variants
+                : assetConfig.FindStateVariants(state);
+            if (authored == null || authored.Count == 0)
+                return null;
+
+            var sets = new List<DirectionalAnimator.DirectionalSpriteSet>(authored.Count);
+            var paces = new List<DirectionalAnimator.VariantPacing>(authored.Count);
+            for (int i = 0; i < authored.Count; i++)
+            {
+                StateVariant variant = authored[i];
+                if (variant == null) continue;
+
+                var set = BuildSet(variant.directional, variant.sheets, layout, out _);
+                if (!HasFrames(set)) continue;
+
+                sets.Add(set);
+                paces.Add(PacingOf(variant.animationSpeedMultiplier, variant.holdLastFrame));
+            }
+
+            if (sets.Count == 0) return null;
             pacing = paces;
             return sets;
         }

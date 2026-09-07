@@ -82,6 +82,7 @@ namespace Valkur.Editor.Players
             public List<StateSheetEntry> states = new List<StateSheetEntry>();
             public List<StateSheetEntry> attackVariants = new List<StateSheetEntry>();
             public List<StateSheetEntry> castVariants = new List<StateSheetEntry>();
+            public List<StateVariantGroupEntry> stateVariants = new List<StateVariantGroupEntry>();
             public List<LoadoutEntry> loadouts = new List<LoadoutEntry>();
         }
 
@@ -91,6 +92,29 @@ namespace Valkur.Editor.Players
         {
             public string key;
             public List<StateSheetEntry> states = new List<StateSheetEntry>();
+
+            /// <summary>The alternatives for the states this loadout overrides. Grouped
+            /// beside <see cref="states"/> rather than nested inside each entry because
+            /// Unity's JsonUtility does not serialize a type that contains itself, and a
+            /// <see cref="StateSheetEntry"/> holding a list of its own kind is exactly
+            /// that.</summary>
+            public List<StateVariantGroupEntry> stateVariants = new List<StateVariantGroupEntry>();
+
+            /// <summary>The swings this loadout uses instead of the base attackVariants.
+            /// Empty means the base rotation stands.</summary>
+            public List<StateSheetEntry> attackVariants = new List<StateSheetEntry>();
+
+            /// <summary>The casting animations this loadout uses instead of the base
+            /// castVariants. Empty means the base rotation stands.</summary>
+            public List<StateSheetEntry> castVariants = new List<StateSheetEntry>();
+        }
+
+        /// <summary>The alternatives for one state — a second walk cycle, a third death.</summary>
+        [Serializable]
+        private class StateVariantGroupEntry
+        {
+            public string state;
+            public List<StateSheetEntry> variants = new List<StateSheetEntry>();
         }
 
         [Serializable]
@@ -200,16 +224,26 @@ namespace Valkur.Editor.Players
                 // Resolved as a list of lists so a loadout keeps its own state names: they are
                 // the BASE state names (idle/walk/chase/…), so flattening them into one list
                 // would collide with the base states resolved above.
-                var resolvedLoadouts = new List<(string key, List<(string name, List<Sprite> frames)> states)>();
+                var resolvedLoadouts = new List<ResolvedLoadout>();
                 if (entry.loadouts != null)
                 {
                     foreach (LoadoutEntry loadout in entry.loadouts)
                     {
                         if (loadout == null || string.IsNullOrEmpty(loadout.key)) continue;
-                        resolvedLoadouts.Add((loadout.key,
-                            ResolveSheets(loadout.states, entry.playerKey, summary.MissingSprites)));
+                        resolvedLoadouts.Add(new ResolvedLoadout
+                        {
+                            Key = loadout.key,
+                            Source = loadout,
+                            States = ResolveSheets(loadout.states, entry.playerKey, summary.MissingSprites),
+                            StateVariants = ResolveVariantGroups(loadout.stateVariants, entry.playerKey, summary),
+                            Attacks = ResolveSheets(loadout.attackVariants, entry.playerKey, summary.MissingSprites),
+                            Casts = ResolveSheets(loadout.castVariants, entry.playerKey, summary.MissingSprites),
+                        });
                     }
                 }
+
+                var resolvedStateVariants =
+                    ResolveVariantGroups(entry.stateVariants, entry.playerKey, summary);
 
                 summary.Updated.Add(entry.playerKey);
                 if (!apply) continue;
@@ -238,6 +272,7 @@ namespace Valkur.Editor.Players
                 ApplyCastVariants(def.assetConfig, resolvedCasts,
                                   DefaultSpellKeys(entry.castVariants),
                                   DefaultPacing(entry.castVariants));
+                ApplyStateVariants(def.assetConfig, resolvedStateVariants);
                 ApplyLoadouts(def.assetConfig, resolvedLoadouts);
 
                 EditorUtility.SetDirty(def);
@@ -327,9 +362,58 @@ namespace Valkur.Editor.Players
                 rejected += CountInvalidSheets(entry.states, entry.playerKey, requireKnownState: true);
                 rejected += CountInvalidSheets(entry.attackVariants, entry.playerKey, requireKnownState: false);
                 rejected += CountInvalidSheets(entry.castVariants, entry.playerKey, requireKnownState: false);
+                rejected += CountInvalidVariantGroups(entry.stateVariants, entry.playerKey);
+                if (entry.loadouts != null)
+                {
+                    foreach (LoadoutEntry loadout in entry.loadouts)
+                    {
+                        if (loadout == null) continue;
+                        rejected += CountInvalidVariantGroups(loadout.stateVariants, entry.playerKey);
+                        rejected += CountInvalidSheets(loadout.attackVariants, entry.playerKey, requireKnownState: false);
+                        rejected += CountInvalidSheets(loadout.castVariants, entry.playerKey, requireKnownState: false);
+                    }
+                }
             }
 
             return rejected == 0;
+        }
+
+        /// <summary>
+        /// Validates the per-state variant groups.
+        ///
+        /// The group's own name MUST be a known state — a typo there is silent otherwise:
+        /// <c>EntityAssetConfig.FindStateVariants</c> would simply never match it and the
+        /// alternatives would sit in the asset, round-trip, and never play. Attack and cast
+        /// are refused by name for the same reason the binder refuses them: those two have
+        /// their own lists with their own selection rules, and accepting them here would
+        /// mean whichever install ran last wins.
+        /// </summary>
+        private static int CountInvalidVariantGroups(List<StateVariantGroupEntry> groups, string playerKey)
+        {
+            int rejected = 0;
+            if (groups == null) return 0;
+
+            foreach (StateVariantGroupEntry group in groups)
+            {
+                if (group == null) continue;
+                string name = (group.state ?? string.Empty).Trim().ToLowerInvariant();
+                if (Array.IndexOf(KNOWN_STATES, name) < 0)
+                {
+                    Debug.LogError($"{LOG_PREFIX} {playerKey}: stateVariants names unknown " +
+                                   $"state '{group.state}'.");
+                    rejected++;
+                }
+                else if (name == "attack" || name == "cast")
+                {
+                    Debug.LogError($"{LOG_PREFIX} {playerKey}: stateVariants may not name " +
+                                   $"'{name}' — use attackVariants / castVariants.");
+                    rejected++;
+                }
+
+                rejected += CountInvalidSheets(group.variants, playerKey, requireKnownState: false);
+            }
+
+            return rejected;
         }
 
         private static int CountInvalidSheets(List<StateSheetEntry> sheets, string playerKey, bool requireKnownState)
@@ -530,13 +614,30 @@ namespace Valkur.Editor.Players
                                                 Dictionary<string, List<string>> defaultSpellKeys = null,
                                                 Dictionary<string, (float speed, bool hold)> defaultPacing = null)
         {
+            var rebuilt = BuildAttackVariantList(config.attackVariants, resolved,
+                                                 defaultSpellKeys, defaultPacing);
+            if (rebuilt != null) config.attackVariants = rebuilt;
+        }
+
+        /// <summary>
+        /// The rebuild itself, over a list rather than over the config, so a LOADOUT's own
+        /// swings go through exactly this path. A second implementation is how the base
+        /// rotation and a loadout's would end up disagreeing about whether an authored
+        /// reservation survives a re-import.
+        /// </summary>
+        private static List<AttackVariant> BuildAttackVariantList(
+            List<AttackVariant> previous,
+            List<(string name, List<Sprite> frames)> resolved,
+            Dictionary<string, List<string>> defaultSpellKeys = null,
+            Dictionary<string, (float speed, bool hold)> defaultPacing = null)
+        {
             if (resolved == null || resolved.Count == 0)
-                return;
+                return null;
 
             var existing = new Dictionary<string, AttackVariant>(StringComparer.Ordinal);
-            if (config.attackVariants != null)
+            if (previous != null)
             {
-                foreach (AttackVariant variant in config.attackVariants)
+                foreach (AttackVariant variant in previous)
                 {
                     if (variant != null && !string.IsNullOrEmpty(variant.key))
                         existing[variant.key] = variant;
@@ -577,7 +678,7 @@ namespace Valkur.Editor.Players
                 rebuilt.Add(variant);
             }
 
-            config.attackVariants = rebuilt;
+            return rebuilt;
         }
 
         /// <summary>
@@ -594,16 +695,29 @@ namespace Valkur.Editor.Players
                                               Dictionary<string, List<string>> defaultSpellKeys = null,
                                               Dictionary<string, (float speed, bool hold)> defaultPacing = null)
         {
+            var rebuilt = BuildCastVariantList(config.castVariants, resolved,
+                                               defaultSpellKeys, defaultPacing);
+            if (rebuilt != null) config.castVariants = rebuilt;
+        }
+
+        /// <summary>The rebuild itself, over a list — see <see cref="BuildAttackVariantList"/>
+        /// for why a loadout shares this path rather than getting its own.</summary>
+        private static List<CastVariant> BuildCastVariantList(
+            List<CastVariant> previous,
+            List<(string name, List<Sprite> frames)> resolved,
+            Dictionary<string, List<string>> defaultSpellKeys = null,
+            Dictionary<string, (float speed, bool hold)> defaultPacing = null)
+        {
             if (resolved == null || resolved.Count == 0)
-                return;
+                return null;
 
             var authoredSpellKeys = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
             // Pacing is captured separately from the reservation because a variant may carry
             // one without the other, and "unreserved" must not also mean "reset to 1x".
             var authoredPacing = new Dictionary<string, (float speed, bool hold)>(StringComparer.OrdinalIgnoreCase);
-            if (config.castVariants != null)
+            if (previous != null)
             {
-                foreach (CastVariant existing in config.castVariants)
+                foreach (CastVariant existing in previous)
                 {
                     if (existing == null || string.IsNullOrEmpty(existing.key)) continue;
                     if (existing.IsReservedForSpell)
@@ -642,7 +756,7 @@ namespace Valkur.Editor.Players
                 rebuilt.Add(variant);
             }
 
-            config.castVariants = rebuilt;
+            return rebuilt;
         }
 
         /// <summary>
@@ -655,8 +769,18 @@ namespace Valkur.Editor.Players
         /// player wave is a replacement, not a partial refresh, and a loadout whose art was
         /// dropped from the pipeline must not keep rendering from sprites nothing regenerates.
         /// </summary>
-        private static void ApplyLoadouts(EntityAssetConfig config,
-            List<(string key, List<(string name, List<Sprite> frames)> states)> resolved)
+        /// <summary>One loadout with every sprite already looked up.</summary>
+        private sealed class ResolvedLoadout
+        {
+            public string Key;
+            public LoadoutEntry Source;
+            public List<(string name, List<Sprite> frames)> States;
+            public List<ResolvedVariantGroup> StateVariants;
+            public List<(string name, List<Sprite> frames)> Attacks;
+            public List<(string name, List<Sprite> frames)> Casts;
+        }
+
+        private static void ApplyLoadouts(EntityAssetConfig config, List<ResolvedLoadout> resolved)
         {
             if (resolved == null || resolved.Count == 0)
             {
@@ -664,20 +788,147 @@ namespace Valkur.Editor.Players
                 return;
             }
 
-            var rebuilt = new List<Loadout>(resolved.Count);
-            foreach ((string key, List<(string name, List<Sprite> frames)> states) in resolved)
+            var previousByKey = new Dictionary<string, Loadout>(StringComparer.OrdinalIgnoreCase);
+            if (config.loadouts != null)
             {
-                var loadout = new Loadout { key = key, states = new List<LoadoutStateSheets>() };
-                foreach ((string state, List<Sprite> frames) in states)
+                foreach (Loadout old in config.loadouts)
+                {
+                    if (old != null && !string.IsNullOrEmpty(old.key)) previousByKey[old.key] = old;
+                }
+            }
+
+            var rebuilt = new List<Loadout>(resolved.Count);
+            foreach (ResolvedLoadout src in resolved)
+            {
+                var loadout = new Loadout { key = src.Key, states = new List<LoadoutStateSheets>() };
+                foreach ((string state, List<Sprite> frames) in src.States)
                 {
                     if (frames == null || frames.Count == 0) continue;
-                    loadout.states.Add(new LoadoutStateSheets { state = state, sheets = frames });
+                    loadout.states.Add(new LoadoutStateSheets
+                    {
+                        state = state,
+                        sheets = frames,
+                        variants = VariantsNamed(src.StateVariants, state),
+                    });
                 }
+
+                // Carried across BY KEY from the loadout of the same name, so a designer's
+                // reservation survives a re-import here exactly as it does at base level.
+                previousByKey.TryGetValue(src.Key, out Loadout previous);
+                loadout.attackVariants = BuildAttackVariantList(
+                    previous?.attackVariants, src.Attacks,
+                    DefaultSpellKeys(src.Source?.attackVariants),
+                    DefaultPacing(src.Source?.attackVariants)) ?? new List<AttackVariant>();
+                loadout.castVariants = BuildCastVariantList(
+                    previous?.castVariants, src.Casts,
+                    DefaultSpellKeys(src.Source?.castVariants),
+                    DefaultPacing(src.Source?.castVariants)) ?? new List<CastVariant>();
+
                 if (loadout.states.Count > 0)
                     rebuilt.Add(loadout);
             }
 
             config.loadouts = rebuilt;
+        }
+
+        /// <summary>One state's resolved alternatives, with the sprites already looked up.</summary>
+        private sealed class ResolvedVariantGroup
+        {
+            public string State;
+            public readonly List<StateVariant> Variants = new List<StateVariant>();
+        }
+
+        /// <summary>
+        /// Turns the manifest's variant groups into ready <see cref="StateVariant"/> objects.
+        ///
+        /// Shared by the base config and by every loadout, because the two carry the same
+        /// thing under the same rules and a second implementation is how the base walk and
+        /// the loadout walk end up disagreeing about whether an empty group means "no
+        /// variants" or "keep the previous ones".
+        /// </summary>
+        private static List<ResolvedVariantGroup> ResolveVariantGroups(
+            List<StateVariantGroupEntry> groups, string playerKey, ImportSummary summary)
+        {
+            var resolved = new List<ResolvedVariantGroup>();
+            if (groups == null) return resolved;
+
+            foreach (StateVariantGroupEntry group in groups)
+            {
+                if (group == null || string.IsNullOrEmpty(group.state)) continue;
+
+                var built = new ResolvedVariantGroup { State = group.state };
+                foreach ((string name, List<Sprite> frames) in
+                         ResolveSheets(group.variants, playerKey, summary.MissingSprites))
+                {
+                    if (frames == null || frames.Count == 0) continue;
+                    StateSheetEntry authored = FindEntry(group.variants, name);
+                    built.Variants.Add(new StateVariant
+                    {
+                        key = name,
+                        sheets = frames,
+                        // Straight from the manifest rather than as a creation default, unlike
+                        // an attack or cast variant's pacing. There is nothing to preserve: a
+                        // StateVariant carries no reservation and no combat multiplier, so the
+                        // whole object is pipeline output and the importer owns all of it.
+                        animationSpeedMultiplier = authored != null && authored.animationSpeedMultiplier > 0f
+                            ? authored.animationSpeedMultiplier
+                            : 1f,
+                        holdLastFrame = authored != null && authored.holdLastFrame,
+                    });
+                }
+
+                if (built.Variants.Count > 0) resolved.Add(built);
+            }
+
+            return resolved;
+        }
+
+        private static StateSheetEntry FindEntry(List<StateSheetEntry> entries, string name)
+        {
+            if (entries == null) return null;
+            foreach (StateSheetEntry entry in entries)
+            {
+                if (entry != null &&
+                    string.Equals(entry.Name, name, StringComparison.OrdinalIgnoreCase))
+                    return entry;
+            }
+            return null;
+        }
+
+        private static List<StateVariant> VariantsNamed(List<ResolvedVariantGroup> groups, string state)
+        {
+            var empty = new List<StateVariant>();
+            if (groups == null) return empty;
+            foreach (ResolvedVariantGroup group in groups)
+            {
+                if (string.Equals(group.State, state, StringComparison.OrdinalIgnoreCase))
+                    return group.Variants;
+            }
+            return empty;
+        }
+
+        /// <summary>
+        /// Rebuilds the base config's per-state alternatives. Replaces the list outright, the
+        /// same ownership rule the two variant paths and <c>ApplyLoadouts</c> follow: a player
+        /// wave is a replacement, so a group the manifest stopped naming must stop rotating.
+        /// </summary>
+        private static void ApplyStateVariants(EntityAssetConfig config,
+                                               List<ResolvedVariantGroup> resolved)
+        {
+            var rebuilt = new List<StateVariantGroup>();
+            if (resolved != null)
+            {
+                foreach (ResolvedVariantGroup group in resolved)
+                {
+                    rebuilt.Add(new StateVariantGroup
+                    {
+                        state = group.State,
+                        variants = group.Variants,
+                    });
+                }
+            }
+
+            config.stateVariants = rebuilt;
         }
 
         /// <summary>
