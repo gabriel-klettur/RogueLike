@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -247,6 +247,66 @@ namespace Valkur.Tests.EditMode.Game.World.Lighting
         }
 
         /// <summary>
+        /// A drop the editor accounts for is an EDIT, and the guard must let it through — for
+        /// every size of drop, up to and including deleting the lot.
+        ///
+        /// Before the Delete key this was theoretical, because deleting six lights meant six
+        /// trips to a row button. It is not theoretical now, and a guard that refuses the result
+        /// does not protect the file: the edit only exists in memory, so refusing to write it
+        /// destroys it just as thoroughly as a bad save would, and tells the author it was being
+        /// careful.
+        /// </summary>
+        [Test]
+        public void MayOverwrite_AllowsADropTheEditorAccountsFor()
+        {
+            var loader = Track(new GameObject("LoaderMOAttested").AddComponent<WorldLightLoader>());
+            var may    = LoaderType.GetMethod("MayOverwrite", Any);
+            var count  = LoaderType.GetMethod("CountRecordsOnDisk", Any);
+
+            int onDisk = (int)count.Invoke(loader, null);
+            if (onDisk <= 1) Assert.Ignore($"Only {onDisk} record(s) on disk; nothing to guard.");
+
+            Assert.IsTrue(Allows(loader, may, 0, onDisk),
+                "Deleting every light and saying so was refused. Deleting them all is a thing an " +
+                "author is allowed to do, and the file is the only place that edit can live.");
+
+            int keep = onDisk / 4;                       // a drop far past the ratio
+            Assert.IsFalse(Allows(loader, may, keep, 0),
+                "Control: unattested, this same drop must still be refused.");
+            Assert.IsTrue(Allows(loader, may, keep, onDisk - keep),
+                "An attested bulk delete was refused.");
+        }
+
+        /// <summary>
+        /// The widening is narrow: a PARTIAL account is no account at all. If the author deleted
+        /// one light and nine went missing, the eight nobody can explain are exactly the accident
+        /// the guard was written for, and the claim must not buy them a pass.
+        ///
+        /// This is the assertion that keeps the allowance from becoming a back door. A load
+        /// failure attests nothing, so it can never produce these numbers — but a single real
+        /// deletion in the same session as a failure could, if the rule were "subtract and
+        /// re-apply the ratio" instead of "explain the whole drop".
+        /// </summary>
+        [Test]
+        public void MayOverwrite_StillRefusesADropTheEditorOnlyPartlyAccountsFor()
+        {
+            var loader = Track(new GameObject("LoaderMOPartial").AddComponent<WorldLightLoader>());
+            var may    = LoaderType.GetMethod("MayOverwrite", Any);
+            var count  = LoaderType.GetMethod("CountRecordsOnDisk", Any);
+
+            int onDisk = (int)count.Invoke(loader, null);
+            if (onDisk < 4) Assert.Ignore($"Only {onDisk} record(s) on disk; nothing to guard.");
+
+            Assert.IsFalse(Allows(loader, may, 0, onDisk - 1),
+                "A wipe was allowed on an attestation that does not cover it.");
+
+            int keep = (int)(onDisk * 0.5f) - 1;         // refused today, unattested
+            Assert.IsFalse(Allows(loader, may, keep, 1),
+                "One attested deletion excused a drop of many. The allowance must explain the " +
+                "WHOLE difference or the original rules apply unchanged.");
+        }
+
+        /// <summary>
         /// An unreadable file is not an empty one. If the guard cannot tell what is on disk it must
         /// assume the file is populated, because the alternative — treating a read failure as
         /// permission to overwrite — turns a transient IO error into data loss.
@@ -262,9 +322,15 @@ namespace Valkur.Tests.EditMode.Game.World.Lighting
                 "A negative count would compare as 'fewer than anything' and wave every save through.");
         }
 
-        private static bool Allows(object loader, MethodInfo may, int aboutToWrite)
+        /// <summary>
+        /// Ask the guard, attesting <paramref name="authoredRemovals"/> deliberate deletions.
+        /// Zero is the historical behaviour and every pre-existing case passes zero on purpose:
+        /// the allowance may only ever widen the guard for a caller that accounts for the drop.
+        /// </summary>
+        private static bool Allows(object loader, MethodInfo may, int aboutToWrite,
+                                   int authoredRemovals = 0)
         {
-            object[] args = { aboutToWrite, null };
+            object[] args = { aboutToWrite, authoredRemovals, null };
             return (bool)may.Invoke(loader, args);
         }
 

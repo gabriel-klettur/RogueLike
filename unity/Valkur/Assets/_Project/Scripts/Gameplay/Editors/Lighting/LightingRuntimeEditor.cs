@@ -152,7 +152,11 @@ namespace Valkur.Gameplay.World
             HandleKeyboardShortcuts();
             SyncCycleFromLive();
             HandleMapInteraction();
+            // After HandleMapInteraction, which is what resolves _hoveredLight — the outline
+            // overlay reads that rather than hit-testing the cursor a second time.
+            UpdateOutlineState();
             MaybeRefreshInstances();
+            TickAutosave();
         }
 
         public void Activate()
@@ -178,6 +182,7 @@ namespace Valkur.Gameplay.World
             ApplyMode();
 
             _mainCamera = Camera.main;
+            _authoredRemovals = 0;
             CameraSetup.Instance?.DetachFollow();
             if (WorldLightLoader.Instance != null)
                 _undoWorldGeneration = WorldLightLoader.Instance.WorldGeneration;
@@ -188,18 +193,30 @@ namespace Valkur.Gameplay.World
 
         public void Deactivate()
         {
+            // FIRST, before anything is cleared. A pending autosave describes edits the author
+            // has already made, and closing the editor is the most likely moment for the last
+            // one to still be inside the debounce window — which is exactly the edit a user
+            // would most expect to survive.
+            FlushAutosave();
+
             _active = false;
             CancelMove();
             ClearDragLatch();
             if (_root != null) _root.SetActive(false);
             _hoveredLight  = null;
             _selectedLight = null;
+            // The Alt overlay is a VIEW, and it does not outlive the session that switched it
+            // on. Hiding the renderers without clearing the flag left it armed, so the next
+            // open painted every light again before the author had asked for anything.
+            _showAllOutlines = false;
+            HideAllOutlineFx();
             // Drop the history with the session. Every command in it addresses a light by id, and
             // ids are only meaningful against the world that was loaded when they were recorded —
             // reload the world, or switch map slot, and the same ids name different lights. An
             // undo surviving into the next session is not a convenience, it is an edit applied to
             // the wrong map.
             _undo.Clear();
+            _authoredRemovals = 0;
             _cameraPan.Reset();
             CameraSetup.Instance?.ReattachFollow();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.NotifyDeactivated(this);
@@ -242,7 +259,7 @@ namespace Valkur.Gameplay.World
                 onJumpDusk:              () => JumpToTime(0.75f),
                 onJumpMidnight:          () => JumpToTime(0.00f),
                 onSearchChanged:         OnSearchChanged,
-                onSave:                  DoSave,
+                onSave:                  () => DoSave(),
                 onUndo:                  DoUndo,
                 onRedo:                  DoRedo,
                 onToggleTutorial:        ToggleTutorial);
@@ -275,7 +292,9 @@ namespace Valkur.Gameplay.World
                 ("Ctrl+F3",  "Toggle Lighting Editor"),
                 ("LMB click","Select / spawn / delete (per mode)"),
                 ("LMB drag", "Move a hovered light"),
+                ("Del",      "Delete the selected light (Ctrl+Z restores)"),
                 ("MMB drag", "Pan the camera"),
+                ("Alt",      "Show every light's reach"),
                 ("WASD",     "Move the player"),
                 ("Type",     "Filter presets"),
                 ("Ctrl+S",   "Save light_instances.json"),
@@ -371,6 +390,7 @@ namespace Valkur.Gameplay.World
             if (EditorInput.UndoPressed()) DoUndo();
             if (EditorInput.RedoPressed()) DoRedo();
             if (EditorInput.SavePressed()) DoSave();
+            HandleDeleteKey();
 
             if (EditorInput.ClosePressed())
             {

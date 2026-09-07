@@ -269,6 +269,60 @@ namespace Valkur.Gameplay.World
         /// </summary>
         public int UnspawnedRecordCount => _unspawnedRecords.Count;
 
+        /// <summary>
+        /// One live light, flattened for a reader that only needs to DRAW it.
+        ///
+        /// <see cref="OuterRadius"/> is the effective radius already on the Light2D — preset
+        /// plus any per-instance override — so a marker built from it cannot disagree with the
+        /// light it marks.
+        /// </summary>
+        public readonly struct LightHandle
+        {
+            public readonly GameObject Go;
+            public readonly int        Id;
+            public readonly string     PresetId;
+            public readonly float      OuterRadius;
+            /// <summary>False for a light owned by a building; it cannot be moved or deleted here.</summary>
+            public readonly bool       Persistent;
+
+            public LightHandle(GameObject go, int id, string presetId, float outerRadius, bool persistent)
+            {
+                Go          = go;
+                Id          = id;
+                PresetId    = presetId;
+                OuterRadius = outerRadius;
+                Persistent  = persistent;
+            }
+        }
+
+        /// <summary>
+        /// Fill <paramref name="buffer"/> with every live light. Clears it first.
+        ///
+        /// Non-allocating on purpose — unlike <see cref="ActiveLightObjects"/>, which mints a
+        /// list per call, this one is written to be safe to call every frame from an editor
+        /// overlay.
+        ///
+        /// A handle is returned for a light whose GameObject is INACTIVE, and that is the whole
+        /// reason this exists beside the other accessors. Two independent gates deactivate a
+        /// light's object without the light ceasing to exist — the day/night window
+        /// (<see cref="ApplyPointLightsVisibility"/>) and the viewport cull
+        /// (<see cref="CullLightsByViewport"/>) — and an overlay that skipped them would go blank
+        /// in daylight and off screen, which is exactly when an author needs to see where the
+        /// lights are.
+        /// </summary>
+        public void CollectActiveLights(List<LightHandle> buffer)
+        {
+            if (buffer == null) return;
+            buffer.Clear();
+            for (int i = 0; i < _activeLights.Count; i++)
+            {
+                var inst = _activeLights[i];
+                if (inst.go == null) continue;
+                float radius = inst.light2D != null ? inst.light2D.pointLightOuterRadius : 0f;
+                buffer.Add(new LightHandle(inst.go, inst.id, inst.presetId, radius, inst.persistent));
+            }
+        }
+
         /// <summary>Find the live <see cref="LightInstance"/>-backed GameObject closest to <paramref name="worldPos"/> within <paramref name="maxRadius"/> world units, or null.</summary>
         public GameObject FindNearestLight(Vector3 worldPos, float maxRadius)
         {
@@ -967,7 +1021,7 @@ namespace Valkur.Gameplay.World
         /// <paramref name="force"/> is the deliberate escape hatch for actually deleting
         /// everything; nothing calls it automatically.
         /// </summary>
-        public int SaveAll(bool force = false)
+        public int SaveAll(int authoredRemovals = 0, bool force = false)
         {
             var sb = new StringBuilder(1024);
             sb.Append("[\n");
@@ -993,7 +1047,7 @@ namespace Valkur.Gameplay.World
             }
             sb.Append("\n]\n");
 
-            if (!force && !MayOverwrite(written, out string refusal))
+            if (!force && !MayOverwrite(written, authoredRemovals, out string refusal))
             {
                 Debug.LogError($"[WorldLightLoader] ABORTING save — {refusal} File NOT written. " +
                                 "The world was probably cleared or only partially loaded; restart Play " +
@@ -1010,26 +1064,56 @@ namespace Valkur.Gameplay.World
         /// <summary>
         /// Compare what is about to be written against what is already on disk. Modelled on the
         /// Particles editor's guard, which refuses the same two shapes of accident.
+        ///
+        /// <para><paramref name="authoredRemovals"/> is how many lights the CALLER can attest it
+        /// deleted on purpose. It exists because the count-based guard cannot tell a deliberate
+        /// bulk delete from a half-loaded world — both are "far fewer lights than the file" — and
+        /// with a Delete key on the editor the first one stopped being rare. An author who deletes
+        /// six of ten lights and saves was refused, with no way through but a code change; the
+        /// file is the only place that edit can live, so refusing it is not caution, it is data
+        /// loss with a polite message. Same reasoning as
+        /// <c>WorldTransitionService.IsBaseWorldContentSuspended</c>: state the fact rather than
+        /// infer it from a count.</para>
+        ///
+        /// <para>The widening is deliberately narrow. A drop is waved through ONLY when it is
+        /// FULLY attested; anything left unexplained falls back to the original rules, unchanged,
+        /// applied to the raw written count. So every input that was refused before is still
+        /// refused unless the caller accounts for the whole difference — a load failure attests
+        /// nothing and cannot produce these numbers.</para>
+        ///
+        /// <para>The count is a LOWER bound on purpose. Under-counting only makes the guard
+        /// stricter; over-counting is what would make it unsafe, so a caller must count confirmed
+        /// deletions and nothing else.</para>
         /// </summary>
-        private bool MayOverwrite(int aboutToWrite, out string refusal)
+        private bool MayOverwrite(int aboutToWrite, int authoredRemovals, out string refusal)
         {
             refusal = null;
             int onDisk = CountRecordsOnDisk();
             if (onDisk <= 0) return true;   // nothing to lose
 
+            // Every record the file has and the world does not is one the author deleted.
+            if (authoredRemovals > 0 && onDisk - aboutToWrite <= authoredRemovals) return true;
+
             if (aboutToWrite == 0)
             {
-                refusal = $"the world holds 0 authored lights but the file holds {onDisk}.";
+                refusal = $"the world holds 0 authored lights but the file holds {onDisk}"
+                        + AttestationNote(authoredRemovals) + ".";
                 return false;
             }
             if (aboutToWrite < onDisk * SaveDropRefusalRatio)
             {
                 refusal = $"the world holds {aboutToWrite} authored lights but the file holds {onDisk} " +
-                          "— too large a drop to be an edit.";
+                          "— too large a drop to be an edit" + AttestationNote(authoredRemovals) + ".";
                 return false;
             }
             return true;
         }
+
+        /// <summary>Say what the caller claimed, so a refusal names the gap rather than only the totals.</summary>
+        private static string AttestationNote(int authoredRemovals)
+            => authoredRemovals > 0
+                ? $" (the editor accounts for only {authoredRemovals} deliberate deletion(s))"
+                : " (no deliberate deletions were reported)";
 
         /// <summary>How many records the file currently holds.</summary>
         private int CountRecordsOnDisk()

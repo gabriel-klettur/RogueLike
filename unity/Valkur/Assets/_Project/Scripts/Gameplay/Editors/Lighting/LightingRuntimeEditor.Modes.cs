@@ -200,7 +200,8 @@ namespace Valkur.Gameplay.World
                 doAction:   () => MoveById(id, to),
                 undoAction: () => MoveById(id, from)));
             RebuildInstancesList();
-            SetStatus($"Moved to ({to.x:F1}, {to.y:F1}). Save (Ctrl+S) to persist.");
+            MarkLightsDirty();
+            SetStatus($"Moved to ({to.x:F1}, {to.y:F1}).");
         }
 
         /// <summary>Re-resolve the light at command time and move it, or say why it could not.</summary>
@@ -215,6 +216,7 @@ namespace Valkur.Gameplay.World
             }
             loader.MoveLight(go, target);
             RebuildInstancesList();
+            MarkLightsDirty();
         }
 
         private void CancelMove()
@@ -256,7 +258,51 @@ namespace Valkur.Gameplay.World
                 undoAction: () => RemoveById(snapshot != null ? snapshot.Id : 0)));
             FocusLight(go);
             RebuildInstancesList();
+            MarkLightsDirty();
             SetStatus($"Spawned '{preset}' at ({worldPos.x:F1}, {worldPos.y:F1}).");
+        }
+
+        /// <summary>
+        /// Delete the selected light on the Delete key. No confirmation, by design: this is
+        /// friction, not safety — Ctrl+Z restores the light whole, from a snapshot that carries
+        /// its id and every per-instance override. The Particles editor made the same call for
+        /// the same reason, and a modal on every single delete is what makes an author stop
+        /// using the key and go back to hunting for the row's X button.
+        ///
+        /// <para>Guarded against typing. The editor has a preset search box and the Delete key
+        /// inside a focused field must edit the text, not destroy the selection — the same guard
+        /// the Particles and Map editors carry. It is not optional here: the search box is one
+        /// Tab away from the map at all times.</para>
+        ///
+        /// <para>Refused mid-drag for the reason undo already is: the drag writes the light's
+        /// position every frame, so destroying its target half way through leaves CommitMove
+        /// recording a move for a light that is gone.</para>
+        /// </summary>
+        private void HandleDeleteKey()
+        {
+            if (!EditorInput.DeletePressed()) return;
+
+            // The typing guard comes FIRST, before anything that writes the status line. A
+            // Delete pressed inside the search box is not a refused delete, it is not a delete
+            // at all, and reporting one would put "nothing selected" under the author's cursor
+            // on every keystroke they correct.
+            var es = EventSystem.current;
+            if (es != null && es.currentSelectedGameObject != null &&
+                es.currentSelectedGameObject.GetComponent<TMPro.TMP_InputField>() != null)
+                return;
+
+            if (_moving)
+            {
+                SetStatus("Finish the drag (release LMB) or cancel it (Esc) before deleting.");
+                return;
+            }
+            if (_selectedLight == null)
+            {
+                SetStatus("Nothing selected — click a light on the map, or a row in Instances.");
+                return;
+            }
+
+            DeleteLight(_selectedLight);
         }
 
         public void DeleteLight(GameObject lightGo)
@@ -278,30 +324,42 @@ namespace Valkur.Gameplay.World
                 return;
             }
 
+            // The counter moves with the WORLD, not with the stack: a redo deletes again and a
+            // undo puts the light back, so both have to adjust it or the save guard's allowance
+            // drifts out of step with what the file is about to lose.
             _undo.Record(new UndoStack.LambdaCommand(
                 $"Delete {label}",
-                doAction:   () => RemoveById(snapshot.Id),
-                undoAction: () => RestoreSnapshot(snapshot)));
+                doAction:   () => { if (RemoveById(snapshot.Id))    _authoredRemovals++; },
+                undoAction: () => { if (RestoreSnapshot(snapshot))  _authoredRemovals--; }));
             WorldLightLoader.Instance.RemoveLight(lightGo);
+            _authoredRemovals++;
             if (_selectedLight == lightGo) _selectedLight = null;
             RebuildInstancesList();
-            SetStatus($"Deleted '{label}'. Save (Ctrl+S) to persist.");
+            MarkLightsDirty();
+            SetStatus($"Deleted '{label}'. Ctrl+Z restores it.");
         }
 
-        /// <summary>Re-create a captured light and refresh the panel.</summary>
-        private void RestoreSnapshot(WorldLightLoader.LightSnapshot snapshot)
+        /// <summary>Re-create a captured light and refresh the panel. Reports whether it did.</summary>
+        private bool RestoreSnapshot(WorldLightLoader.LightSnapshot snapshot)
         {
             var loader = WorldLightLoader.Instance;
-            if (loader == null || snapshot == null) return;
+            if (loader == null || snapshot == null) return false;
             var go = loader.RestoreLight(snapshot);
             if (go == null)
                 Debug.LogWarning($"[LightingEditor] Could not restore light id={snapshot.Id} " +
                                  $"(preset '{snapshot.PresetId}').");
             RebuildInstancesList();
+            MarkLightsDirty();
+            return go != null;
         }
 
-        /// <summary>Destroy the light with this id, if it is still there.</summary>
-        private void RemoveById(int id)
+        /// <summary>
+        /// Destroy the light with this id, if it is still there. Reports whether it did — the
+        /// save guard's attested-removal count must only ever rise on a removal that really
+        /// happened, or the count stops being a lower bound and starts excusing drops nobody
+        /// authored.
+        /// </summary>
+        private bool RemoveById(int id)
         {
             var loader = WorldLightLoader.Instance;
             var go     = loader != null ? loader.FindLightById(id) : null;
@@ -312,11 +370,13 @@ namespace Valkur.Gameplay.World
                 // world never took — the same silence UndoStack.ReportFailure exists to break,
                 // and one its try/catch cannot see because nothing threw.
                 Debug.LogWarning($"[LightingEditor] Undo/redo of a delete could not find light id={id}.");
-                return;
+                return false;
             }
             loader.RemoveLight(go);
             if (_selectedLight == go) _selectedLight = null;
             RebuildInstancesList();
+            MarkLightsDirty();
+            return true;
         }
 
         private void FocusLight(GameObject lightGo)

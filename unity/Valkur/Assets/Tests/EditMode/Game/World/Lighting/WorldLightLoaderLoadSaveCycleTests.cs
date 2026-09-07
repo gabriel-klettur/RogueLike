@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
@@ -495,6 +495,109 @@ namespace Valkur.Tests.EditMode.Game.World.Lighting
         // ─────────────────────────────────────────────────────────────────────────
         //  Helpers
         // ─────────────────────────────────────────────────────────────────────────
+
+        // ─────────────────────────────────────────────────────────────────────────
+        //  Deleting: the whole cycle, because half of it proves nothing
+        // ─────────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// A deleted light must be gone from the FILE and must stay gone through the next load.
+        ///
+        /// Asserted as a composition rather than on either half, for the reason this fixture
+        /// exists: a delete that empties the scene and a save that writes the scene can each be
+        /// correct while the light still comes back, because the record was preserved somewhere —
+        /// as an unspawnable, say — and re-emitted. Nothing about that failure looks wrong until
+        /// the author restarts and finds the light they deleted.
+        /// </summary>
+        [Test]
+        public void DeletingALight_RemovesItFromTheFileAndItDoesNotComeBackOnReload()
+        {
+            _repo.Json = Json(
+                @"{ ""id"": 1, ""preset_id"": ""Torch"", ""zone"": """", ""rel_x"": 0,  ""rel_y"": 0 }",
+                @"{ ""id"": 2, ""preset_id"": ""Torch"", ""zone"": """", ""rel_x"": 32, ""rel_y"": 0 }",
+                @"{ ""id"": 3, ""preset_id"": ""Torch"", ""zone"": """", ""rel_x"": 64, ""rel_y"": 0 }",
+                @"{ ""id"": 4, ""preset_id"": ""Torch"", ""zone"": """", ""rel_x"": 96, ""rel_y"": 0 }");
+            Load();
+            Assert.AreEqual(4, _loader.PersistentLightCount, "The fixture did not load.");
+
+            var victim = _loader.FindLightById(2);
+            Assert.IsNotNull(victim, "Light id=2 did not spawn.");
+            _loader.RemoveLight(victim);
+
+            Assert.AreEqual(3, _loader.PersistentLightCount, "The delete did not reach the world.");
+            Assert.AreEqual(3, _loader.SaveAll(authoredRemovals: 1), "The save wrote the wrong count.");
+
+            // The file itself. Quotes and whitespace are stripped so the needle carries no
+            // escapes and the assertion is about the RECORD rather than about how the
+            // serialiser happens to quote and indent it.
+            string dense = StripJsonNoise(_repo.Json);
+            StringAssert.DoesNotContain("id:2", dense, "The deleted record is still in the file.");
+            StringAssert.Contains("id:1", dense, "An untouched record was dropped from the file.");
+            StringAssert.Contains("id:3", dense, "An untouched record was dropped from the file.");
+            StringAssert.Contains("id:4", dense, "An untouched record was dropped from the file.");
+
+            // And the load side agrees — a fresh loader over the same bytes.
+            var go2 = new GameObject("ReloadLoader");
+            _trash.Add(go2);
+            var reloaded = go2.AddComponent<WorldLightLoader>();
+            reloaded.SetCatalog(_catalog);
+            reloaded.SetRepository(_repo);
+            LoaderMethod("LoadInstances").Invoke(reloaded, null);
+
+            Assert.AreEqual(3, reloaded.PersistentLightCount,
+                "The deleted light came back on reload. The delete reached the scene and the save " +
+                "reported success, and the composition of the two still lost the edit.");
+            Assert.IsNull(reloaded.FindLightById(2), "Id 2 is alive again after a reload.");
+            Assert.IsNotNull(reloaded.FindLightById(1), "An untouched light went missing.");
+            Assert.IsNotNull(reloaded.FindLightById(3), "An untouched light went missing.");
+            Assert.IsNotNull(reloaded.FindLightById(4), "An untouched light went missing.");
+            Assert.AreEqual(0, reloaded.UnspawnedRecordCount,
+                "The deleted record was preserved as an unspawnable, which re-emits it on the " +
+                "next save — the light would return one save later.");
+        }
+
+        /// <summary>
+        /// Deleting more than half is an ordinary edit once there is a Delete key, and the save
+        /// must take it when the caller accounts for it — while an UNATTESTED drop of the same
+        /// size is still refused. Both halves in one test: the allowance is only correct if it
+        /// discriminates, and a test asserting only the permissive half would pass just as well
+        /// on a guard that had simply been deleted.
+        /// </summary>
+        [Test]
+        public void ABulkDelete_IsWrittenWhenAttestedAndRefusedWhenNot()
+        {
+            _repo.Json = Json(
+                @"{ ""id"": 1, ""preset_id"": ""Torch"", ""zone"": """", ""rel_x"": 0,  ""rel_y"": 0 }",
+                @"{ ""id"": 2, ""preset_id"": ""Torch"", ""zone"": """", ""rel_x"": 32, ""rel_y"": 0 }",
+                @"{ ""id"": 3, ""preset_id"": ""Torch"", ""zone"": """", ""rel_x"": 64, ""rel_y"": 0 }",
+                @"{ ""id"": 4, ""preset_id"": ""Torch"", ""zone"": """", ""rel_x"": 96, ""rel_y"": 0 }");
+            Load();
+
+            for (int id = 1; id <= 3; id++) _loader.RemoveLight(_loader.FindLightById(id));
+            Assert.AreEqual(1, _loader.PersistentLightCount);
+
+            int writesBefore = _repo.Writes;
+            LogAssert.ignoreFailingMessages = true;   // the refusal logs an error by design
+            Assert.AreEqual(WorldLightLoader.SaveAborted, _loader.SaveAll(),
+                "An unattested 4 -> 1 drop was written. That is the half-loaded world the guard " +
+                "exists for, and it looks identical to this one from the counts alone.");
+            LogAssert.ignoreFailingMessages = false;
+            Assert.AreEqual(writesBefore, _repo.Writes, "The refused save still wrote the file.");
+
+            Assert.AreEqual(1, _loader.SaveAll(authoredRemovals: 3),
+                "The same drop was refused with the deletions accounted for, so an author who " +
+                "deletes three of four lights has nowhere to put the edit.");
+            Assert.AreEqual(writesBefore + 1, _repo.Writes, "The accepted save did not write.");
+        }
+
+        /// <summary>Whitespace and quotes out, so an id reads as <c>id:2</c> with nothing to escape.</summary>
+        private static string StripJsonNoise(string json)
+        {
+            var sb = new System.Text.StringBuilder(json.Length);
+            foreach (char c in json)
+                if (!char.IsWhiteSpace(c) && c != '"') sb.Append(c);
+            return sb.ToString();
+        }
 
         private static string Json(params string[] records) => "[" + string.Join(",", records) + "]";
     }

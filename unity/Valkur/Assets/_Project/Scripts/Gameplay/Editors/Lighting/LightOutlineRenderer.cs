@@ -1,21 +1,25 @@
 using UnityEngine;
 using Valkur.UIKit;
 
-namespace Valkur.Gameplay.Spawners
+namespace Valkur.Gameplay.World
 {
     /// <summary>
-    /// World-space outline drawn around a <see cref="SpawnerInstance"/> position.
-    /// Used by the runtime Spawner Editor (F3) Alt-toggle to highlight every
-    /// spawner on the map. Renders two concentric LineRenderers:
-    ///   • Outer ring  → the spawner's <c>triggerRadius</c> (per-instance)
+    /// World-space marker drawn on a placed light while the Lighting Editor's Alt overlay is
+    /// on. Two concentric <see cref="LineRenderer"/>s, the same shape the Spawner Editor uses:
+    ///   • Outer ring  → the light's own <c>pointLightOuterRadius</c> (per instance)
     ///   • Inner blob  → a small thick circle that reads as a clickable centre dot
     ///
-    /// Mirrors <c>ParticleEmitterOutlineRenderer</c> but is split into a separate
-    /// type so the centre dot can stay constant while the outer ring varies per
-    /// instance via <see cref="SetRadius"/>.
+    /// Mirrors <c>SpawnerOutlineRenderer</c> and is a separate type for the same reason that one
+    /// is: the centre dot stays constant while the outer ring varies per instance.
+    ///
+    /// The one real difference is <see cref="SetVisible"/>: this renderer NEVER consults its
+    /// target's <c>activeInHierarchy</c>. A light's GameObject is deactivated by two gates that
+    /// have nothing to do with whether the light exists — the day/night window and the viewport
+    /// cull — and hiding the marker with them would blank the overlay in daylight and off
+    /// screen, which is precisely when the author cannot see the lights themselves.
     /// </summary>
     [DisallowMultipleComponent]
-    public class SpawnerOutlineRenderer : MonoBehaviour
+    public class LightOutlineRenderer : MonoBehaviour
     {
         private const int   CIRCLE_SEGMENTS = 32;
         private const int   CENTER_SEGMENTS = 16;
@@ -23,10 +27,10 @@ namespace Valkur.Gameplay.Spawners
         private const float MIN_RADIUS      = 0.25f;
 
         // Centre dot — small thick circle, looks like a filled marker.
-        private const float CENTER_DOT_RADIUS           = 0.10f;
-        private const float CENTER_DOT_THICKNESS        = 0.18f;
-        private const float CENTER_DOT_HOVER_RADIUS     = 0.16f;
-        private const float CENTER_DOT_HOVER_THICKNESS  = 0.26f;
+        private const float CENTER_DOT_RADIUS          = 0.10f;
+        private const float CENTER_DOT_THICKNESS       = 0.18f;
+        private const float CENTER_DOT_HOVER_RADIUS    = 0.16f;
+        private const float CENTER_DOT_HOVER_THICKNESS = 0.26f;
         private static readonly Color CENTER_DOT_COLOR       = UITheme.MARKER_DOT;
         private static readonly Color CENTER_DOT_HOVER_COLOR = UITheme.MARKER_DOT_HOVER;
 
@@ -35,10 +39,22 @@ namespace Valkur.Gameplay.Spawners
 
         private static Material s_lineMat;
 
+        /// <summary>
+        /// Domain Reload is OFF, so a Material cached in a static survives Stop and comes back as
+        /// a destroyed Unity object on the next Play. Reset it rather than adding a line to
+        /// Tests/EditMode/Baselines/unreset-statics.txt — the five older outline renderers are
+        /// grandfathered there, and a ratchet that keeps accepting new entries is a list.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            s_lineMat = null;
+        }
+
         private Transform _target;
-        private float     _radius          = DEFAULT_RADIUS;
-        private float     _thicknessWorld  = 0.06f;
-        private Color     _color           = new Color(1f, 0.65f, 0.20f, 0.85f);
+        private float     _radius         = DEFAULT_RADIUS;
+        private float     _thicknessWorld = 0.06f;
+        private Color     _color          = UITheme.MARKER_RING;
         private bool      _hovered;
 
         public void Configure(Color color, float thicknessWorld, float radius)
@@ -58,8 +74,20 @@ namespace Valkur.Gameplay.Spawners
         }
 
         /// <summary>
-        /// Toggles the hover affordance on the centre dot — when hovered, the
-        /// dot grows + becomes brighter cyan to signal "click to inspect".
+        /// Repaint the ring. A derived light — one owned by a building — is drawn in a different
+        /// colour from an authored one, because the editor refuses to move or delete it and a
+        /// marker that looks identical promises an edit that will be turned down.
+        /// </summary>
+        public void SetColor(Color color)
+        {
+            if (_color == color) return;
+            _color = color;
+            ApplyVisuals();
+        }
+
+        /// <summary>
+        /// Toggles the hover affordance on the centre dot — when hovered, the dot grows and
+        /// turns brighter cyan to signal "click to select".
         /// </summary>
         public void SetHovered(bool hovered)
         {
@@ -142,8 +170,8 @@ namespace Valkur.Gameplay.Spawners
 
         private void LateUpdate()
         {
+            // Deliberately no activeInHierarchy test on the target — see the class summary.
             if (_target == null || _ring == null) { SetVisible(false); return; }
-            if (!_target.gameObject.activeInHierarchy) { SetVisible(false); return; }
 
             SetVisible(true);
 
