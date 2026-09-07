@@ -5,6 +5,9 @@ using UnityEditor;
 using UnityEditor.U2D;
 using UnityEngine;
 using UnityEngine.U2D;
+// The PPU invariants below assert against the same source of truth the postprocessor reads,
+// so a stale .meta is a red test rather than a silently resized character.
+using Valkur.Editor;
 
 namespace Valkur.Tests.EditMode.Game.Data
 {
@@ -112,14 +115,44 @@ namespace Valkur.Tests.EditMode.Game.Data
                 "ruining the pixel-art look that tiles, NPCs, and items share.");
         }
 
+        /// <summary>
+        /// A character sprite imports at the PPU its own character DECLARES, which for every
+        /// character but one is the shared 64.
+        ///
+        /// <para>This asserted a flat 64 and was RIGHT to break. PPU is half of a pair: the
+        /// frame builder's baked pixel height buys DETAIL, and the RATIO of the two is the
+        /// character's world height. A character who must be taller or sharper than the roster
+        /// moves both - the vampire keeps 256 px of her 331-681 px source cells and divides by
+        /// 96 to stand 2.667 units against the dwarf's 1.797.</para>
+        ///
+        /// <para>Reading <see cref="CharacterSpritePpu"/> is STRONGER than the flat constant,
+        /// not weaker, and that is the point of doing it this way: the postprocessor and this
+        /// test now answer from the same manifest, so a .meta left stale by a rebuild - a
+        /// texture still carrying 64 after its character moved to 96, which silently resizes
+        /// her and every collider EntityColliderConfigurator derives from renderer.bounds - is
+        /// a red test. The old assertion could not see that, because 64 was what it wanted.</para>
+        ///
+        /// <para>What it deliberately does NOT do is accept any PPU at all: a character with no
+        /// entry must still be exactly <see cref="PlayerCharacterPPU"/>.</para>
+        /// </summary>
         [TestCaseSource(nameof(CharacterPaths))]
-        public void CharacterPNG_PixelsPerUnit_Is64(string assetPath)
+        public void CharacterPNG_PixelsPerUnit_MatchesItsDeclaration(string assetPath)
         {
             var importer = GetImporter(assetPath);
-            Assert.That(importer.spritePixelsPerUnit, Is.EqualTo(PlayerCharacterPPU),
-                $"'{assetPath}': spritePixelsPerUnit must be {PlayerCharacterPPU} " +
-                "(PLAYER_CHARACTER_PPU constant in ValkurAssetPostprocessor). " +
-                "128 px native ÷ 64 PPU = 2 world units = 2 game tiles.");
+            float declared = CharacterSpritePpu.PpuFor(assetPath);
+            float expected = declared > 0f ? declared : PlayerCharacterPPU;
+            string source = declared > 0f
+                ? "declared for this character under characterPpu in " +
+                  "tools/atlas/generated/player_frames_manifest*.json"
+                : "PLAYER_CHARACTER_PPU in ValkurAssetPostprocessor - the shared default for a " +
+                  "character that declares none";
+
+            Assert.That(importer.spritePixelsPerUnit, Is.EqualTo(expected),
+                $"'{assetPath}': spritePixelsPerUnit must be {expected}, {source}. " +
+                "Baked pixel height is detail and pixelHeight/PPU is world height, so a wrong " +
+                "PPU here resizes the character and her collider without anything failing. If " +
+                "the manifest was just rebuilt, reimport Art/Characters/ so the postprocessor " +
+                "runs over it again.");
         }
 
         [TestCaseSource(nameof(CharacterPaths))]
@@ -320,35 +353,111 @@ namespace Valkur.Tests.EditMode.Game.Data
         }
 
         // ────────────────────────────────────────────────────────────────────
-        // Invariant 4c — All packed sprites have pixelsPerUnit == 64
+        // Invariant 4c - Every packed sprite carries its character's declared PPU
         // ────────────────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// The atlas-side half of <see cref="CharacterPNG_PixelsPerUnit_MatchesItsDeclaration"/>,
+        /// and not redundant with it: the importer setting is what was ASKED FOR, the packed
+        /// sprite is what SHIPPED. A sprite packed before its character's PPU changed keeps the
+        /// old value until the atlas is rebuilt, and nothing announces that.
+        ///
+        /// <para>TWO TRAPS were live in the first version of this and both made it VACUOUS,
+        /// which is worse than absent because it reports coverage it does not have.</para>
+        ///
+        /// <para>First, a packed sprite is a CLONE: <c>AssetDatabase.GetAssetPath</c> returns
+        /// empty for all 1016 of them, measured. Resolving a character from the path therefore
+        /// skipped every sprite. The character is recovered from the sprite's NAME instead,
+        /// against the real folder list, longest match first — so `vampire` never claims a
+        /// hypothetical `vampire_lord`'s frames.</para>
+        ///
+        /// <para>Second, this fixture's atlas constant is <c>players.spriteatlas</c>, and the
+        /// one character who does not import at the shared PPU is not in it: five character
+        /// folders are claimed by that atlas and <c>SpriteAtlasBuilder</c> hands the REMAINDER
+        /// to <c>characters.spriteatlas</c>, which today is exactly the vampire. Checking one
+        /// atlas would have been green for the only character it needed to see. Both are
+        /// walked, and a missing one is a failure rather than a skip.</para>
+        /// </summary>
         [Test]
-        public void SpriteAtlas_AllPackedSprites_HavePixelsPerUnit64()
+        public void SpriteAtlas_AllPackedSprites_HaveTheirDeclaredPixelsPerUnit()
         {
-            var atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(AtlasPath);
-            Assert.IsNotNull(atlas, $"SpriteAtlas not found at '{AtlasPath}'.");
+            // Every character folder, longest name first, so a key that is a prefix of another
+            // never wins the match.
+            var folders = new List<string>();
+            foreach (string dir in System.IO.Directory.GetDirectories(
+                         System.IO.Path.GetFullPath(System.IO.Path.Combine(
+                             Application.dataPath, "_Project", "Art", "Characters"))))
+            {
+                folders.Add(System.IO.Path.GetFileName(dir));
+            }
+            folders.Sort((a, b) => b.Length.CompareTo(a.Length));
+            Assert.IsNotEmpty(folders, "No character folders under Art/Characters.");
 
-            var sprites = new Sprite[atlas.spriteCount];
-            atlas.GetSprites(sprites);
+            string[] atlasPaths =
+            {
+                AtlasPath,
+                "Assets/_Project/SpriteAtlases/characters.spriteatlas",
+            };
 
             var failures = new List<string>();
-            foreach (var sprite in sprites)
+            int inspected = 0, unattributed = 0;
+
+            foreach (string atlasPath in atlasPaths)
             {
-                if (sprite == null) continue;
-                if (!Mathf.Approximately(sprite.pixelsPerUnit, PlayerCharacterPPU))
+                var atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(atlasPath);
+                Assert.IsNotNull(atlas,
+                    $"SpriteAtlas not found at '{atlasPath}'. Both character atlases must exist: " +
+                    "players.spriteatlas claims five character folders and characters.spriteatlas " +
+                    "takes the remainder, so checking only one leaves characters uncovered.");
+
+                var sprites = new Sprite[atlas.spriteCount];
+                atlas.GetSprites(sprites);
+
+                foreach (var sprite in sprites)
                 {
-                    failures.Add(
-                        $"  '{sprite.name}': pixelsPerUnit = {sprite.pixelsPerUnit} " +
-                        $"(expected {PlayerCharacterPPU})");
+                    if (sprite == null) continue;
+
+                    // "vampire_idle_e0(Clone)" -> "vampire_idle_e0" -> folder "vampire".
+                    string name = sprite.name.Replace("(Clone)", string.Empty);
+                    string key = null;
+                    foreach (string folder in folders)
+                    {
+                        if (name.StartsWith(folder + "_", System.StringComparison.Ordinal))
+                        { key = folder; break; }
+                    }
+                    if (key == null) { unattributed++; continue; }
+
+                    inspected++;
+                    float declared = CharacterSpritePpu.PpuFor(
+                        $"{CharactersRoot}/{key}/x/{name}.png");
+                    float expected = declared > 0f ? declared : PlayerCharacterPPU;
+
+                    if (!Mathf.Approximately(sprite.pixelsPerUnit, expected))
+                    {
+                        failures.Add(
+                            $"  '{sprite.name}' (character '{key}', in " +
+                            $"{System.IO.Path.GetFileName(atlasPath)}): pixelsPerUnit = " +
+                            $"{sprite.pixelsPerUnit}, expected {expected}");
+                    }
                 }
             }
 
             Assert.That(failures.Count, Is.EqualTo(0),
-                $"SpriteAtlas '{AtlasPath}': {failures.Count} sprite(s) have wrong pixelsPerUnit:\n" +
+                $"{failures.Count} packed sprite(s) have the wrong pixelsPerUnit:\n" +
                 string.Join("\n", failures) +
-                $"\nAll character sprites must be {PlayerCharacterPPU} PPU " +
-                "(128 px native ÷ 64 PPU = 2 world units = 2 game tiles).");
+                "\n\nEach character sprite must carry the PPU its character declares under " +
+                "characterPpu in tools/atlas/generated/player_frames_manifest*.json, or " +
+                $"{PlayerCharacterPPU} when it declares none. A mismatch here on top of a correct " +
+                "importer setting means the ATLAS is stale, not the import - re-run " +
+                "Valkur > Assets > Build Sprite Atlases.");
+
+            // The guard that stops this going quietly vacuous again. Both previous ways of
+            // failing left `inspected` at zero and every assertion above trivially true.
+            Assert.That(inspected, Is.GreaterThan(0),
+                $"Attributed no packed sprite to a character folder ({unattributed} unattributed), " +
+                "so this test asserted nothing. Packed sprites are clones with no asset path, so " +
+                "they are matched by NAME against the folders under Art/Characters - a rename on " +
+                "either side breaks that silently.");
         }
 
         // ────────────────────────────────────────────────────────────────────

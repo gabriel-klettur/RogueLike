@@ -61,6 +61,13 @@ namespace Valkur.Tests.EditMode.Game.Data
         private class PlayerEntry
         {
             public string playerKey;
+            // The size pair. A player built before these existed reports 0 for both, which is
+            // why the test that reads them SKIPS a zero rather than treating it as a claim:
+            // the manifest is merged per player by `--only`, so three of the four entries are
+            // legitimately from an older run of the builder.
+            public int targetBodyPx;
+            public float ppu;
+            public float worldHeightUnits;
             public List<SheetEntry> states = new List<SheetEntry>();
             public List<SheetEntry> attackVariants = new List<SheetEntry>();
             public List<SheetEntry> castVariants = new List<SheetEntry>();
@@ -286,5 +293,101 @@ namespace Valkur.Tests.EditMode.Game.Data
             // rebuild that forgot to carry authored values across looks like.
             Assert.IsEmpty(problems, string.Join("\n", problems) + RunTheImporter);
         }
+
+        // ────────────────────────────────────────────────────────────────────
+        // The size pair: pixel height buys detail, pixelHeight/PPU is world height
+        // ────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Every shipped frame of a player carries the PPU that player declares, and the
+        /// resulting world height is the one the manifest computed.
+        ///
+        /// <para>This asserts the COMPOSITION, and it exists because neither half can be
+        /// wrong on its own. The builder bakes a pixel height; the postprocessor divides by a
+        /// PPU it reads back out of the same manifest. Each is internally consistent while
+        /// disagreeing, and the disagreement is invisible everywhere except on screen — the
+        /// exact shape of SPAWNER_COORDINATE_SPACE_DRIFT, where a save and a load were each
+        /// perfect and their composition put every spawner 150 tiles away.</para>
+        ///
+        /// <para>Concretely, the way this breaks is a stale <c>.meta</c>. A rebuild rewrites
+        /// 180 PNGs and the manifest; if <c>Art/Characters/</c> is not reimported afterwards,
+        /// the textures keep the PREVIOUS PPU while carrying the NEW pixel height, so the
+        /// character silently changes size — and with her, every collider
+        /// <c>EntityColliderConfigurator</c> derives from <c>renderer.bounds</c> and every
+        /// melee reach tuned against it. Nothing logs.</para>
+        ///
+        /// <para>It is here rather than in <c>CharacterSpriteQualityTests</c> because that
+        /// fixture's case source is a hardcoded list of the two LEGACY strip characters and
+        /// its atlas constant points at <c>players.spriteatlas</c>, which the vampire is not
+        /// in — so both of its PPU invariants are green for every character they cannot
+        /// see. This one is driven by the manifest, so a character is covered the moment the
+        /// builder writes it.</para>
+        /// </summary>
+        [Test]
+        public void EveryPlayerFrame_CarriesItsDeclaredPpu_AndTheDeclaredWorldHeight()
+        {
+            var failures = new List<string>();
+            int checkedPlayers = 0;
+
+            foreach ((string file, PlayerEntry entry) in ManifestEntries())
+            {
+                // A player entry predating the size pair says nothing about either, so there
+                // is nothing to check. Treating 0 as a claim would demand PPU 0 and fail every
+                // character built by an earlier run of the builder.
+                if (entry.ppu <= 0f || entry.targetBodyPx <= 0) continue;
+                checkedPlayers++;
+
+                float expectedHeight = entry.targetBodyPx / entry.ppu;
+                if (entry.worldHeightUnits > 0f
+                    && !Mathf.Approximately(entry.worldHeightUnits, Mathf.Round(expectedHeight * 10000f) / 10000f))
+                {
+                    failures.Add(
+                        $"  {entry.playerKey} ({file}): manifest says worldHeightUnits " +
+                        $"{entry.worldHeightUnits} but {entry.targetBodyPx}px / PPU {entry.ppu} " +
+                        $"= {expectedHeight:0.0000}. The generator disagrees with itself.");
+                }
+
+                // One sprite per state is enough and deliberately not all of them: the PPU is
+                // a folder-level property, so 180 assertions would report one fault 180 times.
+                foreach (SheetEntry sheet in entry.states)
+                {
+                    if (sheet?.sprites == null || sheet.sprites.Count == 0) continue;
+                    string spritePath = sheet.sprites[0];
+
+                    var importer = AssetImporter.GetAtPath(spritePath) as TextureImporter;
+                    if (importer == null)
+                    {
+                        failures.Add($"  {entry.playerKey}/{sheet.Name}: no TextureImporter at " +
+                                     $"'{spritePath}'. The manifest names a frame that is not " +
+                                     "imported.");
+                        continue;
+                    }
+
+                    if (!Mathf.Approximately(importer.spritePixelsPerUnit, entry.ppu))
+                    {
+                        failures.Add(
+                            $"  {entry.playerKey}/{sheet.Name} ('{spritePath}'): imported at PPU " +
+                            $"{importer.spritePixelsPerUnit}, manifest declares {entry.ppu}. At " +
+                            $"{entry.targetBodyPx}px baked that renders " +
+                            $"{entry.targetBodyPx / importer.spritePixelsPerUnit:0.000} world units " +
+                            $"instead of {expectedHeight:0.000}.");
+                    }
+                }
+            }
+
+            Assert.That(failures.Count, Is.EqualTo(0),
+                $"{failures.Count} player frame(s) do not carry their declared PPU:\n" +
+                string.Join("\n", failures) +
+                "\n\nThe usual cause is a stale import: the builder rewrote the frames and the " +
+                "manifest, but Art/Characters/ was not reimported, so ValkurAssetPostprocessor " +
+                "never ran over the new pixels. Right-click Art/Characters > Reimport.");
+
+            Assert.That(checkedPlayers, Is.GreaterThan(0),
+                "No manifest player declares targetBodyPx/ppu, so this test asserted nothing. " +
+                "At least one character (the vampire) is built at her own size pair, so an " +
+                "empty run means the manifest lost those fields — which is exactly the state " +
+                "that would let a size regression through unnoticed.");
+        }
+
     }
 }
