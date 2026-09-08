@@ -10,9 +10,9 @@ namespace Valkur.Gameplay.Combat.Death
     /// While the player is in spirit form, swaps the material on every world
     /// SpriteRenderer / TilemapRenderer to <c>Valkur/SpriteDesaturate</c> so
     /// the screen drains to grayscale. The renderers under the resurrection
-    /// altar (BuildingObject with the configured templateId) and under the
-    /// spirit's path-marker root keep their original materials, leaving them
-    /// the only color in the scene.
+    /// altar (any BuildingObject whose template DeathTuning lists) and under
+    /// the spirit's path-marker root keep their original materials, leaving
+    /// them the only color in the scene.
     ///
     /// Why a material swap instead of <c>SpriteRenderer.color</c> /
     /// <c>Tilemap.color</c>: those properties are MULTIPLICATIVE — they tint
@@ -28,10 +28,10 @@ namespace Valkur.Gameplay.Combat.Death
     /// </summary>
     public class SpiritWorldGrayscale : MonoBehaviour
     {
-        [SerializeField, Tooltip("Template id used to identify resurrection altar buildings. " +
-                                 "Mirrors ResurrectionZoneAutoBinder.targetTemplateId — change " +
-                                 "both at once if the altar template ever moves.")]
-        private int altarTemplateId = 249;
+        // The altar templates are NOT stored here. This used to carry its own copy of the magic
+        // 249, mirrored by hand from ResurrectionZoneAutoBinder with a comment asking whoever
+        // moved one to remember the other — which is the same shape as a hand-maintained
+        // LAYER_COUNT and failed the same way. DeathTuning.IsAltarTemplate is the single answer.
 
         private struct Captured
         {
@@ -163,13 +163,14 @@ namespace Valkur.Gameplay.Combat.Death
         private HashSet<Transform> BuildExemptSet()
         {
             var set = new HashSet<Transform>();
+            var tuning = Valkur.Data.DeathTuning.Active;
 
             var buildings = FindObjectsOfType<BuildingObject>(includeInactive: false);
             for (int i = 0; i < buildings.Length; i++)
             {
                 var b = buildings[i];
                 if (b == null || b.Template == null) continue;
-                if (b.Template.templateId == altarTemplateId)
+                if (tuning.IsAltarTemplate(b.Template.templateId))
                     set.Add(b.transform);
             }
 

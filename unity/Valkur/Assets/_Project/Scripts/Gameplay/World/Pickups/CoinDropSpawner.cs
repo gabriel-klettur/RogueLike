@@ -53,7 +53,14 @@ namespace Valkur.Gameplay.World
         /// reason it does for item drops: several stacks on one point read as a single pickup
         /// and the player walks away from the rest.
         /// </summary>
-        public static int Spill(int total, Vector3 origin, float scatterRadius)
+        /// <param name="onSpawned">
+        /// Optional, called once per pile. It exists so the death flow can TRACK the piles it
+        /// spilled without reimplementing the chunking: a purse spilled on death and a reward
+        /// minted on a kill have to look identical on the ground, and two copies of this loop is
+        /// how they stop being identical.
+        /// </param>
+        public static int Spill(int total, Vector3 origin, float scatterRadius,
+                                System.Action<CoinPickup> onSpawned = null)
         {
             if (total <= 0) return 0;
 
@@ -65,7 +72,8 @@ namespace Valkur.Gameplay.World
                 remaining -= chunk;
 
                 Vector2 offset = Random.insideUnitCircle * scatterRadius;
-                SpawnPile(chunk, origin + new Vector3(offset.x, offset.y, 0f));
+                var pile = SpawnPile(chunk, origin + new Vector3(offset.x, offset.y, 0f));
+                onSpawned?.Invoke(pile);
                 spawned++;
             }
             return spawned;

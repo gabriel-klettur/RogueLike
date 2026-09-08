@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Gameplay.Combat.Death;
 using Valkur.Data;
 using Valkur.Gameplay.FSM;
 using Valkur.Gameplay.Inventory;
@@ -27,13 +28,26 @@ namespace Valkur.Gameplay.Save
             var player = EntityRegistry.Player;
             if (player == null) return null;
 
-            // Refuse to persist an uninitialized or dead player.
-            // maxHp==0 means EntitySetup.ConfigurePlayer hasn't run yet.
+            // Refuse to persist an UNINITIALIZED player: maxHp==0 means EntitySetup.ConfigurePlayer
+            // has not run yet, and a save written there restores a character with no stats.
             var healthCheck = player.GetComponent<Health>();
-            if (healthCheck == null || healthCheck.MaxHp <= 0 || healthCheck.CurrentHp <= 0)
+            if (healthCheck == null || healthCheck.MaxHp <= 0)
             {
                 Debug.LogWarning("[GameStateCollector] Skipping save: player HP is invalid " +
                                  $"(hp={healthCheck?.CurrentHp}, maxHp={healthCheck?.MaxHp}).");
+                return null;
+            }
+
+            // A DEAD player is a different case and used to be refused with it. That refusal is
+            // what made death free: the newest save was always a pre-death one, so dying, quitting
+            // and loading gave back the inventory, the coins and the XP. It is only allowed through
+            // when DeathTuning.persistDeathState is on AND the flow can be recorded, so turning the
+            // setting off restores the historical behaviour exactly.
+            var deathController = ServiceLocator.Get<DeathSequenceController>();
+            if (healthCheck.CurrentHp <= 0 && !DeathStateSave.ShouldPersist(deathController))
+            {
+                Debug.LogWarning("[GameStateCollector] Skipping save: player is dead and " +
+                                 "DeathTuning.persistDeathState is off.");
                 return null;
             }
 
@@ -45,6 +59,7 @@ namespace Valkur.Gameplay.Save
             data.player = CollectPlayerState(player);
             data.npcMemory = CollectNpcMemory();
             CollectMarketState(data);
+            DeathStateSave.Collect(data, deathController);
 
             return data;
         }

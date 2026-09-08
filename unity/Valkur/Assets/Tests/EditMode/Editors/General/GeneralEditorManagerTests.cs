@@ -245,7 +245,7 @@ namespace Valkur.Tests.EditMode.Editors.General
             "Tile", "Buildings", "Items", "Spells", "Entities", "Boss", "FSM",
             "Map", "Inventory", "Particles", "Spawners", "Lighting",
             "Time & Weather", "Camera", "Controls", "Dungeon NodeGraph", "Skills",
-            "Economy",
+            "Economy", "Muerte",
         };
 
         private static readonly string[] ExpectedDiagnosticsLabels =

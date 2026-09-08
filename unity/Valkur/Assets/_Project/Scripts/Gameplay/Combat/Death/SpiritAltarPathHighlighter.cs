@@ -1,71 +1,79 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Data;
 using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.Combat.Death
 {
     /// <summary>
-    /// While the player is in spirit form, draws a yellow tile-outline trail
-    /// along the straight line from the spirit to the nearest
-    /// <see cref="ResurrectionZone"/> altar so the player has a visible compass
-    /// pointing at the revive point.
+    /// Draws the trails a dead player needs: one to the altar that will revive them, and one back
+    /// to the body holding everything they were carrying.
     ///
-    /// Deliberately uses straight-line tile rasterization (no pathfinding):
-    /// the path is meant to read as a magical compass, not as a walkable
-    /// route. It cuts through walls and zone boundaries — its only failure
-    /// mode is "no altar in the loaded scene", which we log once on entry.
+    /// <para><b>The second trail is not decoration.</b> Death drops the entire inventory and the
+    /// entire purse at the death position and then walks the player away from it — measured live
+    /// during the audit, 64 units away — with nothing on screen pointing back. A player who
+    /// revives at an altar has no way to find their own loot except by remembering the geography
+    /// of a fight they just lost. The two trails are different colours because they are different
+    /// destinations, and one colour would make them one thing.</para>
     ///
-    /// Markers are pooled — we recycle the same set of SpriteRenderers each
-    /// recompute instead of spawning/destroying GameObjects every tick.
+    /// <para><b>The altar trail's shape is a setting, and the two options are honest in different
+    /// worlds.</b> <see cref="SpiritPathMode.StraightLine"/> is a magical compass that cuts through
+    /// walls — correct exactly when the spirit can too, which is what
+    /// <c>DeathTuning.spiritPassesThroughWalls</c> says. <see cref="SpiritPathMode.Pathfound"/>
+    /// routes through <c>PathFinder</c> and is the honest answer for a solid spirit. Shipping the
+    /// straight line while the ghost bounced off walls is what made the original a compass
+    /// pointing down a route that did not exist.</para>
+    ///
+    /// <para>Markers are pooled — the same SpriteRenderers are recycled on every recompute instead
+    /// of spawning and destroying GameObjects per tick.</para>
     /// </summary>
     public class SpiritAltarPathHighlighter : MonoBehaviour
     {
-        [SerializeField, Tooltip("Seconds between path recomputes while in spirit form.")]
-        private float updateInterval = 0.25f;
-
-        [SerializeField, Tooltip("Yellow tint applied to the tile outlines.")]
-        private Color tileTint = new Color(1f, 0.95f, 0.2f, 0.9f);
-
-        [SerializeField, Tooltip("World-size of each tile marker (default 1 = grid cell).")]
-        private float tileWorldSize = 1f;
-
-        [SerializeField, Tooltip("Pulse the brightness so the path reads as 'magical' rather than static decal.")]
-        private bool animatePulse = true;
-
-        [SerializeField] private float pulseSpeed = 3f;
-        [SerializeField] private float pulseAmplitude = 0.25f;
-
-        [SerializeField, Tooltip("Log a one-shot diagnostic when entering spirit form (altar found / distance).")]
-        private bool debugLogs = true;
-
         private const float TileGridSize = 1f;
         private const float LineSampleStep = 0.25f;
         private const int OutlineTextureSize = 16;
         private const int OutlineThicknessPx = 2;
         private const float TileFillAlpha = 0.35f;
+        private const float PulseSpeed = 3f;
+        private const float PulseAmplitude = 0.25f;
 
         private readonly List<SpriteRenderer> _markers = new List<SpriteRenderer>();
-        private readonly List<Vector2Int> _lineCells = new List<Vector2Int>();
-        private readonly HashSet<Vector2Int> _lineCellsSet = new HashSet<Vector2Int>();
+        private readonly List<Vector2Int> _cells = new List<Vector2Int>();
+        private readonly HashSet<Vector2Int> _cellSet = new HashSet<Vector2Int>();
+        private readonly List<Vector2> _waypoints = new List<Vector2>();
+
+        /// <summary>Per-marker colour, so the altar trail and the corpse trail can share one pool.</summary>
+        private readonly List<Color> _markerTints = new List<Color>();
 
         private Transform _markerRoot;
         private Sprite _outlineSprite;
         private Material _markerMaterial;
         private PlayerSpiritState _spiritState;
         private Transform _spiritTransform;
+        private DeathSequenceController _death;
         private float _timer;
         private bool _wasSpirit;
+        private int _activeMarkers;
+
+        /// <summary>Cells the last rebuild drew for the altar. Exposed for the console probe and tests.</summary>
+        public int AltarTrailLength { get; private set; }
+
+        /// <summary>Cells the last rebuild drew for the corpse.</summary>
+        public int CorpseTrailLength { get; private set; }
+
+        /// <summary>Why the altar trail is empty, or empty string when it is not.</summary>
+        public string AltarTrailBlockedReason { get; private set; } = string.Empty;
+
+        private static DeathTuning Tuning => DeathTuning.Active;
 
         /// <summary>
-        /// Parent of the pooled tile markers. Exposed so SpiritWorldGrayscale can
-        /// exempt them from the per-sprite desaturation that runs while the
-        /// player is in spirit form (the path is supposed to stay yellow even
-        /// when the rest of the world drops to monochrome).
+        /// Parent of the pooled tile markers. Exposed so <see cref="SpiritWorldGrayscale"/> can
+        /// exempt them from the per-sprite desaturation — the trails are supposed to stay coloured
+        /// when the rest of the world drops to monochrome, which is most of how they read.
         ///
-        /// Lazily creates the GameObject on first access so EditMode tests (and
-        /// any code path that runs before Awake completes) can rely on a
-        /// non-null root without forcing a full Awake cycle.
+        /// <para>Lazily created so EditMode tests, and any path that runs before Awake completes,
+        /// can rely on a non-null root without forcing a full Awake cycle.</para>
         /// </summary>
         public Transform MarkerRoot
         {
@@ -100,35 +108,36 @@ namespace Valkur.Gameplay.Combat.Death
 
         private void Update()
         {
-            ResolveSpiritReferences();
+            ResolveReferences();
 
             bool isSpiritNow = _spiritState != null && _spiritState.IsSpirit;
             if (isSpiritNow != _wasSpirit)
             {
                 _wasSpirit = isSpiritNow;
-                if (!isSpiritNow) HideAllMarkers();
-                else
-                {
-                    _timer = updateInterval; // force an immediate refresh
-                    if (debugLogs) LogSpiritEntry();
-                }
+                // Force an immediate refresh on the transition in BOTH directions: entering, so
+                // the trail is up before the player's first step; leaving, so a stale altar trail
+                // is not left painted on a world that has just come back to colour.
+                _timer = float.MaxValue;
             }
-            if (!isSpiritNow) return;
+
+            // The corpse trail outlives the spirit — that is exactly the walk it exists for — so
+            // the tick cannot stop at "is the player a spirit".
+            if (!isSpiritNow && !CorpseTrailWanted()) { HideAllMarkers(); return; }
 
             _timer += Time.unscaledDeltaTime;
-            if (_timer >= updateInterval)
+            if (_timer >= Mathf.Max(0.05f, Tuning.pathUpdateInterval))
             {
                 _timer = 0f;
-                RebuildPath();
+                Rebuild(isSpiritNow);
             }
 
-            if (animatePulse) PulseMarkers();
+            PulseMarkers();
         }
 
-        private void ResolveSpiritReferences()
+        private void ResolveReferences()
         {
-            // EntityRegistry can swap players (death/restart cycle), so we resolve
-            // every Update — it's a single dictionary lookup.
+            // EntityRegistry can swap players across a death/restart cycle, so this resolves every
+            // Update — a single dictionary lookup.
             var player = EntityRegistry.Player;
             if (player == null)
             {
@@ -141,63 +150,113 @@ namespace Valkur.Gameplay.Combat.Death
                 _spiritState = player.GetComponent<PlayerSpiritState>();
                 _spiritTransform = player.transform;
             }
+            if (_death == null) _death = ServiceLocator.Get<DeathSequenceController>();
         }
 
-        private void RebuildPath()
+        private bool CorpseTrailWanted()
         {
-            if (_spiritTransform == null) { HideAllMarkers(); return; }
+            if (!Tuning.showCorpseCompass) return false;
+            return _death != null && _death.ActiveCorpse != null;
+        }
 
-            ResurrectionZone altar = FindNearestAltar(_spiritTransform.position);
-            if (altar == null) { HideAllMarkers(); return; }
+        // ── Rebuild ─────────────────────────────────────────────────────────────
 
+        private void Rebuild(bool isSpirit)
+        {
+            _activeMarkers = 0;
+            AltarTrailLength = 0;
+            CorpseTrailLength = 0;
+            AltarTrailBlockedReason = string.Empty;
+
+            if (_spiritTransform == null) { HideUnusedMarkers(); return; }
             Vector2 start = _spiritTransform.position;
-            Vector2 end = ResolveAltarPoint(altar);
+
+            if (isSpirit) AltarTrailLength = BuildAltarTrail(start);
+            if (CorpseTrailWanted()) CorpseTrailLength = BuildCorpseTrail(start);
+
+            HideUnusedMarkers();
+        }
+
+        private int BuildAltarTrail(Vector2 start)
+        {
+            var tuning = Tuning;
+            if (tuning.pathMode == SpiritPathMode.None)
+            {
+                AltarTrailBlockedReason = "el camino esta desactivado en DeathTuning.pathMode";
+                return 0;
+            }
+
+            if (!ResurrectionAltarRegistry.TryGetNearest(start, out var altar, out _))
+            {
+                AltarTrailBlockedReason = "no hay ningun altar registrado en el mundo cargado";
+                return 0;
+            }
+
+            Vector2 end = altar.AnchorPoint;
+
+            if (tuning.pathMode == SpiritPathMode.Pathfound && TryBuildRoutedCells(start, end))
+                return EmitCells(tuning.pathTint, tuning.pathMaxMarkers);
 
             BuildLineCells(start, end);
-            if (_lineCells.Count == 0) { HideAllMarkers(); return; }
-
-            EnsureMarkerCount(_lineCells.Count);
-            for (int i = 0; i < _lineCells.Count; i++)
-            {
-                var cell = _lineCells[i];
-                var marker = _markers[i];
-                marker.gameObject.SetActive(true);
-                marker.transform.position = new Vector3(
-                    cell.x * TileGridSize + TileGridSize * 0.5f,
-                    cell.y * TileGridSize + TileGridSize * 0.5f,
-                    0f);
-                marker.color = tileTint;
-            }
-            for (int i = _lineCells.Count; i < _markers.Count; i++)
-            {
-                if (_markers[i] != null) _markers[i].gameObject.SetActive(false);
-            }
+            return EmitCells(tuning.pathTint, tuning.pathMaxMarkers);
         }
 
-        /// <summary>
-        /// Resolve the altar's anchor point — prefer the BuildingObject's rect
-        /// center (more accurate visual center) and fall back to the transform.
-        /// </summary>
-        private static Vector2 ResolveAltarPoint(ResurrectionZone altar)
+        private int BuildCorpseTrail(Vector2 start)
         {
-            var building = altar.GetComponent<BuildingObject>();
-            if (building != null && building.TryGetWorldRect(out Rect rect))
-                return rect.center;
-            return altar.transform.position;
+            var corpse = _death.ActiveCorpse;
+            if (corpse == null) return 0;
+
+            BuildLineCells(start, corpse.transform.position);
+
+            // Deliberately always a straight line, whatever pathMode says, and deliberately
+            // shorter: the corpse trail answers "which way is my stuff", not "how do I walk
+            // there". A routed corpse trail beside a routed altar trail would put two dense
+            // ribbons of tiles over the same floor and neither would be readable.
+            return EmitCells(Tuning.corpseTint, Mathf.Max(8, Tuning.pathMaxMarkers / 2));
         }
 
         /// <summary>
-        /// Walk a straight segment from <paramref name="start"/> to
-        /// <paramref name="end"/> and collect every grid cell the segment
-        /// touches, in order, with no duplicates. Step size is fine enough
-        /// (<see cref="LineSampleStep"/>) that we never skip a cell on a
-        /// shallow diagonal.
+        /// Fill <see cref="_cells"/> from a real walkable route. Returns false when the router
+        /// could not answer, which is NOT the same as "no route exists".
+        ///
+        /// <para>A refusal is <c>PathFinder</c> saying "not this frame" — its per-frame search
+        /// budget — and the caller must fall back to the straight line rather than draw nothing,
+        /// or the trail would blink out whenever the fight around the player is busy. A search
+        /// that ran and found nothing returns true with an empty list, and that IS a real answer:
+        /// there is no walkable route, so the straight-line compass is the best remaining one.</para>
+        /// </summary>
+        private bool TryBuildRoutedCells(Vector2 start, Vector2 end)
+        {
+            var finder = PathFinder.Instance;
+            if (finder == null) return false;
+            if (!finder.TryFindPath(start, end, _waypoints)) return false;
+            if (_waypoints.Count == 0) return false;
+
+            _cells.Clear();
+            _cellSet.Clear();
+
+            Vector2 cursor = start;
+            for (int i = 0; i < _waypoints.Count; i++)
+            {
+                AppendSegmentCells(cursor, _waypoints[i]);
+                cursor = _waypoints[i];
+            }
+            return _cells.Count > 0;
+        }
+
+        /// <summary>
+        /// Walk a straight segment and collect every grid cell it touches, in order, with no
+        /// duplicates. The step is fine enough that a shallow diagonal never skips a cell.
         /// </summary>
         private void BuildLineCells(Vector2 start, Vector2 end)
         {
-            _lineCells.Clear();
-            _lineCellsSet.Clear();
+            _cells.Clear();
+            _cellSet.Clear();
+            AppendSegmentCells(start, end);
+        }
 
+        private void AppendSegmentCells(Vector2 start, Vector2 end)
+        {
             Vector2 delta = end - start;
             float dist = delta.magnitude;
             if (dist < 0.01f) return;
@@ -210,35 +269,64 @@ namespace Valkur.Gameplay.Combat.Death
                 var cell = new Vector2Int(
                     Mathf.FloorToInt(p.x / TileGridSize),
                     Mathf.FloorToInt(p.y / TileGridSize));
-                if (_lineCellsSet.Add(cell)) _lineCells.Add(cell);
+                if (_cellSet.Add(cell)) _cells.Add(cell);
                 p += stepVec;
             }
         }
 
-        private static ResurrectionZone FindNearestAltar(Vector3 from)
+        /// <summary>
+        /// Realise the cells collected so far as markers, and return how many were drawn.
+        ///
+        /// <para><b>The cap trims the FAR end.</b> An altar 300 units away would otherwise paint
+        /// 300 sprites, and the ones that matter are the ones under the player's feet — the far
+        /// half of a trail is a direction the player will re-read when they get there. Trimming
+        /// the near end instead would leave a floating ribbon starting somewhere out in the fog,
+        /// which reads as a different trail belonging to something else.</para>
+        /// </summary>
+        private int EmitCells(Color tint, int cap)
         {
-            var zones = FindObjectsOfType<ResurrectionZone>();
-            ResurrectionZone best = null;
-            float bestSqr = float.PositiveInfinity;
-            for (int i = 0; i < zones.Length; i++)
+            int count = Mathf.Min(_cells.Count, Mathf.Max(1, cap));
+            EnsureMarkerCount(_activeMarkers + count);
+
+            for (int i = 0; i < count; i++)
             {
-                if (zones[i] == null) continue;
-                float d = (zones[i].transform.position - from).sqrMagnitude;
-                if (d < bestSqr) { bestSqr = d; best = zones[i]; }
+                var cell = _cells[i];
+                var marker = _markers[_activeMarkers];
+                marker.gameObject.SetActive(true);
+                marker.transform.position = new Vector3(
+                    cell.x * TileGridSize + TileGridSize * 0.5f,
+                    cell.y * TileGridSize + TileGridSize * 0.5f,
+                    0f);
+                marker.color = tint;
+                _markerTints[_activeMarkers] = tint;
+                _activeMarkers++;
             }
-            return best;
+            return count;
+        }
+
+        private void HideUnusedMarkers()
+        {
+            for (int i = _activeMarkers; i < _markers.Count; i++)
+                if (_markers[i] != null) _markers[i].gameObject.SetActive(false);
         }
 
         private void PulseMarkers()
         {
-            float pulse = 1f + Mathf.Sin(Time.unscaledTime * pulseSpeed) * pulseAmplitude;
-            Color c = tileTint;
-            c.r = Mathf.Clamp01(c.r * pulse);
-            c.g = Mathf.Clamp01(c.g * pulse);
-            for (int i = 0; i < _markers.Count; i++)
+            float pulse = 1f + Mathf.Sin(Time.unscaledTime * PulseSpeed) * PulseAmplitude;
+            for (int i = 0; i < _activeMarkers && i < _markers.Count; i++)
             {
                 var m = _markers[i];
-                if (m != null && m.gameObject.activeSelf) m.color = c;
+                if (m == null || !m.gameObject.activeSelf) continue;
+
+                // Pulsed from the marker's OWN stored tint, never from the live colour: reading
+                // back what the last pulse wrote compounds the multiplier every frame and the
+                // trail ramps to white in about a second. The old single-trail version got away
+                // with it by rebuilding from a constant.
+                Color c = _markerTints[i];
+                c.r = Mathf.Clamp01(c.r * pulse);
+                c.g = Mathf.Clamp01(c.g * pulse);
+                c.b = Mathf.Clamp01(c.b * pulse);
+                m.color = c;
             }
         }
 
@@ -247,49 +335,45 @@ namespace Valkur.Gameplay.Combat.Death
             while (_markers.Count < needed)
             {
                 _markers.Add(CreateMarker());
+                _markerTints.Add(Color.white);
             }
         }
 
         private SpriteRenderer CreateMarker()
         {
             var go = new GameObject("PathTile");
-            go.transform.SetParent(_markerRoot, false);
-            go.transform.localScale = new Vector3(tileWorldSize, tileWorldSize, 1f);
+            go.transform.SetParent(MarkerRoot, false);
+            go.transform.localScale = Vector3.one;
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = _outlineSprite;
-            sr.color = tileTint;
             sr.sortingLayerName = SortingConfig.LAYER_FLOOR_DECALS;
             sr.sortingOrder = 50;
             sr.sharedMaterial = _markerMaterial;
             return sr;
         }
 
+        /// <summary>
+        /// Hide every marker AND zero the reported lengths.
+        ///
+        /// <para>The second half is not tidiness. Those two counters are what the Death Editor's
+        /// live readout and the <c>death</c> console command print, and the early-out path used to
+        /// skip <see cref="Rebuild"/> entirely — so after a revive the readout went on reporting a
+        /// 70-tile corpse trail with nothing drawn. A diagnostic that survives the thing it
+        /// describes is worse than none, which is the whole reason this subsystem was hard to
+        /// diagnose in the first place.</para>
+        /// </summary>
         private void HideAllMarkers()
         {
+            _activeMarkers = 0;
+            AltarTrailLength = 0;
+            CorpseTrailLength = 0;
             for (int i = 0; i < _markers.Count; i++)
-            {
                 if (_markers[i] != null) _markers[i].gameObject.SetActive(false);
-            }
-        }
-
-        private void LogSpiritEntry()
-        {
-            if (_spiritTransform == null) return;
-            var altar = FindNearestAltar(_spiritTransform.position);
-            if (altar == null)
-            {
-                Debug.LogWarning("[SpiritAltarPathHighlighter] No ResurrectionZone in the loaded scene — path will not be drawn.");
-                return;
-            }
-            float d = Vector3.Distance(_spiritTransform.position, altar.transform.position);
-            Debug.Log($"[SpiritAltarPathHighlighter] Spirit entered. Nearest altar at {altar.transform.position} ({d:F1} units away).");
         }
 
         /// <summary>
-        /// Procedural sprite: a translucent yellow fill with a fully opaque
-        /// 2-px border. Tinted via SpriteRenderer.color so each cell renders
-        /// as a filled yellow tile with a brighter outline — the border reads
-        /// as the breadcrumb edge while the fill keeps the floor faintly
+        /// Procedural sprite: a translucent fill with a fully opaque 2-px border, tinted per
+        /// marker. The border reads as the breadcrumb edge while the fill keeps the floor faintly
         /// visible underneath.
         /// </summary>
         private static Sprite CreateTileOutlineSprite()

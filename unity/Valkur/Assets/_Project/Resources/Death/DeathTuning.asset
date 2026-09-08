@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3e645354e44abb46957eee603978abe, type: 3}
+  m_Name: DeathTuning
+  m_EditorClassIdentifier: 
+  dyingFlashDuration: 0.6
+  grayscaleFadeIn: 1.5
+  grayscaleFadeOut: 1
+  spiritSpeedMultiplier: 1.35
+  spiritPassesThroughWalls: 1
+  spiritTimeLimitSeconds: 90
+  spiritIsTargetable: 0
+  altarTemplateIds: c5000000f9000000
+  altarSearchTimeout: 60
+  altarActivationPadding: 0.75
+  rescueMode: 1
+  rescueDelayWithoutAltar: 12
+  rescueHpFraction: 0.35
+  pathMode: 1
+  pathUpdateInterval: 0.25
+  pathTint: {r: 1, g: 0.95, b: 0.2, a: 0.9}
+  pathMaxMarkers: 140
+  showCorpseCompass: 0
+  corpseTint: {r: 0.9490196, g: 0.34901962, b: 0.35, a: 0.85}
+  dropInventory: 1
+  dropCoins: 1
+  coinLossFraction: 1
+  corpseLingerSeconds: 120
+  cleanupPreviousDrops: 1
+  xpLossFraction: 0.1
+  xpLossCanDelevel: 0
+  cheatRevivePaysCost: 0
+  persistDeathState: 1
+  sfxDeath: player_death
+  sfxSpiritEnter: spirit_enter
+  sfxRevive: player_revive

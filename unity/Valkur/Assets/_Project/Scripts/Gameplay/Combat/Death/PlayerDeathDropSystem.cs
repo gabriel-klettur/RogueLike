@@ -1,5 +1,6 @@
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Data;
 using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.World;
 
@@ -7,16 +8,22 @@ namespace Valkur.Gameplay.Combat.Death
 {
     /// <summary>
     /// Handles loot scatter when the player dies in the spirit/altar flow.
-    /// Mirrors <see cref="DeathDropSystem"/>, but always operates on the
-    /// Player tag, drops <em>everything</em> (no questId filter), and also
-    /// empties the <see cref="CurrencyWallet"/> as separated coin pickups.
     ///
-    /// The body marker is spawned by <see cref="DeathSequenceController"/>;
-    /// this system is invoked synchronously from the controller's coroutine
-    /// instead of subscribing to <c>GameEvents.OnPlayerDied</c> directly,
-    /// so the controller can guarantee drops happen before the spirit
-    /// transition (otherwise picking the corpse-position items would race
-    /// with the spirit's own movement).
+    /// <para>Mirrors <see cref="DeathDropSystem"/>, but always operates on the Player, has no
+    /// questId filter, and also empties the <see cref="CurrencyWallet"/> as separated coin
+    /// pickups. Invoked synchronously from <see cref="DeathSequenceController"/>'s coroutine
+    /// rather than subscribing to <c>GameEvents.OnPlayerDied</c>, so the controller can guarantee
+    /// the drops happen before the spirit transition — otherwise picking the corpse-position items
+    /// would race with the spirit's own movement.</para>
+    ///
+    /// <para><b>What it drops is now a decision, not a constant.</b> <c>dropInventory</c>,
+    /// <c>dropCoins</c> and <c>coinLossFraction</c> live on <see cref="DeathTuning"/>, because
+    /// "how much does dying cost" is the balance question of the whole subsystem and it was
+    /// hard-coded at "everything". Everything is a defensible answer and it must be a CHOSEN one:
+    /// a total wipe on a bad pull is what makes a player stop playing rather than try again.</para>
+    ///
+    /// <para>Everything it spawns is registered with <see cref="DeathLitter"/>, so the next death
+    /// can sweep it. Before that, drops accumulated forever.</para>
     /// </summary>
     public static class PlayerDeathDropSystem
     {
@@ -27,9 +34,10 @@ namespace Valkur.Gameplay.Combat.Death
         {
             if (player == null) return;
             Vector3 deathPos = player.transform.position;
+            var tuning = DeathTuning.Active;
 
-            DropInventory(player, deathPos);
-            DropCurrency(player, deathPos);
+            if (tuning.dropInventory) DropInventory(player, deathPos);
+            if (tuning.dropCoins) DropCurrency(player, deathPos, tuning.coinLossFraction);
         }
 
         private static void DropInventory(GameObject player, Vector3 deathPos)
@@ -37,10 +45,10 @@ namespace Valkur.Gameplay.Combat.Death
             var inventory = player.GetComponent<Inventory.Inventory>();
             if (inventory == null || inventory.UsedSlots == 0) return;
 
-            // Snapshot the slots before clearing — the spawn loop must not see
-            // the inventory mutating mid-iteration.
+            // Snapshot the slots before clearing — the spawn loop must not see the inventory
+            // mutating mid-iteration.
             int slotCount = inventory.Slots.Count;
-            var snapshot = new (Valkur.Data.ItemDefinition item, int qty)[slotCount];
+            var snapshot = new (ItemDefinition item, int qty)[slotCount];
             for (int i = 0; i < slotCount; i++)
             {
                 var s = inventory.Slots[i];
@@ -57,11 +65,11 @@ namespace Valkur.Gameplay.Combat.Death
                 Vector3 dropPos = deathPos + new Vector3(offset.x, offset.y, 0f);
 
                 var pickup = DropSystem.SpawnDrop(entry.item, entry.qty, dropPos);
-                // Persist until the player can come back for them — the corpse
-                // and items live until revive (DeathSequenceController despawns
-                // the corpse, but does not clean up dropped items).
                 if (pickup != null)
+                {
                     pickup.gameObject.SetActive(true);
+                    DeathLitter.Track(pickup);
+                }
                 dropped++;
             }
 
@@ -71,22 +79,33 @@ namespace Valkur.Gameplay.Combat.Death
                 Debug.Log($"[PlayerDeathDropSystem] Dropped {dropped} inventory stack(s) at {deathPos}.");
         }
 
-        private static void DropCurrency(GameObject player, Vector3 deathPos)
+        /// <summary>
+        /// Spill the purse.
+        ///
+        /// <para><paramref name="lossFraction"/> below 1 leaves the player a cushion. It is
+        /// rounded with <c>FloorToInt</c> deliberately: at a 0.9 fraction on 5 coins, rounding UP
+        /// would take all five and the cushion would silently not exist for small purses, which is
+        /// exactly where a cushion matters.</para>
+        /// </summary>
+        private static void DropCurrency(GameObject player, Vector3 deathPos, float lossFraction)
         {
             var wallet = player.GetComponent<CurrencyWallet>();
             if (wallet == null || wallet.Coins <= 0) return;
 
-            int total = wallet.Coins;
-            wallet.SetBalance(0);
+            int held = wallet.Coins;
+            int lost = Mathf.Clamp(Mathf.FloorToInt(held * Mathf.Clamp01(lossFraction)), 0, held);
+            if (lost <= 0) return;
+
+            wallet.SetBalance(held - lost);
 
             // The shell (layer, sprite, collider, sorting) and the chunking both live in
-            // CoinDropSpawner, which DeathDropSystem's monster reward also goes through —
-            // a purse spilled on death and a reward minted on a kill must look identical
-            // on the ground, and two copies of that shell is how they stop being.
-            int spawned = CoinDropSpawner.Spill(total, deathPos, CoinScatterRadius);
+            // CoinDropSpawner, which DeathDropSystem's monster reward also goes through — a purse
+            // spilled on death and a reward minted on a kill must look identical on the ground,
+            // and two copies of that shell is how they stop being.
+            int spawned = CoinDropSpawner.Spill(lost, deathPos, CoinScatterRadius, DeathLitter.Track);
 
             if (spawned > 0)
-                Debug.Log($"[PlayerDeathDropSystem] Dropped {total} coin(s) across {spawned} pile(s).");
+                Debug.Log($"[PlayerDeathDropSystem] Dropped {lost} of {held} coin(s) across {spawned} pile(s).");
         }
     }
 }

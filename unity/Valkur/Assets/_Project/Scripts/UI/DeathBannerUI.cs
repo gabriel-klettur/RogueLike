@@ -31,6 +31,15 @@ namespace Valkur.UI
         [SerializeField] private float bannerFadeIn    = 0.3f;
         [SerializeField] private float bannerFadeOut   = 0.4f;
 
+        /// <summary>The standing instruction, and the fallback for every state that is not "stuck".</summary>
+        private const string BannerFindAltar = "Encuentra el altar para revivir";
+
+        /// <summary>
+        /// How close the rescue has to be before the banner shows its clock. Below this it is
+        /// information; above it, it is a countdown over the player's whole walk.
+        /// </summary>
+        private const float RescueCountdownVisibleSeconds = 20f;
+
         [Header("Style")]
         [SerializeField] private Color flashColor   = new Color(0.9f, 0.15f, 0.15f, 1f);
         [SerializeField] private Color bannerColor  = new Color(0.95f, 0.85f, 0.45f, 0.85f);
@@ -82,6 +91,8 @@ namespace Valkur.UI
         {
             if (_bannerGroup == null || _bannerGroup.alpha < 0.05f) return;
 
+            RefreshBannerMessage();
+
             var player = EntityRegistry.Player;
             if (player == null) return;
             var health = player.GetComponent<Health>();
@@ -95,6 +106,50 @@ namespace Valkur.UI
                 _activeFlash  = StartCoroutine(GroupFadeRoutine(_flashGroup, 0f, flashFadeOut));
                 _activeBanner = StartCoroutine(GroupFadeRoutine(_bannerGroup, 0f, bannerFadeOut));
             }
+        }
+
+        /// <summary>
+        /// What the banner SAYS, re-decided every frame it is up.
+        ///
+        /// <para>It shipped as one fixed line — "Encuentra el altar para revivir" — pointing at a
+        /// thing that, in the world as shipped, did not exist: zero altars over 301 buildings. A
+        /// standing instruction that cannot be followed is worse than no instruction, because the
+        /// player spends the whole spirit walk believing the failure is theirs. When there is no
+        /// altar the banner says so and COUNTS DOWN the rescue, so the one guarantee the flow
+        /// makes is visible while it is being kept rather than only after.</para>
+        /// </summary>
+        private void RefreshBannerMessage()
+        {
+            if (_bannerText == null) return;
+
+            var death = ServiceLocator.Get<DeathSequenceController>();
+            if (death == null || death.CurrentPhase != DeathSequenceController.Phase.Spirit)
+            {
+                _bannerText.text = BannerFindAltar;
+                return;
+            }
+
+            float eta = death.RescueEta;
+            bool noAltar = death.NoAltarInWorld;
+
+            if (noAltar)
+            {
+                _bannerText.text = float.IsPositiveInfinity(eta)
+                    ? "No hay altar en este mundo"
+                    : $"No hay altar aqui — volveras en {Mathf.CeilToInt(eta)} s";
+                return;
+            }
+
+            // The countdown only appears once it is short enough to be information rather than
+            // pressure: a ninety-second number ticking from the moment of death turns the whole
+            // walk into a timer, which is the opposite of what the safety net is for.
+            if (!float.IsPositiveInfinity(eta) && eta <= RescueCountdownVisibleSeconds)
+            {
+                _bannerText.text = $"{BannerFindAltar} — {Mathf.CeilToInt(eta)} s";
+                return;
+            }
+
+            _bannerText.text = BannerFindAltar;
         }
 
         private void OnPlayerRevived()

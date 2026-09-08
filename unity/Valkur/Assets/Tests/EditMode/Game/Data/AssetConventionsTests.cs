@@ -73,6 +73,17 @@ namespace Valkur.Tests.EditMode.Game.Data
                            // there is no inspector slot to wire the catalogue from — which is
                            // exactly why its [SerializeField] sat null for the life of the
                            // project and no NPC ever spoke.
+            "Death",       // DeathTuning, loaded by DeathTuning.Active via
+                           // Resources.Load("Death/DeathTuning"). Same reason as Chat and
+                           // Progression: every reader of it — DeathSequenceController,
+                           // SpiritAltarPathHighlighter, SpiritWorldGrayscale,
+                           // PlayerDeathDropSystem, XpLossOnDeathSystem — is AddComponent-ed
+                           // onto a bare GameObject by GameplaySceneSetup, so a
+                           // [SerializeField] on any of them could never be filled. That is
+                           // not hypothetical here: the three death timings WERE serialized
+                           // fields on such a component, no inspector in the project could
+                           // reach them, and that is half of why the subsystem shipped
+                           // unconfigurable. One small asset, no references outward.
             "Dungeon",     // autotile sample tilesheets + catacombs blob assets
             "Input",
             "Placeholders",

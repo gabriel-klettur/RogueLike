@@ -169,7 +169,7 @@ namespace Valkur.Gameplay
             // on diagonal input.
             Vector2 clampedInput = ClampInputAgainstVoid(_moveInput);
 
-            _rb.velocity = clampedInput * moveSpeed;
+            _rb.velocity = clampedInput * CurrentMoveSpeed;
         }
 
         /// <summary>
@@ -195,7 +195,7 @@ namespace Valkur.Gameplay
             if (_voidProbeGrid == null) return rawInput;
 
             Vector2 origin = transform.position;
-            float step = moveSpeed * Time.fixedDeltaTime;
+            float step = CurrentMoveSpeed * Time.fixedDeltaTime;
 
             // Predicted full-vector position. If it's in painted territory,
             // no clamp needed (fast path — the common case for legacy maps).
@@ -1068,5 +1068,23 @@ namespace Valkur.Gameplay
         {
             moveSpeed = speed;
         }
+
+        /// <summary>
+        /// The speed actually applied this frame: the tuned <c>moveSpeed</c>, multiplied while in
+        /// spirit form by <c>DeathTuning.spiritSpeedMultiplier</c>.
+        ///
+        /// <para>It is a multiplier rather than a second authored speed because the base one is
+        /// already composed from the class, the level curve, talents, equipment and buffs
+        /// (<c>PlayerStats</c> pushes it through <see cref="SetMoveSpeed"/>): a flat spirit speed
+        /// would make a fast character and a slow one identical the moment they died, which throws
+        /// away the one thing the player has spent the run building.</para>
+        ///
+        /// <para>Read at the point of use rather than cached on the stance transition, so an
+        /// author dragging the slider in the Death Editor sees it on the next step instead of on
+        /// the next death.</para>
+        /// </summary>
+        private float CurrentMoveSpeed =>
+            IsSpirit ? moveSpeed * Mathf.Max(0.05f, Valkur.Data.DeathTuning.Active.spiritSpeedMultiplier)
+                     : moveSpeed;
     }
 }

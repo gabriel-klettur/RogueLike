@@ -93,9 +93,13 @@ RESOURCES_ROOT_ALLOWED: set[str] = {
 RESOURCES_ROOT_FOLDER_ALLOWED: set[str] = {
     "Buildings",
     "Catalogs",
+    "Chat",                            # ChatAssignmentCatalog
+    "Crafting",                        # RecipeCatalog
+    "Death",                           # DeathTuning
     "Dungeon",                         # autotile sample tilesheets / catacombs
     "Input",
     "Placeholders",
+    "Progression",                     # ProgressionCatalog
     "Spells",
     "Tiles",
     "UI",

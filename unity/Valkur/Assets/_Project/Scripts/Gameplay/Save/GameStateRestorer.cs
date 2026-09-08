@@ -1,6 +1,7 @@
 using System.Globalization;
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Gameplay.Combat.Death;
 using Valkur.Data;
 using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.NPC;
@@ -36,18 +37,28 @@ namespace Valkur.Gameplay.Save
                 return;
             }
 
+            // Resolved BEFORE any stat restore, because it changes what RestoreHealth may do: a
+            // save taken in spirit form legitimately carries hp 0, and the historical guard bumps
+            // any 0 to full — which would revive the player on load and hand back the run.
+            bool wasSpirit = DeathStateSave.TryRead(data, out Vector3 corpsePosition);
+
             RestorePosition(player, data.player);
             // Progression FIRST among the stat-bearing restores. It rebuilds the Level,
             // Skill and Grimoire stat layers, and PlayerStats pushes the resolved max HP
             // and max mana into Health and Mana as it does — so restoring those two before
             // it would have their saved values immediately overwritten by the recompute.
             RestoreProgression(player, data.player);
-            RestoreHealth(player, data.player);
+            RestoreHealth(player, data.player, wasSpirit);
             RestoreMana(player, data.player);
             RestoreExperience(player, data.player);
             RestoreCoins(player, data.player);
             RestoreInventory(player, data.player);
             RestoreVisualLayer(player, data.player);
+
+            // LAST, after every stat and the inventory are back: entering spirit form spawns a
+            // corpse and swaps the collider mask, and doing that before RestoreInventory would put
+            // the swap in the middle of a rebuild it has no reason to be inside.
+            if (wasSpirit) RestoreSpirit(corpsePosition);
 
             Debug.Log($"[GameStateRestorer] Player state restored: pos={data.player.position}, " +
                       $"HP={data.player.hp}/{data.player.maxHp}, " +
@@ -99,14 +110,35 @@ namespace Valkur.Gameplay.Save
             player.transform.position = new Vector3(psd.position.x, psd.position.y, 0f);
         }
 
-        private static void RestoreHealth(GameObject player, PlayerSaveData psd)
+        /// <summary>
+        /// Put the player back into spirit form after loading a save taken while dead.
+        ///
+        /// <para>Silent when no controller exists — an EditMode fixture restoring a save has no
+        /// death flow, and refusing the whole load over it would be worse than loading a player
+        /// who is simply alive.</para>
+        /// </summary>
+        private static void RestoreSpirit(Vector3 corpsePosition)
+        {
+            var controller = ServiceLocator.Get<DeathSequenceController>();
+            if (controller == null)
+            {
+                Debug.LogWarning("[GameStateRestorer] Save says the player was a spirit, but no " +
+                                 "DeathSequenceController is registered — loaded as alive.");
+                return;
+            }
+            controller.RestoreSpiritState(corpsePosition);
+        }
+
+        private static void RestoreHealth(GameObject player, PlayerSaveData psd, bool wasSpirit)
         {
             var health = player.GetComponent<Health>();
             if (health == null) return;
 
-            // Guard: a save with hp==0 means the player died before saving.
-            // Restore to full health so the player is never loaded in a dead state.
-            int safeHp = (psd.hp > 0) ? psd.hp : psd.maxHp;
+            // Guard: a save with hp==0 usually means the write raced a death and the state is
+            // junk, so it is restored to full rather than loading a corpse. The ONE exception is a
+            // save that explicitly says the player was a spirit — there the 0 is the recorded
+            // truth, and bumping it is what made dying free for anyone willing to reload.
+            int safeHp = (psd.hp > 0) ? psd.hp : (wasSpirit ? 0 : psd.maxHp);
 
             // Use the (max, current) overload so OnDamaged / EntityDamaged
             // events DON'T fire. Going through TakeDamage(delta) here used

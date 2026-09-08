@@ -95,6 +95,33 @@ namespace Valkur.Data
                  "Used to key into buildings_collisions_by_image.json.")]
         public string sourceImagePath;
 
+        // ── Resurrection ────────────────────────────────────────────────────────────
+        //
+        // WHETHER this art is an altar is a property of the ART, so it lives here beside hasDoor
+        // and for the same reason: every placement of a wayside shrine is a shrine. It replaces
+        // DeathTuning.altarTemplateIds, a list of ids in a tuning asset that was the WRONG home
+        // twice over — it could not be seen from the building you were looking at, and a template
+        // id is not a fact about death, it is a fact about a building.
+        //
+        // The 2026-09-07 audit is what that cost: the list said 249 and the shipped world placed
+        // 197, the same sprite under its other template. A flag on the asset cannot drift from
+        // itself. The list survives as a legacy bridge (ResurrectionAltarRegistry.IsAltar ORs the
+        // two) so no existing world breaks, and nothing writes to it any more.
+
+        [Header("Resurrection")]
+        [Tooltip("If true, a player in spirit form who reaches this building revives. Applies to " +
+                 "EVERY placement of this art — the same scope as 'hasDoor'.")]
+        public bool isResurrectionAltar;
+
+        [Tooltip("WHERE on the building the spirit has to be. Proximity (any side, within the " +
+                 "radius below) is the forgiving default and the only one reliably reachable on a " +
+                 "SOLID building, whose own collision grid keeps the player out of the other three.")]
+        public ResurrectionAnchor resurrectionAnchor = ResurrectionAnchor.Proximity;
+
+        [Tooltip("Reach in WORLD UNITS for the Proximity anchor, measured out from the building's " +
+                 "bounds. Ignored by Base / Center / Top, which are bands of the building itself.")]
+        [Range(0.25f, 8f)] public float resurrectionRadius = 1.5f;
+
         [Header("Durability")]
         [Tooltip("Destruction profile. Empty = indestructible, which is the default for " +
                  "every shipped template: without one no BuildingDurability component is " +
