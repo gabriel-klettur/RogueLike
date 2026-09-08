@@ -34,7 +34,7 @@ namespace Valkur.Gameplay
             var manager = editorGo.AddComponent<TileEditorManager>();
             editorGo.transform.SetParent(GetSceneContainer("[Editors]"), false);
             manager.SetGridBuilder(_gridBuilder);
-            Debug.Log("[GameplaySceneSetup] TileEditorManager created. Press F8 to toggle.");
+            Debug.Log("[GameplaySceneSetup] TileEditorManager created. Open it from the General Editor (Escape).");
         }
 
         private void EnsureMapEditor()
@@ -43,7 +43,7 @@ namespace Valkur.Gameplay
             var editorGo = new GameObject("MapEditorManager");
             editorGo.AddComponent<MapEditorManager>();
             editorGo.transform.SetParent(GetSceneContainer("[Editors]"), false);
-            Debug.Log("[GameplaySceneSetup] MapEditorManager created. Press F11 to toggle.");
+            Debug.Log("[GameplaySceneSetup] MapEditorManager created. Open it from the General Editor (Escape).");
         }
 
         /// <summary>

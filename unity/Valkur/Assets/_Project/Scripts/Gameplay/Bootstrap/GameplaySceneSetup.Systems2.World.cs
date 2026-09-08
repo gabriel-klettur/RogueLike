@@ -91,7 +91,7 @@ namespace Valkur.Gameplay
             {
                 if (existing.SpawnedBuildings.Count == 0)
                 {
-                    yield return existing.LoadBuildingsProgressively(stage => Report(stage));
+                    yield return existing.LoadBuildingsProgressively(stage => ReportSubStage(stage));
                 }
                 yield break;
             }
@@ -108,7 +108,7 @@ namespace Valkur.Gameplay
             var loader = go.AddComponent<World.BuildingLoader>();
             go.transform.SetParent(GetSceneContainer("[World]"), false);
             loader.Initialize(_buildingCatalog, zm);
-            yield return loader.LoadBuildingsProgressively(stage => Report(stage));
+            yield return loader.LoadBuildingsProgressively(stage => ReportSubStage(stage));
 
             Debug.Log("[GameplaySceneSetup] BuildingLoader created and loaded.");
         }

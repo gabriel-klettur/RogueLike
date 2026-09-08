@@ -143,7 +143,7 @@ namespace Valkur.Gameplay
             if (loadFullWorld)
             {
                 // 1) Zone database — populates ZoneManager with all zones.
-                Report("Loading zone database"); yield return null;
+                ReportSubStage("Leyendo la base de zonas"); yield return null;
                 var dbLoaderGo = new GameObject("ZoneDatabaseLoader");
                 var dbLoader = dbLoaderGo.AddComponent<World.ZoneDatabaseLoader>();
                 // Start() would load the database a second time a frame later; we load
@@ -164,11 +164,11 @@ namespace Valkur.Gameplay
                 worldLoaderGo.transform.SetParent(GetSceneContainer("[World]"), false);
                 yield return worldLoader.LoadFullWorldProgressively(stage =>
                 {
-                    Report(stage);
+                    ReportSubStage(stage);
                 });
 
                 // 3) Procedural dungeon generation south of the lobby.
-                Report("Generating procedural dungeon"); yield return null;
+                ReportSubStage("Generando la mazmorra"); yield return null;
                 GenerateDungeon(dbLoader);
 
                 Debug.Log("[GameplaySceneSetup] Full multi-zone world loaded.");

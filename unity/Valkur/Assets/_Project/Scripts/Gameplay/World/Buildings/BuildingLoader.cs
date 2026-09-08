@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Core.Boot;
 using Valkur.Core.Coordinates;
 using Valkur.Data;
 using Valkur.Infrastructure.Persistence.Repositories;
@@ -142,7 +143,7 @@ namespace Valkur.Gameplay.World
             }
 
             // ── Pass 1: parse JSON ──────────────────────────────────────────
-            reportStage?.Invoke("Parsing building data");
+            reportStage?.Invoke("Leyendo los edificios");
             yield return null;
             string json = ResolveRepository().ReadRawJson(WorldId.Base);
             if (json == null)
@@ -158,13 +159,15 @@ namespace Valkur.Gameplay.World
             }
 
             // ── Pass 2: spawn instances in batches ──────────────────────────
-            // BUILDINGS_PER_BATCH yields once for every batch so the loading
-            // screen repaints mid-spawn on dense maps (e.g. 300+ instances).
-            // 60 was picked empirically: small enough to keep frame time well
-            // below 50 ms on the heaviest single-batch instantiate cost,
-            // large enough to keep total yield count under ~6 for typical maps.
-            const int BUILDINGS_PER_BATCH = 60;
-            reportStage?.Invoke("Spawning building instances");
+            // Yield on a TIME budget, not on a count. The count was 60, picked when a
+            // single instance cost ~22 ms because Sprite.Create was tracing an alpha
+            // outline; at that price 60 instances was a sensible 1.3 s of work per frame.
+            // With that fixed an instance costs 0.4 ms, so the same rule spent EIGHT
+            // frames — over 200 ms of boot-frame time — spreading 118 ms of work. The
+            // constant never changed; what it protected against vanished, and nothing
+            // said so. A budget asks the question the count was standing in for.
+            var budget = LoadFrameBudget.Start();
+            reportStage?.Invoke("Colocando los edificios");
             yield return null;
             int spawned = 0;
             int errors  = 0;
@@ -182,7 +185,7 @@ namespace Valkur.Gameplay.World
                     Debug.LogWarning($"[BuildingLoader] Failed to spawn instance id={inst.Id}: {ex.Message}");
                 }
                 processed++;
-                if (processed % BUILDINGS_PER_BATCH == 0) yield return null;
+                if (budget.Spent) { yield return null; budget.Restart(); }
             }
 
             // ── Pass 3: collision grids ─────────────────────────────────────
@@ -190,7 +193,7 @@ namespace Valkur.Gameplay.World
             // including any inline / per-image / per-instance overrides. With
             // the no-default-footprint rule, this is the ONLY source of
             // building colliders.
-            reportStage?.Invoke("Linking building colliders");
+            reportStage?.Invoke("Enlazando sus colisiones");
             yield return null;
             var collisionLoader = FindObjectOfType<BuildingCollisionLoader>();
             if (collisionLoader != null)

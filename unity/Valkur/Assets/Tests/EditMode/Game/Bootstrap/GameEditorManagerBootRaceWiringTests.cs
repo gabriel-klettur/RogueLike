@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using NUnit.Framework;
 
 namespace Valkur.Tests.EditMode.Game.Bootstrap
@@ -12,7 +12,7 @@ namespace Valkur.Tests.EditMode.Game.Bootstrap
     /// Inventory, Particles, Lighting) runs its OnEnable, Register is silently skipped
     /// FOREVER — that editor never joins the exclusivity group.
     ///
-    /// Before this fix the protection was incidental: <c>EnsureTileEditor()</c> happened to
+    /// Before this fix the protection was incidental: <c>EnsureTileEditor</c> happened to
     /// run before any of the non-retrying editors and self-created the manager as a side
     /// effect. <c>GameplaySceneSetup.Start</c> now creates it explicitly, first, so the
     /// guarantee no longer depends on Ensure*Editor call ORDER. Static source-text checks,
@@ -54,7 +54,7 @@ namespace Valkur.Tests.EditMode.Game.Bootstrap
         [Test]
         public void GameEditorManager_EnsureInstance_IsCalled_InGameplaySceneSetupStart()
         {
-            string src = ReadScript("_Project/Scripts/Gameplay/Bootstrap/GameplaySceneSetup.cs");
+            string src = ReadScript("_Project/Scripts/Gameplay/Bootstrap/GameplaySceneSetup.Sequence.cs");
 
             Assert.IsTrue(src.Contains("GameEditorManager.EnsureInstance()"),
                 "GameplaySceneSetup.Start must explicitly create the GameEditorManager " +
@@ -65,16 +65,21 @@ namespace Valkur.Tests.EditMode.Game.Bootstrap
         [Test]
         public void GameEditorManager_EnsureInstance_Precedes_EnsureTileEditor_InStart()
         {
-            string src = ReadScript("_Project/Scripts/Gameplay/Bootstrap/GameplaySceneSetup.cs");
+            // StripComments matters here now that the order lives in a file that
+            // EXPLAINS the order: the doc comment above the manager install names
+            // EnsureTileEditor while recounting the bug, so a raw IndexOf finds the
+            // prose before the code and reports the constraint backwards.
+            string src = StripComments(
+                ReadScript("_Project/Scripts/Gameplay/Bootstrap/GameplaySceneSetup.Sequence.cs"));
 
             int ensureManagerIdx = src.IndexOf("GameEditorManager.EnsureInstance()");
-            int ensureTileIdx = src.IndexOf("EnsureTileEditor()");
+            int ensureTileIdx = src.IndexOf("EnsureTileEditor");
 
             Assert.AreNotEqual(-1, ensureManagerIdx, "Expected a GameEditorManager.EnsureInstance() call.");
-            Assert.AreNotEqual(-1, ensureTileIdx, "Expected an EnsureTileEditor() call.");
+            Assert.AreNotEqual(-1, ensureTileIdx, "Expected an EnsureTileEditor call.");
 
             Assert.Less(ensureManagerIdx, ensureTileIdx,
-                "GameEditorManager.EnsureInstance() must run before EnsureTileEditor() — " +
+                "GameEditorManager.EnsureInstance() must run before EnsureTileEditor — " +
                 "and therefore before every other Ensure*Editor call in Start — so the " +
                 "exclusivity manager's existence stops being an accident of call order.");
         }

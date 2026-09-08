@@ -320,7 +320,7 @@ namespace Valkur.Tests.PlayMode.World
 
         /// <summary>
         /// Regression for the user-reported bug "lobby colliders don't work unless
-        /// I press Auto-Generate from Walls". <see cref="Valkur.Gameplay.Bootstrap.GameplaySceneSetup.Start"/>
+        /// I press Auto-Generate from Walls". <see cref="Valkur.Gameplay.GameplaySceneSetup"/>
         /// loads the world AND rebakes composites synchronously on the same frame —
         /// no <c>yield</c>, no <c>RefreshAllTiles</c>. Without explicit refresh, the
         /// TilemapCollider2D has not yet processed the queued <c>SetTile</c> calls

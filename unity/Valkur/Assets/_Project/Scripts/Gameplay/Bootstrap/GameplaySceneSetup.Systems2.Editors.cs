@@ -40,7 +40,7 @@ namespace Valkur.Gameplay
 #endif
             }
 
-            Debug.Log("[GameplaySceneSetup] BuildingsRuntimeEditor created. Press F10 to toggle.");
+            Debug.Log("[GameplaySceneSetup] BuildingsRuntimeEditor created. Open it from the General Editor (Escape).");
         }
 
         private void EnsureFSMRuntimeEditor()
@@ -51,7 +51,7 @@ namespace Valkur.Gameplay
             go.AddComponent<FSMRuntimeEditor>();
             go.transform.SetParent(GetSceneContainer("[Editors]"), false);
 
-            Debug.Log("[GameplaySceneSetup] FSMRuntimeEditor created. Press F12 to toggle.");
+            Debug.Log("[GameplaySceneSetup] FSMRuntimeEditor created. Open it from the General Editor (Escape).");
         }
 
         // Top-level launcher panel toggled with ESC. Lists every other editor
@@ -67,7 +67,7 @@ namespace Valkur.Gameplay
             go.AddComponent<GeneralEditorManager>();
             go.transform.SetParent(GetSceneContainer("[Editors]"), false);
 
-            Debug.Log("[GameplaySceneSetup] GeneralEditorManager created. Press ESC to open.");
+            Debug.Log("[GameplaySceneSetup] GeneralEditorManager created. Press Escape to open.");
         }
 
         // Lighting editor (Ctrl+F3). Pulls the LightPresetCatalog from the live
@@ -83,7 +83,7 @@ namespace Valkur.Gameplay
             go.AddComponent<Valkur.Gameplay.World.LightingRuntimeEditor>();
             go.transform.SetParent(GetSceneContainer("[Editors]"), false);
 
-            Debug.Log("[GameplaySceneSetup] LightingRuntimeEditor created. Press Ctrl+F3 to toggle.");
+            Debug.Log("[GameplaySceneSetup] LightingRuntimeEditor created. Open it from the General Editor (Escape).");
         }
 
         // Time & Weather editor (F2). Hosts every modifying control for the
@@ -156,6 +156,27 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>
+        /// The Death editor: the death flow's timings, the spirit's rules, WHICH BUILDING IS AN
+        /// ALTAR, the rescue that guarantees a death has an exit, the two trails, and what dying
+        /// costs. No hotkey, like the Camera, Controls, Skills and Economy editors — the F-row is
+        /// retired and the General Editor (ESC) is the only way in, which is what
+        /// EditorReachabilityTests pins.
+        ///
+        /// <para>It creates no death systems of its own: those are built by
+        /// EnsureDeathSequenceSystems, which runs whether or not anybody opens this editor. An
+        /// editor that had to be opened for the game to be able to revive would be the same class
+        /// of defect it exists to fix.</para>
+        /// </summary>
+        private void EnsureDeathEditor()
+        {
+            if (Valkur.Gameplay.Editors.Death.DeathRuntimeEditor.Instance != null) return;
+            var go = new GameObject("DeathEditor");
+            go.AddComponent<Valkur.Gameplay.Editors.Death.DeathRuntimeEditor>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
+            Debug.Log("[GameplaySceneSetup] DeathEditor created. Open it from the General Editor (ESC).");
+        }
+
+        /// <summary>
         /// The pause key. <c>Gameplay/Pause</c> has been bound to <c>p</c> for the life of the
         /// asset with no reader at all — see <see cref="PauseHotkeyReader"/>.
         /// </summary>
@@ -173,18 +194,25 @@ namespace Valkur.Gameplay
             var go = new GameObject("TimeWeatherEditor");
             go.AddComponent<Valkur.Gameplay.TimeWeather.TimeWeatherEditor>();
             go.transform.SetParent(GetSceneContainer("[Editors]"), false);
-            Debug.Log("[GameplaySceneSetup] TimeWeatherEditor created. Press F2 to toggle.");
+            Debug.Log("[GameplaySceneSetup] TimeWeatherEditor created. Open it from the General Editor (Escape).");
         }
 
-        private void EnsureItemsRuntimeEditor()
+        /// <summary>
+        /// Publish the item catalog on the ServiceLocator. Split out of
+        /// <see cref="EnsureItemsRuntimeEditor"/> because it is RUNTIME wiring, not
+        /// authoring: <c>ItemDropService</c>, the inventory and every loot roll read
+        /// this binding. It used to live inside the editor's Ensure, so gating the
+        /// editor out of a release build would have silently taken the item catalog
+        /// with it — exactly the trap that makes <c>TileEditorManager</c> and
+        /// <c>MapEditorManager</c> un-gateable.
+        ///
+        /// Try the inspector field first, then the canonical Resources/AssetDatabase
+        /// fallback, and only warn if BOTH paths are empty — otherwise the warning
+        /// fires on every cold boot of a freshly-migrated project even though the
+        /// catalog is correctly discovered.
+        /// </summary>
+        private void RegisterItemCatalogForRuntime()
         {
-            // Surface the catalog before the editor's first activation so its
-            // ServiceLocator-first lookup hits a populated binding instead of
-            // falling back to AssetDatabase / Resources. Try the inspector
-            // field first, then the canonical Resources/AssetDatabase
-            // fallback, and only warn if BOTH paths are empty — otherwise
-            // the warning fires on every cold boot of a freshly-migrated
-            // project even though the catalog is correctly discovered.
             var catalog = _itemCatalog != null ? _itemCatalog : ResolveItemCatalogFallback();
             if (catalog != null)
             {
@@ -196,8 +224,13 @@ namespace Valkur.Gameplay
             {
                 Debug.LogWarning("[GameplaySceneSetup] No ItemCatalog assigned and no fallback found — items editor will be empty.");
             }
+        }
 
-            EnsureItemDropService();
+        private void EnsureItemsRuntimeEditor()
+        {
+            // Idempotent, and still called here so any direct caller keeps the
+            // catalog guarantee the editor's picker depends on.
+            RegisterItemCatalogForRuntime();
 
             if (ItemsRuntimeEditor.Instance != null) return;
 
@@ -205,7 +238,7 @@ namespace Valkur.Gameplay
             go.AddComponent<ItemsRuntimeEditor>();
             go.transform.SetParent(GetSceneContainer("[Editors]"), false);
 
-            Debug.Log("[GameplaySceneSetup] ItemsRuntimeEditor created. Press F7 to toggle.");
+            Debug.Log("[GameplaySceneSetup] ItemsRuntimeEditor created. Open it from the General Editor (Escape).");
         }
 
         /// <summary>
@@ -303,7 +336,7 @@ namespace Valkur.Gameplay
             serialized.ApplyModifiedPropertiesWithoutUndo();
 #endif
 
-            Debug.Log("[GameplaySceneSetup] SpellsRuntimeEditor created. Press F4 to toggle.");
+            Debug.Log("[GameplaySceneSetup] SpellsRuntimeEditor created. Open it from the General Editor (Escape).");
         }
 
         private void EnsureBossEditor()
@@ -359,7 +392,7 @@ namespace Valkur.Gameplay
             // build, so a shipped player's F5 picker was permanently empty.
             editor.SetMonsterCatalog(_monsterCatalog);
 
-            Debug.Log("[GameplaySceneSetup] EntitiesRuntimeEditor created. Press F5 to toggle.");
+            Debug.Log("[GameplaySceneSetup] EntitiesRuntimeEditor created. Open it from the General Editor (Escape).");
         }
 
         private void EnsureInventoryRuntimeEditor()
@@ -370,7 +403,7 @@ namespace Valkur.Gameplay
             go.AddComponent<Valkur.Gameplay.Inventory.InventoryRuntimeEditor>();
             go.transform.SetParent(GetSceneContainer("[Editors]"), false);
 
-            Debug.Log("[GameplaySceneSetup] InventoryRuntimeEditor created. Press F6 to toggle.");
+            Debug.Log("[GameplaySceneSetup] InventoryRuntimeEditor created. Open it from the General Editor (Escape).");
         }
 
         private void EnsureParticlesRuntimeEditor()
@@ -398,7 +431,7 @@ namespace Valkur.Gameplay
                 Debug.LogWarning("[GameplaySceneSetup] ParticlesRuntimeEditor created without ParticlePresetCatalog — picker will be empty.");
             }
 
-            Debug.Log("[GameplaySceneSetup] ParticlesRuntimeEditor created. Press F1 to toggle.");
+            Debug.Log("[GameplaySceneSetup] ParticlesRuntimeEditor created. Open it from the General Editor (Escape).");
         }
     }
 }

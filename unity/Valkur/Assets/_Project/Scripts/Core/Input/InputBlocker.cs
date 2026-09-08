@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -25,14 +25,41 @@ namespace Valkur.Core.Input
     /// </summary>
     public static class InputBlocker
     {
-        public static bool IsGameplayBlocked { get; private set; }
+        // ONE FLAG, TWO INDEPENDENT OWNERS — and it used to be one flag with two
+        // owners fighting, which is the exact shape this project already documents for
+        // Health.SetInvincible. The loading screen blocks gameplay input for the whole
+        // boot; ChatInputGate blocks it while a modal panel holds focus. They overlap
+        // in real play, because the chat system is CREATED during the boot and its
+        // gate's first Refresh() answers "no panel is open" — measured live, that
+        // single call cleared the loading screen's block with the world still 40 %
+        // assembled, and the player could walk into it.
+        //
+        // Neither owner may see the other's bit, so each writes its own and the answer
+        // is the OR. That is what makes "blocked until the boot finishes" a property
+        // rather than a race.
+        private static bool _byPanel;
+        private static bool _byBoot;
+
+        public static bool IsGameplayBlocked => _byPanel || _byBoot;
+
         public static event Action<bool> OnBlockChanged;
 
-        public static void SetBlocked(bool blocked)
+        /// <summary>The modal-panel owner: chat and the dev console.</summary>
+        public static void SetBlocked(bool blocked) => Set(ref _byPanel, blocked);
+
+        /// <summary>
+        /// The boot owner: the loading screen holds this from the moment a scene is
+        /// activated until the boot sequence reports ready.
+        /// </summary>
+        public static void SetBootBlocked(bool blocked) => Set(ref _byBoot, blocked);
+
+        private static void Set(ref bool slot, bool value)
         {
-            if (blocked == IsGameplayBlocked) return;
-            IsGameplayBlocked = blocked;
-            OnBlockChanged?.Invoke(blocked);
+            if (slot == value) return;
+            bool before = IsGameplayBlocked;
+            slot = value;
+            bool after = IsGameplayBlocked;
+            if (before != after) OnBlockChanged?.Invoke(after);
         }
 
         public static bool IsAlwaysAllowedKey(Key key) =>
@@ -46,7 +73,8 @@ namespace Valkur.Core.Input
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            IsGameplayBlocked = false;
+            _byPanel = false;
+            _byBoot = false;
             OnBlockChanged = null;
         }
     }

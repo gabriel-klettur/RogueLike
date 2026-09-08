@@ -269,7 +269,7 @@ namespace Valkur.Tests.EditMode.Game.World
                 "is the ONLY way to open it. Losing that line makes it unreachable with " +
                 "nothing to notice.");
 
-            string bootstrap = Read("Gameplay/Bootstrap/GameplaySceneSetup.cs");
+            string bootstrap = Read("Gameplay/Bootstrap/GameplaySceneSetup.Sequence.cs");
             Assert.IsTrue(bootstrap.Contains("EnsureCameraEditor"),
                 "...and it must actually be created in the scene.");
         }

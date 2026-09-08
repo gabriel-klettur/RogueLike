@@ -1,7 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using Valkur.Core.Boot;
 using UnityEngine.Tilemaps;
 using Valkur.Core;
 using Valkur.Core.Coordinates;
@@ -137,9 +138,13 @@ namespace Valkur.Gameplay.World
             // Mid-pass yields keep the loading screen responsive when the
             // world has many zones. ~6 yields total across 24 zones gives
             // smooth bar advancement without measurable per-pass overhead.
-            reportStage?.Invoke("Painting zone overlays");
+            reportStage?.Invoke("Pintando las zonas");
             yield return null;
-            int batchSize = Mathf.Max(1, entries.Count / 6);
+            // Same reasoning as BuildingLoader: a fixed "one sixth of the zones" cadence
+            // buys a frame whether or not the work needed one, and a boot frame is the
+            // expensive thing here (29 ms warm, ~106 ms cold against a 9.8 ms steady-state
+            // frame). The budget yields when the frame has genuinely been held.
+            var budget = LoadFrameBudget.Start();
             int processed = 0;
             foreach (var entry in entries)
             {
@@ -161,11 +166,11 @@ namespace Valkur.Gameplay.World
                     }
                 }
                 processed++;
-                if (processed % batchSize == 0) yield return null;
+                if (budget.Spent) { yield return null; budget.Restart(); }
             }
 
             // ── Pass 2: collisions ──────────────────────────────────────────
-            reportStage?.Invoke("Linking world colliders");
+            reportStage?.Invoke("Enlazando las colisiones");
             yield return null;
             processed = 0;
             foreach (var entry in entries)
@@ -184,7 +189,7 @@ namespace Valkur.Gameplay.World
                     }
                 }
                 processed++;
-                if (processed % batchSize == 0) yield return null;
+                if (budget.Spent) { yield return null; budget.Restart(); }
             }
 
             // ── Pass 3: persisted tile-editor overrides ─────────────────────
@@ -193,7 +198,7 @@ namespace Valkur.Gameplay.World
             // through the active map slot's WorldId so each slot loads its
             // own overrides — the implicit "default" slot keeps the legacy
             // flat root for byte-compat with pre-multi-map saves.
-            reportStage?.Invoke("Applying tile overrides");
+            reportStage?.Invoke("Aplicando ajustes de tiles");
             yield return null;
             var zoneManager = FindObjectOfType<ZoneManager>();
             if (zoneManager != null)

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
@@ -50,7 +50,13 @@ namespace Valkur.Tests.EditMode.Game.Bootstrap
 
             // Collect all invocations from any partial.
             var invoked = new HashSet<string>();
-            var callRegex = new Regex(@"\b(Ensure\w+RuntimeEditor)\s*\(\s*\)",
+            // Two shapes count as "invoked". The bootstrap used to call these
+            // directly - `EnsureItemsRuntimeEditor();` - and now hands them to the boot
+            // sequence as METHOD GROUPS: `BootStep.Of("...", EnsureItemsRuntimeEditor, 1f)`.
+            // A regex that only knew the first shape reported eight perfectly wired
+            // editors as never invoked: this fixture doing its job and pointing at the
+            // wrong file. The guarantee is unchanged; the call site moved.
+            var callRegex = new Regex(@"(Ensure\w+RuntimeEditor)\s*(?:\(\s*\)|\s*[,)])",
                 RegexOptions.Compiled);
 
             foreach (var path in Directory.EnumerateFiles(scriptsRoot, "GameplaySceneSetup*.cs",

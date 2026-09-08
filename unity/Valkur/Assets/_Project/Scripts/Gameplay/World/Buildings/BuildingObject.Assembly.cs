@@ -161,17 +161,38 @@ namespace Valkur.Gameplay.World
             // Sprites with pivot at bottom-center so local Y=0 = the bottom of
             // each portion. Rects are anchored at the sprite's own (x,y) within
             // the (possibly atlased) texture, NOT at (0,0).
+            //
+            // ── SpriteMeshType.FullRect IS NOT A DETAIL: IT IS 90 % OF THE BOOT ──
+            // Sprite.Create defaults to SpriteMeshType.Tight, which traces the alpha
+            // outline of the rect to build a fitted mesh. These rects are ~1024 px
+            // square and they live inside a 4096x4096 atlas page, so each trace is
+            // enormous — measured on the shipped art, **20.15 ms per call against
+            // 0.005 ms for FullRect, a factor of 4 459**. Two calls per building and
+            // 301 buildings is 602 traces, which measured as **6.8 s of an 11.3 s
+            // boot: 60 % of the whole arranque was Unity outlining building sprites.**
+            //
+            // Nothing wanted that mesh. A tight mesh buys reduced overdraw and a
+            // sprite physics shape; these renderers draw near-opaque pixel art and
+            // there is no PolygonCollider2D anywhere in the buildings subsystem —
+            // collision is the painted per-cell grid baked by BuildingCollisionLoader.
+            // So the trace was paid on every building of every boot and read by
+            // nothing.
+            //
+            // The tell was the shape of the number: 22 ms for what is nominally an
+            // object allocation is not "instantiation is slow", it is work nobody
+            // asked for. Re-timing the same load with everything warm (5.8 s against
+            // 6.8 s cold) is what proved it was not asset loading either.
             Sprite bottomSprite = Sprite.Create(
                 tex,
                 new Rect(spriteOriginX, spriteOriginY, spriteW, bottomTexH),
                 new Vector2(0.5f, 0f),
-                PPU);
+                PPU, 0, SpriteMeshType.FullRect);
 
             Sprite topSprite = Sprite.Create(
                 tex,
                 new Rect(spriteOriginX, spriteOriginY + bottomTexH, spriteW, topTexH),
                 new Vector2(0.5f, 0f),
-                PPU);
+                PPU, 0, SpriteMeshType.FullRect);
 
             // Heights in local (unscaled) Unity units (based on texture pixels / PPU)
             float bottomH = bottomTexH / PPU;

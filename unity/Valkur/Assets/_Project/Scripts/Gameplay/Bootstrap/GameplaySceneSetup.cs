@@ -1,7 +1,8 @@
-using System;
+﻿using System;
 using System.Collections;
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Core.Boot;
 using Valkur.Data;
 using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.World;
@@ -99,323 +100,84 @@ namespace Valkur.Gameplay
 
         private WorldGridBuilder _gridBuilder;
 
-        // Stage budget: 41 base + decompositions.
-        //   • SpawnPlayer:     -1 + 7 (Loading player class / Spawning player entity /
-        //                       Building player visuals / Wiring player combat /
-        //                       Loading spell book / Initializing player stats /
-        //                       Building HUD)
-        //   • LoadWorld:       -1 + 5 (Loading zone database / Painting zone overlays /
-        //                       Linking world colliders / Applying tile overrides /
-        //                       Generating procedural dungeon)
-        //   • LoadBuildings:   -1 + 3 (Parsing building data / Spawning building
-        //                       instances / Linking building colliders)
-        // Net: 41 + 6 + 4 + 2 = 53.
-        private const int SetupStepTotal = 53;
-        private int _setupStep;
-
-        private IEnumerator Start()
-        {
-            _setupStep = 0;
-
-            // Every runtime editor's OnEnable does `if (GameEditorManager.HasInstance)
-            // …Register(this)` with NO retry — a handful (Tile, General, DungeonNodeGraph)
-            // self-heal via GameEditorManager.EnsureInstance(), but most (Spawners,
-            // Buildings, FSM, Items, Spells, Entities, Boss, Inventory, Particles, Lighting)
-            // do not, and if the manager doesn't exist yet when one of THOSE runs its
-            // Register call is silently skipped FOREVER — that editor never joins the
-            // exclusivity group, so its first hotkey press opens it without closing
-            // whatever else is open (two canvases stacked, both eating clicks). In
-            // practice EnsureTileEditor() below happens to self-create the manager before
-            // any of the non-retrying editors are created, so the bug is latent rather
-            // than live — but that protection is incidental to call ORDER, not to an
-            // explicit contract, so reordering Ensure*Editor calls could silently reopen
-            // it for a whole batch of editors at once. Make the guarantee explicit instead
-            // of implicit: create the manager before ANY editor (including Tile) can run.
-            GameEditorManager.EnsureInstance();
-
-            // Right after the manager and before any editor, for the same reason: the
-            // workspace service installs itself as DraggablePanel's state sink, and a panel
-            // built before that install would answer its "was I left closed?" question from
-            // the old PlayerPrefs backend and then be recorded there too — two owners of one
-            // bit, which is the failure this layer exists to remove.
-            Valkur.Gameplay.Editors.Workspace.EditorWorkspaceService.EnsureInstance();
-
-            BuildWorldGrid();
-            Report("Building grid"); yield return null;
-
-            EnsureZoneManager();
-            Report("Initializing zones"); yield return null;
-
-            EnsureWorldManager();
-            Report("Initializing WorldManager"); yield return null;
-
-            // TileEditorManager MUST exist before LoadWorldProgressively runs
-            // its "Applying tile overrides" stage. Reason: that stage funnels
-            // collision-tag JSON into TileEditorManager.Instance.CollisionTags;
-            // if the editor singleton isn't alive yet, the sink is null and the
-            // tags are silently dropped. The downstream effect is that the M2
-            // baker reads every cell as Wildcard ("*") and stamps them into the
-            // WorldAll sub-tilemap, blocking the player on every visual layer
-            // regardless of the painted tag — exactly the "Player on L0 still
-            // blocked by tag-7 cells" production bug. Creating the editor here
-            // (idempotent) primes the tag-map sink before overrides apply.
-            EnsureTileEditor();
-            Report("Initializing tile editor"); yield return null;
-
-            // Progressive world load — sub-stages "Loading zone database",
-            // "Painting zone overlays", "Linking world colliders", "Applying
-            // tile overrides", "Generating procedural dungeon" all report
-            // themselves. Replaces the single "Loading world" freeze.
-            yield return LoadWorldProgressively();
-
-            // Install the slot watcher unconditionally — even when LoadWorldProgressively
-            // takes the legacy single-overlay branch (no GenerateDungeon call), the
-            // F11 Map Editor's slot loads still need to drive the Udemy regen flow.
-            EnsureDungeonSlotBootstrap();
-            Report("Installing dungeon slot watcher"); yield return null;
-
-            RebakeTilemapColliders();
-            Report("Rebaking tile colliders"); yield return null;
-
-            EnsureGlobalLight2D();
-            Report("Initializing global lighting"); yield return null;
-
-            EnsureDayNightCycle();
-            Report("Starting day/night cycle"); yield return null;
-
-            EnsureVFXManager();
-            EnsureCameraFeelDirector();
-            Report("Initializing visual effects"); yield return null;
-
-            EnsureParticleInstancesLoader();
-            Report("Loading particles"); yield return null;
-
-            EnsureMapEditor();
-            Report("Initializing map editor"); yield return null;
-
-            EnsureSaveService();
-            Report("Initializing save system"); yield return null;
-
-            EnsureSaveLoadInput();
-            Report("Initializing save input"); yield return null;
-
-            EnsureNPCSeparation();
-            Report("Initializing NPC separation"); yield return null;
-
-            EnsurePathFinder();
-            Report("Initializing pathfinding"); yield return null;
-
-            EnsureVendorShopUI();
-            Report("Initializing shops"); yield return null;
-
-            EnsureVendorEconomyService();
-            Report("Initializing economy"); yield return null;
-
-            EnsureChatSystem();
-            Report("Initializing chat"); yield return null;
-
-            EnsureWorldLightLoader();
-            Report("Loading world lights"); yield return null;
-
-            EnsureBuildingCollisionLoader();
-            Report("Loading building collisions"); yield return null;
-
-            EnsureSpawnerEditor();
-            Report("Initializing spawner editor"); yield return null;
-
-            EnsureBuildingsRuntimeEditor();
-            Report("Initializing buildings editor"); yield return null;
-
-            EnsureFSMRuntimeEditor();
-            Report("Initializing FSM editor"); yield return null;
-
-            EnsureItemsRuntimeEditor();
-            Report("Initializing items editor"); yield return null;
-
-            EnsureSpellsRuntimeEditor();
-            Report("Initializing spells editor"); yield return null;
-
-            EnsureEntitiesRuntimeEditor();
-            Report("Initializing entities editor"); yield return null;
-
-            EnsureBossEditor();
-            Report("Initializing boss editor"); yield return null;
-
-            EnsureInventoryRuntimeEditor();
-            Report("Initializing inventory editor"); yield return null;
-
-            EnsureParticlesRuntimeEditor();
-            Report("Initializing particles editor"); yield return null;
-
-            EnsureLightingRuntimeEditor();
-            Report("Initializing lighting editor"); yield return null;
-
-            EnsureGeneralEditor();
-            Report("Initializing general editor"); yield return null;
-
-            EnsureDayNightAtmosphere();
-            Report("Initializing day/night atmosphere"); yield return null;
-
-            EnsureWeatherManager();
-            Report("Initializing weather system"); yield return null;
-
-            EnsureTimeWeatherEditor();
-            EnsureCameraEditor();
-            EnsureControlsEditor();
-            EnsureSkillsEditor();
-            EnsureEconomyEditor();
-            EnsurePauseHotkeyReader();
-            Report("Initializing time & weather editor"); yield return null;
-
-            EnsureDevConsole();
-            Report("Initializing dev console"); yield return null;
-
-            EnsureDeathDropSystem();
-            Report("Initializing death drops"); yield return null;
-
-            EnsureDeathSequenceFlow();
-            Report("Initializing death & revival cycle"); yield return null;
-
-            EnsureLevelUpRestoreSystem();
-            Report("Initializing level-up restore"); yield return null;
-
-            EnsurePermadeathSaveCleanupSystem();
-            Report("Initializing permadeath"); yield return null;
-
-            Report("Initializing skill points per level"); yield return null;
-
-            Report("Initializing per-level stat scaling"); yield return null;
-
-            EnsureXpFeedbackSystem();
-            Report("Initializing XP feedback"); yield return null;
-
-            EnsureXpLossOnDeathSystem();
-            Report("Initializing death XP penalty"); yield return null;
-
-            EnsureProfileTelemetrySystem();
-            Report("Initializing progression telemetry"); yield return null;
-
-            EnsureNPCRespawnSystem();
-            Report("Initializing NPC respawn"); yield return null;
-
-            EnsureToastSystem();
-            Report("Initializing notifications"); yield return null;
-
-            // Pre-apply player class from pending save so SpawnPlayer() uses the correct
-            // class for visuals and stats. The full restore (position, HP, etc.) happens
-            // later via SaveService.Load().
-            if (Save.PendingSaveLoad.HasPending && !string.IsNullOrWhiteSpace(Save.PendingSaveLoad.PlayerClass))
-                PlayerSelectionState.SetSelectedPlayer(Save.PendingSaveLoad.PlayerClass);
-
-            // Progressive spawn — 7 sub-stages, each yielding so the
-            // loading screen repaints between them. Replaces the previous
-            // synchronous SpawnPlayer() block that froze on "Spawning player"
-            // for ~8 seconds with no visible progress feedback.
-            yield return SpawnPlayerProgressively();
-
-            EnsureProceduralChunkStreamer();
-            Report("Initializing procedural streaming"); yield return null;
-
-            SpawnTestMonsters();
-            Report("Spawning test monsters"); yield return null;
-
-            try { EnsureMonsterSpawner(); }
-            catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] MonsterSpawner failed: {ex.Message}"); }
-            Report("Initializing monster spawner"); yield return null;
-
-            // Progressive building load — sub-stages "Parsing building data",
-            // "Spawning building instances", "Linking building colliders" all
-            // report themselves. RunSafely preserves the original try/catch
-            // exception-safety semantics around the loader.
-            // Before the loader, never after: every building asks the ServiceLocator for this
-            // as it spawns, so a service registered later is found by nothing and every felled
-            // tree quietly comes back whole.
-            try { EnsureWorldDamageService(); }
-            catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] WorldDamageService failed: {ex.Message}"); }
-            Report("Restoring world damage"); yield return null;
-
-            yield return RunSafely(EnsureBuildingLoaderProgressively(), "BuildingLoader");
-
-            try { EnsureSpawnerInstanceLoader(); }
-            catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] SpawnerInstanceLoader failed: {ex.Message}"); }
-            Report("Loading spawner instances"); yield return null;
-
-            try { EnsureAudioManager(); }
-            catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] AudioManager failed: {ex.Message}"); }
-            Report("Initializing audio"); yield return null;
-
-            try { EnsureCombatAudioSystem(); }
-            catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] CombatAudioSystem failed: {ex.Message}"); }
-            Report("Initializing combat audio"); yield return null;
-
-            EnterGameAudio();
-            Report("Starting game music"); yield return null;
-
-            // Apply saved state / checkpoint
-            if (Save.PendingSaveLoad.HasPending)
-            {
-                string savePath = Save.PendingSaveLoad.Consume();
-                if (SaveService.Instance != null)
-                {
-                    SaveService.Instance.Load(savePath);
-                    ApplyPositionCheckpointIfNewer(SaveService.Instance.LastLoadedTimestamp);
-                    Debug.Log($"[GameplaySceneSetup] Loaded pending save: {savePath}");
-                }
-            }
-            else
-            {
-                // New game — generate a fresh run ID so all autosaves from this session
-                // are grouped together in the Load Game panel.
-                SaveService.Instance?.BeginNewRun();
-                ApplyPositionCheckpointIfNewer(null);
-            }
-            // Telemetry run start: now that SaveService.RunId / RunOrdinal are
-            // settled (loaded from disk or freshly minted), wire the
-            // ProfileTelemetrySystem to the same identity. Doing this here
-            // rather than inside EnsureProfileTelemetrySystem prevents the
-            // scene-load-time phantom RunRecord that used to appear on every
-            // boot regardless of whether the player was resuming or starting.
-            StartTelemetryRunForCurrentSession();
-            Save.SaveFileManager.DeletePositionCheckpoint();
-            Report("Restoring session"); yield return null;
-
-            // All systems ready — signal the loading screen to fade out
-            LoadingReporter.ReportGameplayReady();
-        }
-
-        /// <summary>Reports progress to the loading screen for the current setup step.</summary>
-        private void Report(string message)
-        {
-            _setupStep++;
-            LoadingReporter.ReportStage(message, (float)_setupStep / SetupStepTotal);
-        }
+        /// <summary>
+        /// How long the runner may spend before it must give the loading screen a
+        /// frame. The old code yielded once per step unconditionally, which on a
+        /// seventy-step sequence is 1.17 s of pure waiting at 60 Hz even if every
+        /// step were free. Steps that need the frame ask for it
+        /// (<see cref="BootStep.Barrier"/>); the rest are collapsed by this budget.
+        /// </summary>
+        private const float FrameBudgetMs = 8f;
 
         /// <summary>
-        /// Pumps a progressive sub-coroutine and forwards its yields, but
-        /// converts any exception thrown during MoveNext into a single Console
-        /// error so the wider bootstrap sequence keeps running. Mirrors the
-        /// try/catch + Debug.LogError pattern used around the synchronous
-        /// Ensure* calls — yield return cannot live inside a try/catch in C#,
-        /// so this helper inverts the structure to give equivalent safety.
+        /// Runs the boot sequence built by <c>BuildBootSequence</c>.
+        ///
+        /// Everything this method used to hard-code — the order, the labels, the
+        /// step total, which calls were protected — is data now. What is left is the
+        /// three things a runner is actually for: measure each step, keep one
+        /// exception boundary around all of them, and decide when to give the screen
+        /// a frame.
         /// </summary>
-        private System.Collections.IEnumerator RunSafely(System.Collections.IEnumerator iter, string label)
+        private IEnumerator Start()
         {
-            if (iter == null) yield break;
-            while (true)
+            var steps = BuildBootSequence();
+            BootTimeline.BeginRun(steps);
+            LoadingReporter.ReportStage(LoadingText.BuildingWorld, 0f);
+
+            float lastYield = Time.realtimeSinceStartup;
+
+            for (int i = 0; i < steps.Count; i++)
             {
-                bool hasMore;
+                var step = steps[i];
+                BootTimeline.BeginStep(step);
+
+                // Report BEFORE running: the label names what is happening now and
+                // the bar shows the work already banked. The old code reported after,
+                // so every label described something that had already finished.
+                if (step.IsReported)
+                    LoadingReporter.ReportStage(step.Label, BootTimeline.FractionAtStepStart);
+
+                bool failed = false;
+                IEnumerator body = null;
+
                 try
                 {
-                    hasMore = iter.MoveNext();
+                    if (step.Run != null) step.Run();
+                    else if (step.Progressive != null) body = step.Progressive();
                 }
                 catch (System.Exception ex)
                 {
-                    Debug.LogError($"[GameplaySceneSetup] {label} failed: {ex.Message}");
-                    yield break;
+                    failed = true;
+                    Debug.LogError($"[GameplaySceneSetup] Paso #{i} '{step.Label}' fallo: " +
+                                   $"{ex.Message}\n{ex.StackTrace}");
+                    BootTimeline.RecordFailure(step.Label, ex);
                 }
-                if (!hasMore) yield break;
-                yield return iter.Current;
+
+                if (body != null)
+                    yield return RunGuarded(body, step.Label);
+
+                BootTimeline.EndStep(i, failed);
+
+                bool budgetSpent = (Time.realtimeSinceStartup - lastYield) * 1000f >= FrameBudgetMs;
+                if (step.Barrier || budgetSpent)
+                {
+                    yield return null;
+                    lastYield = Time.realtimeSinceStartup;
+                }
             }
+
+            // The one place the bar is allowed to read 100 %, and it is reached only
+            // after every step has run. BootProgress caps itself below 1 until here.
+            BootTimeline.CompleteRun();
+
+            if (BootTimeline.AnyFailed)
+                Debug.LogError($"[GameplaySceneSetup] El arranque termino con " +
+                               $"{BootTimeline.Failures.Count} fallo(s). Escribe 'boot' en la consola.");
+            else
+                Debug.Log($"[GameplaySceneSetup] Arranque completo: {steps.Count} etapas en " +
+                          $"{BootTimeline.TotalMilliseconds / 1000f:F2} s.");
+
+            LoadingReporter.ReportGameplayReady();
         }
 
         /// <summary>

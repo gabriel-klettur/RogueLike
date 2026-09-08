@@ -86,7 +86,6 @@ COLLECTION	Valkur.UI.HUD.ComboHUD.CountLabelCache
 # never mutated -- same "immutable lookup table" class as PlayerSelectionState.DefaultOrder.
 COLLECTION	Valkur.UI.HUD.HUDManager.AbilityRowKeyLabels
 COLLECTION	Valkur.UI.HUD.HUDVisibilityController.RootHUDCanvasNames
-COLLECTION	Valkur.UI.Loading.LoadingScreenController.LoadingTips
 COLLECTION	Valkur.UI.MainMenu.MainMenuUI.BgPaths
 COLLECTION	Valkur.UI.MainMenu.MainMenuUI.ClassBorderColors
 COLLECTION	Valkur.UI.MainMenu.MainMenuUI.ClassFaceUvRects
@@ -139,8 +138,6 @@ UNITYOBJ	Valkur.UI.HUD.MusicPlayerHUD._sPrev
 UNITYOBJ	Valkur.UI.HUD.MusicPlayerHUD._sRoundRect
 UNITYOBJ	Valkur.UI.HUD.MusicPlayerHUD._sSpeaker
 UNITYOBJ	Valkur.UI.HUD.MusicPlayerHUD._sSpeakerMute
-UNITYOBJ	Valkur.UI.Loading.LoadingScreenController._instance
-UNITYOBJ	Valkur.UI.Loading.LoadingScreenController._whiteSprite
 UNITYOBJ	Valkur.UIKit.LoadingBarWidget._whiteSprite
 UNITYOBJ	Valkur.UIKit.MenuBarChrome._instance
 VALUE	Valkur.Core.GameBootstrap.<GameplaySceneName>k__BackingField

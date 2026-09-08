@@ -53,7 +53,7 @@ namespace Valkur.Gameplay
             }
 
             // ── 1. Resolve player class (Resources.LoadAll scan) ────────────
-            Report("Loading player class"); yield return null;
+            ReportSubStage("Resolviendo la clase"); yield return null;
             var resolvedDef = ResolveSelectedPlayerDefinition() ?? defaultPlayerDef;
             if (resolvedDef == null)
             {
@@ -64,29 +64,29 @@ namespace Valkur.Gameplay
                 PlayerSelectionState.SetSelectedPlayer(resolvedDef.playerKey);
 
             // ── 2. Instantiate prefab ───────────────────────────────────────
-            Report("Spawning player entity"); yield return null;
+            ReportSubStage("Creando la entidad"); yield return null;
             var playerGo = Instantiate(playerPrefab, spawnPos, Quaternion.identity);
             playerGo.tag = "Player";
             playerGo.transform.SetParent(GetSceneContainer("[Entities]"), true);
 
             // ── 3. Animation rebind (heaviest single chunk: 7 directional sets) ──
-            Report("Building player visuals"); yield return null;
+            ReportSubStage("Montando las animaciones"); yield return null;
             EntitySetup.ConfigurePlayerVisuals(playerGo, resolvedDef);
 
             // ── 4. Health / movement / combat / dash ────────────────────────
-            Report("Wiring player combat"); yield return null;
+            ReportSubStage("Conectando el combate"); yield return null;
             EntitySetup.ConfigurePlayerCombat(playerGo, resolvedDef);
 
             // ── 5. Spell catalog scan + per-spell registration ──────────────
-            Report("Loading spell book"); yield return null;
+            ReportSubStage("Cargando el grimorio"); yield return null;
             EntitySetup.ConfigurePlayerSpells(playerGo);
 
             // ── 6. Mana, XP, inventory, currency, death flow, class marker ──
-            Report("Initializing player stats"); yield return null;
+            ReportSubStage("Calculando las estadisticas"); yield return null;
             EntitySetup.ConfigurePlayerStats(playerGo, resolvedDef);
 
             // ── 7. HUD singletons (inventory, spell bar, icons, range) ──────
-            Report("Building HUD"); yield return null;
+            ReportSubStage("Construyendo la interfaz"); yield return null;
             EntitySetup.ConfigurePlayerHUD();
 
             Debug.Log($"[GameplaySceneSetup] Player ready: key={resolvedDef.playerKey}, " +

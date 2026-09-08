@@ -552,6 +552,14 @@ namespace Valkur.Gameplay
 
             // Which provider answers NPC chat — see DevConsole.Commands.Chat.cs.
             RegisterChatCommands();
+
+            // The death flow: phase, altars, the trails, the rescue clock and the litter. Every
+            // one of those fails silently, which is why the subsystem needed a probe at all.
+            RegisterDeathCommands();
+
+            // The arranque's own probe — see DevConsole.Commands.Boot.cs.
+            RegisterBootCommands();
+
             RegisterFaceCommands();
 
             // Doorway authoring — see DevConsole.Commands.Doors.cs. Registered LAST and in a

@@ -13,7 +13,7 @@ namespace Valkur.Gameplay.World.Worlds
     /// <summary>
     /// Phase 1 default <see cref="IWorldManager"/>. Pure POCO — does not
     /// instantiate Unity scenes or tilemaps; orchestrating the actual scene
-    /// load is the responsibility of <c>BootstrapPipeline</c> (or the
+    /// load is the responsibility of the boot sequence in <c>GameplaySceneSetup</c> (or the
     /// legacy <c>GameplaySceneSetup</c> until that migration lands).
     ///
     /// Phase 1 scope:
@@ -25,7 +25,7 @@ namespace Valkur.Gameplay.World.Worlds
     ///
     /// Out of scope (deferred):
     ///   - Driving Unity scene swap / tilemap rebuild — done by
-    ///     BootstrapPipeline when migrated.
+    ///     the boot sequence when migrated.
     ///   - Save folder per world — SaveFileManager will key on
     ///     Active.WorldId once it adopts the manager.
     ///   - Cinemachine bounds reset — done by the scene-swap step.

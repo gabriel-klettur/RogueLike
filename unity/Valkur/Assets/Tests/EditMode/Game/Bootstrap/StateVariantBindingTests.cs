@@ -5,7 +5,6 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay;
-using Valkur.Gameplay.Bootstrap;
 
 namespace Valkur.Tests.EditMode.Game.Bootstrap
 {
