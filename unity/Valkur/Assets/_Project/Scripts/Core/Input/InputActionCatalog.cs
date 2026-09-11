@@ -290,6 +290,9 @@ namespace Valkur.Core.Input
             // control that can be switched off from inside the mode it escapes is a soft lock.
             list.Add(G("ToggleStance", "Cambiar postura",  InputActionCategory.System,      both, false,
                        contextLocked: true));
+            // The world map reaches no damage path, so it is live in both postures and the
+            // player may narrow or silence it from the Controls editor like Pause.
+            list.Add(G("OpenWorldMap", "Mapa del mundo",   InputActionCategory.Interface,   both, false));
 
             // ── Gameplay: the 24 spell slots ─────────────────────────────────
             // Every one reaches the damage path through SpellCaster, INCLUDING the ones that

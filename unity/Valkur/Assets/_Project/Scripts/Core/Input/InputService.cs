@@ -199,6 +199,13 @@ namespace Valkur.Core.Input
             public InputAction ToggleStance { get; }
 
             /// <summary>
+            /// Opens and closes the world map. Read by <c>MinimapHUD</c> and by nothing else.
+            /// <c>n</c> rather than the customary <c>m</c>, which is the ice wall's spell slot;
+            /// it is rebindable from the Controls editor like any other action.
+            /// </summary>
+            public InputAction OpenWorldMap { get; }
+
+            /// <summary>
             /// The spell slots, keyed by their action name — resolved from
             /// <see cref="InputActionCatalog"/> rather than declared as twenty-four
             /// properties.
@@ -234,6 +241,7 @@ namespace Valkur.Core.Input
                 DropItem        = map.FindAction("DropItem",        throwIfNotFound: true);
                 Pause           = map.FindAction("Pause",           throwIfNotFound: true);
                 ToggleStance    = map.FindAction("ToggleStance",    throwIfNotFound: true);
+                OpenWorldMap    = map.FindAction("OpenWorldMap",    throwIfNotFound: true);
 
                 _spells = new Dictionary<string, InputAction>(32, StringComparer.Ordinal);
                 foreach (var descriptor in InputActionCatalog.Spells())

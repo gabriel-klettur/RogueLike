@@ -280,6 +280,14 @@
                     "interactions": ""
                 },
                 {
+                    "name": "OpenWorldMap",
+                    "type": "Button",
+                    "id": "6d3a9c1e-4f7b-4a52-9e0d-2b8c71f5a4e3",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
                     "name": "DropItem",
                     "type": "Button",
                     "id": "91f1d38c-857f-4a2c-aa34-8a73e42c7c04",
@@ -792,6 +800,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "ToggleStance",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "8e5b2d47-1c93-4f06-b7a8-3d9e6c0f2b15",
+                    "path": "<Keyboard>/n",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "OpenWorldMap",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
