@@ -331,7 +331,6 @@ namespace Valkur.Gameplay.Buildings
         // Capture the active-state of each HUD when the editor opens so we can
         // restore exactly what was visible before (and not forcibly show a HUD
         // that was already hidden by the player).
-        private bool _hudSpellBarWasActive;
         private bool _hudInventoryWasActive;
         private bool _hudMusicPlayerWasActive;
         private GameObject _hudMusicPlayerGo;

@@ -103,9 +103,8 @@ namespace Valkur.Core
         /// per cast attempt — Prepare → Channel transitions do not re-fire it.
         /// Primitive payload (no <c>SpellDefinition</c> reference) keeps the
         /// <c>Valkur.Core</c> assembly free of <c>Valkur.Data</c> dependencies.
-        /// Subscribed by the player-only <c>SpellCooldownHUD</c> which filters
-        /// on <c>caster</c> identity to stack a per-spell countdown row above
-        /// the XP bar.
+        /// Subscribed by the action bar (<c>SpellBarHUD</c>), which filters
+        /// on <c>caster</c> identity to light the slot of the spell that was cast.
         /// </summary>
         public static event Action<GameObject, string, string, float> OnSpellCast;
 

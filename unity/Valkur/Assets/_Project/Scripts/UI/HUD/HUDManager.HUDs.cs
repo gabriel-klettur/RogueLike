@@ -142,8 +142,8 @@ namespace Valkur.UI.HUD
         {
             if (_playerHudPanel != null)
                 _playerHudPanel.SetActive(!editorActive);
-            if (_spellCooldownPanel != null)
-                _spellCooldownPanel.SetActive(!editorActive);
+            if (_spellBar != null)
+                _spellBar.gameObject.SetActive(!editorActive);
             if (_comboPanel != null)
                 _comboPanel.SetActive(!editorActive);
             if (_bossBarPanel != null)

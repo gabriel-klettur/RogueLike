@@ -114,7 +114,6 @@ UNITYOBJ	Valkur.Gameplay.Spells.AuraSpriteFactory._runeInnerSprite
 UNITYOBJ	Valkur.Gameplay.Spells.AuraSpriteFactory._runeOuterSprite
 UNITYOBJ	Valkur.Gameplay.Spells.AuraSpriteFactory._sparkleSprite
 UNITYOBJ	Valkur.Gameplay.TileEditor.TerrainCatalogLoader._cached
-UNITYOBJ	Valkur.Gameplay.UI.SpellBarHUD._whitePixel
 UNITYOBJ	Valkur.Gameplay.VFX.ParticleEmitterOutlineRenderer.s_lineMat
 UNITYOBJ	Valkur.Gameplay.VFX.ParticleEmitterOutlineRenderer.s_whiteSprite
 UNITYOBJ	Valkur.Gameplay.VFX.ParticleEmitterOutlineRenderer.s_whiteTex

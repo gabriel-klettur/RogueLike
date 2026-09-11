@@ -10,7 +10,6 @@ using Valkur.Data;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.Save;
-using Valkur.Gameplay.Spells.UI;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Infrastructure.Persistence.Repositories;
 
@@ -196,18 +195,6 @@ namespace Valkur.Tests.EditMode.Game.Core
             Assert.IsFalse(PlayerSelectionState.HasExplicitSelection,
                 "A class picked in one session must not silently apply to the next.");
             Assert.AreEqual(PlayerSelectionState.DefaultPlayerOrder[0], PlayerSelectionState.SelectedPlayerKey);
-        }
-
-        [Test]
-        public void SpellDragContext_Hook_EndsADragInterruptedByLeavingPlayMode()
-        {
-            SimulatePlayModeEnter(typeof(SpellDragContext));
-
-            Assert.IsFalse(SpellDragContext.IsDragging,
-                "A drag interrupted by Stop would otherwise start the next session mid-drag.");
-            Assert.AreEqual(-1, SpellDragContext.SourceSlotIndex);
-            Assert.IsTrue(SpellDragContext.GhostObject == null,
-                "The ghost GameObject belongs to the destroyed session; holding it is a fake-null reference.");
         }
 
         [Test]

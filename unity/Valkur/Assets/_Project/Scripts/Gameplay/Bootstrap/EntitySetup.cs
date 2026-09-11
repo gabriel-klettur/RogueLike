@@ -115,7 +115,8 @@ namespace Valkur.Gameplay
             EntityRegistry.RegisterPlayer(go);
         }
 
-        /// <summary>InventoryUI + SpellBarHUD + HUDIconBar + CombatRangeVisualizer.</summary>
+        /// <summary>InventoryUI + HUDIconBar + CombatRangeVisualizer. The action bar is built by
+        /// HUDManager, beside the player panel, once the player exists.</summary>
         /// <summary>
         /// What this creature's bar frame says about it.
         ///
@@ -139,8 +140,8 @@ namespace Valkur.Gameplay
         internal static void ConfigurePlayerHUD()
         {
             EnsureInventoryUI();
-            EnsureSpellBarHUD();
             EnsureHUDIconBar();
+            EnsureCraftingPanelUI();
             EnsureCombatRangeVisualizer();
         }
 
@@ -386,8 +387,12 @@ namespace Valkur.Gameplay
                 registered++;
             }
 
-            // Set slot 0 to fireball for backward compatibility (LMB)
-            var fireball = ProjectilePrefabFactory.GetFireballSpell();
+            // Slot 0 holds the fireball for backward compatibility. It is the catalog ASSET when
+            // the book has one: the code-built fallback has no icon, no element and none of the
+            // authored tuning, and the old action bar drew exactly that nameless copy in its
+            // first slot. The fallback stays for a catalog that failed to load.
+            var fireball = caster.GetSpellByKey("fireball");
+            if (fireball == null) fireball = ProjectilePrefabFactory.GetFireballSpell();
             if (fireball != null)
                 caster.SetSpell(0, fireball);
 

@@ -434,26 +434,13 @@ namespace Valkur.Gameplay.Buildings
         // ── HUD visibility management ────────────────────────────────────────────────
 
         /// <summary>
-        /// Captures the current active-state of Spell HUD, Inventory, and Music Player,
-        /// then hides each one while the Buildings Editor is open.
+        /// Captures the current active-state of Inventory and Music Player, then hides each one
+        /// while the Buildings Editor is open. The action bar is not here: it lives in the HUD
+        /// canvas, and HUDManager hides it with the rest of the HUD whenever ANY editor opens.
         /// Called once from Activate() so state is always captured before anything is hidden.
         /// </summary>
         private void HideHUDs()
         {
-            // Spell Bar HUD — SingletonMonoBehaviour in Valkur.Gameplay.UI
-            var spellBar = Valkur.Gameplay.UI.SpellBarHUD.HasInstance
-                ? Valkur.Gameplay.UI.SpellBarHUD.Instance
-                : null;
-            if (spellBar != null)
-            {
-                _hudSpellBarWasActive = spellBar.gameObject.activeSelf;
-                if (_hudSpellBarWasActive) spellBar.gameObject.SetActive(false);
-            }
-            else
-            {
-                _hudSpellBarWasActive = false;
-            }
-
             // Inventory UI — SingletonMonoBehaviour in Valkur.Gameplay.Inventory
             var inv = Valkur.Gameplay.Inventory.InventoryUI.HasInstance
                 ? Valkur.Gameplay.Inventory.InventoryUI.Instance
@@ -490,14 +477,6 @@ namespace Valkur.Gameplay.Buildings
         /// </summary>
         private void RestoreHUDs()
         {
-            if (_hudSpellBarWasActive)
-            {
-                var spellBar = Valkur.Gameplay.UI.SpellBarHUD.HasInstance
-                    ? Valkur.Gameplay.UI.SpellBarHUD.Instance
-                    : null;
-                if (spellBar != null) spellBar.gameObject.SetActive(true);
-            }
-
             if (_hudInventoryWasActive)
             {
                 var inv = Valkur.Gameplay.Inventory.InventoryUI.HasInstance

@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3c09d10f5acf0e42905fbc1dd5549a1, type: 3}
+  m_Name: SpellBarStyle
+  m_EditorClassIdentifier: 
+  slotTexels: 22
+  slotGapTexels: 2
+  groupGapTexels: 5
+  warGroupSize: 5
+  maxSlotsPerRow: 10
+  paddingTexels: 6
+  clearanceTexels: 6
+  warAccent: {r: 0.95, g: 0.42, b: 0.32, a: 1}
+  peaceAccent: {r: 0.45, g: 0.85, b: 0.55, a: 1}
+  interactTint: {r: 0.94, g: 0.86, b: 0.59, a: 1}
+  inventoryTint: {r: 0.86, g: 0.63, b: 0.39, a: 1}
+  mapTint: {r: 0.92, g: 0.84, b: 0.63, a: 1}
+  craftingTint: {r: 0.78, g: 0.8, b: 0.86, a: 1}
+  questsTint: {r: 1, g: 0.84, b: 0.35, a: 1}
+  talentsTint: {r: 0.96, g: 0.71, b: 0.35, a: 1}
+  grimoireTint: {r: 0.73, g: 0.55, b: 1, a: 1}
+  idleVerbStrength: 0.38
+  flipHalfSeconds: 0.13
+  flipStaggerSeconds: 0.022
+  gemPulseSeconds: 0.35
+  showFadeSeconds: 0.12
+  moteCapacity: 64
+  motesOnCast: 4
+  motesOnReady: 6
+  motesOnFlip: 22
+  motesOnLearn: 20
+  motesOnVerb: 5
+  trayIcon: {fileID: 21300000, guid: 2167f535abb6a9a4a919a8d7c3fc6ce4, type: 3}

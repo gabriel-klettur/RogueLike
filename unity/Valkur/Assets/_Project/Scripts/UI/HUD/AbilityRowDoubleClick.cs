@@ -38,7 +38,9 @@ namespace Valkur.UI.HUD
             else sheet.Open(tabOnOpen);
         }
 
-        private static CharacterSheetController ResolveSheet()
+        /// <summary>The sheet, created under [UI] when nothing has built it yet. Shared with the
+        /// action bar's talents and grimoire slots, so both ways in open the same sheet.</summary>
+        internal static CharacterSheetController ResolveSheet()
         {
             if (CharacterSheetController.HasInstance) return CharacterSheetController.Instance;
 

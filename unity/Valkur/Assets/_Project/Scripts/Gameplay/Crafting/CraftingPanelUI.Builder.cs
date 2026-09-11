@@ -245,17 +245,6 @@ namespace Valkur.Gameplay.Crafting
             sr.offsetMax = new Vector2(-10f, 0f);
         }
 
-        private partial void RegisterTrayButton()
-        {
-            var bar = HUDIconBar.Instance;
-            if (bar == null) return;
-            // No sprite: HUDIconBar draws its own fallback, and the crafting icon is art that
-            // does not exist yet. Registering without one is what makes the panel reachable
-            // today rather than after an art pass — an unreachable feature is one nobody can
-            // report a bug against.
-            bar.Register("crafting", null, Toggle, order: 1);
-        }
-
         // ── Small factories ──────────────────────────────────────────────────────
         //
         // Local rather than pushed into UIFactory: these are three shapes this one panel needs,

@@ -99,7 +99,9 @@ namespace Valkur.Gameplay.Crafting
         {
             EnsureBuilt();
             SetVisible(false);
-            RegisterTrayButton();
+            // No tray button. The panel is reached from the action bar's Peace face (its
+            // Oficios slot) and from a station's badge. A tray button would have needed art
+            // that does not exist, and the tray's fallback square sat among three painted ones.
         }
 
         /// <summary>
@@ -333,6 +335,5 @@ namespace Valkur.Gameplay.Crafting
         private partial void BuildUI();
         private partial void RefreshRows();
         private partial void RebuildTabsIfNeeded();
-        private partial void RegisterTrayButton();
     }
 }

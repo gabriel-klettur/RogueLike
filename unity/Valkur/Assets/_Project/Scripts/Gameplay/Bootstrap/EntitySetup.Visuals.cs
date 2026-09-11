@@ -134,11 +134,18 @@ namespace Valkur.Gameplay
             if (container != null) uiGo.transform.SetParent(container.transform, false);
         }
 
-        private static void EnsureSpellBarHUD()
+        /// <summary>
+        /// The crafting panel. It shipped with a station component that opens it
+        /// (<c>CraftingStation</c>), a tray button it registers itself, and nothing anywhere that
+        /// ever created it: every station answered <c>Instance?.OpenAt</c> on a null, so the
+        /// whole trade screen was unreachable in play. Built here beside the inventory, it is
+        /// what the action bar's Peace face opens from its Oficios slot.
+        /// </summary>
+        private static void EnsureCraftingPanelUI()
         {
-            if (Valkur.Gameplay.UI.SpellBarHUD.Instance != null) return;
-            var go = new GameObject("SpellBarHUD");
-            go.AddComponent<Valkur.Gameplay.UI.SpellBarHUD>();
+            if (Valkur.Gameplay.Crafting.CraftingPanelUI.HasInstance) return;
+            var go = new GameObject("CraftingPanelUI");
+            go.AddComponent<Valkur.Gameplay.Crafting.CraftingPanelUI>();
             var container = GameObject.Find("[UI]");
             if (container != null) go.transform.SetParent(container.transform, false);
         }

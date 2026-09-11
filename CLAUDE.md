@@ -5161,6 +5161,72 @@ Shaders/UIHudFx.shader                         UI/Default + blend mode + saturat
   tool renders through the main camera and silently omits every overlay canvas — the capture
   looks like a game with no HUD at all.
 
+## The action bar (bottom-centre): one face per posture
+
+Audited 2026-09-11 at **1.9/10** and rebuilt the same day to **8.2** — findings, per-axis
+scores, the measured result and what is open in `.github/SPELL_BAR_BEAUTY_AUDIT_2026-09-11.md`.
+The finding that framed it: **the old bar was not ugly, it was untrue** — 24 of 24 printed keys
+were wrong, 8 of its 12 top slots could hold nothing, the 4 that could were cast by no key, and a
+click on any slot fired damage in Peace.
+
+```text
+SpellBarHUD (+.Faces, .Verbs, .Motes)  UI/HUD/SpellBar/     faces, the flip, motes, clicks
+SpellBarModel                          UI/HUD/SpellBar/     which slots each face carries (pure)
+SpellBarArt                            UI/HUD/SpellBar/     9 verb glyphs + the frame with the posture gem
+HudSlotVerb + HudAbilitySlot.SetVerb   UI/HUD/PlayerPanel/  ONE slot for spells and non-spell actions
+SpellBarStyle                          Data/UI/ + Resources/UI/SpellBarStyle.asset
+PlayerController.TryCastFromHud        the only way the bar casts
+HUDManager.SpellBar                    built beside the player panel, inside the HUD canvas
+```
+
+- **War shows what can be CAST, Peace what can be DONE.** War: every catalog spell action whose
+  spell the character knows and whose key is live in War, keyboard order, groups of 5. Peace:
+  Interactuar, Inventario, Mapa, Oficios, Misiones, Talentos, Grimorio. Both end in the posture
+  switch, which shows where it LEADS (a leaf on War, blades on Peace) — the top-left chip already
+  says where the player IS.
+- **Face membership IS `InputContextPolicy.IsLive(action, stance)`**, the rule that decides whether
+  the key works. A verb silenced for Peace in the Controls editor leaves the face, and nothing that
+  reaches damage can be on the Peace face. `SpellBarModel` is pure so all of that is one fixture.
+- **The bar never casts.** A click goes through `PlayerController.TryCastFromHud`, which applies
+  every gate the key does (posture, per-slot mask, editor, `InputBlocker`, stun, spirit, dash,
+  charge). The old bar called `SpellCaster.TryCast` directly — the Peace guarantee broken by a
+  HUD button. `SpellBarHudTests` scans both sides: no cast call in `UI/HUD/SpellBar/`, all seven
+  gates in `TryCastFromHud`, posture checked before the cast.
+- **A verb goes to the SAME entry point its key or button uses** (`InventoryUI.SetVisible`,
+  `MinimapHUD.ToggleWorldMap`, `PlayerInteractionController.TryInteractWith`,
+  `CharacterSheetController.Open(TabSkills | TabGrimoire)`…). The bar is a second way in, never a
+  second implementation. Verb states: available, idle (nothing in reach: dimmed, never hidden — a
+  slot that vanishes as the player walks reads as flicker), active (its panel is open: a steady
+  ring, because that is a state).
+- **The flip is the bar's one loud event**, because it is the one moment every key under the
+  player's fingers changes meaning: slots narrow to nothing left to right (in steps of two texels,
+  so both edges stay on the grid), the face rebuilds behind them, they reopen; the gem is re-cut
+  in the posture colour, the word rises, a curtain of motes lifts off the top edge. Everything
+  else follows `HudMoteLayer`'s rule: events only, never at rest, nothing on a refusal.
+- **The player panel's kit and grid.** Lives in `Valkur.UI` because `HudAbilitySlot` needs
+  `SpellCaster`; drawn in the panel's texel space on the panel's bottom margin, centred, clamped
+  clear of the panel. `SpellBarArt` is its own atlas on purpose — the shared kit is due to move
+  (`.github/HUD_VISUAL_LANGUAGE.md`) and must not grow per surface. It re-cuts the gem on top of
+  `HudArt.BakePanel` rather than copying the bake. **Padding is 6 texels**: at 4 the stone's corner
+  rivets (4-5 texels in) peeked out from under the corner slots.
+- **Retired with it:** the `SpellDragContext` / `DraggableSpellItem` / `DropZoneSpellSlot` drag
+  chain (its only target was caster slots nothing casts for the player), the top-left
+  `SpellCooldownHUD` text stack (every cooldown drawn a third time), and the Buildings editor's
+  private spell-bar hiding (HUDManager hides the bar with the HUD for every editor).
+- **Found on the way:** `CraftingPanelUI` was never instantiated in production — stations called
+  `Instance?.OpenAt` on a null — so every trade was unreachable in play. `EntitySetup` builds it
+  now and its art-less tray button is gone (Oficios is the way in). Slot 0 held
+  `ProjectilePrefabFactory`'s nameless code-built fireball even with the catalog loaded; it takes
+  the asset now. `InputCentralizationGuardTests` gained `Input.mousePosition`, which every pattern
+  it had missed.
+- **The big open gap: a spell with no key action cannot be on the War face**, because no key casts
+  it — and the grimoire has 73 spells against 24 fixed spell actions. The fix is the loadout bar
+  (`ActionBar/Slot1..N` actions whose payload is save data, filled by dragging from the grimoire),
+  which is an input-model change across `InputActionCatalog`, `ValkurInputActions` and persisted
+  `controls.json`, and was deliberately not folded into this pass.
+- **Test trap:** a slot derives its state on its first `Tick`, so a fixture that asserts on
+  `State` straight after `Create` reads `Empty` from a correct build.
+
 ## Incident reports
 
 Past incidents that left investigation hooks behind. Read these first when a

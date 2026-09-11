@@ -5,7 +5,6 @@ using UnityEngine.UI;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
-using Valkur.Gameplay.Spells.UI;
 using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Spells
@@ -189,10 +188,6 @@ namespace Valkur.Gameplay.Spells
                     EditorUIHelpers.MakeSelectionBorder(btn.GetComponent<RectTransform>());
 
                 AddAudienceBadges(btn.transform, spell.audience);
-
-                // Add drag-drop support: make this spell draggable to the HUD
-                var draggable = btn.gameObject.AddComponent<DraggableSpellItem>();
-                draggable.Configure(spell, icon, SpellDragOrigin.Picker);
 
                 shown++;
             }

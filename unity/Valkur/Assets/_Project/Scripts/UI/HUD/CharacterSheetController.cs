@@ -33,6 +33,12 @@ namespace Valkur.UI.HUD
 
         protected override bool Persist => false;
 
+        /// <summary>Index of the talents tab, for callers that open the sheet on it.</summary>
+        public const int TabSkills = 1;
+
+        /// <summary>Index of the grimoire tab.</summary>
+        public const int TabGrimoire = 2;
+
         /// <summary>True while the sheet is on screen.</summary>
         public bool IsOpen { get; private set; }
 

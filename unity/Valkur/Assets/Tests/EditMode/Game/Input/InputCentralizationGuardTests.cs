@@ -133,6 +133,13 @@ namespace Valkur.Tests.EditMode.Game.Input
             // came looking for the Controls editor because their keys had stopped working.
             (new Regex(@"(Keyboard\.current\??|kb)\s*\[[^\]]+\]\s*\.(isPressed|wasPressedThisFrame|wasReleasedThisFrame)"),
              "indexer read `kb[key].*` — use KeyboardInputManager.{Is,Was}Key* which ORs the legacy backend"),
+            // The LEGACY half of the pointer. Every pattern above names the InputSystem device,
+            // so a raw Input.mousePosition sailed through for the life of the project: the old
+            // action bar aimed every clicked spell with one. It is the half that survives the
+            // event-drop bug, which is exactly why reading it alone is wrong. It is only right
+            // when OR-ed with the other, and MouseInputManager is where that OR lives.
+            (new Regex(@"\bInput\.mousePosition\b"),
+             "raw `Input.mousePosition` - use MouseInputManager.GetScreenMousePosition() which ORs both backends"),
         };
 
         [Test]

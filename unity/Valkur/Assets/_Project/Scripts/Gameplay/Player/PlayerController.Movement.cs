@@ -1081,6 +1081,37 @@ namespace Valkur.Gameplay
             }
         }
 
+        /// <summary>
+        /// Casts a spell because the player CLICKED it on the action bar, through every gate its
+        /// key goes through: dead, spirit, stunned, an open editor, a blocked input (chat, console),
+        /// the Peace posture, the per-slot stance mask, a dash in flight, a charge in progress.
+        ///
+        /// <para>The bar used to call <c>SpellCaster.TryCast</c> itself and so cast damage spells
+        /// in Peace — the one guarantee the posture exists for, broken by a HUD button. Keeping
+        /// the decision here, beside <see cref="PollCombatActions"/>, is what keeps a click and a
+        /// key press from ever disagreeing about whether a cast is allowed.</para>
+        /// </summary>
+        public bool TryCastFromHud(string spellKey)
+        {
+            if (string.IsNullOrEmpty(spellKey) || _spellCaster == null) return false;
+            if (_health == null || _health.IsDead || IsSpirit) return false;
+            if (_statusEffects != null && _statusEffects.IsStunned) return false;
+            if (InputBlocker.IsGameplayBlocked) return false;
+            if (IsGameplayInputSuspended() || IsPlayerCombatSuspended()) return false;
+            if (PlayerStance.IsPeace) return false;
+            if (_dashAbility != null && _dashAbility.IsDashing) return false;
+            if (!string.IsNullOrEmpty(_spellCaster.ChargingKey)) return false;
+
+            InputActionDescriptor descriptor = null;
+            foreach (var d in InputActionCatalog.Spells())
+                if (d.PayloadKey == spellKey) { descriptor = d; break; }
+            if (descriptor == null || !InputContextPolicy.IsLive(descriptor)) return false;
+
+            if (!_spellCaster.TryCastByKey(spellKey, _facingDirection)) return false;
+            TriggerCastAnimation(spellKey);
+            return true;
+        }
+
         public void SetMoveSpeed(float speed)
         {
             moveSpeed = speed;

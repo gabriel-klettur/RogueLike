@@ -49,9 +49,9 @@ namespace Valkur.UI.HUD
             // outranks it. Created after it so it draws on top.
             CreateBossHealthBar();
 
-            // Spell cooldown countdown stack — top-left, below the day/night
-            // clock. One row per active cooldown; subscribes to GameEvents.OnSpellCast.
-            CreateSpellCooldownHUD(playerHealth != null ? playerHealth.gameObject : null);
+            // The action bar, bottom-centre, beside the player panel it stands clear of. It
+            // carries every key-cast cooldown, which is why the top-left text stack is gone.
+            CreateSpellBar(playerHealth != null ? playerHealth.gameObject : null);
 
             UILayerHelper.SetUILayerRecursive(_canvas.gameObject);
 

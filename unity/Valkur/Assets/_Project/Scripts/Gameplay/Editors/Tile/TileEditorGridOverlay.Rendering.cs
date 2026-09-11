@@ -42,9 +42,12 @@ namespace Valkur.Gameplay.TileEditor
             if ((xMax - xMin) > MaxLinesPerAxis || (yMax - yMin) > MaxLinesPerAxis)
                 return;
 
-            // Update hovered cell from current mouse position.
+            // Update hovered cell from current mouse position. Through the helper, which ORs
+            // both backends and survives the 2022.3 event-drop bug; a raw legacy read here was
+            // the one Input.mousePosition outside the helpers the guard could not see.
+            Vector2 mouseScreen = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
             Vector3 mouseWorld = cam.ScreenToWorldPoint(
-                new Vector3(Input.mousePosition.x, Input.mousePosition.y, -cam.transform.position.z));
+                new Vector3(mouseScreen.x, mouseScreen.y, -cam.transform.position.z));
             _hoverCell = new Vector2Int(Mathf.FloorToInt(mouseWorld.x), Mathf.FloorToInt(mouseWorld.y));
 
             // Update Fill preview when using Fill tool

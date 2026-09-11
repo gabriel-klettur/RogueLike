@@ -18,6 +18,10 @@ namespace Valkur.UI.HUD
         Ready = 2,
         Cooldown = 3,
         ManaShort = 4,
+        /// <summary>A verb with nothing to act on right now (no one in reach to talk to).</summary>
+        Idle = 5,
+        /// <summary>A verb whose panel is open.</summary>
+        Active = 6,
     }
 
     /// <summary>
@@ -70,6 +74,11 @@ namespace Valkur.UI.HUD
         private bool _pressed;
         private string _boundPath;
         private HudSlotState _state = HudSlotState.Empty;
+        private HudSlotVerb _verb;
+        private Image _glyph;
+        private Vector2Int _glyphAt;
+        private bool _verbSeen;
+        private bool _verbWasAvailable;
 
         /// <summary>The state the slot is showing.</summary>
         public HudSlotState State => _state;
@@ -88,6 +97,12 @@ namespace Valkur.UI.HUD
 
         /// <summary>True while the button behind the slot is held.</summary>
         public bool Pressed => _pressed;
+
+        /// <summary>The non-spell action this slot shows, when it shows one.</summary>
+        public HudSlotVerb Verb => _verb;
+
+        /// <summary>The edge of the slot in texels.</summary>
+        public int Size => _size;
 
         /// <summary>Raised when the cooldown runs out, with the slot's panel-space centre.</summary>
         public event Action<HudAbilitySlot> BecameReady;
@@ -152,8 +167,47 @@ namespace Valkur.UI.HUD
             _refusedLeft = style.refusedFlashSeconds;
         }
 
+        /// <summary>The ready flash, on demand: a verb that was just used, a spell just learned.</summary>
+        public void Flash(PlayerHudStyle style)
+        {
+            _readyFlash = style.readyFlashSeconds;
+        }
+
+        /// <summary>
+        /// Turns the slot into a VERB slot: no spell, no cooldown, a pixel glyph at its native
+        /// size in the middle. Called once, straight after construction.
+        /// </summary>
+        public void SetVerb(HudSlotVerb verb)
+        {
+            _verb = verb;
+            if (verb == null) return;
+            _icon.enabled = false;
+            if (_glyph == null)
+            {
+                _glyph = HudRect.MakeImage("Glyph", Root, verb.Glyph, 0, 0, 1, 1);
+                // Above the icon and the cooldown, below the flash, glow, text and badge.
+                _glyph.transform.SetSiblingIndex(_icon.transform.GetSiblingIndex() + 1);
+            }
+            _glyph.sprite = verb.Glyph;
+            int w = verb.Glyph != null ? Mathf.RoundToInt(verb.Glyph.rect.width) : 0;
+            int h = verb.Glyph != null ? Mathf.RoundToInt(verb.Glyph.rect.height) : 0;
+            _glyphAt = new Vector2Int((_size - w) / 2, (_size - h) / 2);
+            HudRect.Place(_glyph.rectTransform, _glyphAt.x, _glyphAt.y, w, h);
+            _glyph.enabled = verb.Glyph != null;
+            _verbSeen = false;
+        }
+
+        /// <summary>The colour this slot's flashes take: the verb's tint or the spell's swatch.</summary>
+        public Color AccentColour(PlayerHudStyle style) => _verb != null ? _verb.Tint : SpellColour(style);
+
         public void Tick(float dt, SpellCaster caster, Mana mana, PlayerHudStyle style, int pixelScale)
         {
+            if (_verb != null)
+            {
+                TickVerb(dt, style);
+                return;
+            }
+
             string key = _spellKey != null ? _spellKey() : null;
             if (key != _key)
             {
@@ -234,6 +288,15 @@ namespace Valkur.UI.HUD
             var ip = _icon.rectTransform.anchoredPosition;
             if ((int)ip.y != iconY) _icon.rectTransform.anchoredPosition = new Vector2(Inset, iconY);
 
+            DrawFeedback(dt, style, SpellColour(style), 0f);
+        }
+
+        /// <summary>
+        /// The flash, the ring and the press, shared by spells and verbs. <paramref name="steady"/>
+        /// is a ring that holds rather than fades: a verb whose panel is open.
+        /// </summary>
+        private void DrawFeedback(float dt, PlayerHudStyle style, Color accent, float steady)
+        {
             // Ready flash: a white burst over the icon and a ring round the frame in the spell's
             // own colour, fading over readyFlashSeconds.
             if (_readyFlash > 0f) _readyFlash = Mathf.Max(0f, _readyFlash - dt);
@@ -244,14 +307,69 @@ namespace Valkur.UI.HUD
             if (_flash.enabled != flashOn) _flash.enabled = flashOn;
             if (flashOn) _flash.color = new Color(1f, 1f, 1f, 0.75f * flashA * flashA);
 
-            Color glow = Color.clear;
-            if (_readyFlash > 0f) glow = WithAlpha(SpellColour(style), flashA);
+            Color glow = steady > 0f ? WithAlpha(accent, steady) : Color.clear;
+            if (_readyFlash > 0f) glow = WithAlpha(accent, Mathf.Max(flashA, steady));
             if (_refusedLeft > 0f)
                 glow = WithAlpha(style.mana, _refusedLeft / Mathf.Max(0.01f, style.refusedFlashSeconds));
             if (_pressed) glow = Color.Lerp(glow, new Color(1f, 1f, 1f, 0.45f), 0.6f);
             bool glowOn = glow.a > 0.001f;
             if (_glow.enabled != glowOn) _glow.enabled = glowOn;
             if (glowOn && _glow.color != glow) _glow.color = glow;
+        }
+
+        // -- Verb ---------------------------------------------------------------------
+
+        private void TickVerb(float dt, PlayerHudStyle style)
+        {
+            UpdateBinding();
+            if (_icon.enabled) _icon.enabled = false;
+            if (_cooldown.enabled) _cooldown.enabled = false;
+            if (_lock.enabled) _lock.enabled = false;
+            _seconds.SetText("");
+            _cooldown01 = 0f;
+
+            bool available = _verb.Available;
+            bool active = available && _verb.Active;
+            // Something to act on just arrived: a tree in reach, a vendor in range. That is an
+            // EVENT, so it flashes once; being in reach afterwards is a state and does not.
+            if (_verbSeen && available && !_verbWasAvailable)
+                _readyFlash = Mathf.Max(_readyFlash, style.readyFlashSeconds * 0.6f);
+            _verbSeen = true;
+            _verbWasAvailable = available;
+
+            _state = active ? HudSlotState.Active : available ? HudSlotState.Ready : HudSlotState.Idle;
+
+            var action = _action != null ? _action() : null;
+            _pressed = available && action != null && InputBindingResolver.IsPressed(action);
+
+            if (_glyph != null)
+            {
+                Color c;
+                if (_state == HudSlotState.Idle)
+                {
+                    var grey = new Color(0.36f, 0.37f, 0.42f, 1f);
+                    c = Color.Lerp(grey, _verb.Tint, Mathf.Clamp01(_verb.IdleStrength));
+                    c.a = 0.8f;
+                }
+                else if (_state == HudSlotState.Active)
+                {
+                    c = Color.Lerp(_verb.Tint, Color.white, 0.22f);
+                    c.a = 1f;
+                }
+                else
+                {
+                    c = _verb.Tint;
+                    c.a = 1f;
+                }
+                if (_glyph.color != c) _glyph.color = c;
+
+                // A held key presses the glyph down one texel, exactly as it does a spell icon.
+                int y = _glyphAt.y - (_pressed ? 1 : 0);
+                var p = _glyph.rectTransform.anchoredPosition;
+                if ((int)p.y != y) _glyph.rectTransform.anchoredPosition = new Vector2(_glyphAt.x, y);
+            }
+
+            DrawFeedback(dt, style, _verb.Tint, _state == HudSlotState.Active ? 0.55f : 0f);
         }
 
         private static Color WithAlpha(Color c, float a)
