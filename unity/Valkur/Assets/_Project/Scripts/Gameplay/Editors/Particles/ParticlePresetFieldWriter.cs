@@ -348,6 +348,65 @@ namespace Valkur.Gameplay.VFX
         }
 
         /// <summary>
+        /// What the dropdown DISPLAYS: the same list as <see cref="SortingLayerNames"/> with
+        /// each entry's position in the draw stack in front of it — <c>"10 · PropsL4"</c>.
+        ///
+        /// <para>The number is a LABEL and never a stored value, and that distinction is the
+        /// whole design. <c>ParticleVfxParams.sortingLayer</c> holds the NAME on purpose: a
+        /// sorting layer's id is not stable across an edit to ProjectSettings > Tags and
+        /// Layers, and its position is not stable either — inserting one layer renumbers every
+        /// entry below it, which would silently move the depth of all 393 emitters already
+        /// placed. Storing a name and showing a number is the only combination that survives
+        /// somebody adding a layer.</para>
+        ///
+        /// <para>It is worth showing because the names alone do not say where anything is.
+        /// This project's stack interleaves the building layers with the tile layers —
+        /// <c>PropsL4</c> falls between <c>WallsBottom</c> and <c>Entities</c>, <c>PropsL6</c>
+        /// between <c>WallsTop</c> and <c>ObjectsHigh</c> — so an author reading a flat list of
+        /// forty-seven names has no way to tell which side of the player a pick lands on.</para>
+        ///
+        /// <para>INDEX-ALIGNED WITH <see cref="SortingLayerNames"/>, which is load-bearing: the
+        /// form reports the index of the row the author picked and
+        /// <see cref="TrySetSortingLayer"/> resolves it against the NAME list. Two lists that
+        /// drifted by one entry would store the neighbour of the layer that was clicked, and
+        /// nothing would fail. The orphan entry a missing layer appends is labelled rather than
+        /// numbered — it has no position in a stack it is not in.</para>
+        /// </summary>
+        public static string[] SortingLayerLabels(string authored)
+        {
+            var names  = SortingLayerNames(authored);
+            var stack  = SortingLayer.layers;
+            var labels = new string[names.Length];
+
+            for (int i = 0; i < names.Length; i++)
+                labels[i] = (i < stack.Length ? i.ToString() : MISSING_LAYER_PREFIX)
+                          + LAYER_LABEL_SEPARATOR + names[i];
+
+            return labels;
+        }
+
+        /// <summary>What separates a label's position from the layer it names.</summary>
+        public const string LAYER_LABEL_SEPARATOR = " · ";
+
+        /// <summary>Stands in for the position of a layer the project no longer defines.</summary>
+        public const string MISSING_LAYER_PREFIX = "(ausente)";
+
+        /// <summary>
+        /// The layer NAME a label carries — the inverse of <see cref="SortingLayerLabels"/>.
+        ///
+        /// <para>It lives here rather than in whoever reads a label so the format has exactly
+        /// one owner. A caller splitting on its own copy of the separator would keep compiling
+        /// and keep passing the day the labels change shape, while reporting on a string that
+        /// no longer means what it thinks.</para>
+        /// </summary>
+        public static string LayerNameFromLabel(string label)
+        {
+            if (string.IsNullOrEmpty(label)) return label;
+            int at = label.IndexOf(LAYER_LABEL_SEPARATOR, StringComparison.Ordinal);
+            return at < 0 ? label : label.Substring(at + LAYER_LABEL_SEPARATOR.Length);
+        }
+
+        /// <summary>
         /// Which entry of <see cref="SortingLayerNames"/> the row must show for
         /// <paramref name="authored"/>.
         ///

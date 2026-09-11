@@ -165,6 +165,24 @@ namespace Valkur.Data
                  "Entities sprite; the capability was simply denied to authored presets.")]
         public float sortingFudge = 0f;
 
+        [Tooltip("Order this emitter against the world by its OWN Y, the way every building " +
+                 "and entity is ordered, instead of by the fixed sortingOrder above. Off by " +
+                 "default, so nothing already authored changes. Why it exists: sortingLayer " +
+                 "buys the BAND and nothing finer. Buildings sit on PropsL{z} and take their " +
+                 "order from SortingConfig.YToSortingOrder, so inside that band a fixed order " +
+                 "is either in front of every building or behind every one of them, and " +
+                 "landing behind ONE house and in front of its neighbour meant the author " +
+                 "computing -(y * 100) by hand. sortingOrder is NOT ignored when this is on: " +
+                 "it becomes a RELATIVE nudge added to the Y term, which is what keeps a " +
+                 "composite's layers ordered against each other and lets an author bias one " +
+                 "emitter a little in front of the thing it belongs to. Keep it small: the Y " +
+                 "term already spends most of the 16-bit sortingOrder window (see " +
+                 "SortingConfig.SORT_ORDER_HEADROOM). It applies to PLACED emitters only, " +
+                 "the ones that carry a PersistedParticleInstance: a preview emitter has no " +
+                 "world position to be ordered against, and a spell's effect is ordered by " +
+                 "whoever spawns it.")]
+        public bool ySort = false;
+
         // --------------- Ambient light ---------------
         [Tooltip("Tint this emitter by the world's ambient light instead of rendering at " +
                  "the authored daylight brightness forever. Every particle material is " +

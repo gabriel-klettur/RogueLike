@@ -198,10 +198,23 @@ namespace Valkur.Gameplay.VFX
                 // Options and selection both come from ParticlePresetFieldWriter, which is
                 // where the index is resolved back into a name; see SortingLayerNames for why
                 // an empty authored value shows as VFX instead of getting its own entry.
+                // Options are the LABELS — the name with its position in the draw stack in
+                // front of it — while the stored value stays the name. The names on their own
+                // do not say where a layer sits, and this project's stack interleaves the
+                // building layers with the tile ones (PropsL4 between WallsBottom and
+                // Entities), so "is this in front of the player" was unanswerable from the row.
+                // The two lists are index-aligned; see SortingLayerLabels for why that matters.
                 form.AddDropdown("vfx.sortingLayer", "Sorting Layer",
-                    ParticlePresetFieldWriter.SortingLayerNames(v.sortingLayer),
+                    ParticlePresetFieldWriter.SortingLayerLabels(v.sortingLayer),
                     ParticlePresetFieldWriter.SortingLayerIndex(v.sortingLayer));
-                form.AddInt("vfx.sortingOrder", "Order in Layer", v.sortingOrder);
+
+                // Y-sort sits ABOVE Order because it changes what Order means, and the label
+                // below says so rather than leaving the author to find out. The form rebuilds
+                // after every accepted edit, so the two rows cannot disagree.
+                form.AddBool("vfx.ySort", "Y-sort like a building", v.ySort);
+                form.AddInt("vfx.sortingOrder",
+                    v.ySort ? "Order (nudge on the Y-sort)" : "Order in Layer",
+                    v.sortingOrder);
 
                 // Read as the third rung of the same ladder: layer, then order within the
                 // layer, then this — a depth bias applied within one layer AND one order.

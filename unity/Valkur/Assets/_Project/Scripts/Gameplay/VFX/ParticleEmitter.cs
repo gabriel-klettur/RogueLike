@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Data;
 
 namespace Valkur.Gameplay.VFX
@@ -172,6 +173,16 @@ namespace Valkur.Gameplay.VFX
         /// </summary>
         public void ApplyConfig(ParticlePresetDefinition preset, ParticleInstanceConfig config,
                                 float scaleMultiplier = 1f)
+        {
+            ApplyConfigInternal(preset, config, scaleMultiplier);
+            // Wrapped rather than appended, because both apply paths carry an early return for
+            // the lightning kind: a call at the tail would leave a lightning emitter out of the
+            // depth policy, silently and only for that one kind.
+            RefreshYSort();
+        }
+
+        private void ApplyConfigInternal(ParticlePresetDefinition preset, ParticleInstanceConfig config,
+                                         float scaleMultiplier)
         {
             if (config == null || config.IsEmpty)
             {
@@ -381,6 +392,54 @@ namespace Valkur.Gameplay.VFX
         /// </summary>
         public void ApplyPreset(ParticlePresetDefinition preset, float scaleMultiplier,
                                 ParticleInstanceOverrides overrides)
+        {
+            ApplyPresetInternal(preset, scaleMultiplier, overrides);
+            RefreshYSort();
+        }
+
+        /// <summary>
+        /// The block this emitter is actually running: its own configuration when it owns one
+        /// (copy on place), the preset otherwise. Null before the first apply.
+        /// </summary>
+        private ParticleVfxParams ActiveVfx =>
+            _config != null && !_config.IsEmpty ? _config.vfx
+                                               : (_preset != null ? _preset.vfx : null);
+
+        /// <summary>
+        /// Attach or drop the Y-sort binder to match what the running block asks for. Called at
+        /// the end of every apply, so the flag can be toggled from the editor and answered on
+        /// the same frame.
+        ///
+        /// <para>PLACED EMITTERS ONLY, and the gate is the presence of a
+        /// <see cref="PersistedParticleInstance"/>. The other two populations have no world
+        /// position worth ordering against: the editor's preview emitter lives on a rig in
+        /// front of a render texture, where a Y term of several thousand would push it behind
+        /// its own background and read as the preview having broken; and a spell's effect is
+        /// ordered by whoever spawns it — <c>KiAuraFX</c> and <c>ShieldSphereFX</c> rebase on
+        /// their caster's live order every frame precisely because a value captured once is
+        /// wrong the moment that caster walks.</para>
+        /// </summary>
+        private void RefreshYSort()
+        {
+            var v = ActiveVfx;
+            bool want = v != null && v.ySort && GetComponent<PersistedParticleInstance>() != null;
+
+            var binder = GetComponent<ParticleYSort>();
+
+            if (!want)
+            {
+                // Nothing to restore: the apply that just ran rewrote every renderer's order
+                // from the authored value, so dropping the binder leaves exactly that.
+                if (binder != null) SafeDestroy.Of(binder);
+                return;
+            }
+
+            if (binder == null) binder = gameObject.AddComponent<ParticleYSort>();
+            binder.Rebind();
+        }
+
+        private void ApplyPresetInternal(ParticlePresetDefinition preset, float scaleMultiplier,
+                                         ParticleInstanceOverrides overrides)
         {
             _playOnAwake = false; // prevent double-apply when called programmatically before Start()
             _preset = preset;

@@ -276,7 +276,7 @@ namespace Valkur.Tests.EditMode.Editors.Particles
 
             Assert.GreaterOrEqual(dd.value, 0, "The dropdown must have a selection.");
             Assert.Less(dd.value, dd.options.Count, "The selection must be inside the option list.");
-            Assert.AreEqual(authored, dd.options[dd.value].text,
+            Assert.AreEqual(authored, SelectedLayer(dd),
                 $"The preset authors '{authored}', so the row must show it. A row that always " +
                 "shows the first entry makes every preset look unauthored and invites the " +
                 "author to 'fix' one that was already right.");
@@ -309,7 +309,7 @@ namespace Valkur.Tests.EditMode.Editors.Particles
 
             Assert.GreaterOrEqual(dd.value, 0, "The dropdown must have a selection.");
             Assert.Less(dd.value, dd.options.Count, "The selection must be inside the option list.");
-            Assert.AreEqual(SortingConfig.LAYER_VFX, dd.options[dd.value].text,
+            Assert.AreEqual(SortingConfig.LAYER_VFX, SelectedLayer(dd),
                 "An unauthored preset resolves to VFX at the renderer, so that is what the row " +
                 "must show. Entries offered: " + string.Join(", ", OptionLabels(dd)));
         }
@@ -364,13 +364,18 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             for (int i = 0; i < dd.options.Count; i++)
             {
                 string label = dd.options[i].text;
+                // The row DISPLAYS "10 · PropsL4" and STORES "PropsL4". The name is read back
+                // through the production inverse rather than by splitting on a copy of the
+                // separator here, so a change to the label format cannot leave this fixture
+                // passing while reporting on a string that no longer means what it thinks.
+                string layer = ParticlePresetFieldWriter.LayerNameFromLabel(label);
                 probe.vfx.sortingLayer = _priorLayer;
                 string stored = WriteLayerIndex(probe, i, out bool ok, out string err);
 
                 Assert.IsTrue(ok, $"Entry {i} ('{label}') was refused by the writer: {err}. " +
                                   "Every entry the panel offers must be selectable.");
-                if (layerNames.Contains(label))
-                    Assert.AreEqual(label, stored,
+                if (layerNames.Contains(layer))
+                    Assert.AreEqual(layer, stored,
                         $"Entry {i} is labelled '{label}' but stored '{stored}'. The panel and " +
                         "ParticlePresetFieldWriter must resolve an index against the SAME " +
                         "list, or every preset authored through the panel lands on the wrong " +
@@ -863,7 +868,7 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             var names = new List<string>(ProjectLayerNames());
             for (int i = 0; i < dd.options.Count; i++)
             {
-                string text = dd.options[i].text;
+                string text = ParticlePresetFieldWriter.LayerNameFromLabel(dd.options[i].text);
                 if (names.Contains(text)) layers.Add(text);
                 else others.Add(text);
             }
@@ -872,11 +877,15 @@ namespace Valkur.Tests.EditMode.Editors.Particles
         private static int RequireOptionIndex(TMP_Dropdown dd, string label)
         {
             for (int i = 0; i < dd.options.Count; i++)
-                if (dd.options[i].text == label) return i;
+                if (ParticlePresetFieldWriter.LayerNameFromLabel(dd.options[i].text) == label) return i;
             Assert.Fail($"The Sorting Layer dropdown offers no entry '{label}'. Offered: " +
                         string.Join(", ", OptionLabels(dd)));
             return -1;
         }
+
+        /// <summary>The layer the row is currently SHOWING, with its position label stripped.</summary>
+        private static string SelectedLayer(TMP_Dropdown dd) =>
+            ParticlePresetFieldWriter.LayerNameFromLabel(dd.options[dd.value].text);
 
         private static string[] OptionLabels(TMP_Dropdown dd)
         {
