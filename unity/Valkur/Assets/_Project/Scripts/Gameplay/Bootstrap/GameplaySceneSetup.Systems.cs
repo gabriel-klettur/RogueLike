@@ -47,29 +47,49 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>
-        /// Sorting layers the ambient (day/night) light is allowed to darken.
+        /// Sorting layers the ambient (day/night) light must NOT darken. Everything else in
+        /// TagManager is lit — see <see cref="AmbientLitSortingLayerNames"/>.
         ///
-        /// In: every layer that carries world surface or its inhabitants.
-        /// Out, on purpose:
+        /// Out, on purpose, each with its reason:
         ///   • Projectiles / VFX — emissive by art direction; particles answer to the
         ///     cycle through <c>ParticleEmitter.AmbientLight</c>, which keeps its own floor.
         ///   • UI_World / Overlay — health bars, facing arrows and editor rulers must stay
         ///     readable at midnight.
         ///
-        /// Overhead IS in: it carries the OverheadDetails tilemap (canopies and the like),
-        /// and a tree crown that stays noon-bright over a night-blue floor is the exact
-        /// artefact this mask exists to avoid.
-        ///
-        /// A LIT renderer on a layer that is NOT in this mask renders BLACK, so this list
-        /// and the set of layers converted to Sprite-Lit-Default must move together.
+        /// This used to be the OTHER list — twelve names the light WAS allowed to darken —
+        /// and that shape is what turned every building in the world black the afternoon
+        /// nine sorting layers were added for them: a LIT renderer on a layer the ambient
+        /// light does not reach renders BLACK, not dim, and nothing logs it. An allowlist has
+        /// to be remembered every time TagManager grows; a denylist makes a new layer lit by
+        /// default, which is the failure that is at least VISIBLE (noon-bright at midnight)
+        /// rather than the one that deletes half the world. The names here are checked
+        /// against TagManager by <c>AmbientLitCoverageTests</c>, because a typo in a denylist
+        /// is a layer that quietly goes lit — the mild failure, but still a silent one.
         /// </summary>
         [Valkur.Core.SelfHealingStatic("Immutable table of sorting-layer names, built once from string literals. Holds no Unity objects and is never mutated after init, so it cannot go stale across a Play session.")]
-        private static readonly string[] AmbientLitSortingLayers =
+        private static readonly string[] AmbientUnlitSortingLayers =
         {
-            "Default", "Background", "Ground", "FloorDecals", "ObjectsLow",
-            "WallsBottom", "Entities", "Decorations", "WallsTop", "ObjectsHigh",
-            "Overhead", "EntitiesOverhead"
+            "Projectiles", "VFX", "UI_World", "Overlay"
         };
+
+        /// <summary>The sorting layers the ambient light deliberately leaves alone. A copy.</summary>
+        public static string[] AmbientUnlitSortingLayerNames() => (string[])AmbientUnlitSortingLayers.Clone();
+
+        /// <summary>
+        /// Every sorting layer in TagManager except <see cref="AmbientUnlitSortingLayers"/>,
+        /// in TagManager order. Derived on each call from <see cref="SortingLayer.layers"/>
+        /// and never cached, so a layer added to the project is lit without anybody
+        /// remembering to list it, and so it cannot go stale across a Play session.
+        /// </summary>
+        public static string[] AmbientLitSortingLayerNames()
+        {
+            var unlit  = new HashSet<string>(AmbientUnlitSortingLayers);
+            var layers = SortingLayer.layers;
+            var lit    = new List<string>(layers.Length);
+            foreach (var layer in layers)
+                if (!unlit.Contains(layer.name)) lit.Add(layer.name);
+            return lit.ToArray();
+        }
 
         /// <summary>
         /// Ensures the scene owns exactly one URP 2D <b>Global</b> Light2D, repairing the
@@ -129,7 +149,7 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>
-        /// Writes <see cref="AmbientLitSortingLayers"/> onto the light's layer mask.
+        /// Writes <see cref="AmbientLitSortingLayerNames"/> onto the light's layer mask.
         ///
         /// URP exposes no public setter — <c>Light2D.m_ApplyToSortingLayers</c> is a private
         /// SerializeField — so this is the one reflection write left in the lighting path.
@@ -142,14 +162,10 @@ namespace Valkur.Gameplay
         /// </summary>
         private static void ApplyAmbientSortingLayerMask(Light2D light)
         {
-            var ids = new List<int>(AmbientLitSortingLayers.Length);
-            foreach (var layerName in AmbientLitSortingLayers)
-            {
-                int id = SortingLayer.NameToID(layerName);
-                if (SortingLayer.IsValid(id)) ids.Add(id);
-                else Debug.LogWarning(
-                    $"[GameplaySceneSetup] Sorting layer '{layerName}' does not exist — ambient light will skip it.");
-            }
+            // The names come straight from SortingLayer.layers, so every one of them resolves.
+            var names = AmbientLitSortingLayerNames();
+            var ids   = new List<int>(names.Length);
+            foreach (var layerName in names) ids.Add(SortingLayer.NameToID(layerName));
 
             var field = typeof(Light2D).GetField("m_ApplyToSortingLayers",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);

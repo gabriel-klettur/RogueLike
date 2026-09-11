@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Valkur.Core;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -177,9 +178,10 @@ namespace Valkur.Editor
                 sb.Append($"\"rel_x\": {relX}, ");
                 sb.Append($"\"rel_y\": {relY}");
 
-                bool hasZOv = b.ZBottomOffset != 0 || b.ZTopOffset != 0;
+                bool hasZBottomOv = b.ZBottom != SortingConfig.DEFAULT_PROP_Z_BOTTOM;
+                bool hasZTopOv    = b.ZTop    != SortingConfig.DEFAULT_PROP_Z_TOP;
                 bool hasInteractableOv = b.InteractableOverride != -1;
-                bool hasOverrides = splitOverride >= 0f || scaleOv.x > 0 || scaleOv.y > 0 || hasZOv || hasInteractableOv;
+                bool hasOverrides = splitOverride >= 0f || scaleOv.x > 0 || scaleOv.y > 0 || hasZBottomOv || hasZTopOv || hasInteractableOv;
                 if (hasOverrides)
                 {
                     sb.Append(", \"overrides\": {");
@@ -195,16 +197,16 @@ namespace Valkur.Editor
                         sb.Append($"\"split_ratio\": {splitOverride:F4}");
                         firstOv = false;
                     }
-                    if (b.ZBottomOffset != 0)
+                    if (hasZBottomOv)
                     {
                         if (!firstOv) sb.Append(", ");
-                        sb.Append($"\"z_bottom\": {b.ZBottomOffset}");
+                        sb.Append($"\"layer_bottom\": {b.ZBottom}");
                         firstOv = false;
                     }
-                    if (b.ZTopOffset != 0)
+                    if (hasZTopOv)
                     {
                         if (!firstOv) sb.Append(", ");
-                        sb.Append($"\"z_top\": {b.ZTopOffset}");
+                        sb.Append($"\"layer_top\": {b.ZTop}");
                         firstOv = false;
                     }
                     if (hasInteractableOv)

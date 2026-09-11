@@ -156,11 +156,20 @@ namespace Valkur.Tests.EditMode.Game.Editors.TileEditor.Tags
         }
 
         [Test]
-        public void MultiTag_AllNineDigits_CollapsesToWildcard_StampsOnlyWorldAll()
+        public void MultiTag_EveryLayer_CollapsesToWildcard_StampsOnlyWorldAll()
         {
-            // "0,1,2,3,4,5,6,7,8" canonicalises to "*" on Set; the baker must
-            // see the wildcard form and take the WorldAll fast path.
-            PaintAndBake(8, 8, "0,1,2,3,4,5,6,7,8");
+            // The full set canonicalises to "*" on Set, and the baker must see the wildcard
+            // form and take the WorldAll fast path. Built from LayerCount: as a literal
+            // "0,1,...,8" it stopped being the full set the day the ladder grew, so the cell
+            // was stamped into nine real slots and the fast path was never exercised.
+            var csv = new System.Text.StringBuilder();
+            for (int i = 0; i < CollisionTagMap.LayerCount; i++)
+            {
+                if (csv.Length > 0) csv.Append(',');
+                csv.Append(i);
+            }
+
+            PaintAndBake(8, 8, csv.ToString());
             AssertOnlyStampedInto(8, 8, WorldCollisionBaker.WorldAllCompositeIndex);
         }
 

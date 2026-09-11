@@ -66,15 +66,28 @@ namespace Valkur.Tests.EditMode.Game.World.Layering
             Assert.AreEqual(3, _occ.CurrentVisualLayer);
         }
 
-        [TestCase(-5, 0)]
-        [TestCase(-1, 0)]
-        [TestCase(9,  8)]
-        [TestCase(100, 8)]
-        public void SetVisualLayer_OutOfRange_ClampsToValidRange(int input, int expected)
+        [TestCase(-5)]
+        [TestCase(-1)]
+        public void SetVisualLayer_BelowRange_ClampsToZero(int input)
         {
             _occ.SetVisualLayer(input);
-            Assert.AreEqual(expected, _occ.CurrentVisualLayer,
-                $"Out-of-range input {input} must clamp to {expected} so authoring bugs never produce undefined layers.");
+            Assert.AreEqual(VisualLayerOccupant.MinLayer, _occ.CurrentVisualLayer,
+                "Out-of-range input " + input + " must clamp so authoring bugs never produce undefined layers.");
+        }
+
+        [Test]
+        public void SetVisualLayer_AboveRange_ClampsToTheTopLayer()
+        {
+            // Derived: this was TestCase(9, 8) and TestCase(100, 8), and 9 became a real layer
+            // the day the ladder grew — a case pinned to the old size reports a correct build
+            // as broken while no longer testing the clamp at all.
+            foreach (int input in new[] { VisualLayerOccupant.MaxLayer + 1, 100 })
+            {
+                _occ.SetVisualLayer(0);
+                _occ.SetVisualLayer(input);
+                Assert.AreEqual(VisualLayerOccupant.MaxLayer, _occ.CurrentVisualLayer,
+                    "Out-of-range input " + input + " must clamp to the top layer.");
+            }
         }
 
         [Test]

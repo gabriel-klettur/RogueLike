@@ -55,7 +55,10 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Overlay
         [Test]
         public void Set_InvalidTag_ClampsToWildcard()
         {
-            _map.Set(new Vector2Int(0, 0), "9");      // out of 0..8 range
+            // Derived, never a literal: "9" was out of range when there were nine layers and
+            // is a real layer now. The first index PAST the ladder is the only value that
+            // stays invalid however far the ladder grows.
+            _map.Set(new Vector2Int(0, 0), CollisionTagMap.LayerCount.ToString());
             _map.Set(new Vector2Int(0, 1), "abc");    // not a digit / wildcard
             _map.Set(new Vector2Int(0, 2), "-1");
 
@@ -65,24 +68,30 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Overlay
         }
 
         [Test]
-        public void IsValidTag_AcceptsWildcardAndDigits0Through8()
+        public void IsValidTag_AcceptsTheWildcardAndEveryLayerIndex()
         {
             Assert.IsTrue(CollisionTagMap.IsValidTag("*"));
-            for (int i = 0; i <= 8; i++)
-                Assert.IsTrue(CollisionTagMap.IsValidTag(i.ToString()), $"Index {i} must be a valid tag.");
-            Assert.IsFalse(CollisionTagMap.IsValidTag("9"));
+            for (int i = 0; i < CollisionTagMap.LayerCount; i++)
+                Assert.IsTrue(CollisionTagMap.IsValidTag(i.ToString()),
+                    "Index " + i + " must be a valid tag — including the two-digit ones, which " +
+                    "the old single-character parser could not express at all.");
+
+            Assert.IsFalse(CollisionTagMap.IsValidTag(CollisionTagMap.LayerCount.ToString()),
+                "One past the last layer must stay invalid.");
             Assert.IsFalse(CollisionTagMap.IsValidTag(""));
             Assert.IsFalse(CollisionTagMap.IsValidTag(null));
-            Assert.IsFalse(CollisionTagMap.IsValidTag("10"));
             Assert.IsFalse(CollisionTagMap.IsValidTag("foo"));
         }
 
         [Test]
-        public void ValidTags_IsTenEntriesWildcardFirst()
+        public void ValidTags_IsTheWildcardThenOnePerLayer()
         {
-            Assert.AreEqual(10, CollisionTagMap.ValidTags.Length);
+            // Derived from LayerCount: this asserted a literal 10 and went red the day the
+            // ladder grew, which is the right failure — the Colliders panel builds one button
+            // per entry, so the array and the ladder have to move together.
+            Assert.AreEqual(CollisionTagMap.LayerCount + 1, CollisionTagMap.ValidTags.Length);
             Assert.AreEqual(CollisionTagMap.Wildcard, CollisionTagMap.ValidTags[0]);
-            for (int i = 1; i < 10; i++)
+            for (int i = 1; i < CollisionTagMap.ValidTags.Length; i++)
                 Assert.AreEqual((i - 1).ToString(), CollisionTagMap.ValidTags[i]);
         }
 

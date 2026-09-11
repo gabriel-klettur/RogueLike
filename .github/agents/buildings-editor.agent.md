@@ -79,7 +79,7 @@ colliderScope     string     — "CG" shared | "CU" per-instance
 - `Apply(template, scaleOverride, splitRatioOverride)` — idempotent, safe to call multiple times
 - `TryGetWorldRect(out Rect)` — world-space AABB used by hover-detection and outline FX
 - `TryGetWorldCellRect(row, col, rows, cols, out Rect)` — single source of truth for collision grid geometry
-- `ZBottomOffset`, `ZTopOffset` — per-instance sorting order deltas
+- `ZBottom`, `ZTop` — the tile layer (0..8) each half sits directly above; resolves the sorting LAYER via `SortingConfig.PropSortingLayer`, never an order. Defaults 4 / 6 keep the player between footprint and canopy
 
 ### Coordinate System (Python → Unity)
 ```

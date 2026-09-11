@@ -12,8 +12,8 @@ namespace Valkur.Tests.EditMode.Game.Editors.TileEditor.Tags
     ///
     /// Invariants pinned:
     ///   • <see cref="CollisionTagMap.Canonicalize"/> sorts + dedupes + collapses
-    ///     the full set ("0..8") to <see cref="CollisionTagMap.Wildcard"/>.
-    ///   • Garbage segments (non-digits, two-char numbers like "10", chars > 8)
+    ///     the full set (every visual layer) to <see cref="CollisionTagMap.Wildcard"/>.
+    ///   • Garbage segments (non-digits, and any index past the last visual layer)
     ///     yield <c>null</c> so <see cref="CollisionTagMap.Set"/> can fall back
     ///     to <see cref="CollisionTagMap.Wildcard"/>.
     ///   • <see cref="CollisionTagMap.LayerMaskFromTag"/> and
@@ -41,18 +41,52 @@ namespace Valkur.Tests.EditMode.Game.Editors.TileEditor.Tags
         }
 
         [Test]
-        public void Canonicalize_AllNineDigits_CollapsesToWildcard()
+        public void Canonicalize_EveryLayer_CollapsesToWildcard()
         {
-            // Every single bit set must collapse to "*" — the canonical
-            // shortcut. Storing "0,1,2,3,4,5,6,7,8" verbatim would defeat
-            // the WorldAll fast-path in the physics baker.
-            Assert.AreEqual(CollisionTagMap.Wildcard,
-                CollisionTagMap.Canonicalize("0,1,2,3,4,5,6,7,8"));
+            // Every single bit set must collapse to "*" — the canonical shortcut. Storing the
+            // full list verbatim would defeat the WorldAll fast-path in the physics baker.
+            // Built from LayerCount so growing the ladder cannot leave this asserting a subset.
+            Assert.AreEqual(CollisionTagMap.Wildcard, CollisionTagMap.Canonicalize(EveryLayerCsv()));
+        }
+
+        /// <summary>"0,1,2,...,N-1" for the ladder as it stands.</summary>
+        private static string EveryLayerCsv()
+        {
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < CollisionTagMap.LayerCount; i++)
+            {
+                if (sb.Length > 0) sb.Append(',');
+                sb.Append(i);
+            }
+            return sb.ToString();
+        }
+
+        [Test]
+        public void Canonicalize_RejectsAnIndexPastTheLadder()
+        {
+            string past = CollisionTagMap.LayerCount.ToString();
+            Assert.IsNull(CollisionTagMap.Canonicalize(past));
+            Assert.IsNull(CollisionTagMap.Canonicalize("0," + past));
+        }
+
+        [Test]
+        public void Canonicalize_ReadsATwoDigitSegmentAsOneLayer()
+        {
+            // The old parser rejected any two-digit run to keep the schema "tight to the 0..8
+            // enum range", which is precisely what made layers 9..15 untaggable once the ladder
+            // grew. A run of digits is ONE number now — "12" is layer twelve, not one and two.
+            // Read through a local: LayerCount is a const, so comparing it inline is folded at
+            // compile time and the guard is reported as unreachable code.
+            int layers = CollisionTagMap.LayerCount;
+            if (layers <= 12) Assert.Ignore("Ladder is too short to have a layer 12.");
+
+            Assert.AreEqual("12", CollisionTagMap.Canonicalize("12"));
+            Assert.AreEqual(1 << 12, CollisionTagMap.LayerMaskFromTag("12"));
+            Assert.AreEqual("1,2", CollisionTagMap.Canonicalize("1,2"),
+                "The comma is what separates two layers; without it the digits are one number.");
         }
 
         [TestCase("garbage")]
-        [TestCase("0,9")]       // 9 is out of the 0..8 enum range
-        [TestCase("10")]        // two-digit segment is rejected
         [TestCase("0,a")]
         public void Canonicalize_InvalidInput_ReturnsNull(string raw)
         {
@@ -177,18 +211,18 @@ namespace Valkur.Tests.EditMode.Game.Editors.TileEditor.Tags
         }
 
         [Test]
-        public void EnumerateLayers_Wildcard_YieldsAllNine()
+        public void EnumerateLayers_Wildcard_YieldsEveryLayer()
         {
             var actual = CollisionTagMap.EnumerateLayers("*").ToArray();
-            CollectionAssert.AreEqual(Enumerable.Range(0, 9).ToArray(), actual);
+            CollectionAssert.AreEqual(Enumerable.Range(0, CollisionTagMap.LayerCount).ToArray(), actual);
         }
 
         [Test]
-        public void EnumerateLayers_Empty_YieldsAllNine()
+        public void EnumerateLayers_Empty_YieldsEveryLayer()
         {
             // Empty == legacy wildcard fallback — same semantic as missing entry.
             var actual = CollisionTagMap.EnumerateLayers("").ToArray();
-            CollectionAssert.AreEqual(Enumerable.Range(0, 9).ToArray(), actual);
+            CollectionAssert.AreEqual(Enumerable.Range(0, CollisionTagMap.LayerCount).ToArray(), actual);
         }
 
         // ── Set canonicalises before storing ─────────────────────────────────
@@ -204,10 +238,10 @@ namespace Valkur.Tests.EditMode.Game.Editors.TileEditor.Tags
         }
 
         [Test]
-        public void Set_AllNineDigits_CollapsesToWildcard()
+        public void Set_EveryLayer_CollapsesToWildcard()
         {
             var map = new CollisionTagMap();
-            map.Set(new Vector2Int(5, 5), "0,1,2,3,4,5,6,7,8");
+            map.Set(new Vector2Int(5, 5), EveryLayerCsv());
 
             Assert.AreEqual(CollisionTagMap.Wildcard, map.Get(new Vector2Int(5, 5)));
         }
@@ -227,7 +261,8 @@ namespace Valkur.Tests.EditMode.Game.Editors.TileEditor.Tags
             Assert.IsTrue(CollisionTagMap.IsValidTag("4"));
             Assert.IsTrue(CollisionTagMap.IsValidTag("0,2,5"));
             Assert.IsTrue(CollisionTagMap.IsValidTag("5,2,0"));      // raw → canonicalisable
-            Assert.IsFalse(CollisionTagMap.IsValidTag("9"));
+            Assert.IsFalse(CollisionTagMap.IsValidTag(CollisionTagMap.LayerCount.ToString()),
+                "One past the last layer. Was hard-coded as \"9\", which is a real layer now.");
             Assert.IsFalse(CollisionTagMap.IsValidTag("garbage"));
             Assert.IsFalse(CollisionTagMap.IsValidTag(""));
             Assert.IsFalse(CollisionTagMap.IsValidTag(null));

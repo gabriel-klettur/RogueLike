@@ -1,3 +1,4 @@
+using Valkur.Core;
 using UnityEngine;
 using Valkur.Gameplay.World.Layering;
 
@@ -18,7 +19,7 @@ namespace Valkur.Gameplay.TileEditor
         // Cached refs resolved lazily — avoid per-frame FindObjectOfType cost
         // while the panel is being ticked.
         private VisualLayerOccupant _playerLayerOccupant;
-        private readonly bool[] _underfootScratch = new bool[9];
+        private readonly bool[] _underfootScratch = new bool[SortingConfig.VISUAL_LAYER_COUNT];
 
         /// <summary>
         /// Refresh the panel's two readout lines with the player's logical

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Valkur.Core;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Tilemaps;
@@ -53,7 +54,7 @@ namespace Valkur.Gameplay.TileEditor
         private string _currentCategory = "";
         private readonly List<GameObject> _tileSlots = new List<GameObject>();
         private int _selectedSlotIndex = -1;
-        private readonly bool[] _layerVisibility = new bool[9];
+        private readonly bool[] _layerVisibility = new bool[SortingConfig.VISUAL_LAYER_COUNT];
 
         // ── Dropdown state ──
         // Each panel opens / closes independently; we keep a set of open panel keys
@@ -120,7 +121,7 @@ namespace Valkur.Gameplay.TileEditor
             _onEraseLayerJumpsClicked = onEraseLayerJumpsClicked;
             _onLayerJumpsTargetChanged = onLayerJumpsTargetChanged;
             _onShowTileLayerClicked   = onShowTileLayerClicked;
-            for (int i = 0; i < 9; i++) _layerVisibility[i] = true;
+            for (int i = 0; i < _layerVisibility.Length; i++) _layerVisibility[i] = true;
 
             BuildUI();
             SetVisible(false);

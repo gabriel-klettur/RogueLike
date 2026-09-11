@@ -23,7 +23,11 @@ namespace Valkur.Gameplay.World.Layering
     ///         above WallsBottom in the project's SortingLayer order.</item>
     ///   <item>5 Decorations                → "WallsTop"          — strictly above Decorations.</item>
     ///   <item>6 WallsTop                   → "ObjectsHigh"       — strictly above WallsTop.</item>
-    ///   <item>7 ObjectsHigh                → "Projectiles"       — strictly above ObjectsHigh.</item>
+    ///   <item>7 ObjectsHigh                → "EntitiesHigh"      — strictly above ObjectsHigh and
+    ///         PropsL7, and still lit: it used to borrow Projectiles, which the ambient light
+    ///         skips on purpose, so a character up there rendered black.</item>
+    ///   <item>9..15 Tier9..Tier15          → "EntityL9".."EntityL15" — each strictly above
+    ///         its own tier's tiles and props.</item>
     ///   <item>8 OverheadDetails            → "EntitiesOverhead"  — strictly above Overhead
     ///         (a sortingLayer added specifically for this case so the elevated
     ///         entity does NOT borrow UI_World, which would render the player in
@@ -51,8 +55,15 @@ namespace Valkur.Gameplay.World.Layering
             SortingConfig.LAYER_ENTITIES,           // 4 WallsBottom
             SortingConfig.LAYER_WALLS_TOP,          // 5 Decorations
             SortingConfig.LAYER_OBJECTS_HIGH,       // 6 WallsTop
-            SortingConfig.LAYER_PROJECTILES,        // 7 ObjectsHigh
+            SortingConfig.LAYER_ENTITIES_HIGH,      // 7 ObjectsHigh
             SortingConfig.LAYER_ENTITIES_OVERHEAD,  // 8 OverheadDetails
+            SortingConfig.LAYER_ENTITY_L9,        // 9 Tier9
+            SortingConfig.LAYER_ENTITY_L10,        // 10 Tier10
+            SortingConfig.LAYER_ENTITY_L11,        // 11 Tier11
+            SortingConfig.LAYER_ENTITY_L12,        // 12 Tier12
+            SortingConfig.LAYER_ENTITY_L13,        // 13 Tier13
+            SortingConfig.LAYER_ENTITY_L14,        // 14 Tier14
+            SortingConfig.LAYER_ENTITY_L15,        // 15 Tier15
         };
 
         private VisualLayerOccupant _occupant;

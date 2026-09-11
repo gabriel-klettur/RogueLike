@@ -180,8 +180,8 @@ namespace Valkur.Gameplay.Buildings
                     bool writeCollisionOverride = hasCollisionOverride &&
                         string.Equals(b.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase);
                     bool hasColliderScope = !string.IsNullOrEmpty(b.ColliderScopeOverride);
-                    bool hasZBottomOverride = b.ZBottomOffset != 0;
-                    bool hasZTopOverride = b.ZTopOffset != 0;
+                    bool hasZBottomOverride = b.ZBottom != SortingConfig.DEFAULT_PROP_Z_BOTTOM;
+                    bool hasZTopOverride = b.ZTop != SortingConfig.DEFAULT_PROP_Z_TOP;
                     bool hasInteractableOverride = b.InteractableOverride != -1;
                     // A doorway is written only when it actually leads somewhere. An empty
                     // target is the resting state of every un-assigned house; persisting it
@@ -210,13 +210,13 @@ namespace Valkur.Gameplay.Buildings
                         if (hasZBottomOverride)
                         {
                             if (!first) sb.Append(", ");
-                            sb.Append($"\"z_bottom\": {b.ZBottomOffset}");
+                            sb.Append($"\"layer_bottom\": {b.ZBottom}");
                             first = false;
                         }
                         if (hasZTopOverride)
                         {
                             if (!first) sb.Append(", ");
-                            sb.Append($"\"z_top\": {b.ZTopOffset}");
+                            sb.Append($"\"layer_top\": {b.ZTop}");
                             first = false;
                         }
                         if (hasInteractableOverride)

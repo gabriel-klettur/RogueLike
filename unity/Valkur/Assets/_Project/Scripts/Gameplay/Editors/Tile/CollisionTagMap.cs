@@ -1,3 +1,4 @@
+using Valkur.Core;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
@@ -27,21 +28,31 @@ namespace Valkur.Gameplay.TileEditor
         /// <summary>Tag value that means "this collider applies to entities on every visual layer".</summary>
         public const string Wildcard = "*";
 
-        /// <summary>Number of visual layers tracked by a layer mask (matches
-        /// <see cref="World.TilemapLayerSetup.TilemapLayer"/> enum size).</summary>
-        public const int LayerCount = 9;
+        /// <summary>Number of visual layers tracked by a layer mask. Derived from
+        /// <see cref="SortingConfig.VISUAL_LAYER_COUNT"/>, the project's single source for it.</summary>
+        public const int LayerCount = SortingConfig.VISUAL_LAYER_COUNT;
 
-        /// <summary>Bitmask with all 9 visual-layer bits set — canonical "all layers"
-        /// representation, equivalent to <see cref="Wildcard"/>.</summary>
+        /// <summary>Bitmask with every visual-layer bit set — canonical "all layers"
+        /// representation, equivalent to <see cref="Wildcard"/>. Packed into an int, which is
+        /// the third Unity-adjacent ceiling on <see cref="SortingConfig.VISUAL_LAYER_COUNT"/>
+        /// after the 32 physics layers and the sorting-layer ladder: at most 31 layers fit.</summary>
         public const int FullLayerMask = (1 << LayerCount) - 1; // 0x1FF
 
-        /// <summary>The 10 valid tag values: "*" + "0".."8" (one per <see cref="World.TilemapLayerSetup.TilemapLayer"/>).
-        /// Kept for back-compat with M1 callers that pre-validate against the legacy list; the
-        /// new <see cref="IsValidTag"/> accepts any canonical CSV subset.</summary>
-        public static readonly string[] ValidTags =
+        /// <summary>
+        /// The valid tag values: <see cref="Wildcard"/> plus one per visual layer. GENERATED
+        /// from <see cref="LayerCount"/> rather than written out, because it was a literal
+        /// array of ten when the ladder grew to sixteen — and the Colliders panel builds one
+        /// button per entry, so a stale array is a layer the author cannot tag, silently.
+        /// </summary>
+        public static readonly string[] ValidTags = BuildValidTags();
+
+        private static string[] BuildValidTags()
         {
-            Wildcard, "0", "1", "2", "3", "4", "5", "6", "7", "8",
-        };
+            var tags = new string[LayerCount + 1];
+            tags[0] = Wildcard;
+            for (int i = 0; i < LayerCount; i++) tags[i + 1] = i.ToString();   // "0".."15"
+            return tags;
+        }
 
         private readonly Dictionary<Vector2Int, string> _tags = new Dictionary<Vector2Int, string>();
 
@@ -101,7 +112,7 @@ namespace Valkur.Gameplay.TileEditor
 
         /// <summary>
         /// True when <paramref name="tag"/> is parseable as a canonical layer subset —
-        /// i.e. <see cref="Wildcard"/>, "0".."8", or a CSV of digits 0..8.
+        /// i.e. <see cref="Wildcard"/> or a CSV of layer numbers in [0, LayerCount).
         /// Multi-segment CSV strings are valid even when out-of-order or with duplicates
         /// (<see cref="Set"/> will canonicalize them).
         /// </summary>
@@ -117,38 +128,59 @@ namespace Valkur.Gameplay.TileEditor
 
         /// <summary>
         /// Reduce <paramref name="raw"/> to a canonical layer-subset representation:
-        /// "*" stays "*"; single-digit stays as-is; CSV gets sorted + deduped; all-9
-        /// digits collapse to "*"; any segment outside "0".."8" → returns <c>null</c>
-        /// (caller is responsible for falling back to <see cref="Wildcard"/>).
+        /// "*" stays "*"; a subset gets sorted + deduped; every layer set collapses to "*";
+        /// anything unparseable or out of range returns <c>null</c> (the caller falls back to
+        /// <see cref="Wildcard"/>).
         /// </summary>
         internal static string Canonicalize(string raw)
         {
-            if (string.IsNullOrEmpty(raw)) return null;
-            if (raw == Wildcard) return Wildcard;
+            return TryParseMask(raw, out int mask) ? TagFromLayerMask(mask) : null;
+        }
 
-            int mask = 0;
+        /// <summary>
+        /// THE parser. A segment is a RUN OF DIGITS read as one decimal number, so "12" is
+        /// layer twelve rather than layers one and two, and segments are separated by commas
+        /// or spaces.
+        ///
+        /// <para>It used to read one CHARACTER per layer (the character '0' plus the index) and reject any
+        /// two-digit run outright, with a comment saying that kept the schema "tight to the
+        /// 0..8 enum range". That was true and it became the reason layers 9..15 could not be
+        /// tagged at all once the ladder grew — the writer emits <c>"0,2,5"</c>, so a
+        /// two-digit layer had no spelling. Nothing on disk was at risk: the shipped maps
+        /// carry zero collision tags, and every string the writer has ever produced is
+        /// comma-separated, so no comma-less run like "358" exists to be re-read as one number.</para>
+        ///
+        /// <para>There was also a SECOND parser — <c>LayerMaskFromTag</c> walked the canonical
+        /// string character by character with its own <c>'0'..'8'</c> bound — which is the
+        /// shape that lets two readers disagree about the same string. Both go through here.</para>
+        /// </summary>
+        internal static bool TryParseMask(string raw, out int mask)
+        {
+            mask = 0;
+            if (string.IsNullOrEmpty(raw)) return false;
+            if (raw == Wildcard) { mask = FullLayerMask; return true; }
+
             int idx = 0;
+            bool sawSegment = false;
             while (idx < raw.Length)
             {
-                // Skip whitespace + commas between segments.
-                while (idx < raw.Length && (raw[idx] == ' ' || raw[idx] == ','))
-                    idx++;
-                if (idx >= raw.Length) break;
-
                 char c = raw[idx];
-                if (c < '0' || c > '8') return null;          // non-digit or out-of-range
-                if (idx + 1 < raw.Length)
+                if (c == ' ' || c == ',') { idx++; continue; }
+                if (c < '0' || c > '9') { mask = 0; return false; }
+
+                int value = 0;
+                while (idx < raw.Length && raw[idx] >= '0' && raw[idx] <= '9')
                 {
-                    char next = raw[idx + 1];
-                    // Reject multi-char numeric segments like "10" — keeps the schema
-                    // tight to the 0..8 enum range.
-                    if (next >= '0' && next <= '9') return null;
+                    value = value * 10 + (raw[idx] - '0');
+                    if (value >= LayerCount) { mask = 0; return false; }   // out of range, and cannot shrink
+                    idx++;
                 }
-                mask |= 1 << (c - '0');
-                idx++;
+                mask |= 1 << value;
+                sawSegment = true;
             }
 
-            return TagFromLayerMask(mask);
+            if (!sawSegment) { mask = 0; return false; }
+            return true;
         }
 
         /// <summary>
@@ -158,27 +190,18 @@ namespace Valkur.Gameplay.TileEditor
         /// </summary>
         public static int LayerMaskFromTag(string tag)
         {
+            // Empty or unparseable reads as the wildcard, which is the legacy "a cell with no
+            // tag collides on every layer" semantic every pre-M1.10 map relies on.
             if (string.IsNullOrEmpty(tag)) return FullLayerMask;
-            if (tag == Wildcard) return FullLayerMask;
-            string canon = Canonicalize(tag);
-            if (canon == null) return FullLayerMask;          // garbage → "*"
-            if (canon == Wildcard) return FullLayerMask;
-
-            int mask = 0;
-            for (int i = 0; i < canon.Length; i++)
-            {
-                char c = canon[i];
-                if (c >= '0' && c <= '8') mask |= 1 << (c - '0');
-            }
-            return mask;
+            return TryParseMask(tag, out int mask) ? mask : FullLayerMask;
         }
 
         /// <summary>
-        /// Convert a 9-bit layer <paramref name="mask"/> to its canonical string form.
+        /// Convert a layer <paramref name="mask"/> to its canonical string form.
         /// <see cref="FullLayerMask"/> → <see cref="Wildcard"/>; 0 → empty string (no
         /// layers, semantically "no collider"); otherwise comma-separated ascending
-        /// digits (e.g. <c>0x025</c> → <c>"0,2,5"</c>). Bits above index 8 are silently
-        /// ignored so callers can pass an int without pre-masking.
+        /// layer numbers (e.g. <c>0x025</c> → <c>"0,2,5"</c>). Bits above the last visual
+        /// layer are silently ignored so callers can pass an int without pre-masking.
         /// </summary>
         public static string TagFromLayerMask(int mask)
         {
@@ -191,15 +214,15 @@ namespace Valkur.Gameplay.TileEditor
             {
                 if ((trimmed & (1 << i)) == 0) continue;
                 if (sb.Length > 0) sb.Append(',');
-                sb.Append((char)('0' + i));
+                sb.Append(i);   // the NUMBER: layer 12 is "12", not the character after '9'
             }
             return sb.ToString();
         }
 
         /// <summary>
-        /// Enumerate the visual-layer indices (0..8) covered by <paramref name="tag"/>.
-        /// "*" yields 0..8 in order; single-digit yields that one index; CSV yields each
-        /// covered index. Empty / null yields 0..8 (legacy wildcard fallback). Caller
+        /// Enumerate the visual-layer indices covered by <paramref name="tag"/>.
+        /// "*" yields every layer in order; a single number yields that one index; CSV yields each
+        /// covered index. Empty / null yields every layer (legacy wildcard fallback). Caller
         /// can rely on ascending order.
         /// </summary>
         public static IEnumerable<int> EnumerateLayers(string tag)

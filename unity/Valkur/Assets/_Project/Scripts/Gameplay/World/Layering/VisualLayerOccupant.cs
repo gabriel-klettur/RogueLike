@@ -1,3 +1,4 @@
+using Valkur.Core;
 using System;
 using UnityEngine;
 
@@ -32,7 +33,9 @@ namespace Valkur.Gameplay.World.Layering
     public class VisualLayerOccupant : MonoBehaviour
     {
         public const int MinLayer = 0;
-        public const int MaxLayer = 8;
+        /// <summary>Derived from <see cref="SortingConfig.MAX_VISUAL_LAYER"/>. Must stay a const:
+        /// <c>[Range]</c> below needs a compile-time value.</summary>
+        public const int MaxLayer = SortingConfig.MAX_VISUAL_LAYER;
 
         [SerializeField, Range(MinLayer, MaxLayer)]
         [Tooltip("Visual layer this entity is currently considered to be on. " +

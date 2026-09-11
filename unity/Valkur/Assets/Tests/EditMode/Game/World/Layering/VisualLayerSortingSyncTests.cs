@@ -89,10 +89,15 @@ namespace Valkur.Tests.EditMode.Game.World.Layering
         }
 
         [Test]
-        public void Layer7_ObjectsHigh_PlacesPlayerOn_Projectiles()
+        public void Layer7_ObjectsHigh_PlacesPlayerOn_EntitiesHigh()
         {
+            // It used to borrow Projectiles, and this test pinned that. Projectiles is one of
+            // the four sorting layers the ambient light deliberately skips (spell art is
+            // emissive), so a LIT character who climbed to layer 7 rendered BLACK — never seen,
+            // because no shipped map paints a layer-jump tile. EntitiesHigh sits between
+            // PropsL7 and Projectiles: above every building on layer 7, and lit.
             _occ.SetVisualLayer(7);
-            Assert.AreEqual(SortingConfig.LAYER_PROJECTILES, _sr.sortingLayerName);
+            Assert.AreEqual(SortingConfig.LAYER_ENTITIES_HIGH, _sr.sortingLayerName);
         }
 
         [Test]
@@ -243,7 +248,7 @@ namespace Valkur.Tests.EditMode.Game.World.Layering
         [Test]
         public void OutOfRangeVisualLayer_ClampsTo_NearestValidSortingLayer()
         {
-            // VisualLayerOccupant clamps to [0..8] itself, so we hit the sortingsync
+            // VisualLayerOccupant clamps to the ladder itself, so we hit the sortingsync
             // clamp by talking directly to its private apply method (no occupant
             // change → no event → must call the private API). The clamp guards
             // against any future caller that bypasses the occupant.
@@ -256,9 +261,16 @@ namespace Valkur.Tests.EditMode.Game.World.Layering
             Assert.AreEqual(SortingConfig.LAYER_ENTITIES, _sr.sortingLayerName,
                 "Negative visual layer must clamp to slot 0 (Entities), not throw.");
 
-            apply.Invoke(sync, new object[] { 99 });
-            Assert.AreEqual(SortingConfig.LAYER_ENTITIES_OVERHEAD, _sr.sortingLayerName,
-                "Above-range visual layer must clamp to slot 8 (EntitiesOverhead).");
+            // The TOP of the ladder, derived. This asserted EntitiesOverhead — the slot for
+            // layer 8 — which stopped being the top the moment the ladder grew past it.
+            var table = typeof(VisualLayerSortingSync).GetField(
+                "SortingLayerByVisualLayer", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(table, "VisualLayerSortingSync.SortingLayerByVisualLayer must exist.");
+            var names = (string[])table.GetValue(null);
+
+            apply.Invoke(sync, new object[] { names.Length + 5 });
+            Assert.AreEqual(names[names.Length - 1], _sr.sortingLayerName,
+                "An above-range visual layer must clamp to the top slot, not throw.");
         }
 
         /// <summary>
@@ -298,7 +310,7 @@ namespace Valkur.Tests.EditMode.Game.World.Layering
             typeof(VisualLayerSortingSync).GetMethod("OnEnable", Flags)?.Invoke(sync, null);
 
             _occ.SetVisualLayer(7);
-            Assert.AreEqual(SortingConfig.LAYER_PROJECTILES, _sr.sortingLayerName,
+            Assert.AreEqual(SortingConfig.LAYER_ENTITIES_HIGH, _sr.sortingLayerName,
                 "OnEnable must re-subscribe so SetVisualLayer events resume updating " +
                 "the renderer.");
         }

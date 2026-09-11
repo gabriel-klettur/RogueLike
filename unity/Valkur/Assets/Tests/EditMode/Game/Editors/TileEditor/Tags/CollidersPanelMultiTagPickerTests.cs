@@ -143,12 +143,14 @@ namespace Valkur.Tests.EditMode.Game.Editors.TileEditor.Tags
         }
 
         [Test]
-        public void ClickOutOfRangeDigit_FallsBackToWildcard()
+        public void ClickOutOfRangeIndex_FallsBackToWildcard()
         {
+            // The index one PAST the ladder, derived. It used to be the literal "9", which is
+            // a real layer now — a test pinned to the old size reports a correct build as broken.
             _state.ActiveCollisionTag = "3";
-            Click("9");
+            Click(CollisionTagMap.LayerCount.ToString());
             Assert.AreEqual("*", _state.ActiveCollisionTag,
-                "Digit '9' is outside the 0..8 enum; treat as garbage.");
+                "An index past the last visual layer is garbage; the picker clamps to wildcard.");
         }
 
         // ── Authoring flow ───────────────────────────────────────────────────

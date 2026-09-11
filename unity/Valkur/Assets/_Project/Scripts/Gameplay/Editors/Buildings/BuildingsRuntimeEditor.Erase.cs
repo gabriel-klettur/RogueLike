@@ -261,8 +261,8 @@ namespace Valkur.Gameplay.Buildings
             public int       InstanceId;
             public Vector2Int ScaleOverride;
             public float     SplitRatioOverride;
-            public int       ZBottomOffset;
-            public int       ZTopOffset;
+            public int       ZBottom;
+            public int       ZTop;
             public string    ColliderScopeOverride;
             public string    Name;
         }
@@ -285,8 +285,8 @@ namespace Valkur.Gameplay.Buildings
                     InstanceId            = b.InstanceId,
                     ScaleOverride         = b.ScaleOverride,
                     SplitRatioOverride    = b.SplitRatioOverride,
-                    ZBottomOffset         = b.ZBottomOffset,
-                    ZTopOffset            = b.ZTopOffset,
+                    ZBottom               = b.ZBottom,
+                    ZTop                  = b.ZTop,
                     ColliderScopeOverride = b.ColliderScopeOverride,
                     Name                  = b.gameObject.name,
                 });
@@ -352,11 +352,11 @@ namespace Valkur.Gameplay.Buildings
                         bObj.ZoneName              = s.ZoneName;
                         bObj.InstanceId            = s.InstanceId;
                         bObj.ColliderScopeOverride = s.ColliderScopeOverride;
-                        // Apply must run BEFORE Z offsets so the renderers exist when
-                        // ApplyZOffsets fires; the setters call ApplyZOffsets internally.
+                        // Apply must run BEFORE the Z setters so the renderers exist when
+                        // ApplySorting fires; the setters call it internally.
                         bObj.Apply(s.Template, s.ScaleOverride, s.SplitRatioOverride);
-                        bObj.ZBottomOffset = s.ZBottomOffset;
-                        bObj.ZTopOffset    = s.ZTopOffset;
+                        bObj.ZBottom = s.ZBottom;
+                        bObj.ZTop    = s.ZTop;
 
                         // Honor the current "buildings visible" flag, exactly like Fill's
                         // commit path does for newly placed buildings.

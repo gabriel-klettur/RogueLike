@@ -25,7 +25,17 @@ namespace Valkur.Gameplay.World
             Decorations = 5,
             WallsTop = 6,
             ObjectsHigh = 7,
-            OverheadDetails = 8
+            OverheadDetails = 8,
+
+            // 9..15 — the tiers the ladder gained when it was grown to Unity's ceiling of 16
+            // visual layers. Indexed rather than named: see SortingConfig.LAYER_TIER_9.
+            Tier9 = 9,
+            Tier10 = 10,
+            Tier11 = 11,
+            Tier12 = 12,
+            Tier13 = 13,
+            Tier14 = 14,
+            Tier15 = 15
         }
 
         [SerializeField] private TilemapLayer layer = TilemapLayer.Ground;
@@ -64,41 +74,19 @@ namespace Valkur.Gameplay.World
                 return;
             }
 
-            switch (layer)
+            // One resolver, not a switch per reader — see SortingConfig.TileSortingLayer.
+            string sortingLayer = SortingConfig.TileSortingLayer((int)layer);
+            if (string.IsNullOrEmpty(sortingLayer))
             {
-                case TilemapLayer.Ground:
-                    renderer.sortingLayerName = SortingConfig.LAYER_GROUND;
-                    renderer.sortingOrder = 0;
-                    break;
-                case TilemapLayer.FloorDecals:
-                    renderer.sortingLayerName = SortingConfig.LAYER_FLOOR_DECALS;
-                    renderer.sortingOrder = 0;
-                    break;
-                case TilemapLayer.ObjectsLow:
-                    renderer.sortingLayerName = SortingConfig.LAYER_OBJECTS_LOW;
-                    renderer.sortingOrder = 0;
-                    break;
-                case TilemapLayer.WallsBottom:
-                    renderer.sortingLayerName = SortingConfig.LAYER_WALLS_BOTTOM;
-                    renderer.sortingOrder = 0;
-                    break;
-                case TilemapLayer.Decorations:
-                    renderer.sortingLayerName = SortingConfig.LAYER_DECORATIONS;
-                    renderer.sortingOrder = 0;
-                    break;
-                case TilemapLayer.WallsTop:
-                    renderer.sortingLayerName = SortingConfig.LAYER_WALLS_TOP;
-                    renderer.sortingOrder = 0;
-                    break;
-                case TilemapLayer.ObjectsHigh:
-                    renderer.sortingLayerName = SortingConfig.LAYER_OBJECTS_HIGH;
-                    renderer.sortingOrder = 0;
-                    break;
-                case TilemapLayer.OverheadDetails:
-                    renderer.sortingLayerName = SortingConfig.LAYER_OVERHEAD;
-                    renderer.sortingOrder = 0;
-                    break;
+                // A layer that draws nothing. Collision already returned above; anything else
+                // here is a value added to the enum without a slot, which must not silently
+                // render on Default (behind the entire world) — WorldLayerCeilingTests fails it.
+                renderer.enabled = false;
+                return;
             }
+
+            renderer.sortingLayerName = sortingLayer;
+            renderer.sortingOrder = 0;
         }
     }
 }

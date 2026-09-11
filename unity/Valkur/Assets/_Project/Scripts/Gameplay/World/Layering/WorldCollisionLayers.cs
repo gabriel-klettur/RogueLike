@@ -1,3 +1,4 @@
+using Valkur.Core;
 using UnityEngine;
 
 namespace Valkur.Gameplay.World.Layering
@@ -19,7 +20,16 @@ namespace Valkur.Gameplay.World.Layering
     /// </summary>
     public static class WorldCollisionLayers
     {
-        public const int LayerCount = 9; // WorldL0..WorldL8
+        /// <summary>
+        /// One <c>WorldL{N}</c> physics layer per visual layer. Derived from
+        /// <see cref="SortingConfig.VISUAL_LAYER_COUNT"/>: Unity has 32 physics layers total and
+        /// this subsystem already owns 10 of them (18..27), so growing the visual layers is
+        /// bounded by how many are still free — see the ceiling test.
+        /// </summary>
+        public const int LayerCount = SortingConfig.VISUAL_LAYER_COUNT;
+
+        /// <summary>Unity's hard total. The budget every WorldL{N} is spent out of.</summary>
+        public const int UnityPhysicsLayerCount = 32;
 
         /// <summary>Legacy gameplay layer holding the building <c>CollTile_*</c> boxes.</summary>
         public const int WorldLayer = 11;

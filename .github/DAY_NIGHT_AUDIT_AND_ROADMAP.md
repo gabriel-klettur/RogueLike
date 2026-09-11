@@ -87,7 +87,7 @@ Los tres fallos que este trabajo provocó por el camino, todos legítimos y todo
    (`EntitySpriteHelper._playerSprite`, `._monsterSprite`, `._unlitSpriteMaterial`,
    `BuildingObject.s_urpSpriteMat`). Eliminadas: el backlog de estáticos baja de 4.
 2. `DomainReloadStaticResetTests.NoNewStaticEscapesTheSubsystemRegistrationRule` — la nueva
-   tabla `AmbientLitSortingLayers`. Marcada `[SelfHealingStatic]`: array de literales que nadie
+   tabla `AmbientLitSortingLayers` (sustituida el 2026-09-08 por `AmbientLitSortingLayerNames()`, derivada de TagManager menos la lista negra `AmbientUnlitSortingLayers` — la lista blanca dejó en negro todos los buildings el día que se añadieron nueve SortingLayers; ver CLAUDE.md). Marcada `[SelfHealingStatic]`: array de literales que nadie
    muta después de init.
 3. `AssetConventionsTests.HardRules_ResourcesRoot_OnlyContainsWhitelistedEntries` —
    `DayNightProfile.asset` no estaba en la lista blanca de `Resources/`. Añadido a las dos

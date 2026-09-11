@@ -50,11 +50,11 @@ namespace Valkur.Gameplay.World
         [Tooltip("Per-instance split ratio override in [0,1]. Values < 0 use template.splitRatio.")]
         [SerializeField, Range(-0.01f, 1f)] private float _splitRatioOverride = -1f;
 
-        [Tooltip("Per-instance Z-bottom offset (added to footprint sortingOrder). Maps to Python building.z_bottom.")]
-        [SerializeField] private int _zBottomOffset;
+        [Tooltip("Tile layer (0..8) the FOOTPRINT sits directly above. Default 4 keeps it under the player. Maps to overrides.layer_bottom.")]
+        [SerializeField, Range(0, SortingConfig.MAX_VISUAL_LAYER)] private int _zBottom = SortingConfig.DEFAULT_PROP_Z_BOTTOM;
 
-        [Tooltip("Per-instance Z-top offset (added to canopy sortingOrder). Maps to Python building.z_top.")]
-        [SerializeField] private int _zTopOffset;
+        [Tooltip("Tile layer (0..8) the CANOPY sits directly above. Default 6 keeps it over the player. Maps to overrides.layer_top.")]
+        [SerializeField, Range(0, SortingConfig.MAX_VISUAL_LAYER)] private int _zTop = SortingConfig.DEFAULT_PROP_Z_TOP;
 
         [Tooltip("Per-instance collider scope override: empty = use template, 'CG' = shared, 'CU' = per-instance.")]
         [SerializeField] private string _colliderScopeOverride = "";
@@ -92,8 +92,25 @@ namespace Valkur.Gameplay.World
         public int                  InstanceId    { get => _instanceId;         set => _instanceId = value;         }
         public Vector2Int           ScaleOverride { get => _scaleOverride;      set => _scaleOverride = value;       }
         public float SplitRatioOverride           { get => _splitRatioOverride; set => _splitRatioOverride = value;  }
-        public int   ZBottomOffset                { get => _zBottomOffset;      set { _zBottomOffset = value; ApplyZOffsets(); } }
-        public int   ZTopOffset                   { get => _zTopOffset;         set { _zTopOffset    = value; ApplyZOffsets(); } }
+        /// <summary>
+        /// Tile layer (0..8) the footprint sits directly above. Z IS the layer: it selects the
+        /// sorting slot through <see cref="SortingConfig.PropSortingLayer"/>, so whether this
+        /// half draws over or under a painted wall is answered by the layer name and never by
+        /// an order. Clamped, and re-applied on the frame it changes so the Buildings editor
+        /// sees it move.
+        /// </summary>
+        public int ZBottom
+        {
+            get => _zBottom;
+            set { _zBottom = Mathf.Clamp(value, 0, SortingConfig.MAX_VISUAL_LAYER); ApplySorting(); }
+        }
+
+        /// <summary>Tile layer (0..8) the canopy sits directly above. See <see cref="ZBottom"/>.</summary>
+        public int ZTop
+        {
+            get => _zTop;
+            set { _zTop = Mathf.Clamp(value, 0, SortingConfig.MAX_VISUAL_LAYER); ApplySorting(); }
+        }
         public string ColliderScopeOverride       { get => _colliderScopeOverride; set => _colliderScopeOverride = value ?? ""; }
         public int    InteractableOverride        { get => _interactableOverride;   set => _interactableOverride = value; }
 
@@ -107,7 +124,7 @@ namespace Valkur.Gameplay.World
         public SpriteRenderer FootprintRenderer => _bottomRenderer;
 
         /// <summary>
-        /// The upper half, drawn OVER the player on WallsTop. A tree's canopy, a roof.
+        /// The upper half, drawn OVER the player. A tree's canopy, a roof.
         /// </summary>
         public SpriteRenderer CanopyRenderer => _topRenderer;
 
@@ -207,54 +224,38 @@ namespace Valkur.Gameplay.World
         /// of entities at its OLD scene Y, which surfaces as visible ordering
         /// glitches when a building is dragged across other entities.
         /// </summary>
-        public void RefreshSorting() => ApplyZOffsets();
+        public void RefreshSorting() => ApplySorting();
 
-        private void ApplyZOffsets()
+        private void ApplySorting()
         {
-            // Z offsets act as a HARD TIER on top of the Y-sort: a +1 in
-            // Z always wins against any Y-sort difference, a +N always
-            // beats +(N-1). Without SortingConfig.Z_TIER_SCALE the raw
-            // zOffset (±8) lost against a Y diff of 0.1 world units
-            // (since YToSortingOrder contributes ±100 per world unit).
+            // Z IS the layer. Each half names the tile layer it sits directly above, and
+            // SortingConfig.PropSortingLayer hands back the slot between the tiles of that
+            // layer and those of the next — so whether a building draws over or under a
+            // painted wall is decided by sorting-LAYER comparison, by name, never by
+            // sortingOrder arithmetic. Inside one slot the Y-sort orders buildings against
+            // each other the same way it orders entities.
             //
-            // Crucially, ALSO promote/demote the SORTING LAYER when the
-            // Z is non-zero. Unity sorts by sortingLayer FIRST and
-            // sortingOrder SECOND, so a Z+8 footprint sitting on
-            // WallsBottom would still render BEHIND a Z=0 canopy on
-            // WallsTop no matter how large its sortingOrder is. To make
-            // a higher-Z building render entirely above a lower-Z one,
-            // each renderer's effective layer follows its own Z sign:
-            //
-            //   ZBottomOffset > 0 → footprint promoted from WallsBottom
-            //                       up to WallsTop, escaping the layer
-            //                       hierarchy. Side-effect: the player
-            //                       no longer walks "over" this footprint;
-            //                       that's a deliberate trade-off the
-            //                       designer opted in to by setting Z>0.
-            //   ZTopOffset    < 0 → canopy demoted from WallsTop down
-            //                       to WallsBottom (no longer occludes
-            //                       entities). Designer-opt-in for
-            //                       decorative / floor-level canopies.
-            //
-            // For ZTopOffset >= ZBottomOffset, a +1 nudge on the canopy
-            // ensures it still wins against its OWN footprint when both
-            // share a sorting layer (e.g. when both Z's are positive).
+            // This replaced a Z that was a signed TIER multiplied into sortingOrder and
+            // promoted a half to WallsTop on its sign. That ladder ended at WallsTop, which is
+            // below the layer-7 and layer-8 tile slots, so no value of Z could put a building
+            // over a wall painted up there — an author pressing "+" got nothing, silently. Four
+            // of 301 shipped placements used it, which is what a control that cannot do the
+            // job looks like in data. The multiplier went with it: the incident it caused
+            // (100000 wrapping the 16-bit sort key to -27880) cannot recur when nothing is
+            // multiplied.
             int baseY = SortingConfig.YToSortingOrder(transform.position.y);
+
             if (_bottomRenderer != null)
             {
-                _bottomRenderer.sortingLayerName = (_zBottomOffset > 0)
-                    ? SortingConfig.LAYER_WALLS_TOP
-                    : SortingConfig.LAYER_WALLS_BOTTOM;
-                _bottomRenderer.sortingOrder = baseY + _zBottomOffset * SortingConfig.Z_TIER_SCALE;
+                _bottomRenderer.sortingLayerName = SortingConfig.PropSortingLayer(_zBottom);
+                _bottomRenderer.sortingOrder = baseY;
             }
             if (_topRenderer != null)
             {
-                _topRenderer.sortingLayerName = (_zTopOffset < 0)
-                    ? SortingConfig.LAYER_WALLS_BOTTOM
-                    : SortingConfig.LAYER_WALLS_TOP;
-                int topOrder = baseY + _zTopOffset * SortingConfig.Z_TIER_SCALE;
-                if (_zTopOffset >= _zBottomOffset) topOrder += 1;
-                _topRenderer.sortingOrder = topOrder;
+                _topRenderer.sortingLayerName = SortingConfig.PropSortingLayer(_zTop);
+                // One above the footprint: when both halves share a slot the canopy must still
+                // win, or the two z-fight at equal order and the tie-break is scene order.
+                _topRenderer.sortingOrder = baseY + 1;
             }
         }
 

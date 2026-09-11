@@ -209,17 +209,16 @@ namespace Valkur.Gameplay.World
             // Bottom child at local (0, 0) → its bottom aligns with parent.
             // Top child    at local (0, bottomH) → its bottom aligns with top of footprint.
             EnsureRenderer(ref _bottomRenderer, "Footprint",
-                SortingConfig.LAYER_WALLS_BOTTOM, bottomSprite, Vector3.zero);
+                SortingConfig.PropSortingLayer(_zBottom), bottomSprite, Vector3.zero);
 
             EnsureRenderer(ref _topRenderer, "Canopy",
-                SortingConfig.LAYER_WALLS_TOP, topSprite, new Vector3(0f, bottomH, 0f));
+                SortingConfig.PropSortingLayer(_zTop), topSprite, new Vector3(0f, bottomH, 0f));
 
-            // Delegate sortingLayer + sortingOrder assignment to ApplyZOffsets()
-            // so the Z-tier layer-promotion logic lives in exactly one place.
-            // Both Apply() (initial setup) and the ZBottomOffset / ZTopOffset
-            // setters need this — keeping it private+single-source guarantees
-            // they can never drift apart.
-            ApplyZOffsets();
+            // Delegate sortingLayer + sortingOrder assignment to ApplySorting()
+            // so the Z-to-slot resolution lives in exactly one place. Both
+            // Apply() (initial setup) and the ZBottom / ZTop setters need this —
+            // keeping it private+single-source guarantees they can never drift apart.
+            ApplySorting();
 
             // ── 5. Collider ─────────────────────────────────────────────────────────
             // No default footprint collider. Buildings only block movement once the
@@ -289,7 +288,7 @@ namespace Valkur.Gameplay.World
             // Nothing draws above the footprint any more, so the split has to say so too —
             // the save layer reads it back, and a persisted stump must not restore a canopy.
             _splitRatioOverride = 0f;
-            ApplyZOffsets();
+            ApplySorting();
         }
 
         /// <summary>
@@ -320,7 +319,7 @@ namespace Valkur.Gameplay.World
                 _topRenderer.gameObject.SetActive(true);
 
             _hasPristineSnapshot = false;
-            ApplyZOffsets();
+            ApplySorting();
             return true;
         }
 

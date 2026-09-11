@@ -1,3 +1,4 @@
+using Valkur.Core;
 using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Gameplay.TileEditor;
@@ -24,7 +25,8 @@ namespace Valkur.Gameplay.World.Layering
     public class LayerJumpMap : ITileMetadataMap
     {
         public const int MinTarget = 0;
-        public const int MaxTarget = 8;
+        /// <summary>Derived from <see cref="SortingConfig.MAX_VISUAL_LAYER"/>.</summary>
+        public const int MaxTarget = SortingConfig.MAX_VISUAL_LAYER;
 
         private readonly Dictionary<Vector2Int, string> _jumps = new Dictionary<Vector2Int, string>();
 

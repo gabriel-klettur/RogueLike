@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
@@ -54,6 +54,10 @@ namespace Valkur.Gameplay.Buildings
             sb.AppendLine($"<b>Original:</b> {t.originalScale.x}×{t.originalScale.y} px");
             var sov = _activeBuilding.ScaleOverride;
             if (sov.x > 0 || sov.y > 0) sb.AppendLine($"<b>Scale ovr:</b> {sov.x}×{sov.y}");
+            sb.AppendLine($"<b>Z:</b> planta sobre capa {_activeBuilding.ZBottom} " +
+                          $"({SortingConfig.PropSortingLayer(_activeBuilding.ZBottom)}), " +
+                          $"copa sobre capa {_activeBuilding.ZTop} " +
+                          $"({SortingConfig.PropSortingLayer(_activeBuilding.ZTop)})");
             sb.AppendLine($"<b>Zone:</b> {_activeBuilding.ZoneName}");
             _propsTmp.text = sb.ToString();
             _propsTmp.richText = true;
@@ -62,8 +66,8 @@ namespace Valkur.Gameplay.Buildings
             float sr = _activeBuilding.SplitRatioOverride >= 0f
                 ? _activeBuilding.SplitRatioOverride : t.splitRatio;
             _splitSlider.SetValueWithoutNotify(Mathf.Clamp(sr, _splitSlider.minValue, _splitSlider.maxValue));
-            if (_zBottomVal != null) _zBottomVal.text = _activeBuilding.ZBottomOffset.ToString();
-            if (_zTopVal    != null) _zTopVal.text    = _activeBuilding.ZTopOffset.ToString();
+            if (_zBottomVal != null) _zBottomVal.text = _activeBuilding.ZBottom.ToString();
+            if (_zTopVal    != null) _zTopVal.text    = _activeBuilding.ZTop.ToString();
             RefreshGridResolutionLabels();
             string scope = _activeBuilding.EffectiveColliderScope;
             if (_scopeBtnLabel != null) _scopeBtnLabel.text = GetScopeButtonLabel(scope);
@@ -142,11 +146,14 @@ namespace Valkur.Gameplay.Buildings
         private void AdjustZ(BuildingObject b, bool bottom, int delta)
         {
             if (b == null) return;
-            int oldVal = bottom ? b.ZBottomOffset : b.ZTopOffset;
-            int newVal = oldVal + delta;
+            int oldVal = bottom ? b.ZBottom : b.ZTop;
+            // Clamped, never wrapped: 0 and 8 are the two ends of the render order, and a
+            // stepper that jumps between them on one click reads as the building vanishing.
+            int newVal = Mathf.Clamp(oldVal + delta, 0, SortingConfig.MAX_VISUAL_LAYER);
+            if (newVal == oldVal) return;
             ExecutePersistedEdit($"Z{(bottom?"B":"T")} {newVal}",
-                () => { if (bottom) b.ZBottomOffset = newVal; else b.ZTopOffset = newVal; RefreshInspector(); },
-                () => { if (bottom) b.ZBottomOffset = oldVal; else b.ZTopOffset = oldVal; RefreshInspector(); });
+                () => { if (bottom) b.ZBottom = newVal; else b.ZTop = newVal; RefreshInspector(); },
+                () => { if (bottom) b.ZBottom = oldVal; else b.ZTop = oldVal; RefreshInspector(); });
         }
 
         private void ToggleColliderScope()
@@ -177,13 +184,13 @@ namespace Valkur.Gameplay.Buildings
             var b = _activeBuilding;
             var oldScale = b.ScaleOverride;
             var oldSplit = b.SplitRatioOverride;
-            var oldZB = b.ZBottomOffset;
-            var oldZT = b.ZTopOffset;
+            var oldZB = b.ZBottom;
+            var oldZT = b.ZTop;
             var oldScope = b.ColliderScopeOverride;
             var oldIa = b.InteractableOverride;
             ExecutePersistedEdit("Reset building",
-                () => { b.Apply(b.Template, Vector2Int.zero, -1f); b.ZBottomOffset = 0; b.ZTopOffset = 0; b.ColliderScopeOverride = ""; b.InteractableOverride = -1; RefreshCollisionFor(b); RefreshInspector(); },
-                () => { b.Apply(b.Template, oldScale, oldSplit); b.ZBottomOffset = oldZB; b.ZTopOffset = oldZT; b.ColliderScopeOverride = oldScope; b.InteractableOverride = oldIa; RefreshCollisionFor(b); RefreshInspector(); });
+                () => { b.Apply(b.Template, Vector2Int.zero, -1f); b.ZBottom = SortingConfig.DEFAULT_PROP_Z_BOTTOM; b.ZTop = SortingConfig.DEFAULT_PROP_Z_TOP; b.ColliderScopeOverride = ""; b.InteractableOverride = -1; RefreshCollisionFor(b); RefreshInspector(); },
+                () => { b.Apply(b.Template, oldScale, oldSplit); b.ZBottom = oldZB; b.ZTop = oldZT; b.ColliderScopeOverride = oldScope; b.InteractableOverride = oldIa; RefreshCollisionFor(b); RefreshInspector(); });
         }
 
         // ──────────────────────────────────────────────────────────────────────────
@@ -242,6 +249,9 @@ namespace Valkur.Gameplay.Buildings
 
         private void RequestDeleteActiveWithConfirm()
         {
+            // Delete key, inspector button: with a group selected, all of it.
+            var group = GroupTargets();
+            if (group.Count > 1) { RequestDeleteGroupWithConfirm(group); return; }
             if (_activeBuilding != null) RequestDeleteWithConfirm(_activeBuilding);
         }
 

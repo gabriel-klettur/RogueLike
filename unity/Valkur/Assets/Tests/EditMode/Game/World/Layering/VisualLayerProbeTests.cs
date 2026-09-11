@@ -1,3 +1,4 @@
+using Valkur.Core;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -33,7 +34,10 @@ namespace Valkur.Tests.EditMode.Game.World.Layering
             var tex = new Texture2D(1, 1); tex.SetPixel(0, 0, Color.white); tex.Apply();
             _tile.sprite = Sprite.Create(tex, new Rect(0, 0, 1, 1), Vector2.one * 0.5f, 1f);
 
-            _buf = new bool[9];
+            // Sized from the ladder: Sample refuses a short buffer and answers 0 without
+            // filling it, so a stale literal makes every assertion here fail for a reason that
+            // has nothing to do with what the test is about.
+            _buf = new bool[SortingConfig.VISUAL_LAYER_COUNT];
         }
 
         [TearDown]

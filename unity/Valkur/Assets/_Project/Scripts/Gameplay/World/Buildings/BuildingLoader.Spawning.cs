@@ -48,7 +48,7 @@ namespace Valkur.Gameplay.World
 
             return SpawnAtCore(inst.Id, inst.Zone, template, new Vector3(worldX, worldY, 0f),
                 inst.ScaleOverride, inst.SplitRatioOverride, inst.ColliderScopeOverride,
-                inst.ZBottomOffset, inst.ZTopOffset, inst.DoorSpec, inst.InteractableOverride) != null;
+                inst.ZBottom, inst.ZTop, inst.DoorSpec, inst.InteractableOverride) != null;
         }
 
         /// <summary>
@@ -72,13 +72,15 @@ namespace Valkur.Gameplay.World
                 return null;
             }
             return SpawnAtCore(instanceId, zoneName, template, worldPosition,
-                Vector2Int.zero, -1f, string.Empty, 0, 0, doorSpec: null, interactableOverride: -1);
+                Vector2Int.zero, -1f, string.Empty,
+                SortingConfig.DEFAULT_PROP_Z_BOTTOM, SortingConfig.DEFAULT_PROP_Z_TOP,
+                doorSpec: null, interactableOverride: -1);
         }
 
         private BuildingObject SpawnAtCore(int instanceId, string zoneName,
             BuildingTemplateData template, Vector3 worldPos,
             Vector2Int scaleOverride, float splitRatioOverride,
-            string colliderScopeOverride, int zBottomOffset, int zTopOffset,
+            string colliderScopeOverride, int zBottom, int zTop,
             BuildingDoorSpec doorSpec, int interactableOverride = -1)
         {
             Transform root = _buildingsRoot != null ? _buildingsRoot : transform;
@@ -94,8 +96,8 @@ namespace Valkur.Gameplay.World
             bObj.Apply(template, scaleOverride, splitRatioOverride);
             bObj.ColliderScopeOverride = colliderScopeOverride;
             bObj.InteractableOverride  = interactableOverride;
-            if (zBottomOffset != 0) bObj.ZBottomOffset = zBottomOffset;
-            if (zTopOffset    != 0) bObj.ZTopOffset    = zTopOffset;
+            bObj.ZBottom = zBottom;
+            bObj.ZTop    = zTop;
 
             // After Apply(): the doorway rect is derived from the building's world bounds,
             // which only exist once the renderers have been built. The factory refuses (and
@@ -161,6 +163,8 @@ namespace Valkur.Gameplay.World
                 var inst = new BuildingInstanceDto
                 {
                     Id               = GetInt(dict, "id"),
+                    ZBottom          = SortingConfig.DEFAULT_PROP_Z_BOTTOM,
+                    ZTop             = SortingConfig.DEFAULT_PROP_Z_TOP,
                     TemplateId       = GetInt(dict, "template_id"),
                     Zone             = GetString(dict, "zone", "Lobby"),
                     RelX             = GetInt(dict, "rel_x"),
@@ -187,11 +191,23 @@ namespace Valkur.Gameplay.World
                     if (overrides.TryGetValue("collider_scope", out var scopeRaw) && scopeRaw != null)
                         inst.ColliderScopeOverride = scopeRaw.ToString();
 
-                    if (overrides.TryGetValue("z_bottom", out var zBotRaw) && zBotRaw != null)
-                        inst.ZBottomOffset = Convert.ToInt32(zBotRaw);
+                    // Z is a tile-layer index (0..8) and rides on layer_bottom / layer_top.
+                    // The keys it replaced, z_bottom / z_top, held a signed TIER whose only
+                    // effect on the sorting LAYER was its sign: a positive bottom promoted the
+                    // footprint onto WallsTop, a negative top demoted the canopy onto
+                    // WallsBottom. A row still carrying them is read through that same rule so
+                    // it comes back at the depth it was authored at, and the next save rewrites
+                    // it in the new keys. The magnitude is dropped on purpose: it ordered
+                    // buildings against each other inside one slot, and the Y-sort owns that.
+                    if (overrides.TryGetValue("layer_bottom", out var lbRaw) && lbRaw != null)
+                        inst.ZBottom = Convert.ToInt32(lbRaw);
+                    else if (overrides.TryGetValue("z_bottom", out var zBotRaw) && zBotRaw != null)
+                        inst.ZBottom = LegacyZBottomToLayer(Convert.ToInt32(zBotRaw));
 
-                    if (overrides.TryGetValue("z_top", out var zTopRaw) && zTopRaw != null)
-                        inst.ZTopOffset = Convert.ToInt32(zTopRaw);
+                    if (overrides.TryGetValue("layer_top", out var ltRaw) && ltRaw != null)
+                        inst.ZTop = Convert.ToInt32(ltRaw);
+                    else if (overrides.TryGetValue("z_top", out var zTopRaw) && zTopRaw != null)
+                        inst.ZTop = LegacyZTopToLayer(Convert.ToInt32(zTopRaw));
 
                     if (overrides.TryGetValue("interactable", out var iaRaw) && iaRaw != null)
                         inst.InteractableOverride = Convert.ToInt32(iaRaw);
@@ -257,6 +273,20 @@ namespace Valkur.Gameplay.World
         // ── DTO ─────────────────────────────────────────────────────────────────────
 
         /// <summary>Parsed representation of one buildings_instances.json entry.</summary>
+        /// <summary>
+        /// The slot a legacy signed <c>z_bottom</c> tier resolved to: any positive value promoted
+        /// the footprint onto WallsTop (= above layer 6), anything else left it on WallsBottom.
+        /// </summary>
+        public static int LegacyZBottomToLayer(int zBottomTier)
+            => zBottomTier > 0 ? SortingConfig.DEFAULT_PROP_Z_TOP : SortingConfig.DEFAULT_PROP_Z_BOTTOM;
+
+        /// <summary>
+        /// The slot a legacy signed <c>z_top</c> tier resolved to: any negative value demoted
+        /// the canopy onto WallsBottom (= above layer 4), anything else left it on WallsTop.
+        /// </summary>
+        public static int LegacyZTopToLayer(int zTopTier)
+            => zTopTier < 0 ? SortingConfig.DEFAULT_PROP_Z_BOTTOM : SortingConfig.DEFAULT_PROP_Z_TOP;
+
         private struct BuildingInstanceDto
         {
             public int        Id;
@@ -270,10 +300,10 @@ namespace Valkur.Gameplay.World
             public float      SplitRatioOverride;
             /// <summary>Empty = use template.colliderScope.</summary>
             public string     ColliderScopeOverride;
-            /// <summary>Sorting order delta for the bottom (WallsBottom) renderer. 0 = no override.</summary>
-            public int        ZBottomOffset;
-            /// <summary>Sorting order delta for the top (WallsTop) renderer. 0 = no override.</summary>
-            public int        ZTopOffset;
+            /// <summary>Tile layer (0..8) the footprint sits directly above.</summary>
+            public int        ZBottom;
+            /// <summary>Tile layer (0..8) the canopy sits directly above.</summary>
+            public int        ZTop;
             /// <summary>-1 = inherit template.interactable; 0 = off; 1 = on.</summary>
             public int        InteractableOverride;
             /// <summary>Per-instance doorway destination, or null when this placement has none.</summary>

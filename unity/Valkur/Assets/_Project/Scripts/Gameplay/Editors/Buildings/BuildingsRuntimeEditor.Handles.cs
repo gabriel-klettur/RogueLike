@@ -143,9 +143,10 @@ namespace Valkur.Gameplay.Buildings
             _zBotBadgeRt.sizeDelta        = new Vector2(badgeW, badgeH);
             _zBotBadgeRt.anchoredPosition = new Vector2(centerX, canvasBot.y + inset);
 
-            // Update Z values
-            if (_zTopBadgeTmp != null) _zTopBadgeTmp.text = $"Z: {_activeBuilding.ZTopOffset}";
-            if (_zBotBadgeTmp != null) _zBotBadgeTmp.text = $"Z: {_activeBuilding.ZBottomOffset}";
+            // Z is the tile layer each half sits above — the same number the Tile editor
+            // paints with, so the badge and the tilemap panel speak one vocabulary.
+            if (_zTopBadgeTmp != null) _zTopBadgeTmp.text = $"Z: {_activeBuilding.ZTop}";
+            if (_zBotBadgeTmp != null) _zBotBadgeTmp.text = $"Z: {_activeBuilding.ZBottom}";
         }
 
         private void BuildTutorial()

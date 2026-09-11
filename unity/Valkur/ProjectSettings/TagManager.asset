@@ -22,11 +22,11 @@ TagManager:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - WorldL13
   - Water
   - UI
-  - 
-  - 
+  - WorldL14
+  - WorldL15
   - Player
   - NPC
   - Projectile
@@ -47,10 +47,10 @@ TagManager:
   - WorldL7
   - WorldL8
   - WorldAll
-  - 
-  - 
-  - 
-  - 
+  - WorldL9
+  - WorldL10
+  - WorldL11
+  - WorldL12
   m_SortingLayers:
   - name: Default
     uniqueID: 0
@@ -61,14 +61,29 @@ TagManager:
   - name: Ground
     uniqueID: 1
     locked: 0
+  - name: PropsL0
+    uniqueID: 23
+    locked: 0
   - name: FloorDecals
     uniqueID: 11
+    locked: 0
+  - name: PropsL1
+    uniqueID: 24
+    locked: 0
+  - name: PropsL2
+    uniqueID: 25
     locked: 0
   - name: ObjectsLow
     uniqueID: 12
     locked: 0
+  - name: PropsL3
+    uniqueID: 26
+    locked: 0
   - name: WallsBottom
     uniqueID: 13
+    locked: 0
+  - name: PropsL4
+    uniqueID: 27
     locked: 0
   - name: Entities
     uniqueID: 4
@@ -76,11 +91,23 @@ TagManager:
   - name: Decorations
     uniqueID: 14
     locked: 0
+  - name: PropsL5
+    uniqueID: 19
+    locked: 0
   - name: WallsTop
     uniqueID: 15
     locked: 0
+  - name: PropsL6
+    uniqueID: 20
+    locked: 0
   - name: ObjectsHigh
     uniqueID: 16
+    locked: 0
+  - name: PropsL7
+    uniqueID: 21
+    locked: 0
+  - name: EntitiesHigh
+    uniqueID: 28
     locked: 0
   - name: Projectiles
     uniqueID: 5
@@ -91,8 +118,74 @@ TagManager:
   - name: Overhead
     uniqueID: 17
     locked: 0
+  - name: PropsL8
+    uniqueID: 22
+    locked: 0
   - name: EntitiesOverhead
     uniqueID: 18
+    locked: 0
+  - name: Tier9
+    uniqueID: 29
+    locked: 0
+  - name: PropsL9
+    uniqueID: 30
+    locked: 0
+  - name: EntityL9
+    uniqueID: 31
+    locked: 0
+  - name: Tier10
+    uniqueID: 32
+    locked: 0
+  - name: PropsL10
+    uniqueID: 33
+    locked: 0
+  - name: EntityL10
+    uniqueID: 34
+    locked: 0
+  - name: Tier11
+    uniqueID: 35
+    locked: 0
+  - name: PropsL11
+    uniqueID: 36
+    locked: 0
+  - name: EntityL11
+    uniqueID: 37
+    locked: 0
+  - name: Tier12
+    uniqueID: 38
+    locked: 0
+  - name: PropsL12
+    uniqueID: 39
+    locked: 0
+  - name: EntityL12
+    uniqueID: 40
+    locked: 0
+  - name: Tier13
+    uniqueID: 41
+    locked: 0
+  - name: PropsL13
+    uniqueID: 42
+    locked: 0
+  - name: EntityL13
+    uniqueID: 43
+    locked: 0
+  - name: Tier14
+    uniqueID: 44
+    locked: 0
+  - name: PropsL14
+    uniqueID: 45
+    locked: 0
+  - name: EntityL14
+    uniqueID: 46
+    locked: 0
+  - name: Tier15
+    uniqueID: 47
+    locked: 0
+  - name: PropsL15
+    uniqueID: 48
+    locked: 0
+  - name: EntityL15
+    uniqueID: 49
     locked: 0
   - name: UI_World
     uniqueID: 7

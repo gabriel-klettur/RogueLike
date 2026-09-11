@@ -4,6 +4,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
+using Valkur.Core;
 using UnityEngine.Rendering.Universal;
 using Valkur.Core.Rendering;
 using Valkur.Gameplay.World;
@@ -84,7 +85,10 @@ namespace Valkur.Tests.EditMode.Game.World.Lighting
                 "The scene's ambient light does not cover these sorting layers: " +
                 string.Join(", ", missing) + ". A LIT renderer on a layer outside the mask does " +
                 "not render dim — it renders BLACK, so this is how a correct-looking change makes " +
-                "half the world disappear at once.");
+                "half the world disappear at once. The boot rewrites this mask from TagManager on " +
+                "every start, but the authored one is the FALLBACK for the day that write cannot " +
+                "land, so it must be complete too: select the Global Light 2D in MainGameplay.unity " +
+                "and add the new sorting layers to its Target Sorting Layers.");
         }
 
         // ── 3. The lit / unlit decision ───────────────────────────────────────────
@@ -279,38 +283,26 @@ namespace Valkur.Tests.EditMode.Game.World.Lighting
             return null;
         }
 
-        /// <summary>The layer names the bootstrap writes onto the ambient light.</summary>
+        /// <summary>
+        /// The layer names the bootstrap writes onto the ambient light: every sorting layer in
+        /// TagManager minus the explicit unlit set. Read through the same public resolver the
+        /// boot uses, so this fixture and the game cannot disagree about the list.
+        /// </summary>
         private static string[] AmbientLitLayerNames()
         {
-            var field = typeof(Valkur.Gameplay.GameplaySceneSetup).GetField(
-                "AmbientLitSortingLayers",
-                BindingFlags.NonPublic | BindingFlags.Static);
-            Assert.IsNotNull(field,
-                "GameplaySceneSetup.AmbientLitSortingLayers is gone. It is the single source of " +
-                "truth for which layers the ambient light may darken.");
-            var names = field.GetValue(null) as string[];
+            var names = Valkur.Gameplay.GameplaySceneSetup.AmbientLitSortingLayerNames();
             Assert.IsNotNull(names);
             Assert.IsNotEmpty(names);
             return names;
         }
 
+        /// <summary>
+        /// Asked of the resolver the tilemap builder itself uses. This used to be a hand-mirrored
+        /// copy of that switch, which is exactly the shape that lets a new tier be lit in the
+        /// game and dark in the fixture, or the reverse.
+        /// </summary>
         private static string SortingLayerNameFor(TilemapLayerSetup.TilemapLayer layer)
-        {
-            // Mirrors TilemapLayerSetup's own switch. Collision layers render nothing.
-            switch (layer)
-            {
-                case TilemapLayerSetup.TilemapLayer.Ground:          return "Ground";
-                case TilemapLayerSetup.TilemapLayer.FloorDecals:     return "FloorDecals";
-                case TilemapLayerSetup.TilemapLayer.ObjectsLow:      return "ObjectsLow";
-                case TilemapLayerSetup.TilemapLayer.WallsBottom:     return "WallsBottom";
-                case TilemapLayerSetup.TilemapLayer.Decorations:     return "Decorations";
-                case TilemapLayerSetup.TilemapLayer.WallsTop:        return "WallsTop";
-                case TilemapLayerSetup.TilemapLayer.ObjectsHigh:     return "ObjectsHigh";
-                case TilemapLayerSetup.TilemapLayer.OverheadDetails: return "Overhead";
-                default:                                              return null;
-            }
-        }
-
+            => SortingConfig.TileSortingLayer((int)layer);
         private static ScriptableRendererData LoadRendererData()
         {
             var data = AssetDatabase.LoadAssetAtPath<ScriptableRendererData>(RendererPath);

@@ -28,10 +28,10 @@ namespace Valkur.Data
         public float SplitRatioOverride = -1f;
         /// <summary>Empty = use template.colliderScope ("CG" or "CU").</summary>
         public string ColliderScopeOverride;
-        /// <summary>Sorting order delta for the WallsBottom renderer. 0 = no override.</summary>
-        public int ZBottomOffset;
-        /// <summary>Sorting order delta for the WallsTop renderer. 0 = no override.</summary>
-        public int ZTopOffset;
+        /// <summary>Tile layer (0..8) the footprint sits directly above. Maps to <c>overrides.layer_bottom</c>.</summary>
+        public int ZBottom = 4;
+        /// <summary>Tile layer (0..8) the canopy sits directly above. Maps to <c>overrides.layer_top</c>.</summary>
+        public int ZTop = 6;
         /// <summary>-1 = inherit template.interactable; 0 = force off; 1 = force on.</summary>
         public int InteractableOverride = -1;
 

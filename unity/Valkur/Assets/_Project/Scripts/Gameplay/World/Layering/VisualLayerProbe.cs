@@ -1,3 +1,4 @@
+using Valkur.Core;
 using UnityEngine;
 
 namespace Valkur.Gameplay.World.Layering
@@ -23,7 +24,7 @@ namespace Valkur.Gameplay.World.Layering
     /// </summary>
     public static class VisualLayerProbe
     {
-        private const int LayerCount = 9; // 0..8 matches TilemapLayerSetup.TilemapLayer
+        private const int LayerCount = SortingConfig.VISUAL_LAYER_COUNT;
 
         /// <summary>
         /// Fill <paramref name="layersWithTile"/> with one bool per visual layer (0..8)

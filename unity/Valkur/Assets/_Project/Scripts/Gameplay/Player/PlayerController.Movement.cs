@@ -219,7 +219,12 @@ namespace Valkur.Gameplay
 
         // Reused 9-element sample buffer for the void probe. VisualLayerProbe.Sample
         // takes a caller-allocated bool[] so we never GC on the hot path.
-        private readonly bool[] _voidSampleBuf = new bool[9];
+        // Sized from the ladder, never a literal. VisualLayerProbe.Sample REFUSES a buffer
+        // shorter than the layer count and answers 0 without filling it — so a stale 9 does not
+        // throw, it reports "no tile on any layer" for every cell, and ClampInputAgainstVoid
+        // then reads the whole world as void and zeroes the player's input. Measured exactly
+        // that the day the ladder grew to sixteen: the character could not move at all.
+        private readonly bool[] _voidSampleBuf = new bool[SortingConfig.VISUAL_LAYER_COUNT];
 
         // Cached WorldGridBuilder ref. Resolved lazily on first void probe so
         // the field never carries a stale reference across scene reloads.
