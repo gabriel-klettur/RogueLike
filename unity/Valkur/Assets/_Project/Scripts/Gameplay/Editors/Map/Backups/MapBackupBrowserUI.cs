@@ -93,6 +93,8 @@ namespace Valkur.Gameplay.MapEditor.Backups
 
         private void OnDestroy()
         {
+            // A claim outliving its claimant would freeze Escape for the whole session.
+            Valkur.Core.Input.EscapeOwnership.Release(this);
             if (Instance == this) Instance = null;
         }
 
@@ -102,12 +104,19 @@ namespace Valkur.Gameplay.MapEditor.Backups
         {
             if (_root == null) return;
             _root.SetActive(true);
+            // Escape closes this browser, so it OWNS Escape while it is up. Without the claim
+            // there are two readers of one press — this Update and GeneralEditorManager's —
+            // in an order nothing fixes. It worked only because both paths happened to want
+            // the same outcome and the launcher's Activate is idempotent; SaveTelemetryHUD
+            // claims Escape for exactly this reason and this browser did not.
+            Valkur.Core.Input.EscapeOwnership.Claim(this);
             RefreshList();
         }
 
         public void Hide()
         {
             if (_root != null) _root.SetActive(false);
+            Valkur.Core.Input.EscapeOwnership.Release(this);
             _onClose?.Invoke();
         }
 

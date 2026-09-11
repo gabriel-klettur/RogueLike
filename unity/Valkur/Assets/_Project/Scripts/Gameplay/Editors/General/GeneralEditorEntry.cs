@@ -3,13 +3,20 @@ using System;
 namespace Valkur.Gameplay.Editors.General
 {
     /// <summary>
-    /// Logical group inside the General Editor launcher panel. Each section
-    /// renders as a labelled row of buttons.
+    /// Logical group inside the General Editor launcher panel. Each section is one TAB, and
+    /// the enum is the tab order.
+    ///
+    /// <para><see cref="Tools"/> was called <c>Diagnostics</c> and held three overlay toggles.
+    /// The rename is what it always was: none of the three is an editor, and "Map Backups"
+    /// had been filed under <see cref="Game"/> — beside Save, Load and Quit — while being a
+    /// browser rather than a session action. A tool is a thing that acts ON the world without
+    /// being a modal authoring surface for one kind of content; that is the line the three
+    /// sections are drawn on now.</para>
     /// </summary>
     public enum GeneralEditorSection
     {
         Editors,
-        Diagnostics,
+        Tools,
         Game,
     }
 

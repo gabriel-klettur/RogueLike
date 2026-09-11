@@ -22,6 +22,7 @@ namespace Valkur.Gameplay.Editors.General
         internal const float GRID_SPACING     = 4f;
         internal const int   GRID_COLUMNS     = 3;
         private const float CLOSE_BTN_WIDTH   = 20f;
+        internal const float TAB_HEIGHT       = 24f;
 
         // MakeDropPanel's content layout — (8, 8, 6, 6) padding and 4 spacing. The live
         // values are read back from the built group in ApplyDerivedHeight; these are the
@@ -38,6 +39,31 @@ namespace Valkur.Gameplay.Editors.General
         private readonly List<(Image bg, Button btn, GeneralEditorEntry entry)> _entryButtons =
             new List<(Image, Button, GeneralEditorEntry)>();
 
+        // One container and one tab button per section. Sections are built ONCE and shown or
+        // hidden after that — the same reason the Controls editor realises its rows per
+        // context instead of per keystroke: building a uGUI row costs ~0.3 ms and there are
+        // thirty of them here, so rebuilding on every tab click is a visible hitch for a
+        // gesture that changes nothing.
+        private readonly Dictionary<GeneralEditorSection, GameObject> _sectionRoots =
+            new Dictionary<GeneralEditorSection, GameObject>(3);
+        private readonly Dictionary<GeneralEditorSection, (Image bg, Button btn, TextMeshProUGUI tmp)> _tabs =
+            new Dictionary<GeneralEditorSection, (Image, Button, TextMeshProUGUI)>(3);
+
+        private GeneralEditorSection _activeTab = GeneralEditorSection.Editors;
+
+        /// <summary>Which tab is showing. Read by the tests; the launcher itself never needs it.</summary>
+        internal GeneralEditorSection ActiveTab => _activeTab;
+
+        /// <summary>The tab label, kept beside the enum so a section added to one is a compile
+        /// error in the other rather than a tab with no name.</summary>
+        internal static string TabLabel(GeneralEditorSection section) => section switch
+        {
+            GeneralEditorSection.Editors => "EDITORES",
+            GeneralEditorSection.Tools   => "HERRAMIENTAS",
+            GeneralEditorSection.Game    => "JUEGO",
+            _                            => section.ToString().ToUpperInvariant(),
+        };
+
         partial void BuildUI()
         {
             if (_uiBuilt) return;
@@ -50,7 +76,7 @@ namespace Valkur.Gameplay.Editors.General
                 canvasT: _canvas.transform,
                 dock: TileEditorUIHelpers.PanelDock.TopLeft,
                 xOff: PANEL_X_OFFSET, yOff: PANEL_Y_OFFSET,
-                width: PANEL_WIDTH, height: ComputePanelHeight(_entries),
+                width: PANEL_WIDTH, height: ComputePanelHeight(_entries, _activeTab),
                 title: "General Editor",
                 contentOut: out var contentRoot,
                 dragOut: out _drag);
@@ -67,10 +93,11 @@ namespace Valkur.Gameplay.Editors.General
             _drag.ShowCloseButton = false;
             AddCloseButtonToHeader(_panelRoot);
 
-            BuildSection(contentRoot, "EDITORS",     GeneralEditorSection.Editors);
-            BuildSection(contentRoot, "DIAGNOSTICS", GeneralEditorSection.Diagnostics);
-            BuildSection(contentRoot, "GAME",        GeneralEditorSection.Game);
+            BuildTabStrip(contentRoot);
+            foreach (GeneralEditorSection section in System.Enum.GetValues(typeof(GeneralEditorSection)))
+                BuildSection(contentRoot, section);
 
+            SelectTab(_activeTab);
             ApplyDerivedHeight();
         }
 
@@ -86,6 +113,9 @@ namespace Valkur.Gameplay.Editors.General
             {
                 var (bg, btn, entry) = _entryButtons[i];
                 if (bg == null || entry?.IsActive == null) continue;
+                // Only the open tab is on screen; repainting the other 24 buttons asks every
+                // one of their IsActive delegates a question nobody can see the answer to.
+                if (entry.Section != _activeTab) continue;
                 bool active = false;
                 try { active = entry.IsActive(); }
                 catch { active = false; }
@@ -137,31 +167,57 @@ namespace Valkur.Gameplay.Editors.General
         // to the registry grows the panel instead of clipping it.
 
         /// <summary>
-        /// The panel height that fits every entry: header + separator, the content
-        /// padding, three children per section (header, grid, spacer) with the content
-        /// spacing between them, and each grid sized from its own row count.
+        /// The panel height for ONE tab — the one that is open.
+        ///
+        /// <para>It sized itself to the TALLEST tab first, so the panel never resized. Measured,
+        /// that left it <b>60 % empty</b> on two tabs of three: Editors wants 228 px of grid and
+        /// Tools and Game want 56 each, so 180 px of the window was void. A panel that is mostly
+        /// hole reads as half-built, and it is a worse trade than a resize the author asked for
+        /// by clicking a tab.</para>
+        ///
+        /// <para>Safe to resize because the height is DERIVED and never persisted: the workspace
+        /// records where the panel was dragged, not how tall it was, so this cannot accumulate
+        /// the way the Controls editor's geometry drifted across three opens.</para>
+        ///
+        /// <para>Derived from the registry rather than a constant, for the reason the stacked
+        /// version was: 360 px was a constant sized when the registry held eleven editors, and at
+        /// sixteen the content wanted 374 px inside it — headers squashed from 18 px to 8 and the
+        /// last row below the panel's edge.</para>
         /// </summary>
         public static float ComputePanelHeight(
             IReadOnlyList<GeneralEditorEntry> entries,
+            GeneralEditorSection section,
             float contentPadTotalV = CONTENT_PAD_TOTAL_V,
             float contentSpacing   = CONTENT_SPACING)
         {
-            int   children = 0;
-            float total    = 0f;
-            foreach (GeneralEditorSection section in System.Enum.GetValues(typeof(GeneralEditorSection)))
-            {
-                int count = 0;
-                if (entries != null)
-                    for (int i = 0; i < entries.Count; i++)
-                        if (entries[i].Section == section) count++;
+            int count = 0;
+            if (entries != null)
+                for (int i = 0; i < entries.Count; i++)
+                    if (entries[i].Section == section) count++;
 
-                total    += SECTION_HDR_H + GridHeight(count) + SECTION_SPACING;
-                children += 3;
-            }
-            total += Mathf.Max(0, children - 1) * contentSpacing;
+            // Content children are the tab strip and the one visible grid: one spacing between.
+            // No section header any more — the tab strip already names the open section, and
+            // printing "HERRAMIENTAS" again 4 px under the lit "HERRAMIENTAS" tab spent 18 px
+            // saying nothing.
+            float total = TAB_HEIGHT + contentSpacing + GridHeight(count);
+            total += SECTION_SPACING;                       // breathing room under the grid
             total += contentPadTotalV;
-            total += TileEditorUIHelpers.PANEL_HDR_H + 1f; // header + separator
+            total += TileEditorUIHelpers.PANEL_HDR_H + 1f;  // header + separator
             return total;
+        }
+
+        /// <summary>The height of the tallest tab — what the panel must never be shorter than
+        /// if it is ever pinned to one size again. Kept for the tests, which assert that no tab
+        /// clips, independently of which one happens to be open.</summary>
+        public static float TallestTabHeight(IReadOnlyList<GeneralEditorEntry> entries)
+        {
+            float tallest = 0f;
+            foreach (GeneralEditorSection s in System.Enum.GetValues(typeof(GeneralEditorSection)))
+            {
+                float h = ComputePanelHeight(entries, s);
+                if (h > tallest) tallest = h;
+            }
+            return tallest;
         }
 
         internal static float GridHeight(int entryCount)
@@ -185,7 +241,8 @@ namespace Valkur.Gameplay.Editors.General
             }
 
             var rt = (RectTransform)_panelRoot.transform;
-            rt.sizeDelta = new Vector2(rt.sizeDelta.x, ComputePanelHeight(_entries, padV, spacing));
+            rt.sizeDelta = new Vector2(rt.sizeDelta.x,
+                ComputePanelHeight(_entries, _activeTab, padV, spacing));
         }
 
         // ── IProvidesWorkspaceState ────────────────────────────────────────────
@@ -196,31 +253,140 @@ namespace Valkur.Gameplay.Editors.General
 
         public Transform WorkspaceRoot => _canvas != null ? _canvas.transform : null;
 
-        public void CaptureWorkspace(EditorWorkspace workspace) { }
+        public void CaptureWorkspace(EditorWorkspace workspace)
+        {
+            // WHICH TAB, and nothing else. An author spending a session in HERRAMIENTAS
+            // reopened onto EDITORES every time, which is a choice the launcher watched them
+            // make and then threw away. Which BUTTON was pressed last is still not a
+            // workspace — that is a history, not a layout.
+            workspace?.SetString("tab", _activeTab.ToString());
+        }
 
         public void RestoreWorkspace(EditorWorkspace workspace)
         {
+            if (workspace != null &&
+                System.Enum.TryParse(workspace.GetString("tab", ""), out GeneralEditorSection saved) &&
+                System.Enum.IsDefined(typeof(GeneralEditorSection), saved))
+            {
+                // Parse rather than cast: a document written before a section was renamed
+                // holds a name this build does not have, and TryParse answers false where a
+                // cast would happily produce an out-of-range enum and hide every tab.
+                _activeTab = saved;
+                if (_uiBuilt) SelectTab(_activeTab);
+            }
+
             // The restored size is the size the panel HAD; the registry may have grown
-            // since. Position is kept, height is re-derived.
+            // since, and the open tab decides the height. Position is kept, height re-derived.
             ApplyDerivedHeight();
             if (_panelRoot != null && !_panelRoot.activeSelf) _panelRoot.SetActive(true);
         }
 
         // ── Panel construction helpers ──────────────────────────────────────────
 
-        private void BuildSection(Transform parent, string title, GeneralEditorSection section)
+        /// <summary>
+        /// The tab strip. Three buttons in a row, each switching which section is on screen.
+        ///
+        /// <para>A button in a <c>HorizontalLayoutGroup</c> with <c>childControlWidth</c> and
+        /// no <c>childForceExpandWidth</c> is laid out at its MINIMUM — which in the Controls
+        /// editor collapsed two buttons into a single overprinted character column. Both flags
+        /// are set here for that reason.</para>
+        /// </summary>
+        private void BuildTabStrip(Transform parent)
         {
-            // Section header
-            var hdrGo = EditorUIHelpers.CreateUI($"Hdr_{section}", parent);
-            hdrGo.AddComponent<LayoutElement>().preferredHeight = SECTION_HDR_H;
-            var hdrTmp           = hdrGo.AddComponent<TextMeshProUGUI>();
-            hdrTmp.text          = title;
-            hdrTmp.fontSize      = 10f;
-            hdrTmp.fontStyle     = FontStyles.Bold;
-            hdrTmp.color         = UITheme.ACCENT;
-            hdrTmp.alignment     = TextAlignmentOptions.MidlineLeft;
-            hdrTmp.characterSpacing = 1.2f;
-            hdrTmp.raycastTarget = false;
+            var rowGo = EditorUIHelpers.CreateUI("Tabs", parent);
+            var le = rowGo.AddComponent<LayoutElement>();
+            le.preferredHeight = TAB_HEIGHT;
+
+            // flexibleHeight = 0 IS THE WHOLE FIX, and without it this strip renders at 180 px.
+            //
+            // uGUI resolves each layout property INDEPENDENTLY, from the highest-priority
+            // component that supplies one. The LayoutElement wins the PREFERRED height and
+            // leaves flexibleHeight unset (-1), so the value actually used comes from the
+            // HorizontalLayoutGroup on this same GameObject, which reports 1 because
+            // childForceExpandHeight is on. This row was then the content's only flexible
+            // child and absorbed every spare pixel the open tab did not use: measured at
+            // 274 - 12 - 78 - 4 = 180, three giant vertical bars with a label floating in the
+            // middle of each.
+            //
+            // Same trap the chat input row records, and the note did not prevent it — only
+            // reading the rendered frame did. Any row carrying both components needs this.
+            le.flexibleHeight = 0f;
+
+            var hlg = rowGo.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing                = GRID_SPACING;
+            hlg.childControlWidth      = true;
+            hlg.childForceExpandWidth  = true;
+            hlg.childControlHeight     = true;
+            hlg.childForceExpandHeight = true;
+
+            foreach (GeneralEditorSection section in System.Enum.GetValues(typeof(GeneralEditorSection)))
+            {
+                var captured = section;
+                var bg = EditorUIHelpers.AddActionBtn(rowGo.transform, TabLabel(section), TAB_HEIGHT,
+                    onClick: () => SelectTab(captured), tmp: out var tmp, fontSize: 9f);
+                _tabs[section] = (bg, bg.GetComponent<Button>(), tmp);
+            }
+        }
+
+        /// <summary>Show one section, hide the others, and repaint the strip.</summary>
+        internal void SelectTab(GeneralEditorSection section)
+        {
+            _activeTab = section;
+
+            foreach (var kv in _sectionRoots)
+                if (kv.Value != null) kv.Value.SetActive(kv.Key == section);
+
+            foreach (var kv in _tabs)
+            {
+                var (bg, btn, tmp) = kv.Value;
+                bool on = kv.Key == section;
+                // Through UIButton.SetTint rather than by writing the Image: a Button on the
+                // default ColorTint transition multiplies its ColorBlock into the graphic, so
+                // a raw write renders the product and the ACTIVE tab comes out darker than
+                // the inactive ones — measured at 3 vs 108 luminance in the Skills editor.
+                if (btn != null) UIButton.SetTint(btn, on ? UITheme.ACCENT_BG : UITheme.BTN_NORMAL);
+                else if (bg != null) bg.color = on ? UITheme.ACCENT_BG : UITheme.BTN_NORMAL;
+                if (tmp != null) tmp.color = on ? UITheme.ACCENT : UITheme.TEXT_SECONDARY;
+            }
+
+            // The keyboard focus was on a button that may now be hidden; pressing Enter on a
+            // disabled object does nothing, which reads as the launcher having stopped
+            // responding. Re-seat it on the first entry of the tab just opened.
+            _firstEntryGo = FirstEntryOf(section);
+            FocusFirstEntry();
+
+            // The panel holds ONE tab, so switching tabs is a resize.
+            ApplyDerivedHeight();
+        }
+
+        private GameObject FirstEntryOf(GeneralEditorSection section)
+        {
+            for (int i = 0; i < _entryButtons.Count; i++)
+            {
+                var (bg, _, entry) = _entryButtons[i];
+                if (bg != null && entry != null && entry.Section == section) return bg.gameObject;
+            }
+            return null;
+        }
+
+        private void BuildSection(Transform parent, GeneralEditorSection section)
+        {
+            // One container per tab, shown or hidden by SelectTab. It carries its own vertical
+            // layout so the header and the grid stack inside it exactly as they used to inside
+            // the panel — the tab strip is the only thing that changed above them.
+            var sectionGo = EditorUIHelpers.CreateUI($"Section_{section}", parent);
+            var sectionVlg = sectionGo.AddComponent<VerticalLayoutGroup>();
+            sectionVlg.spacing                = CONTENT_SPACING;
+            sectionVlg.childControlWidth      = true;
+            sectionVlg.childForceExpandWidth  = true;
+            sectionVlg.childControlHeight     = true;
+            sectionVlg.childForceExpandHeight = false;
+            _sectionRoots[section] = sectionGo;
+
+            parent = sectionGo.transform;
+
+            // NO section header. The lit tab above already says which section this is, and
+            // printing the same word again 4 px under it spent 18 px twice over.
 
             // Grid container for the section's buttons
             var gridGo = EditorUIHelpers.CreateUI($"Grid_{section}", parent);
@@ -244,9 +410,9 @@ namespace Valkur.Gameplay.Editors.General
 
             gridGo.AddComponent<LayoutElement>().preferredHeight = GridHeight(count);
 
-            // Trailing spacing so sections don't visually collide
-            var spacerGo = EditorUIHelpers.CreateUI($"Spacer_{section}", parent);
-            spacerGo.AddComponent<LayoutElement>().preferredHeight = SECTION_SPACING;
+            // No trailing spacer: sections cannot collide any more because only one is ever on
+            // screen. The breathing room under the grid is the SECTION_SPACING that
+            // ComputePanelHeight adds once, outside the tab.
         }
 
         private void AddEntryButton(Transform parent, GeneralEditorEntry entry)

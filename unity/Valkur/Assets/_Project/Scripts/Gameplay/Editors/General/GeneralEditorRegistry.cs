@@ -25,15 +25,16 @@ namespace Valkur.Gameplay.Editors.General
 {
     /// <summary>
     /// Builds the static catalogue of buttons rendered in the General Editor
-    /// (ESC) launcher. Three sections:
+    /// (ESC) launcher. Three sections, each drawn as one TAB:
     /// <list type="bullet">
-    /// <item><b>Editors</b> – the nineteen runtime editors. Each entry calls
-    /// <see cref="GameEditorManager.OpenExclusive"/>, which auto-closes the
-    /// launcher (since the launcher is itself the active editor). Since the
-    /// F-row was retired this list is the ONLY way into any of them, which is
-    /// what <c>EditorReachabilityTests</c> pins.</item>
-    /// <item><b>Diagnostics</b> – overlay toggles that don't participate in
-    /// the editor exclusivity contract; the launcher stays open.</item>
+    /// <item><b>Editors</b> – the twenty runtime editors, one per kind of authored
+    /// content. Each entry calls <see cref="GameEditorManager.OpenExclusive"/>, which
+    /// auto-closes the launcher (since the launcher is itself the active editor). Since
+    /// the F-row was retired this list is the ONLY way into any of them, which is what
+    /// <c>EditorReachabilityTests</c> pins.</item>
+    /// <item><b>Tools</b> – things that act ON the world without owning a content type:
+    /// the cross-domain Selection tool (a full exclusive editor), the backup browser, and
+    /// the three overlay toggles that leave the launcher open.</item>
     /// <item><b>Game</b> – session actions (save / load / options / quit)
     /// that close the launcher first and then route through the pause menu
     /// service or scene transition.</item>
@@ -65,23 +66,42 @@ namespace Valkur.Gameplay.Editors.General
             list.Add(MakeEditor("Skills",        () => Valkur.Gameplay.Editors.Skills.SkillsRuntimeEditor.Instance));
             list.Add(MakeEditor("Economy",       () => Valkur.Gameplay.Editors.Economy.EconomyRuntimeEditor.Instance));
             list.Add(MakeEditor("Muerte",        () => Valkur.Gameplay.Editors.Death.DeathRuntimeEditor.Instance));
+            list.Add(MakeEditor("Misiones",      () => Valkur.Gameplay.Editors.Quests.QuestsRuntimeEditor.Instance));
 
-            // ── Diagnostics (toggles, no exclusive activation) ──────────────
+            // ── Tools ───────────────────────────────────────────────────────
+            //
+            // The Selection tool IS an exclusive editor and belongs in the same
+            // exclusivity contract as the nineteen above — it is filed here rather
+            // than under Editors because it authors no content type of its own: it
+            // operates ON buildings, emitters and lights through their editors.
+            list.Add(MakeEditorEntry("Seleccion", GeneralEditorSection.Tools,
+                () => Valkur.Gameplay.Editors.MultiSelect.MultiSelectRuntimeEditor.Instance));
+
             list.Add(new GeneralEditorEntry(
-                "Combat Ranges", GeneralEditorSection.Diagnostics,
+                "Map Backups", GeneralEditorSection.Tools,
+                onClick: OpenMapBackupBrowser,
+                closesLauncher: true));
+
+            // Overlay toggles — they do not participate in editor exclusivity, so the
+            // launcher stays open and their button reports the live on/off state.
+            list.Add(new GeneralEditorEntry(
+                "Combat Ranges", GeneralEditorSection.Tools,
                 onClick:  () => CombatRangeVisualizer.Instance?.ToggleVisible(),
                 isActive: () => CombatRangeVisualizer.Instance != null
                                 && CombatRangeVisualizer.Instance.IsVisible));
 
             list.Add(new GeneralEditorEntry(
-                "Debug HUD", GeneralEditorSection.Diagnostics,
+                "Debug HUD", GeneralEditorSection.Tools,
                 onClick:  () => ServiceLocator.Get<IDebugOverlayService>()?.ToggleVisible(),
                 isActive: () => ServiceLocator.Get<IDebugOverlayService>()?.IsVisible == true));
 
+            // IsShowing, never `Instance != null`: the overlay is DontDestroyOnLoad, so the
+            // instance survives its own close and the old test lit this button for the rest
+            // of the session with the panel hidden.
             list.Add(new GeneralEditorEntry(
-                "Save Log", GeneralEditorSection.Diagnostics,
+                "Save Log", GeneralEditorSection.Tools,
                 onClick:  Valkur.Gameplay.Save.SaveTelemetryHUD.Toggle,
-                isActive: () => Valkur.Gameplay.Save.SaveTelemetryHUD.Instance != null));
+                isActive: () => Valkur.Gameplay.Save.SaveTelemetryHUD.IsShowing));
 
             // ── Game ────────────────────────────────────────────────────────
             list.Add(new GeneralEditorEntry(
@@ -105,11 +125,6 @@ namespace Valkur.Gameplay.Editors.General
                 closesLauncher: true));
 
             list.Add(new GeneralEditorEntry(
-                "Map Backups", GeneralEditorSection.Game,
-                onClick: OpenMapBackupBrowser,
-                closesLauncher: true));
-
-            list.Add(new GeneralEditorEntry(
                 "Exit to Menu", GeneralEditorSection.Game,
                 onClick: ConfirmQuitToMainMenu,
                 closesLauncher: true));
@@ -121,9 +136,22 @@ namespace Valkur.Gameplay.Editors.General
         // click time and routes through GameEditorManager.
         private static GeneralEditorEntry MakeEditor<T>(string label, Func<T> getter)
             where T : Component, GameEditorManager.IGameEditor
+            => MakeEditorEntry(label, GeneralEditorSection.Editors, getter);
+
+        /// <summary>
+        /// The same wiring under a chosen section. It exists because an entry's SECTION and
+        /// its exclusivity CONTRACT are independent: the Selection tool is a full
+        /// <see cref="GameEditorManager.IGameEditor"/> that lives under Tools, and folding the
+        /// section into <see cref="MakeEditor"/> would have forced it into Editors or forced a
+        /// second copy of this body — which is how the two would eventually disagree about
+        /// what a missing instance does.
+        /// </summary>
+        private static GeneralEditorEntry MakeEditorEntry<T>(
+            string label, GeneralEditorSection section, Func<T> getter)
+            where T : Component, GameEditorManager.IGameEditor
         {
             return new GeneralEditorEntry(
-                label, GeneralEditorSection.Editors,
+                label, section,
                 onClick: () =>
                 {
                     var ed = getter();

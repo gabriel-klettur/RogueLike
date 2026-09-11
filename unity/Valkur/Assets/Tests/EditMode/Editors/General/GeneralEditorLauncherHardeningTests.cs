@@ -174,29 +174,77 @@ namespace Valkur.Tests.EditMode.Editors.General
 
             var group = panel.transform.Find("Content").GetComponent<VerticalLayoutGroup>();
             float expected = GeneralEditorManager.ComputePanelHeight(
-                entries, group.padding.top + group.padding.bottom, group.spacing);
+                entries, ed.ActiveTab, group.padding.top + group.padding.bottom, group.spacing);
 
             Assert.AreEqual(expected, panel.GetComponent<RectTransform>().sizeDelta.y, 0.01f,
-                "The panel must be exactly as tall as its content wants, read off the built layout.");
-            Assert.Greater(expected, 360f,
-                "360 was the constant that clipped: sixteen editors wanted 374 px of content " +
-                "inside it, squashing the section headers from 18 px to 8.");
+                "The panel must be exactly as tall as the OPEN tab wants, read off the built layout.");
+        }
+
+        /// <summary>
+        /// The panel holds one tab, and a tab that holds more rows is taller.
+        ///
+        /// <para>This assertion has now been rewritten twice, and both rewrites were correct
+        /// rather than accommodating: it first pinned the stacked SUM of three sections, then
+        /// the TALLEST of them, and now the OPEN one. Each time the layout genuinely changed
+        /// and the old shape would have gone on passing while measuring something the panel no
+        /// longer does.</para>
+        /// </summary>
+        [Test]
+        public void EachTab_IsSizedByItsOwnRowCount()
+        {
+            var entries = GeneralEditorRegistry.BuildEntries();
+
+            float editors = GeneralEditorManager.ComputePanelHeight(entries, GeneralEditorSection.Editors);
+            float tools   = GeneralEditorManager.ComputePanelHeight(entries, GeneralEditorSection.Tools);
+            float game    = GeneralEditorManager.ComputePanelHeight(entries, GeneralEditorSection.Game);
+
+            Assert.Greater(editors, tools, "Nineteen entries must want more room than five.");
+            Assert.Greater(editors, game,  "Nineteen entries must want more room than five.");
+
+            float rows = GeneralEditorManager.GridHeight(entries.Count(e => e.Section == GeneralEditorSection.Editors));
+            Assert.Greater(editors, rows, "The tallest tab must clear its own grid plus the chrome.");
         }
 
         [Test]
-        public void OneMoreRow_GrowsThePanel_ByExactlyOneRow()
+        public void OneMoreRow_InATab_GrowsThatTab_ByExactlyOneRow()
         {
             var entries = GeneralEditorRegistry.BuildEntries();
-            var more    = new List<GeneralEditorEntry>(entries);
-            // Game holds six entries = two full rows of three; a seventh starts a third row.
-            more.Add(new GeneralEditorEntry("Extra", GeneralEditorSection.Game, () => { }));
 
-            float before = GeneralEditorManager.ComputePanelHeight(entries);
-            float after  = GeneralEditorManager.ComputePanelHeight(more);
+            // How many entries it takes to START a new row is arithmetic on the column count,
+            // never a number to hard-code: nineteen entries fill seven rows of three and so do
+            // twenty and twenty-one, so a test that added exactly one — or exactly two —
+            // measured a panel that correctly did not move. Fill the partial last row, then
+            // one more; that one is the eighth row.
+            int count  = entries.Count(e => e.Section == GeneralEditorSection.Tools);
+            int cols   = GeneralEditorManager.GRID_COLUMNS;
+            int filled = ((count + cols - 1) / cols) * cols;
+            int toAdd  = filled + 1 - count;
+
+            var more = new List<GeneralEditorEntry>(entries);
+            for (int i = 0; i < toAdd; i++)
+                more.Add(new GeneralEditorEntry($"Extra{i}", GeneralEditorSection.Tools, () => { }));
+
+            float before = GeneralEditorManager.ComputePanelHeight(entries, GeneralEditorSection.Tools);
+            float after  = GeneralEditorManager.ComputePanelHeight(more,    GeneralEditorSection.Tools);
 
             Assert.AreEqual(GeneralEditorManager.BUTTON_HEIGHT + GeneralEditorManager.GRID_SPACING,
                 after - before, 0.01f,
-                "A registry entry that opens a new row must grow the panel by one row, not clip.");
+                "A registry entry that opens a new row must grow its own tab by one row, not clip.");
+        }
+
+        [Test]
+        public void OneMoreRow_InOneTab_DoesNotMoveAnother()
+        {
+            var entries = GeneralEditorRegistry.BuildEntries();
+
+            var more = new List<GeneralEditorEntry>(entries);
+            for (int i = 0; i < 4; i++)
+                more.Add(new GeneralEditorEntry($"Extra{i}", GeneralEditorSection.Game, () => { }));
+
+            Assert.AreEqual(
+                GeneralEditorManager.ComputePanelHeight(entries, GeneralEditorSection.Tools),
+                GeneralEditorManager.ComputePanelHeight(more,    GeneralEditorSection.Tools), 0.01f,
+                "A tab is sized by its OWN rows; growing another one must not reach it.");
         }
 
         [Test]

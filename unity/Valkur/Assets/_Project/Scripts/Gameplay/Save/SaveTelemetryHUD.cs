@@ -39,10 +39,32 @@ namespace Valkur.Gameplay.Save
 
         // ── Static toggle API ────────────────────────────────────────────────────
 
+        /// <summary>
+        /// True while the overlay is actually ON SCREEN.
+        ///
+        /// <para>The General Editor's Save Log button used to read <c>Instance != null</c>,
+        /// and this object is <c>DontDestroyOnLoad</c>: <see cref="Close"/> only deactivates
+        /// the root, so <c>Instance</c> stops being null on the first open and never becomes
+        /// null again. Measured across four toggles, the launcher reported ON for the rest of
+        /// the session with the panel hidden — a control describing a state it did not have.</para>
+        /// </summary>
+        public static bool IsShowing => Instance != null
+                                     && Instance._root != null
+                                     && Instance._root.activeSelf;
+
+        /// <summary>
+        /// Show it if it is hidden, hide it if it is showing.
+        ///
+        /// <para>It used to branch on <c>Instance == null</c>, which made it ONE-WAY: after the
+        /// first close the instance still existed, so every later press took the else branch and
+        /// closed an already-closed panel. Measured — toggles #3 and #4 did nothing, and the Save
+        /// Log was unreachable until Play Mode restarted. The branch has to ask whether the thing
+        /// is VISIBLE, which is the question the caller is actually asking.</para>
+        /// </summary>
         public static void Toggle()
         {
-            if (Instance == null) Open();
-            else                  Instance.Close();
+            if (IsShowing) Instance.Close();
+            else           Open();
         }
 
         public static SaveTelemetryHUD Open()

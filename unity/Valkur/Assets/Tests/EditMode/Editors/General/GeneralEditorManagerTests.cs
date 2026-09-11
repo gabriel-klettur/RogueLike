@@ -245,22 +245,25 @@ namespace Valkur.Tests.EditMode.Editors.General
             "Tile", "Buildings", "Items", "Spells", "Entities", "Boss", "FSM",
             "Map", "Inventory", "Particles", "Spawners", "Lighting",
             "Time & Weather", "Camera", "Controls", "Dungeon NodeGraph", "Skills",
-            "Economy", "Muerte",
+            "Economy", "Muerte", "Misiones",
         };
 
-        private static readonly string[] ExpectedDiagnosticsLabels =
+        // The TOOLS tab: things that act on the world without owning a content type. The
+        // Selection tool is a full exclusive editor that lives here rather than under Editors,
+        // and "Map Backups" moved out of Game — it is a browser, not a session action.
+        private static readonly string[] ExpectedToolsLabels =
         {
-            "Combat Ranges", "Debug HUD", "Save Log",
+            "Seleccion", "Map Backups", "Combat Ranges", "Debug HUD", "Save Log",
         };
 
         private static readonly string[] ExpectedGameLabels =
         {
-            "Pause Menu", "Save Game", "Load", "Options", "Map Backups", "Exit to Menu",
+            "Pause Menu", "Save Game", "Load", "Options", "Exit to Menu",
         };
 
         private static int ExpectedTotal =>
             ExpectedEditorLabels.Length +
-            ExpectedDiagnosticsLabels.Length +
+            ExpectedToolsLabels.Length +
             ExpectedGameLabels.Length;
 
         [Test]
@@ -269,7 +272,7 @@ namespace Valkur.Tests.EditMode.Editors.General
             var entries = GeneralEditorRegistry.BuildEntries();
             Assert.AreEqual(ExpectedTotal, entries.Count,
                 $"Registry must list {ExpectedEditorLabels.Length} runtime editors + " +
-                $"{ExpectedDiagnosticsLabels.Length} diagnostics + " +
+                $"{ExpectedToolsLabels.Length} tools + " +
                 $"{ExpectedGameLabels.Length} game actions = {ExpectedTotal} buttons total.");
         }
 
@@ -280,9 +283,9 @@ namespace Valkur.Tests.EditMode.Editors.General
         }
 
         [Test]
-        public void Registry_DiagnosticsSection_MatchesExpectedLabels()
+        public void Registry_ToolsSection_MatchesExpectedLabels()
         {
-            AssertSectionMatches(GeneralEditorSection.Diagnostics, ExpectedDiagnosticsLabels);
+            AssertSectionMatches(GeneralEditorSection.Tools, ExpectedToolsLabels);
         }
 
         [Test]
