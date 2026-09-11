@@ -4674,19 +4674,23 @@ spawners [fragment]        DevConsole            the probe: state, roster, live 
 
 ## The bars over an entity's head
 
-Audited 2026-09-10 at **2.4/10** and rebuilt the same day to **8.6** — the numbers below are
-measured live at 1600x800 / ortho 5, i.e. **80 screen pixels per world unit**, against the
-shipped dwarf whose body is **1.219 x 1.859 world units (97.5 x 148.7 px)**.
+Audited 2026-09-10 at **2.4/10** and rebuilt the same day to **8.6**; re-audited 2026-09-11 at
+**4.6** after the colour art landed (two bugs and a regression, see "The second pass" below) and
+iterated the same day to **8.7**. The numbers below are measured live at 1600x800 / ortho 5, i.e.
+**80 screen pixels per world unit**, against the shipped dwarf whose body is
+**1.219 x 1.859 world units (97.5 x 148.7 px)**.
 
 ```text
 WorldBarGeometry     Core/UI/                 the texel grid + fill quantisation. Pure, testable
+WorldBarPalette      Core/UI/                 one authored colour -> four hue-shifted tones; WCAG maths
 WorldBarRank         Core/UI/                 Normal / Ally / Elite / Boss / Player
-WorldBarStyle        Data/UI/                 the 40 decisions, in Resources/UI/WorldBarStyle.asset
-WorldBarArt          Gameplay/Combat/WorldUI/ ONE generated atlas + ONE material
-StatusGlyphs         Gameplay/Combat/WorldUI/ eight 6x6 silhouettes
-WorldBarRig (+.Layout) Gameplay/Combat/WorldUI/ the single owner: rows, feel, fade, sorting
-WorldBarLine / WorldBarPip / WorldStatusIconRow             the pieces it draws
+WorldBarStyle        Data/UI/                 the ~60 decisions, in Resources/UI/WorldBarStyle.asset
+WorldBarArt          Gameplay/Combat/WorldUI/ ONE generated atlas + ONE material (+ the painted icons)
+StatusGlyphs         Gameplay/Combat/WorldUI/ eight generated silhouettes, the fallback under the painted set
+WorldBarRig (+.Layout) Gameplay/Combat/WorldUI/ the single owner: rows, feel, fade, sorting, bursts
+WorldBarLine / WorldBarPip / WorldStatusIconRow / WorldBarJoints / WorldBarSparks   the pieces it draws
 WorldHealthBar / WorldManaBar / WorldDashBar                DRIVERS. They own no pixels
+SpiritTintExempt     Gameplay/Combat/Death/   the marker that keeps the spirit look off the readout
 ```
 
 - **THE BARS WERE OFF THE PIXEL GRID, AT EVERY RESOLUTION, AND THAT IS PROVABLE RATHER THAN A
@@ -4779,11 +4783,14 @@ WorldHealthBar / WorldManaBar / WorldDashBar                DRIVERS. They own no
   from `EntityAnimationBinder.ApplyLoadout`, the single seam a loadout swap passes through.
 - **The sorting order is derived from the OWNER's Y**, the same formula `YSortEntity` uses for the
   body. The old bars used a constant 200..212 for every creature in the world, so the bar of a
-  monster at the back drew over the bar of one in front. The rig claims thirteen consecutive
-  orders (health 0..4, resource 5..9, pip 10..11, status 12), i.e. 0.13 world units of Y
-  granularity — two creatures closer than that on Y can interleave their bars, which is bounded
-  and strictly better than no order at all. Spacing those slots out also closed a real collision:
-  measured before it, the pip's frame and the mana fill both landed on +8.
+  monster at the back drew over the bar of one in front. The rig's slots are DERIVED from what
+  each piece claims (`WorldBarLine.SLOT_COUNT`, `WorldBarPip.SLOT_COUNT`, ...; the sum is
+  `WorldBarRig.SORT_SPAN`, ~31 orders, i.e. ~0.3 world units of Y granularity) — two creatures
+  closer than that on Y can interleave their bars, which is bounded and strictly better than no
+  order at all. Deriving them closed a real collision: measured before it, the pip's frame and the
+  mana fill both landed on +8. `WorldBarStackTests.EveryOrderTheRigClaims_FitsInsideItsDeclaredSpan`
+  reads every renderer back; it is what found the sparks sitting a THOUSAND orders under the bars
+  they were thrown off, because `SyncSorting` re-based every piece but them.
 - **One visibility rule for every entity in the game, and the player's bars now fade.** The old
   behaviour was two rules: monsters hid at full health with a hard `SetActive`, the player never
   hid at all ("Python always shows player health bar") — which cost **34 screen pixels of
@@ -4820,11 +4827,87 @@ WorldHealthBar / WorldManaBar / WorldDashBar                DRIVERS. They own no
   is harder than its kind", produced by `SpawnerTemplateData.levelBonus` and
   `scaleWithPlayerLevel` without anybody authoring it twice.
 - **Testing traps this hit, all three already in this file.** Unity calls no `Awake` on a
-  component added in Edit Mode, so a driver has to be started by reflection; `Time.deltaTime` is 0
-  there, so a fade started in a fixture never advances by a single frame — which is why the rig
-  exposes `AlphaTarget` (the decision) beside `Alpha` (how far it has got), and the test asserts
-  on the first. And `Object.Destroy` is an error in Edit Mode, so every fixture tears down with
-  `DestroyImmediate`.
+  component added in Edit Mode, so a driver has to be started by reflection; `Time.deltaTime` is
+  NOT a clock a fixture can rely on there — measured, one `LateUpdate` moved a fade by a frame's
+  worth (dt ≈ 0.017 s), so a value under test drifts if the rig's own visibility pass runs over
+  it — which is why the rig exposes `AlphaTarget` (the decision) beside `Alpha` (how far it has
+  got), the test asserts on the first, and a test that needs a specific alpha ticks the PIECE
+  directly instead of the rig. And `Object.Destroy` is an error in Edit Mode, so every fixture
+  tears down with `DestroyImmediate`.
+
+### The second pass: one instrument, not three strips
+
+Re-audited 2026-09-11 after the colour sheet landed, at **4.6/10**: the generated look had been
+8.6 and the painted frames took the rank, the pip states and the flashes away with them (`TintFor`
+draws painted art white), the plate was off, and the first death corrupted every bar colour for the
+rest of the session. Iterated the same day to **8.7**. What changed and why, each one measured:
+
+- **ONE OUTLINE ROW IS SHARED BY THE TWO ROWS (`rowGapTexels = -1`).** With a one-texel gap the
+  character's own helmet pixels showed through a slot in the middle of the readout and read as
+  dirt; joined, the stack is one instrument. Joining exposed three transparent corner texels
+  (every frame piece arrives with its own chamfers), which `WorldBarJoints` fills — a seam the
+  width of the bar under the health outline, and the inner corner where the mana bar meets the
+  pip. It draws UNDER the health frame so the low-health pulse still owns the whole ring.
+- **The health row draws LAST** (`SORT_RESOURCE < SORT_PIP < SORT_JOINT < SORT_HEALTH`). The
+  low-HP pulse lives in the health row's outline; drawn under the mana row it lost its whole top
+  edge to the mana row's dark outline and read as a bracket.
+- **The pip STANDS on the resource row's floor** rather than centred on it: it is taller than the
+  thin row, and centred its lower half sat inside the health row. Stood on the shared outline it
+  rises above the row as the stack's one ornament, and it is shaded like a stone rather than
+  filled like a bar — shadow row, light row, one glint texel — because a flat square of the ready
+  gold was the brightest thing over the character in the state it spends most of its life in.
+  The glint appears only on a FULL charge; on a charging stone it would say "ready" in the corner
+  of something that is not.
+- **Every status glyph sits on the same dark TILE**, `iconTexels - 2` wide and as tall as the
+  cell, chamfered, opaque, in the outline's own colour so each glyph's baked outline melts into
+  it. The painted glyphs carry only an outline dilated from their own silhouette, so the row was
+  three different shapes (a flame seven texels wide, a drop five). The tile's bottom row IS the
+  remaining-time readout, draining in the status's OWN hue lifted toward white — as a separate
+  cream line under each icon, three statuses made one near-continuous strip that was the
+  brightest thing in the stack. The timer has a sorting slot of its own: at the glyph's order the
+  dilated outline drew over it on two icons out of three (the burn timer vanished, the poison one
+  kept two texels), which is invisible in the numbers and obvious in a 6x capture.
+- **The plate is 0.88 alpha, not 0.74.** At 0.74 the pixels behind the bar showed through the
+  empty part and the missing health read as texture. `WorldBarContrastTests` pins every fill at
+  >=3:1 against the plate composited over four grounds (cobble, pale sand, foliage, dark stone);
+  the pale ground is the hard case and the hostile red measures 3.2:1 there against 1.1:1 bare.
+- **A two-row fill takes the SHADOW only.** The mana bar is two texels tall; a highlight there is
+  half the bar and reads as a two-tone stripe rather than as light on a tube.
+- **Low health is a RANK decision (`WorldBarStyle.LowFor`).** The player's own bar goes green to
+  RED — amber was tried and read as the same family as the brass caps and the gold stone beside
+  it; an ally's goes amber; a hostile's does not switch at all, and the heartbeat is the player's
+  alone — on every monster near death it would be a field of pulsing rings reporting good news
+  as an alarm. `WorldBarStackTests.TheHeartbeat_IsThePlayersAlone` pins it through
+  `WorldBarRig.HeartbeatActive`, the DECISION, because the phase rides `Time.time` and can be at
+  zero on the frame a test looks.
+- **The ramp's leading edge is desaturated harder than its highlight** (`s * 0.30` against
+  `s * 0.62`), or it is not the brightest tone for every hue: a blue's highlight leans further
+  toward yellow — through cyan, the brightest part of the wheel — and came out lighter than its
+  own edge. Found by `WorldBarPaletteTests`, not by looking. Fill motes peak at 0.7 alpha for a
+  similar reason: caught in a still frame, a full-strength mote is a single white texel in the
+  middle of the fill and reads as a dead pixel.
+- **THE FIRST DEATH USED TO CORRUPT EVERY BAR COLOUR FOR THE REST OF THE SESSION.**
+  `PlayerSpiritVisuals` tinted every renderer under the player (the bars included) and wrote the
+  tint into a `MaterialPropertyBlock` `_Color`; the revive wrote the ORIGINAL colour into that
+  same `_Color`, which left a colour frozen in the block that the shader multiplied into
+  everything the renderer was coloured afterwards — measured, the low-health amber `(245,184,41)`
+  rendered `(51,119,0)`, dark olive. Two fixes: `SpiritTintExempt` marks the rig's root and the
+  spirit look skips that subtree, and the revive restores the renderer's ORIGINAL block verbatim
+  (null when it was empty) instead of writing a colour into it. `WorldBarSpiritTests` pins both.
+- **`Valkur/SpriteDesaturate` now takes the luminance of the texel TIMES the vertex colour.** The
+  spirit world swaps every renderer's material onto it; ignoring `IN.color.rgb` drew the bars over
+  a spirit as WHITE slabs (generated art is a white texture whose whole colour is
+  `SpriteRenderer.color`) and, less visibly, drained the Dark roster's black-tinted twins to pale
+  grey ghosts. The bars stay grey during the walk on purpose — the altar and its trail are meant
+  to be the only colour in that scene — they are just legible now.
+- **Verifying any of this live needs three tricks.** A hit-stop restores `Time.timeScale` to 1 a
+  few milliseconds after a blow, so a slow-motion set BEFORE `TakeDamage` in the same call is
+  undone before the capture — set it in the call after. The lobby altar sits under the spawn
+  point, so a player killed there is revived by the altar within seconds and the spirit phase
+  never appears in a sample — teleport ten units away first. And a source file edited between
+  Unity's import and its compile leaves the test DLL one edit behind with a single
+  `Import Error Code:(4) ... modification time` warning as the only tell; force a refresh and
+  compare the DLL's write time against the source's before trusting a run.
 
 ### Hand-painted art for those bars
 
@@ -4834,7 +4917,7 @@ The bars generate their own art and always will; a painted sheet REPLACES it a p
 WorldBarSheetLayout   Core/UI/            the rectangles. Read by all four users of them
 WorldBarSkin          Data/UI/            one sprite slot per piece, on WorldBarStyle
 WorldBarSkinImporter  Editor/UI/          Valkur > UI > Export Template / Import / Clear
-Art/WorldBars/        world_bars.png      the sheet an artist paints, 64x32
+Art/WorldBars/        world_bars.png      the sheet, 128x32 today (only the eight icons are painted)
                       world_bars_guide.png  the same sheet at 8x, boxed and numbered
                       world_bars_layout.md  the table, generated with them
 ```
@@ -4934,6 +5017,75 @@ Art/WorldBars/        world_bars.png      the sheet an artist paints, 64x32
 - **The anti-wipe guard in `ParticlesRuntimeEditor` compares against the count ON DISK**, so it is
   blind once a first bad write has landed — it refused nothing here because by then the file it was
   comparing against was already small. It is a second line, not a first.
+
+## The minimap and the world map
+
+Audited 2026-09-11 at **3.4/10** and rebuilt the same day — findings, per-axis scores and what
+is still open in `.github/MINIMAP_BEAUTY_AUDIT_2026-09-11.md`. The finding that framed it: **it
+was not a map, it was a radar over a black disc** — zero pixels of terrain, the "background tile
+layer" its header promised was never ported from Python.
+
+```text
+MinimapStyle            Data/UI/            every look decision + the two shader refs (Resources/UI/)
+MinimapWorldBaker       UI/HUD/Minimap/     the world's own art baked into a terrain atlas, by camera
+MinimapFogMap           UI/HUD/Minimap/     explored mask per WORLD (outdoor / each interior), R8
+MinimapScene            UI/HUD/Minimap/     every glyph source collected once per frame, by band
+MinimapEntityClassifier UI/HUD/Minimap/     what an entity IS on the map, from the game's facts
+MinimapView             UI/HUD/Minimap/     one map on screen: composite material + 3 quad layers
+MinimapQuadGraphic      UI/HUD/Minimap/     one mesh of icon quads (glyphs, or additive FX)
+MinimapFx               UI/HUD/Minimap/     the map's particles — events, never states
+MinimapIconAtlas        UI/HUD/Minimap/     28 icons generated from SDFs, two tones
+MinimapChromeSprites    UI/HUD/Minimap/     bevelled ring, shadow, plate, buttons
+MinimapHUD (+UIBuilder, .Console)  UI/HUD/  the dial; owns the model, the bake and the world map
+WorldMapPanel (+UIBuilder)  UI/HUD/Minimap/ N (Gameplay/OpenWorldMap): full map, pin, legend
+Valkur/UI/MinimapComposite  Shaders/        terrain, ink, fog clouds + hatching, frontier, sonar
+Valkur/UI/MinimapAdditive   Shaders/        glows and particles
+minimap [rebake|reveal|fog clear|pin|zoom]  DevConsole probe
+```
+
+- **The terrain is baked by a CAMERA, not assembled from tile colours.** Buildings are sprites on
+  sixteen sorting layers with a Y-sort, and a town map is mostly buildings; a camera renders
+  exactly what the game sorts. One 32x32-unit chunk at 32 px/unit measured 3.7 ms. The bake is
+  progressive and nearest-first within `bakeBudgetMs`, and dirty chunks come from
+  `Tilemap.tilemapTileChanged`, a 1 Hz building-rect diff and a world-key change.
+- **What the bake must not see is hidden by WHITELIST.** Entities, bars, particles and weather
+  share the tiles' layer (all 32 physics layers are spent), so a culling mask cannot separate
+  them. Everything except the grid's tilemap renderers and each building's sprite renderers gets
+  `forceRenderingOff` for one synchronous `Camera.Render`, restored in a `finally`; the Global
+  Light2D is held white at 1 and every other light at 0 for the same window.
+- **`ScreenGradeFeature` skips any camera with a `targetTexture`.** Without that the vignette was
+  graded into every baked chunk. It also stops grading the spell and particle preview cameras,
+  which is what that feature's own comment already said it meant to do.
+- **No Mask.** The composite shader antialiases its own circle; glyphs are kept inside by the
+  projection (`MinimapProjection.ClampToRim` — RADIAL; the old square clamp threw corner dots
+  outside the circle, where they vanished).
+- **`MinimapQuadGraphic` needs `[RequireComponent(typeof(CanvasRenderer))]`.** Without it the
+  first build drew no glyph at all — a `MaskableGraphic` added with `AddComponent` gets no
+  CanvasRenderer on its own, and nothing logs.
+- **Fog is per WORLD, not per zone.** The old code cleared it on every `OnZoneChanged`, and
+  zones are 50x50 tiles edge to edge. A reveal writes a byte RAMP outside its radius, so the
+  bilinear sample is a soft frontier. It persists per RUN (`Saves/<run>/minimap_fog.minimap`,
+  merged on load so it can never un-explore), only in Play Mode, only into a run folder that
+  already exists, and never with a `.json` extension (the save listing enumerates those).
+- **The fog decides what may be drawn** (`MinimapReveal`): creatures only inside sight, places
+  once explored, quest marks / the pin / the corpse / allies always. The first build drew every
+  vendor over unexplored ink.
+- **Draw order is meaning.** `MinimapScene` collects into four bands (ground, entity, landmark,
+  quest) and concatenates them — stable, no sort delegate. The old dial drew the quest board
+  BEFORE the vendor squares, so every quest in town sat hidden under its giver.
+- **Entity kind comes from the game, not the dot type.** Every NPC was registered as a Monster,
+  so the six vendors were red enemy dots; `EntitySetup.ConfigureMonster` now registers neutrals
+  as `NPC`, and the classifier reads `EntityFaction`, `AlliedUnit`, `VendorNPC`, the bar rig's
+  rank and `Health` directly anyway.
+- **Particles are events** (`MinimapFx`): reveal motes on new ground, a ring when a quest mark
+  appears, rim sparks FROM the attacker's bearing when the player is hit, a sweep round the ring
+  on a new zone, a burst on reaching the pin, a gold burst from the player when an errand is
+  completed, altar rings on becoming a spirit, and weather
+  (rain streaks / snow) at the density the world's weather is rendering. The sonar ping is in
+  the shader. Night motes are the only loop, and they carry no meaning.
+- **The world map is an overlay, not a pause.** The backdrop is a raycast target (the combat poll
+  skips presses over UI) and Escape is claimed through `EscapeOwnership` so closing the map does
+  not open the General Editor. Clicking sets `MinimapWaypoint`; right click clears it.
 
 ## The player panel (bottom-left HUD)
 
