@@ -146,6 +146,14 @@ namespace Valkur.Gameplay
         private int     _lastKnownPlayerHp   = -1;   // -1 = not yet sampled
         private bool    _hasKnownPlayerPos;
 
+        // The last sample taken while the base world was actually loaded. An interior is its
+        // own grid at the origin, so the live position stops meaning anything the moment the
+        // player steps inside one — this is what the checkpoint falls back to instead.
+        // See PlayerPositionPersistence for the whole rule.
+        private Vector2 _lastBaseWorldPlayerPos;
+        private string  _lastBaseWorldPlayerZone = "";
+        private bool    _hasBaseWorldPlayerPos;
+
         // Marks the run as worth autosaving. Stays false for sessions where the
         // player did nothing meaningful (entered the world, walked around, quit) —
         // those used to leak phantom Lv.0 autosaves into the Load Game panel.
@@ -302,6 +310,15 @@ namespace Valkur.Gameplay
                     ? (_zoneManagerCache.CurrentZone ?? "")
                     : "";
                 _hasKnownPlayerPos = true;
+
+                // Only while the base world is standing. Sampling through a transition is what
+                // put an interior's room-local coordinate into the checkpoint in the first place.
+                if (!Valkur.Gameplay.World.WorldTransitionService.IsBaseWorldContentSuspended)
+                {
+                    _lastBaseWorldPlayerPos  = _lastKnownPlayerPos;
+                    _lastBaseWorldPlayerZone = _lastKnownPlayerZone;
+                    _hasBaseWorldPlayerPos   = true;
+                }
 
                 // Cached Health lookup. The player can respawn / reload mid-run,
                 // so we re-resolve when the GameObject identity changes; in
@@ -717,19 +734,64 @@ namespace Valkur.Gameplay
         /// Write a tiny position-only file for crash-safe position recovery.
         /// Uses atomic write + backup copy; safe to call every 10 seconds.
         /// </summary>
+        /// <summary>
+        /// The position that may be written down for a given live one, which is NOT always
+        /// the live one itself. Public so the save collector answers the same question the
+        /// same way — two writers of the player position with two rules is how one of them
+        /// stays wrong.
+        ///
+        /// <para>THE LIVE POSITION IS A PARAMETER, not read from this service's own tracker,
+        /// and the distinction is load-bearing in both directions. The collector must capture
+        /// the transform AT THE MOMENT OF THE CALL — a snapshot lagging by a frame is a save
+        /// that disagrees with the screen, which <c>SaveServiceDirtyAndImmediateTests</c>
+        /// pins. The checkpoint cannot read a transform on its own schedule at all: it runs
+        /// from <c>OnApplicationQuit</c>, where the player may already be gone, which is the
+        /// whole reason the tracker exists.</para>
+        ///
+        /// <para>Only the SUSPENDED branch consults the remembered base-world sample, and
+        /// that value is only ever written while no transition is in flight.</para>
+        /// </summary>
+        public PlayerPositionPersistence.Record ResolvePersistablePlayerPosition(
+            Vector2 livePosition, string liveZone)
+        {
+            bool suspended = Valkur.Gameplay.World.WorldTransitionService.IsBaseWorldContentSuspended;
+            bool hasReturn = Valkur.Gameplay.World.WorldTransitionService.TryPeekReturnPoint(out var back);
+
+            return PlayerPositionPersistence.Resolve(
+                suspended,
+                hasReturn, hasReturn && back.IsBaseWorld, back.WorldPosition,
+                _hasBaseWorldPlayerPos, _lastBaseWorldPlayerPos, _lastBaseWorldPlayerZone,
+                livePosition, liveZone ?? "");
+        }
+
         public void SavePositionCheckpoint()
         {
             if (RefuseWriteOutsidePlayMode("SavePositionCheckpoint")) return;
             if (!_hasKnownPlayerPos) return;
             // Never persist a dead player's position — it would become the crash-recovery location.
             if (_lastKnownPlayerHp <= 0) return;
+
+            // Nor an INTERIOR's. This file is read on the next boot to place the player in the
+            // base world, and an interior is a separate grid loaded at the origin — a position
+            // measured in one is off the map in the other. Refusing keeps the previous
+            // checkpoint, which is strictly better than a newer one that is wrong.
+            var where = ResolvePersistablePlayerPosition(_lastKnownPlayerPos, _lastKnownPlayerZone ?? "");
+            if (!where.IsBaseWorld)
+            {
+                VerboseLog.Log(VerboseLog.Category.Settings, () =>
+                    "[SaveService] Position checkpoint skipped: the player is inside " +
+                    $"'{where.Zone}' and no base-world position is known yet. The previous " +
+                    "checkpoint stands.");
+                return;
+            }
+
             try
             {
                 var data = new PositionCheckpointData
                 {
-                    x         = _lastKnownPlayerPos.x,
-                    y         = _lastKnownPlayerPos.y,
-                    zone      = _lastKnownPlayerZone ?? "",
+                    x         = where.Position.x,
+                    y         = where.Position.y,
+                    zone      = where.Zone ?? "",
                     timestamp = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")
                 };
                 SaveFileManager.WritePositionCheckpoint(data);

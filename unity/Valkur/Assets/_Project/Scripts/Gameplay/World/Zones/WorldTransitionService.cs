@@ -127,6 +127,21 @@ namespace Valkur.Gameplay.World
             s_hasReturnPoint = true;
         }
 
+        /// <summary>
+        /// Read the return point WITHOUT clearing it.
+        ///
+        /// <para>The save path needs to know where the player came from — a position taken
+        /// inside an interior is off the map in the base world — and it must not spend the
+        /// record doing so: <see cref="TryConsumeReturnPoint"/> is what actually walks the
+        /// player back out, so an autosave that consumed it would leave them unable to leave
+        /// the room they are standing in.</para>
+        /// </summary>
+        public static bool TryPeekReturnPoint(out ReturnPoint point)
+        {
+            point = s_hasReturnPoint ? new ReturnPoint(s_returnOverlay, s_returnPosition) : default;
+            return s_hasReturnPoint;
+        }
+
         /// <summary>Take the recorded return point and clear it. False when none was recorded.</summary>
         public static bool TryConsumeReturnPoint(out ReturnPoint point)
         {

@@ -91,6 +91,40 @@ namespace Valkur.Gameplay.Save
             data.SetMeta(MarketService.SourceMetaKey, market.SeedSource);
         }
 
+        /// <summary>
+        /// Where to record the player, and under which zone.
+        ///
+        /// <para>Routed through <c>SaveService</c> so this and the position checkpoint answer
+        /// with one rule — see <see cref="PlayerPositionPersistence"/>. Without a live service
+        /// (an EditMode fixture collecting a save) it falls back to the transform, which is
+        /// what this method always did and is correct whenever no transition is in flight.</para>
+        ///
+        /// <para>The interior position is still written when nothing better is known, because
+        /// a save document must carry SOME position. It carries the interior's zone label with
+        /// it, which is exactly what the restore side refuses to spawn on.</para>
+        /// </summary>
+        private static Vector2 ResolvePlayerPosition(GameObject player, out string zone)
+        {
+            Vector2 live     = (Vector2)player.transform.position;
+            string  liveZone = UnityEngine.Object.FindObjectOfType<ZoneManager>()?.CurrentZone ?? "";
+
+            // HasInstance, never a bare Instance: the singleton accessor is not something to
+            // touch from a collector that also runs in fixtures with no service in the scene.
+            var service = Valkur.Gameplay.SaveService.HasInstance
+                        ? Valkur.Gameplay.SaveService.Instance : null;
+            if (service == null)
+            {
+                zone = liveZone;
+                return live;
+            }
+
+            // The LIVE values go in and the answer comes back: outside a transition it is the
+            // same pair, so the snapshot still captures the transform at the moment of the call.
+            var record = service.ResolvePersistablePlayerPosition(live, liveZone);
+            zone = record.Zone ?? "";
+            return record.Position;
+        }
+
         private static PlayerSaveData CollectPlayerState(GameObject player)
         {
             var health = player.GetComponent<Health>();
@@ -103,12 +137,21 @@ namespace Valkur.Gameplay.Save
             var psd = new PlayerSaveData
             {
                 playerClass = PlayerSelectionState.SelectedPlayerKey,
-                position = (Vector2)player.transform.position,
+                // NOT the live transform. An interior is its own grid loaded at the origin, so
+                // a save taken inside one records a room-local coordinate that is off the map
+                // in the base world — measured, the player block came back as (11, -8). The
+                // service answers the same question the position checkpoint asks, so the two
+                // writers of the player position cannot disagree.
+                position = ResolvePlayerPosition(player, out string playerZone),
                 hp = health != null ? health.CurrentHp : 0,
                 maxHp = health != null ? health.MaxHp : 0,
                 mana = mana != null ? mana.CurrentMana : 0,
                 maxMana = mana != null ? mana.MaxMana : 0,
-                currentZone = UnityEngine.Object.FindObjectOfType<ZoneManager>()?.CurrentZone ?? "",
+                // Whatever zone the position above belongs to, which inside an interior is the
+                // one the player walked in FROM. Keeping the live zone beside a base-world
+                // position would label it with a room it is not in — and the restore side
+                // reads exactly that label to decide whether a position is spawnable.
+                currentZone = playerZone,
                 experience = experience != null ? experience.TotalXp : 0,
                 level = experience != null ? experience.Level : 1,
                 visualLayer = layerOccupant != null ? layerOccupant.CurrentVisualLayer : 0,

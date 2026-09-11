@@ -133,6 +133,18 @@ namespace Valkur.Gameplay.Combat.Death
         /// loaded world, and to be somewhere the player was standing a moment ago — i.e. reachable
         /// ground. It also keeps the corpse's loot in reach, which the origin would not.</para>
         /// </summary>
+        /// <summary>Whether a stored checkpoint names a zone the loaded world actually has.
+        /// The judgement itself lives in <see cref="PlayerPositionPersistence"/>.</summary>
+        private bool IsCheckpointInThisWorld(string zone)
+        {
+            var zones = FindObjectOfType<ZoneManager>();
+            System.Func<string, bool> known = zones == null
+                ? (System.Func<string, bool>)null
+                : (name => zones.TryGetZone(name, out _));
+
+            return PlayerPositionPersistence.IsUsableSpawn(zone, known, out _);
+        }
+
         private Vector3 ResolveRescuePoint(DeathRescueMode mode)
         {
             switch (mode)
@@ -140,7 +152,12 @@ namespace Valkur.Gameplay.Combat.Death
                 case DeathRescueMode.LastCheckpoint:
                 {
                     var checkpoint = SaveFileManager.ReadPositionCheckpoint();
-                    if (checkpoint != null) return new Vector3(checkpoint.x, checkpoint.y, 0f);
+                    // A checkpoint recorded inside an interior is a coordinate in a grid this
+                    // world does not have, so rescuing onto it strands the player in the void —
+                    // which for a rescue is the one outcome that must be impossible. The death
+                    // position is guaranteed to be inside the loaded world.
+                    if (checkpoint != null && IsCheckpointInThisWorld(checkpoint.zone))
+                        return new Vector3(checkpoint.x, checkpoint.y, 0f);
                     return LastDeathPosition;
                 }
 

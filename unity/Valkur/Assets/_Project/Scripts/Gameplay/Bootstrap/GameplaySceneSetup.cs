@@ -188,6 +188,23 @@ namespace Valkur.Gameplay
         /// When <paramref name="loadedSaveTimestamp"/> is null the checkpoint is applied
         /// unconditionally (direct scene entry with no main-menu save selection).
         /// </summary>
+        /// <summary>
+        /// May a stored position be spawned on in the world that is loading?
+        ///
+        /// <para>The judgement lives in <see cref="Valkur.Gameplay.Save.PlayerPositionPersistence"/>;
+        /// this only supplies the zone database. A null <c>ZoneManager</c> accepts everything,
+        /// deliberately: with no way to tell a real zone from an overlay, refusing would
+        /// relocate every player whose zone manager happened not to be up yet.</para>
+        /// </summary>
+        private static bool IsSpawnableCheckpoint(World.ZoneManager zones, string zone, out string refusal)
+        {
+            System.Func<string, bool> known = zones == null
+                ? (System.Func<string, bool>)null
+                : (name => zones.TryGetZone(name, out _));
+
+            return Valkur.Gameplay.Save.PlayerPositionPersistence.IsUsableSpawn(zone, known, out refusal);
+        }
+
         private void ApplyPositionCheckpointIfNewer(string loadedSaveTimestamp)
         {
             var checkpoint = Save.SaveFileManager.ReadPositionCheckpoint();
@@ -206,6 +223,17 @@ namespace Valkur.Gameplay
 
             var player = EntityRegistry.Player;
             if (player == null) return;
+
+            // Same refusal as the spawn path, and it has to be repeated here rather than
+            // trusted to it: this runs later in the boot and would happily move a correctly
+            // spawned player onto the interior coordinate the spawn had just declined.
+            if (!IsSpawnableCheckpoint(FindObjectOfType<World.ZoneManager>(), checkpoint.zone,
+                                       out string refusal))
+            {
+                Debug.LogWarning($"[GameplaySceneSetup] Ignoring the crash-safe checkpoint " +
+                                 $"({checkpoint.x:F2}, {checkpoint.y:F2}): {refusal}");
+                return;
+            }
 
             player.transform.position = new Vector3(checkpoint.x, checkpoint.y, 0f);
             Debug.Log($"[GameplaySceneSetup] Position restored from crash-safe checkpoint: " +

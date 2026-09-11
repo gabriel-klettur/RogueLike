@@ -5,6 +5,7 @@ using Valkur.Gameplay.Combat.Death;
 using Valkur.Data;
 using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.NPC;
+using Valkur.Gameplay.World;
 using Valkur.Gameplay.World.Layering;
 
 namespace Valkur.Gameplay.Save
@@ -111,8 +112,33 @@ namespace Valkur.Gameplay.Save
                 ? v : 0;
         }
 
+        /// <summary>
+        /// Put the player where the save says — unless the save says somewhere this world does
+        /// not have.
+        ///
+        /// <para>A save written while the player stood inside an interior carries that room's
+        /// own coordinate, which is off the map here. It is detectable because the same save
+        /// carries the zone it was measured in, and an interior's label is its overlay file
+        /// rather than a zone in the database. Leaving the player where the spawn put them is
+        /// the recoverable answer; the void is not.</para>
+        ///
+        /// <para>This is what heals a save poisoned before the write-side guard existed, so it
+        /// is not redundant with it — see <see cref="PlayerPositionPersistence"/>.</para>
+        /// </summary>
         private static void RestorePosition(GameObject player, PlayerSaveData psd)
         {
+            var zones = UnityEngine.Object.FindObjectOfType<ZoneManager>();
+            System.Func<string, bool> known = zones == null
+                ? (System.Func<string, bool>)null
+                : (name => zones.TryGetZone(name, out _));
+
+            if (!PlayerPositionPersistence.IsUsableSpawn(psd.currentZone, known, out string refusal))
+            {
+                Debug.LogWarning($"[GameStateRestorer] Keeping the spawn position: the save records " +
+                                 $"({psd.position.x:F2}, {psd.position.y:F2}) but {refusal}");
+                return;
+            }
+
             player.transform.position = new Vector3(psd.position.x, psd.position.y, 0f);
         }
 

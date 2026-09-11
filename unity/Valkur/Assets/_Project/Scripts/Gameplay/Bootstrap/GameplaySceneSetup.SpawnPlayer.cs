@@ -47,9 +47,22 @@ namespace Valkur.Gameplay
             var checkpoint = Valkur.Gameplay.Save.SaveFileManager.ReadPositionCheckpoint();
             if (checkpoint != null && !string.IsNullOrEmpty(checkpoint.timestamp))
             {
-                spawnPos = new Vector3(checkpoint.x, checkpoint.y, 0f);
-                Debug.Log($"[GameplaySceneSetup] Restoring player position from checkpoint: " +
-                          $"({checkpoint.x:F1}, {checkpoint.y:F1}) zone='{checkpoint.zone}'.");
+                // A checkpoint written inside an interior names a grid this world does not
+                // have, and spawning on its coordinates puts the player off the map. Falling
+                // back to the lobby is visibly wrong for one boot; landing in the void is a
+                // save the player cannot recover from without a console.
+                if (IsSpawnableCheckpoint(zm, checkpoint.zone, out string refusal))
+                {
+                    spawnPos = new Vector3(checkpoint.x, checkpoint.y, 0f);
+                    Debug.Log($"[GameplaySceneSetup] Restoring player position from checkpoint: " +
+                              $"({checkpoint.x:F1}, {checkpoint.y:F1}) zone='{checkpoint.zone}'.");
+                }
+                else
+                {
+                    Debug.LogWarning($"[GameplaySceneSetup] Ignoring the position checkpoint " +
+                                     $"({checkpoint.x:F1}, {checkpoint.y:F1}): {refusal} " +
+                                     $"Spawning at {spawnPos.x:F0},{spawnPos.y:F0} instead.");
+                }
             }
 
             // ── 1. Resolve player class (Resources.LoadAll scan) ────────────
