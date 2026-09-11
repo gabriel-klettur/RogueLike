@@ -5,8 +5,6 @@ using Valkur.Data;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Save;
 using Valkur.UI.HUD;
-using TMPro;
-using UnityEngine.UI;
 using UnityEngine.TestTools;
 
 namespace Valkur.Tests.EditMode.Game.Combat
@@ -15,7 +13,7 @@ namespace Valkur.Tests.EditMode.Game.Combat
     /// Pins the save-load round-trip for <see cref="Experience"/>:
     ///   • Initialize fires OnStateChanged so subscribers (HUD, telemetry)
     ///     can refresh after a Restore.
-    ///   • XpBarHUD bound BEFORE the restore still reflects the post-restore
+    ///   • The player panel bound BEFORE the restore still reflects the post-restore
     ///     state — this is the fix for the "XP doesn't persist visually"
     ///     bug where the bar stayed at 0/0 after loading a save.
     ///   • Full GameStateCollector → GameStateRestorer round-trip preserves
@@ -69,49 +67,68 @@ namespace Valkur.Tests.EditMode.Game.Combat
             LogAssert.ignoreFailingMessages = true;
 
             var playerGo = new GameObject("Player");
-            var hudGo    = new GameObject("XpBarHUD");
+            var canvasGo = new GameObject("HUDCanvas", typeof(RectTransform));
+            PlayerHUD hud = null;
             try
             {
+                var health = playerGo.AddComponent<Health>();
+                health.Initialize(100);
                 var xp = playerGo.AddComponent<Experience>();
-
-                // Build a minimal HUD wired with the canonical UI references.
-                var fillGo = new GameObject("Fill", typeof(RectTransform));
-                fillGo.transform.SetParent(hudGo.transform, false);
-                var fill = fillGo.AddComponent<Image>();
-                fill.type = Image.Type.Filled;
-                fill.fillMethod = Image.FillMethod.Horizontal;
-
-                var bgGo = new GameObject("BG", typeof(RectTransform));
-                bgGo.transform.SetParent(hudGo.transform, false);
-                var bg = bgGo.AddComponent<Image>();
-
-                var labelGo = new GameObject("Label", typeof(RectTransform));
-                labelGo.transform.SetParent(hudGo.transform, false);
-                var label = labelGo.AddComponent<TextMeshProUGUI>();
-
-                var hud = hudGo.AddComponent<XpBarHUD>();
-                hud.SetUIReferences(fill, bg, label);
+                var canvas = canvasGo.AddComponent<Canvas>();
 
                 // Bind BEFORE the simulated load — this is the real-world ordering
-                // (HUDBootstrap binds as soon as the player spawns; Save.Load runs
-                // a few frames later).
-                hud.Bind(xp);
-                Assert.AreEqual(0f, hud.TargetFill,
-                    "Sanity: brand-new Experience must show empty bar.");
+                // (the HUD binds as soon as the player spawns; Save.Load runs a few
+                // frames later).
+                hud = PlayerHUD.Create(canvas, health);
+                Assert.AreEqual(0f, hud.XpBar.Target, 0.001f,
+                    "Sanity: brand-new Experience must show an empty bar.");
 
-                // Simulate the Restore: SaveService.Load → GameStateRestorer
-                // → Experience.Initialize(150, 0).
+                // Simulate the Restore: SaveService.Load -> GameStateRestorer
+                // -> Experience.Initialize.
                 xp.Initialize(50, 0);
 
-                Assert.That(hud.TargetFill, Is.EqualTo(0.5f).Within(0.02f),
+                Assert.That(hud.XpBar.Target, Is.EqualTo(0.5f).Within(0.02f),
                     "After Initialize the HUD must reflect the loaded XP. " +
-                    "If this fails, OnStateChanged → RefreshAll wiring regressed.");
-                StringAssert.Contains("Lvl 0", label.text);
+                    "If this fails, the OnStateChanged wiring regressed.");
+                Assert.AreEqual("0", hud.Medallion.Label);
             }
             finally
             {
+                if (hud != null) Object.DestroyImmediate(hud.gameObject);
                 Object.DestroyImmediate(playerGo);
-                Object.DestroyImmediate(hudGo);
+                Object.DestroyImmediate(canvasGo);
+            }
+        }
+
+        [Test]
+        public void HUDBoundBeforeRestore_ShowsTheRestoredLevel_NotTheBootOne()
+        {
+            // The "Lvl 0" defect: the old badge read the level once at bind time and afterwards
+            // listened only for OnLevelUp, which Initialize does not raise. A save restored at
+            // level 3 went on reading 0 until the next level-up.
+            LogAssert.ignoreFailingMessages = true;
+
+            var playerGo = new GameObject("Player");
+            var canvasGo = new GameObject("HUDCanvas", typeof(RectTransform));
+            PlayerHUD hud = null;
+            try
+            {
+                var health = playerGo.AddComponent<Health>();
+                health.Initialize(100);
+                var xp = playerGo.AddComponent<Experience>();
+                var canvas = canvasGo.AddComponent<Canvas>();
+                hud = PlayerHUD.Create(canvas, health);
+
+                xp.Initialize(xp.XpRequiredForLevel(3), 3);
+
+                Assert.AreEqual(3, hud.Medallion.Level);
+                Assert.AreEqual("3", hud.Medallion.Label);
+            }
+            finally
+            {
+                if (hud != null) Object.DestroyImmediate(hud.gameObject);
+                Object.DestroyImmediate(playerGo);
+                Object.DestroyImmediate(canvasGo);
             }
         }
 

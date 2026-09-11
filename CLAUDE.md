@@ -4935,6 +4935,80 @@ Art/WorldBars/        world_bars.png      the sheet an artist paints, 64x32
   blind once a first bad write has landed — it refused nothing here because by then the file it was
   comparing against was already small. It is a second line, not a first.
 
+## The player panel (bottom-left HUD)
+
+Audited 2026-09-11 at **3.4/10** and rebuilt the same day to **8.9** — findings, per-axis
+scores, the measured result and what is open in `.github/PLAYER_HUD_BEAUTY_AUDIT_2026-09-11.md`.
+
+```text
+PlayerHudStyle        Data/UI/                 every decision, Resources/UI/PlayerHudStyle.asset
+PlayerHUD (+.Binding, +.Motes)  UI/HUD/PlayerPanel/  builds, binds, ticks. The only MonoBehaviour
+HudArt                UI/HUD/PlayerPanel/      ONE generated point-filtered atlas + 3 one-off bakes
+HudPixelFont / HudPixelText                    3x5 and 5x7 bitmap faces with a baked outline
+HudBar                                         frame, chip, heal preview, fill, notches, heartbeat
+HudPortrait / HudTextureBaker                  head crop from the east idle frame; icon minify
+HudAbilitySlot / HudDashPip / HudStatusRow / HudMedallion / HudTooltip / HudFloatText
+HudMoteLayer                                   event particles: one Graphic, pooled pixel quads
+HudEdgeVignette                                the red screen edge (blows + low health)
+Shaders/UIHudFx.shader                         UI/Default + blend mode + saturation + flash
+```
+
+- **The panel has its own whole-pixel space.** It is authored in TEXELS and drawn at
+  `HudPixelScaleFor(screen)` screen pixels per texel — the CanvasScaler's own geometric-mean
+  rule, ROUNDED (1600x800 = 2, 1080p = 3, 4K = 5). A `Pixels` child counter-scales by
+  `scale / canvas.scaleFactor` and the corner is placed on a whole screen pixel. Drawn straight
+  into the HUD canvas (factor 1.27 at 1080p) every frame edge and glyph was resampled. The outer
+  RectTransform stays in canvas units, which is what the combo badge stacks against — and it
+  moves with the resolution, so `HUDManager` re-stacks the badge on `PlayerHUD.GeometryChanged`
+  instead of placing it once at build.
+- **Every rect in that space is bottom-left, integer, via `HudRect`.** A centre pivot on an odd
+  width puts everything under it half a texel off, which at scale 3 is a smeared glyph.
+  `PlayerHudTests.EveryRectInThePixelSpace_SitsOnWholeTexels` walks the hierarchy.
+- **The three mouse slots show what the BUTTONS cast.** The old row read `SpellCaster` slots
+  0-2 under the labels 1/2/3; slot 0 is LEFT CLICK, 1-2 are empty for the player, the number
+  keys cast the spell BOOK, and the cooldown ring read the slot clock a mouse cast never sets.
+  The slots take their keys from `PlayerController.PrimarySpellKeyNow` / `SecondarySpellKey` /
+  `MiddleSpellKey` (the cast code uses the same constants), read the BOOK cooldown, and draw the
+  button from the action's live binding.
+- **`SpellCaster.OnCastRefusedForMana`** exists for the panel: a refused cast used to be silent.
+  It fires on every attempt (a held primary re-tries every frame), so the listener throttles.
+- **Spell icons are 1024x1024, bilinear, no mipmaps, in a packed non-readable atlas.** Drawn into
+  a 32-pixel slot they alias. `HudTextureBaker.Icon` halves them on the GPU (each halving at
+  texel centres is a 2x2 box filter) down to the slot's pixel size and reads back once.
+  The portrait bake does the same read-back at 1:1 to find the silhouette, because the character
+  frames are FullRect sprites whose mesh says nothing about where the head is. Both refuse on a
+  null graphics device and fall back to the raw sprite.
+- **Motes answer events only** (blow, heal, spend, cooldown back, dash back, level) and are not a
+  `ParticleSystem`: in an overlay canvas that would not sort with the Images around it. They are
+  pooled quads of one Graphic on the additive HudFx material, positions snapped to texels.
+- **Level 0 is the model's real starting level** (`XpRequiredForLevel(1)` is 100), so a fresh
+  character's medallion reads 0 — not a bug. The bug was the old badge ignoring
+  `Experience.OnStateChanged`, so a restored save at level 3 read the boot level until the next
+  level-up; the panel listens to every Experience event including `OnXpLost`.
+- **A heal must collapse the chip onto the fill, never push it ahead.** A chip in front of a
+  growing fill is drawn pale over exactly the span the heal preview owns and reads as damage.
+  Found by a red test on the first run.
+- **Assert what is DRAWN, not what is modelled.** The first build's chip was correct in the
+  model for the whole life of a blow and never on screen: `DrawWidths` re-evaluated the chip's
+  visibility only when the chip's OWN width changed, and after a blow the chip keeps its width
+  while the fill drops under it. The EditMode test asserted `ChipActive` and passed; a live
+  capture showed a bare recess. `HudBar.ChipDrawn` reads the image.
+- **In a linear-colour project, "96 % opaque" is not opaque.** Alpha blends in linear space, so a
+  4 % gap lets ~18 % of a bright surface through once encoded for the screen — measured on the
+  first tooltip, which showed the green health bar through its card. Every surface of the panel
+  that sits over something is authored at alpha 1.
+- **A ScriptableObject asset keeps the defaults it was CREATED with.** Changing an initializer in
+  `PlayerHudStyle.cs` changes nothing for `Resources/UI/PlayerHudStyle.asset`, which serialised
+  every field at creation. Re-sync the asset (copy a fresh instance's JSON over it, keeping the
+  shader) whenever a default is meant to ship.
+- **Photograph a transient at `Time.timeScale` ~0.005, in the SAME `execute_code` call that
+  triggers it.** The panel runs on game time for exactly this reason (the pause menu stops it
+  too). Round trips through the MCP bridge take seconds with the Editor unfocused, so a chip that
+  holds 0.3 s and drains in 0.45 s is gone by the next call.
+- **Screen-space overlay captures need `ScreenCapture.CaptureScreenshot`.** The MCP screenshot
+  tool renders through the main camera and silently omits every overlay canvas — the capture
+  looks like a game with no HUD at all.
+
 ## Incident reports
 
 Past incidents that left investigation hooks behind. Read these first when a

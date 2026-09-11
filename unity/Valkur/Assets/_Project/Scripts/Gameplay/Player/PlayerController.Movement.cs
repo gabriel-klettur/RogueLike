@@ -325,6 +325,18 @@ namespace Valkur.Gameplay
         /// <summary>What left click casts during ordinary play. Python parity: M_LEFT.</summary>
         private const string DEFAULT_PRIMARY_SPELL_KEY = "fireball";
 
+        /// <summary>What right click casts. Python parity: M_RIGHT. Public so the player panel's
+        /// mouse slots show the spell the button actually casts — they used to read SpellCaster
+        /// slots 0-2 under the labels 1, 2 and 3, and slot 0 is the LEFT CLICK.</summary>
+        public const string SecondarySpellKey = "slash";
+
+        /// <summary>What middle click channels. Python parity: M_MIDDLE.</summary>
+        public const string MiddleSpellKey = "laser_beam";
+
+        /// <summary>What left click casts right now: the default, or the spell an open editor
+        /// that opts in (<see cref="IChoosesPrimaryCastSpell"/>) has selected.</summary>
+        public string PrimarySpellKeyNow => ResolvePrimaryCastKey();
+
         /// <summary>Beam started by LEFT click, so its release does not stop a middle-click one.</summary>
         private LaserBeamController _leftHeldBeam;
 
@@ -976,8 +988,8 @@ namespace Valkur.Gameplay
             if (InputContextPolicy.IsLive(_descSecondaryAttack) &&
                 InputBindingResolver.WasPerformedThisFrame(SecondaryAttackAction))
             {
-                if (_spellCaster != null && _spellCaster.TryCastByKey("slash", _facingDirection))
-                    TriggerCastAnimation("slash");
+                if (_spellCaster != null && _spellCaster.TryCastByKey(SecondarySpellKey, _facingDirection))
+                    TriggerCastAnimation(SecondarySpellKey);
             }
 
             // Middle click → laser beam (hold-to-channel)
@@ -995,12 +1007,12 @@ namespace Valkur.Gameplay
                     if (existingBeam != null)
                         existingBeam.Refresh();
                     else
-                        _spellCaster.TryCastByKey("laser_beam", _facingDirection);
+                        _spellCaster.TryCastByKey(MiddleSpellKey, _facingDirection);
                     // Beam is hold-to-channel — keep refreshing the cast animation
                     // each frame so the pose persists for as long as the player
                     // holds the trigger. The key is passed so the refresh is recognised
                     // as the SAME cast and does not re-roll the variant every frame.
-                    TriggerCastAnimation("laser_beam");
+                    TriggerCastAnimation(MiddleSpellKey);
                 }
             }
             if (InputBindingResolver.WasReleasedThisFrame(middleAction))

@@ -63,15 +63,21 @@ namespace Valkur.Tests.EditMode.Game.Input
         [Test]
         public void RightClick_CastsSlash()
         {
-            StringAssert.Contains("TryCastByKey(\"slash\", _facingDirection)", Movement(),
+            // The key is a public constant now, because the player panel's right-click slot reads
+            // it to show the spell the button casts. Pin the VALUE and that the cast uses it.
+            Assert.AreEqual("slash", Valkur.Gameplay.PlayerController.SecondarySpellKey,
                 "Right click must cast slash — the historical M_RIGHT binding.");
+            StringAssert.Contains("TryCastByKey(SecondarySpellKey, _facingDirection)", Movement(),
+                "Right click must cast through the constant the HUD reads, or the two can disagree.");
         }
 
         [Test]
         public void MiddleClick_CastsLaserBeam()
         {
-            StringAssert.Contains("TryCastByKey(\"laser_beam\", _facingDirection)", Movement(),
+            Assert.AreEqual("laser_beam", Valkur.Gameplay.PlayerController.MiddleSpellKey,
                 "Middle click must cast laser_beam — the historical M_MIDDLE binding.");
+            StringAssert.Contains("TryCastByKey(MiddleSpellKey, _facingDirection)", Movement(),
+                "Middle click must cast through the constant the HUD reads, or the two can disagree.");
         }
 
         /// <summary>

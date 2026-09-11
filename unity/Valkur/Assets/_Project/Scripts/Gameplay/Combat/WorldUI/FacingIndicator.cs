@@ -12,8 +12,8 @@ namespace Valkur.Gameplay.Combat
     /// FIXED, so it cannot be read as reach. It is WHITE with one shade per layer, because
     /// taking the primary spell's palette made a fireball draw a red marker and turned the aim
     /// indicator into a readout of a loadout choice. Per-slot cooldowns are absent — and
-    /// <c>SpellBarHUD</c>, <c>DashMeterHUD</c> and <c>PlayerAbilityRowHUD</c> already say that
-    /// three times over. So is the charge ramp, which <c>ChargeBuildFX</c> owns.</para>
+    /// <c>SpellBarHUD</c> and the player panel's mouse slots and dash pip (<c>PlayerHUD</c>)
+    /// already say that twice over. So is the charge ramp, which <c>ChargeBuildFX</c> owns.</para>
     ///
     /// <para><b>Three second jobs were built here and then removed, and each was individually
     /// defensible.</b> A sweep that dimmed while the primary recovered; a tip that contracted

@@ -1,0 +1,94 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dcc0502a18b236443a965fbb7038db96, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hudFxShader: {fileID: 4800000, guid: 26a514c443ab6964192d7486350c6664, type: 3}
+  texelPixelsAtReference: 2
+  referenceResolution: {x: 1600, y: 800}
+  minPixelScale: 1
+  marginTexels: 6
+  paddingTexels: 5
+  portraitTexels: 47
+  stackWidthTexels: 132
+  columnGapTexels: 4
+  healthBarTexels: 13
+  manaBarTexels: 9
+  slotTexels: 20
+  xpBarTexels: 5
+  rowGapTexels: 2
+  medallionTexels: 17
+  outline: {r: 0.03, g: 0.03, b: 0.05, a: 1}
+  stoneLight: {r: 0.17, g: 0.17, b: 0.22, a: 1}
+  stoneDark: {r: 0.08, g: 0.08, b: 0.11, a: 1}
+  gold: {r: 0.9, g: 0.76, b: 0.38, a: 1}
+  goldShade: {r: 0.52, g: 0.4, b: 0.17, a: 1}
+  recess: {r: 0.05, g: 0.05, b: 0.08, a: 1}
+  bevelLight: {r: 1, g: 1, b: 1, a: 0.1}
+  followWorldBarPalette: 1
+  health: {r: 0.3, g: 0.88, b: 0.34, a: 1}
+  healthLow: {r: 0.94, g: 0.27, b: 0.2, a: 1}
+  healthChip: {r: 1, g: 0.93, b: 0.85, a: 0.95}
+  heal: {r: 0.78, g: 1, b: 0.72, a: 1}
+  mana: {r: 0.36, g: 0.55, b: 1, a: 1}
+  manaChip: {r: 0.75, g: 0.86, b: 1, a: 0.9}
+  xp: {r: 1, g: 0.8, b: 0.3, a: 1}
+  xpChip: {r: 1, g: 0.97, b: 0.8, a: 1}
+  dashReady: {r: 0.2, g: 0.86, b: 1, a: 1}
+  dashCharging: {r: 0.3, g: 0.42, b: 0.52, a: 1}
+  notch: {r: 0, g: 0, b: 0, a: 0.42}
+  lowThreshold: 0.3
+  text: {r: 1, g: 0.98, b: 0.93, a: 1}
+  textDim: {r: 0.72, g: 0.74, b: 0.82, a: 1}
+  cooldownShade: {r: 0.02, g: 0.02, b: 0.05, a: 0.72}
+  lockedIcon: {r: 0.3, g: 0.3, b: 0.36, a: 0.55}
+  manaShortIcon: {r: 0.46, g: 0.55, b: 0.95, a: 1}
+  readyFlashSeconds: 0.32
+  readyFlashMinCooldown: 1.5
+  fillLerpSpeed: 11
+  chipHoldSeconds: 0.3
+  chipDrainSeconds: 0.45
+  hitFlashSeconds: 0.12
+  knockTexels: 1
+  knockSeconds: 0.2
+  healGlowSeconds: 0.45
+  heartbeatHz: 1.25
+  levelUpSeconds: 0.9
+  refusedFlashSeconds: 0.35
+  gem: {r: 0.72, g: 0.12, b: 0.16, a: 1}
+  gemLit: {r: 1, g: 0.55, b: 0.55, a: 1}
+  medallionFace: {r: 0.22, g: 0.15, b: 0.1, a: 1}
+  medallionFaceRim: {r: 0.07, g: 0.05, b: 0.05, a: 1}
+  spiritStone: {r: 0.72, g: 0.8, b: 0.95, a: 1}
+  dangerEdge: {r: 0.52, g: 0.02, b: 0.03, a: 1}
+  hitBarFlash: {r: 1, g: 1, b: 1, a: 0.55}
+  hitPortraitFlash: {r: 1, g: 0.25, b: 0.18, a: 0.38}
+  healPortraitFlash: {r: 0.7, g: 1, b: 0.6, a: 0.35}
+  levelPortraitFlash: {r: 1, g: 0.86, b: 0.45, a: 0.5}
+  levelBarFlash: {r: 1, g: 1, b: 0.85, a: 0.85}
+  backdropCentre: {r: 0.34, g: 0.25, b: 0.18, a: 1}
+  backdropEdge: {r: 0.05, g: 0.05, b: 0.08, a: 1}
+  portraitSaturationAtZero: 0.2
+  portraitBodyTexels: 112
+  moteCapacity: 72
+  motesOnHit: 10
+  motesOnHeal: 8
+  motesOnSpend: 3
+  motesOnReady: 6
+  motesOnLevelUp: 32
+  motesOnDashReady: 6
+  moteLifeSeconds: 0.55
+  moteSpeedTexels: 34
+  moteGravityTexels: 90
+  lowHealthVignetteAlpha: 0.34
+  hitVignetteAlpha: 0.22
+  hitVignetteSeconds: 0.35

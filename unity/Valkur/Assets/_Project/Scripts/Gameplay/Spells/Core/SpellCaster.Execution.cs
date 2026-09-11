@@ -258,7 +258,11 @@ namespace Valkur.Gameplay.Spells
                 var mana = ResolveMana();
                 if (mana != null)
                 {
-                    if (!mana.TryConsume(manaCost)) return false;
+                    if (!mana.TryConsume(manaCost))
+                    {
+                        OnCastRefusedForMana?.Invoke(spellKey);
+                        return false;
+                    }
                 }
                 else if (!_freeCastWithoutMana)
                 {

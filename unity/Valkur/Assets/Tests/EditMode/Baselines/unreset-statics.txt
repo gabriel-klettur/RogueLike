@@ -82,9 +82,6 @@ COLLECTION	Valkur.Gameplay.World.Layering.WorldCollisionLayers._worldLayerIndice
 # resets the 4 sprite fields (_solidSprite etc.), not this one. Stale entries are just
 # recomputed display strings with no destroyed-object risk, so it's backlog, not urgent.
 COLLECTION	Valkur.UI.HUD.ComboHUD.CountLabelCache
-# 2026-08-25 field-level ratchet sharpening: fixed 3-entry lookup array ("1"/"2"/"3"),
-# never mutated -- same "immutable lookup table" class as PlayerSelectionState.DefaultOrder.
-COLLECTION	Valkur.UI.HUD.HUDManager.AbilityRowKeyLabels
 COLLECTION	Valkur.UI.HUD.HUDVisibilityController.RootHUDCanvasNames
 COLLECTION	Valkur.UI.MainMenu.MainMenuUI.BgPaths
 COLLECTION	Valkur.UI.MainMenu.MainMenuUI.ClassBorderColors

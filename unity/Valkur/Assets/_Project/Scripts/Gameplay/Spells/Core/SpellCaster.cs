@@ -85,6 +85,15 @@ namespace Valkur.Gameplay.Spells
             { SpellType.Buff,             new BuffExecutor() },
         };
 
+        /// <summary>
+        /// A cast was refused because the caster could not pay its mana. Args: the spell key.
+        /// Before this existed a refusal was silent: the click did nothing and nothing on screen
+        /// said why, which reads as an unresponsive button. The player panel flashes the mana bar
+        /// and the slot on it. Fires on every refused attempt — a held primary re-attempts every
+        /// frame — so a listener throttles its own feedback.
+        /// </summary>
+        public event System.Action<string> OnCastRefusedForMana;
+
         public CastPhase CurrentPhase => _phase;
         public int ActiveSlot => _activeSlot;
         public float PhaseTimer => _phaseTimer;
@@ -198,7 +207,10 @@ namespace Valkur.Gameplay.Spells
                 if (mana != null)
                 {
                     if (!mana.TryConsume(manaCost))
+                    {
+                        OnCastRefusedForMana?.Invoke(spell.spellKey);
                         return false;
+                    }
                 }
                 else if (!_freeCastWithoutMana)
                 {

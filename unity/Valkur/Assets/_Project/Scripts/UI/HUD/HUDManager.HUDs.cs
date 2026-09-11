@@ -132,8 +132,8 @@ namespace Valkur.UI.HUD
         {
             GameEditorManager.OnEditorStateChanged -= OnEditorStateChanged;
 
-            if (_playerMana != null)
-                _playerMana.OnManaChanged -= OnPlayerManaChanged;
+            if (_playerHUD != null)
+                _playerHUD.GeometryChanged -= OnPlayerPanelGeometryChanged;
 
             base.OnDestroy();
         }
@@ -142,8 +142,6 @@ namespace Valkur.UI.HUD
         {
             if (_playerHudPanel != null)
                 _playerHudPanel.SetActive(!editorActive);
-            if (_xpBarPanel != null)
-                _xpBarPanel.SetActive(!editorActive);
             if (_spellCooldownPanel != null)
                 _spellCooldownPanel.SetActive(!editorActive);
             if (_comboPanel != null)

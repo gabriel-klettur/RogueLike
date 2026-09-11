@@ -16,13 +16,13 @@ namespace Valkur.UI.HUD
         private PlayerHUD _playerHUD;
         private TargetHUD _targetHUD;
         private Canvas _canvas;
-        private Mana _playerMana;
         private GameObject _playerHudPanel;
 
         // Footprint of the unified bottom-left panel, published so widgets that
         // stack above it (combo badge today) don't have to recompute the math.
         private float _playerPanelWidth;
         private float _playerPanelHeight;
+        private Vector2 _playerPanelOrigin = new Vector2(HudPanelMargin, HudPanelMargin);
 
         public TargetHUD TargetHUD => _targetHUD;
 
@@ -39,7 +39,7 @@ namespace Valkur.UI.HUD
             if (_canvas == null)
                 CreateCanvas();
 
-            CreatePlayerHUD(playerHealth);
+            CreatePlayerHUD(playerHealth, playerMana);
             CreateTargetHUD();
 
             // Combo badge — stacks directly above the unified player panel.
@@ -55,21 +55,8 @@ namespace Valkur.UI.HUD
 
             UILayerHelper.SetUILayerRecursive(_canvas.gameObject);
 
-            // Wire mana to PlayerHUD
-            if (playerMana != null)
-            {
-                _playerMana = playerMana;
-                _playerMana.OnManaChanged += OnPlayerManaChanged;
-                OnPlayerManaChanged(_playerMana.CurrentMana, _playerMana.MaxMana);
-            }
 
             Debug.Log("[HUDManager] HUD initialized for player.");
-        }
-
-        private void OnPlayerManaChanged(int current, int max)
-        {
-            if (_playerHUD != null)
-                _playerHUD.SetMana(current, max);
         }
 
         private void CreateCanvas()
@@ -89,94 +76,31 @@ namespace Valkur.UI.HUD
             canvasGo.AddComponent<GraphicRaycaster>();
         }
 
-        // ── Layout constants for the unified bottom-left HUD panel ─────────
-        // Outer panel holds the portrait (left) + a vertical stack (right) of
-        // HP / MP / 3 ability slots / XP bar — mirrors the reference layout.
-        private const float HudPanelMargin     = 16f;
-        private const float HudPanelPadding    = 8f;
-        private const float HudPanelInnerSpacing = 8f;
-        private const float HudPortraitSize    = 108f;
-        private const float HudStackWidth      = 220f;
-        private const float HudBarHeight       = 22f;
-        private const float HudAbilityRowHeight = 38f;
-        private const float HudXpRowHeight     = 18f;
-        private const float HudStackSpacing    = 4f;
+        // Gap between the HUD canvas's bottom-left corner and the panel is owned by
+        // PlayerHudStyle.marginTexels now; this is only what the combo badge falls back to before
+        // the panel has measured itself.
+        private const float HudPanelMargin = 16f;
 
-        private void CreatePlayerHUD(Health playerHealth)
+        /// <summary>
+        /// Builds the bottom-left player panel. Everything about it — its art, its pixel grid, what
+        /// it listens to — is PlayerHUD's; this only creates it and keeps the combo badge above it.
+        /// </summary>
+        private void CreatePlayerHUD(Health playerHealth, Mana playerMana)
         {
-            // --- Container panel (bottom-left) ---
-            var panel = CreateUIObject("PlayerHUDPanel", _canvas.transform);
-            var panelRect = panel.GetComponent<RectTransform>();
-            panelRect.anchorMin = new Vector2(0f, 0f);
-            panelRect.anchorMax = new Vector2(0f, 0f);
-            panelRect.pivot = new Vector2(0f, 0f);
-            panelRect.anchoredPosition = new Vector2(HudPanelMargin, HudPanelMargin);
+            _playerHUD = PlayerHUD.Create(_canvas, playerHealth, playerMana);
+            _playerHudPanel = _playerHUD.gameObject;
+            _playerHUD.GeometryChanged += OnPlayerPanelGeometryChanged;
+            OnPlayerPanelGeometryChanged();
+        }
 
-            float stackHeight = HudBarHeight * 2f + HudAbilityRowHeight + HudXpRowHeight + HudStackSpacing * 3f;
-            float panelHeight = Mathf.Max(HudPortraitSize, stackHeight) + HudPanelPadding * 2f;
-            float panelWidth  = HudPortraitSize + HudStackWidth + HudPanelInnerSpacing + HudPanelPadding * 2f;
-            panelRect.sizeDelta = new Vector2(panelWidth, panelHeight);
-            _playerPanelWidth  = panelWidth;
-            _playerPanelHeight = panelHeight;
-
-            // Semi-transparent background
-            var panelImg = panel.AddComponent<Image>();
-            panelImg.color = new Color(0f, 0f, 0f, 0.55f);
-
-            // Horizontal layout: portrait | stack
-            var hLayout = panel.AddComponent<HorizontalLayoutGroup>();
-            hLayout.padding = new RectOffset(
-                (int)HudPanelPadding, (int)HudPanelPadding,
-                (int)HudPanelPadding, (int)HudPanelPadding);
-            hLayout.spacing = HudPanelInnerSpacing;
-            hLayout.childForceExpandWidth  = false;
-            hLayout.childForceExpandHeight = true;
-            hLayout.childControlWidth      = true;
-            hLayout.childControlHeight     = true;
-            hLayout.childAlignment         = TextAnchor.MiddleLeft;
-
-            // --- Portrait (left) ---
-            CreatePortrait(panel.transform, playerHealth);
-
-            // --- Stat stack (right) ---
-            var stack = CreateUIObject("StatStack", panel.transform);
-            var stackLe = stack.AddComponent<LayoutElement>();
-            stackLe.preferredWidth  = HudStackWidth;
-            stackLe.preferredHeight = stackHeight;
-            stackLe.flexibleWidth   = 0f;
-            stackLe.flexibleHeight  = 0f;
-
-            var vLayout = stack.AddComponent<VerticalLayoutGroup>();
-            vLayout.padding = new RectOffset(0, 0, 0, 0);
-            vLayout.spacing = HudStackSpacing;
-            vLayout.childForceExpandWidth  = true;
-            vLayout.childForceExpandHeight = false;
-            vLayout.childControlWidth      = true;
-            vLayout.childControlHeight     = true;
-            vLayout.childAlignment         = TextAnchor.MiddleLeft;
-
-            // HP bar (green, value overlaid)
-            var hpRow = CreateOverlayBar(stack.transform, "HpBar", HudBarHeight,
-                new Color(0.20f, 0.85f, 0.20f, 1f),
-                out var hpFill, out var hpBg, out var hpText);
-
-            // MP bar (blue, value overlaid)
-            var mpRow = CreateOverlayBar(stack.transform, "MpBar", HudBarHeight,
-                new Color(0.31f, 0.47f, 1.0f, 1f),
-                out var mpFill, out var mpBg, out var mpText);
-
-            // 3 ability slots (icons + radial cooldown) — reads SpellCaster.
-            CreateAbilityRow(stack.transform, playerHealth != null ? playerHealth.gameObject : null);
-
-            // XP bar (yellow) — last in the stack.
-            var xp = playerHealth != null ? playerHealth.GetComponent<Experience>() : null;
-            CreateXpBarHUD(xp, stack.transform);
-
-            // Attach PlayerHUD component (drives HP+MP fills).
-            _playerHudPanel = panel;
-            _playerHUD = panel.AddComponent<PlayerHUD>();
-            _playerHUD.SetUIReferences(hpFill, hpBg, hpText, mpFill, mpBg, mpText);
-            _playerHUD.Initialize(playerHealth);
+        private void OnPlayerPanelGeometryChanged()
+        {
+            if (_playerHUD == null) return;
+            var rt = _playerHUD.Panel;
+            _playerPanelWidth = rt.sizeDelta.x;
+            _playerPanelHeight = rt.sizeDelta.y;
+            _playerPanelOrigin = rt.anchoredPosition;
+            ApplyComboPlacement();
         }
     }
 }
