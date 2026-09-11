@@ -231,6 +231,110 @@ namespace Valkur.UI.HUD
             return tex;
         }
 
+        // -- Figure -------------------------------------------------------------------
+
+        /// <summary>
+        /// The WHOLE figure of <paramref name="sprite"/>, fitted inside <paramref name="outW"/> by
+        /// <paramref name="outH"/> texels, standing on the bottom edge, outlined. Where
+        /// <see cref="Portrait"/> crops a head, this keeps the body — the inventory's paper doll
+        /// stands the character between the slots it is wearing. The reduction is the SMALLEST
+        /// whole factor that fits, never a fraction, so the pixel art stays pixel art. Null when it
+        /// cannot be baked.
+        /// </summary>
+        public static Texture2D Figure(Sprite sprite, int outW, int outH, Color outline)
+        {
+            if (sprite == null || outW <= 2 || outH <= 2 || !CanBake) return null;
+            var source = sprite.texture;
+            if (source == null) return null;
+
+            int sw = Mathf.Max(1, Mathf.RoundToInt(sprite.rect.width));
+            int sh = Mathf.Max(1, Mathf.RoundToInt(sprite.rect.height));
+            GetUvBounds(sprite, out var uvMin, out var uvMax);
+
+            Color32[] src;
+            var prevActive = RenderTexture.active;
+            var rt = RenderTexture.GetTemporary(sw, sh, 0, RenderTextureFormat.ARGB32);
+            try
+            {
+                rt.filterMode = FilterMode.Point;
+                Graphics.Blit(source, rt, uvMax - uvMin, uvMin);
+                var tmp = ReadBack(rt, sw, sh, FilterMode.Point);
+                src = tmp.GetPixels32();
+                HudLifetime.Release(tmp);
+            }
+            finally
+            {
+                RenderTexture.active = prevActive;
+                RenderTexture.ReleaseTemporary(rt);
+            }
+
+            int top = -1, bottom = sh, left = sw, right = -1;
+            for (int y = 0; y < sh; y++)
+                for (int x = 0; x < sw; x++)
+                {
+                    if (src[y * sw + x].a <= 96) continue;
+                    if (y > top) top = y;
+                    if (y < bottom) bottom = y;
+                    if (x < left) left = x;
+                    if (x > right) right = x;
+                }
+            if (top < 0) return null;
+
+            int bodyW = right - left + 1, bodyH = top - bottom + 1;
+            // Two texels of room for the outline, one on each side.
+            int k = Mathf.Max(1, Mathf.Max(Mathf.CeilToInt(bodyW / (float)(outW - 2)),
+                                           Mathf.CeilToInt(bodyH / (float)(outH - 2))));
+            int figW = Mathf.CeilToInt(bodyW / (float)k), figH = Mathf.CeilToInt(bodyH / (float)k);
+            int ox0 = (outW - figW) / 2, oy0 = 1;
+
+            var outPx = new Color32[outW * outH];
+            for (int fy = 0; fy < figH; fy++)
+            {
+                for (int fx = 0; fx < figW; fx++)
+                {
+                    float r = 0, g = 0, b = 0, a = 0;
+                    for (int by = 0; by < k; by++)
+                        for (int bx = 0; bx < k; bx++)
+                        {
+                            int sx = left + fx * k + bx, sy = bottom + fy * k + by;
+                            if (sx < 0 || sy < 0 || sx >= sw || sy >= sh) continue;
+                            var p = src[sy * sw + sx];
+                            float pa = p.a / 255f;
+                            r += p.r * pa; g += p.g * pa; b += p.b * pa; a += pa;
+                        }
+                    if (a <= 0f || a / (k * k) < 0.5f) continue;
+                    int px = ox0 + fx, py = oy0 + fy;
+                    if (px < 0 || py < 0 || px >= outW || py >= outH) continue;
+                    outPx[py * outW + px] = new Color32((byte)(r / a), (byte)(g / a), (byte)(b / a), 255);
+                }
+            }
+
+            var outlined = (Color32[])outPx.Clone();
+            Color32 edge = outline;
+            for (int y = 0; y < outH; y++)
+                for (int x = 0; x < outW; x++)
+                {
+                    if (outPx[y * outW + x].a != 0) continue;
+                    bool near =
+                        (x > 0 && outPx[y * outW + x - 1].a != 0) ||
+                        (x < outW - 1 && outPx[y * outW + x + 1].a != 0) ||
+                        (y > 0 && outPx[(y - 1) * outW + x].a != 0) ||
+                        (y < outH - 1 && outPx[(y + 1) * outW + x].a != 0);
+                    if (near) outlined[y * outW + x] = edge;
+                }
+
+            var tex = new Texture2D(outW, outH, TextureFormat.RGBA32, false, false)
+            {
+                name = "HudFigure_" + sprite.name,
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+                hideFlags = HideFlags.DontSave,
+            };
+            tex.SetPixels32(outlined);
+            tex.Apply(false, false);
+            return tex;
+        }
+
         // -- Helpers -------------------------------------------------------------------
 
         private static void GetUvBounds(Sprite sprite, out Vector2 min, out Vector2 max)

@@ -18,7 +18,7 @@ namespace Valkur.Gameplay.Combat
     /// <para>Ordered by <c>StatusEffectKind</c>'s integer value. A kind with no drawing gets no
     /// icon rather than a placeholder: an absent icon is honest, a wrong one is not.</para>
     /// </summary>
-    internal static class StatusGlyphs
+    public static class StatusGlyphs
     {
         // NOT `static readonly`. Domain Reload is off and the ratchet in
         // DomainReloadStaticResetTests reads the reset hook's raw IL for a `stsfld` on the field

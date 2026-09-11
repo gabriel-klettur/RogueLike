@@ -3,6 +3,7 @@
     "rootNamespace": "Valkur.UIKit",
     "references": [
         "Valkur.Core",
+        "Valkur.Data",
         "Unity.TextMeshPro",
         "Unity.InputSystem"
     ],

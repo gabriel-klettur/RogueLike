@@ -10,6 +10,7 @@ namespace Valkur.UI.HUD
         Plus = 1,
         Star = 2,
         Glow = 3,
+        Note = 4,
     }
 
     /// <summary>
@@ -170,6 +171,7 @@ namespace Valkur.UI.HUD
                 case HudMoteShape.Plus: return _art.MotePlus;
                 case HudMoteShape.Star: return _art.MoteStar;
                 case HudMoteShape.Glow: return _art.MoteGlow;
+                case HudMoteShape.Note: return _art.MoteNote;
                 default: return _art.MoteDot;
             }
         }

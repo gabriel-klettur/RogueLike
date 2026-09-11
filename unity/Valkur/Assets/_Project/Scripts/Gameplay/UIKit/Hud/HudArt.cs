@@ -88,6 +88,7 @@ namespace Valkur.UI.HUD
         public Sprite MotePlus { get; private set; }
         public Sprite MoteStar { get; private set; }
         public Sprite MoteGlow { get; private set; }
+        public Sprite MoteNote { get; private set; }
         public Sprite[] StatusGlyph { get; private set; }
 
         private readonly Dictionary<char, HudGlyph> _small = new Dictionary<char, HudGlyph>();
@@ -235,6 +236,16 @@ namespace Valkur.UI.HUD
                 float a = Mathf.Clamp01(1f - d / 2.7f);
                 return Grey(255, (int)(a * a * 255f));
             }, Vector4.zero);
+            // An eighth note, for the music panel: the one mote that says what kind of event it
+            // answers. No outline — motes are drawn additive, where a dark rim adds nothing.
+            AddPattern("mote_note", new[]
+            {
+                "  # ",
+                "  ##",
+                "  # ",
+                "### ",
+                "### ",
+            }, c => c == '#' ? (Color32?)Grey(255, 255) : null, outline: false);
 
             int statusCount = Valkur.Gameplay.Combat.StatusGlyphs.Count;
             for (int i = 0; i < statusCount; i++)
@@ -282,6 +293,7 @@ namespace Valkur.UI.HUD
             MotePlus = SpriteOf("mote_plus");
             MoteStar = SpriteOf("mote_star");
             MoteGlow = SpriteOf("mote_glow");
+            MoteNote = SpriteOf("mote_note");
             StatusGlyph = new Sprite[statusCount];
             for (int i = 0; i < statusCount; i++) StatusGlyph[i] = SpriteOf("status_" + i);
         }
@@ -340,7 +352,7 @@ namespace Valkur.UI.HUD
 
         /// <summary>Turns a top-down pattern into bottom-up pixels, optionally dilating a dark
         /// one-texel outline around every inked pixel (8-neighbourhood).</summary>
-        internal static Color32[] Rasterise(string[] rows, System.Func<char, Color32?> map, bool outline,
+        public static Color32[] Rasterise(string[] rows, System.Func<char, Color32?> map, bool outline,
                                             out int w, out int h)
         {
             int pw = 0;
