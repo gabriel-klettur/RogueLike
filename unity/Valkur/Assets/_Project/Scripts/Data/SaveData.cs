@@ -89,6 +89,48 @@ namespace Valkur.Data
         /// spent nothing", which is exactly what such a save describes.
         /// </summary>
         public ProgressionSaveData progression = new ProgressionSaveData();
+
+        /// <summary>
+        /// Quests taken, quests finished, and how far along each open one is. Never
+        /// null, for the same reason <see cref="progression"/> is not: a save written
+        /// before quests existed arrives here as an EMPTY document, which reads as
+        /// "this character has accepted nothing" — which is exactly what such a save
+        /// describes. No schema bump, and no migration.
+        /// </summary>
+        public QuestSaveData quests = new QuestSaveData();
+    }
+
+    /// <summary>
+    /// The persisted half of the quest log.
+    ///
+    /// <para>Three parallel lists rather than a list of records, the same shape
+    /// <see cref="ProgressionSaveData"/> uses and for the same reason: JsonUtility
+    /// serializes lists of primitives and refuses a dictionary. The one wrinkle is
+    /// per-objective progress, which is a list PER QUEST — a jagged array does not
+    /// survive JsonUtility either, so it is flattened into
+    /// <see cref="activeProgress"/> with <see cref="activeObjectiveCounts"/> saying
+    /// where each quest's run begins.</para>
+    ///
+    /// <para>Living in <c>Valkur.Data</c> and not as a nested type on
+    /// <c>QuestManager</c> is not a style choice: the save assembly may not reference
+    /// <c>Valkur.Gameplay</c>.</para>
+    /// </summary>
+    [Serializable]
+    public class QuestSaveData
+    {
+        public List<string> activeQuestIds = new List<string>();
+        public List<string> completedQuestIds = new List<string>();
+
+        /// <summary>How many objective counters each active quest contributed, in order.</summary>
+        public List<int> activeObjectiveCounts = new List<int>();
+
+        /// <summary>Every active quest's counters, end to end.</summary>
+        public List<int> activeProgress = new List<int>();
+
+        /// <summary>True when this document says nothing at all.</summary>
+        public bool IsEmpty =>
+            (activeQuestIds == null || activeQuestIds.Count == 0) &&
+            (completedQuestIds == null || completedQuestIds.Count == 0);
     }
 
     /// <summary>

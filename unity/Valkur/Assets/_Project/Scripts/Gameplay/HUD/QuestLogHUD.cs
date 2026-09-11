@@ -1,43 +1,52 @@
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
-using UnityEngine.UI;
 using Valkur.Core;
 using Valkur.Gameplay.Quests;
 
 namespace Valkur.Gameplay.HUD
 {
     /// <summary>
-    /// Minimal text-only quest log. Reads the active quests off
-    /// <see cref="QuestManager"/> and renders each one as
-    ///   <c>"Quest Name"</c>
-    ///   <c>  - Objective 1 (3/5)</c>
-    ///   <c>  - Objective 2 (1/2)</c>
-    /// in a Canvas overlay anchored to the top-right corner.
+    /// The quest tracker: the corner window that says what the player is carrying and how
+    /// far along each errand is.
     ///
-    /// Refreshes on the manager's OnQuestStarted / OnQuestCompleted events
-    /// AND on each KillCountObjective.OnProgressChanged tick so the text
-    /// is live without per-frame polling. Built procedurally — no prefab
-    /// required.
+    /// <para><b>IT IS A WINDOW NOW, NOT A LABEL.</b> It shipped as one TMP blob inside a
+    /// non-interactive rectangle — no drag, no resize, no way to put it away, and nothing in
+    /// it could be clicked. Three consequences followed from that one decision. A player who
+    /// wanted the corner back had no verb for it. A quest DROPPED from the conversation panel
+    /// stayed listed here (see <see cref="QuestManager.OnQuestAbandoned"/>, which did not
+    /// exist). And the one action a tracker invites — "I am done carrying this" — was
+    /// reachable only by walking back across the map to the character who gave it.</para>
     ///
-    /// Real production UI would have collapsible categories, sort by
-    /// completion, fade-in / fade-out animations. This is the text-only
-    /// stepping stone the data layer is already wired for; designers
-    /// upgrade visuals via prefab / UI toolkit later.
+    /// <para><b>Geometry is per MACHINE, not per save</b>, so it rides PlayerPrefs under
+    /// <c>valkur.questlog.*</c> exactly as <c>MusicPlayerHUD</c>'s does — the editor workspace
+    /// layer cannot take it, because every entry point there is typed on
+    /// <c>GameEditorManager.IGameEditor</c> and keyed on an <c>EditorName</c> this is not.</para>
+    ///
+    /// <para><b>Refresh is EVENT-DRIVEN and that is why the abandon event had to exist.</b>
+    /// Started, completed, abandoned, plus one subscription per live objective. The publisher
+    /// that drives the minimap re-scans the world on a timer and heals itself; this panel
+    /// cannot, so anything that changes the active log and stays quiet leaves a row here
+    /// forever.</para>
     /// </summary>
-    public sealed class QuestLogHUD : SingletonMonoBehaviour<QuestLogHUD>
+    public sealed partial class QuestLogHUD : SingletonMonoBehaviour<QuestLogHUD>
     {
         [Tooltip("Manager driving the log. Auto-resolved via FindObjectOfType when null.")]
         [SerializeField] private QuestManager manager;
 
-        private Canvas _canvas;
-        private GameObject _root;
-        private Text _textLabel;
+        /// <summary>Heading over the list. Spanish, like every other player-facing string.</summary>
+        private const string QuestLogTitle = "MISIONES";
 
         // Per-objective subscription so we can detach on quest completion
         // without leaking event handlers.
-        private readonly Dictionary<KillCountObjective, System.Action<int, int>> _kcHandlers
-            = new Dictionary<KillCountObjective, System.Action<int, int>>();
+        //
+        // Keyed on ObjectiveBase rather than on KillCountObjective, which is what it
+        // watched while that was the only kind of objective in existence. Every other
+        // kind ticked in silence: a Collect or a Craft objective advanced, the quest
+        // advanced with it, and the panel went on displaying the numbers it had drawn
+        // when the quest was accepted until an unrelated kill forced a repaint.
+        private readonly Dictionary<ObjectiveBase, System.Action<ObjectiveBase>> _objectiveHandlers
+            = new Dictionary<ObjectiveBase, System.Action<ObjectiveBase>>();
 
         protected override bool Persist => false;
 
@@ -49,7 +58,8 @@ namespace Valkur.Gameplay.HUD
             manager = mgr;
             if (manager == null) return;
             manager.OnQuestStarted   += OnQuestStarted;
-            manager.OnQuestCompleted += OnQuestCompleted;
+            manager.OnQuestCompleted += OnQuestClosed;
+            manager.OnQuestAbandoned += OnQuestClosed;
             // Subscribe to whatever active objectives already exist (rare but
             // possible if the HUD binds AFTER quests started — e.g. save load).
             foreach (var id in manager.ActiveIds)
@@ -59,6 +69,7 @@ namespace Valkur.Gameplay.HUD
 
         protected override void OnSingletonAwake()
         {
+            LoadWindowPrefs();
             EnsureBuilt();
             if (manager == null) manager = FindObjectOfType<QuestManager>();
             if (manager != null) BindManager(manager);
@@ -77,34 +88,59 @@ namespace Valkur.Gameplay.HUD
             if (manager != null)
             {
                 manager.OnQuestStarted   -= OnQuestStarted;
-                manager.OnQuestCompleted -= OnQuestCompleted;
+                manager.OnQuestCompleted -= OnQuestClosed;
+                manager.OnQuestAbandoned -= OnQuestClosed;
             }
-            foreach (var kv in _kcHandlers)
-                if (kv.Key != null) kv.Key.OnProgressChanged -= kv.Value;
-            _kcHandlers.Clear();
+            foreach (var kv in _objectiveHandlers)
+                if (kv.Key != null) kv.Key.Progressed -= kv.Value;
+            _objectiveHandlers.Clear();
         }
 
         private void OnQuestStarted(string questId)
         {
             SubscribeQuestObjectives(questId);
+
+            // A quest arriving is the one moment a closed tracker has to come back. Without
+            // it, CLOSE is a one-way door in a shipped build: the Quest Editor can reopen the
+            // panel and the Quest Editor does not exist outside the Editor, so a player who
+            // pressed the X once would never see a tracker again. Accepting an errand is the
+            // player's own action and the instant the panel is most worth having, which makes
+            // this the cheapest honest way back — the alternative was a new key, and a new key
+            // means an action in ValkurInputActions AND a descriptor in the closed
+            // InputActionCatalog.
+            if (_closed) SetClosed(false);
+
             Refresh();
         }
 
-        private void OnQuestCompleted(string questId)
+        /// <summary>
+        /// A quest leaving the active log, for either reason.
+        ///
+        /// <para>Completion and abandonment are DIFFERENT events elsewhere — one pays rewards
+        /// and the other must not — and they are the same event here, because the tracker's
+        /// only question is whether the row is still worth drawing.</para>
+        /// </summary>
+        private void OnQuestClosed(string questId)
         {
             // Drop any per-objective subscriptions for this quest so the
             // dictionary doesn't grow forever as quests rotate. The
             // objective objects themselves stop ticking after completion.
-            var toRemove = new List<KillCountObjective>();
-            foreach (var kv in _kcHandlers)
+            var toRemove = new List<ObjectiveBase>();
+            foreach (var kv in _objectiveHandlers)
             {
                 if (kv.Key != null && kv.Key.Id.StartsWith(questId + "."))
                 {
-                    kv.Key.OnProgressChanged -= kv.Value;
+                    kv.Key.Progressed -= kv.Value;
                     toRemove.Add(kv.Key);
                 }
             }
-            foreach (var k in toRemove) _kcHandlers.Remove(k);
+            foreach (var k in toRemove) _objectiveHandlers.Remove(k);
+
+            // An armed drop button on the quest that just left would survive as an armed
+            // button on whatever row slid up into its place.
+            if (string.Equals(_armedDropId, questId, System.StringComparison.OrdinalIgnoreCase))
+                _armedDropId = null;
+
             Refresh();
         }
 
@@ -115,17 +151,22 @@ namespace Valkur.Gameplay.HUD
             if (quest == null) return;
             foreach (var obj in quest.Objectives)
             {
-                if (obj is KillCountObjective kc && !_kcHandlers.ContainsKey(kc))
+                if (obj is ObjectiveBase ob && !_objectiveHandlers.ContainsKey(ob))
                 {
-                    System.Action<int, int> handler = (cur, tgt) => Refresh();
-                    kc.OnProgressChanged += handler;
-                    _kcHandlers[kc] = handler;
+                    System.Action<ObjectiveBase> handler = _ => Refresh();
+                    ob.Progressed += handler;
+                    _objectiveHandlers[ob] = handler;
                 }
             }
         }
 
-        // Test seam — used by unit tests to drive a redraw and verify the
-        // resulting text string without standing up a real Canvas.
+        /// <summary>
+        /// The whole log as one string.
+        ///
+        /// <para>Kept as the panel became rows, because it is the seam a fixture can read
+        /// without a Canvas — uGUI performs no layout in Edit Mode, so an assertion against
+        /// the drawn rows would be measuring rects nothing has laid out.</para>
+        /// </summary>
         public string ComputeLogText()
         {
             if (manager == null) return string.Empty;
@@ -152,55 +193,6 @@ namespace Valkur.Gameplay.HUD
                 }
             }
             return sb.ToString();
-        }
-
-        private void Refresh()
-        {
-            if (_textLabel == null) return;
-            _textLabel.text = ComputeLogText();
-            if (_root != null)
-                _root.SetActive(!string.IsNullOrEmpty(_textLabel.text));
-        }
-
-        public void EnsureBuilt()
-        {
-            if (_canvas != null) return;
-
-            _root = new GameObject("QuestLogHUD_Root");
-            _root.transform.SetParent(transform, false);
-
-            _canvas = _root.AddComponent<Canvas>();
-            _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            _canvas.sortingOrder = 40;
-            _root.AddComponent<CanvasScaler>().uiScaleMode =
-                CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            _root.AddComponent<GraphicRaycaster>();
-
-            // Top-right anchored panel.
-            var bg = new GameObject("BG");
-            bg.transform.SetParent(_root.transform, false);
-            var bgRt = bg.AddComponent<RectTransform>();
-            bgRt.anchorMin = new Vector2(0.72f, 0.55f);
-            bgRt.anchorMax = new Vector2(0.99f, 0.92f);
-            bgRt.offsetMin = bgRt.offsetMax = Vector2.zero;
-            var bgImg = bg.AddComponent<Image>();
-            bgImg.color = new Color(0f, 0f, 0f, 0.55f);
-
-            var textGo = new GameObject("Text");
-            textGo.transform.SetParent(bg.transform, false);
-            var textRt = textGo.AddComponent<RectTransform>();
-            textRt.anchorMin = Vector2.zero;
-            textRt.anchorMax = Vector2.one;
-            textRt.offsetMin = new Vector2(8, 8);
-            textRt.offsetMax = new Vector2(-8, -8);
-            _textLabel = textGo.AddComponent<Text>();
-            _textLabel.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            _textLabel.alignment = TextAnchor.UpperLeft;
-            _textLabel.color = new Color(0.95f, 0.95f, 0.85f);
-            _textLabel.fontSize = 14;
-            _textLabel.text = "";
-
-            _root.SetActive(false);
         }
     }
 }

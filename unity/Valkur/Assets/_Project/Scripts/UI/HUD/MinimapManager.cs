@@ -84,6 +84,37 @@ namespace Valkur.UI.HUD
         /// </summary>
         public static IReadOnlyList<MinimapMarker> Markers => _markers;
 
+        // ── Board marker styling ────────────────────────────────────────────
+        //
+        // Colour and shape carry the MEANING, because a minimap dot has no room for a word
+        // and the label beside it is often the character's name rather than what they want.
+        // Gold diamond = work on offer, green plus = something finished to hand in, pale
+        // blue diamond = where an accepted objective is pointing.
+
+        /// <summary>Fill colour for a published marker.</summary>
+        public static Color BoardMarkerColor(Valkur.Core.UI.WorldMarkerKind kind)
+        {
+            switch (kind)
+            {
+                case Valkur.Core.UI.WorldMarkerKind.QuestOffer:   return new Color(0.95f, 0.78f, 0.20f, 1f);
+                case Valkur.Core.UI.WorldMarkerKind.QuestTurnIn:  return new Color(0.42f, 0.85f, 0.38f, 1f);
+                default:                                          return new Color(0.55f, 0.78f, 0.95f, 1f);
+            }
+        }
+
+        /// <summary>Glyph for a published marker.</summary>
+        public static MinimapMarker.MarkerShape BoardMarkerShape(Valkur.Core.UI.WorldMarkerKind kind) =>
+            kind == Valkur.Core.UI.WorldMarkerKind.QuestTurnIn
+                ? MinimapMarker.MarkerShape.Plus
+                : MinimapMarker.MarkerShape.Diamond;
+
+        /// <summary>
+        /// Size for a published marker. The turn-in is deliberately the biggest: it is the
+        /// one the player has already earned and the only one with a reward behind it.
+        /// </summary>
+        public static int BoardMarkerPixelSize(Valkur.Core.UI.WorldMarkerKind kind) =>
+            kind == Valkur.Core.UI.WorldMarkerKind.QuestTurnIn ? 7 : 5;
+
         /// <summary>
         /// Wire the host RawImage at runtime. Lets MinimapHUD build the chrome
         /// programmatically and then plug the freshly-created RawImage into the
@@ -232,6 +263,20 @@ namespace Valkur.UI.HUD
                 if (m == null || !m.isActiveAndEnabled) continue;
                 if (!TryProject(m.WorldPosition, center, out int mx, out int my)) continue;
                 DrawMarker(mx, my, m.pixelSize, m.shape, m.EffectiveColor);
+            }
+
+            // Markers published as DATA by an assembly that cannot reference this one.
+            // The quest layer is Valkur.Gameplay and this is Valkur.UI, and neither may
+            // reference the other, so a MonoBehaviour marker was not an option — see
+            // WorldMarkerBoard. Drawn after the component markers and before the entity
+            // dots, so a quest target never hides the player.
+            var board = Valkur.Core.UI.WorldMarkerBoard.All;
+            for (int i = 0; i < board.Count; i++)
+            {
+                var wm = board[i];
+                if (!TryProject(wm.Position, center, out int bx, out int by)) continue;
+                DrawMarker(bx, by, BoardMarkerPixelSize(wm.Kind), BoardMarkerShape(wm.Kind),
+                           BoardMarkerColor(wm.Kind));
             }
 
             // Draw entity dots (drawn after markers so player/enemies are on top)

@@ -208,6 +208,16 @@ namespace Valkur.Gameplay.Crafting
             }
 
             professions?.AddXp(recipe.profession, recipe.xpReward);
+
+            // Announced only on the path that actually produced something: the rollback
+            // above returns before here, so a craft refused for want of room never fires.
+            // A listener therefore never has to ask whether the result really landed —
+            // which is the whole reason this sits after the AddItem and not before it.
+            Valkur.Core.GameEvents.FireItemCrafted(
+                recipe.recipeId,
+                recipe.output != null ? recipe.output.itemId : string.Empty,
+                recipe.outputQuantity);
+
             return true;
         }
 

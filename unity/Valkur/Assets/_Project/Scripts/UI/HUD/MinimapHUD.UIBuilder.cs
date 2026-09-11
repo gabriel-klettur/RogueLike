@@ -19,7 +19,7 @@ namespace Valkur.UI.HUD
     public sealed partial class MinimapHUD
     {
         // ── Layout (mirrors DayNightClockHUD's dial proportions) ────────────
-        private const float DISC_SIZE        = 192f;
+        private const float DISC_SIZE        = Valkur.Core.UI.HudLayout.TopRightColumnWidth;
         private const float RING_THICK       = 6f;
         private const float MAP_INSET        = 4f;
         private const float INFO_BAND_H      = 40f;
@@ -66,8 +66,9 @@ namespace Valkur.UI.HUD
 
             var scaler = canvasGo.AddComponent<CanvasScaler>();
             scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1600, 800);
-            scaler.matchWidthOrHeight  = 0.5f;
+            scaler.referenceResolution = new Vector2(
+                Valkur.Core.UI.HudLayout.ReferenceWidth, Valkur.Core.UI.HudLayout.ReferenceHeight);
+            scaler.matchWidthOrHeight  = Valkur.Core.UI.HudLayout.Match;
             // GraphicRaycaster is needed so EventSystem.IsPointerOverGameObject()
             // returns true when the cursor is over the disc — that's how
             // CameraSetup.cs:262 knows to skip its own wheel-zoom logic while

@@ -72,6 +72,28 @@ namespace Valkur.Core
         /// <summary>Item consumed (used from inventory). Args: (consumer, itemId)</summary>
         public static event Action<GameObject, string> OnItemConsumed;
 
+        /// <summary>
+        /// A craft succeeded. Args: (recipeId, resultItemId, resultQuantity).
+        /// Fired from <c>CraftingService.TryCraft</c> AFTER the result is placed in
+        /// the bag and the profession xp is granted — so a listener that reads the
+        /// inventory sees the finished state, and a craft that rolled back because
+        /// the bag was full never fires at all.
+        ///
+        /// <para>Primitive payload keeps <c>Valkur.Core</c> free of
+        /// <c>Valkur.Data</c>, the same rule <c>OnSpellCast</c> follows.</para>
+        /// </summary>
+        public static event Action<string, string, int> OnItemCrafted;
+
+        // ── Social Events ──
+
+        /// <summary>
+        /// The player opened a conversation with a character. Args: (personaId).
+        /// Fired once per OPEN, not per message — a Talk objective means "go and
+        /// see them", and a per-message event would tick it for chatting with
+        /// somebody the player was already standing in front of.
+        /// </summary>
+        public static event Action<string> OnNpcConversed;
+
         // ── Spell Events ──
 
         /// <summary>
@@ -176,6 +198,16 @@ namespace Valkur.Core
             OnItemConsumed?.Invoke(consumer, itemId);
         }
 
+        public static void FireItemCrafted(string recipeId, string resultItemId, int resultQuantity)
+        {
+            OnItemCrafted?.Invoke(recipeId, resultItemId, resultQuantity);
+        }
+
+        public static void FireNpcConversed(string personaId)
+        {
+            OnNpcConversed?.Invoke(personaId);
+        }
+
         public static void FireZoneChanged(string oldZone, string newZone)
         {
             OnZoneChanged?.Invoke(oldZone, newZone);
@@ -214,6 +246,8 @@ namespace Valkur.Core
             OnLevelUp = null;
             OnItemPickedUp = null;
             OnItemConsumed = null;
+            OnItemCrafted = null;
+            OnNpcConversed = null;
             OnZoneChanged = null;
             OnSpellCast = null;
             OnRoomChanged = null;

@@ -196,6 +196,26 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>
+        /// The Quests editor: every shipped quest in one list, its live objectives, and the
+        /// four things an author needs to do to one — accept it without its giver, drive an
+        /// objective, drop it, or forget a completion so a chain can be watched twice. No
+        /// hotkey, like the Camera, Controls, Skills, Economy and Death editors.
+        ///
+        /// <para>It creates no quest systems of its own: <c>QuestService</c> and
+        /// <c>QuestManager</c> are built whether or not anybody opens this, and the tracker by
+        /// <c>HUDBootstrap</c>. An editor the game needed in order to run its own quests would
+        /// be the same class of defect this one exists to find.</para>
+        /// </summary>
+        private void EnsureQuestsEditor()
+        {
+            if (Valkur.Gameplay.Editors.Quests.QuestsRuntimeEditor.Instance != null) return;
+            var go = new GameObject("QuestsEditor");
+            go.AddComponent<Valkur.Gameplay.Editors.Quests.QuestsRuntimeEditor>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
+            Debug.Log("[GameplaySceneSetup] QuestsEditor created. Open it from the General Editor (ESC).");
+        }
+
+        /// <summary>
         /// The pause key. <c>Gameplay/Pause</c> has been bound to <c>p</c> for the life of the
         /// asset with no reader at all — see <see cref="PauseHotkeyReader"/>.
         /// </summary>

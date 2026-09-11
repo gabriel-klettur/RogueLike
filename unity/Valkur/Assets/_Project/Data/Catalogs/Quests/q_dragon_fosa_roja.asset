@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67735d37ab4f29c4f8d860d24cbd80bc, type: 3}
+  m_Name: q_dragon_fosa_roja
+  m_EditorClassIdentifier: 
+  questId: q_dragon_fosa_roja
+  displayName: "El drag\xF3n de la Fosa Roja"
+  description: "Smith lleva media vida guardando el acero equivocado para el enemigo
+    correcto. La Fosa Roja tiene due\xF1o, y el due\xF1o tiene alas."
+  hookLine: "Te lo voy a decir una sola vez: no vas a poder con eso hoy. Sube de
+    nivel, qu\xEDtale al gigante lo que guarda, aguanta el aliento de la Fosa y tr\xE1eme
+    un coraz\xF3n de magma. Entonces hablamos de la espada."
+  completionLine: "Nadie hab\xEDa tra\xEDdo uno de esos a esta fragua. Nadie. Toma
+    \u2014 es tuya desde hace mucho, solo que no lo sab\xEDas."
+  giverPersonaId: vendor_blacksmith_smith
+  turnInPersonaId: vendor_blacksmith_smith
+  requiredLevel: 10
+  recommendedLevel: 15
+  prerequisiteQuestIds:
+  - q_manada_alfa
+  - q_cripta_colina
+  - q_grimorio_robado
+  questLine: fosa_roja
+  objectives:
+  - kind: 7
+    targetId: 
+    count: 12
+    description: Alcanza el nivel 12
+    consumeOnComplete: 0
+  - kind: 0
+    targetId: barbol_gigante
+    count: 1
+    description: Derrota al Barbol Gigante
+    consumeOnComplete: 0
+  - kind: 6
+    targetId: 
+    count: 240
+    description: Sobrevive 240 segundos en la Fosa
+    consumeOnComplete: 0
+  - kind: 0
+    targetId: red_dragon
+    count: 1
+    description: "Mata al Drag\xF3n Rojo"
+    consumeOnComplete: 0
+  - kind: 1
+    targetId: magma_heart
+    count: 1
+    description: "Arranca su coraz\xF3n de magma"
+    consumeOnComplete: 1
+  xpReward: 5000
+  skillPointReward: 3
+  arcanePointReward: 3
+  coinReward: 1500
+  itemRewards:
+  - knight_longsword
+  itemRewardCounts: 01000000

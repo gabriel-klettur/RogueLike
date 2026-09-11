@@ -9,52 +9,36 @@ namespace Valkur.Gameplay.Quests
     /// <summary>
     /// "Kill N monsters of type X" objective. Listens to GameEvents.OnEntityDied,
     /// filters by <see cref="MonsterDefinition.monsterKey"/> on the victim's
-    /// FSMMonsterBrain, and increments <see cref="Current"/> until reaching
-    /// <see cref="Target"/>. Empty <see cref="MonsterKey"/> matches any
-    /// non-player victim — useful for "kill 50 enemies" generic objectives.
+    /// FSMMonsterBrain, and increments <see cref="ObjectiveBase.Current"/> until
+    /// reaching <see cref="ObjectiveBase.Target"/>. Empty <see cref="MonsterKey"/>
+    /// matches any non-player victim — useful for "kill 50 enemies" generic
+    /// objectives.
     ///
-    /// Fires <see cref="OnProgressChanged"/> after each increment so quest
-    /// log UI can refresh without polling each frame.
+    /// <para>Fires <see cref="OnProgressChanged"/> after each increment so quest
+    /// log UI can refresh without polling each frame. That event predates
+    /// <see cref="ObjectiveBase.Progressed"/> and is kept because
+    /// <c>QuestLogHUD</c> and the shipped fixtures bind to it; both are raised, and
+    /// the base one is what <see cref="Quest"/> aggregates.</para>
     /// </summary>
-    public sealed class KillCountObjective : IObjective
+    public sealed class KillCountObjective : ObjectiveBase
     {
-        public string Id          { get; }
-        public string Description { get; }
-        public int    Target      { get; }
-        public string MonsterKey  { get; }
-
-        public int  Current    { get; private set; }
-        public bool IsComplete => Current >= Target;
+        public string MonsterKey { get; }
 
         /// <summary>Fires (current, target) after each increment.</summary>
         public event Action<int, int> OnProgressChanged;
-
-        private bool _subscribed;
 
         public KillCountObjective(string id,
                                   string description,
                                   int target,
                                   string monsterKey = null)
+            : base(id, description, target)
         {
-            Id          = id ?? string.Empty;
-            Description = description ?? string.Empty;
-            Target      = Mathf.Max(1, target);
-            MonsterKey  = monsterKey;
+            MonsterKey = monsterKey;
+            Progressed += _ => OnProgressChanged?.Invoke(Current, Target);
         }
 
-        public void Begin()
-        {
-            if (_subscribed) return;
-            GameEvents.OnEntityDied += HandleEntityDied;
-            _subscribed = true;
-        }
-
-        public void End()
-        {
-            if (!_subscribed) return;
-            GameEvents.OnEntityDied -= HandleEntityDied;
-            _subscribed = false;
-        }
+        protected override void OnBegin() => GameEvents.OnEntityDied += HandleEntityDied;
+        protected override void OnEnd()   => GameEvents.OnEntityDied -= HandleEntityDied;
 
         private void HandleEntityDied(GameObject victim, GameObject killer)
         {
@@ -76,8 +60,7 @@ namespace Valkur.Gameplay.Quests
                         StringComparison.OrdinalIgnoreCase)) return;
             }
 
-            Current++;
-            OnProgressChanged?.Invoke(Current, Target);
+            Increment();
         }
     }
 }

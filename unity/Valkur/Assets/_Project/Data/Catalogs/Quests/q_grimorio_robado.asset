@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67735d37ab4f29c4f8d860d24cbd80bc, type: 3}
+  m_Name: q_grimorio_robado
+  m_EditorClassIdentifier: 
+  questId: q_grimorio_robado
+  displayName: El grimorio robado
+  description: "A Roberto le han vaciado la estanter\xEDa. Sabe qui\xE9n ha sido,
+    porque el ladr\xF3n lleva su misma cara."
+  hookLine: Me han robado un libro y, lo que es peor, me lo ha robado alguien que
+    sabe leerlo. Practica el fuego hasta que te salga sin pensar, recupera el grimorio,
+    y hazme el favor de encontrarte con tres magos oscuros por el camino.
+  completionLine: "Est\xE1 entero. Todav\xEDa huele a mi mesa. Toma, esto es m\xE1s
+    \xFAtil que el oro."
+  giverPersonaId: vendor_mague_roberto
+  turnInPersonaId: vendor_mague_roberto
+  requiredLevel: 4
+  recommendedLevel: 6
+  prerequisiteQuestIds: []
+  questLine: roberto
+  objectives:
+  - kind: 5
+    targetId: fireball
+    count: 10
+    description: Lanza 10 bolas de fuego
+    consumeOnComplete: 0
+  - kind: 0
+    targetId: dark_mague
+    count: 3
+    description: Derrota a 3 magos oscuros
+    consumeOnComplete: 0
+  - kind: 1
+    targetId: spellbook_simple
+    count: 1
+    description: Recupera el grimorio
+    consumeOnComplete: 1
+  xpReward: 650
+  skillPointReward: 0
+  arcanePointReward: 2
+  coinReward: 200
+  itemRewards: []
+  itemRewardCounts: 

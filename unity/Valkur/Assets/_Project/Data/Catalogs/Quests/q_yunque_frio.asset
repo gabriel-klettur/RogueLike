@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67735d37ab4f29c4f8d860d24cbd80bc, type: 3}
+  m_Name: q_yunque_frio
+  m_EditorClassIdentifier: 
+  questId: q_yunque_frio
+  displayName: "El yunque fr\xEDo"
+  description: "La fragua de Smith lleva dos d\xEDas apagada. No le falta oficio:
+    le falta mineral y le falta carb\xF3n."
+  hookLine: "Un yunque fr\xEDo no es un yunque, es un pisapapeles de doscientos kilos.
+    Tr\xE1eme doce de mineral de hierro y seis de carb\xF3n y ver\xE1s lo que sale."
+  completionLine: "Escucha ese chisporroteo. Eso es una fragua contenta. Ll\xE9vate
+    esto."
+  giverPersonaId: vendor_blacksmith_smith
+  turnInPersonaId: vendor_blacksmith_smith
+  requiredLevel: 0
+  recommendedLevel: 2
+  prerequisiteQuestIds: []
+  questLine: smith
+  objectives:
+  - kind: 1
+    targetId: iron_ore
+    count: 12
+    description: Consigue 12 de mineral de hierro
+    consumeOnComplete: 1
+  - kind: 1
+    targetId: coal_chunk
+    count: 6
+    description: "Consigue 6 trozos de carb\xF3n"
+    consumeOnComplete: 1
+  xpReward: 180
+  skillPointReward: 0
+  arcanePointReward: 0
+  coinReward: 80
+  itemRewards:
+  - iron_ingot
+  itemRewardCounts: 02000000

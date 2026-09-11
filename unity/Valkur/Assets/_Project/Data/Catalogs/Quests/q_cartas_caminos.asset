@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67735d37ab4f29c4f8d860d24cbd80bc, type: 3}
+  m_Name: q_cartas_caminos
+  m_EditorClassIdentifier: 
+  questId: q_cartas_caminos
+  displayName: Cartas para los caminos
+  description: Tres cartas, tres firmas y un camino largo. Abigail no cierra un libro
+    de cuentas hasta que cada deudor lo mira a los ojos.
+  hookLine: "Necesito tres firmas y un par de botas que no sean las m\xEDas. Habla
+    con Pavel, con Valeria y con Roberto, y p\xE1sate por el bosque de camino: quiero
+    saber si el puente sigue en pie."
+  completionLine: "Tres firmas y un puente en pie. Un buen d\xEDa para los libros."
+  giverPersonaId: vendor_banker_abigail
+  turnInPersonaId: vendor_banker_abigail
+  requiredLevel: 2
+  recommendedLevel: 3
+  prerequisiteQuestIds: []
+  questLine: abigail
+  objectives:
+  - kind: 3
+    targetId: vendor_lumberjack_pavel
+    count: 1
+    description: Consigue la firma de Pavel
+    consumeOnComplete: 0
+  - kind: 3
+    targetId: vendor_alchemist_valeria
+    count: 1
+    description: Consigue la firma de Valeria
+    consumeOnComplete: 0
+  - kind: 3
+    targetId: vendor_mague_roberto
+    count: 1
+    description: Consigue la firma de Roberto
+    consumeOnComplete: 0
+  - kind: 2
+    targetId: Forest
+    count: 1
+    description: Comprueba el puente del bosque
+    consumeOnComplete: 0
+  xpReward: 350
+  skillPointReward: 0
+  arcanePointReward: 0
+  coinReward: 250
+  itemRewards: []
+  itemRewardCounts: 

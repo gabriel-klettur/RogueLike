@@ -347,6 +347,18 @@ namespace Valkur.Gameplay.Chat
             HoldStillForConversation(target);
 
             OnChatOpened?.Invoke();
+
+            // Announced AFTER the panel is fully seated and the greeting is in, so a
+            // listener that answers by SPEAKING — the quest layer posts its hook line
+            // here — lands under the hello rather than in front of it.
+            //
+            // The id and not the display name: a rename must not unhook a quest, which
+            // is the same reason NPCChatIdentity carries the persona reference rather
+            // than being looked up by name. A character with no persona announces
+            // nothing rather than announcing its GameObject name into an id channel.
+            if (_activePersona != null && !string.IsNullOrEmpty(_activePersona.personaId))
+                Valkur.Core.GameEvents.FireNpcConversed(_activePersona.personaId);
+
             Debug.Log($"[ChatSystem] Chat opened with {npcName} (visit #{_activeMemory.visitCount})");
         }
 

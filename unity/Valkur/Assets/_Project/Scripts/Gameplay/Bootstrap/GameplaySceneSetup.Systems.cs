@@ -353,6 +353,32 @@ namespace Valkur.Gameplay
             Debug.Log("[GameplaySceneSetup] MarketService created.");
         }
 
+        /// <summary>
+        /// Stands up the quest layer: one <c>QuestService</c> carrying one
+        /// <c>QuestManager</c>.
+        ///
+        /// <para>Built BEFORE <c>EnsureSaveService</c> would need it — the restore path
+        /// asks <c>QuestService.Instance</c> for the catalogue, and a save loaded into a
+        /// scene with no manager silently drops every open quest. It is also before the
+        /// chat system, because the service subscribes to <c>OnNpcConversed</c> and a
+        /// conversation opened during boot would otherwise be the one conversation that
+        /// offers nothing.</para>
+        /// </summary>
+        private void EnsureQuestService()
+        {
+            if (Quests.QuestService.Instance != null) return;
+            var go = new GameObject("QuestService");
+            go.AddComponent<Quests.QuestManager>();
+            go.AddComponent<Quests.QuestService>();
+
+            // Publishes quest targets to WorldMarkerBoard for the minimap to draw. On the
+            // same GameObject so it dies with the service — a publisher that outlived it
+            // would leave its last snapshot on the board forever.
+            go.AddComponent<Quests.QuestMarkerPublisher>();
+            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
+            Debug.Log("[GameplaySceneSetup] QuestService created.");
+        }
+
         private void EnsureWorldLightLoader()
         {
             if (FindObjectOfType<World.WorldLightLoader>() != null) return;

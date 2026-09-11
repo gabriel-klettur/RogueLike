@@ -93,6 +93,14 @@ namespace Valkur.Tests.EditMode.Game.Data
                            // by EntitySetup, so a [SerializeField] on it could never be
                            // filled. One small asset — the trees and curves it points at live
                            // outside Resources and are pulled in by reference.
+            "Quests",      // QuestCatalog, loaded by QuestService.Awake via
+                           // Resources.Load("Quests/QuestCatalog"). Same reason as Chat,
+                           // Death and Progression above: QuestService is AddComponent-ed
+                           // onto a bare GameObject by GameplaySceneSetup, so there is no
+                           // inspector slot a [SerializeField] could ever be filled from.
+                           // One asset — the ten quest definitions it points at live in
+                           // Data/Catalogs/Quests/ and are pulled in by reference, so the
+                           // build-everything folder carries the index and not the content.
             "Spells",
             "Tiles",
             "UI",

@@ -99,6 +99,9 @@ namespace Valkur.Gameplay
             s.Add(BootStep.Of("Inicializando el editor de mapas", EnsureMapEditor, 2f));
 
             // ── Save, navigation, services ───────────────────────────────────
+            // Before the save service and before the chat: the restore path asks this
+            // for the catalogue, and the service listens for conversations.
+            s.Add(BootStep.Of("Inicializando las misiones", EnsureQuestService, 2f, barrier: false));
             s.Add(BootStep.Of("Inicializando el sistema de guardado", EnsureSaveService, 3f));
             s.Add(BootStep.Of("Inicializando el guardado rapido", EnsureSaveLoadInput, 1f, barrier: false));
             s.Add(BootStep.Of("Inicializando la separacion de NPCs", EnsureNPCSeparation, 1f, barrier: false));

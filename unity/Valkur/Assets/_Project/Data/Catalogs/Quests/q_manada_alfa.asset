@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67735d37ab4f29c4f8d860d24cbd80bc, type: 3}
+  m_Name: q_manada_alfa
+  m_EditorClassIdentifier: 
+  questId: q_manada_alfa
+  displayName: La manada y su alfa
+  description: "Pavel ya no baja al claro del este. Dice que los barboles se mueven
+    juntos, y que uno de ellos es del tama\xF1o de su caba\xF1a."
+  hookLine: "No es que sean muchos. Es que uno de ellos manda. Adelgaza la manada
+    y luego busca al grande: mientras respire, volver\xE1n."
+  completionLine: Ya se oye el hacha otra vez en el claro. Gracias, de verdad.
+  giverPersonaId: vendor_lumberjack_pavel
+  turnInPersonaId: vendor_lumberjack_pavel
+  requiredLevel: 2
+  recommendedLevel: 4
+  prerequisiteQuestIds:
+  - q_despensa_plaga
+  questLine: pavel
+  objectives:
+  - kind: 0
+    targetId: barbol
+    count: 10
+    description: 'Adelgaza la manada: 10 barboles'
+    consumeOnComplete: 0
+  - kind: 0
+    targetId: barbol_muscle
+    count: 1
+    description: Derrota al Coloso que la manda
+    consumeOnComplete: 0
+  xpReward: 400
+  skillPointReward: 1
+  arcanePointReward: 0
+  coinReward: 150
+  itemRewards: []
+  itemRewardCounts: 

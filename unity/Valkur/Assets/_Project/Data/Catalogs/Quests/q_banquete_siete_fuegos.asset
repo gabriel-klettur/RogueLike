@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67735d37ab4f29c4f8d860d24cbd80bc, type: 3}
+  m_Name: q_banquete_siete_fuegos
+  m_EditorClassIdentifier: 
+  questId: q_banquete_siete_fuegos
+  displayName: El banquete de los siete fuegos
+  description: Gatita ha prometido un banquete que no puede cocinar sola. Tres platos,
+    tres fuegos, y carne suficiente para el cuarto.
+  hookLine: "Promet\xED un banquete y ahora tengo tres ollas y dos manos. Cocina
+    un locro, unas empanadas y unos churros con chocolate, y tr\xE1eme cuatro de
+    carne. Del resto me encargo yo."
+  completionLine: "Huele a fiesta. Anda, si\xE9ntate: esta paella es tuya."
+  giverPersonaId: vendor_cheff_gatita
+  turnInPersonaId: vendor_cheff_gatita
+  requiredLevel: 3
+  recommendedLevel: 5
+  prerequisiteQuestIds:
+  - q_despensa_plaga
+  questLine: gatita
+  objectives:
+  - kind: 4
+    targetId: locro
+    count: 1
+    description: Cocina un locro
+    consumeOnComplete: 0
+  - kind: 4
+    targetId: empanadas_argentinas
+    count: 1
+    description: Cocina unas empanadas
+    consumeOnComplete: 0
+  - kind: 4
+    targetId: churros_con_chocolate
+    count: 1
+    description: Cocina churros con chocolate
+    consumeOnComplete: 0
+  - kind: 1
+    targetId: beef
+    count: 4
+    description: Lleva 4 de carne a la cocina
+    consumeOnComplete: 1
+  xpReward: 500
+  skillPointReward: 0
+  arcanePointReward: 0
+  coinReward: 200
+  itemRewards:
+  - paella
+  itemRewardCounts: 01000000

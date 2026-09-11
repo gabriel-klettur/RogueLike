@@ -356,6 +356,31 @@ namespace Valkur.Gameplay.Chat
         private static int WordCount(string text) =>
             text.Split(new[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries).Length;
 
+        /// <summary>
+        /// Put a line into the open conversation as if the active character had said
+        /// it. Used by systems that have something to say through an NPC rather than
+        /// through a panel of their own — the quest layer's hook and completion lines
+        /// are the first.
+        ///
+        /// <para>It goes through <see cref="AddMessage"/>, so the line is REMEMBERED
+        /// and JOURNALLED like anything else the character says. That is deliberate:
+        /// a quest offer the character does not remember making is one the player
+        /// cannot ask about afterwards, and the diary would have a hole exactly where
+        /// the interesting thing happened.</para>
+        ///
+        /// <para>Silently does nothing when no conversation is open — a caller
+        /// reacting to a world event has no way to know, and throwing there would
+        /// make every call site carry the same guard.</para>
+        /// </summary>
+        public void SpeakAsActiveNpc(string text)
+        {
+            if (!_chatOpen || string.IsNullOrWhiteSpace(text)) return;
+            string npcName = _activePersona != null && !string.IsNullOrEmpty(_activePersona.displayName)
+                ? _activePersona.displayName
+                : (_chatTarget != null ? _chatTarget.name : "???");
+            AddMessage(npcName, text.Trim());
+        }
+
         /// <summary>A whole message: shown, remembered and logged.</summary>
         private void AddMessage(string sender, string text)
         {

@@ -128,6 +128,69 @@ namespace Valkur.Gameplay.Chat
         /// <summary>Leaves the journal and goes back to the conversation.</summary>
         public static string JournalBack => IsEnglish ? "Back" : "Volver";
 
+        // ── Quests ──────────────────────────────────────────────────────────
+
+        /// <summary>The gutter button that opens what this character has to offer.</summary>
+        public static string Quests => IsEnglish ? "Quests" : "Misiones";
+
+        /// <summary>Title of the quest overlay, over the character's own name.</summary>
+        public static string QuestsTitle(string npcName) =>
+            IsEnglish ? $"Quests — {npcName}" : $"Misiones — {npcName}";
+
+        /// <summary>This character has nothing to give and nothing to collect.</summary>
+        public static string QuestsNone =>
+            IsEnglish
+                ? "Nothing for you right now. Come back when you have grown."
+                : "Ahora mismo no tiene nada para ti. Vuelve cuando hayas crecido.";
+
+        /// <summary>Takes the quest.</summary>
+        public static string QuestAccept => IsEnglish ? "Accept" : "Aceptar";
+
+        /// <summary>Closes the quest that is already finished.</summary>
+        public static string QuestTurnIn => IsEnglish ? "Hand in" : "Entregar";
+
+        /// <summary>Header over the quests this character is handing out.</summary>
+        public static string QuestsOnOffer => IsEnglish ? "ON OFFER" : "DISPONIBLES";
+
+        /// <summary>Header over the quests this character is waiting to be told about.</summary>
+        public static string QuestsWaiting => IsEnglish ? "READY TO HAND IN" : "LISTAS PARA ENTREGAR";
+
+        /// <summary>Header over the quests of theirs the player is still working on.</summary>
+        public static string QuestsInProgress => IsEnglish ? "IN PROGRESS" : "EN CURSO";
+
+        /// <summary>Header over the quests this character has but the player cannot take yet.</summary>
+        public static string QuestsLocked => IsEnglish ? "NOT YET" : "TODAVIA NO";
+
+        /// <summary>Why a locked quest is locked: the player is too low.</summary>
+        public static string QuestNeedsLevel(int level) =>
+            IsEnglish ? $"Requires level {level}" : $"Requiere nivel {level}";
+
+        /// <summary>Why a locked quest is locked: an earlier one is unfinished.</summary>
+        public static string QuestNeedsQuest(string questName) =>
+            IsEnglish ? $"Finish \"{questName}\" first" : $"Termina antes \"{questName}\"";
+
+        /// <summary>Drops an accepted quest. Armed state asks again.</summary>
+        public static string QuestAbandon => IsEnglish ? "Drop" : "Abandonar";
+
+        /// <summary>The armed caption: a second click really drops it.</summary>
+        public static string QuestAbandonConfirm => IsEnglish ? "Sure?" : "Seguro?";
+
+        /// <summary>Header over the tasks a quest will ask for, shown before accepting.</summary>
+        public static string QuestObjectivesPreview => IsEnglish ? "Tasks:" : "Tareas:";
+
+        /// <summary>What the character says the moment the player takes the job.</summary>
+        public static string QuestAccepted(string questName) =>
+            IsEnglish ? $"Good. \"{questName}\" is yours — come back when it is done."
+                      : $"Bien. \"{questName}\" es tuya — vuelve cuando este hecha.";
+
+        /// <summary>The reward line under a quest's description.</summary>
+        public static string QuestReward(int xp, int coins) =>
+            IsEnglish ? $"Reward: {xp} xp, {coins} coins" : $"Recompensa: {xp} xp, {coins} monedas";
+
+        /// <summary>The suggested level, shown but never enforced.</summary>
+        public static string QuestSuggestedLevel(int level) =>
+            IsEnglish ? $"Suggested level {level}" : $"Nivel recomendado {level}";
+
         /// <summary>Nothing has ever been written about this character.</summary>
         public static string JournalNoPages =>
             IsEnglish

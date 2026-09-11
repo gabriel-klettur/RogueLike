@@ -567,6 +567,10 @@ namespace Valkur.Gameplay
             // category changes while walking declaration order, so a new command dropped into
             // an existing category anywhere but its original block prints a duplicate header.
             RegisterDoorCommands();
+
+            // Same rule as the doors above: its own category, registered in one
+            // contiguous block, so CmdHelp prints exactly one "quests" header.
+            RegisterQuestCommands();
         }
 
         // ------------------------------------------------------------------

@@ -66,6 +66,7 @@ namespace Valkur.Gameplay.Chat
         private const float PANEL_MIN_H =
             PANEL_PADDING + PORTRAIT_SIZE_H +
             GUTTER_GAP + GUTTER_TRADE_HEIGHT +
+            GUTTER_GAP + GUTTER_QUESTS_HEIGHT +
             GUTTER_GAP + GUTTER_JOURNAL_HEIGHT +
             GUTTER_GAP +
             GUTTER_RESET_HEIGHT + PANEL_PADDING;
@@ -260,6 +261,19 @@ namespace Valkur.Gameplay.Chat
         private const float GUTTER_TRADE_HEIGHT = 28f;
 
         /// <summary>
+        /// Height of the gutter's Misiones button. The same as the others: the column is
+        /// one shape, and a taller button would say this control matters more than the
+        /// one above it.
+        ///
+        /// <para>It is counted in <see cref="PANEL_MIN_H"/> whether or not the character
+        /// in front of the player has anything to offer, because the minimum has to hold
+        /// the TALLEST gutter the panel can ever draw — and the failure of getting that
+        /// wrong is silent: the column's children are ignoreLayout, so a button that no
+        /// longer fits simply overlaps Reiniciar.</para>
+        /// </summary>
+        private const float GUTTER_QUESTS_HEIGHT = 28f;
+
+        /// <summary>
         /// Height of the gutter's Diario button. The same as Comerciar's: they are the two
         /// things a player OPENS from this panel and there is no reason for one to look
         /// heavier than the other.
@@ -325,6 +339,8 @@ namespace Valkur.Gameplay.Chat
         private GameObject _tradeButton;
         private GameObject _journalButton;
         private TextMeshProUGUI _journalButtonText;
+        private GameObject _questsButton;
+        private TextMeshProUGUI _questsButtonText;
         private GameObject _resetButton;
         private GameObject _tradeConfirmRow;
         private TextMeshProUGUI _tradeOfferText;
@@ -369,7 +385,7 @@ namespace Valkur.Gameplay.Chat
                 chatSystem.OnTradeOfferChanged += OnTradeOfferChanged;
                 chatSystem.OnExpressionChanged += OnExpressionChanged;
                 chatSystem.OnListeningChanged += OnListeningChanged;
-                chatSystem.OnOverlayDismissRequested += CloseJournal;
+                chatSystem.OnOverlayDismissRequested += CloseOverlays;
                 chatSystem.OnDayRolledOver += OnDayRolledOver;
                 ChatLanguage.OnChanged += ApplyLanguageToChrome;
             }
@@ -388,7 +404,7 @@ namespace Valkur.Gameplay.Chat
                 chatSystem.OnTradeOfferChanged -= OnTradeOfferChanged;
                 chatSystem.OnExpressionChanged -= OnExpressionChanged;
                 chatSystem.OnListeningChanged -= OnListeningChanged;
-                chatSystem.OnOverlayDismissRequested -= CloseJournal;
+                chatSystem.OnOverlayDismissRequested -= CloseOverlays;
                 chatSystem.OnDayRolledOver -= OnDayRolledOver;
                 ChatLanguage.OnChanged -= ApplyLanguageToChrome;
             }
@@ -426,9 +442,9 @@ namespace Valkur.Gameplay.Chat
             // The archive is up. Enter takes the player back to the conversation rather than
             // sending — the field is disabled and covered, so "send" would post whatever
             // draft was there before the diary was opened, into a panel they cannot see.
-            if (IsJournalOpen)
+            if (IsJournalOpen || IsQuestsOpen)
             {
-                CloseJournal();
+                CloseOverlays();
                 return;
             }
 
@@ -474,7 +490,7 @@ namespace Valkur.Gameplay.Chat
             SyncActiveMemoryLanguage();
 
             DisarmReset();
-            CloseJournal();
+            CloseOverlays();
             OnTradeOfferChanged(false);
 
             // Show existing history
@@ -490,7 +506,7 @@ namespace Valkur.Gameplay.Chat
             // Before the panel goes: closing the overlay also clears the modal flag and gives
             // the input field back its interactable state, and both are properties of a panel
             // that is about to be shown again for someone else.
-            CloseJournal();
+            CloseOverlays();
 
             _panel.SetActive(false);
             if (_backdrop != null) _backdrop.SetActive(false);
@@ -667,7 +683,14 @@ namespace Valkur.Gameplay.Chat
             if (_sendButtonText != null) _sendButtonText.text = ChatLanguage.Send;
             if (_tradeButtonText != null) _tradeButtonText.text = ChatLanguage.Trade;
 
+            if (_questsButtonText != null) _questsButtonText.text = ChatLanguage.Quests;
+
             ApplyLanguageToJournal();
+
+            // Same argument as the archive below: the cards carry the character's own
+            // hook lines and the reward captions, so a view that is up is redrawn rather
+            // than merely relabelled.
+            if (IsQuestsOpen) RenderQuests();
 
             // The archive's PAGE is language-dependent too — the day label, the counter, the
             // notice on a trimmed day — so a view that is up is redrawn rather than merely

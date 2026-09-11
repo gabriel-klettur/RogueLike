@@ -38,8 +38,13 @@ namespace Valkur.Gameplay.Quests
         public event Action OnCompleted;
 
         // Track which objectives we wired so Begin/End can be idempotent.
-        private readonly Dictionary<IObjective, Action<int, int>> _kcHandlers
-            = new Dictionary<IObjective, Action<int, int>>();
+        //
+        // Keyed on ObjectiveBase rather than IObjective because that is the type
+        // carrying the progress event. A plain IObjective (test stubs) is still a
+        // legal member of a quest — it simply reports nothing, and the quest
+        // re-checks it whenever any of its siblings ticks.
+        private readonly Dictionary<ObjectiveBase, Action<ObjectiveBase>> _handlers
+            = new Dictionary<ObjectiveBase, Action<ObjectiveBase>>();
 
         public Quest(string id, string displayName, IList<IObjective> objectives)
         {
@@ -60,18 +65,22 @@ namespace Valkur.Gameplay.Quests
                 if (obj == null) continue;
                 obj.Begin();
 
-                // KillCountObjective exposes OnProgressChanged; subscribe
-                // to it via duck-typing so the Quest layer doesn't have to
-                // care which concrete IObjective is in the list.
-                if (obj is KillCountObjective kc)
+                // Every shipped objective derives from ObjectiveBase and reports
+                // through ONE event. This used to duck-type KillCountObjective
+                // alone, which was invisible while that was the only kind in
+                // existence and became a silent hole the moment a second one
+                // arrived: a quest whose last objective was a Collect or a Survive
+                // would go complete without OnCompleted ever firing, so it stayed
+                // active forever and never paid out.
+                if (obj is ObjectiveBase ob)
                 {
-                    Action<int, int> handler = (cur, tgt) =>
+                    Action<ObjectiveBase> handler = _ =>
                     {
                         OnObjectiveProgressed?.Invoke(obj);
                         CheckCompletion();
                     };
-                    kc.OnProgressChanged += handler;
-                    _kcHandlers[obj] = handler;
+                    ob.Progressed += handler;
+                    _handlers[ob] = handler;
                 }
             }
 
@@ -90,14 +99,14 @@ namespace Valkur.Gameplay.Quests
             foreach (var obj in Objectives)
             {
                 if (obj == null) continue;
-                if (obj is KillCountObjective kc &&
-                    _kcHandlers.TryGetValue(obj, out var handler))
+                if (obj is ObjectiveBase ob &&
+                    _handlers.TryGetValue(ob, out var handler))
                 {
-                    kc.OnProgressChanged -= handler;
+                    ob.Progressed -= handler;
                 }
                 obj.End();
             }
-            _kcHandlers.Clear();
+            _handlers.Clear();
         }
 
         /// <summary>Compute completion fraction across all objectives (0..1).</summary>
@@ -110,6 +119,25 @@ namespace Valkur.Gameplay.Quests
                 foreach (var obj in Objectives)
                     if (obj != null && obj.IsComplete) completed++;
                 return (float)completed / Objectives.Count;
+            }
+        }
+
+        /// <summary>
+        /// Ask every polled objective to re-read the world. Driven by
+        /// <c>QuestManager</c> at a low rate — a bag count, a purse balance and a
+        /// level are facts that change a few times a minute, not a few times a
+        /// frame, and the one time-based objective accumulates <c>deltaTime</c>
+        /// itself rather than caring how often it is asked.
+        ///
+        /// <para>No-op once the quest is done, so a completed quest that has not yet
+        /// been cleaned up costs nothing.</para>
+        /// </summary>
+        public void Poll()
+        {
+            if (!IsActive || IsCompleted) return;
+            for (int i = 0; i < Objectives.Count; i++)
+            {
+                if (Objectives[i] is ObjectiveBase ob && ob.IsPollable) ob.Poll();
             }
         }
 

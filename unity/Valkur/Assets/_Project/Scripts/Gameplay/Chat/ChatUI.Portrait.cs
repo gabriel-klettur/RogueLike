@@ -138,6 +138,12 @@ namespace Valkur.Gameplay.Chat
                 LayoutRebuilder.MarkLayoutForRebuild((RectTransform)_panel.transform);
             }
 
+            // Decided BEFORE the column is laid out, for the reason Comerciar's own
+            // comment records: a switched-off button consumes no space, so setting this
+            // afterwards leaves Diario floating over a gap and nothing complains.
+            if (_questsButton != null)
+                _questsButton.SetActive(ShouldShowQuestButton(persona != null ? persona.personaId : null));
+
             LayoutGutterColumn();
 
             if (!_portraitActive) return;
@@ -174,6 +180,7 @@ namespace Valkur.Gameplay.Chat
             if (_portraitActive) top += PORTRAIT_SIZE_H + GUTTER_GAP;
 
             top = SeatGutterButton(_tradeButton, top, GUTTER_TRADE_HEIGHT);
+            top = SeatGutterButton(_questsButton, top, GUTTER_QUESTS_HEIGHT);
             top = SeatGutterButton(_journalButton, top, GUTTER_JOURNAL_HEIGHT);
         }
 

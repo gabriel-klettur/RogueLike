@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67735d37ab4f29c4f8d860d24cbd80bc, type: 3}
+  m_Name: q_despensa_plaga
+  m_EditorClassIdentifier: 
+  questId: q_despensa_plaga
+  displayName: Plaga en la despensa
+  description: "Algo peque\xF1o y con demasiados dientes se ha instalado entre los
+    sacos de harina de Gatita. Ella no piensa entrar ah\xED con un cuchar\xF3n."
+  hookLine: "Ay, por fin alguien con botas. Hay reto\xF1os metidos en mi despensa
+    y me est\xE1n royendo la harina. Saca seis y te doy de comer una semana."
+  completionLine: "\xA1Seis! Y sin romper nada. Toma, esto te lo has ganado con creces."
+  giverPersonaId: vendor_cheff_gatita
+  turnInPersonaId: vendor_cheff_gatita
+  requiredLevel: 0
+  recommendedLevel: 1
+  prerequisiteQuestIds: []
+  questLine: gatita
+  objectives:
+  - kind: 0
+    targetId: barbol_baby
+    count: 6
+    description: "Echa 6 reto\xF1os de la despensa"
+    consumeOnComplete: 0
+  xpReward: 120
+  skillPointReward: 0
+  arcanePointReward: 0
+  coinReward: 40
+  itemRewards:
+  - locro
+  itemRewardCounts: 02000000

@@ -24,8 +24,12 @@ namespace Valkur.UI.HUD
     public sealed partial class MinimapHUD : MonoBehaviour
     {
         // ── Root layout (margins; widget dimensions live in the UIBuilder) ──
-        private const float MARGIN_TOP   = 24f;
-        private const float MARGIN_RIGHT = 24f;
+        // Taken from HudLayout, not typed here, because the quest log stacks under
+        // this widget and lives in an assembly that may not reference this one. Two
+        // hand-kept copies of a margin is how the two corners drifted apart before:
+        // measured, the minimap covered 29.4 % of the log and won on sortingOrder.
+        private const float MARGIN_TOP   = Valkur.Core.UI.HudLayout.ScreenMargin;
+        private const float MARGIN_RIGHT = Valkur.Core.UI.HudLayout.ScreenMargin;
 
         // ── UI handles ──────────────────────────────────────────────────────
         private Canvas        _canvas;

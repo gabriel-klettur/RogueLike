@@ -499,13 +499,17 @@ namespace Valkur.Tests.EditMode.Game.Chat
         {
             var grip = Child(Panel, "ResizeGrip").GetComponent<Valkur.UIKit.PanelResizeHandle>();
 
-            // 259 = the gutter column, which is the tallest thing in this panel and the only
+            // 293 = the gutter column, which is the tallest thing in this panel and the only
             // thing that has to fit whatever the conversation gives up: 8 padding + 141 face
-            // + 28 Comerciar + 28 Diario + 28 Reiniciar, with a 6px gap between each and 8
-            // padding at the foot. It is DERIVED in ChatUI from those same constants, so a
-            // taller gutter control moves it — and this assertion is the tripwire that makes
-            // that a deliberate change rather than a silent one.
-            Assert.AreEqual(new Vector2(470f, 259f), grip.MinSize,
+            // + 28 Comerciar + 28 Misiones + 28 Diario + 28 Reiniciar, with a 6px gap between
+            // each and 8 padding at the foot. It is DERIVED in ChatUI from those same
+            // constants, so a taller gutter control moves it — and this assertion is the
+            // tripwire that makes that a deliberate change rather than a silent one.
+            //
+            // It rose from 259 when Misiones joined the column. The ceiling it must not
+            // cross is PANEL_DEFAULT_H (312): a minimum above the default would drag every
+            // player's saved panel size up through the restore clamp.
+            Assert.AreEqual(new Vector2(470f, 293f), grip.MinSize,
                 "PANEL_MIN_W/PANEL_MIN_H sat in ChatUI.cs unread since the Python port. They " +
                 "are the floor the panel was always meant to refuse to shrink past, and this " +
                 "is the call that finally makes them mean something.");
@@ -656,7 +660,7 @@ namespace Valkur.Tests.EditMode.Game.Chat
 
             var size = Panel.GetComponent<RectTransform>().sizeDelta;
             Assert.GreaterOrEqual(size.x, 470f, "PANEL_MIN_W is the floor.");
-            Assert.GreaterOrEqual(size.y, 259f, "PANEL_MIN_H is the floor.");
+            Assert.GreaterOrEqual(size.y, 293f, "PANEL_MIN_H is the floor.");
         }
 
         [Test]
@@ -722,7 +726,7 @@ namespace Valkur.Tests.EditMode.Game.Chat
             // including the gutter's own rows. Anything built after it would draw on top of
             // the archive the player is reading.
             CollectionAssert.AreEqual(
-                new[] { "MsgRow", "ScrollArea", "TradeConfirmRow", "InputRow", "TradeButton", "JournalButton", "ResetButton", "ResizeGrip", "CloseXButton", "LangButton", "Portrait", "JournalOverlay" }, names,
+                new[] { "MsgRow", "ScrollArea", "TradeConfirmRow", "InputRow", "TradeButton", "QuestsButton", "JournalButton", "ResetButton", "ResizeGrip", "CloseXButton", "LangButton", "Portrait", "QuestOverlay", "JournalOverlay" }, names,
                 "Panel row order defines the whole visual layout - reordering rearranges the panel.");
         }
 
@@ -785,6 +789,47 @@ namespace Valkur.Tests.EditMode.Game.Chat
             Assert.IsNotNull(vlg, "Message rows are stacked by a VerticalLayoutGroup on Content.");
             Assert.IsFalse(vlg.childForceExpandHeight,
                 "Force-expanding message rows would give every single message the full viewport height.");
+        }
+
+        /// <summary>
+        /// Every scroll content in this panel is stretched across its viewport, and a
+        /// stretched rect's <c>sizeDelta.x</c> is not a width — it is a SURPLUS over the
+        /// parent. So the value has to be zero, and a fresh <c>RectTransform</c> is born
+        /// with a hundred.
+        ///
+        /// <para>That is exactly how the Misiones sheet shipped: it copied the anchor and
+        /// pivot lines from the Diario and not the one after them, so the list hung a
+        /// hundred pixels wider than its own mask and — with the centre pivot splitting the
+        /// surplus — every row lost its first fifty pixels. On screen that read as
+        /// "Plaga e|n la despensa", the same seven characters missing from every line
+        /// including the section headers.</para>
+        ///
+        /// <para>Written over ALL of them by NAME rather than as three separate tests,
+        /// because the failure is a line nobody wrote rather than a line somebody broke:
+        /// the next overlay built here inherits the assertion instead of the bug.</para>
+        /// </summary>
+        [Test]
+        public void BuildUI_EveryScrollContent_AddsNoWidthOverItsViewport()
+        {
+            string[] contents = { "Content", "JournalContent", "QuestContent" };
+            int checkedCount = 0;
+
+            foreach (var rt in CanvasGo.GetComponentsInChildren<RectTransform>(true))
+            {
+                if (System.Array.IndexOf(contents, rt.name) < 0) continue;
+                checkedCount++;
+
+                Assert.AreEqual(0f, rt.anchorMin.x, 0.0001f, rt.name + " must stretch from the left edge.");
+                Assert.AreEqual(1f, rt.anchorMax.x, 0.0001f, rt.name + " must stretch to the right edge.");
+                Assert.AreEqual(0f, rt.sizeDelta.x, 0.0001f,
+                    rt.name + ".sizeDelta.x is a surplus over the viewport, not a width. "
+                    + "The RectTransform default of 100 hangs the list 50 px off each side of "
+                    + "its own mask and cuts the first characters off every row.");
+            }
+
+            Assert.AreEqual(contents.Length, checkedCount,
+                "One of the scroll contents was renamed or is no longer built - this test would "
+                + "then be silently checking fewer rects than it claims.");
         }
 
         // -------------------------------------------------------------------------
@@ -862,7 +907,7 @@ namespace Valkur.Tests.EditMode.Game.Chat
         [Test]
         public void BuildUI_GutterButtons_FloatWithSeparateImageAndLabelObjects()
         {
-            foreach (var name in new[] { "TradeButton", "JournalButton", "ResetButton" })
+            foreach (var name in new[] { "TradeButton", "QuestsButton", "JournalButton", "ResetButton" })
             {
                 var go = Child(Panel, name);
 
@@ -1044,7 +1089,8 @@ namespace Valkur.Tests.EditMode.Game.Chat
                                          "InputRow", "InputField", "SendButton",
                                          "TradeButton", "JournalButton", "ResetButton", "CloseXButton",
                                          "LangButton", "LangLabel", "Text Area", "Placeholder",
-                                         "JournalOverlay", "JournalScroll", "JournalContent" })
+                                         "JournalOverlay", "JournalScroll", "JournalContent",
+                                         "QuestsButton", "QuestOverlay", "QuestScroll", "QuestContent" })
             {
                 Assert.IsTrue(counts.ContainsKey(name), "Node '" + name + "' disappeared from the hierarchy.");
                 Assert.AreEqual(1, counts[name],

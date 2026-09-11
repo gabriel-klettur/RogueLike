@@ -302,6 +302,23 @@ namespace Valkur.Gameplay.Chat
             _tradeButton.GetComponent<Button>().onClick.AddListener(OnTradeClicked);
             _tradeButton.SetActive(false);
 
+            // Misiones sits between Comerciar and Diario, and is CONDITIONAL like
+            // Comerciar rather than unconditional like Diario: most characters have
+            // nothing to hand out most of the time, and a button that is permanently
+            // dead teaches the player it does nothing. Whether it shows is decided in
+            // ConfigurePortraitFor, BEFORE the column is laid out — a switched-off
+            // button consumes no space, so deciding afterwards leaves a hole nothing
+            // complains about.
+            _questsButton = CreateGutterButton(_panel.transform, "QuestsButton", ChatLanguage.Quests,
+                new Color(0.22f, 0.34f, 0.18f, 1f), 12f, wrap: false, out _questsButtonText);
+            var questsRt = (RectTransform)_questsButton.transform;
+            questsRt.anchorMin = new Vector2(0f, 1f);
+            questsRt.anchorMax = new Vector2(0f, 1f);
+            questsRt.pivot     = new Vector2(0f, 1f);
+            questsRt.sizeDelta = new Vector2(GUTTER_BUTTON_WIDTH, GUTTER_QUESTS_HEIGHT);
+            _questsButton.GetComponent<Button>().onClick.AddListener(OnQuestsClicked);
+            _questsButton.SetActive(false);
+
             // Diario sits under Comerciar and is UNCONDITIONAL, where Comerciar is not: five
             // of the six characters do not trade, and all of them can be remembered. Its Y,
             // like Comerciar's, is set per conversation by LayoutGutterColumn — the column
@@ -465,6 +482,12 @@ namespace Valkur.Gameplay.Chat
 
             // After the portrait, because it covers it too: the journal is a view of the
             // whole panel, not a row inside the conversation. Built hidden.
+            // Both sheets cover the same rectangle and are mutually exclusive, so their
+            // relative order decides nothing on screen — but the Diario stays LAST,
+            // because "nothing may be built after the overlay" is the invariant
+            // ChatPortraitLayoutTests pins, and an invariant that moves whenever a view
+            // is added stops being one.
+            BuildQuestOverlay(_panel.transform);
             BuildJournalOverlay(_panel.transform);
         }
 

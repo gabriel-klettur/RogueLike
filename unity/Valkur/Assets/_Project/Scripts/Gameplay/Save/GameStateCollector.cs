@@ -128,6 +128,16 @@ namespace Valkur.Gameplay.Save
             var progression = player.GetComponent<PlayerProgression>();
             if (progression != null) progression.WriteTo(psd.progression);
 
+            // The quest log. Read off the manager rather than off the player, because
+            // the manager is the only thing that knows how far along an open quest is —
+            // the player carries the consequences (xp, coins, items) and none of the
+            // state. Absent manager writes an empty document, which restores as "this
+            // character has accepted nothing" rather than as a warning.
+            var quests = Quests.QuestService.Instance != null
+                ? Quests.QuestService.Instance.Manager
+                : UnityEngine.Object.FindObjectOfType<Quests.QuestManager>();
+            if (quests != null) quests.WriteTo(psd.quests);
+
             return psd;
         }
 

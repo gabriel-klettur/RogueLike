@@ -134,6 +134,21 @@ namespace Valkur.UI.HUD
                 if (uiContainer != null) minimapGo.transform.SetParent(uiContainer.transform, false);
             }
 
+            // The quest log. It existed for the life of the project and NOTHING
+            // instantiated it — grep for the type outside its own file returned zero —
+            // so a quest could be accepted, advanced and completed with no line of it on
+            // screen. It resolves its own manager in OnSingletonAwake, and binds again
+            // here for the case where the quest layer came up after the HUD did.
+            if (FindObjectOfType<Valkur.Gameplay.HUD.QuestLogHUD>() == null)
+            {
+                var questGo = new GameObject("QuestLogHUD");
+                var log = questGo.AddComponent<Valkur.Gameplay.HUD.QuestLogHUD>();
+                if (uiContainer != null) questGo.transform.SetParent(uiContainer.transform, false);
+
+                var quests = Valkur.Gameplay.Quests.QuestService.Instance;
+                if (quests != null && quests.Manager != null) log.BindManager(quests.Manager);
+            }
+
             // Hide the HUD whenever any runtime editor opens, restore on close.
             // Hosted on this same GameObject ([Systems]/HUDBootstrap) so it lives
             // outside [UI] and survives the SetActive(false) it applies.

@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67735d37ab4f29c4f8d860d24cbd80bc, type: 3}
+  m_Name: q_vigilia_altar
+  m_EditorClassIdentifier: 
+  questId: q_vigilia_altar
+  displayName: Vigilia en el altar
+  description: "Lo que se abri\xF3 en la cripta no se ha vuelto a cerrar. Alguien
+    tiene que estar en el bosque cuando salgan, y tiene que seguir de pie tres minutos
+    despu\xE9s."
+  hookLine: "No te pido que ganes. Te pido que sigas ah\xED cuando dejen de venir.
+    Tres minutos en pie en el bosque, y quince de ellos en el suelo."
+  completionLine: "Sigues de pie. Eso ya es m\xE1s de lo que consigui\xF3 el anterior."
+  giverPersonaId: npc_barbol_brother_felipondor
+  turnInPersonaId: npc_barbol_brother_felipondor
+  requiredLevel: 6
+  recommendedLevel: 8
+  prerequisiteQuestIds:
+  - q_cripta_colina
+  questLine: felipondor
+  objectives:
+  - kind: 2
+    targetId: Forest
+    count: 1
+    description: Sube al claro del bosque
+    consumeOnComplete: 0
+  - kind: 6
+    targetId: 
+    count: 180
+    description: Aguanta en pie 180 segundos
+    consumeOnComplete: 0
+  - kind: 0
+    targetId: 
+    count: 15
+    description: Derriba 15 enemigos durante la vigilia
+    consumeOnComplete: 0
+  xpReward: 700
+  skillPointReward: 0
+  arcanePointReward: 0
+  coinReward: 300
+  itemRewards: []
+  itemRewardCounts: 

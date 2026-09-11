@@ -55,6 +55,12 @@ namespace Valkur.Gameplay.Save
             RestoreInventory(player, data.player);
             RestoreVisualLayer(player, data.player);
 
+            // After experience, coins and the bag: a restored quest re-begins its
+            // objectives, and the polled ones (Collect / EarnCoins / ReachLevel) read the
+            // live player on their first tick. Restoring them earlier would measure a
+            // half-built character.
+            RestoreQuests(data.player);
+
             // LAST, after every stat and the inventory are back: entering spirit form spawns a
             // corpse and swaps the collider mask, and doing that before RestoreInventory would put
             // the swap in the middle of a rebuild it has no reason to be inside.
@@ -198,6 +204,35 @@ namespace Valkur.Gameplay.Save
             if (progression == null) return;
 
             progression.RestoreFrom(psd.progression, Mathf.Max(1, psd.level));
+        }
+
+        /// <summary>
+        /// Rebuilds the quest log: which quests are open, how far along each one is, and
+        /// which are done.
+        ///
+        /// <para>Runs AFTER progression and experience, and that order is load-bearing
+        /// rather than tidy. Restoring an active quest re-BEGINS its objectives, and the
+        /// polled ones read the live player the moment they tick — a ReachLevel objective
+        /// restored before <c>RestoreExperience</c> would measure a level-1 character and
+        /// report the quest as barely started until the next poll corrected it.</para>
+        ///
+        /// <para>A save with no quest document restores an empty log rather than warning:
+        /// every save written before this layer existed is exactly that, and it describes
+        /// a character who has accepted nothing.</para>
+        /// </summary>
+        private static void RestoreQuests(PlayerSaveData psd)
+        {
+            var service = Quests.QuestService.Instance;
+            var manager = service != null
+                ? service.Manager
+                : UnityEngine.Object.FindObjectOfType<Quests.QuestManager>();
+            if (manager == null) return;
+
+            var catalog = service != null
+                ? service.Definitions
+                : System.Array.Empty<Valkur.Data.QuestDefinition>();
+
+            manager.ReadFrom(psd.quests, catalog);
         }
 
         private static void RestoreExperience(GameObject player, PlayerSaveData psd)

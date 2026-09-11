@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67735d37ab4f29c4f8d860d24cbd80bc, type: 3}
+  m_Name: q_cripta_colina
+  m_EditorClassIdentifier: 
+  questId: q_cripta_colina
+  displayName: La cripta bajo la colina
+  description: "Bajo la colina hay una puerta que lleva cerrada m\xE1s tiempo del
+    que nadie recuerda. Felipondor sabe lo que hay dentro, y por eso no baja \xE9l."
+  hookLine: "Hay algo ah\xED abajo que lleva mi apellido y no me enorgullece. Baja,
+    l\xEDmpialo, y s\xFAbeme cinco trozos de obsidiana de las paredes: quiero saber
+    de qu\xE9 est\xE1 hecha esa oscuridad."
+  completionLine: "Obsidiana. Claro que s\xED. Ahora ya s\xE9 qu\xE9 es lo que nos
+    mira desde abajo."
+  giverPersonaId: npc_barbol_brother_felipondor
+  turnInPersonaId: npc_barbol_brother_felipondor
+  requiredLevel: 5
+  recommendedLevel: 7
+  prerequisiteQuestIds:
+  - q_manada_alfa
+  questLine: felipondor
+  objectives:
+  - kind: 2
+    targetId: dungeon
+    count: 1
+    description: Encuentra la entrada de la cripta
+    consumeOnComplete: 0
+  - kind: 0
+    targetId: barbol_oscuro
+    count: 8
+    description: 'Limpia la cripta: 8 barboles oscuros'
+    consumeOnComplete: 0
+  - kind: 1
+    targetId: obsidian_chunk
+    count: 5
+    description: Arranca 5 trozos de obsidiana
+    consumeOnComplete: 1
+  xpReward: 900
+  skillPointReward: 1
+  arcanePointReward: 0
+  coinReward: 400
+  itemRewards:
+  - spellbook_simple
+  itemRewardCounts: 01000000
