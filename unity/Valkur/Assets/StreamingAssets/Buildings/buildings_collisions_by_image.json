@@ -8,6 +8,44 @@
       ],
       "grid_ref_size": [76, 58]
     },
+  "assets/buildings/lights/brazier_bowl_stone.png": {
+      "width": 2,
+      "height": 3,
+      "collision": [
+        [".", "."],
+        [".", "."],
+        ["#", "#"]
+      ],
+      "grid_ref_size": [47, 77]
+    },
+  "assets/buildings/lights/brazier_iron_tripod.png": {
+      "width": 2,
+      "height": 3,
+      "collision": [
+        [".", "."],
+        [".", "."],
+        ["#", "#"]
+      ],
+      "grid_ref_size": [36, 80]
+    },
+  "assets/buildings/market/barrel_apples_green.png": {
+      "width": 2,
+      "height": 2,
+      "collision": [
+        [".", "."],
+        ["#", "#"]
+      ],
+      "grid_ref_size": [34, 48]
+    },
+  "assets/buildings/market/basket_handle_tomatoes.png": {
+      "width": 2,
+      "height": 2,
+      "collision": [
+        [".", "."],
+        ["#", "#"]
+      ],
+      "grid_ref_size": [39, 42]
+    },
   "assets/buildings/market/basket_wide_vegetables.png": {
       "width": 2,
       "height": 2,
@@ -506,6 +544,16 @@
         ["#", "#", "#", "#", "#", "#", "#"]
       ],
       "grid_ref_size": [216, 256]
+    },
+  "assets/buildings/statues/sundial_gnomon_gold.png": {
+      "width": 3,
+      "height": 3,
+      "collision": [
+        [".", ".", "."],
+        ["#", "#", "#"],
+        ["#", "#", "#"]
+      ],
+      "grid_ref_size": [72, 67]
     },
   "assets/buildings/vegetation/tree_1.png": {
       "width": 6,
