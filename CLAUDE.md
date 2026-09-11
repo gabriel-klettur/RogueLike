@@ -1004,6 +1004,19 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   schema diff finds fields no shipped-data test happens to cover. Reach for one of those
   BEFORE reading the failures — without it, the twelve red tests above cost twenty minutes of
   investigating TileEditor code that was fine.
+- **A LOG LINE HAS A TIMESTAMP AND A POSITION, AND READING ONE FOR THE OTHER IS THE SAME TRAP.**
+  Fourth sighting, 2026-09-10, and this one was a wrong CONCLUSION announced to three people.
+  The MCP bridge went silent for every session at once; `Editor.log` was being written three
+  seconds ago, and `tail`+`grep` over it turned up 94 WebSocket keep-alive failures. Both facts
+  are true. The conclusion drawn from them — "the socket is dead, restart the bridge" — was
+  wrong: those lines were HISTORICAL, and the silence was a test run owning the main loop, which
+  is exactly what makes MCP For Unity stop answering. It came back on its own.
+  **What separated the two hypotheses was not reading more lines, it was measuring two different
+  quantities**: where the WebSocket lines sit RELATIVE TO THE END of the file (not in the last
+  4000), and whether the log is GROWING with runner lines (measured by a peer at 1 MB in 6 s,
+  923 of 2000 lines from the test runner). "The log was written 3 seconds ago" is true and
+  answers a third question. `stat -c %s` twice a few seconds apart costs nothing and is the
+  check that would have refused the wrong answer.
 - **Reflection sees SYMBOLS, not FILES, so it cannot confirm a comment-only edit is loaded.**
   The rule above about confirming the new code is loaded — `typeof(X).GetMethod("NewThing")
   != null` — proves a symbol arrived and says nothing about whether the FILE Unity compiled is
@@ -1025,6 +1038,18 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   so it answers "No running job to clear" with a runner live. **The job registry and the Unity
   runner are two different sources of truth.** What
   definitively clears an orphaned runner is restarting the Editor.
+
+  **There are THREE sources of truth, not two, and the third is the one that gates
+  `refresh_unity`.** Measured 2026-09-10 on a runner orphaned for 33 minutes: clearing
+  `TestJobDataHolder.TestRuns` (Unity's own registry) changed nothing, and
+  `TestJobManager.ClearStuckJob()` returned true and set `HasRunningJob` false — and the refresh
+  was STILL refused with `tests_running`. What actually gates it is
+  `MCPForUnity.Editor.Services.TestRunStatus._isRunning`, a loose static with its own
+  `MarkStarted`/`MarkFinished` pair; calling `MarkFinished()` flipped `EditorStateCache` from
+  `phase=running_tests` to `idle` and the refresh went through immediately. Note also that
+  `EditorStateCache.ForceUpdate` re-reads that static, so it is not a stale-cache problem —
+  asking the cache twice will not help. And `clear_stuck` really does clear its half: the
+  threshold is 60 s, so a 33-minute job qualifies. It just is not the half that was blocking.
 
   **The Unity-side runner IS readable from here, and this note used to say it was not.** The
   probe is `Resources.FindObjectsOfTypeAll(` +
@@ -1174,6 +1199,128 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   `scale` override — silently, on exactly the buildings a designer resized. `hasDoor` +
   `doorOffsetNormalized` + `doorSizeNormalized` live on the template (where the ART has a
   door); `overrides.door` lives per instance (where THIS house leads).
+- **A building's Z IS a tile layer, and there is exactly one sorting slot per layer for it.**
+  `BuildingObject.ZBottom` / `ZTop` (0..15) name the painted visual layer each half sits
+  directly above; `SortingConfig.PropSortingLayer(z)` answers `PropsL{z}`, a sorting layer
+  INSERTED between the tiles of layer z and those of layer z+1. So "does this building draw
+  over that wall" is decided by sorting-LAYER comparison, by name, and `sortingOrder` carries
+  only the Y-sort. Defaults 4 / 6 sit either side of `Entities`, which is the whole split
+  ratio: the player walks between a trunk on `PropsL4` and a crown on `PropsL6`.
+  **It used to be a signed TIER** multiplied by `Z_TIER_SCALE` into the order and promoted
+  to `WallsTop` on its sign — a ladder that ended at `WallsTop`, which is BELOW the layer-7
+  and layer-8 tile slots, so no value of Z could put a building over a wall painted up there
+  and an author pressing "+" got nothing, silently. Measured: 4 of 301 shipped placements
+  used it, i.e. what a control that cannot do the job looks like in data. The tier also
+  produced this project's one sort-key overflow (a five-digit order wrapping the 16-bit
+  short — and the wrap is worse than that incident recorded: it happens in the SETTER, see
+  the sortingOrder ceiling below);
+  nothing is multiplied now, so it cannot recur. The JSON keys are `layer_bottom` /
+  `layer_top`; the old `z_bottom` / `z_top` are still READ through the sign rule the old
+  code applied (`BuildingLoader.LegacyZBottomToLayer` / `LegacyZTopToLayer`), so those four
+  rows come back where they were authored, and the next save rewrites them.
+  **A first cut shipped TWO dials — the old Z plus a separate "Capa" — and was rejected in
+  review within the hour**: two controls that both mean "depth" is a design where the one
+  drawn on the building is the one that cannot do the job. One number, one meaning.
+  Pinned by `BuildingZLayerTests` (the ladder, by live `SortingLayer` values, never literals)
+  and `BuildingLoaderZOffsetTests` (both key generations).
+- **Editing `ProjectSettings/TagManager.asset` on disk while Unity is open does not edit
+  TagManager.** Unity holds it in memory like any asset, a domain reload does not re-read
+  it, and a later save — or a Play-mode round trip — flushes the STALE copy back over the
+  file. Measured twice in one afternoon: nine sorting layers written to disk, `refresh_unity
+  (scope=all)` reported ready, `SortingLayer.layers` listed them, and one Play/Stop later
+  `GetLayerValueFromName("PropsL8")` answered **0** — `Default` — which puts the renderer
+  behind the entire world with nothing logged, and the file on disk was back to its old
+  contents. Add sorting layers through the live object: `LoadAllAssetsAtPath
+  ("ProjectSettings/TagManager.asset")`, a `SerializedObject` over `m_SortingLayers`,
+  `InsertArrayElementAtIndex`, then `EditorUtility.SetDirty` AND `AssetDatabase.SaveAssets`
+  — without the `SetDirty` the second batch here stayed in memory only and was lost on the
+  next Play. Verify by reading `SortingLayer.layers` and the file's own text in the same
+  probe. A test that resolves a name through `GetLayerValueFromName` must first assert
+  `NameToID(name) != 0`, or a lost layer passes as "value 0" on the wrong side of everything.
+- **A sorting layer the ambient light does not reach renders every LIT sprite on it BLACK —
+  and the mask was an ALLOWLIST.** Nine `PropsL*` sorting layers were added for buildings,
+  every building in the world went black at 08:27 with the tiles around them lit, nothing
+  logged, and the wiring test passed: `TheSceneLightIlluminatesEveryWorldSortingLayer`
+  compared the scene's mask against the same twelve-name table the boot wrote, one half
+  against itself. An allowlist has to be remembered every time TagManager grows; the mask is
+  DERIVED now — `GameplaySceneSetup.AmbientLitSortingLayerNames()` is every layer in
+  `SortingLayer.layers` minus `AmbientUnlitSortingLayers` (`Projectiles`, `VFX`, `UI_World`,
+  `Overlay`, each with a reason). A new layer is lit by default, which is the failure that is
+  VISIBLE (noon-bright at midnight) rather than the one that deletes half the world.
+  `AmbientLitCoverageTests` pins the property from the other side: every `PropSortingLayer(z)`
+  and every slot `VisualLayerSortingSync` can put an entity on must be lit, every denylist
+  name must exist (a typo there is a layer that quietly goes lit), and lit ∪ unlit must be
+  exactly TagManager. That second check found a latent one the same hour: visual layer 7 sent
+  entities to `Projectiles`, an unlit slot — nothing had ever climbed there (zero layer-jump
+  tiles shipped) — so it has its own `EntitiesHigh` now. The scene's authored mask is kept
+  complete as well: it is the fallback for the day the boot's reflection write cannot land.
+  **And TagManager edits only land OUTSIDE Play Mode**: `SetDirty` + `SaveAssets` during Play
+  left the file untouched and the entry vanished on Stop — the third loss in one afternoon.
+- **`SpriteRenderer.sortingOrder` is a 16-bit short IN THE PROPERTY SETTER, so the Y-sort has
+  a world-size budget of ±317 units.** Measured directly, not inferred: writing 32768 reads
+  back **-32768**, 65536 reads back **0**, 100000 reads back **-31072**, 300000 reads back
+  **-27680**. The field does not keep what you write, so an order past the short window is
+  not "very high" — it comes back NEGATIVE and the sprite draws behind everything it was
+  meant to be in front of. This became load-bearing the moment the building Z stopped being a
+  multiplied tier: `sortingOrder` now carries the Y term and nothing else, so the world's Y
+  span IS the budget. `SortingConfig` states it as `Y_SORT_SCALE` (100), `SORT_ORDER_HEADROOM`
+  (1024 — `Z_UI` is 1000 and two callers nudge by ±1, so the Y term must leave room or the SUM
+  wraps while the Y term looks fine) and `MAX_SAFE_WORLD_Y` = **317**. `YToSortingOrder`
+  CLAMPS and warns once: past the line every renderer out there sorts as equal — locally wrong,
+  bounded, still monotone up to the line — where wrapping would put the furthest thing in the
+  world in front of everything. The shipped world runs `offset_y` 0..100 tiles over 50-tall
+  zones, i.e. 0..150 units, about 2x headroom — and `zones_database.json` AUTO-EXPANDS, so a
+  new zone row is how this gets reached, not a decision anybody makes.
+  `WorldLayerCeilingTests.EveryShippedZone_SitsInsideTheYSortBudget` reads the shipped file.
+- **The ladder is SIXTEEN visual layers, which is Unity's own ceiling, and reaching it spent
+  every free physics slot in the project.** `SortingConfig.VISUAL_LAYER_COUNT` is the single
+  literal; `CollisionTagMap.LayerCount`, `WorldCollisionLayers.LayerCount`,
+  `VisualLayerOccupant.MaxLayer`, `VisualLayerProbe.LayerCount` and `LayerJumpMap.MaxTarget`
+  derive from it. It lives in Core because `TilemapLayerSetup.TilemapLayer` — the enum that
+  morally owns it — is in Gameplay and Core may not reference Gameplay, the same constraint
+  `LoadoutStateSheets.state` answers; the two are pinned against each other in BOTH directions,
+  plus contiguity from 0, because every consumer indexes arrays and bitmasks by the raw value.
+  Layers 0..8 keep the names the Python build gave them (`Ground`, `WallsTop`, …) because those
+  strings are written into every shipped overlay file; 9..15 are named by INDEX (`Tier9`…),
+  which is the honest name for a tier whose job nobody has decided.
+  The three ceilings, measured: **32 physics layers** — each visual layer needs a `WorldL{N}`,
+  and the seven that were free are now spent, so **0 remain**. `WorldL9..WorldL12` took the
+  ordinary user slots 28..31; `WorldL13..WorldL15` took **3, 6 and 7, which are Unity's
+  RESERVED builtin range** — they accept a name through `SerializedObject` and `LayerToName`
+  resolves them (measured), but Unity's own Inspector will not edit them, so the top three
+  tiers are the ones deliberately put there: if an upgrade ever reclaims that range it costs
+  the tiers nobody has painted yet rather than the middle of the ladder. **47 sorting layers**
+  (`Tier{N}` / `PropsL{N}` / `EntityL{N}` per tier, inserted after `EntitiesOverhead` so no
+  existing entry moved). And **an int bitmask** — `CollisionTagMap.FullLayerMask` is 65535 now,
+  cap 31. `WorldLayerCeilingTests` asserts every one of those joins.
+- **Growing the ladder broke three things that were sized `9` by hand, and one of them stopped
+  the player moving.** `VisualLayerProbe.Sample` REFUSES a buffer shorter than the layer count
+  and answers 0 **without filling it** — so a stale `new bool[9]` does not throw, it reports
+  "no tile on any layer" for every cell. `PlayerController.Movement._voidSampleBuf` was one:
+  `ClampInputAgainstVoid` then read the whole world as void and zeroed the input, i.e. the
+  character could not move at all. `TileEditorManager._underfootScratch` and
+  `TileEditorUI._layerVisibility` were the other two, the second also indexed by layer against
+  a nine-long array. All three size from `SortingConfig.VISUAL_LAYER_COUNT` now. The suite
+  caught all of it (`PlayerVoidStopMovementTests`, `VisualLayerProbeTests`), which is the
+  argument for the derived count: a literal that is merely *stale* fails loudly, a buffer that
+  is stale fails silently one layer down.
+- **A collision tag is a NUMBER now, not a character, and that is what made layers 9..15
+  taggable.** `CollisionTagMap` emitted one char per layer (`'0' + i`) and `Canonicalize`
+  rejected any two-digit run outright, with a comment saying it kept the schema "tight to the
+  0..8 enum range" — true, and it is exactly why layers above 8 had no spelling at all once
+  the ladder grew. A segment is a RUN OF DIGITS read as one decimal now, so `"12"` is layer
+  twelve and `"1,2"` is layers one and two: the comma is what separates them. Safe because
+  the writer has always emitted commas (`"0,2,5"`) and the shipped maps carry **zero**
+  collision tags, so no comma-less run like `"358"` exists to be re-read as one number. It
+  also retired a SECOND parser — `LayerMaskFromTag` walked the canonical string character by
+  character with its own `'0'..'8'` bound, which is the shape that lets two readers disagree
+  about one string. Both go through `TryParseMask`.
+- **A test pinned to the old size reports a correct build as broken, and thirteen did.** Every
+  one asserted a literal `9`, `10` or `"0,1,2,3,4,5,6,7,8"`: `ValidTags` is ten entries, `"9"`
+  is invalid, `EnumerateLayers` yields nine, an out-of-range clamp lands on 8, `ZTop = 12`
+  clamps. All of them are derived from the count now. The distinction worth keeping: those
+  thirteen were RIGHT to go red — the ladder really did change — and the fix is never to
+  re-pin them to the new number, which only moves the same failure to the next growth.
 - **A doorway is detected by polling, not by a trigger.** Buildings carry no `Rigidbody2D`, so
   a trigger depends entirely on the player's Dynamic body — and a Dynamic body that comes to
   rest goes to sleep (`Player.prefab`: Sleeping Mode = Start Awake, Time To Sleep = 0.5 s). A
@@ -3620,6 +3767,281 @@ market / marketday / marketseed / coins      DevConsole, category "economy"
   and gold still buys no POWER — talents and spells cost points, so the cycle moves numbers
   on a window the player has little reason to look at.
 
+## Quests: nine objective kinds, ten shipped, and a turn-in nobody authors
+
+Audited 2026-09-08 at **1.0/10** — `QuestDefinition`, `QuestManager`, `IObjective` and
+`KillCountObjective` were written and tested, and there were **zero shipped quests, zero
+production callers of `StartQuest`, zero instantiators of `QuestLogHUD`** and no giver.
+Built the same day. Design, the ten quests and what was left out:
+`.github/QUESTS_TEN_DND.md`.
+
+```text
+QuestDefinition / QuestCatalog   Data/Quests/            the blueprint and the index
+ObjectiveBase                    Gameplay/Quests/Objectives/  counter + the ONE progress event
+QuestManager (+ .Persistence)    Gameplay/Quests/        progress, rewards, the poll tick
+QuestService                     Gameplay/Quests/        catalogue, offers, speaks the hook line
+ChatUI.Quests.cs                 Gameplay/Chat/          the Misiones sheet in the gutter
+QuestContentSeeder               Editor/Quests/          Valkur > Quests > Seed Quest Content
+quest / quests                   DevConsole              category "quests"
+Resources/Quests/QuestCatalog.asset                      the index the runtime loads
+Data/Catalogs/Quests/*.asset                             the ten definitions
+```
+
+- **`Quest` used to hear ONE kind of objective, and the hole was total.** The aggregator
+  duck-typed `KillCountObjective.OnProgressChanged` and re-checked completion from that
+  handler — so a quest whose last objective was anything else went complete and
+  `OnCompleted` **never fired**: it stayed in the active list forever and never paid out.
+  Invisible while KillCount was the only kind in existence, which is exactly why it
+  survived. Every objective now reports through `ObjectiveBase.Progressed`.
+- **`IObjective` is deliberately NOT widened with that event.** It is what fixtures
+  implement with three-line stubs; a new member breaks every one of them for no gain. The
+  aggregator asks `is ObjectiveBase` and treats anything else as a passive counter.
+- **EVENT vs POLLED is the objective taxonomy, and Collect had to be polled.**
+  `GameEvents.OnItemPickedUp` carries the item's DISPLAY NAME (`WorldPickup` passes
+  `itemDefinition.displayName`) rather than its id, and it does not fire at all for an item
+  that arrived by crafting, by trade or as a reward. Counting the bag cannot miss a source
+  and is the only formulation that can go DOWN when the player sells the ore. Same argument
+  for `ReachLevel` (a player already at the level never levels again) and `EarnCoins` (a
+  savings objective, not a lifetime-earnings one). `QuestManager` ticks them at 0.25 s.
+- **`Survive` accumulates `deltaTime` rather than reading a wall clock**, because the vigil
+  has to STOP while the player is dead — a stored start time would finish itself while they
+  were a ghost. Dying does not reset it: that would make a long vigil a memory test.
+- **The turn-in objective is GENERATED, never authored.** A quest with `turnInPersonaId`
+  gets a `TalkObjective` appended, gated on every authored objective being complete.
+  Authored by hand it would tick on the very conversation that HANDED THE QUEST OVER,
+  because the giver and the turn-in are usually the same character.
+- **An unmapped `ObjectiveKind` makes a quest EASIER, not broken.** `BuildObjective` logs
+  and returns null, and the objective is silently dropped from the list.
+  `QuestObjectiveKindTests` walks the enum against the dispatcher for exactly that.
+- **`StartQuest` is permissive; `IsEligible` is the gate.** The console and the fixtures
+  need to force a quest on without standing up a level-12 character with three cleared
+  prerequisites, and folding the check in would make "give me that quest" untestable.
+- **The restore seeds counters WITHOUT raising the progress event** — reporting progress
+  during a restore re-runs the completion path and pays the rewards a second time. It also
+  retired a reflection reach into `<Current>k__BackingField`, which was one auto-property
+  rewrite away from silently restoring nothing.
+- **`QuestSaveData` is FLATTENED.** JsonUtility refuses a jagged array, so the per-quest
+  counters run end to end with a parallel list of run lengths. The pack/unpack pair lives in
+  one file, because two copies of it is how one drifts by one and a quest comes back holding
+  another quest's progress. A save with no quest document restores an empty log rather than
+  warning — every save written before this layer is exactly that.
+- **`Resources/Quests/` holds the CATALOGUE only.** `QuestService` is `AddComponent`-ed by
+  the boot sequence and has no inspector slot, which is the `ChatSystem._catalog` defect
+  verbatim; the ten definitions live in `Data/Catalogs/Quests/` and are pulled in by
+  reference, so the build-everything folder carries the index and not the content.
+- **`GameEvents` gained two events and both are raised at the point of NO RETURN.**
+  `OnItemCrafted` fires after the result is in the bag and the profession xp is paid — the
+  rollback path returns before it — and `OnNpcConversed` fires after the panel is seated and
+  the greeting is in, so a listener that answers by speaking lands under the hello. It
+  carries the personaId and not the display name: a rename must not unhook a quest.
+- **Handing in does NOT complete the quest.** The Entregar button fires the same
+  `OnNpcConversed` a conversation fires, and the generated turn-in objective notices. One
+  completion path whether the player pressed a button or just walked up and talked; a second
+  one would be a way to close a quest whose gate had not actually shut.
+- **The Misiones button is CONDITIONAL, like Comerciar and unlike Diario**, and it is
+  counted in `PANEL_MIN_H` whether or not it shows — the minimum has to hold the tallest
+  gutter the panel can draw, and the gutter's children are `ignoreLayout`, so a button that
+  no longer fits simply overlaps Reiniciar in silence. `PANEL_MIN_H` went 259 to 293 against
+  a `PANEL_DEFAULT_H` of 312; a minimum above the default would drag every player's saved
+  panel size up through the restore clamp.
+- **The Diario stays the LAST child of the panel.** Both sheets cover the same rect and are
+  mutually exclusive, so their order decides nothing on screen — but "nothing may be built
+  after the overlay" is an invariant `ChatPortraitLayoutTests` pins, and one that moves
+  whenever a view is added is not an invariant.
+- **`QuestLogHUD` had no instantiator for the life of the project**, and its per-objective
+  subscription watched `KillCountObjective` alone — so every other kind ticked with the
+  panel still showing the numbers it drew when the quest was accepted. `HUDBootstrap`
+  creates it now and it binds to `ObjectiveBase.Progressed`.
+- **`ShippedQuestDataTests` reads the shipped ten off disk** and resolves every
+  `monsterKey`, `itemId`, `recipeId`, `spellKey`, zone name and `personaId` against the real
+  catalogues. Every one of those is a plain string nothing validates at author time, and all
+  of them fail the same way: a counter that never moves, which looks exactly like a quest the
+  player has not worked on yet.
+- **`Valkur.Core.UI.HudLayout` owns the top-right column, and it exists because two
+  assemblies cannot talk.** The minimap is `Valkur.UI`, the quest tracker is
+  `Valkur.Gameplay`, and `Gameplay -> UI` is forbidden — so the two were laid out in
+  different LANGUAGES (the minimap in fixed pixels, the tracker in screen fractions
+  `0.72-0.99` x / `0.55-0.92` y) and could only agree by luck. They did not: measured live
+  at 1600x800 the minimap covered **192x196 px, 29.4 % of the tracker**, over the corner
+  where the quest names and their counters run, and won on sortingOrder 105 against 40.
+  `BelowMinimapTop` is DERIVED from the minimap's own block, so moving the minimap moves
+  what is under it instead of sliding it behind.
+- **Raising the covered widget's sortingOrder is never the fix** — it only swaps which of
+  the two is unreadable. Stacking them is the one arrangement where both are legible.
+- **A HUD canvas that does not use `HudLayout.Reference*` is scaled against something
+  else.** The tracker shipped on Unity's default 800x600 with `matchWidthOrHeight = 0`,
+  which at 1600 wide is a scale factor of **2.0 against every other HUD canvas's 1.0** — its
+  text rendered at double size and the two corners drifted apart on every resize.
+- **Re-run the overlap sweep AFTER moving a panel, because moving one is putting it in
+  somebody else's place.** Dropping the tracker below the minimap put it under
+  `MusicPlayerHUD` (order 150, alpha 0.85, 35.1 % covered). And a constant cannot fix that
+  one: the music widget is draggable and its geometry is persisted per machine in
+  PlayerPrefs, so any reserve computed against where it sits today is wrong for a player
+  who has moved it. The answer was to occupy LESS — the tracker sizes itself from its own
+  text with `GetPreferredValues`, capped by the free band. Measured after, with two quests
+  active: 0 px against both, right edges aligned at 1576.
+- **The sweep itself has a trap worth naming.** Filtering canvases with
+  `GetComponentInParent<Canvas>() != cv` silently drops every INACTIVE one — that method
+  skips inactive objects and returns null — so the first sweep returned a long, plausible
+  list with the minimap missing from it. The one thing being looked for was the one thing
+  filtered out.
+- **The giver used to FORGET YOU.** An accepted quest leaves `OffersFor` and does not reach
+  `TurnInsReadyFor` until it is finished, so for the whole middle of a quest the character
+  who sent the player showed an empty sheet AND the Misiones button disappeared — which
+  reads as the errand never having been given. `QuestService.ActiveFrom` feeds an EN CURSO
+  section with each objective and its counter, and keeps the button on screen.
+- **A character must not say the same thing twice in one conversation.** The hook and
+  completion lines are announced on open, and the Entregar button deliberately re-raises
+  `OnNpcConversed` — one completion path — so the handler ran again and repeated the line
+  verbatim into the transcript AND into the journal, which records what a character is
+  remembered to have said. `_announcedThisConversation` is cleared on chat CLOSE and not on
+  open: `OnChatOpened` and the first `OnNpcConversed` land in the same frame in an order
+  nothing pins, and clearing on the wrong side of that wipes the entry just written.
+- **Accepting says an ACKNOWLEDGEMENT, never the pitch again.** The hook is already on
+  screen twice by then — spoken on open, printed on the card just pressed — so a third
+  reading confirms nothing and reads as a button that only scrolled.
+- **Completing a quest produced no pixel anywhere.** The rewards land in four separate
+  systems and the only evidence was a line vanishing from the tracker, which is
+  indistinguishable from a quest that silently failed to pay. `AnnounceCompletion` toasts
+  the name and what it paid — through the TOAST and not the conversation, because a polled
+  objective can close a quest with the player nowhere near anybody.
+- **A quest card is sized from its text, and 78 px is a FLOOR.** It shipped as a fixed
+  height holding a bold name, the character's hook (the shipped ones run two or three
+  sentences) and a reward line at font 11 in ~434 px — Gatita's hook alone is six lines
+  that way, so the paragraph the sheet exists to show was the part being ellipsised.
+
+- **`Valkur.Core.UI.WorldMarkerBoard` is how the quest layer puts a dot on the map, and it
+  exists because there was NO CHANNEL.** The minimap is `Valkur.UI`, the quest layer is
+  `Valkur.Gameplay`, and neither may reference the other — so the one system that knows
+  where the player should go and the one system that can draw a map could not be
+  introduced. Navigation scored 0.5 for that reason and not for difficulty.
+  `MinimapMarker` is a MonoBehaviour, so publishing through it was the same wall; the board
+  carries plain structs from an assembly below both.
+- **The board is keyed by CHANNEL although it has one publisher.** A board that replaced
+  its whole contents would work today and silently erase the quest markers the first time
+  anything else published — a marker that vanishes for no reason the player or the author
+  can see.
+- **Half the objective kinds deliberately produce NO marker.** Collect, Craft, CastSpell,
+  Survive, ReachLevel and EarnCoins have no place; inventing one teaches the player to
+  distrust every arrow. Talk resolves the LIVE NPC position (five of seven personas walk,
+  so an authored coordinate points at where a vendor used to be — the
+  `RegisterDynamic` rule), Reach resolves the zone centre and refuses `(0,0)` because that
+  is a real place, and KillCount resolves the nearest LIVE monster or nothing.
+- **The generated turn-in must be excluded from the objective sweep.** Measured live, it
+  put TWO markers on one character — a big green plus with a small blue diamond drawn over
+  the middle of it, muddying the one dot the player most needs. Identified by position, the
+  same rule `QuestService.AuthoredWorkDone` uses, so the two cannot drift.
+- **`QuestBadgeState` is compared by VALUE, so its order is behaviour.** The publisher keeps
+  the most urgent state for a character who is several things at once. The first cut
+  numbered it `Offer=1, TurnIn=2, InProgress=3`, so **InProgress beat TurnIn** — a
+  character who owed the player a reward would have shown the dim "you are working on
+  something" glyph, the one state the player can do nothing with. It is
+  `InProgress < Offer < TurnIn` now and `QuestNavigationTests` pins it. Safe to renumber
+  only because it is runtime-only and serialized nowhere.
+- **The badge is DRIVEN, never self-polling**, and the pass must push `None` as well as the
+  positive states. A pass that only touched the personas it found something for would leave
+  the last exclamation mark hanging over a character the player already dealt with.
+- **A turn-in line must name the CHARACTER, not the personaId.** It read "Vuelve a hablar
+  con vendor_banker_abigail" in the tracker, in the sheet and on the minimap label — a
+  database key shown to the player in the one sentence that tells them where to go.
+- **`QuestService.Manager` resolves LAZILY.** Unity does not call `Awake` on a component
+  added in Edit Mode, so a fixture got a null manager and every method returned its
+  empty-guard answer — the tests would have passed while measuring nothing. The laziness
+  also removes a real Play-Mode ordering hazard.
+- **A level-gated quest is SHOWN, greyed, with its requirement.** Filtered out it is
+  indistinguishable from one that does not exist, which removes the only reason to come
+  back to that character.
+- **Abandon takes two clicks and arming is EXCLUSIVE**, and it disarms when the sheet
+  closes — coming back to a red "Seguro?" with no memory of pressing anything is one click
+  from losing a quest. Before it existed, abandoning was console-only, so a quest accepted
+  by mistake was permanent for anyone actually playing.
+- **CONTENT GAP, measured on the loaded world: 6 personas alive, 7 givers in the
+  catalogue.** `npc_barbol_brother_felipondor` is a persona and a `MonsterDefinition` and
+  NO spawner instantiates him, so `q_cripta_colina` and `q_vigilia_altar` are unreachable
+  in normal play. The UI handles it correctly — no offer, no badge, no marker — which is
+  exactly why it is invisible.
+
+- **DROPPING A QUEST RAISED NO EVENT AT ALL, AND THE TRACKER IS THE ONE LISTENER THAT
+  CANNOT SURVIVE SILENCE.** `QuestManager` had two events, started and completed, and
+  abandoning is neither — so `AbandonQuest` removed the entry and told nobody. The minimap
+  and the head badges healed themselves within half a second because `QuestMarkerPublisher`
+  re-scans the world on a timer; the corner tracker is event-driven and had nothing to
+  re-scan from, so a quest dropped in the conversation panel stayed listed there with its
+  counters live for the rest of the session. `OnQuestAbandoned` is its own event and must
+  stay one: `QuestService` subscribes `AnnounceCompletion` to the completion event, so
+  reusing that would toast the rewards of a quest nobody finished — and pay none of them.
+  It fires AFTER the removal, because a listener asks the manager what is active the moment
+  it is told.
+- **The tracker is a WINDOW now** — drag, resize, minimize, close, and a two-click drop per
+  row. What it replaced could do none of that: one TMP blob in a `raycastTarget = false`
+  rectangle, so the panel could not be moved off something it covered, could not be put
+  away, and could not offer the one action a list of errands invites.
+- **A panel's PIVOT decides which corner its grip can live in**, which is why this one is
+  TOP-LEFT pivoted while sitting in the top-right corner. A rect grows away from its pivot
+  and never towards it, so a top-right pivot pins the right and top edges and leaves a grip
+  able to pull only left and down — the one gesture nobody makes. Top-left pivot,
+  `ResizeGripCorner.BottomRight`, and the default POSITION is computed from
+  `HudLayout.ReferenceWidth - ScreenMargin - width` so it opens exactly where the old fixed
+  panel sat and still moves when the minimap does.
+- **Geometry is PlayerPrefs under `valkur.questlog.*`, written at the END of a gesture.**
+  The editor workspace layer cannot take it — every entry point there is typed on
+  `GameEditorManager.IGameEditor` and keyed on an `EditorName` a HUD panel does not have —
+  so this follows `MusicPlayerHUD`'s precedent. The drag is recorded from `LateUpdate` by
+  comparing against the last saved value, because `WindowDragHandler` writes
+  `localPosition` directly and raises no event; a write per frame is a file write per frame.
+- **MINIMIZE does not touch the remembered SIZE.** Collapsing is a view, not a resize, so
+  expanding restores the height the player chose rather than a title bar's worth of it.
+- **CLOSE is remembered, so it needs a way back, and there are three.** Accepting a quest
+  reopens it (the player's own action, at the moment the panel is most useful), `questlog
+  on` from the console, and the Quests editor. The first one is the load-bearing one:
+  runtime editors are gated out of a player build, so without it one click on the X would
+  be permanent — the exact defect `DraggablePanel.ShowCloseButton` shipped in the Controls
+  editor, made worse by the reopen living somewhere a player cannot reach.
+- **`TMP_Text.GetPreferredValues` THROWS on a component added in Edit Mode.** A
+  `TextMeshProUGUI` picks up `TMP_Settings.defaultFontAsset` in its `Awake`, which Unity
+  never calls there, so the label has no font and TMP dereferences it while sizing the
+  material array — a `NullReferenceException` thrown from inside TMP with the caller's code
+  nowhere in the message. Four `QuestLogHUDTests` went red on it the first time the tracker
+  measured its own rows. Assign the default font first (in Play Mode that is only what Awake
+  already did; in a fixture it makes the measurement REAL) and fall back to a floor when
+  even that is null. `ChatUI.Quests` has the same call and survives only because no EditMode
+  fixture reaches it.
+- **The Quests editor (ESC → Misiones) edits the RUN, not an asset.** Unlike Death or
+  Economy there is no SAVE and no `.asset` written: a quest log is save state. It lists all
+  ten across four tabs (Activas / Ofrecidas / Bloqueadas / Hechas) with each one's live
+  progress on the row, because the question it is opened to answer is usually "which of
+  these is stuck" and an author should not have to click ten rows to find out.
+- **Every authoring action goes through the SAME seam the game uses.**
+  `ObjectiveBase.ForceProgress` is `SetCurrent` made public — it raises `Progressed`, so a
+  quest driven to its target here completes, pays out and clears the log by the one path
+  that does those things. `RestoreProgress` was the tempting alternative and is silent by
+  design, so an editor built on it could fill every counter and leave the quest sitting
+  there unfinished: a second definition of "complete" that disagrees with the first.
+  `QuestManager.ForgetCompleted` is the one action with no gameplay counterpart and must
+  stay that way — `_completed` is what stops a quest paying twice, so anything a player can
+  press that empties it is a way to farm rewards.
+- **It accepts through `StartQuest`, deliberately NOT `QuestService.TryAccept`.** TryAccept
+  re-checks eligibility, which is right for a button a player presses and wrong for the one
+  screen whose job is to reach a quest whose giver is not in the world (Felipondor's two).
+  The eligibility answer is still SHOWN — the Bloqueadas tab and `DescribeLock` in the
+  detail — so forcing one is a decision rather than an accident.
+- **Its list is NOT virtualised, and that is the scale talking.** Ten rows against the Items
+  editor's 180 items x 38 columns: virtualising this would be machinery guarding nothing.
+- **It declares no input actions**, so no `OwnerEditor` exists in that folder and
+  `ValkurInputActions` is untouched — every verb is a button, and undo/save/close come from
+  the shared `EditorShared` map. Adding a hotkey would have meant an action in the asset AND
+  a descriptor in the closed `InputActionCatalog`.
+
+- **Still open:** Felipondor is not in the world (two quests unreachable), no sound on
+  accept/progress/complete (the catalogue has no ids, so any call must be gated on
+  `HasSfx`), the tracker still has no toggle KEY (it has a console verb, a window
+  control and an editor button, but a new key would mean an action in `ValkurInputActions`
+  AND a descriptor in the closed `InputActionCatalog`), no off-screen
+  compass, no repeatable or branching quests (`Quest` is pure AND), no escort (needs follow
+  AI), and the item reward ignores `AddItem`'s leftover so a full bag loses it — the
+  correct pattern is already in `CraftingService.TryCraft`. Full UI/UX audit of the whole
+  flow, scored 2.4 → 7.2: `.github/QUESTS_UX_AUDIT_2026-09-09.md`.
+
 ## Death, the spirit walk, and the guarantee that a death has an exit
 
 Audited 2026-09-07 at **2.8/10** and rebuilt the same day to **8.1** — findings, the measured
@@ -4250,6 +4672,269 @@ spawners [fragment]        DevConsole            the probe: state, roster, live 
   vortex's radius, `coneLength`, `arcane_flame`'s radius, `AuraExecutor`'s discarded divide —
   where the tell is always a constant compensating for units that stopped applying.
 
+## The bars over an entity's head
+
+Audited 2026-09-10 at **2.4/10** and rebuilt the same day to **8.6** — the numbers below are
+measured live at 1600x800 / ortho 5, i.e. **80 screen pixels per world unit**, against the
+shipped dwarf whose body is **1.219 x 1.859 world units (97.5 x 148.7 px)**.
+
+```text
+WorldBarGeometry     Core/UI/                 the texel grid + fill quantisation. Pure, testable
+WorldBarRank         Core/UI/                 Normal / Ally / Elite / Boss / Player
+WorldBarStyle        Data/UI/                 the 40 decisions, in Resources/UI/WorldBarStyle.asset
+WorldBarArt          Gameplay/Combat/WorldUI/ ONE generated atlas + ONE material
+StatusGlyphs         Gameplay/Combat/WorldUI/ eight 6x6 silhouettes
+WorldBarRig (+.Layout) Gameplay/Combat/WorldUI/ the single owner: rows, feel, fade, sorting
+WorldBarLine / WorldBarPip / WorldStatusIconRow             the pieces it draws
+WorldHealthBar / WorldManaBar / WorldDashBar                DRIVERS. They own no pixels
+```
+
+- **THE BARS WERE OFF THE PIXEL GRID, AT EVERY RESOLUTION, AND THAT IS PROVABLE RATHER THAN A
+  MATTER OF TASTE.** `CameraSetup.SnapOrthoSize` solves `ortho = pixelHeight / (2 · 16 · N)`, so
+  pixels-per-unit is always a multiple of 16 and **any length that is a multiple of 1/16 of a
+  world unit lands on a whole screen pixel**. The shipped bars authored 0.8 / 0.1 / 0.07 / 0.04,
+  none of which is: measured, the border padding was **3.2 px**, the mana and dash bars **5.6 px**
+  tall, and the stack sat **158.3 px** above the feet. Every dimension is stated in TEXELS now
+  (`WorldBarGeometry.Texels`), and the fill is additionally rounded to a whole pixel at draw time
+  — the lerp stays continuous, the drawn width does not, which is what stops the leading edge
+  boiling as the value moves.
+- **A texel is not a pixel-perfect POSITION and this does not claim to be one.** The entity moves
+  continuously, so the stack still lands between pixels exactly as every sprite in the game does.
+  What the grid buys is that the bar's own parts keep whole-pixel sizes relative to each other and
+  that the source texels map 1:1 instead of being resampled at 1.6 or 5.6 per texel.
+- **Sizes go through `SpriteRenderer.size` in `Sliced` draw mode, never through
+  `transform.localScale`.** The old bars were one 4x4 white texture scaled to 64 x 8 screen
+  pixels — a sixteen-fold stretch of a four-pixel source, which is why no edge in them could be
+  crisp and why a rounded corner was impossible. Sliced sizing leaves the border texels alone, so
+  the chamfered corners and the fill's leading-edge highlight stay one texel wide at any width.
+  `WorldBarRigTests.NoRendererIsSizedByItsScale` pins it in both directions (scale 1, and no
+  renderer left in `Simple` draw mode, which cannot be sized without scaling).
+- **Three components drew three bars and two of them carried private copies of the first one's
+  geometry.** `WorldManaBar` and `WorldDashBar` each declared `healthBarMargin 0.12`,
+  `healthBarH 0.1`, `dashBarH 0.07` and `dashGap 0.06` in order to stack above a bar they had no
+  way to ask, so changing the health bar's height moved the health bar and left the other two
+  hanging, silently. `WorldBarRig` is the single owner; the three components survive as DRIVERS
+  that report a number, which is what kept `EntitySetup`, `AlliedSummonService`,
+  `NPCRespawnSystem`, `UnconsciousState`, `InteractionPromptView` and `HarvestNodeBar` working
+  unchanged.
+- **Disabling a driver has to SAY so.** `UnconsciousState` puts a downed NPC's readout away by
+  disabling the three bar components — which hid the bars only because each component owned its
+  own children. With the drawing on a separate object that is a no-op, so `WorldHealthBar.OnDisable`
+  calls `WorldBarRig.SetSuppressed(true)` explicitly.
+- **The stack is TWO rows, not three, and the third one became a pip.** The dash bar was a
+  full-width strip built from a one-segment loop, directly under a mana bar of the same width and
+  shape, in cyan against blue — two adjacent rectangles differing only in hue are one rectangle to
+  a glance and to a colour-blind player. A dash charge is a COUNT, so it is a square that fills
+  from the floor, at the right end of the mana row. Shape now carries the meaning (thick bar /
+  thin bar / pip / quarter marks) and colour only confirms it.
+- **The one instant a dash readout exists for produced no pixel.** The old bar drew the charging
+  ramp and then simply stopped moving. `WorldBarPip` flashes when the charge returns, and reads
+  EMPTY during the lunge itself — `CanDash` is false while the dash is in flight, and a pip that
+  stayed full through it would report the ability as available at the one moment it is not.
+- **A blow and a heal were the same event.** The old bar subscribed to `OnHpChanged` alone, so it
+  could see that a number had moved and never why: no chip, no flash, no shake, and a heal that
+  looked exactly like a hit. `Health.OnDamaged` fires immediately before `OnHpChanged` inside
+  `TakeDamage`, which makes the distinction free — `WorldBarChange.Damage` leaves the delayed
+  chip, flashes the plate and knocks the rig sideways by a whole texel; `Heal` overshoots bright
+  and RETIRES the chip.
+- **The chip is snapped to the width currently DRAWN, never to the new target.** On a heal,
+  setting it to the target leaves a bright band running ahead of the fill for the whole
+  animation, which reads as a preview of health the creature does not have yet. Found by a red
+  test on the first run, not by looking at it.
+- **Two dark colours a percent apart are one colour, and this defect was reintroduced while
+  fixing it.** The audit's own finding was that the old border (`0.9` black) was invisible against
+  its own `0.12` background. The first rebuild shipped `plate 0.07` against `frame 0.05` and the
+  live capture rendered a single black slab with no frame in it. Measured after separating them:
+  along a horizontal line through the health row, **frame 0.01–0.02, plate 0.07–0.20, fill 0.64**,
+  with the quarter mark reading 0.45 against the fill's 0.64. The plate's alpha was then raised
+  to 0.97 for a related reason a screenshot does not show: at 0.90 the empty part of the bar
+  measured anywhere between 0.04 and 0.20 depending on what was behind it, so "how much is
+  missing" changed with the background.
+- **Status effects were invisible, all eight of them.** Burn, Poison, Stun, Freeze, Slow, Root,
+  Vulnerable and Marked are applied by shipped spells and monsters, and the only trace was the
+  body tint — which `SpriteTintStack` multiplies together with the hit flash, the death fade and
+  the transporter effect, so "it is burning" and "I just hit it" arrived on the same channel.
+  `WorldStatusIconRow` is the readout. It is POLLED rather than subscribed: the apply/remove
+  events cover membership perfectly and say nothing about the last second before a status ends,
+  which is the half a player acts on.
+- **Glyph downscaling is MAX-POOLED, not point-sampled.** The glyphs are authored 6x6 and the
+  style ships 5: point sampling drops a whole source row and column, which is enough to take an
+  arm off the snowflake or close the gap that makes the poison drop a drop. Max-pooling keeps
+  every stroke and costs a little weight instead. Icons shipped at 6 first and measured taller
+  than the entire two-row stack — the status row reading as the primary thing over the character
+  is backwards.
+- **One atlas, one material, generated in code.** Frame, plate, fill, quarter mark, pip and the
+  eight glyphs share a single 128x64 `RGBA32` texture so the readout over every creature on
+  screen stays batchable; a texture per piece is the obvious way to write it and costs a draw
+  call per piece. It is generated rather than authored because every size comes FROM the style —
+  changing a row's height regenerates art that fits it exactly instead of resampling art that
+  does not. The shelf packer leaves a one-texel gutter, which is not tidiness: a stretched
+  9-slice samples to its rect edge and would otherwise pull a neighbour's texel into its end cap.
+- **The width follows the BODY.** One authored 0.8 served a roster spanning the dwarf's 1.219 u
+  and the vampire's 2.667-unit height. `WidthTexelsForBody` rounds up to an EVEN texel count,
+  because the fill is anchored on the left inner edge at `-innerWidth/2` and half of an odd count
+  is half a texel — the one edge that must never move would be the one off the grid.
+- **Measured on demand, never per frame.** Each animation frame is trimmed to its own alpha, so a
+  per-frame measure makes the bar bob with the walk cycle. `WorldBarRig.Remeasure()` is called
+  from `EntityAnimationBinder.ApplyLoadout`, the single seam a loadout swap passes through.
+- **The sorting order is derived from the OWNER's Y**, the same formula `YSortEntity` uses for the
+  body. The old bars used a constant 200..212 for every creature in the world, so the bar of a
+  monster at the back drew over the bar of one in front. The rig claims thirteen consecutive
+  orders (health 0..4, resource 5..9, pip 10..11, status 12), i.e. 0.13 world units of Y
+  granularity — two creatures closer than that on Y can interleave their bars, which is bounded
+  and strictly better than no order at all. Spacing those slots out also closed a real collision:
+  measured before it, the pip's frame and the mana fill both landed on +8.
+- **One visibility rule for every entity in the game, and the player's bars now fade.** The old
+  behaviour was two rules: monsters hid at full health with a hard `SetActive`, the player never
+  hid at all ("Python always shows player health bar") — which cost **34 screen pixels of
+  permanent silhouette on a 149-pixel character**, repeating what `PlayerHUD` and `DashMeterHUD`
+  already draw in the corner. A rig with nothing to report fades out after `idleFadeDelay` and
+  comes straight back on the frame anything moves; while it is faded its root is deactivated, so
+  a world of undamaged monsters costs nothing at all. Verified live: full health and no status →
+  `alpha=0, rootActive=False`; one blow → `alpha=1` on the next frame with the fill already at
+  135/200.
+- **DEATH IS NOT THE SAME EVENT FOR A MONSTER AND FOR THE PLAYER.** The old bars had one rule —
+  `if (_health.IsDead) show = false` — and the rig inherited it verbatim, so the player's readout
+  vanished the moment they died. A dead monster IS a corpse and its bar is noise on something
+  about to despawn; a dead player is a spirit walking to an altar against `spiritTimeLimitSeconds`,
+  which is the one moment the run is actually in danger. Reported from play as "al morir las
+  barras de la cabeza desaparecen", which is what a decision nobody wrote down looks like from
+  the outside. The rank decides it now, and `WorldBarRigTests` pins both halves.
+- **Verifying a death from outside the game is harder than it sounds, and the fixture is the
+  proof rather than the capture.** Measured live: kill the player and eight seconds later the
+  probe reports `phase=Alive, hp=200` — the rescue clock had already run, so the spirit window
+  closed between two `execute_code` calls and never appeared in a sample. What settles it is the
+  EditMode test, which drives `SetHealth(0, …)` and reads `AlphaTarget` in the same frame.
+- **After a revive the bars fade anyway, and that is the idle rule working.** Full health, no
+  status, nothing happening for `idleFadeDelay` — so they go. It reads like the death bug and is
+  not one; the two were measured apart before either was touched.
+- **`WorldBarStyle` lives under `Resources/` for the reason every other tuning asset in this
+  project does**: every reader is `AddComponent`-ed by `EntitySetup` and has no inspector slot, so
+  a `[SerializeField]` on it could never be filled — the `ChatSystem._catalog` defect. It also
+  retired three separate sets of colour literals at three call sites (`EntitySetup` twice,
+  `AlliedSummonService` once), which is what made the asset able to change anything.
+- **Rank is DERIVED, and elite is not an authored flag.** Player comes from the tag, ally from
+  `AlliedUnit` (set explicitly by `AlliedSummonService`, because the bar's `Awake` ran during
+  `ConfigureMonster` before the component existed), boss from `MonsterDefinition.bossDefinition`,
+  and elite from `SpawnLevel.Of(go, def) > def.level` — the one fact that already means "this one
+  is harder than its kind", produced by `SpawnerTemplateData.levelBonus` and
+  `scaleWithPlayerLevel` without anybody authoring it twice.
+- **Testing traps this hit, all three already in this file.** Unity calls no `Awake` on a
+  component added in Edit Mode, so a driver has to be started by reflection; `Time.deltaTime` is 0
+  there, so a fade started in a fixture never advances by a single frame — which is why the rig
+  exposes `AlphaTarget` (the decision) beside `Alpha` (how far it has got), and the test asserts
+  on the first. And `Object.Destroy` is an error in Edit Mode, so every fixture tears down with
+  `DestroyImmediate`.
+
+### Hand-painted art for those bars
+
+The bars generate their own art and always will; a painted sheet REPLACES it a piece at a time.
+
+```text
+WorldBarSheetLayout   Core/UI/            the rectangles. Read by all four users of them
+WorldBarSkin          Data/UI/            one sprite slot per piece, on WorldBarStyle
+WorldBarSkinImporter  Editor/UI/          Valkur > UI > Export Template / Import / Clear
+Art/WorldBars/        world_bars.png      the sheet an artist paints, 64x32
+                      world_bars_guide.png  the same sheet at 8x, boxed and numbered
+                      world_bars_layout.md  the table, generated with them
+```
+
+- **The rectangles have four users and one owner.** The runtime generator draws into them, the
+  template is written from them, the importer slices by them and the runtime check refuses a piece
+  that disagrees with them. Four copies of a coordinate table is four chances for painted art to
+  land one texel off, which is invisible in code and shows up as a sliver of the neighbouring
+  piece welded to the end of a bar. They all read `WorldBarSheetLayout`.
+- **Slots resolve INDIVIDUALLY.** A painted `frame_health` and twenty empty slots is a legitimate
+  state: that piece switches over, the rest stay generated. An all-or-nothing skin would mean the
+  first useful look at hand-painted art arrives only after all of it exists. The price is one extra
+  draw call while both textures are in play, and it goes away when the sheet is complete.
+- **`Art/UI/` is where this art must NOT live, and it took two separate mechanisms to learn that.**
+  `ValkurAssetPostprocessor` forces `spritePixelsPerUnit = 100` and `FilterMode.Bilinear` on
+  anything under that folder — screen UI wants both, world-space pixel art wants neither, and a
+  sheet imported there is a sixth of its intended size with nothing logged. That one was expected
+  and a dedicated branch answered it. **The second was not**: `ui.spriteatlas` packs the whole
+  `Art/UI` tree and carries `filterMode: 1`, and **an atlas overrides the filter of the textures it
+  packs**. Measured on the first exported sheet: PPU 16, rect 8x4, border (2,1,2,1) and pivot all
+  correct, texture `sactx-71-2048x2048-Uncompressed-ui`, filter **Bilinear**, every bar and glyph
+  soft. Four of the five properties were right, which is exactly why it needed measuring rather
+  than reading. The sheet lives in `Art/WorldBars/`, which no atlas group packs.
+- **Moving a folder does not unpack it.** A `SpriteAtlas` holds its packables as object references,
+  and `AssetDatabase.MoveAsset` preserves GUIDs — so after the move the sprites still resolved to
+  the old `ui` atlas page, still bilinear. What fixes it is repacking: `ImportAsset(ForceUpdate)` on
+  the atlas and the sheet, then `SpriteAtlasUtility.PackAllAtlases`. Verify by reading
+  `sprite.texture.name` back; a sprite whose texture is called `sactx-…` is in an atlas, whatever
+  its own import settings say.
+- **A painted piece is CHECKED on four properties and all four have failed here**: PPU, rect size,
+  9-slice border and texture filter. It is refused with ONE warning and falls back to the generated
+  piece, so the failure is a console line and unchanged art rather than a readout that is quietly
+  wrong. The filter check exists only because the atlas defeated the other three.
+- **The 9-slice border is not an import SETTING.** It is per-sprite data that lives in the
+  `spritesheet` metadata and nowhere else, it survives no other route, and a frame without one
+  stretches its own chamfered corners into wedges. `ApplyImportSettings` writes it from the layout;
+  forgetting it is why the check asks.
+- **A sprite's rect is not its body, and the roster is split on this.** The five wave3 characters
+  ship frames trimmed to their own alpha, so the rect IS the body — the dwarf measures
+  1.219 x 1.859. The legacy 8-direction art does not: the valkyrie is a 128 px SQUARE cell and
+  measures **2.000 x 2.000** however much of it she fills, so a width read straight off the rect
+  gave her a bar **1.875 units wide, 1.6x her drawn body**, against the dwarf's 1.03x. Nothing in
+  the project separates the two pipelines and an atlas-packed texture is not readable, so the alpha
+  extents cannot be measured at runtime. What is available is the PROPORTION:
+  `maxWidthFractionOfHeight` (0.7) caps the width against the creature's own height, which leaves
+  every trimmed character untouched (the dwarf is 0.656 wide over tall) and bounds the padded ones.
+  It also catches a second case found the same hour — a hit-reaction frame is wider than an idle
+  one, so an unlucky `Remeasure` could size the bar off a lunge.
+- **The template refuses to overwrite itself.** Re-exporting to pick up a layout change rewrites
+  the guide and the table and leaves `world_bars.png` alone, because that file is a day of somebody
+  else's work the moment it stops being the generated art.
+- **The guide's numbers are drawn OUTSIDE the boxes.** The first version put them in each box's
+  top-left corner, where they covered a corner of every 5x5 glyph — on a reference image that is
+  worse than useless, because it teaches the artist that those texels belong to the piece.
+- **A painted piece may be in COLOUR, and then it must be drawn WHITE.** `SpriteRenderer.color`
+  multiplies, so a `WorldBarStyle` colour is an instruction to the GENERATED (greyscale) art and is
+  destructive over painted art: the shipped frame tint `(0.02, 0.02, 0.03)` turned the colour sheet
+  into a black slab on the first live capture. `WorldBarArt.TintFor(id, styleColour)` answers white
+  (keeping the style's alpha, which is the fade) for a painted piece and the style colour for a
+  generated one; every row and the pip resolve their palette through it. The pieces the palette
+  COLOURS — fills, plate, solid — therefore stay generated, which is why a skin is partial by design
+  and a bar draws from at most two atlases. The generated fill keeps its body around 217 so its
+  right-most column — the leading edge — has somewhere brighter to go.
+
+### A test must not be able to write the authored world
+
+`Valkur.Core.WorldDataWriteGuard` + `WorldDataWriteGuardTestHook` (Editor) + the floor in
+`ShippedWorldDataIntegrityTests`. Full findings: `.github/incidents/PARTICLE_INSTANCES_TEST_POLLUTION.md`.
+
+- **`!Application.isPlaying` IS THE WRONG QUESTION, in both directions.** It was the shape of both
+  guards this project had, and it lets a **PlayMode test** through (`isPlaying` is true there) while
+  refusing an **editor tool a human clicked** (`Valkur > Spawners > Migrate Instances To v2` writes
+  shipped data outside Play Mode on purpose). The right question is "is a TEST RUN in progress",
+  and only the test framework can answer it — `TestRunnerApi` callbacks registered from
+  `[InitializeOnLoad]`.
+- **An opt-in that is a bare `static bool` is a hole with a delay fuse.** A fixture arms it in
+  `[SetUp]` and clears it in `[TearDown]`; the TearDown that lost 188 particle emitters deletes
+  files, and deleting a StreamingAssets file Unity still holds mapped throws **Win32 1224**, which
+  skipped the clearing line and left the door open for every test after it. `DisarmAll` now runs
+  before EVERY test, and `AllowRealPathWrites` returns an `IDisposable` so it cannot leak inside a
+  fixture either.
+- **The guard sits at `WorldStreamingFileRepositoryBase.WriteFileAtomic`**, the one method all
+  eleven JSON world repositories write through — before this, **one** of the eleven had any guard.
+  A repository built with a `streamingRootOverride` is deliberately NOT refused: that is the
+  correct way to isolate a test, and refusing it is the fastest route to somebody deleting the
+  guard.
+- **A refusal is a `LogError`**, so the run that would have destroyed the data goes red instead of
+  going quiet. That is the whole point: 8,306 tests passed while the world was being emptied.
+- **Forgetting to inject a store must be harmless.** Eight fixtures build a
+  `ParticlesRuntimeEditor` and inject none; patching those eight does nothing about the ninth.
+  `GetOrCreateStore` returns an in-memory store during a test run unless a scope is open, so the
+  production path is reachable only by asking for it.
+- **A guard can be bypassed; a floor cannot.** `ShippedWorldDataIntegrityTests` asserts the shipped
+  counts and — sharper, because it needs no threshold — that **every placed particle names a preset
+  the game ships**. The record left behind by the incident was `preset_id: "aura_smoke"`, a string
+  that exists in exactly one place in the repository: the fixture that wrote it.
+- **The anti-wipe guard in `ParticlesRuntimeEditor` compares against the count ON DISK**, so it is
+  blind once a first bad write has landed — it refused nothing here because by then the file it was
+  comparing against was already small. It is a second line, not a first.
+
 ## Incident reports
 
 Past incidents that left investigation hooks behind. Read these first when a
@@ -4261,6 +4946,7 @@ related symptom reappears.
 | Run "twin-save" — duplicate `Saves/<runId>/` folders with byte-identical body but distinct `meta.run_id` | 2026-05-08 (mitigated — root cause: EditMode test pollution; fixed by `RefuseWriteOutsidePlayMode` guard) | `.github/incidents/RUN_TWIN_SAVE.md` |
 | Spawners drift by their zone's origin on every restart (save wrote absolute world coords into a zone-relative field) | 2026-08-19 (fixed) | `.github/incidents/SPAWNER_COORDINATE_SPACE_DRIFT.md` |
 | 216 building templates (ids 4–313) deleted from the working tree; catalog rewritten without them | 2026-09-04 (recovered, root cause TBD) | `.github/incidents/BUILDING_TEMPLATES_MASS_DELETION.md` |
+| Every placed particle wiped by an EditMode fixture — 188 emitters → 1, suite green | 2026-09-10 (fixed) | `.github/incidents/PARTICLE_INSTANCES_TEST_POLLUTION.md` |
 
 ## Open work
 
@@ -4311,7 +4997,7 @@ related symptom reappears.
 
 - **Multi-map Phase B/C** — Phase A (per-slot persistence routing) shipped 2026-08-18: buildings, spawners, lights, particles and authored item drops each own their file per map slot. Still open: built-in parallel worlds (Sky / Hell) and cross-world portals at runtime. See `.github/MAP_EDITOR_MULTIMAP_ROADMAP.md`.
 - **Asset pipeline Phase 2** — finalised `asset_map.csv` schema + the formal naming convention. Bulk reimport already executed; `ValkurAssetPostprocessor` writes Uncompressed platform overrides. Atlas consolidation is **done** (2026-08-18): exactly 9 atlases, all under `_Project/SpriteAtlases/`, one owner (`SpriteAtlasBuilder`).
-- **Day/night overhaul** — audited 2026-08-25 at **2.0/10**; Phases 0-3 shipped the same day, now **6.4/10**. The cycle used to reach no rendered pixel: three wrong URP enum literals (URP 14: `Freeform=1, Sprite=2, Point=3, Global=4`) left the scene light a `Point` of radius 1 and every placed torch a cookie-less `Sprite` light, while `WorldGridBuilder` forced the whole world to `Sprite-Unlit-Default` unconditionally. Now: typed URP API in all three light paths; world and entities lit (`Valkur/SpriteHDRTintLit`); placed lights on blend style **1 (Additive)**; colour from an 8-key Gradient in `Resources/DayNightProfile.asset`; the `Buildings/lights/` prop family emits its own light via `BuildingTemplateData.lightPresetKey` + `WorldLightLoader.RegisterDerivedLight` (derived lights are `persistent = false`, so `SaveAll` never writes them to `light_instances.json`); and a **`ScreenGradeFeature`** renderer feature on `Renderer2D.asset` does per-phase saturation/contrast/vignette/dither in one blit at a measured **0.215 ms/frame** — it does NOT need `renderPostProcessing`, so the ~18 ms UberPost stack stays off. Single owners: `AmbientLitSortingLayers` (light mask), `Core/Rendering/WorldSpriteMaterials` (lit vs unlit), `ScreenGradeSettings` (the live grade; static because Core cannot reference Gameplay). **URP 2D shadows render correctly but are disabled**: measured 11 % of pixels changed with a valid probe, yet URP derives the caster shape from the `Renderer` bounds, so every building throws a hard rectangular wedge. Accurate silhouettes would need the painted collision grid as caster geometry. NOTE `ShadowCaster2D.IsLit` reads `light.boundingSphere.radius`, written only by `Light2D.LateUpdate` — a light created and rendered in the same call has radius 0 and measures a false zero. Still open: atmosphere (3.0) and gameplay coupling (0.0), plus persisting the time of day and the Time & Weather editor's authoring. **The phases are pinned by 40 tests** across `DayNightPhaseLookTests` (reads the shipped `Resources/DayNightProfile.asset`, asserts characteristics not literals), `DayNightPipelineWiringTests` (the URP enum constants, exactly one Global light, the sorting-layer mask vs the layers that go lit, blend style 1 still Additive, the ScreenGrade feature still installed) and `TimeWeatherPhaseShortcutTests` (each Time & Weather phase button's hour, label and the phase the cycle actually reports there). Full findings and the roadmap: `.github/DAY_NIGHT_AUDIT_AND_ROADMAP.md`.
+- **Day/night overhaul** — audited 2026-08-25 at **2.0/10**; Phases 0-3 shipped the same day, now **6.4/10**. The cycle used to reach no rendered pixel: three wrong URP enum literals (URP 14: `Freeform=1, Sprite=2, Point=3, Global=4`) left the scene light a `Point` of radius 1 and every placed torch a cookie-less `Sprite` light, while `WorldGridBuilder` forced the whole world to `Sprite-Unlit-Default` unconditionally. Now: typed URP API in all three light paths; world and entities lit (`Valkur/SpriteHDRTintLit`); placed lights on blend style **1 (Additive)**; colour from an 8-key Gradient in `Resources/DayNightProfile.asset`; the `Buildings/lights/` prop family emits its own light via `BuildingTemplateData.lightPresetKey` + `WorldLightLoader.RegisterDerivedLight` (derived lights are `persistent = false`, so `SaveAll` never writes them to `light_instances.json`); and a **`ScreenGradeFeature`** renderer feature on `Renderer2D.asset` does per-phase saturation/contrast/vignette/dither in one blit at a measured **0.215 ms/frame** — it does NOT need `renderPostProcessing`, so the ~18 ms UberPost stack stays off. Single owners: `GameplaySceneSetup.AmbientLitSortingLayerNames()` (light mask — DERIVED from TagManager minus the `AmbientUnlitSortingLayers` denylist, since 2026-09-08), `Core/Rendering/WorldSpriteMaterials` (lit vs unlit), `ScreenGradeSettings` (the live grade; static because Core cannot reference Gameplay). **URP 2D shadows render correctly but are disabled**: measured 11 % of pixels changed with a valid probe, yet URP derives the caster shape from the `Renderer` bounds, so every building throws a hard rectangular wedge. Accurate silhouettes would need the painted collision grid as caster geometry. NOTE `ShadowCaster2D.IsLit` reads `light.boundingSphere.radius`, written only by `Light2D.LateUpdate` — a light created and rendered in the same call has radius 0 and measures a false zero. Still open: atmosphere (3.0) and gameplay coupling (0.0), plus persisting the time of day and the Time & Weather editor's authoring. **The phases are pinned by 40 tests** across `DayNightPhaseLookTests` (reads the shipped `Resources/DayNightProfile.asset`, asserts characteristics not literals), `DayNightPipelineWiringTests` (the URP enum constants, exactly one Global light, the sorting-layer mask vs the layers that go lit, blend style 1 still Additive, the ScreenGrade feature still installed) and `TimeWeatherPhaseShortcutTests` (each Time & Weather phase button's hour, label and the phase the cycle actually reports there). Full findings and the roadmap: `.github/DAY_NIGHT_AUDIT_AND_ROADMAP.md`.
 - **Weather (Wind / Rain / Snow)** — rebuilt 2026-08-30, zone-scoped 2026-09-01, in
   `Scripts/Gameplay/World/Weather/`. Weather is **stored per ZONE and rendered once**:
   `WeatherManager` holds a `zone -> levels` table and drives ONE set of effects at whatever
