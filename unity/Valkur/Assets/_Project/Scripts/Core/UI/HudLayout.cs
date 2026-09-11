@@ -68,14 +68,33 @@ namespace Valkur.Core.UI
         /// <summary>
         /// Distance from the screen bottom that the top-right column must clear.
         ///
-        /// <para>Measured: the music widget sits at <c>y[208..344]</c> by default and
-        /// draws at sortingOrder 150, so anything in this column that reaches below 356
-        /// is covered by it. That number is a DEFAULT and not a guarantee — the widget is
-        /// draggable and its geometry is persisted per machine in PlayerPrefs — which is
-        /// exactly why the tracker below hugs its own content instead of claiming the
-        /// whole band: the reserve keeps the shipped layout clean, and content-hugging
-        /// keeps it clean for a player who has moved things around.</para>
+        /// <para>Set when the old music widget sat at <c>y[208..344]</c> at sortingOrder 150.
+        /// The rebuilt music panel docks at <c>y = 104</c> and, with its resonance open, reaches
+        /// 104 + 82 texels x 2 = 268 at the reference resolution — under this line, which
+        /// <c>MusicPlayerHUDTests</c> pins. The reserve is a DEFAULT and not a guarantee — the
+        /// panel can be dragged and its dock is persisted per machine — which is why the
+        /// tracker below hugs its own content instead of claiming the whole band.</para>
         /// </summary>
         public const float BottomReserved = 356f;
+
+        /// <summary>
+        /// Sorting order of the music panel's canvas: over the player panel's HUD canvas (100)
+        /// and the minimap (105), under the spell bar (150) and the tray (250) — so a panel the
+        /// player dragged next to the spell bar slides behind it rather than over its keys.
+        /// </summary>
+        public const int MusicSortingOrder = 140;
+
+        /// <summary>Width of the music panel at the reference resolution: MusicHudStyle.widthTexels (126) x the reference texel scale (2). Equal to the HUD tray's width (3 x 80 + 2 x 6) on purpose — the two read as one column. MusicPlayerHUDTests pins the style against it.</summary>
+        public const float MusicPanelWidth = 252f;
+
+        /// <summary>
+        /// Distance from the RIGHT screen edge that a game window (the inventory, and the next
+        /// one) opens to the left of. It clears the widest instrument docked on the right — the
+        /// music panel (<see cref="MusicPanelWidth"/>; the minimap column is 192) — plus the gap. A
+        /// window may be DRAGGED over an instrument; it must not OPEN over one
+        /// (HUD_VISUAL_LANGUAGE.md, R13): the old inventory opened at (-16, -16) and hid the whole
+        /// minimap, and its first rebuild still covered the music panel's medallion.
+        /// </summary>
+        public const float GameWindowRightInset = ScreenMargin + MusicPanelWidth + StackGap;
     }
 }

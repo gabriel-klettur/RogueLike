@@ -76,6 +76,36 @@ def estimate_bpm(y: np.ndarray, sr: int) -> tuple[float, float, list[float]]:
     return round(bpm, 2), round(offset, 3), beat_times
 
 
+ENVELOPE_BUCKETS = 128
+
+
+def estimate_envelope(y: np.ndarray, sr: int, buckets: int = ENVELOPE_BUCKETS) -> str:
+    """Return the loudness envelope of the whole track as a hex string.
+
+    ``buckets`` RMS values, one per equal slice of the song, normalised against the
+    track's own loud passages (98th percentile, so one clipped transient does not
+    flatten the rest) and packed as one byte each: ``buckets * 2`` hex characters.
+
+    This is what the in-game music panel draws as the overview of the song. Every
+    shipped track is imported ``Streaming``, where ``AudioClip.GetData`` is refused,
+    and the live output is read AFTER the source volume, so without a baked
+    envelope the overview only ever existed for what had already been heard, and
+    not at all while the music was muted.
+    """
+    if y.size == 0:
+        return ""
+    rms = librosa.feature.rms(y=y, frame_length=2048, hop_length=512)[0]
+    if rms.size == 0:
+        return ""
+    edges = np.linspace(0, rms.size, buckets + 1).astype(int)
+    values = np.array([
+        float(rms[a:max(a + 1, b)].mean()) for a, b in zip(edges[:-1], edges[1:])
+    ])
+    ref = float(np.percentile(values, 98)) or 1.0
+    values = np.clip(values / ref, 0.0, 1.0) ** 0.8
+    return "".join(f"{int(round(v * 255)):02x}" for v in values)
+
+
 def estimate_key(y: np.ndarray, sr: int) -> tuple[str, float]:
     """Return ``("<Tonic> <mode>", confidence)`` using K–S correlation.
 
@@ -125,6 +155,7 @@ def analyze_file(path: Path) -> dict:
     duration = float(len(y) / sr) if sr > 0 else 0.0
     bpm, offset, beat_times = estimate_bpm(y, sr)
     key, conf = estimate_key(y, sr)
+    envelope = estimate_envelope(y, sr)
     return {
         "filename": path.name,
         "stem": path.stem,
@@ -135,6 +166,7 @@ def analyze_file(path: Path) -> dict:
         "beat_times": beat_times,
         "key": key,
         "key_confidence": conf,
+        "envelope": envelope,
     }
 
 

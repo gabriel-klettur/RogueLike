@@ -67,7 +67,17 @@ namespace Valkur.Infrastructure
         // Internal helpers
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        private float EffectiveMusicVolume => _musicVolume * _duckTarget;
+        /// <summary>
+        /// The quietest a playing music source is ever driven: -80 dBFS, about one least
+        /// significant bit of a 16-bit output for music peaking at 0.3, so the player hears
+        /// nothing. It exists for the music panel's visualiser, which divides the source volume
+        /// back out of the signal (<see cref="MusicSignalTap"/>) — a volume of 0 has nothing to
+        /// divide. Measured on Unity 2022.3: at 1e-5 the source is virtualised and its filter
+        /// receives exact zeros; at 1e-4 the filter still sees the song.
+        /// </summary>
+        public const float MusicSilenceFloor = 1e-4f;
+
+        private float EffectiveMusicVolume => Mathf.Max(MusicSilenceFloor, _musicVolume * _duckTarget);
 
         private void ApplyMusicVolume()
         {

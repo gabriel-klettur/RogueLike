@@ -206,6 +206,15 @@ namespace Valkur.Core.Input
             public InputAction OpenWorldMap { get; }
 
             /// <summary>
+            /// The music transport: pause or resume, next, previous. Read by
+            /// <c>MusicPlayerHUD</c> and by nothing else. Shipped with an EMPTY binding, so the
+            /// player assigns them in the Controls editor rather than losing a key to them.
+            /// </summary>
+            public InputAction MusicPlayPause { get; }
+            public InputAction MusicNext { get; }
+            public InputAction MusicPrevious { get; }
+
+            /// <summary>
             /// The spell slots, keyed by their action name — resolved from
             /// <see cref="InputActionCatalog"/> rather than declared as twenty-four
             /// properties.
@@ -242,6 +251,9 @@ namespace Valkur.Core.Input
                 Pause           = map.FindAction("Pause",           throwIfNotFound: true);
                 ToggleStance    = map.FindAction("ToggleStance",    throwIfNotFound: true);
                 OpenWorldMap    = map.FindAction("OpenWorldMap",    throwIfNotFound: true);
+                MusicPlayPause  = map.FindAction("MusicPlayPause",  throwIfNotFound: true);
+                MusicNext       = map.FindAction("MusicNext",       throwIfNotFound: true);
+                MusicPrevious   = map.FindAction("MusicPrevious",   throwIfNotFound: true);
 
                 _spells = new Dictionary<string, InputAction>(32, StringComparer.Ordinal);
                 foreach (var descriptor in InputActionCatalog.Spells())

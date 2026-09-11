@@ -293,6 +293,13 @@ namespace Valkur.Core.Input
             // The world map reaches no damage path, so it is live in both postures and the
             // player may narrow or silence it from the Controls editor like Pause.
             list.Add(G("OpenWorldMap", "Mapa del mundo",   InputActionCategory.Interface,   both, false));
+            // The music transport. Shipped UNBOUND, with an empty binding slot each (the editor
+            // toggles' shape): the keyboard has no key nobody uses, and taking one from the spell
+            // slots would be a worse trade than a key the player picks in the Controls editor.
+            // Read by MusicPlayerHUD whether its panel is open or not.
+            list.Add(G("MusicPlayPause", "Música: pausa / seguir", InputActionCategory.Interface, both, false));
+            list.Add(G("MusicNext",      "Música: siguiente",      InputActionCategory.Interface, both, false));
+            list.Add(G("MusicPrevious",  "Música: anterior",       InputActionCategory.Interface, both, false));
 
             // ── Gameplay: the 24 spell slots ─────────────────────────────────
             // Every one reaches the damage path through SpellCaster, INCLUDING the ones that

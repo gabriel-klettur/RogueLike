@@ -288,6 +288,30 @@
                     "interactions": ""
                 },
                 {
+                    "name": "MusicPlayPause",
+                    "type": "Button",
+                    "id": "32608e26-3f39-47f4-bb93-e76bbe114769",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "MusicNext",
+                    "type": "Button",
+                    "id": "71778b59-3e12-4bbf-a465-0780c9b4b57e",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "MusicPrevious",
+                    "type": "Button",
+                    "id": "a9ec336d-1226-4a5e-b81c-3310223b409e",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
                     "name": "DropItem",
                     "type": "Button",
                     "id": "91f1d38c-857f-4a2c-aa34-8a73e42c7c04",
@@ -811,6 +835,39 @@
                     "processors": "",
                     "groups": "",
                     "action": "OpenWorldMap",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "01635f64-12b4-475e-b816-756be797758a",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MusicPlayPause",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "4cd9a64f-c604-45fd-9695-d9fdfc87b079",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MusicNext",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "7503b055-3fe9-48ad-87ab-4f247c20cdc5",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MusicPrevious",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

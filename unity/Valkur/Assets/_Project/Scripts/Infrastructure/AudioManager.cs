@@ -11,7 +11,7 @@ namespace Valkur.Infrastructure
     /// Mirrors Python AudioService + AudioBus + AudioSystem combined.
     /// Registers as IAudioService via ServiceLocator.
     /// </summary>
-    public partial class AudioManager : SingletonMonoBehaviour<AudioManager>, IAudioService
+    public partial class AudioManager : SingletonMonoBehaviour<AudioManager>, IAudioService, IMusicSignalSource
     {
         // â”€â”€ Inspector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         [Header("Audio Catalog")]
@@ -82,6 +82,8 @@ namespace Valkur.Infrastructure
             _musicA = CreateAudioSource("MusicA", true);
             _musicB = CreateAudioSource("MusicB", true);
             _activeMusicSource = _musicA;
+            _musicA.gameObject.AddComponent<MusicSignalTap>();
+            _musicB.gameObject.AddComponent<MusicSignalTap>();
 
             // Create SFX pool
             for (int i = 0; i < sfxPoolSize; i++)
@@ -98,6 +100,17 @@ namespace Valkur.Infrastructure
         {
             ServiceLocator.Unregister<IAudioService>();
             base.OnDestroy();
+        }
+
+        /// <inheritdoc cref="IMusicSignalSource.MusicSignalSampleRate"/>
+        public int MusicSignalSampleRate => AudioSettings.outputSampleRate;
+
+        /// <inheritdoc cref="IMusicSignalSource.ReadMusicSignal"/>
+        public int ReadMusicSignal(float[] dest)
+        {
+            if (_activeMusicSource == null || !_activeMusicSource.isPlaying) return 0;
+            var tap = _activeMusicSource.GetComponent<MusicSignalTap>();
+            return tap != null ? tap.Read(dest) : 0;
         }
 
         private AudioSource CreateAudioSource(string label, bool loop)

@@ -4,8 +4,8 @@ Reads ``tools/cache/audio/music_analysis.json`` (output of
 ``analyze_music.py``), locates every ``AudioCatalog.asset`` under the
 Unity project, resolves each track's clip GUID → AudioClip filename via
 the corresponding ``.mp3.meta`` file, and rewrites the entry in-place
-adding/overwriting ``bpm``, ``firstBeatOffsetSec``, ``key`` and
-``keyConfidence`` fields.
+adding/overwriting ``bpm``, ``firstBeatOffsetSec``, ``key``, ``keyConfidence`` and
+``envelope`` (the song's loudness overview the music panel draws) fields.
 
 Idempotent — safe to re-run.
 
@@ -38,6 +38,10 @@ _FIELD_PATTERNS = {
     "firstBeatOffsetSec": re.compile(r"^\s*firstBeatOffsetSec:\s*[^\n]*\n", re.MULTILINE),
     "key":               re.compile(r"^\s*key:\s*[^\n]*\n", re.MULTILINE),
     "keyConfidence":     re.compile(r"^\s*keyConfidence:\s*[^\n]*\n", re.MULTILINE),
+    "envelope":          re.compile(r"^\s*envelope:\s*[^\n]*\n", re.MULTILINE),
+    # A Unity float list: the key line, then one "- value" line per element at the same
+    # indent. The entry block never contains the next "- id:" line, so this cannot eat it.
+    "beatTimes":         re.compile(r"^\s*beatTimes:[^\n]*\n(?:[ \t]*-[ \t][^\n]*\n)*", re.MULTILINE),
 }
 _NEXT_ENTRY_RE = re.compile(r"^\s*-\s*id:\s", re.MULTILINE)
 _END_TRACKS_RE = re.compile(r"^[A-Za-z_][\w]*:\s", re.MULTILINE)
@@ -84,8 +88,17 @@ def patch_entry(block: str, indent: str, data: dict) -> str:
         ("firstBeatOffsetSec", f"{data.get('first_beat_offset_sec', 0):.3f}"),
         ("key",                f"{data.get('key', '')}"),
         ("keyConfidence",      f"{data.get('key_confidence', 0):.3f}"),
+        ("envelope",           f"{data.get('envelope', '')}"),
     ):
         new_lines.append(f"{field_indent}{field}: {fmt}\n")
+    beats = data.get("beat_times") or []
+    if beats:
+        # Real songs drift: MusicBeatClock fires from these onsets directly (precise mode)
+        # instead of extrapolating one BPM over three minutes of music.
+        new_lines.append(f"{field_indent}beatTimes:\n")
+        new_lines.extend(f"{field_indent}- {float(t):.4f}\n" for t in beats)
+    else:
+        new_lines.append(f"{field_indent}beatTimes: []\n")
     insert_text = "".join(new_lines)
 
     # Drop any existing copies of these fields first.

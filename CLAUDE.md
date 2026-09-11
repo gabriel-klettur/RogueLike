@@ -5227,6 +5227,80 @@ HUDManager.SpellBar                    built beside the player panel, inside the
 - **Test trap:** a slot derives its state on its first `Tick`, so a fixture that asserts on
   `State` straight after `Create` reads `Empty` from a correct build.
 
+## The music panel (bottom-right, above the tray)
+
+Audited 2026-09-11 at **2.1/10** and rebuilt the same day to **9.1** — findings, per-axis
+scores and the measured result in `.github/MUSIC_HUD_BEAUTY_AUDIT_2026-09-11.md`.
+
+```text
+MusicHudStyle          Data/UI/                 its own sizes/timings/resonance ramp + the tray icon
+MusicPlayerHUD (+.Layout, .Window, .Playback, .Effects, .Hotkeys, .Console)  UI/HUD/Music/
+MusicHudArt            UI/HUD/Music/            generated atlas: keys, glyphs, bead, medallion, sigils; plaque bake
+MusicGroove / MusicVolumeNotches / MusicHudKey / MusicHudPointer                the widgets
+MusicResonanceGraphic  UI/HUD/Music/            spectrum blocks + baked envelope + phrase marks, ONE graphic
+MusicSpectrum          UI/HUD/Music/            pure FFT -> log bands -> automatic gain
+MusicTrackInfo / MusicHudText / MusicSigil      zone, list position, time, Spanish key, labels
+MusicSignalTap         Infrastructure/          signal ring buffer on each music source, volume divided back out
+AudioManager.MusicWake Infrastructure/          wakes a music voice Unity started virtual
+IMusicSignalSource     Core/                    AudioManager's read side of it (not on IAudioService)
+music [abrir|cerrar|resonancia|reset]           DevConsole probe
+```
+
+- **The panel is a plaque, not a DAW.** The old one carried tap-tempo, a BPM drag and a
+  waveform with a beat grid — authoring tools that wrote per-track tempo to PlayerPrefs and so
+  calibrated ONE machine. Tempo is catalog data now; the panel only reads it.
+- **All 24 tracks shipped with `bpm: 0` for the life of the project**, so the old metronome,
+  bar counter, beat dots and grid never showed a real value. `tools/audio/analyze_music.py`
+  (librosa, in `venv/`) now also bakes a 128-slice loudness `envelope`, and
+  `patch_audio_catalog_bpm.py` writes `bpm`, `firstBeatOffsetSec`, `key`, `keyConfidence`,
+  `envelope` and the full `beatTimes` into `Resources/AudioCatalog.asset`.
+  `ShippedMusicCatalogTests` pins all of it.
+- **`AudioSource.GetOutputData` / `GetSpectrumData` read AFTER the source volume**, so with the
+  music slider at 0 a visualiser draws nothing (measured: peak 0.0000). `MusicSignalTap`
+  captures the signal in `OnAudioFilterRead` — which ALSO sees it post-volume (measured at 0.02:
+  filter peak 8.2e-3 vs output 9.1e-3) — and divides the source volume back out.
+- **A music voice STARTED quieter than ~1e-3 is started virtual and its filter receives exact
+  zeros — and it stays virtual.** Measured: 1e-5 and 3e-4 from a fade-in gave zeros, 1e-3 went
+  real, and a voice once real STAYED real brought back to 1e-4 (filter peak 7e-5). So
+  `AudioManager.MusicSilenceFloor` = 1e-4 (-80 dBFS: silent to the player, still a signal to
+  divide) is necessary and not sufficient: when the tap reports `Starved` (0.3 s of zeros while
+  playing below the wake level) `AudioManager.Update` lifts the voice to `MusicWakeVolume`
+  (2e-3, -54 dBFS) for three frames and drops it back, at most every two seconds, never during
+  a crossfade. Measured after: a muted player's resonance peaks at 0.257. The first floor (1e-5)
+  and the second without the wake both passed a test and failed live — the experiment that
+  "worked" had lowered a voice that was ALREADY real.
+- **Every shipped track is `Streaming`**, which refuses `AudioClip.GetData`: the song's
+  overview cannot be computed at runtime, only baked offline. That is what the `envelope` is.
+- **The window grows; it never stretches.** The old panel resized by `localScale` per axis
+  (measured 0.56 x 0.87, a 1.57x distortion of every glyph) on a canvas scaled against 800x600.
+  The plaque is 126x42 texels on the HUD contract (1600x800, match 0.5, `HudLayout.MusicSortingOrder`
+  140) and does not resize; `MusicPlayerHUDTests` refuses any non-unit `localScale` inside it.
+- **126 texels is the tray's width** (3 x 80 + 2 x 6 = 252 px at scale 2), and the default dock
+  (16, 104) puts the plaque's right edge on the tray's and 8 px above it: one column.
+- **Nothing on the plaque moves with the beat.** A pulse is an event that repeats forever; one
+  on the plaque is a screensaver. Motes answer a new track (notes from the medallion + a shine
+  across the title + a gold rim), a skip, a seek, resuming and unmuting. The resonance — opened
+  on request — may move with the music, and even there only one mote per BAR.
+- **Gold is importance, the plaque is ambience:** no gold in the stone (`TheStone_HasNoGold`);
+  gold only on the playhead bead and on the medallion for the moment a track starts.
+- **A track that changed while the panel was closed is not announced when it opens**, and a
+  keyboard skip with the panel closed emits nothing — both would fire stale.
+- **`Gameplay/MusicPlayPause`, `MusicNext`, `MusicPrevious` ship with an EMPTY binding**, the
+  editor toggles' shape: assignable in the Controls editor, never stealing a key. They work with
+  the panel closed, behind the same gates as the world map key.
+- **A frame step is capped at 1/20 s.** Uncapped, one long frame (an unfocused editor renders
+  seconds apart) consumed a track change's whole gold flash, shine and notes before any of them
+  was drawn — invisible to every EditMode test, which ticks in small steps.
+- **A 3-texel groove cannot use a 2+2 nine-slice** (uGUI squashes it onto half texels — the XP
+  bar's lesson again); it has its own 3x3 `WellThin`, and `EveryNineSlice_FitsItsBorders` walks
+  every sliced image. Measured after the fix: every 2x2 block of the plaque uniform except the
+  chamfered corners, where the world shows through.
+- **The analysed key is shown only above 0.1 confidence** (13 of 24 tracks): below it the
+  Krumhansl estimate is noise, and a panel that states noise as fact is less honest than one
+  that says nothing. The `music` probe prints it with its confidence either way.
+- **The GameObject keeps the name `MusicPlayerHUD`**: `BuildingsRuntimeEditor.HideHUDs` finds
+  it by name.
+
 ## Incident reports
 
 Past incidents that left investigation hooks behind. Read these first when a

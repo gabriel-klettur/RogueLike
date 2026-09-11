@@ -80,13 +80,7 @@ namespace Valkur.UI.HUD
 
             // Now-playing widget (bottom-right, always-on; replaces python ToastRenderSystem)
             if (FindObjectOfType<MusicPlayerHUD>() == null)
-            {
-                // Create with RectTransform up-front and parent BEFORE adding the
-                // MonoBehaviour so its Awake/BuildUI sees the correct Canvas hierarchy.
-                var musicGo = new GameObject("MusicPlayerHUD", typeof(RectTransform));
-                if (uiContainer != null) musicGo.transform.SetParent(uiContainer.transform, false);
-                musicGo.AddComponent<MusicPlayerHUD>();
-            }
+                MusicPlayerHUD.Create(uiContainer != null ? uiContainer.transform : null);
 
             // Create DeathBanner overlay (replacement for the old DeathScreenUI red modal).
             if (FindObjectOfType<DeathBannerUI>() == null)

@@ -41,5 +41,37 @@ namespace Valkur.Data
                  "(precise mode), so boss choreography lands on the actual musical beat even if " +
                  "the song's tempo drifts. Empty = fall back to constant-BPM model.")]
         public float[] beatTimes;
+
+        [Tooltip("Loudness of the whole song in 128 equal slices, one byte each as hex (256 " +
+                 "characters), baked by analyze_music.py. The music panel draws it as the song's " +
+                 "overview: every shipped track is Streaming, which refuses AudioClip.GetData, and " +
+                 "the live output is read after the source volume, so without it the overview only " +
+                 "existed for what had already been heard — and not at all while muted.")]
+        public string envelope = string.Empty;
+
+        /// <summary>
+        /// <see cref="envelope"/> decoded to 0..1, or an empty array when it was never baked or
+        /// is malformed. Allocates; callers cache the result per track.
+        /// </summary>
+        public float[] DecodeEnvelope()
+        {
+            if (string.IsNullOrEmpty(envelope) || (envelope.Length & 1) != 0) return Array.Empty<float>();
+            var values = new float[envelope.Length / 2];
+            for (int i = 0; i < values.Length; i++)
+            {
+                int hi = HexValue(envelope[i * 2]), lo = HexValue(envelope[i * 2 + 1]);
+                if (hi < 0 || lo < 0) return Array.Empty<float>();
+                values[i] = (hi * 16 + lo) / 255f;
+            }
+            return values;
+        }
+
+        private static int HexValue(char c)
+        {
+            if (c >= '0' && c <= '9') return c - '0';
+            if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+            if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+            return -1;
+        }
     }
 }
