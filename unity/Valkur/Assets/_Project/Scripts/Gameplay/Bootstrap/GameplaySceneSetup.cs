@@ -120,6 +120,13 @@ namespace Valkur.Gameplay
         /// </summary>
         private IEnumerator Start()
         {
+            // The spell catalog goes in FIRST. It used to be injected by the player-spawn step,
+            // but spawners place monsters before that step runs, so every autocasting monster
+            // present at load (red_dragon, dark_dwarf) logged "no SpellCatalog was injected"
+            // and came up with no spells at all. SpawnPlayerProgressively still injects it; the
+            // call is idempotent.
+            if (_spellCatalog != null) EntitySetup.SetSpellCatalog(_spellCatalog);
+
             var steps = BuildBootSequence();
             BootTimeline.BeginRun(steps);
             LoadingReporter.ReportStage(LoadingText.BuildingWorld, 0f);
