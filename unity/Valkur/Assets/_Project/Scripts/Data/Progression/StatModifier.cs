@@ -55,22 +55,53 @@ namespace Valkur.Data
         public string Describe()
         {
             string name = StatCatalog.DisplayName(stat);
-            bool lowerIsBetter = StatCatalog.LowerIsBetter(stat);
+
+            // Seconds between swings is shown as what the player feels, attack SPEED: a
+            // -16.67 % cooldown is +20 % speed. Printing the raw cooldown under the name
+            // "attack speed" put a minus sign next to a buff and a plus next to a nerf.
+            if (stat == StatKind.MeleeCooldown)
+            {
+                if (op == StatOp.Flat)
+                {
+                    string s = value > 0f ? "+" : "";
+                    return $"{s}{FormatAmount(value)} s entre golpes";
+                }
+                float factor = 1f + value;
+                float speed = factor > 0.0001f ? (1f / factor - 1f) * 100f : 0f;
+                return $"{(speed >= 0f ? "+" : "")}{FormatAmount(speed)}% {name}";
+            }
 
             if (op == StatOp.Flat)
             {
+                // A flat bonus to a stat that IS a fraction (crit chance, the reductions) or a
+                // multiplier (spell power, crit damage, experience) reads as a percentage:
+                // "+0.1 crit chance" is 10 % that the player has to multiply in their head.
+                if (ReadsAsPercent(stat))
+                {
+                    float p = value * 100f;
+                    return $"{(p >= 0f ? "+" : "")}{FormatAmount(p)}% {name}";
+                }
                 string sign = value >= 0f ? "+" : "";
                 return $"{sign}{FormatAmount(value)} {name}";
             }
 
             float pct = value * 100f;
             string pctSign = pct >= 0f ? "+" : "";
-            // A negative cooldown modifier is a BUFF, so say so rather than showing the
-            // player a minus sign next to a good thing.
-            if (lowerIsBetter && pct < 0f)
-                return $"-{FormatAmount(-pct)}% {name}";
-
             return $"{pctSign}{FormatAmount(pct)}% {name}";
+        }
+
+        private static bool ReadsAsPercent(StatKind stat)
+        {
+            if (StatCatalog.IsPercentage(stat)) return true;
+            switch (stat)
+            {
+                case StatKind.CritMultiplier:
+                case StatKind.SpellPower:
+                case StatKind.XpGain:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private static string FormatAmount(float v)

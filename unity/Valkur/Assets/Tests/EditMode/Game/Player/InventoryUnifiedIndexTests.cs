@@ -48,16 +48,20 @@ namespace Valkur.Tests.EditMode.Game.Player
             return inv;
         }
 
-        private ItemDefinition CreateItem(string id, bool stackable = false, int maxStack = 1)
+        private ItemDefinition CreateItem(string id, bool stackable = false, int maxStack = 1,
+                                          EquipSlot slot = EquipSlot.None)
         {
             var item = ScriptableObject.CreateInstance<ItemDefinition>();
             item.itemId = id;
             item.displayName = id;
             item.stackable = stackable;
             item.maxStack = maxStack;
+            item.equipSlot = slot;
             _assets.Add(item);
             return item;
         }
+
+        private static int Eq(EquipmentSlotKind k) => Cap + (int)k;
 
         // ── IsEquipmentIndex ──────────────────────────────────────────────────
 
@@ -158,11 +162,11 @@ namespace Valkur.Tests.EditMode.Game.Player
         public void TryDepositInIndex_EquipRange_RoutesToEquipSlot()
         {
             var inv = CreateInventory(Cap);
-            var shield = CreateItem("shield");
-            // Equipment slot 5 → unified index Cap + 5.
-            int placed = inv.TryDepositInIndex(Cap + 5, shield, 1);
+            var shield = CreateItem("shield", slot: EquipSlot.Shield);
+            // A shield belongs in the off-hand slot, unified index Cap + Offhand.
+            int placed = inv.TryDepositInIndex(Eq(EquipmentSlotKind.Offhand), shield, 1);
             Assert.AreEqual(1, placed);
-            Assert.AreEqual(shield, inv.EquipmentSlots[5].Item);
+            Assert.AreEqual(shield, inv.EquipmentSlots[(int)EquipmentSlotKind.Offhand].Item);
         }
 
         [Test]
@@ -249,19 +253,33 @@ namespace Valkur.Tests.EditMode.Game.Player
         public void MoveSlotByIndex_BagToEquip_Swaps()
         {
             var inv = CreateInventory(Cap);
-            var sword = CreateItem("sword");
-            var helm = CreateItem("helm");
+            var sword = CreateItem("sword", slot: EquipSlot.Weapon);
+            var axe = CreateItem("axe", slot: EquipSlot.Weapon);
             inv.SetSlot(0, sword, 1);
-            inv.SetEquipmentSlot(0, helm, 1);
+            inv.SetEquipmentSlot((int)EquipmentSlotKind.Weapon, axe, 1);
 
-            // Equipment slot 0 → unified index Cap + 0 = Cap.
-            bool moved = inv.MoveSlotByIndex(0, Cap);
+            bool moved = inv.MoveSlotByIndex(0, Eq(EquipmentSlotKind.Weapon));
 
             Assert.IsTrue(moved);
-            Assert.AreEqual(helm, inv.Slots[0].Item,
-                "Bag slot 0 should now contain what was in equipment slot 0.");
-            Assert.AreEqual(sword, inv.EquipmentSlots[0].Item,
-                "Equipment slot 0 should now contain what was in bag slot 0.");
+            Assert.AreEqual(axe, inv.Slots[0].Item,
+                "Bag slot 0 should now hold the weapon that was worn.");
+            Assert.AreEqual(sword, inv.EquipmentSlots[(int)EquipmentSlotKind.Weapon].Item,
+                "The weapon slot should now hold the sword.");
+        }
+
+        [Test]
+        public void MoveSlotByIndex_BagToWrongEquipSlot_IsRefused()
+        {
+            var inv = CreateInventory(Cap);
+            var sword = CreateItem("sword", slot: EquipSlot.Weapon);
+            inv.SetSlot(0, sword, 1);
+
+            bool moved = inv.MoveSlotByIndex(0, Eq(EquipmentSlotKind.Boots));
+
+            Assert.IsFalse(moved, "A sword must not go in the boots.");
+            Assert.AreEqual(EquipRefusal.WrongSlot, inv.LastRefusal);
+            Assert.AreEqual(sword, inv.Slots[0].Item);
+            Assert.IsTrue(inv.EquipmentSlots[(int)EquipmentSlotKind.Boots].IsEmpty);
         }
 
         [Test]
@@ -279,19 +297,19 @@ namespace Valkur.Tests.EditMode.Game.Player
         }
 
         [Test]
-        public void MoveSlotByIndex_EquipToEquip_Swaps()
+        public void MoveSlotByIndex_EquipToEquip_BetweenKinds_IsRefused()
         {
             var inv = CreateInventory(Cap);
-            var ring = CreateItem("ring");
-            var amulet = CreateItem("amulet");
-            inv.SetEquipmentSlot(0, ring, 1);
-            inv.SetEquipmentSlot(8, amulet, 1);
+            var ring = CreateItem("ring", slot: EquipSlot.Ring);
+            var amulet = CreateItem("amulet", slot: EquipSlot.Amulet);
+            inv.SetEquipmentSlot((int)EquipmentSlotKind.Ring, ring, 1);
+            inv.SetEquipmentSlot((int)EquipmentSlotKind.Amulet, amulet, 1);
 
-            bool moved = inv.MoveSlotByIndex(Cap + 0, Cap + 8);
+            bool moved = inv.MoveSlotByIndex(Eq(EquipmentSlotKind.Ring), Eq(EquipmentSlotKind.Amulet));
 
-            Assert.IsTrue(moved);
-            Assert.AreEqual(amulet, inv.EquipmentSlots[0].Item);
-            Assert.AreEqual(ring, inv.EquipmentSlots[8].Item);
+            Assert.IsFalse(moved, "A ring and an amulet cannot trade places: each fits only its own slot.");
+            Assert.AreEqual(ring, inv.EquipmentSlots[(int)EquipmentSlotKind.Ring].Item);
+            Assert.AreEqual(amulet, inv.EquipmentSlots[(int)EquipmentSlotKind.Amulet].Item);
         }
 
         [Test]

@@ -63,9 +63,10 @@ namespace Valkur.Tests.EditMode.Game.Player
         }
 
         [Test]
-        public void EquipmentCapacity_Is9()
+        public void EquipmentCapacity_IsOneSlotPerKind()
         {
-            Assert.AreEqual(9, Inventory.EquipmentCapacity);
+            Assert.AreEqual(System.Enum.GetValues(typeof(EquipmentSlotKind)).Length, Inventory.EquipmentCapacity);
+            Assert.AreEqual(EquipmentLayout.Count, Inventory.EquipmentCapacity);
         }
 
         // ── Initialize fixed-array semantics ───────────────────────────────────

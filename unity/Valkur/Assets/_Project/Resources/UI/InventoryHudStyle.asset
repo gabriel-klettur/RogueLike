@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fb5a13d787e53548b5073589e95ce8f, type: 3}
+  m_Name: InventoryHudStyle
+  m_EditorClassIdentifier: 
+  trayIcon: {fileID: 21300000, guid: ddf096c4cc67b134b90e888443132ecd, type: 3}
+  paddingTexels: 6
+  titleBarTexels: 11
+  slotTexels: 22
+  slotGapTexels: 2
+  iconInsetTexels: 3
+  bagColumns: 5
+  tabTexels: 13
+  sectionGapTexels: 4
+  footerTexels: 11
+  cardWidthTexels: 116
+  openSeconds: 0.12
+  closeSeconds: 0.09
+  openRiseTexels: 4
+  slotFlashSeconds: 0.2
+  refusalSeconds: 0.3
+  refusalShakeTexels: 1
+  countSeconds: 0.5
+  dragSourceAlpha: 0.35
+  filteredAlpha: 0.22
+  silhouetteAlpha: 0.28
+  cardDelaySeconds: 0.12
+  moteCapacity: 72
+  motesOnPickup: 4
+  motesOnRare: 14
+  motesOnLegendary: 26
+  motesOnEquip: 10
+  motesOnUnequip: 5
+  motesOnConsume: 7
+  motesOnCoins: 8
+  coinBurstThreshold: 50
+  motesOnSettle: 3
+  moteLifeSeconds: 0.6
+  moteSpeedTexels: 30
+  moteGravityTexels: 60
+  sfxOpen: inv_open
+  sfxPickup: 
+  sfxEquip: 
+  sfxUnequip: 
+  sfxRefuse: 
+  sfxCoin: 
+  sfxDrop: 
+  sfxConsume: 
+  sfxSort: 
+  volume: 0.55

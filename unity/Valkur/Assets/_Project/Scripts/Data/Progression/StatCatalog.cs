@@ -204,20 +204,20 @@ namespace Valkur.Data
         {
             switch (stat)
             {
-                case StatKind.MaxHp:                  return "Max HP";
-                case StatKind.MaxMana:                return "Max Mana";
-                case StatKind.ManaRegen:              return "Mana Regen";
-                case StatKind.MoveSpeed:              return "Move Speed";
-                case StatKind.MeleeDamage:            return "Melee Damage";
-                case StatKind.MeleeRange:             return "Melee Range";
-                case StatKind.MeleeCooldown:          return "Attack Speed";
-                case StatKind.Defense:                return "Defense";
-                case StatKind.CritChance:             return "Crit Chance";
-                case StatKind.CritMultiplier:         return "Crit Damage";
-                case StatKind.SpellPower:             return "Spell Power";
-                case StatKind.SpellCooldownReduction: return "Cooldown Reduction";
-                case StatKind.ManaCostReduction:      return "Mana Cost Reduction";
-                case StatKind.XpGain:                 return "XP Gain";
+                case StatKind.MaxHp:                  return "Vida máxima";
+                case StatKind.MaxMana:                return "Maná máximo";
+                case StatKind.ManaRegen:              return "Regeneración de maná";
+                case StatKind.MoveSpeed:              return "Velocidad";
+                case StatKind.MeleeDamage:            return "Daño cuerpo a cuerpo";
+                case StatKind.MeleeRange:             return "Alcance cuerpo a cuerpo";
+                case StatKind.MeleeCooldown:          return "Velocidad de ataque";
+                case StatKind.Defense:                return "Defensa";
+                case StatKind.CritChance:             return "Probabilidad de crítico";
+                case StatKind.CritMultiplier:         return "Daño crítico";
+                case StatKind.SpellPower:             return "Poder mágico";
+                case StatKind.SpellCooldownReduction: return "Reducción de recarga";
+                case StatKind.ManaCostReduction:      return "Reducción de coste de maná";
+                case StatKind.XpGain:                 return "Ganancia de experiencia";
                 default:                              return stat.ToString();
             }
         }
@@ -227,20 +227,20 @@ namespace Valkur.Data
         {
             switch (stat)
             {
-                case StatKind.MaxHp:                  return "Damage you can take before dying.";
-                case StatKind.MaxMana:                return "Size of your spell pool.";
-                case StatKind.ManaRegen:              return "Mana recovered every second out of combat.";
-                case StatKind.MoveSpeed:              return "World units travelled per second.";
-                case StatKind.MeleeDamage:            return "Damage of one melee swing.";
-                case StatKind.MeleeRange:             return "How far a melee swing reaches.";
-                case StatKind.MeleeCooldown:          return "Seconds between swings. Lower is faster.";
-                case StatKind.Defense:                return "Damage subtracted from every blow you take.";
-                case StatKind.CritChance:             return "Chance for a blow to critically strike.";
-                case StatKind.CritMultiplier:         return "Damage multiplier on a critical strike.";
-                case StatKind.SpellPower:             return "Multiplier on all spell damage.";
-                case StatKind.SpellCooldownReduction: return "Fraction cut from every spell cooldown.";
-                case StatKind.ManaCostReduction:      return "Fraction cut from every spell's mana cost.";
-                case StatKind.XpGain:                 return "Multiplier on experience earned.";
+                case StatKind.MaxHp:                  return "Daño que aguantas antes de morir.";
+                case StatKind.MaxMana:                return "Tamaño de tu reserva de maná.";
+                case StatKind.ManaRegen:              return "Maná que recuperas cada segundo fuera de combate.";
+                case StatKind.MoveSpeed:              return "Distancia que recorres por segundo.";
+                case StatKind.MeleeDamage:            return "Daño de un golpe cuerpo a cuerpo.";
+                case StatKind.MeleeRange:             return "Hasta dónde llega un golpe cuerpo a cuerpo.";
+                case StatKind.MeleeCooldown:          return "Segundos entre golpes. Menos es más rápido.";
+                case StatKind.Defense:                return "Daño que se resta a cada golpe que recibes.";
+                case StatKind.CritChance:             return "Probabilidad de que un golpe sea crítico.";
+                case StatKind.CritMultiplier:         return "Multiplicador de daño de un golpe crítico.";
+                case StatKind.SpellPower:             return "Multiplicador del daño de todos los hechizos.";
+                case StatKind.SpellCooldownReduction: return "Fracción que se descuenta de cada recarga.";
+                case StatKind.ManaCostReduction:      return "Fracción que se descuenta del coste de maná.";
+                case StatKind.XpGain:                 return "Multiplicador de la experiencia ganada.";
                 default:                              return string.Empty;
             }
         }

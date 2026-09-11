@@ -40,7 +40,6 @@ COLLECTION	Valkur.Gameplay.Buildings.BuildingsRuntimeEditor.TUTORIAL_STEPS
 COLLECTION	Valkur.Gameplay.Editors.Boss.BossEditorManager.TUTORIAL_STEPS
 COLLECTION	Valkur.Gameplay.Editors.Boss.BossEditorTimelineRenderer.CUE_COLORS
 COLLECTION	Valkur.Gameplay.Inventory.InventoryUI.CURRENCY_ITEM_IDS
-COLLECTION	Valkur.Gameplay.Inventory.InventoryUI.EQUIP_SLOT_LABELS
 COLLECTION	Valkur.Gameplay.Items.ItemTableColumns._columns
 COLLECTION	Valkur.Gameplay.Items.ItemTableColumns._equipSlotNames
 COLLECTION	Valkur.Gameplay.Items.ItemTableColumns._rarityNames

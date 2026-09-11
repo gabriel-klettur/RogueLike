@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e73304083b519c94e82421b44783447b, type: 3}
+  m_Name: HudTheme
+  m_EditorClassIdentifier: 
+  outline: {r: 0.03, g: 0.03, b: 0.05, a: 1}
+  stoneLight: {r: 0.17, g: 0.17, b: 0.22, a: 1}
+  stoneDark: {r: 0.08, g: 0.08, b: 0.11, a: 1}
+  recess: {r: 0.05, g: 0.05, b: 0.08, a: 1}
+  gold: {r: 0.9, g: 0.76, b: 0.38, a: 1}
+  goldShade: {r: 0.52, g: 0.4, b: 0.17, a: 1}
+  gem: {r: 0.72, g: 0.12, b: 0.16, a: 1}
+  gemLit: {r: 1, g: 0.55, b: 0.55, a: 1}
+  text: {r: 1, g: 0.98, b: 0.93, a: 1}
+  textDim: {r: 0.72, g: 0.74, b: 0.82, a: 1}
+  textDisabled: {r: 0.46, g: 0.47, b: 0.54, a: 1}
+  success: {r: 0.45, g: 0.92, b: 0.45, a: 1}
+  warning: {r: 0.98, g: 0.72, b: 0.26, a: 1}
+  danger: {r: 0.98, g: 0.36, b: 0.3, a: 1}
+  info: {r: 0.55, g: 0.75, b: 1, a: 1}
+  rarityCommon: {r: 0.8, g: 0.8, b: 0.82, a: 1}
+  rarityUncommon: {r: 0.4, g: 0.88, b: 0.42, a: 1}
+  rarityRare: {r: 0.36, g: 0.62, b: 1, a: 1}
+  rarityEpic: {r: 0.76, g: 0.46, b: 1, a: 1}
+  rarityLegendary: {r: 1, g: 0.62, b: 0.18, a: 1}

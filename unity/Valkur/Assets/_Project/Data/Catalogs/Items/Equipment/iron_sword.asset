@@ -19,8 +19,8 @@ MonoBehaviour:
   itemType: blacksmith
   stackable: 0
   maxStack: 1
-  icon: {fileID: 21300000, guid: cb95d0ac57bc2f24fa9be7a06ad58b61, type: 3}
-  iconSmall: {fileID: 21300000, guid: cb95d0ac57bc2f24fa9be7a06ad58b61, type: 3}
+  icon: {fileID: 21300000, guid: 142b85fa4345af849b2607861eaf0167, type: 3}
+  iconSmall: {fileID: 21300000, guid: 142b85fa4345af849b2607861eaf0167, type: 3}
   iconLarge: {fileID: 0}
   equipSlot: 3
   damage: 15
@@ -29,6 +29,7 @@ MonoBehaviour:
   critChance: 0.1
   critMultiplier: 1.5
   durability: 1000
+  statModifiers: []
   value: 50
   buyPrice: 50
   sellPrice: 25
@@ -51,5 +52,6 @@ MonoBehaviour:
   buffStat: 
   buffValue: 0
   duration: 0
+  buffModifiers: []
   toolClass: 3
   toolTier: 1

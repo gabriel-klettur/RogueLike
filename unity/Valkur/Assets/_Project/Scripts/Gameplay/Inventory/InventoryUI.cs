@@ -5,52 +5,46 @@ using TMPro;
 using Valkur.Core;
 using Valkur.Core.Input;
 using Valkur.Data;
+using Valkur.UI.HUD;
 
 namespace Valkur.Gameplay.Inventory
 {
     /// <summary>
-    /// Screen-space inventory grid UI. Toggle with Tab or I key.
-    /// Maps to Python's InventoryUISystem (header, equipment preview,
-    /// 5×5 grid, tabs, gold footer, drag-and-drop).
+    /// The player's inventory window: what they wear, what they carry, what they are worth.
+    ///
+    /// <para><b>It speaks the player panel's language, not an editor's.</b> Until 2026-09-11 it
+    /// wore the Tile editor's theme (a live-tweakable static, so retuning the editor recoloured
+    /// the player's bag), drew 76 flat rectangles and one sprite, sat translucent over the
+    /// minimap, and taught the player to press Tab to close it (Tab is the stance) and Q to drop
+    /// (Q is the teleport). It is built now from the shared HUD kit — the generated stone, the
+    /// slot hollows, the bitmap face, the event motes — on the same whole-pixel texel grid as the
+    /// player panel beside it (<see cref="PlayerHudStyle.HudPixelScaleFor"/>), with its colours
+    /// from <see cref="HudTheme"/> and its own geometry from <see cref="InventoryHudStyle"/>.
+    /// Audit and rationale: <c>.github/INVENTORY_HUD_BEAUTY_AUDIT_2026-09-11.md</c>.</para>
+    ///
+    /// <para><b>Events are seen, states are read.</b> Nothing moves while nothing happens. A
+    /// pickup flashes the slot it landed in, a rare one throws light in its rarity's colour,
+    /// equipping draws a trail to the paper doll and counts the stats to their new value, gold
+    /// counts and glints — and all of it dies inside a second.</para>
+    ///
+    /// <para>Every widget is a plain class driven by <see cref="Tick"/>, so an EditMode test can
+    /// build the window, tick it and read back what the player would see.</para>
     /// </summary>
     public partial class InventoryUI : SingletonMonoBehaviour<InventoryUI>
     {
-        [Header("Layout (legacy fields, kept for inspector parity)")]
-        // CS0414: these [SerializeField] fields are read by Unity serialization, not by C# code.
-        // Suppress the "assigned but never used" warning for this small block only.
-#pragma warning disable CS0414
-        [SerializeField] private int columns = 5;
-        [SerializeField] private float slotSize = 64f;
-        [SerializeField] private float padding = 8f;
-#pragma warning restore CS0414
-
-        [Header("Colors (legacy)")]
-        [SerializeField] private Color panelColor      = new Color(0.1f, 0.1f, 0.15f, 0.9f);
-        [SerializeField] private Color slotColor       = new Color(0.2f, 0.2f, 0.25f, 1f);
-        [SerializeField] private Color slotHoverColor  = new Color(0.3f, 0.3f, 0.4f, 1f);
-        [SerializeField] private Color selectedColor   = new Color(0.4f, 0.6f, 0.9f, 1f);
-
-        // ── Runtime UI roots (built in UILogic) ──
-        private Canvas         _canvas;
-        private GameObject     _panelGo;
-        private RectTransform  _panelRect;
-        private CanvasGroup    _panelGroup;
-
         // ── Player references ──
         private Inventory        _playerInventory;
         private CurrencyWallet   _playerWallet;
         private Experience       _playerXp;
-        private SpriteRenderer   _playerSprite;
+        private PlayerStats      _playerStats;
         private GameObject       _playerGo;
         private PlayerDefinition _playerDef;
         private ItemConsumer     _playerConsumer;
 
         // ── Input ──
-        // Resolved from the canonical asset every read rather than held in a field. With
-        // Domain Reload off, a serialized private InputAction comes back as a zombie
-        // (bindings.Count == 0, actionMap == null) after a mid-Play recompile — the hazard
-        // PlayerController carries EnsureInputActionsLive for — and a property that asks the
-        // service cannot go stale.
+        // Resolved from the canonical asset on every read rather than held in a field: with
+        // Domain Reload off a serialized InputAction comes back a zombie after a mid-Play
+        // recompile.
         private InputAction _toggleAction => InputService.Instance?.Gameplay?.Inventory;
         private InputAction _dropAction   => InputService.Instance?.Gameplay?.DropItem;
 
@@ -63,25 +57,14 @@ namespace Valkur.Gameplay.Inventory
         private bool _visible;
         private int  _selectedSlot = -1;
 
-        // ── Cached UI refs ──
-        private GameObject[]      _slotObjects;
-        private Image[]           _slotBackgrounds;
-        private Outline[]         _slotOutlines;
-        private Image[]           _slotIcons;
-        private TextMeshProUGUI[] _slotQuantities;
-        private TextMeshProUGUI   _tooltipText;
-
+        /// <summary>True while the window is open (including while it is collapsed).</summary>
         public bool IsVisible => _visible;
 
         protected override void OnSingletonAwake()
         {
-            // Deliberately empty. This used to build two InputActions in code —
-            // "ToggleInventory" on tab AND i, and "DropItem" on q — which put two live
-            // bindings outside ValkurInputActions where nothing could audit them. That is
-            // how `tab` went on opening the inventory for the whole life of the War/Peace
-            // stance, months after a comment in this very file declared it removed, and
-            // while StanceGateTests.Tab_IsBoundOnlyToToggleStance passed: the test reads the
-            // ASSET, and this action was not in it. Both are asset actions now.
+            // Bindings live in ValkurInputActions only; this used to build its own InputActions
+            // in code, which is how Tab went on opening the inventory for months after the stance
+            // took it.
             InputService.Initialize();
         }
 
@@ -89,72 +72,78 @@ namespace Valkur.Gameplay.Inventory
         {
             ResolvePlayerRefs();
             BuildUI();
-            SetVisible(false);
+            SetVisible(false, animate: false);
             RegisterTrayButton();
         }
 
         private void Update()
         {
-            // Both backends, both derived from whatever the action is bound to right now.
-            // InputBindingResolver reads through KeyboardInputManager, so a modal panel's
-            // input block still reaches these: raw reads answered while the chat had focus,
-            // so typing 'i' opened the inventory mid-sentence and 'q' threw an item on the
-            // ground.
-            //
-            // THE LITERALS WERE THE BUG. `KeyCode.I` and `KeyCode.Q` were hardcoded next to
-            // the actions, so rebinding the inventory left `I` opening it anyway — and
-            // ValkurInputActions was not the source of truth for the fallback, which is
-            // exactly how Tab came within one commit of being a second meaning for the same
-            // physical key. This project has bound one key to two features three times
-            // (`e` on Interact + SpellSlash, `p` on Pause + SpellMeteorShower, which threw
-            // meteors when the player paused); an audit over the asset can only see the ones
-            // that are IN the asset.
-            //
-            // `q` is still the drop key AND SpellTeleport. It survives because the drop is
-            // read only while the panel is open, and the panel sets InputBlocker — so the
-            // Controls editor reports it as a conflict the player may resolve, rather than
-            // this file silently owning half of it.
             if (InputContextPolicy.IsLive(_descInventory) &&
                 InputBindingResolver.WasPerformedThisFrame(_toggleAction))
                 SetVisible(!_visible);
 
-            if (_visible)
+            if (_visible && !_collapsed)
             {
-                // The context mask as well as the binding: without it the Controls editor
-                // drew posture chips on this row that reported a change nothing honoured.
+                // The context mask as well as the binding: without it the Controls editor drew
+                // posture chips on this row that reported a change nothing honoured.
                 if (InputContextPolicy.IsLive(_descDropItem) &&
                     InputBindingResolver.WasPerformedThisFrame(_dropAction) && _selectedSlot >= 0)
-                    DropSelectedItem();
+                    RequestWorldDrop(_selectedSlot, null, 0);
             }
+
+            // A pending "throw it away?" takes Enter and Escape first, so answering it can never
+            // also close the window behind it.
+            if (_confirm != null && _confirm.Visible)
+            {
+                if (KeyboardInputManager.WasEscapePressedThisFrame()) _confirm.Resolve(false);
+                else if (KeyboardInputManager.WasEnterPressedThisFrame()) _confirm.Resolve(true);
+            }
+            // Escape closes the window before it opens the General Editor: the window claims the
+            // key for as long as it is up, exactly as the world map does.
+            else if (_visible && KeyboardInputManager.WasEscapePressedThisFrame())
+                SetVisible(false);
+
+            Refit();
+            Tick(Time.unscaledDeltaTime);
         }
 
-        public void SetVisible(bool visible)
+        /// <summary>Opens or closes the window.</summary>
+        public void SetVisible(bool visible) => SetVisible(visible, animate: true);
+
+        public void SetVisible(bool visible, bool animate)
         {
+            bool was = _visible;
             _visible = visible;
-            if (_panelGroup != null)
-            {
-                _panelGroup.alpha          = visible ? 1f : 0f;
-                _panelGroup.blocksRaycasts = visible;
-                _panelGroup.interactable   = visible;
-            }
 
             if (visible)
             {
                 ResolvePlayerRefs();
-                RefreshAll();
-                int rendered = 0;
-                if (_playerInventory != null)
-                    for (int i = 0; i < _playerInventory.Slots.Count; i++)
-                        if (!_playerInventory.Slots[i].IsEmpty) rendered++;
-                Debug.Log($"[InventoryUI] SetVisible(true): refreshed UI, rendered {rendered} bag item(s)");
+                RefreshAll(announce: false);
+                EscapeOwnership.Claim(this);
+                if (!was && animate) InventoryAudio.Play(InventorySound.Open, _style);
             }
+            else
+            {
+                EscapeOwnership.Release(this);
+                EndDragQuietly();
+                HideCard();
+                _confirm?.Resolve(false);
+                SetHover(-1);
+            }
+
+            if (_panelGroup != null)
+            {
+                _panelGroup.blocksRaycasts = visible;
+                _panelGroup.interactable = visible;
+                if (!animate) { _openT = visible ? 1f : 0f; ApplyOpen(); }
+            }
+            RefreshTrayBadge();
         }
 
         public void SelectSlot(int index)
         {
             _selectedSlot = index;
-            UpdateSlotHighlights();
-            UpdateTooltip();
+            UpdateMarks();
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -166,34 +155,65 @@ namespace Valkur.Gameplay.Inventory
             var player = EntityRegistry.Player;
             if (player == null)
             {
-                Debug.Log($"[InventoryUI] ResolvePlayerRefs: EntityRegistry.Player is NULL — skipping wire-up.");
+                VerboseLog.Log(VerboseLog.Category.Bootstrap, () => "[InventoryUI] ResolvePlayerRefs: no player yet.");
                 return;
             }
             if (player == _playerGo) return; // already wired
+            WirePlayer(player);
+        }
 
+        /// <summary>
+        /// Builds the window against <paramref name="player"/> and opens it. For EditMode tests,
+        /// where Unity calls no Start and no player is registered.
+        /// </summary>
+        internal void BuildFor(GameObject player)
+        {
+            WirePlayer(player);
+            BuildUI();
+            SetVisible(true, animate: false);
+        }
+
+        /// <summary>
+        /// The half of OnDestroy a test needs: Unity sends no OnDestroy to a component whose Awake
+        /// never ran, and <see cref="CurrencyWallet.OnCoinsChanged"/> is a STATIC event, so a
+        /// fixture's window left subscribed would answer the next test's coins from a destroyed
+        /// canvas.
+        /// </summary>
+        internal void TeardownForTests()
+        {
+            UnsubscribePlayer();
+            EscapeOwnership.Release(this);
+            ReleaseArt();
+        }
+
+        private void WirePlayer(GameObject player)
+        {
+            if (player == null || player == _playerGo) return;
             UnsubscribePlayer();
 
             _playerGo        = player;
             _playerInventory = player.GetComponent<Inventory>();
             _playerWallet    = player.GetComponent<CurrencyWallet>();
             _playerXp        = player.GetComponent<Experience>();
+            _playerStats     = player.GetComponent<PlayerStats>();
             _playerConsumer  = player.GetComponent<ItemConsumer>();
-            _playerSprite    = player.GetComponentInChildren<SpriteRenderer>();
             _playerDef       = ResolvePlayerDefinition(PlayerSelectionState.SelectedPlayerKey);
-
-            int liveCount = 0;
-            if (_playerInventory != null)
-                for (int i = 0; i < _playerInventory.Slots.Count; i++)
-                    if (!_playerInventory.Slots[i].IsEmpty) liveCount++;
-            Debug.Log($"[InventoryUI] ResolvePlayerRefs wired player={player.name} inventoryFound={_playerInventory != null} liveBagItems={liveCount}");
 
             if (_playerInventory != null) _playerInventory.OnInventoryChanged += OnInventoryChangedExternal;
             if (_playerXp != null)
             {
                 _playerXp.OnXpGained += OnXpGainedExternal;
                 _playerXp.OnLevelUp  += OnLevelUpExternal;
+                _playerXp.OnStateChanged += OnXpStateExternal;
             }
+            if (_playerStats != null) _playerStats.OnStatsChanged += OnStatsChangedExternal;
             CurrencyWallet.OnCoinsChanged += OnCoinsChangedExternal;
+
+            // The bag's first picture is taken now, so nothing already carried is announced as
+            // just picked up.
+            TakeSnapshot();
+            _figureSource = null;
+            if (_built) EnsureBagViews();
         }
 
         private void UnsubscribePlayer()
@@ -203,28 +223,53 @@ namespace Valkur.Gameplay.Inventory
             {
                 _playerXp.OnXpGained -= OnXpGainedExternal;
                 _playerXp.OnLevelUp  -= OnLevelUpExternal;
+                _playerXp.OnStateChanged -= OnXpStateExternal;
             }
+            if (_playerStats != null) _playerStats.OnStatsChanged -= OnStatsChangedExternal;
             CurrencyWallet.OnCoinsChanged -= OnCoinsChangedExternal;
         }
 
-        private void OnInventoryChangedExternal()                 { if (_visible) RefreshAll(); }
-        private void OnXpGainedExternal(int amount)               { if (_visible) UpdateHeaderInfo(); }
-        private void OnLevelUpExternal(int level)                 { if (_visible) UpdateHeaderInfo(); }
-        private void OnCoinsChangedExternal(int balance, int dlt) { if (_visible) UpdateGold(); }
+        private void OnInventoryChangedExternal()                 => OnInventoryChanged();
+        private void OnXpGainedExternal(int amount)               { if (_visible) UpdateHeader(); }
+        private void OnLevelUpExternal(int level)                 { if (_visible) { UpdateHeader(); _medallion?.Pulse(0.9f); } }
+        private void OnXpStateExternal()                          { if (_visible) UpdateHeader(); }
+        private void OnStatsChangedExternal()                     => OnStatsChanged();
+        private void OnCoinsChangedExternal(int balance, int dlt) => OnCoinsChanged(dlt);
 
         private static PlayerDefinition ResolvePlayerDefinition(string key)
         {
             if (string.IsNullOrEmpty(key)) return null;
-            // Optional resolve from Resources/Players if the project ships PlayerDefinition
-            // assets there. Scoped, never the whole tree: LoadAll("") deserializes every
-            // asset under Resources/ and surfaces a console error for each one whose
-            // script no longer resolves.
+            // Scoped, never the whole tree: LoadAll("") deserializes every asset under
+            // Resources/ and surfaces a console error for each one whose script no longer
+            // resolves.
             var all = Resources.LoadAll<PlayerDefinition>("Players");
             for (int i = 0; i < all.Length; i++)
                 if (all[i] != null &&
                     string.Equals(all[i].playerKey, key, System.StringComparison.OrdinalIgnoreCase))
                     return all[i];
             return null;
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        //  Tray
+        // ─────────────────────────────────────────────────────────────────────
+
+        internal void RegisterTrayButton()
+        {
+            var bar = Valkur.UIKit.HUDIconBar.Instance;
+            if (bar == null) return;
+            // From the style asset, never the editor's asset database: that does not exist in a player build,
+            // where the button used to be a grey square.
+            var sprite = _style != null ? _style.trayIcon : null;
+            bar.Register("inventory", sprite, () => SetVisible(!_visible), order: 0);
+        }
+
+        protected override void OnDestroy()
+        {
+            UnsubscribePlayer();
+            EscapeOwnership.Release(this);
+            ReleaseArt();
+            base.OnDestroy();
         }
     }
 }

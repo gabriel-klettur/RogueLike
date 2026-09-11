@@ -333,8 +333,10 @@ namespace Valkur.Gameplay.Save
             var equipSlots = psd.inventory.equipmentSlots;
             if (equipSlots != null)
             {
-                int eqMax = Mathf.Min(equipSlots.Count, Inventory.Inventory.EquipmentCapacity);
-                for (int i = 0; i < eqMax; i++)
+                // Every saved entry, whatever its index: each item is re-homed into the slot its
+                // kind names (a save from before the slots were typed stored nine untyped cells),
+                // and one that fits no slot goes back into the bag rather than vanishing.
+                for (int i = 0; i < equipSlots.Count; i++)
                 {
                     var slot = equipSlots[i];
                     if (string.IsNullOrEmpty(slot.itemId) || slot.quantity <= 0) continue;
@@ -345,7 +347,9 @@ namespace Valkur.Gameplay.Save
                         missing++;
                         continue;
                     }
-                    inventory.SetEquipmentSlot(i, def, slot.quantity);
+                    int lost = inventory.RestoreEquipped(def, slot.quantity);
+                    if (lost > 0)
+                        Debug.LogWarning($"[GameStateRestorer] Equipment '{slot.itemId}' x{lost} fitted neither its slot nor the bag — dropped.");
                     equipRestored++;
                 }
             }

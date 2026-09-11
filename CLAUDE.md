@@ -5301,6 +5301,66 @@ music [abrir|cerrar|resonancia|reset]           DevConsole probe
 - **The GameObject keeps the name `MusicPlayerHUD`**: `BuildingsRuntimeEditor.HideHUDs` finds
   it by name.
 
+## The inventory window
+
+Audited 2026-09-11 at **2.1/10** and rebuilt the same day — findings, scores and what is open in
+`.github/INVENTORY_HUD_BEAUTY_AUDIT_2026-09-11.md`; the shared rules it follows are
+`.github/HUD_VISUAL_LANGUAGE.md` (sections 5.x are the window rules R13-R16).
+
+```text
+EquipmentLayout      Data/Items/            8 typed slots (EquipmentSlotKind) + the EquipSlot → slot map
+Inventory.Equipment  Gameplay/Inventory/    CheckEquip / TryEquipFromBag / TryUnequip / RestoreEquipped
+Inventory.Organize   Gameplay/Inventory/    SplitStack, SortBag (stable, merges stacks, refuses overflow)
+HudTheme             Data/UI/               shared tokens + rarity ramp (Resources/UI/HudTheme.asset)
+InventoryHudStyle    Data/UI/               the window's texels, timings, motes, sounds, TRAY ICON
+InventoryUI (+.Build, .Window, .Refresh, .SlotInteraction, .Feel)   the window
+InventoryArt / InventorySlotView / InventoryItemCard / InventoryConfirm / InventoryAudio /
+InventoryPointerRelay                   Gameplay/Inventory/UI/
+```
+
+- **The equipment is TYPED, at the MODEL.** Nine untyped cells used to accept anything, and
+  `EquipmentStatSource` summed every equippable item in all of them — nine longswords were +162
+  melee damage; four labels (Arms, Gloves, Pants, Jewelry) named places no item could go. Now
+  eight slots speak the data's `EquipSlot` vocabulary (aliases collapsed), and
+  `TryDepositInEquipmentSlot` / `MoveSlotByIndex` refuse a wrong slot or an unmet level in EITHER
+  direction of a swap, with `LastRefusal` saying why — so the world-drop path obeys it too.
+  `levelRequirement` 1 means none (the model starts at level 0). Old saves (nine cells) restore
+  through `RestoreEquipped`, which re-homes by kind and puts what fits nowhere in the bag.
+- **The kit lives in `Valkur.UIKit` now** (`Gameplay/UIKit/Hud/`, namespace still
+  `Valkur.UI.HUD`), because the inventory is `Valkur.Gameplay`, which may not reference
+  `Valkur.UI` — that one rule is why every Gameplay window had grown its own dialect.
+- **Same grid as the player panel**: `PlayerHudStyle.HudPixelScaleFor` whole texels, a `Pixels`
+  child counter-scaled against the canvas, corner snapped to a whole screen pixel. Opens at
+  `HudLayout.GameWindowRightInset` from the right — left of the minimap AND the music panel (R13);
+  the old window hid the minimap completely. Position and collapse persist in PlayerPrefs
+  (`valkur.inventory.*`), written at the END of a drag.
+- **Pickups are found by DIFFERENCE.** Items reach the bag from a dozen places and only some raise
+  events, so the window keeps a picture of every slot and compares on `OnInventoryChanged`; its own
+  moves are bracketed by `BeginAction`/`EndAction` so a drag is never announced as a find. A find
+  flashes its slot, throws motes in its rarity colour (a ring for Rare+, more for Legendary), marks
+  it new until hovered, and counts on the tray button (`HUDIconBar.SetBadge`) while closed.
+- **Rarity is SHAPE as well as colour**: corner marks 0/1/2/4/4 plus a one-texel filet for
+  Legendary. The filet must NOT be a glow — a glow ring is what selection looks like, and the
+  first capture read every legendary as the selected slot.
+- **The card's numbers come from the code that applies them** (`EquipmentStatSource.AppendItem`
+  and `StatModifier.Describe`), with a diff against what is worn in that slot. `Describe` itself was
+  fixed on the way: it printed "-16.67% Attack Speed" for a cooldown REDUCTION (a buff under a
+  minus sign) and "+0.1 Crit Chance" for 10 %; cooldowns now read as speed and fractions as %.
+  `StatCatalog` names are Spanish now.
+- **Stat and footer rows are FLOWED by measured ink** (`LayoutStats` / `LayoutFooter`): fixed
+  quarters put "200" into the mana drop in the first live capture.
+- **An Epic/Legendary drop to the ground asks first** (`InventoryConfirm`); nothing cheaper does —
+  a window that confirms every pebble gets clicked through. Enter/Escape answer it before Escape can
+  close the window.
+- **Sounds**: catalogue id first (gated on `HasSfx`), else synthesised (`InventoryAudio`), played
+  through `IAudioService.PlaySFX` so the effects volume applies. Only `inv_open` is recorded.
+- **Data bug found by the first capture**: `iron_sword.asset` pointed at `ancient_relic_mask.png`;
+  the equipped sword drew a mask. A catalogue sweep found it was the only one.
+- **Test traps**: `InventoryUI.BuildFor(player)` / `TeardownForTests()` exist because Unity sends
+  no Start or OnDestroy to a component added in Edit Mode, and `CurrencyWallet.OnCoinsChanged` is a
+  STATIC event a fixture's window would otherwise stay subscribed to. A source guard that greps for
+  `"Tab` matches `"Tab" + i`, and `| Q` matches `|| Quantity` — guard on the real phrases.
+
 ## Incident reports
 
 Past incidents that left investigation hooks behind. Read these first when a

@@ -16,10 +16,10 @@ namespace Valkur.Gameplay.Inventory
     /// "drop in the cell I want": cells 0 and 5 can both be filled while
     /// cells 1..4 stay empty.
     /// </summary>
-    public class Inventory : MonoBehaviour
+    public partial class Inventory : MonoBehaviour
     {
-        /// <summary>Number of equipment slots (paper-doll 3×3).</summary>
-        public const int EquipmentCapacity = 9;
+        /// <summary>Number of equipment slots — one per <see cref="EquipmentSlotKind"/>.</summary>
+        public const int EquipmentCapacity = EquipmentLayout.Count;
 
         /// <summary>Default bag capacity matching the UI's 5×5 grid.</summary>
         public const int DefaultBagCapacity = 25;
@@ -161,139 +161,6 @@ namespace Valkur.Gameplay.Inventory
                 ? new InventorySlot(item, quantity)
                 : default;
             OnInventoryChanged?.Invoke();
-        }
-
-        // ── Equipment slots ────────────────────────────────────────────────
-
-        public void SetEquipmentSlot(int equipIndex, ItemDefinition item, int quantity)
-        {
-            if (equipIndex < 0 || equipIndex >= EquipmentCapacity) return;
-            EnsureEquipSized();
-            _equipSlots[equipIndex] = (item != null && quantity > 0)
-                ? new InventorySlot(item, quantity)
-                : default;
-            OnInventoryChanged?.Invoke();
-        }
-
-        /// <summary>
-        /// Place up to <paramref name="quantity"/> of <paramref name="item"/>
-        /// at the given equipment slot. Returns the count actually placed.
-        /// Same rules as <see cref="TryDepositInSlot"/>: empty cell accepts any
-        /// item; same-item stackable cell stacks until <c>maxStack</c>; mismatch
-        /// rejects (returns 0). Equipment cells do not auto-fill — only manual
-        /// drag drops items here.
-        /// </summary>
-        public int TryDepositInEquipmentSlot(int equipIndex, ItemDefinition item, int quantity)
-        {
-            if (item == null || quantity <= 0) return 0;
-            if (equipIndex < 0 || equipIndex >= EquipmentCapacity) return 0;
-            EnsureEquipSized();
-
-            int placed;
-            var current = _equipSlots[equipIndex];
-            if (current.IsEmpty)
-            {
-                placed = item.stackable ? Mathf.Min(quantity, Mathf.Max(1, item.maxStack)) : 1;
-                _equipSlots[equipIndex] = new InventorySlot(item, placed);
-            }
-            else if (current.Item == item && item.stackable)
-            {
-                int room = Mathf.Max(0, item.maxStack - current.Quantity);
-                placed = Mathf.Min(quantity, room);
-                if (placed <= 0) return 0;
-                _equipSlots[equipIndex] = new InventorySlot(item, current.Quantity + placed);
-            }
-            else
-            {
-                return 0;
-            }
-
-            OnInventoryChanged?.Invoke();
-            return placed;
-        }
-
-        // ── Unified index-space helpers ────────────────────────────────────
-        // Visual slots are addressed by a single int across the panel:
-        //   • [0 .. Capacity-1)             → bag.
-        //   • [Capacity .. Capacity+Equip)  → equipment.
-        // This lets WorldDropInteractor / drag handlers treat the panel as
-        // one grid and route deposits without an extra "kind" parameter.
-
-        public bool IsEquipmentIndex(int unifiedIndex)
-            => unifiedIndex >= capacity && unifiedIndex < capacity + EquipmentCapacity;
-
-        public InventorySlot GetSlotByIndex(int unifiedIndex)
-        {
-            if (unifiedIndex >= 0 && unifiedIndex < capacity)
-                return _slots[unifiedIndex];
-            if (IsEquipmentIndex(unifiedIndex))
-                return _equipSlots[unifiedIndex - capacity];
-            return default;
-        }
-
-        /// <summary>
-        /// Index-space-aware deposit. Routes to <see cref="TryDepositInSlot"/>
-        /// or <see cref="TryDepositInEquipmentSlot"/> depending on the unified
-        /// index range. Returns the count placed.
-        /// </summary>
-        public int TryDepositInIndex(int unifiedIndex, ItemDefinition item, int quantity)
-        {
-            if (unifiedIndex < 0) return 0;
-            if (unifiedIndex < capacity) return TryDepositInSlot(unifiedIndex, item, quantity);
-            if (IsEquipmentIndex(unifiedIndex))
-                return TryDepositInEquipmentSlot(unifiedIndex - capacity, item, quantity);
-            return 0;
-        }
-
-        /// <summary>
-        /// Move the entire stack at <paramref name="src"/> into <paramref name="dst"/>,
-        /// across both bag and equipment slots. If <paramref name="dst"/> is
-        /// non-empty: stack-merge if compatible, else swap. Returns true on
-        /// any change. Used by the in-panel drag-and-drop handler.
-        /// </summary>
-        public bool MoveSlotByIndex(int src, int dst)
-        {
-            if (src == dst) return false;
-            EnsureSlotsSized();
-            EnsureEquipSized();
-
-            if (!IsValidUnifiedIndex(src) || !IsValidUnifiedIndex(dst)) return false;
-
-            var s = GetSlotByIndex(src);
-            if (s.IsEmpty) return false;
-
-            var d = GetSlotByIndex(dst);
-
-            // Stack-merge same-item stackables.
-            if (!d.IsEmpty && d.Item == s.Item && s.Item.stackable)
-            {
-                int cap = Mathf.Max(1, s.Item.maxStack);
-                int room = cap - d.Quantity;
-                if (room > 0)
-                {
-                    int moved = Mathf.Min(s.Quantity, room);
-                    WriteSlotByIndex(dst, new InventorySlot(d.Item, d.Quantity + moved));
-                    int srcLeft = s.Quantity - moved;
-                    WriteSlotByIndex(src, srcLeft <= 0 ? default : new InventorySlot(s.Item, srcLeft));
-                    OnInventoryChanged?.Invoke();
-                    return true;
-                }
-            }
-
-            // Otherwise raw swap (works for empty dst too).
-            WriteSlotByIndex(dst, s);
-            WriteSlotByIndex(src, d);
-            OnInventoryChanged?.Invoke();
-            return true;
-        }
-
-        private bool IsValidUnifiedIndex(int idx)
-            => (idx >= 0 && idx < capacity) || IsEquipmentIndex(idx);
-
-        private void WriteSlotByIndex(int idx, InventorySlot slot)
-        {
-            if (idx >= 0 && idx < capacity) _slots[idx] = slot;
-            else if (IsEquipmentIndex(idx)) _equipSlots[idx - capacity] = slot;
         }
 
         /// <summary>
@@ -470,14 +337,6 @@ namespace Valkur.Gameplay.Inventory
             if (_slots.Count == capacity) return;
             if (_slots.Count > capacity) _slots.RemoveRange(capacity, _slots.Count - capacity);
             while (_slots.Count < capacity) _slots.Add(default);
-        }
-
-        private void EnsureEquipSized()
-        {
-            if (_equipSlots.Count == EquipmentCapacity) return;
-            if (_equipSlots.Count > EquipmentCapacity)
-                _equipSlots.RemoveRange(EquipmentCapacity, _equipSlots.Count - EquipmentCapacity);
-            while (_equipSlots.Count < EquipmentCapacity) _equipSlots.Add(default);
         }
     }
 

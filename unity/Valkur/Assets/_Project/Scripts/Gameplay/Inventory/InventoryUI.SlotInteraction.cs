@@ -1,138 +1,271 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Data;
-using Valkur.Gameplay.TileEditor;
 
 namespace Valkur.Gameplay.Inventory
 {
+    /// <summary>
+    /// What the player DOES to a slot: select, equip, take off, use, move, split, drop, sort —
+    /// and what the window answers, including why it refused.
+    /// </summary>
     public partial class InventoryUI
     {
-        // Drag state
-        private GameObject _dragGhost;
-        private Image      _dragGhostImg;
-        private int        _dragSourceIndex = -1;
-        private RectTransform _dragGhostRt;
+        private int _dragSource = -1;
+        private int _dragAmount;
+        private ItemDefinition _dragItem;
+        private int _dragHover = -1;
+        private int _depositTarget = -1;
+        private int _hoverSlot = -1;
 
-        // ─────────────────────────────────────────────────────────────────────
-        //  Slot interactions (called from InventorySlotDragHandler)
-        // ─────────────────────────────────────────────────────────────────────
+        /// <summary>The unified index the equipment range starts at.</summary>
+        private int EquipBase => _playerInventory != null ? _playerInventory.Capacity : _bagViews.Length;
 
-        public void UseSlot(int slotIndex)
+        /// <summary>True while an item is being dragged out of a slot.</summary>
+        public bool IsDragging => _dragSource >= 0;
+
+        /// <summary>The view drawing unified index <paramref name="unified"/>, or null.</summary>
+        internal InventorySlotView ViewFor(int unified)
         {
-            if (_playerInventory == null) return;
-            if (slotIndex < 0 || slotIndex >= _playerInventory.Slots.Count) return;
-            var slot = _playerInventory.Slots[slotIndex];
-            if (slot.IsEmpty) return;
-
-            if (slot.Item.GetCategory() == ItemCategory.Consumable && _playerConsumer != null)
-            {
-                _playerConsumer.TryConsume(slot.Item);
-                _selectedSlot = -1;
-                UpdateSlotHighlights();
-                UpdateTooltip();
-            }
-            else
-            {
-                // Non-consumable: just keep selection.
-                SelectSlot(slotIndex);
-            }
+            if (unified < 0) return null;
+            if (unified < _bagViews.Length) return _bagViews[unified];
+            int e = unified - EquipBase;
+            return e >= 0 && e < _equipViews.Length ? _equipViews[e] : null;
         }
 
-        public void BeginSlotDrag(int srcIndex, PointerEventData ev)
+        private InventorySlot SlotAt(int unified)
+            => _playerInventory != null ? _playerInventory.GetSlotByIndex(unified) : default;
+
+        // ── Activate: the one verb for right click and double click ────────
+
+        /// <summary>Kept for callers that predate <see cref="ActivateSlot"/>.</summary>
+        public void UseSlot(int slotIndex) => ActivateSlot(slotIndex);
+
+        /// <summary>
+        /// Does the obvious thing to the item in a slot: wears it, takes it off, or uses it.
+        /// Refuses loudly (and says why) when none applies.
+        /// </summary>
+        public void ActivateSlot(int unified)
         {
             if (_playerInventory == null) return;
-            var src = _playerInventory.GetSlotByIndex(srcIndex);
+            var slot = SlotAt(unified);
+            if (slot.IsEmpty) return;
+            var item = slot.Item;
+            bool equipped = _playerInventory.IsEquipmentIndex(unified);
+
+            if (equipped)
+            {
+                BeginAction();
+                int landed = _playerInventory.TryUnequip(unified - EquipBase);
+                EndAction();
+                if (landed >= 0) OnUnequipped(unified, landed, item);
+                else Refuse(unified, EquipRefusal.BagFull, item);
+                return;
+            }
+
+            int home = EquipmentLayout.IndexFor(item);
+            if (home >= 0)
+            {
+                BeginAction();
+                bool ok = _playerInventory.TryEquipFromBag(unified, out var why);
+                EndAction();
+                if (ok) OnEquipped(unified, EquipBase + home, item);
+                else Refuse(unified, why, item);
+                return;
+            }
+
+            if (item.GetCategory() == ItemCategory.Consumable && _playerConsumer != null)
+            {
+                BeginAction();
+                bool consumed = _playerConsumer.TryConsume(item);
+                EndAction();
+                if (consumed) OnConsumed(unified, item);
+                else Refuse(unified, EquipRefusal.None, item);
+                return;
+            }
+
+            SelectSlot(unified);
+        }
+
+        // ── Hover ─────────────────────────────────────────────────────────
+
+        public void OnSlotPointer(int unified, bool entered)
+        {
+            if (entered) SetHover(unified);
+            else if (_hoverSlot == unified) SetHover(-1);
+            if (IsDragging) _dragHover = entered ? unified : (_dragHover == unified ? -1 : _dragHover);
+            UpdateMarks();
+        }
+
+        private void SetHover(int unified)
+        {
+            if (unified == _hoverSlot) return;
+            _hoverSlot = unified;
+            _hoverT = 0f;
+            if (_cardSlot >= 0 && _cardSlot != unified) HideCard();
+            // Looking at a new item is what makes it not new.
+            var v = ViewFor(unified);
+            if (v != null && v.IsNew) { v.SetNew(false, _theme); ClearNewFlag(unified); }
+            UpdateMarks();
+        }
+
+        // ── Drag ──────────────────────────────────────────────────────────
+
+        public void BeginSlotDrag(int unified, PointerEventData ev)
+        {
+            if (_playerInventory == null || _collapsed) return;
+            var src = SlotAt(unified);
             if (src.IsEmpty) return;
 
-            _dragSourceIndex = srcIndex;
-            CreateDragGhost(src.Item);
+            // Shift takes half the stack, Ctrl one; either way the source keeps the rest.
+            int amount = src.Quantity;
+            if (src.Item.stackable && src.Quantity > 1 && !_playerInventory.IsEquipmentIndex(unified))
+            {
+                if (KeyboardInputManager.IsShiftHeld()) amount = Mathf.Max(1, src.Quantity / 2);
+                else if (KeyboardInputManager.IsCtrlHeld()) amount = 1;
+            }
+
+            _dragSource = unified;
+            _dragItem = src.Item;
+            _dragAmount = amount;
+            _dragHover = unified;
+            HideCard();
+
+            ViewFor(unified)?.SetDragSource(true);
+            ShowGhost(src.Item, amount < src.Quantity ? amount : src.Quantity);
             UpdateSlotDrag(ev);
+            UpdateMarks();
         }
 
         public void UpdateSlotDrag(PointerEventData ev)
         {
-            if (_dragGhostRt == null) return;
-            _dragGhostRt.position = ev.position;
+            if (!IsDragging || ev == null) return;
+            PlaceGhost(ev.position);
+            int over = HitTestSlot(ev.position);
+            if (over != _dragHover) { _dragHover = over; UpdateMarks(); }
         }
 
-        // Drag end-routing across the unified slot space:
-        //   • src ↔ dst within the bag           → existing merge / swap.
-        //   • bag ↔ equipment, or eq ↔ eq        → MoveSlotByIndex (swap or
-        //     stack-merge depending on item compatibility).
-        //   • dst outside any slot but inside    → no-op (cancels the drag).
-        //     the panel
-        //   • dst outside the panel altogether   → world drop at cursor.
-        public void EndSlotDrag(int srcIndex, PointerEventData ev)
+        public void EndSlotDrag(int unused, PointerEventData ev)
         {
-            DestroyDragGhost();
-            if (_dragSourceIndex < 0) return;
-            int src = _dragSourceIndex;
-            _dragSourceIndex = -1;
-            if (_playerInventory == null) return;
+            if (!IsDragging) return;
+            int src = _dragSource;
+            var item = _dragItem;
+            int amount = _dragAmount;
+            EndDragQuietly();
+            if (_playerInventory == null || ev == null) return;
 
-            int dst = HitTestSlot(ev);
+            var srcSlot = SlotAt(src);
+            if (srcSlot.IsEmpty || srcSlot.Item != item) return;   // the bag changed under the drag
+            bool partial = amount < srcSlot.Quantity;
+
+            int dst = HitTestSlot(ev.position);
             if (dst >= 0 && dst != src)
             {
-                if (_playerInventory.IsEquipmentIndex(src) || _playerInventory.IsEquipmentIndex(dst))
+                bool srcEquip = _playerInventory.IsEquipmentIndex(src);
+                bool dstEquip = _playerInventory.IsEquipmentIndex(dst);
+                BeginAction();
+                bool ok;
+                if (partial && !dstEquip)
+                    ok = _playerInventory.SplitStack(src, dst, amount) > 0;
+                else
+                    ok = _playerInventory.MoveSlotByIndex(src, dst);
+                EndAction();
+
+                if (!ok)
                 {
-                    _playerInventory.MoveSlotByIndex(src, dst);
+                    Refuse(dst, partial ? EquipRefusal.None : _playerInventory.LastRefusal, item);
+                    return;
                 }
-                else if (!_playerInventory.TryMergeStacks(src, dst))
-                {
-                    _playerInventory.SwapSlots(src, dst);
-                }
+                if (dstEquip) OnEquipped(src, dst, item);
+                else if (srcEquip) OnUnequipped(src, dst, item);
+                else OnSettled(dst);
                 SelectSlot(dst);
                 return;
             }
 
-            if (!IsPointerOverPanel(ev))
-            {
-                DropSlotToWorld(src, ResolveWorldDropPosition(ev));
-            }
-        }
-
-        // Tests both grids (bag first, then equipment) and returns the unified
-        // index — caller routes by Inventory.IsEquipmentIndex.
-        private int HitTestSlot(PointerEventData ev)
-        {
-            if (_slotObjects != null)
-            {
-                for (int i = 0; i < _slotObjects.Length; i++)
-                {
-                    var rt = _slotObjects[i].GetComponent<RectTransform>();
-                    if (rt == null) continue;
-                    if (RectTransformUtility.RectangleContainsScreenPoint(rt, ev.position, ev.pressEventCamera))
-                        return i;
-                }
-            }
-            if (_equipObjects != null)
-            {
-                for (int i = 0; i < _equipObjects.Length; i++)
-                {
-                    var go = _equipObjects[i];
-                    if (go == null) continue;
-                    var rt = go.GetComponent<RectTransform>();
-                    if (rt == null) continue;
-                    if (RectTransformUtility.RectangleContainsScreenPoint(rt, ev.position, ev.pressEventCamera))
-                        return Inventory.DefaultBagCapacity + i;
-                }
-            }
-            return -1;
-        }
-
-        private bool IsPointerOverPanel(PointerEventData ev)
-        {
-            if (_panelRect == null) return true;
-            return RectTransformUtility.RectangleContainsScreenPoint(_panelRect, ev.position, ev.pressEventCamera);
+            if (dst < 0 && !IsScreenPointOverPanel(ev.position))
+                RequestWorldDrop(src, ResolveWorldDropPosition(ev), partial ? amount : 0);
         }
 
         /// <summary>
-        /// True when the inventory window is open AND the given screen-space point
-        /// falls inside the panel. Used by world-drop drag systems to detect a
-        /// drop-into-inventory gesture without going through PointerEventData.
-        /// Canvas is ScreenSpaceOverlay so the camera arg is null.
+        /// Drops at once, or — for an Epic or Legendary item — asks first. The question sits over
+        /// the grid, centred, until it is answered.
+        /// </summary>
+        internal void RequestWorldDrop(int unified, Vector3? worldPos, int amount)
+        {
+            var slot = SlotAt(unified);
+            if (slot.IsEmpty) return;
+            if (slot.Item.rarity < ItemRarity.Epic || _confirm == null)
+            {
+                DropSlotToWorld(unified, worldPos, amount);
+                return;
+            }
+            var item = slot.Item;
+            int qty = amount > 0 ? Mathf.Min(amount, slot.Quantity) : slot.Quantity;
+            int x = (_widthTexels - 104) / 2;
+            int y = _gridY + _style.GridHeightTexels(_bagRows) / 2 - 19;
+            HideCard();
+            _confirm.Ask(item, qty, _theme, x, y, () =>
+            {
+                // The bag may have changed while the question was up; drop only what is still there.
+                var now = SlotAt(unified);
+                if (!now.IsEmpty && now.Item == item) DropSlotToWorld(unified, worldPos, amount);
+            });
+        }
+
+        /// <summary>Ends a drag without doing anything with it.</summary>
+        private void EndDragQuietly()
+        {
+            if (_dragSource >= 0) ViewFor(_dragSource)?.SetDragSource(false);
+            _dragSource = -1;
+            _dragItem = null;
+            _dragAmount = 0;
+            _dragHover = -1;
+            if (_ghostRoot != null) _ghostRoot.gameObject.SetActive(false);
+            UpdateMarks();
+        }
+
+        private void ShowGhost(ItemDefinition item, int quantity)
+        {
+            if (_ghostRoot == null) return;
+            var sprite = item.icon != null ? item.icon : item.iconSmall;
+            int inner = _style.slotTexels - _style.iconInsetTexels * 2;
+            var baked = Valkur.UI.HUD.HudTextureBaker.Icon(sprite, inner * Mathf.Max(1, _pixelScale));
+            _ghost.texture = baked;
+            _ghost.enabled = baked != null;
+            _ghostFallback.sprite = sprite;
+            _ghostFallback.enabled = baked == null && sprite != null;
+            if (_ghostCount != null) _ghostCount.SetText(quantity > 1 ? quantity.ToString() : "");
+            _ghostRoot.SetAsLastSibling();
+            _ghostRoot.gameObject.SetActive(true);
+        }
+
+        private void PlaceGhost(Vector2 screen)
+        {
+            if (_ghostRoot == null) return;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_pixels, screen, null, out var local)) return;
+            int inner = _style.slotTexels - _style.iconInsetTexels * 2;
+            // Lifted two texels above the pointer, as if held.
+            _ghostRoot.anchoredPosition = new Vector2(Mathf.Floor(local.x - inner * 0.5f), Mathf.Floor(local.y - inner * 0.5f + 2f));
+        }
+
+        // ── Hit tests (also used by WorldDropInteractor) ───────────────────
+
+        private int HitTestSlot(Vector2 screen)
+        {
+            for (int i = 0; i < _bagViews.Length; i++)
+                if (RectTransformUtility.RectangleContainsScreenPoint(_bagViews[i].Root, screen, null))
+                    return i;
+            for (int i = 0; i < _equipViews.Length; i++)
+                if (RectTransformUtility.RectangleContainsScreenPoint(_equipViews[i].Root, screen, null))
+                    return EquipBase + i;
+            return -1;
+        }
+
+        /// <summary>
+        /// True when the window is open AND the given screen-space point falls inside it. Used by
+        /// world-drop drags to detect a drop-into-inventory gesture.
         /// </summary>
         public bool IsScreenPointOverPanel(Vector2 screenPos)
         {
@@ -141,128 +274,118 @@ namespace Valkur.Gameplay.Inventory
         }
 
         /// <summary>
-        /// Returns the index of the slot whose rect contains <paramref name="screenPos"/>,
-        /// or -1 if no slot is hit (or the panel isn't visible). Used by
-        /// <c>WorldDropInteractor</c> to honour "deposit in the cell I want".
+        /// The unified index of the slot under <paramref name="screenPos"/>, or -1 (also -1 when
+        /// the window is closed or collapsed). Used by <c>WorldDropInteractor</c> to honour
+        /// "deposit in the cell I want".
         /// </summary>
         public int HitTestSlotByScreenPos(Vector2 screenPos)
         {
-            if (!_visible) return -1;
-            if (_slotObjects != null)
-            {
-                for (int i = 0; i < _slotObjects.Length; i++)
-                {
-                    var go = _slotObjects[i];
-                    if (go == null) continue;
-                    var rt = go.GetComponent<RectTransform>();
-                    if (rt == null) continue;
-                    if (RectTransformUtility.RectangleContainsScreenPoint(rt, screenPos, null))
-                        return i;
-                }
-            }
-            if (_equipObjects != null)
-            {
-                for (int i = 0; i < _equipObjects.Length; i++)
-                {
-                    var go = _equipObjects[i];
-                    if (go == null) continue;
-                    var rt = go.GetComponent<RectTransform>();
-                    if (rt == null) continue;
-                    if (RectTransformUtility.RectangleContainsScreenPoint(rt, screenPos, null))
-                        return Inventory.DefaultBagCapacity + i;
-                }
-            }
-            return -1;
+            if (!_visible || _collapsed) return -1;
+            return HitTestSlot(screenPos);
         }
 
-        // Yellow border drawn on the slot that AddItem would deposit into,
-        // refreshed every frame by WorldDropInteractor while a world drag is
-        // active. Reuses each slot's existing Outline component to avoid extra
-        // GameObjects — only color/distance get swapped.
-        private int _depositTargetSlot = -1;
-        private static readonly Color s_depositTargetColor    = new Color(1.00f, 0.86f, 0.20f, 1f);
-        private static readonly Vector2 s_depositTargetOffset = new Vector2(3f, 3f);
-
         /// <summary>
-        /// Tag a slot as the current deposit target so it stands out with a
-        /// yellow border. Pass -1 to clear. Slot indices outside the grid are
-        /// ignored. Idempotent and per-frame safe.
+        /// Marks the slot a world drag would deposit into. Pass -1 to clear. Idempotent and safe to
+        /// call every frame.
         /// </summary>
         public void SetDepositTargetSlot(int slotIndex)
         {
-            if (slotIndex == _depositTargetSlot) return;
-
-            ResetSlotOutline(_depositTargetSlot);
-            _depositTargetSlot = slotIndex;
-            ApplyDepositOutline(_depositTargetSlot);
+            if (slotIndex == _depositTarget) return;
+            _depositTarget = slotIndex;
+            UpdateMarks();
         }
 
-        private Outline GetOutlineByIndex(int unifiedIndex)
+        // ── Marks: one pass decides every slot's highlight ─────────────────
+
+        private void UpdateMarks()
         {
-            if (unifiedIndex < 0) return null;
-            if (unifiedIndex < Inventory.DefaultBagCapacity)
-                return (_slotOutlines != null && unifiedIndex < _slotOutlines.Length)
-                    ? _slotOutlines[unifiedIndex] : null;
-            int eq = unifiedIndex - Inventory.DefaultBagCapacity;
-            return (_equipOutlines != null && eq >= 0 && eq < _equipOutlines.Length)
-                ? _equipOutlines[eq] : null;
+            if (!_built) return;
+            for (int i = 0; i < _bagViews.Length; i++) _bagViews[i].SetMark(MarkFor(i), _theme);
+            for (int i = 0; i < _equipViews.Length; i++) _equipViews[i].SetMark(MarkFor(EquipBase + i), _theme);
         }
 
-        private void ResetSlotOutline(int unifiedIndex)
+        private InventorySlotMark MarkFor(int unified)
         {
-            var ol = GetOutlineByIndex(unifiedIndex);
-            if (ol == null) return;
-            ol.effectColor    = TileEditorTheme.Border;
-            ol.effectDistance = new Vector2(1f, 1f);
+            if (unified == _depositTarget) return InventorySlotMark.HoverTarget;
+            if (IsDragging)
+            {
+                if (unified == _dragSource) return InventorySlotMark.None;
+                bool can = _playerInventory != null && CanDropOn(unified);
+                if (unified == _dragHover) return can ? InventorySlotMark.HoverTarget : InventorySlotMark.InvalidTarget;
+                // Only the equipment slot the held item belongs in is lit ahead of time; lighting
+                // all 25 bag slots gold would say nothing.
+                if (can && _playerInventory.IsEquipmentIndex(unified)) return InventorySlotMark.ValidTarget;
+                return InventorySlotMark.None;
+            }
+            if (unified == _selectedSlot) return InventorySlotMark.Selected;
+            if (unified == _hoverSlot && !SlotAt(unified).IsEmpty) return InventorySlotMark.Hover;
+            return InventorySlotMark.None;
         }
 
-        private void ApplyDepositOutline(int unifiedIndex)
+        private bool CanDropOn(int unified)
         {
-            var ol = GetOutlineByIndex(unifiedIndex);
-            if (ol == null) return;
-            ol.effectColor    = s_depositTargetColor;
-            ol.effectDistance = s_depositTargetOffset;
+            if (_dragItem == null) return false;
+            if (!_playerInventory.CanPlaceAt(unified, _dragItem)) return false;
+            // A swap puts the destination's item where the drag came from; that has to fit too.
+            var d = SlotAt(unified);
+            if (!d.IsEmpty && _playerInventory.IsEquipmentIndex(_dragSource) && d.Item != _dragItem)
+                return _playerInventory.CanPlaceAt(_dragSource, d.Item);
+            return true;
         }
 
-        private void DropSlotToWorld(int srcIndex, Vector3? worldDropPos = null)
+        // ── World drop ───────────────────────────────────────────────────
+
+        /// <param name="amount">How many to drop; 0 or less means the whole stack.</param>
+        private void DropSlotToWorld(int unified, Vector3? worldDropPos, int amount = 0)
         {
             if (_playerInventory == null) return;
-            if (srcIndex < 0 || srcIndex >= _playerInventory.Slots.Count) return;
-            var slot = _playerInventory.Slots[srcIndex];
+            var slot = SlotAt(unified);
             if (slot.IsEmpty) return;
 
             var item = slot.Item;
-            int qty  = slot.Quantity;
-            int removed = _playerInventory.RemoveItem(item, qty);
+            int qty = amount > 0 ? Mathf.Min(amount, slot.Quantity) : slot.Quantity;
+            BeginAction();
+            int removed;
+            if (_playerInventory.IsEquipmentIndex(unified))
+            {
+                _playerInventory.SetEquipmentSlot(unified - EquipBase, slot.Quantity - qty > 0 ? item : null,
+                                                  slot.Quantity - qty);
+                removed = qty;
+            }
+            else
+            {
+                int left = slot.Quantity - qty;
+                _playerInventory.SetSlot(unified, left > 0 ? item : null, left);
+                removed = qty;
+            }
+            EndAction();
             if (removed <= 0) return;
 
             var player = EntityRegistry.Player;
             if (player != null)
             {
-                // Drag-from-inventory passes the (clamped) cursor world position;
-                // the Q-key path passes null and falls back to a small random
-                // offset around the player so the drop doesn't stack on the foot.
+                // A drag passes the clamped cursor position; the key path passes null and falls
+                // back to a small random offset around the player so the drop doesn't stack on
+                // the foot.
                 Vector3 pos = worldDropPos
                               ?? player.transform.position
                                  + (Vector3)(Random.insideUnitCircle.normalized * 1.5f);
                 DropSystem.SpawnDrop(item, removed, pos);
             }
 
-            _selectedSlot = -1;
-            UpdateSlotHighlights();
-            UpdateTooltip();
+            OnDropped(unified);
+            if (_selectedSlot == unified && SlotAt(unified).IsEmpty) _selectedSlot = -1;
+            UpdateMarks();
         }
 
-        // Convert the pointer release position to a clamped world-space drop
-        // location. Uses the player's WorldDropInteractor to enforce the same
-        // interaction range that bounds drag-from-ground, so the player can
-        // always reach back to whatever they just placed.
+        // Converts the pointer release position to a clamped world-space drop location, using the
+        // player's WorldDropInteractor so the same reach bounds drag-from-ground and drop-to-ground.
         private Vector3 ResolveWorldDropPosition(PointerEventData ev)
         {
             var player = EntityRegistry.Player;
             Vector3 playerPos = player != null ? player.transform.position : Vector3.zero;
 
-            var cam = ev.pressEventCamera != null ? ev.pressEventCamera : Camera.main;
+            var cam = Camera.main;
             if (cam == null) return playerPos;
 
             Vector3 sp = new Vector3(ev.position.x, ev.position.y, -cam.transform.position.z);
@@ -277,56 +400,53 @@ namespace Valkur.Gameplay.Inventory
             return worldCursor;
         }
 
-        private void CreateDragGhost(ItemDefinition item)
+        // ── Sort and filter ────────────────────────────────────────────────
+
+        private void SortBag()
         {
-            if (item == null || _canvas == null) return;
-            DestroyDragGhost();
-
-            _dragGhost = new GameObject("DragGhost", typeof(RectTransform), typeof(CanvasGroup));
-            _dragGhost.transform.SetParent(_canvas.transform, false);
-            _dragGhostRt = _dragGhost.GetComponent<RectTransform>();
-            _dragGhostRt.sizeDelta = new Vector2(SLOT_PX, SLOT_PX);
-
-            var cg = _dragGhost.GetComponent<CanvasGroup>();
-            cg.blocksRaycasts = false;
-            cg.alpha = 0.85f;
-
-            _dragGhostImg = _dragGhost.AddComponent<Image>();
-            _dragGhostImg.sprite         = item.icon ?? item.iconSmall;
-            _dragGhostImg.preserveAspect = true;
-            _dragGhostImg.raycastTarget  = false;
+            if (_playerInventory == null) return;
+            BeginAction();
+            bool moved = _playerInventory.SortBag();
+            EndAction();
+            _selectedSlot = -1;
+            if (moved) OnSorted();
+            UpdateMarks();
         }
 
-        private void DestroyDragGhost()
+        private void SetTab(int tab)
         {
-            if (_dragGhost != null) Destroy(_dragGhost);
-            _dragGhost    = null;
-            _dragGhostImg = null;
-            _dragGhostRt  = null;
+            _activeTab = Mathf.Clamp(tab, 0, TabCategories.Length - 1);
+            ApplyTabs();
+            ApplyFilter();
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        //  Drop selected (Q key)
-        // ─────────────────────────────────────────────────────────────────────
-
-        private void DropSelectedItem()
+        private void ApplyTabs()
         {
-            DropSlotToWorld(_selectedSlot);
+            if (_tabFrame == null) return;
+            for (int i = 0; i < _tabFrame.Length; i++)
+            {
+                bool on = i == _activeTab;
+                _tabFrame[i].enabled = on;
+                _tabGlyph[i].color = on ? _theme.gold : _theme.textDim;
+            }
         }
 
-        private void OnDisable()
+        private void ApplyFilter()
         {
-            _toggleAction?.Disable();
-            _dropAction?.Disable();
+            if (_playerInventory == null) return;
+            var slots = _playerInventory.Slots;
+            for (int i = 0; i < _bagViews.Length; i++)
+            {
+                var item = i < slots.Count ? slots[i].Item : null;
+                _bagViews[i].SetFiltered(item != null && !MatchesTab(item, _activeTab));
+            }
         }
 
-        protected override void OnDestroy()
+        internal static bool MatchesTab(ItemDefinition item, int tab)
         {
-            UnsubscribePlayer();
-            DestroyDragGhost();
-            _toggleAction?.Dispose();
-            _dropAction?.Dispose();
-            base.OnDestroy();
+            if (item == null) return false;
+            int cat = tab >= 0 && tab < TabCategories.Length ? TabCategories[tab] : -1;
+            return cat < 0 || (int)item.GetCategory() == cat;
         }
     }
 }

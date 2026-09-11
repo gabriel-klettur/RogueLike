@@ -1,20 +1,24 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 namespace Valkur.Gameplay.Inventory
 {
     /// <summary>
-    /// Per-slot input handler attached to each main-grid slot in the inventory UI.
-    /// Forwards click / double-click / drag callbacks to <see cref="InventoryUI"/>.
-    /// Mirrors Python's combined click+drag behaviour
-    /// (single-click selects, double-click within 500 ms uses the item,
-    /// drag-onto-another-slot swaps/merges, drop outside panel = world drop).
+    /// Per-slot input for the inventory window, bag and equipment alike. Forwards to
+    /// <see cref="InventoryUI"/>:
+    /// <list type="bullet">
+    /// <item>hover — the item card opens after a short rest;</item>
+    /// <item>left click — select; double click — use or equip (the same verb right click has);</item>
+    /// <item>right click — equip, take off or use, whichever the item supports;</item>
+    /// <item>drag — move, swap or merge; Shift-drag takes half a stack, Ctrl-drag one; out of the
+    /// window — drop into the world.</item>
+    /// </list>
     /// </summary>
     public class InventorySlotDragHandler : MonoBehaviour,
-        IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
+        IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler,
+        IBeginDragHandler, IDragHandler, IEndDragHandler
     {
-        private const float DOUBLE_CLICK_SECONDS = 0.5f;
+        private const float DOUBLE_CLICK_SECONDS = 0.4f;
 
         public int SlotIndex { get; private set; }
         public InventoryUI Owner { get; private set; }
@@ -29,13 +33,18 @@ namespace Valkur.Gameplay.Inventory
 
         public void OnPointerClick(PointerEventData ev)
         {
-            if (Owner == null) return;
+            if (Owner == null || ev.dragging) return;
+            if (ev.button == PointerEventData.InputButton.Right)
+            {
+                Owner.ActivateSlot(SlotIndex);
+                return;
+            }
             if (ev.button != PointerEventData.InputButton.Left) return;
 
             float now = Time.unscaledTime;
             if (now - _lastClickTime <= DOUBLE_CLICK_SECONDS)
             {
-                Owner.UseSlot(SlotIndex);
+                Owner.ActivateSlot(SlotIndex);
                 _lastClickTime = -10f;
             }
             else
@@ -45,23 +54,16 @@ namespace Valkur.Gameplay.Inventory
             }
         }
 
+        public void OnPointerEnter(PointerEventData ev) => Owner?.OnSlotPointer(SlotIndex, true);
+        public void OnPointerExit(PointerEventData ev) => Owner?.OnSlotPointer(SlotIndex, false);
+
         public void OnBeginDrag(PointerEventData ev)
         {
-            if (Owner == null) return;
-            if (ev.button != PointerEventData.InputButton.Left) return;
+            if (Owner == null || ev.button != PointerEventData.InputButton.Left) return;
             Owner.BeginSlotDrag(SlotIndex, ev);
         }
 
-        public void OnDrag(PointerEventData ev)
-        {
-            if (Owner == null) return;
-            Owner.UpdateSlotDrag(ev);
-        }
-
-        public void OnEndDrag(PointerEventData ev)
-        {
-            if (Owner == null) return;
-            Owner.EndSlotDrag(SlotIndex, ev);
-        }
+        public void OnDrag(PointerEventData ev) => Owner?.UpdateSlotDrag(ev);
+        public void OnEndDrag(PointerEventData ev) => Owner?.EndSlotDrag(SlotIndex, ev);
     }
 }

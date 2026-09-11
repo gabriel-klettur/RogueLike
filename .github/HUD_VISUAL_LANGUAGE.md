@@ -220,13 +220,24 @@ prohibido**. Ninguna de esas ventanas puede cumplir R1, R3, R4, R5 ni R8 aunque 
 cada una se inventó su estilo o se lo pidió prestado al editor. R5 ("una sola casilla") en
 concreto es imposible para la casilla de objeto del inventario y de la tienda sin esto.
 
-Propuesta (no ejecutar mientras otra sesión esté editando alguno de estos ficheros):
+**Hecho el 2026-09-11** (coordinado con las sesiones de la barra de hechizos y del reproductor):
 
-1. `Valkur.UIKit` gana la referencia a `Valkur.Data` (Data solo ve Core: no hay ciclo).
-2. `git mv` del kit a `Gameplay/UIKit/Hud/` (namespace `Valkur.UIKit.Hud`), conservando GUIDs.
-   Los estilos siguen en `Data/UI/`.
-3. `HudArt` se parte en atlas base (piezas del lenguaje) y piezas de superficie (retrato del
-   panel, paper doll del inventario) para que el atlas común no crezca con cada ventana.
+1. `Valkur.UIKit` referencia a `Valkur.Data` (Data solo ve Core: no hay ciclo).
+2. `git mv` a `Gameplay/UIKit/Hud/` de `HudArt`, `HudPixelFont`, `HudPixelText`, `HudRect`,
+   `HudMoteLayer`, `HudTextureBaker`, `HudLifetime`, `HudFloatText`, `HudSlotHover`, `HudBar`,
+   `HudMedallion` y `StatusGlyphs` (ahora `public`). **El namespace NO cambió**
+   (`Valkur.UI.HUD`): el código de `Valkur.UI` compiló sin tocar un `using`. `HudTooltip`,
+   `HudAbilitySlot`, `HudPortrait` y `PlayerHUD` se quedan en `Valkur.UI` porque dependen de
+   tipos de allí.
+3. `HudArt` no se partió: las piezas propias del inventario viven en su propio atlas generado
+   (`Gameplay/Inventory/UI/InventoryArt.cs`), que es la misma idea sin tocar un fichero que dos
+   sesiones estaban usando. El atlas común no crece con cada ventana.
+4. `HudTheme` existe (`Data/UI/HudTheme.cs` + `Resources/UI/HudTheme.asset`) con la rampa de
+   rareza. De momento solo lo lee el inventario; `PlayerHudStyle`, `MinimapStyle` y
+   `WorldBarStyle` siguen con sus copias hasta su migración.
+5. `HudLayout.GameWindowRightInset` es la banda de R13: el borde derecho de una ventana de juego
+   al abrirse queda a la izquierda del instrumento más ancho de la derecha (la placa de música,
+   `HudLayout.MusicPanelWidth`).
 
 ### 5.3 Componentes que añaden las ventanas
 
@@ -262,8 +273,8 @@ Comprobaciones: `HudDialectGuardTests` (ningún fichero de `Gameplay/Inventory`,
 
 ### 5.5 Orden, después del de la sección 3
 
-1. El kit a UIKit (5.2), cuando la barra de hechizos nueva esté en `main`.
-2. Inventario (nota 2.1, el peor) — fases de su auditoría.
+1. ~~El kit a UIKit (5.2)~~ — hecho.
+2. ~~Inventario~~ — reconstruido el mismo día; ver su auditoría, sección 9.
 3. Tienda, que comparte casilla de objeto y tarjeta con el inventario.
 4. Chat y misiones; después crafteo, árboles, estadísticas y pausa.
 
