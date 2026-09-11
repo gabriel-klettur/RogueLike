@@ -170,8 +170,9 @@ namespace Valkur.Tests.EditMode.Game.UI
                 int kinds = System.Enum.GetValues(typeof(StatusEffectKind)).Length;
                 var sheet = WorldBarSheetLayout.Build(style.healthRowTexels, style.resourceRowTexels,
                                                       style.pipTexels, style.iconTexels, kinds);
-                Assert.AreEqual(9 + kinds, sheet.Pieces.Count,
-                    "nine structural pieces plus one glyph per status kind");
+                Assert.AreEqual(11 + kinds, sheet.Pieces.Count,
+                    "eleven structural pieces (two frames, plates, fills and caps, the solid, " +
+                    "the pip's ring and core) plus one glyph per status kind");
                 foreach (var p in sheet.Pieces)
                 {
                     Assert.Greater(p.Width, 0, p.Id);

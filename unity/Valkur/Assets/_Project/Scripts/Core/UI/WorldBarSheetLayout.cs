@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace Valkur.Core.UI
@@ -64,6 +64,8 @@ namespace Valkur.Core.UI
         public const string SOLID = "solid";
         public const string PIP_FRAME = "pip_frame";
         public const string PIP_CORE = "pip_core";
+        public const string CAPS_HEALTH = "caps_health";
+        public const string CAPS_RESOURCE = "caps_resource";
 
         /// <summary>Id of the glyph for status kind <paramref name="index"/>.</summary>
         public static string IconId(int index) => "icon_" + index;
@@ -103,7 +105,7 @@ namespace Valkur.Core.UI
             int icon = Mathf.Max(3, iconTexels);
             iconCount = Mathf.Max(0, iconCount);
 
-            var pieces = new List<WorldBarPieceRect>(9 + iconCount);
+            var pieces = new List<WorldBarPieceRect>(11 + iconCount);
             // Border widths are how much of a piece's END CAP survives stretching, so they are a
             // property of the ART, not a round number. Measured on the hand-drawn sheet at a
             // six-texel row height: the frame's ornate cap is three texels wide and the plate and
@@ -111,6 +113,7 @@ namespace Valkur.Core.UI
             // lost its bevelled end entirely, which is invisible in the sheet and obvious on a bar.
             var stretchBorder = new Vector4(3, 1, 3, 1);   // frames: ends and rims survive
             var flatBorder = new Vector4(2, 0, 2, 0);      // plate and fill: ends only
+            var capBorder = new Vector4(1, 0, 1, 0);       // end caps: one metal column each end
 
             int x = 0, shelfY = 0, shelfH = 0, width = 0;
 
@@ -141,6 +144,11 @@ namespace Valkur.Core.UI
             Add(FILL_HEALTH, STRETCH_WIDTH, healthRow - 2, flatBorder);
             Add(FILL_RESOURCE, STRETCH_WIDTH, resourceRow - 2, flatBorder);
             Add(SOLID, SOLID_SIZE, SOLID_SIZE, Vector4.zero);
+            // The metal end caps sit inside the outline, one column at each end of the interior.
+            // Their own piece rather than part of the frame because they are tinted by RANK while
+            // the outline is not, and a multiply can only give one sprite one colour.
+            Add(CAPS_HEALTH, STRETCH_WIDTH, healthRow - 2, capBorder);
+            Add(CAPS_RESOURCE, STRETCH_WIDTH, resourceRow - 2, capBorder);
 
             // Shelf 2 - the dash pip.
             NewShelf();

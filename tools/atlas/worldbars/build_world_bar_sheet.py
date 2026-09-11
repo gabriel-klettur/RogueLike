@@ -2,29 +2,27 @@
 """Reduce the hand-drawn world-bar art to the game's texel grid.
 
 The source is drawn at roughly thirty times the size the readout is rendered at: an icon is
-180x178 px and the game draws it at 10, where one texel is one screen pixel at the snapped
-camera. Nothing about that is wrong with the art -- it is drawn to be seen at HUD size too --
-but it means the reduction has to be deliberate.
+180x178 px and the game draws its glyph at 7 texels, where one texel is five screen pixels at the
+snapped camera. Nothing about that is wrong with the art -- it is drawn to be seen at HUD size
+too -- but it means the reduction has to be deliberate.
 
-WHAT THE COLOUR SHEET PROVIDES, AND WHAT IT DELIBERATELY DOES NOT
------------------------------------------------------------------
-Measured on `staging/ui/world_bars_colour_src.png`: eight framed icons, four pip corners, a pip
-core, and TWO BAR FRAMES THAT ARE 100% HOLLOW -- zero opaque texels across their whole central
-band. The greyscale sheet it replaces carried a frame, a plate and a fill per row; this one
-carries only the frames, because the interior is no longer a sprite. The empty part of the bar
-shows the world straight through and the filled part is drawn by a shader.
+WHAT THIS SCRIPT PAINTS: THE EIGHT STATUS GLYPHS, AND NOTHING ELSE
+-------------------------------------------------------------------
+The sheet also carries two ornate bar frames, pip brackets and a pip gem. They were painted into
+the overhead bars once and measured badly in game (frames 4/10, pip 3/10): a 725 px frame reduced
+90x is noise, painted art is drawn white so rank and dash states lost their colour, and the
+brackets became four dots. The overhead frames and pip are GENERATED now, in this sheet's palette
+-- slate outline, navy plate, brass caps, gold gem -- and the ornate originals are kept for the
+screen HUD, where they can be drawn at their native size.
 
-So this script paints TWELVE of the layout's seventeen cells and says so in the manifest. The
-importer assigns only what the manifest lists, which is the difference between "not painted, use
-the generated piece" and "painted transparent", two states a sheet alone cannot tell apart.
+So the manifest lists eight painted cells. The importer assigns only what the manifest lists and
+CLEARS every other slot, which is the difference between "not painted, use the generated piece"
+and "painted transparent", two states a sheet alone cannot tell apart.
 
-THE ICONS KEEP THEIR FRAMES, which reverses the greyscale pipeline's decision and is a
-consequence of colour rather than a change of mind. Cropping to the bare glyph bought resolution
-when every glyph was white: it took the readable size from 12 texels to 8. These glyphs carry
-their own hue, and measured at 8, 10, 12 and 14 the colour does most of the identifying work --
-at 10 all eight read with their gold frames intact, and the only genuinely confusable pair is
-Poison against Root, both green, separated by silhouette density. The frame is also part of this
-art's identity in a way the greyscale one's was not.
+THE ICONS LOSE THEIR FRAMES AND GAIN AN OUTLINE. The framed icon needed ten texels to read and
+then outweighed the health bar under it. The glyph alone, with a one-texel dark outline baked
+around it, reads at seven -- all eight silhouettes survive there, and at six the snowflake is a
+blob -- and the outline does what the frame did, separating the glyph from any ground.
 
 Usage:
     python tools/atlas/worldbars/build_world_bar_sheet.py [--preview]
@@ -37,6 +35,7 @@ Then run  Valkur > UI > Import World Bar Skin  in Unity.
 from __future__ import annotations
 
 import argparse
+import colorsys
 import json
 import os
 import sys
@@ -83,7 +82,13 @@ FRAME_RESOURCE = (807, 574, 531, 108)
 HEALTH_ROW   = 6   # texels, frame included
 RESOURCE_ROW = 4
 PIP          = 6
-ICON         = 10  # measured: 8 identifies by colour alone, 10 by colour AND silhouette
+ICON         = 9   # a 7-texel glyph plus its 1-texel outline; see build_icon
+GLYPH_MARGIN = 0.15  # fraction of the icon box that is frame, cropped away on every side
+OUTLINE_RGBA = (10, 13, 18, 255)
+# Slow's clock is drawn in the same pale cyan as Freeze's snowflake, and hue was the only thing
+# separating the pair at this size. Royal blue keeps it "cold" and puts a luminance gap between
+# the two, which is what a colour-blind player can actually see.
+RECOLOUR = {"slow": 0.62}
 GUTTER       = 1
 STRETCH_W    = 8   # nominal width of a 9-sliced piece; only its border columns survive
 FRAME_BORDER = 3   # must match WorldBarSheetLayout's stretchBorder
@@ -111,10 +116,57 @@ def _resize_rgba(src: Image.Image, w: int, h: int) -> Image.Image:
     return small
 
 
+def _recolour(icon: Image.Image, hue: float) -> Image.Image:
+    """Move every saturated texel to `hue`, keeping its saturation and value."""
+    px = icon.load()
+    for yy in range(icon.height):
+        for xx in range(icon.width):
+            r, g, b, a = px[xx, yy]
+            if a == 0:
+                continue
+            h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+            if s > 0.25:
+                rr, gg, bb = colorsys.hsv_to_rgb(hue, s, v)
+                px[xx, yy] = (int(rr * 255), int(gg * 255), int(bb * 255), a)
+    return icon
+
+
 def build_icon(img: Image.Image, box, size: int) -> Image.Image:
-    """A framed icon, whole. No glyph extraction: this art's gold frame is part of the icon."""
-    _, x, y, w, h = box
-    return _resize_rgba(img.crop((x, y, x + w, y + h)), size, size)
+    """The GLYPH of an icon, cropped out of its frame and given a one-texel dark outline.
+
+    The framed icon at ten texels was 50 screen px against a 30 px health bar and read as the
+    primary thing over the character; at seven, frame included, it went to mush. Cropping the
+    frame away gives the glyph the whole cell: measured at 6, 7 and 10, seven is where all eight
+    silhouettes survive (at six the snowflake is a blob). The outline is baked here rather than
+    drawn by the game so the glyph and its outline cannot be told apart by the batcher.
+    """
+    name, x, y, w, h = box
+    glyph = size - 2
+    m = int(w * GLYPH_MARGIN)
+    t = img.crop((x + m, y + m, x + w - m, y + h - m)).resize((glyph, glyph), Image.BOX)
+    px = t.load()
+    mask = [[False] * glyph for _ in range(glyph)]
+    for yy in range(glyph):
+        for xx in range(glyph):
+            r, g, b, a = px[xx, yy]
+            lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
+            # Keep the bright, saturated glyph; drop the frame's navy backing.
+            mask[yy][xx] = a >= 140 and (lum > 70 or max(r, g, b) - min(r, g, b) > 60)
+            px[xx, yy] = (r, g, b, 255)
+    out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    for yy in range(glyph):
+        for xx in range(glyph):
+            if mask[yy][xx]:
+                for dx in (-1, 0, 1):
+                    for dy in (-1, 0, 1):
+                        out.putpixel((xx + 1 + dx, yy + 1 + dy), OUTLINE_RGBA)
+    for yy in range(glyph):
+        for xx in range(glyph):
+            if mask[yy][xx]:
+                out.putpixel((xx + 1, yy + 1), px[xx, yy])
+    if name in RECOLOUR:
+        out = _recolour(out, RECOLOUR[name])
+    return out
 
 
 def build_sliced(img: Image.Image, box, width: int, height: int, border: int) -> Image.Image:
@@ -173,17 +225,14 @@ def main() -> None:
     inner_h = HEALTH_ROW - 2
     inner_r = RESOURCE_ROW - 2
 
-    # What this sheet paints. The five it does NOT paint - both plates, both fills and the plain
-    # square - are absent on purpose: the bar's interior is transparent and its filled part is
-    # drawn by a shader, so a painted plate would be exactly the thing the design removes.
-    painted = {
-        "frame_health":   build_sliced(img, FRAME_HEALTH,   STRETCH_W, HEALTH_ROW,   FRAME_BORDER),
-        "frame_resource": build_sliced(img, FRAME_RESOURCE, STRETCH_W, RESOURCE_ROW, FRAME_BORDER),
-        "pip_frame":      composite_pip_ring(img, PIP),
-        "pip_core":       _resize_rgba(img.crop((PIP_CORE[0], PIP_CORE[1],
-                                                 PIP_CORE[0] + PIP_CORE[2],
-                                                 PIP_CORE[1] + PIP_CORE[3])), PIP - 2, PIP - 2),
-    }
+    # What this sheet paints: the eight status glyphs, and nothing else. The frames and the pip
+    # were painted once and measured at 4/10 and 3/10 in game: reduced 90x from 725 px the ornate
+    # frame became noise with an opaque interior, painted art is drawn white so the rank tint
+    # and the dash states had nothing to colour, and the pip's brackets reduced to four dots.
+    # They are GENERATED now in the sheet's palette (slate outline, navy plate, brass caps,
+    # gold gem), which is what lets them be tinted by rank and animated. build_sliced and
+    # composite_pip_ring are kept for the screen HUD, where the art is drawn at native size.
+    painted = {}
     for i, box in enumerate(ICONS):
         painted[f"icon_{i}"] = build_icon(img, box, ICON)
 
@@ -198,6 +247,8 @@ def main() -> None:
         ("fill_health",    STRETCH_W,  inner_h),
         ("fill_resource",  STRETCH_W,  inner_r),
         ("solid",          SOLID_SIZE, SOLID_SIZE),
+        ("caps_health",    STRETCH_W,  inner_h),
+        ("caps_resource",  STRETCH_W,  inner_r),
         ("__shelf__",      0, 0),
         ("pip_frame",      PIP,        PIP),
         ("pip_core",       PIP - 2,    PIP - 2),

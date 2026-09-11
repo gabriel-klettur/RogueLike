@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using Valkur.Core;
 using Valkur.Core.UI;
 using Valkur.Data;
@@ -63,6 +63,9 @@ namespace Valkur.Gameplay.Combat
             _barWidth = WorldBarGeometry.Texels(widthTexels);
 
             float y = WorldBarGeometry.Texels(style.headMarginTexels);
+            // Negative on purpose: at -1 the resource row's bottom outline IS the health row's top
+            // outline, so the two rows are one instrument instead of two strips with a slot of the
+            // character's own pixels showing between them.
             float gap = WorldBarGeometry.Texels(style.rowGapTexels);
 
             // Health sits CLOSEST to the head. It is the value the player acts on, so it gets the
@@ -71,6 +74,9 @@ namespace Valkur.Gameplay.Combat
             bool notches = style.showQuarterNotches && widthTexels >= style.notchMinWidthTexels;
             _health.Layout(_barWidth, 0f, y + healthH * 0.5f, notches);
             y += healthH;
+            float top = y;
+            float seamWidth = 0f, seamY = 0f;
+            float cornerX = float.NaN, cornerY = 0f;
 
             bool manaOn = _wantsMana && _mana != null;
             bool dashOn = _wantsDash && _pip != null;
@@ -81,29 +87,47 @@ namespace Valkur.Gameplay.Combat
                 float centre = y + rowH * 0.5f;
 
                 float pipSide = dashOn ? _pip.Side : 0f;
-                float pipGap = dashOn && manaOn ? WorldBarGeometry.TEXEL : 0f;
+                float t = WorldBarGeometry.TEXEL;
+                if (style.rowGapTexels < 0)
+                {
+                    seamWidth = _barWidth;
+                    seamY = y + t * 0.5f;
+                }
 
                 if (manaOn)
                 {
-                    int manaTexels = widthTexels
-                                     - WorldBarGeometry.TexelsOf(pipSide)
-                                     - WorldBarGeometry.TexelsOf(pipGap);
+                    // The mana bar runs right up to the pip: its outline and the pip's sit side by
+                    // side, so the row is one closed frame with no ground showing through it.
+                    int manaTexels = widthTexels - WorldBarGeometry.TexelsOf(pipSide);
                     manaTexels = MakeEvenDown(Mathf.Max(4, manaTexels));
                     float manaW = WorldBarGeometry.Texels(manaTexels);
                     // Left-aligned inside the row, so the pip owns the right end whether or not
                     // the mana bar happens to be an even number of texels narrower than the row.
                     float manaCentre = -_barWidth * 0.5f + manaW * 0.5f;
                     _mana.Layout(manaW, manaCentre, centre, notchesWanted: false);
+                    if (dashOn)
+                    {
+                        cornerX = -_barWidth * 0.5f + manaW - t * 0.5f;
+                        cornerY = y + rowH - t * 0.5f;
+                    }
                 }
 
                 if (dashOn)
-                    _pip.Layout(_barWidth * 0.5f - pipSide * 0.5f, centre);
+                {
+                    // Standing ON the row's floor rather than centred on it: the pip is taller than
+                    // the thin row, and centring it pushed its lower half into the health row. Stood
+                    // on the shared outline it rises above the row instead, as the stack's one
+                    // ornament — the corner a gem belongs in.
+                    _pip.Layout(_barWidth * 0.5f - pipSide * 0.5f, y + pipSide * 0.5f);
+                    top = Mathf.Max(top, y + pipSide);
+                }
 
                 y += rowH;
+                top = Mathf.Max(top, y);
             }
 
-            y += gap;
-            _status.Layout(y + _status.Height * 0.5f);
+            _joints.Layout(seamWidth, seamY, cornerX, cornerY);
+            _status.Layout(top + WorldBarGeometry.Texels(style.statusGapTexels) + _status.Height * 0.5f);
 
             PushAlpha();
         }
@@ -119,9 +143,10 @@ namespace Valkur.Gameplay.Combat
         /// health bar of a monster standing at the back drew over the health bar of one standing
         /// in front. Deriving it means two bars sort the way their owners do.</para>
         ///
-        /// <para>The rig's thirteen slots span 0.13 world units of Y granularity, so two creatures
-        /// standing closer than that on Y can interleave their bars — which is bounded, local, and
-        /// strictly better than the constant that gave them no order at all.</para>
+        /// <para>The rig's <see cref="SORT_SPAN"/> slots span about 0.3 world units of Y
+        /// granularity, so two creatures standing closer than that on Y can interleave their bars
+        /// — which is bounded, local, and strictly better than the constant that gave them no order
+        /// at all.</para>
         /// </summary>
         private void SyncSorting()
         {
@@ -133,7 +158,11 @@ namespace Valkur.Gameplay.Combat
             _health.SetSortingBase(_sortBase + SORT_HEALTH);
             _mana?.SetSortingBase(_sortBase + SORT_RESOURCE);
             _pip?.SetSortingBase(_sortBase + SORT_PIP);
+            _joints.SetSortingBase(_sortBase + SORT_JOINT);
             _status.SetSortingBase(_sortBase + SORT_STATUS);
+            // The sparks too: left at their construction order they sat a thousand below the bars
+            // they were thrown off, i.e. under every readout in the scene.
+            _sparks?.SetSortingOrder(_sortBase + SORT_SPARKS);
         }
 
         /// <summary>Push the palette for the current rank into every row.</summary>
@@ -143,21 +172,26 @@ namespace Valkur.Gameplay.Combat
             var style = WorldBarStyle.Active;
 
             Color fill = _hasColourOverride ? _healthFillOverride : style.HealthFor(_rank);
-            Color low = _hasColourOverride ? _healthLowOverride : style.healthLow;
-            Color frame = style.FrameFor(_rank);
+            Color low = _hasColourOverride ? _healthLowOverride : style.LowFor(_rank);
+            Color cap = style.CapFor(_rank);
+            Color halo = style.HaloFor(_rank);
 
-            _health.SetColours(fill, low, style.healthChip, frame, style.plate, style.notch,
+            _health.SetColours(fill, low, style.healthChip, style.outline, style.plate, style.notch,
                                style.lowThreshold);
+            _health.SetRankColours(cap, halo, style.lowPulse);
             _health.SetPlateVisible(style.drawPlate);
 
             // The mana row never turns "low": running out of mana is a resource decision, not a
             // warning, and a second colour changing under the health bar would compete with the
-            // one that is.
-            _mana?.SetColours(style.mana, style.mana, style.manaSpent, frame, style.plate,
+            // one that is. It carries the rank's caps but not its halo — one halo per creature
+            // is a statement, two is a pattern.
+            _mana?.SetColours(style.mana, style.mana, style.manaSpent, style.outline, style.plate,
                               style.notch, 0f);
+            _mana?.SetRankColours(cap, Color.clear, style.lowPulse);
             _mana?.SetPlateVisible(style.drawPlate);
 
-            _pip?.SetColours(style.dashReady, style.dashCharging, frame);
+            _pip?.SetColours(style.dashReady, style.dashCharging, style.outline, style.plate);
+            _joints.SetColour(style.outline);
         }
     }
 

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using Valkur.Core.UI;
 
 namespace Valkur.Data
@@ -61,8 +61,15 @@ namespace Valkur.Data
         [Tooltip("Total height of the resource row (mana + dash pip), frame included.")]
         [Range(3, 8)] public int resourceRowTexels = 4;
 
-        [Tooltip("Blank texels between two rows.")]
-        [Range(0, 4)] public int rowGapTexels = 1;
+        [Tooltip("Texels between the health row and the resource row. MINUS ONE is the shipped " +
+                 "value and means the two rows SHARE one outline row, so the stack reads as one " +
+                 "instrument. Measured with a one-texel gap instead, the gap showed the character's " +
+                 "own pixels through a slot in the middle of the readout, which read as dirt.")]
+        [Range(-1, 4)] public int rowGapTexels = -1;
+
+        [Tooltip("Blank texels between the top of the bars (the dash pip included) and the row " +
+                 "of status icons above them.")]
+        [Range(0, 4)] public int statusGapTexels = 1;
 
         [Tooltip("Blank texels between the top of the body sprite and the first row.")]
         [Range(0, 8)] public int headMarginTexels = 1;
@@ -70,32 +77,34 @@ namespace Valkur.Data
         [Tooltip("Side of the square dash pip that sits at the right end of the resource row.")]
         [Range(3, 8)] public int pipTexels = 6;
 
-        [Tooltip("Side of a status icon. The hand-drawn glyphs need EIGHT to be told apart - " +
-                 "measured by reducing them to 5, 6, 8 and 10 and looking: at 5 all eight are " +
-                 "indistinct, at 6 three of them read, at 8 all of them do. Their ornate frames " +
-                 "are dropped in the reduction, which is what buys that: the glyph is only " +
-                 "46-64% of the drawn icon, so cropping to it nearly doubles the resolution " +
-                 "available to the part that carries the meaning. " +
-                 "TEN with the COLOUR sheet, which keeps its gold frames: measured at 8, 10, 12 " +
-                 "and 14, colour does most of the identifying - at 8 the eight are told apart by " +
-                 "hue alone with the silhouettes gone to mush, and at 10 by hue AND shape. The " +
-                 "only genuinely confusable pair is Poison against Root, both green, and 10 is " +
-                 "where their silhouettes separate.")]
-        [Range(4, 12)] public int iconTexels = 10;
+        [Tooltip("Side of a status icon cell, its one-texel dark outline included. NINE: a " +
+                 "seven-texel glyph plus the outline. Measured on the colour sheet at 6, 7 and 10: " +
+                 "at 6 the snowflake collapses into a blob; at 10 with the sheet's own gold frames " +
+                 "the icons were 50 px against a 30 px health bar and read as the primary thing " +
+                 "over the character. The glyph alone, cropped out of its frame and given a dark " +
+                 "outline, keeps all eight silhouettes at seven texels and weighs a third less.")]
+        [Range(4, 12)] public int iconTexels = 9;
 
-        [Tooltip("Blank texels between two status icons.")]
-        [Range(0, 4)] public int iconGapTexels = 1;
+        [Tooltip("Blank texels between two status icons. Zero: each glyph carries its own dark " +
+                 "outline, which already separates it from its neighbour.")]
+        [Range(0, 4)] public int iconGapTexels = 0;
 
         [Tooltip("How many status icons are drawn before the row collapses into an overflow pip. " +
-                 "A row wider than the creature it describes stops being a readout.")]
-        [Range(1, 8)] public int maxIcons = 4;
+                 "THREE keeps the row about as wide as the health bar under it; four made it " +
+                 "2.2x the character's own width and turned a readout into a second silhouette.")]
+        [Range(1, 8)] public int maxIcons = 3;
 
-        [Tooltip("Draw the dark recess behind the fill. OFF leaves the bar's empty part fully " +
-                 "transparent, so the world shows through and the FRAME becomes the scale the eye " +
-                 "measures the fill against - which is how a glass-tube bar reads, and what the " +
-                 "hollow hand-drawn frames were made for. The cost is real and was stated before " +
-                 "it was chosen: over pale ground an empty bar has no contrast of its own.")]
-        public bool drawPlate = false;
+        [Tooltip("Drain the bottom row of each status tile with its remaining time, in the " +
+                 "status's own hue. It lives inside the tile, so it costs no height; measured as a " +
+                 "row of its own it was a cream strip the width of the health bar.")]
+        public bool iconDurationLines = true;
+
+        [Tooltip("Draw the dark translucent recess behind the fill. It is what the fill's " +
+                 "contrast is measured against: with it OFF the empty part of the bar showed the " +
+                 "ground, and the hostile red measured 1.09:1 against cobblestone - the same " +
+                 "luminance, i.e. readable by hue alone and invisible to a colour-blind player. " +
+                 "Translucent rather than opaque, so the world still shows faintly through.")]
+        public bool drawPlate = true;
 
         [Tooltip("Draw quarter marks across the health row. They are what lets the bar be read " +
                  "without relying on its colour, which is half of the colour-blind problem.")]
@@ -106,52 +115,75 @@ namespace Valkur.Data
 
         // -- Colour ----------------------------------------------------------
 
-        [Header("Colour - plate and frame")]
-        [Tooltip("The recess the fill sits in. Deliberately well above the frame's value: the " +
-                 "first live capture had them at 0.07 and 0.05, one percent of a channel apart, " +
-                 "and the whole readout rendered as a single black slab with no frame in it - " +
-                 "the exact failure the old bars had, reintroduced by picking two dark colours.")]
-        public Color plate = new Color(0.15f, 0.15f, 0.19f, 0.97f);
+        [Header("Colour - outline, plate and rank")]
+        [Tooltip("The one-texel outline round every row. Near black, and the SAME for every " +
+                 "rank: it is what separates the bar from any ground behind it, pale cobblestone " +
+                 "and dark foliage alike, so it cannot also be the thing that changes with rank. " +
+                 "Rank lives in the metal end caps and the halo below.")]
+        public Color outline = new Color(0.04f, 0.05f, 0.07f, 1f);
 
-        [Tooltip("Frame of an ordinary creature's bar. Near black, so it reads as an outline " +
-                 "against both the plate inside it and the world behind it.")]
-        public Color frameNormal = new Color(0.02f, 0.02f, 0.03f, 0.98f);
+        [Tooltip("The recess the fill sits in: the navy of the painted sheet's own interiors, " +
+                 "translucent. Its job is contrast - every fill colour must stand at least 3:1 " +
+                 "against it - and WorldBarContrastTests measures that over the real ground. " +
+                 "Alpha 0.88: at 0.74 the pixels of whatever stood behind the bar (the " +
+                 "character's own helmet, most of the time) showed through the empty part, and " +
+                 "the missing health read as texture instead of as a calm recess.")]
+        public Color plate = new Color(0.08f, 0.11f, 0.16f, 0.88f);
 
-        [Tooltip("Frame of an ally's bar.")]
-        public Color frameAlly = new Color(0.35f, 0.80f, 0.45f, 0.95f);
+        [Tooltip("What the outline beats toward while health is low. A ring that pulses warm is " +
+                 "read from the corner of the eye; a fill that changes colour is not.")]
+        public Color lowPulse = new Color(1f, 0.36f, 0.18f, 1f);
 
-        [Tooltip("Frame of an elite's bar.")]
-        public Color frameElite = new Color(0.80f, 0.80f, 0.88f, 0.95f);
+        [Tooltip("Metal of the two end caps on the player's own bar: the brass of the sheet's " +
+                 "rivets. Every rank gets its own metal, so rank reads without a legend.")]
+        public Color capPlayer = new Color(0.95f, 0.72f, 0.34f, 1f);
+        public Color capAlly = new Color(0.42f, 0.84f, 0.68f, 1f);
+        public Color capNormal = new Color(0.56f, 0.60f, 0.66f, 1f);
+        public Color capElite = new Color(0.90f, 0.94f, 1f, 1f);
+        public Color capBoss = new Color(1f, 0.80f, 0.24f, 1f);
 
-        [Tooltip("Frame of a boss's bar.")]
-        public Color frameBoss = new Color(0.95f, 0.78f, 0.25f, 1f);
-
-        [Tooltip("Frame of the player's own bar.")]
-        public Color framePlayer = new Color(0.02f, 0.02f, 0.04f, 0.98f);
+        [Tooltip("A one-texel ring OUTSIDE the outline, for the ranks that must be picked out of " +
+                 "a crowd. Alpha 0 draws none - an ordinary monster and the player carry no halo, " +
+                 "so a halo always means something.")]
+        public Color haloAlly = new Color(0.40f, 0.90f, 0.66f, 0.95f);
+        public Color haloElite = new Color(0.92f, 0.95f, 1f, 0.95f);
+        public Color haloBoss = new Color(1f, 0.78f, 0.20f, 1f);
 
         [Header("Colour - health")]
-        public Color healthPlayer = new Color(0.30f, 0.88f, 0.34f, 1f);
-        public Color healthAlly = new Color(0.36f, 0.85f, 0.52f, 1f);
-        public Color healthHostile = new Color(0.86f, 0.24f, 0.22f, 1f);
+        [Tooltip("Each fill colour is ONE decision: WorldBarPalette derives the highlight, " +
+                 "shadow and leading edge from it with a hue-shifted ramp.")]
+        public Color healthPlayer = new Color(0.31f, 0.84f, 0.40f, 1f);
+        public Color healthAlly = new Color(0.26f, 0.80f, 0.70f, 1f);
+        public Color healthHostile = new Color(0.90f, 0.24f, 0.22f, 1f);
 
-        [Tooltip("What a bar turns into below the low threshold. A warning, not a second identity.")]
-        public Color healthLow = new Color(0.96f, 0.72f, 0.16f, 1f);
+        [Tooltip("What an ALLY's bar turns into below the low threshold. A warning, not a second " +
+                 "identity. Hostile bars do not switch at all: a monster about to die is not " +
+                 "news the player has to be warned about, and an amber hostile read as gold " +
+                 "beside the elite and boss caps.")]
+        public Color healthLow = new Color(1f, 0.70f, 0.18f, 1f);
+
+        [Tooltip("What the player's OWN bar turns into below the low threshold: green to red, the " +
+                 "one colour change every player already knows. Amber was tried first and read " +
+                 "as the same family as the brass caps and the gold dash stone beside it.")]
+        public Color healthLowPlayer = new Color(0.94f, 0.27f, 0.20f, 1f);
 
         [Tooltip("The delayed chunk left behind by a blow. Bright, so the eye catches the SIZE " +
                  "of the hit rather than only its outcome.")]
-        public Color healthChip = new Color(1f, 0.93f, 0.85f, 0.95f);
+        public Color healthChip = new Color(1f, 0.95f, 0.82f, 0.95f);
 
         [Range(0f, 1f), Tooltip("Fraction of max HP below which the bar switches to the low colour.")]
         public float lowThreshold = 0.3f;
 
         [Header("Colour - resources")]
-        public Color mana = new Color(0.36f, 0.55f, 1f, 1f);
+        public Color mana = new Color(0.30f, 0.52f, 1f, 1f);
 
         [Tooltip("The ghost of mana just spent. Same job as the health chip.")]
-        public Color manaSpent = new Color(0.75f, 0.86f, 1f, 0.9f);
+        public Color manaSpent = new Color(0.78f, 0.88f, 1f, 0.9f);
 
-        public Color dashReady = new Color(0.20f, 0.86f, 1f, 1f);
-        public Color dashCharging = new Color(0.32f, 0.55f, 0.68f, 1f);
+        [Tooltip("The dash pip when a charge is ready: the gold of the sheet's gem. Gold rather " +
+                 "than cyan, because cyan beside the blue mana bar is one channel away from it.")]
+        public Color dashReady = new Color(0.98f, 0.76f, 0.28f, 1f);
+        public Color dashCharging = new Color(0.52f, 0.40f, 0.16f, 1f);
 
         [Header("Colour - quarter marks")]
         public Color notch = new Color(0f, 0f, 0f, 0.55f);
@@ -218,7 +250,55 @@ namespace Valkur.Data
                  "instant the dash readout exists for produced no pixel at all.")]
         [Range(0f, 1f)] public float dashReadyFlashSeconds = 0.25f;
 
+        [Header("Particles - inside the fill")]
+        [Tooltip("Motes of light drifting along the fill toward its leading edge. They are what " +
+                 "turns a flat strip into something that reads as a charge of energy, and they " +
+                 "only exist where the fill does, so an emptying bar visibly loses its sparkle.")]
+        public bool fillMotes = true;
+
+        [Tooltip("One mote per this many texels of fill.")]
+        [Range(3, 20)] public int moteEveryTexels = 6;
+
+        [Tooltip("Drift speed of a mote, in texels per second.")]
+        [Range(0f, 20f)] public float moteSpeedTexels = 2.5f;
+
+        [Tooltip("Drift speed while the resource is regenerating. Ties the mana bar to the " +
+                 "regeneration aura around the body, which used to be the only sign of it.")]
+        [Range(0f, 40f)] public float moteBoostSpeedTexels = 9f;
+
+        [Range(0.1f, 6f)] public float moteTwinkleHz = 1.6f;
+
+        [Header("Particles - events")]
+        [Tooltip("Shards thrown off the chunk of health a blow removed.")]
+        [Range(0, 16)] public int sparksOnHit = 6;
+
+        [Tooltip("Motes rising out of the fill on a heal.")]
+        [Range(0, 16)] public int sparksOnHeal = 5;
+
+        [Tooltip("Sparks where mana was spent.")]
+        [Range(0, 16)] public int sparksOnSpend = 3;
+
+        [Tooltip("Sparks thrown out of the dash pip the moment the charge is back.")]
+        [Range(0, 16)] public int sparksOnDashReady = 6;
+
+        [Range(0.1f, 2f)] public float sparkLifeSeconds = 0.5f;
+
+        [Tooltip("Launch speed of an event spark, texels per second.")]
+        [Range(1f, 60f)] public float sparkSpeedTexels = 16f;
+
+        [Tooltip("Gravity on a shard, texels per second squared. Heal motes ignore it and rise.")]
+        [Range(0f, 200f)] public float sparkGravityTexels = 55f;
+
         [Header("Feel - visibility")]
+        [Tooltip("How fast the rig appears. Faster than it fades, on purpose: news should arrive " +
+                 "at once and leave slowly.")]
+        [Range(0.02f, 1f)] public float fadeInSeconds = 0.12f;
+
+        [Tooltip("The player's bars stay up while mana or the dash charge is still coming back, " +
+                 "not only while health is below full - a bar that vanishes with the mana at a " +
+                 "fifth leaves the player guessing whether they can cast.")]
+        public bool playerShowsWhileRecovering = true;
+
         [Tooltip("Seconds of nothing happening before the player's own bars fade out. They are " +
                  "duplicated by the corner HUD, so a permanent copy over the head is a quarter of " +
                  "the character's silhouette spent on news the player already has.")]
@@ -243,16 +323,28 @@ namespace Valkur.Data
         /// <summary>Resource row height in world units.</summary>
         public float ResourceRowHeight => WorldBarGeometry.Texels(resourceRowTexels);
 
-        /// <summary>The frame colour for a rank, without a switch at every call site.</summary>
-        public Color FrameFor(WorldBarRank rank)
+        /// <summary>The end-cap metal for a rank, without a switch at every call site.</summary>
+        public Color CapFor(WorldBarRank rank)
         {
             switch (rank)
             {
-                case WorldBarRank.Ally:   return frameAlly;
-                case WorldBarRank.Elite:  return frameElite;
-                case WorldBarRank.Boss:   return frameBoss;
-                case WorldBarRank.Player: return framePlayer;
-                default:                  return frameNormal;
+                case WorldBarRank.Ally:   return capAlly;
+                case WorldBarRank.Elite:  return capElite;
+                case WorldBarRank.Boss:   return capBoss;
+                case WorldBarRank.Player: return capPlayer;
+                default:                  return capNormal;
+            }
+        }
+
+        /// <summary>The halo ring for a rank; alpha 0 means the rank carries none.</summary>
+        public Color HaloFor(WorldBarRank rank)
+        {
+            switch (rank)
+            {
+                case WorldBarRank.Ally:  return haloAlly;
+                case WorldBarRank.Elite: return haloElite;
+                case WorldBarRank.Boss:  return haloBoss;
+                default:                 return Color.clear;
             }
         }
 
@@ -264,6 +356,20 @@ namespace Valkur.Data
                 case WorldBarRank.Player: return healthPlayer;
                 case WorldBarRank.Ally:   return healthAlly;
                 default:                  return healthHostile;
+            }
+        }
+
+        /// <summary>
+        /// What the health fill turns into below the low threshold, per rank. A hostile rank
+        /// answers its own fill colour, i.e. no switch.
+        /// </summary>
+        public Color LowFor(WorldBarRank rank)
+        {
+            switch (rank)
+            {
+                case WorldBarRank.Player: return healthLowPlayer;
+                case WorldBarRank.Ally:   return healthLow;
+                default:                  return HealthFor(rank);
             }
         }
 

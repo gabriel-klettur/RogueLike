@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace Valkur.Gameplay.Combat.Death
@@ -37,6 +37,12 @@ namespace Valkur.Gameplay.Combat.Death
         {
             public SpriteRenderer Renderer;
             public Color OriginalColor;
+
+            // The renderer's property block as it was BEFORE the spirit touched it. Restored
+            // verbatim on revive: writing OriginalColor into _Color instead left a colour frozen
+            // in the block for good, which the shader then multiplied into everything the
+            // renderer was coloured afterwards.
+            public MaterialPropertyBlock OriginalBlock;
         }
 
         private readonly List<CachedRenderer> _renderers = new List<CachedRenderer>();
@@ -113,9 +119,8 @@ namespace Valkur.Gameplay.Combat.Death
             {
                 var entry = _renderers[i];
                 if (entry.Renderer == null) continue;
-                entry.Renderer.GetPropertyBlock(_mpb);
-                _mpb.SetColor(s_ColorId, entry.OriginalColor);
-                entry.Renderer.SetPropertyBlock(_mpb);
+                entry.Renderer.SetPropertyBlock(
+                    entry.OriginalBlock == null || entry.OriginalBlock.isEmpty ? null : entry.OriginalBlock);
                 entry.Renderer.color = entry.OriginalColor;
             }
 
@@ -133,10 +138,17 @@ namespace Valkur.Gameplay.Combat.Death
             var found = GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
             for (int i = 0; i < found.Length; i++)
             {
+                // A readout under the player (the bars over the head) owns its own colours and is
+                // kept on screen precisely while the player is a spirit. See SpiritTintExempt.
+                if (found[i].GetComponentInParent<SpiritTintExempt>(true) != null) continue;
+
+                var block = new MaterialPropertyBlock();
+                found[i].GetPropertyBlock(block);
                 _renderers.Add(new CachedRenderer
                 {
                     Renderer = found[i],
                     OriginalColor = found[i].color,
+                    OriginalBlock = block,
                 });
             }
         }

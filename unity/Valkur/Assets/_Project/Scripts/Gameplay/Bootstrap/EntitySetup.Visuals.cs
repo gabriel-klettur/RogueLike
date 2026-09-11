@@ -98,11 +98,11 @@ namespace Valkur.Gameplay
             // straight back on the frame anything moves.
             playerBar.SetHideAtFullHp(WorldBarStyle.Active.playerBarsHideWhenIdle);
 
-            // World-space dash bar (above health bar) — Python parity
+            // The dash charge, drawn by the rig as a pip at the right end of the resource row.
             if (go.GetComponent<WorldDashBar>() == null)
                 go.AddComponent<WorldDashBar>();
 
-            // World-space mana bar (above dash bar) — Python parity
+            // The mana row, sharing its bottom outline with the health row under it.
             if (go.GetComponent<WorldManaBar>() == null)
                 go.AddComponent<WorldManaBar>();
 

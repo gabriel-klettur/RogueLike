@@ -1,5 +1,5 @@
-// Sprite/Tilemap shader that outputs the texture in pure Rec.601 luminance —
-// every pixel becomes (lum, lum, lum, alpha) regardless of source color, so
+﻿// Sprite/Tilemap shader that outputs the texture (times the renderer's own tint) in pure
+// Rec.601 luminance — every pixel becomes (lum, lum, lum, alpha) regardless of source hue, so
 // vivid yellows / reds / cyans actually go gray on the screen. Used by
 // SpiritWorldGrayscale to drain the world while the player is in spirit form;
 // the regular Sprites/Default + Tilemap.color route is multiplicative and
@@ -68,7 +68,13 @@ Shader "Valkur/SpriteDesaturate"
                 // Rec.601 luminance — close enough to perceived brightness and
                 // matches the "saturation -100" output URP's ColorAdjustments
                 // produces, so the look matches the previous global volume.
-                half lum = tex.r * 0.299h + tex.g * 0.587h + tex.b * 0.114h;
+                // The VERTEX colour is in the product. It used not to be, and two things went
+                // wrong at once: the world bars over a spirit's head are white generated art
+                // whose whole colour arrives as SpriteRenderer.color, so they drew as white
+                // slabs with a white outline; and the Dark roster's black-tinted twins, whose
+                // tint also lives on the renderer, drained to pale grey ghosts.
+                half3 rgb = tex.rgb * IN.color.rgb;
+                half lum = rgb.r * 0.299h + rgb.g * 0.587h + rgb.b * 0.114h;
                 // Honor renderer alpha (vertex color) for fades, and the
                 // texture's own alpha for cutouts.
                 half a = tex.a * IN.color.a;

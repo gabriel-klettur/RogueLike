@@ -214,19 +214,46 @@ namespace Valkur.Tests.EditMode.Game.UI
         }
 
         [Test]
-        public void EveryRank_HasAFrameAndAHealthColour()
+        public void EveryRank_HasCapsAndAHealthColour()
         {
             var style = ScriptableObject.CreateInstance<WorldBarStyle>();
             try
             {
                 foreach (WorldBarRank rank in System.Enum.GetValues(typeof(WorldBarRank)))
                 {
-                    Assert.Greater(style.FrameFor(rank).a, 0f, $"{rank} frame");
+                    Assert.Greater(style.CapFor(rank).a, 0f, $"{rank} caps");
                     Assert.Greater(style.HealthFor(rank).a, 0f, $"{rank} health");
                 }
-                Assert.AreNotEqual(style.FrameFor(WorldBarRank.Boss),
-                                   style.FrameFor(WorldBarRank.Normal),
-                    "A boss whose frame matches an ordinary creature's is a rank that says nothing.");
+            }
+            finally { Object.DestroyImmediate(style); }
+        }
+
+        /// <summary>
+        /// Every rank must be told apart from every other at a glance — by the pair of what its
+        /// caps are made of and whether it carries a halo. The painted frames broke this silently:
+        /// drawn white, the elite and the boss wore exactly an ordinary monster's bar.
+        /// </summary>
+        [Test]
+        public void EveryRank_IsDistinguishable_ByCapsAndHalo()
+        {
+            var style = ScriptableObject.CreateInstance<WorldBarStyle>();
+            try
+            {
+                var ranks = (WorldBarRank[])System.Enum.GetValues(typeof(WorldBarRank));
+                for (int i = 0; i < ranks.Length; i++)
+                    for (int j = i + 1; j < ranks.Length; j++)
+                    {
+                        Color ci = style.CapFor(ranks[i]), cj = style.CapFor(ranks[j]);
+                        float capDelta = Mathf.Abs(ci.r - cj.r) + Mathf.Abs(ci.g - cj.g) + Mathf.Abs(ci.b - cj.b);
+                        bool haloDiffers = (style.HaloFor(ranks[i]).a > 0.01f) != (style.HaloFor(ranks[j]).a > 0.01f)
+                                           || style.HaloFor(ranks[i]) != style.HaloFor(ranks[j]);
+                        Assert.IsTrue(capDelta > 0.25f || haloDiffers,
+                            $"{ranks[i]} and {ranks[j]} wear the same caps and the same halo.");
+                    }
+                Assert.Greater(style.HaloFor(WorldBarRank.Boss).a, 0f, "a boss carries a halo");
+                Assert.Greater(style.HaloFor(WorldBarRank.Elite).a, 0f, "an elite carries a halo");
+                Assert.AreEqual(0f, style.HaloFor(WorldBarRank.Normal).a,
+                    "an ordinary creature carries none, so a halo always means something");
             }
             finally { Object.DestroyImmediate(style); }
         }

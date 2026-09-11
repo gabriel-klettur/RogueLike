@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using Valkur.Core.UI;
 
@@ -59,6 +59,13 @@ namespace Valkur.Data
         [Tooltip("The dash pip's interior, filled from the floor. (pipTexels-2) square.")]
         public Sprite pipCore;
 
+        [Tooltip("Metal end caps of the health row: a one-texel column at each end, greyscale, " +
+                 "tinted by rank.")]
+        public Sprite capsHealth;
+
+        [Tooltip("Metal end caps of the resource row.")]
+        public Sprite capsResource;
+
         [Tooltip("Status glyphs indexed by StatusEffectKind's integer value: Burn, Poison, Stun, " +
                  "Freeze, Slow, Root, Vulnerable, Marked. iconTexels square, white on transparent.")]
         public Sprite[] statusIcons;
@@ -72,6 +79,7 @@ namespace Valkur.Data
                 if (plateHealth != null || plateResource != null) return false;
                 if (fillHealth != null || fillResource != null) return false;
                 if (solid != null || pipFrame != null || pipCore != null) return false;
+                if (capsHealth != null || capsResource != null) return false;
                 if (statusIcons != null)
                     for (int i = 0; i < statusIcons.Length; i++)
                         if (statusIcons[i] != null) return false;
@@ -100,6 +108,8 @@ namespace Valkur.Data
                 case WorldBarSheetLayout.SOLID:          return solid;
                 case WorldBarSheetLayout.PIP_FRAME:      return pipFrame;
                 case WorldBarSheetLayout.PIP_CORE:       return pipCore;
+                case WorldBarSheetLayout.CAPS_HEALTH:    return capsHealth;
+                case WorldBarSheetLayout.CAPS_RESOURCE:  return capsResource;
             }
 
             if (id.StartsWith("icon_") && int.TryParse(id.Substring(5), out int index))
@@ -129,6 +139,8 @@ namespace Valkur.Data
                 case WorldBarSheetLayout.SOLID:          solid = sprite; return;
                 case WorldBarSheetLayout.PIP_FRAME:      pipFrame = sprite; return;
                 case WorldBarSheetLayout.PIP_CORE:       pipCore = sprite; return;
+                case WorldBarSheetLayout.CAPS_HEALTH:    capsHealth = sprite; return;
+                case WorldBarSheetLayout.CAPS_RESOURCE:  capsResource = sprite; return;
             }
 
             if (!id.StartsWith("icon_") || !int.TryParse(id.Substring(5), out int index)) return;
@@ -149,6 +161,7 @@ namespace Valkur.Data
             plateHealth = plateResource = null;
             fillHealth = fillResource = null;
             solid = pipFrame = pipCore = null;
+            capsHealth = capsResource = null;
             statusIcons = null;
         }
     }

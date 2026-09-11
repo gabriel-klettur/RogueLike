@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Valkur.Gameplay.Combat
 {
@@ -59,6 +59,7 @@ namespace Valkur.Gameplay.Combat
 
             _lastMana = current;
             _rig.SetMana(current, max, change);
+            _rig.SetManaRegenerating(_mana.IsRegenerating);
         }
     }
 }

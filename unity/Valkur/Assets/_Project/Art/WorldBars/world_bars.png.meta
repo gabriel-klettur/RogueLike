@@ -369,8 +369,8 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 14
-        width: 10
-        height: 10
+        width: 9
+        height: 9
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -388,10 +388,10 @@ TextureImporter:
       name: icon_1
       rect:
         serializedVersion: 2
-        x: 11
+        x: 10
         y: 14
-        width: 10
-        height: 10
+        width: 9
+        height: 9
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -409,10 +409,10 @@ TextureImporter:
       name: icon_2
       rect:
         serializedVersion: 2
-        x: 22
+        x: 20
         y: 14
-        width: 10
-        height: 10
+        width: 9
+        height: 9
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -430,10 +430,10 @@ TextureImporter:
       name: icon_3
       rect:
         serializedVersion: 2
-        x: 33
+        x: 30
         y: 14
-        width: 10
-        height: 10
+        width: 9
+        height: 9
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -451,10 +451,10 @@ TextureImporter:
       name: icon_4
       rect:
         serializedVersion: 2
-        x: 44
+        x: 40
         y: 14
-        width: 10
-        height: 10
+        width: 9
+        height: 9
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -472,10 +472,10 @@ TextureImporter:
       name: icon_5
       rect:
         serializedVersion: 2
-        x: 55
+        x: 50
         y: 14
-        width: 10
-        height: 10
+        width: 9
+        height: 9
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -493,10 +493,10 @@ TextureImporter:
       name: icon_6
       rect:
         serializedVersion: 2
-        x: 66
+        x: 60
         y: 14
-        width: 10
-        height: 10
+        width: 9
+        height: 9
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -514,10 +514,10 @@ TextureImporter:
       name: icon_7
       rect:
         serializedVersion: 2
-        x: 77
+        x: 70
         y: 14
-        width: 10
-        height: 10
+        width: 9
+        height: 9
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -527,6 +527,48 @@ TextureImporter:
       bones: []
       spriteID: cf5478588c8f2d140800000000000000
       internalID: 4743126897691936252
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: caps_health
+      rect:
+        serializedVersion: 2
+        x: 59
+        y: 0
+        width: 8
+        height: 4
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 1, y: 0, z: 1, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a1b34e7f972002147bcb4f4c6a0f5d64
+      internalID: -975943522
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: caps_resource
+      rect:
+        serializedVersion: 2
+        x: 68
+        y: 0
+        width: 8
+        height: 2
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 1, y: 0, z: 1, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2529c8f3f4317774a928c2797672b2d1
+      internalID: 2141622296
       vertices: []
       indices: 
       edges: []
@@ -542,6 +584,8 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
+      caps_health: -975943522
+      caps_resource: 2141622296
       fill_health: 4517320639107759289
       fill_resource: 233112582278227924
       frame_health: -2297194410623772784

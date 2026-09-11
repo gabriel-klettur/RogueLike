@@ -104,6 +104,12 @@ namespace Valkur.Gameplay.Combat
                 ? WorldBarSheetLayout.FILL_HEALTH
                 : WorldBarSheetLayout.FILL_RESOURCE);
 
+        /// <summary>The metal end caps inside a row's outline, tinted by rank.</summary>
+        public static Sprite Caps(WorldBarRow row)
+            => Piece(row == WorldBarRow.Health
+                ? WorldBarSheetLayout.CAPS_HEALTH
+                : WorldBarSheetLayout.CAPS_RESOURCE);
+
         /// <summary>The dash pip's ring.</summary>
         public static Sprite PipFrame => Piece(WorldBarSheetLayout.PIP_FRAME);
 
@@ -216,6 +222,8 @@ namespace Valkur.Gameplay.Combat
                 hash = hash * 31 + IdOf(skin.solid);
                 hash = hash * 31 + IdOf(skin.pipFrame);
                 hash = hash * 31 + IdOf(skin.pipCore);
+                hash = hash * 31 + IdOf(skin.capsHealth);
+                hash = hash * 31 + IdOf(skin.capsResource);
                 if (skin.statusIcons != null)
                     for (int i = 0; i < skin.statusIcons.Length; i++)
                         hash = hash * 31 + IdOf(skin.statusIcons[i]);
@@ -357,6 +365,11 @@ namespace Valkur.Gameplay.Combat
                 case WorldBarSheetLayout.PIP_CORE:
                     FillRect(pixels, w, h, piece.Rect, Color.white);
                     return;
+
+                case WorldBarSheetLayout.CAPS_HEALTH:
+                case WorldBarSheetLayout.CAPS_RESOURCE:
+                    DrawCaps(pixels, w, h, piece.Rect);
+                    return;
             }
 
             if (piece.IconIndex >= 0)
@@ -386,45 +399,50 @@ namespace Valkur.Gameplay.Combat
         }
 
         /// <summary>
-        /// The recess. Darkest along its top edge, because in a top-lit scene a sunken surface
-        /// catches its own shadow there — one texel of gradient is what stops the plate reading
-        /// as a hole punched in the screen.
+        /// The recess. Its TOP row is darker, because in a top-lit scene a sunken surface catches
+        /// its own shadow there — one texel of gradient is what stops the plate reading as a hole
+        /// punched in the screen. Otherwise flat: the plate is tinted translucent navy and its job
+        /// is contrast, which a busy texture would only spend.
         /// </summary>
         private static void DrawPlate(Color32[] pixels, int w, int h, RectInt r)
         {
             for (int y = 0; y < r.height; y++)
             {
                 // y grows upward in texture space, so the TOP row is the last one.
-                bool top = y == r.height - 1;
-                float shade = top ? 0.55f : (r.height > 1 && y == 0 ? 1.15f : 1f);
+                bool top = y == r.height - 1 && r.height > 1;
+                float v = top ? 0.6f : 1f;
                 for (int x = 0; x < r.width; x++)
-                {
-                    // The two end columns are a touch darker so a full bar still shows where it
-                    // ends against a bright fill.
-                    float k = (x == 0 || x == r.width - 1) ? 0.8f : 1f;
-                    float v = Mathf.Clamp01(shade * k);
                     Set(pixels, w, h, r.x + x, r.y + y, new Color(v, v, v, 1f));
-                }
             }
         }
 
         /// <summary>
-        /// The fill: bright along the top, shaded along the bottom, with its RIGHT-most column
-        /// brightened. That column is the leading edge — the part of the bar the eye tracks while
-        /// it moves — and the 9-slice border keeps it one texel wide at every drawn width.
+        /// The fill body: flat white. Its shading is NOT baked here any more — a greyscale ramp
+        /// multiplied by one colour keeps every tone on the same hue line, which is what made the
+        /// bar read as programmer-drawn. The highlight row, shadow row and leading edge are
+        /// separate renderers tinted with <c>WorldBarPalette.Ramp</c>'s hue-shifted tones.
         /// </summary>
         private static void DrawFill(Color32[] pixels, int w, int h, RectInt r)
         {
+            FillRect(pixels, w, h, r, Color.white);
+        }
+
+        /// <summary>
+        /// The two metal end caps: one column at each end, lit from above — bright at the top,
+        /// mid in the body, dark at the foot — so a multiply by the rank's metal colour gives a
+        /// rounded post rather than a flat stripe. Transparent in between, so the fill shows.
+        /// </summary>
+        private static void DrawCaps(Color32[] pixels, int w, int h, RectInt r)
+        {
             for (int y = 0; y < r.height; y++)
             {
-                float t = r.height <= 1 ? 1f : (float)y / (r.height - 1);
-                float shade = Mathf.Lerp(0.62f, 1f, t);
-                for (int x = 0; x < r.width; x++)
-                {
-                    float k = x == r.width - 1 ? 1.25f : (x == 0 ? 0.88f : 1f);
-                    float v = Mathf.Clamp01(shade * k);
-                    Set(pixels, w, h, r.x + x, r.y + y, new Color(v, v, v, 1f));
-                }
+                float v = r.height <= 1 ? 1f
+                        : y == r.height - 1 ? 1f
+                        : y == 0 ? 0.55f
+                        : 0.8f;
+                var c = new Color(v, v, v, 1f);
+                Set(pixels, w, h, r.x, r.y + y, c);
+                Set(pixels, w, h, r.x + r.width - 1, r.y + y, c);
             }
         }
 

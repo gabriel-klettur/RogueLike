@@ -7,10 +7,8 @@
   "healthRowTexels": 6,
   "resourceRowTexels": 4,
   "pipTexels": 6,
-  "iconTexels": 10,
+  "iconTexels": 9,
   "painted": [
-    "frame_health",
-    "frame_resource",
     "icon_0",
     "icon_1",
     "icon_2",
@@ -18,9 +16,7 @@
     "icon_4",
     "icon_5",
     "icon_6",
-    "icon_7",
-    "pip_core",
-    "pip_frame"
+    "icon_7"
   ],
   "pieces": {
     "frame_health": [
@@ -65,6 +61,18 @@
       4,
       4
     ],
+    "caps_health": [
+      59,
+      28,
+      8,
+      4
+    ],
+    "caps_resource": [
+      68,
+      30,
+      8,
+      2
+    ],
     "pip_frame": [
       0,
       19,
@@ -79,51 +87,51 @@
     ],
     "icon_0": [
       0,
-      8,
-      10,
-      10
+      9,
+      9,
+      9
     ],
     "icon_1": [
-      11,
-      8,
       10,
-      10
+      9,
+      9,
+      9
     ],
     "icon_2": [
-      22,
-      8,
-      10,
-      10
+      20,
+      9,
+      9,
+      9
     ],
     "icon_3": [
-      33,
-      8,
-      10,
-      10
+      30,
+      9,
+      9,
+      9
     ],
     "icon_4": [
-      44,
-      8,
-      10,
-      10
+      40,
+      9,
+      9,
+      9
     ],
     "icon_5": [
-      55,
-      8,
-      10,
-      10
+      50,
+      9,
+      9,
+      9
     ],
     "icon_6": [
-      66,
-      8,
-      10,
-      10
+      60,
+      9,
+      9,
+      9
     ],
     "icon_7": [
-      77,
-      8,
-      10,
-      10
+      70,
+      9,
+      9,
+      9
     ]
   }
 }
