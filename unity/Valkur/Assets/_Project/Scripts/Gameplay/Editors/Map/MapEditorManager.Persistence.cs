@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Core.Coordinates;
 using Valkur.Gameplay.World;
 using Valkur.Infrastructure.Persistence.Repositories;
@@ -35,7 +36,24 @@ namespace Valkur.Gameplay.MapEditor
             => _persistenceWorldId = worldId;
 
         private IMapEditorZonesRepository ResolveZonesRepository()
-            => _zonesRepository ?? (_zonesRepository = new JsonFileMapEditorZonesRepository());
+        {
+            if (_zonesRepository != null) return _zonesRepository;
+
+            // DURING A TEST RUN THE DEFAULT IS MEMORY, NOT THE USER'S FILE — the same inversion
+            // ParticlesRuntimeEditor.GetOrCreateStore makes, for the same reason. A fixture that
+            // forgets SetZonesRepository used to fall through to the production
+            // persistentDataPath/map_editor_zones.json: the write was refused, quietly, by a guard
+            // that logged a warning nobody read, so the test passed while exercising nothing. That
+            // is the file the 2026-05-23 38-zone loss was about, and an orphaned runner filled its
+            // sidecar with fixture zones as recently as this week.
+            //
+            // Inverting the default means forgetting to inject is harmless AND the test actually
+            // round-trips through a repository that works, instead of through one that refuses.
+            _zonesRepository = WorldDataWriteGuard.TestRunActive && !WorldDataWriteGuard.IsAllowed
+                ? (IMapEditorZonesRepository)new InMemoryMapEditorZonesRepository()
+                : new JsonFileMapEditorZonesRepository();
+            return _zonesRepository;
+        }
 
         private void PersistZonesToDisk()
         {

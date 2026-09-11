@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Core.Coordinates;
 
 namespace Valkur.Infrastructure.Persistence.Repositories
@@ -60,7 +61,13 @@ namespace Valkur.Infrastructure.Persistence.Repositories
         /// in <c>[TearDown]</c>. Default-ctor writes go through the guard,
         /// override-path writes never do — that path is implicitly trusted.
         /// </summary>
-        public static bool AllowEditModeWritesToRealPath { get; set; }
+        public static bool AllowEditModeWritesToRealPath
+        {
+            // Backed by the shared guard so the per-test disarm clears this opt-in too. Two
+            // independent bools meant two places a fixture could leave a hole open.
+            get => WorldDataWriteGuard.AllowRealPathWritesFlag;
+            set => WorldDataWriteGuard.AllowRealPathWritesFlag = value;
+        }
 
         /// <summary>
         /// Re-arms the guard on every Play. A test that opted in and failed before its
@@ -107,6 +114,15 @@ namespace Valkur.Infrastructure.Persistence.Repositories
 
         public void WriteAtomic(WorldId worldId, string json)
         {
+            // The test-run guard runs FIRST and covers what the EditMode check below cannot: a
+            // PlayMode test, which has Application.isPlaying == true and was therefore never
+            // guarded here at all. An orphaned EditMode runner did fill this file's sidecar with
+            // fixture zones once already, and particles_instances.json lost 188 placed emitters
+            // to the same family the same week.
+            if (WorldDataWriteGuard.Refuse("map-editor-zones", PathFor(worldId),
+                                           isRealShippedPath: _rootOverride == null))
+                return;
+
             // Refuse EditMode writes against the production path unless a
             // test has explicitly opted in. See the AllowEditModeWritesToRealPath
             // comment above for the full rationale (May 23 38-zone loss).

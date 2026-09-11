@@ -37,8 +37,28 @@ namespace Valkur.Gameplay.VFX
 
         private IParticleInstanceStore GetOrCreateStore()
         {
-            if (_instanceStore == null)
+            if (_instanceStore != null) return _instanceStore;
+
+            // DURING A TEST RUN THE DEFAULT IS MEMORY, NOT THE FILE.
+            //
+            // Eight EditMode fixtures build a ParticlesRuntimeEditor and inject no store; before
+            // this line every one of them fell through to the real StreamingAssets path, and any
+            // save they triggered wrote the authored world. That is how particles_instances.json
+            // went from 188 placed emitters to a single fixture record on 2026-09-10 — the file
+            // store's own EditMode guard was armed by an unrelated fixture that threw before its
+            // TearDown could clear it.
+            //
+            // Patching those eight is not the fix: the ninth fixture arrives next week and nobody
+            // reviewing it knows this default exists. Inverting it means forgetting to inject is
+            // harmless, and the one fixture that genuinely exercises the file path says so by
+            // opening WorldDataWriteGuard.AllowRealPathWrites — which is also what lifts the
+            // refusal in FileParticleInstanceStore, so the two cannot disagree.
+            if (Valkur.Core.WorldDataWriteGuard.TestRunActive &&
+                !Valkur.Core.WorldDataWriteGuard.IsAllowed)
+                _instanceStore = new InMemoryParticleInstanceStore();
+            else
                 _instanceStore = new FileParticleInstanceStore();
+
             return _instanceStore;
         }
 

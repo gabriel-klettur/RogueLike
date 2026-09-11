@@ -191,6 +191,15 @@ namespace Valkur.Tests.EditMode.Editors.Particles
         [TearDown]
         public void TearDown()
         {
+            // FIRST LINE, on purpose. Everything below this touches the file system, and one of
+            // those calls has been observed to throw: File.Delete on a StreamingAssets file Unity
+            // still holds mapped fails with Win32 1224. A throw here used to skip the disarm at
+            // the bottom of this method and leave every following fixture in the session able to
+            // write the production file — which is how particles_instances.json was reduced to a
+            // single fixture record. WorldDataWriteGuard now also disarms before every test, so
+            // this is belt and braces; it is first anyway, because the order was the bug.
+            FileParticleInstanceStore.AllowEditModeWritesToRealPath = false;
+
             // Restore or remove the production file as it was before the test.
             bool restored = RestoreWithRetry();
 

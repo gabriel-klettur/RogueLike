@@ -69,6 +69,19 @@ namespace Valkur.Infrastructure.Persistence.Repositories
         public void WriteFileAtomic(WorldId worldId, string content)
         {
             string path = PathFor(worldId);
+
+            // THE choke point. All eleven JSON world repositories write through this one method,
+            // and before this line exactly ONE of them carried any protection against a test
+            // writing the shipped data. The cost of that gap, measured: particles_instances.json
+            // reduced from 188 placed emitters to a single fixture record by a suite run, with no
+            // failure anywhere and one warning about a preset nobody recognised.
+            //
+            // A repository handed a streamingRootOverride is already writing to a temp directory,
+            // which is the correct way for a test to isolate itself and must not be refused.
+            if (WorldDataWriteGuard.Refuse(GetType().Name, path,
+                                           isRealShippedPath: _streamingRootOverride == null))
+                return;
+
             string tmp  = path + ".tmp";
             File.WriteAllText(tmp, content ?? string.Empty);
             if (File.Exists(path))

@@ -66,27 +66,34 @@ namespace Valkur.Gameplay.VFX
         /// per fixture. Production never touches it — Application.isPlaying already allows
         /// the write.
         /// </summary>
-        public static bool AllowEditModeWritesToRealPath;
-
-        // Domain Reload is OFF: a fixture that threw before its TearDown would otherwise
-        // leave the opt-in armed for the rest of the session, which is precisely the state
-        // this guard exists to prevent.
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => AllowEditModeWritesToRealPath = false;
+        public static bool AllowEditModeWritesToRealPath
+        {
+            get => WorldDataWriteGuard.AllowRealPathWritesFlag;
+            set => WorldDataWriteGuard.AllowRealPathWritesFlag = value;
+        }
 
         /// <inheritdoc/>
         public void Save(string json)
         {
+            string path = CurrentPath;
+
+            // Asked of the test framework rather than of Application.isPlaying, which answers a
+            // different question in both directions: an editor tool a human clicks is not playing
+            // and must be allowed to write, and a PlayMode TEST is playing and must not. The old
+            // isPlaying check here could not see a PlayMode test at all.
+            if (WorldDataWriteGuard.Refuse("particles", path)) return;
+
+            // Kept as well: outside a test run, EditMode writes still need the opt-in, because
+            // this store is the runtime editor's and nothing but a test drives it from EditMode.
             if (!Application.isPlaying && !AllowEditModeWritesToRealPath)
             {
                 Debug.LogWarning(
                     "[FileParticleInstanceStore] Refusing to write particle instances from " +
-                    "EditMode. Inject InMemoryParticleInstanceStore, or set " +
-                    "AllowEditModeWritesToRealPath in a fixture that backs the file up.");
+                    "EditMode. Inject InMemoryParticleInstanceStore, or open " +
+                    "WorldDataWriteGuard.AllowRealPathWrites in a fixture that backs the file up.");
                 return;
             }
 
-            string path = CurrentPath;
             string dir  = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
