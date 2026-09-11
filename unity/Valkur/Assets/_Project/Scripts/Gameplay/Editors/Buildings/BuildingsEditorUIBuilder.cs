@@ -50,6 +50,13 @@ namespace Valkur.Gameplay.Buildings
 
             // Modes panel refs
             public Image SelectBtnImg, PlaceBtnImg, ResizeBtnImg, DeleteBtnImg;
+            public TextMeshProUGUI SelectBtnSubText;   // "Simple" / "Multiple" under the Select label
+
+            // Select scope sub-panel (flyout below TOOLS): Simple or Multiple selection.
+            public GameObject SelectSubPanel;
+            public Image      SelectSimpleBtnImg;
+            public Image      SelectMultipleBtnImg;
+            public Image      SelectAreaBtnImg;
             public Image AddBtnImg, RemoveBtnImg;
             public Image FillBtnImg;   // Fill tool button
             public Image EraseBtnImg;  // Erase tool button
@@ -110,12 +117,18 @@ namespace Valkur.Gameplay.Buildings
         // 84, not the Tile editor's 60: the header reserves 24 px on the right for the
         // chrome close button, and at 60 the title "TOOLS" shipped truncated to "TOO".
         private const float MODES_W     = 84f;
-        // Tools: Undo + Redo + Fill + Erase + Door. The multiplier is the count of BTN_H-tall
-        // buttons BEYOND the two the 88f base already covers - a 6th button needs a 4 here, or
-        // it is clipped off the bottom of the panel with no other symptom.
-        private const float MODES_H     = 88f + BTN_H * 3 + PANEL_HDR_H;
+        // Tools: Select + Undo + Redo + Fill + Erase + Door. The multiplier is the count of
+        // BTN_H-tall buttons BEYOND the two the 88f base already covers - a 7th button needs
+        // a 5 here, or it is clipped off the bottom of the panel with no other symptom.
+        // BuildingsSelectionToolTests counts the buttons the panel really builds against it.
+        private const float MODES_H     = 88f + BTN_H * 4 + PANEL_HDR_H;
         private const float ERASE_SUB_W = 130f;
         private const float ERASE_SUB_H = PANEL_HDR_H + BTN_H * 2 + 12f;
+        // The Select tool's scope flyout: three rows, Simple / Multiple / Area. Same width
+        // as the Erase flyout, and docked at the same spot - the two are never open together
+        // because each belongs to a mode the other cannot be in.
+        private const float SELECT_SUB_W = ERASE_SUB_W;
+        private const float SELECT_SUB_H = PANEL_HDR_H + BTN_H * 3 + 12f;
         private const float BUILDINGS_W = TILES_DROP_W;          // 256 px
         private const float BUILDINGS_H = TILES_DROP_H;          // 564 px
         private const float COLLIDERS_W = 220f;                  // narrower than props
@@ -182,7 +195,10 @@ namespace Valkur.Gameplay.Buildings
             Action         onDoorAnchorXMinus  = null, Action onDoorAnchorXPlus = null,
             Action         onDoorAnchorYMinus  = null, Action onDoorAnchorYPlus = null,
             Action         onDoorSizeMinus     = null, Action onDoorSizePlus    = null,
-            Action         onDoorApply         = null, Action onDoorClear       = null)
+            Action         onDoorApply         = null, Action onDoorClear       = null,
+            // Select tool scope callbacks
+            Action         onSelectSimple      = null, Action onSelectMultiple  = null,
+            Action         onSelectArea        = null)
         {
             // Reserve space below the menu bar so draggable panels cannot occlude it
             DraggablePanel.TopReservedPx = MENUBAR_HEIGHT;
@@ -197,6 +213,7 @@ namespace Valkur.Gameplay.Buildings
                 onAddBuilding, onRemoveBuilding, onAddOnSystem,
                 onUndo, onRedo, onSave, onReload, onFill, onErase, onDoor);
             BuildEraseSubPanel(canvasT, ref refs, onEraseTilesArea, onEraseZone);
+            BuildSelectSubPanel(canvasT, ref refs, onSelectSimple, onSelectMultiple, onSelectArea);
             BuildDoorSubPanel(canvasT, ref refs,
                 onDoorToggleHasDoor,
                 onDoorTargetCommit, onDoorSpawnXCommit, onDoorSpawnYCommit,

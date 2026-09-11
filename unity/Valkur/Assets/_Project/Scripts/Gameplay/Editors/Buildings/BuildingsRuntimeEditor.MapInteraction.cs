@@ -82,6 +82,15 @@ namespace Valkur.Gameplay.Buildings
                 if (scroll < -0.01f) { _hoverIndex = (_hoverIndex + 1) % _hoverStack.Count;                     _hoveredBuilding = _hoverStack[_hoverIndex]; }
             }
 
+            // Area select in progress: the box owns the pointer until LMB comes up.
+            if (_areaSelecting)
+            {
+                UpdateAreaSelect(worldPos);
+                if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonReleasedThisFrame())
+                    FinalizeAreaSelect(screenPos);
+                return;
+            }
+
             // Split-ratio drag â€” LMB held on the split handle
             if (_splitDragging && _activeBuilding != null)
             {
@@ -180,6 +189,7 @@ namespace Valkur.Gameplay.Buildings
                 // started and visibly clips on top of (or behind) entities
                 // it has moved past.
                 _activeBuilding.RefreshSorting();
+                ApplyGroupDragDelta();
                 MarkInstanceDataDirty();
                 if (Valkur.Core.Input.MouseInputManager.WasRightMouseButtonReleasedThisFrame()) FinalizeMoveDrag();
                 return;
@@ -233,8 +243,14 @@ namespace Valkur.Gameplay.Buildings
                 }
                 // Click-to-place was removed: placement is drag-only (drag a
                 // thumbnail from the Buildings panel onto the map). A bare LMB
-                // click on the map only ever selects the hovered building.
-                if (_hoveredBuilding != null) SetActiveBuilding(_hoveredBuilding);
+                // click on the map only ever selects - and the Select tool's scope
+                // decides whether that replaces the selection or toggles a member.
+                // In Area scope the press is the start of a box; whether it was
+                // really a click is decided on release.
+                if (_selectScope == SelectScope.Area && _mode == EditorMode.Select)
+                    BeginAreaSelect(worldPos, screenPos);
+                else
+                    HandleSelectClick(_hoveredBuilding);
             }
 
             // RMB drag-moves the ALREADY-SELECTED building (resize is LMB-drag
@@ -243,12 +259,14 @@ namespace Valkur.Gameplay.Buildings
             // that isn't the current selection does nothing, freeing the
             // button for future context-menu actions instead of doubling as
             // an implicit select.
+            // With a group, grabbing ANY member drags all of them - the offset stays
+            // relative to the primary, so the arithmetic is the single-building one.
             if (Valkur.Core.Input.MouseInputManager.WasRightMouseButtonPressedThisFrame()
-                && _hoveredBuilding != null && _hoveredBuilding == _activeBuilding)
+                && _hoveredBuilding != null && _activeBuilding != null
+                && (_hoveredBuilding == _activeBuilding
+                    || (_selection.Count > 1 && _selection.Contains(_hoveredBuilding))))
             {
-                _dragging   = true;
-                _dragStartWorldPos = _activeBuilding.transform.position;
-                _dragOffset = _activeBuilding.transform.position - worldPos;
+                BeginMoveDrag(worldPos);
             }
         }
 
@@ -264,6 +282,9 @@ namespace Valkur.Gameplay.Buildings
             var building = _activeBuilding;
             Vector3 startPos = _dragStartWorldPos;
             Vector3 finalPos = building.transform.position;
+
+            // A group drag records every member in ONE step and owns the rest of this.
+            if (TryFinalizeGroupMove(startPos, finalPos)) return;
 
             if ((finalPos - startPos).sqrMagnitude <= 0.0001f)
             {

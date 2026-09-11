@@ -86,6 +86,17 @@ namespace Valkur.Gameplay.Editors.General
                 return;
             }
 
+            // An editor opened FROM another editor leaves a one-shot return target behind it:
+            // the Selection tool double-clicks a building and lands in the Buildings editor,
+            // and Escape there should undo that step rather than dump the author at the
+            // launcher with their selection stranded one screen back. Consumed, so the NEXT
+            // Escape behaves exactly as it always has.
+            if (mgr.TryConsumeReturnTarget(out var back))
+            {
+                mgr.OpenExclusive(back);
+                return;
+            }
+
             // Anything else (no editor active, or a different editor active) →
             // open the launcher. GameEditorManager.OpenExclusive auto-closes the
             // previous editor first, so the per-press UX is uniform:

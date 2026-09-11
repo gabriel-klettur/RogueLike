@@ -148,6 +148,43 @@ namespace Valkur.UIKit
         /// <summary>The same centre with the cursor on it — "click to select".</summary>
         public static readonly Color MARKER_DOT_HOVER   = new Color(0.40f, 1f, 1f, 1f);
 
+        // ── World-content domains (the cross-domain Selection tool) ───────────
+        //
+        // One hue per KIND of placed content. The Selection tool draws the same box around
+        // every selected thing — a group of six has to read as one object, not six unrelated
+        // markers — so the colour is the only thing left saying WHAT each member is, and it
+        // has to mean the same on the outline and on the filter chip beside it.
+        //
+        // They are tokens rather than three literals in the tool because they are a
+        // VOCABULARY: anything that later wants to say "this is a light" (a legend, a
+        // minimap key, a per-domain count) has to agree with these or the reader learns
+        // nothing from either.
+
+        /// <summary>Placed buildings. Cool blue — the largest, heaviest thing on screen.</summary>
+        public static readonly Color DOMAIN_BUILDING = new Color(0.42f, 0.78f, 1.00f, 1f);
+
+        /// <summary>Placed particle emitters. Warm amber, distinct from the light yellow at a
+        /// glance, which is the one pair an author actually has to tell apart.</summary>
+        public static readonly Color DOMAIN_PARTICLE = new Color(1.00f, 0.72f, 0.30f, 1f);
+
+        /// <summary>Authored lights. Pale yellow, borrowed from MARKER_DOT so the tool and the
+        /// Lighting editor's own overlay do not disagree about the colour of a light.</summary>
+        public static readonly Color DOMAIN_LIGHT    = new Color(1.00f, 0.94f, 0.45f, 1f);
+
+        /// <summary>The drag-select box. The accent at low alpha: a fill dark enough to read
+        /// as a hint over any ground and light enough not to hide what is being caught.</summary>
+        public static readonly Color MARQUEE_FILL    = new Color(ACCENT.r, ACCENT.g, ACCENT.b, 0.18f);
+
+        /// <summary>
+        /// The same colour at a different alpha.
+        ///
+        /// <para>A derivation, not a palette entry — which is exactly why it belongs here: the
+        /// alternative is <c>new Color(c.r, c.g, c.b, a)</c> at every call site, and the raw
+        /// colour ratchet cannot tell that apart from somebody inventing a shade. Two editors
+        /// already carried a private copy of this one line.</para>
+        /// </summary>
+        public static Color WithAlpha(Color c, float a) { c.a = a; return c; }
+
         // ── Layout ──
         public const float PANEL_PAD       = 10f;
         public const float SECTION_SPACING = 6f;

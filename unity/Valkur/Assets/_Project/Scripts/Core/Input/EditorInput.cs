@@ -1,4 +1,4 @@
-using UnityEngine.InputSystem;
+﻿using UnityEngine.InputSystem;
 
 namespace Valkur.Core.Input
 {
@@ -74,31 +74,44 @@ namespace Valkur.Core.Input
         /// </summary>
         public static bool Tool(string map, string action)
         {
-            var descriptor = InputActionCatalog.Find(map, action);
-            if (!InputContextPolicy.IsLive(descriptor)) return false;
-            if (KeyboardInputManager.IsCtrlHeld()) return false;   // see ToolHeld
-
+            if (!ToolLive(map, action)) return false;
             return InputBindingResolver.WasPerformedThisFrame(Resolve(map, action));
         }
 
-        /// <summary>
-        /// The held form of <see cref="Tool"/>.
-        ///
-        /// <para>BOTH REFUSE WHILE CTRL IS HELD, and that is not tidiness. Every shared
-        /// shortcut in this project is Ctrl+key with the Ctrl living in C# rather than in the
-        /// binding, and no editor tool is — so a bare key and a Ctrl+key were competing for
-        /// the same press. Measured on the shipped asset: <c>EditorShared/Save</c> and
-        /// <c>Editor.Tile/ToolSelect</c> are both on <c>s</c>, so Ctrl+S in the Tile editor
-        /// saved the map AND switched the active tool to Select, every time, in silence.
-        /// Ruling it out here rather than per tool means the next editor cannot reintroduce
-        /// it, and it costs nothing a tool could want: a tool is a bare key by construction.</para>
-        /// </summary>
+        /// <summary>The held form of <see cref="Tool"/>.</summary>
         public static bool ToolHeld(string map, string action)
+        {
+            if (!ToolLive(map, action)) return false;
+            return InputBindingResolver.IsPressed(Resolve(map, action));
+        }
+
+        /// <summary>
+        /// Is this editor's own tool answerable right now — the right editor open, and the
+        /// right modifier state?
+        ///
+        /// <para>THE MODIFIER IS MATCHED, NOT REFUSED. Every shared shortcut in this project is
+        /// Ctrl+key with the Ctrl living in C# rather than in the binding, so a bare key and a
+        /// Ctrl+key were competing for the same press. Measured on the shipped asset:
+        /// <c>EditorShared/Save</c> and <c>Editor.Tile/ToolSelect</c> are both on <c>s</c>, so
+        /// Ctrl+S in the Tile editor saved the map AND switched the active tool to Select,
+        /// every time, in silence.</para>
+        ///
+        /// <para>This used to be a blanket <c>if (IsCtrlHeld()) return false;</c>, which
+        /// separates the two presses and ALSO makes a Ctrl tool unreachable — so the Tile
+        /// editor's Ctrl+C / Ctrl+X / Ctrl+V, which are read as
+        /// <c>ctrl &amp;&amp; EditorInput.Tool(...)</c>, could not fire at any time. Three
+        /// buttons in the Select panel did the same job, so the dead half looked like a
+        /// preference rather than a defect. It reads the descriptor's own
+        /// <see cref="InputActionDescriptor.RequiresCtrl"/> now — the same field
+        /// <see cref="Live"/> reads for the shared verbs and
+        /// <see cref="InputConflictScanner"/> reads to decide a shared key is not a double
+        /// fire, so the three cannot disagree about which press a tool wants.</para>
+        /// </summary>
+        private static bool ToolLive(string map, string action)
         {
             var descriptor = InputActionCatalog.Find(map, action);
             if (!InputContextPolicy.IsLive(descriptor)) return false;
-            if (KeyboardInputManager.IsCtrlHeld()) return false;
-            return InputBindingResolver.IsPressed(Resolve(map, action));
+            return descriptor.RequiresCtrl == KeyboardInputManager.IsCtrlHeld();
         }
 
         // ── Plumbing ─────────────────────────────────────────────────────────

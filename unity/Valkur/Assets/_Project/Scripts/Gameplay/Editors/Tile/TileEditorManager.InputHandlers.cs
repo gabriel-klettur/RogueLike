@@ -147,12 +147,16 @@ namespace Valkur.Gameplay.TileEditor
             // Gated on CurrentTool so they don't shadow other editors' shortcuts.
             if (_state.CurrentTool == TileEditorState.Tool.Select)
             {
-                bool ctrl = Valkur.Core.Input.KeyboardInputManager.IsCtrlHeld();
-                if (ctrl && EditorInput.Tool(InputActionCatalog.MapTileEditor, "Copy"))
+                // The Ctrl half lives in the catalog (`requiresCtrl: true`) and is answered by
+                // EditorInput. It used to be tested HERE against a helper that refused every
+                // tool while Ctrl was held, so all three were unreachable at any time — three
+                // buttons in this panel do the same job, which is why the dead keys read as a
+                // preference rather than as a defect.
+                if (EditorInput.Tool(InputActionCatalog.MapTileEditor, "Copy"))
                     OnCopyClicked();
-                else if (ctrl && EditorInput.Tool(InputActionCatalog.MapTileEditor, "Cut"))
+                else if (EditorInput.Tool(InputActionCatalog.MapTileEditor, "Cut"))
                     OnCutClicked();
-                else if (ctrl && EditorInput.Tool(InputActionCatalog.MapTileEditor, "Paste"))
+                else if (EditorInput.Tool(InputActionCatalog.MapTileEditor, "Paste"))
                     OnPasteClicked();
                 else if (EditorInput.ClosePressed())
                     ClearSelection();

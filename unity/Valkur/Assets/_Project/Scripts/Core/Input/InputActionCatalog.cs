@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Valkur.Core.Input
@@ -210,6 +210,11 @@ namespace Valkur.Core.Input
         /// cannot drift apart.</summary>
         public const string MapTileEditor      = "Editor.Tile";
         public const string MapBuildingsEditor = "Editor.Buildings";
+
+        /// <summary>The cross-domain Selection tool. The map name is a SLUG and deliberately
+        /// does NOT match the editor's own <c>EditorName</c> ("Seleccion"), which is what the
+        /// descriptors below carry as their owner — comparing the two would prove nothing.</summary>
+        public const string MapSelectionEditor = "Editor.Selection";
         public const string MapMapEditor       = "Editor.Map";
         public const string MapBossEditor      = "Editor.Boss";
 
@@ -408,9 +413,9 @@ namespace Valkur.Core.Input
             list.Add(Tool(MapTileEditor, "ToolEyedropper", "Cuentagotas",   "Tile Editor"));
             list.Add(Tool(MapTileEditor, "ToolSelect",     "Seleccion",     "Tile Editor"));
             list.Add(Tool(MapTileEditor, "ToolAutoTile",   "Auto-tile",     "Tile Editor"));
-            list.Add(Tool(MapTileEditor, "Copy",           "Copiar",        "Tile Editor"));
-            list.Add(Tool(MapTileEditor, "Cut",            "Cortar",        "Tile Editor"));
-            list.Add(Tool(MapTileEditor, "Paste",          "Pegar",         "Tile Editor"));
+            list.Add(Tool(MapTileEditor, "Copy",           "Copiar",        "Tile Editor", requiresCtrl: true));
+            list.Add(Tool(MapTileEditor, "Cut",            "Cortar",        "Tile Editor", requiresCtrl: true));
+            list.Add(Tool(MapTileEditor, "Paste",          "Pegar",         "Tile Editor", requiresCtrl: true));
 
             list.Add(Tool(MapBuildingsEditor, "ResetActive",         "Restaurar edificio",  "Buildings Editor"));
             list.Add(Tool(MapBuildingsEditor, "ResizeMode",          "Modo redimensionar",  "Buildings Editor"));
@@ -420,6 +425,28 @@ namespace Valkur.Core.Input
             list.Add(Tool(MapBuildingsEditor, "BrushSmaller",        "Pincel mas pequeno",  "Buildings Editor"));
             list.Add(Tool(MapBuildingsEditor, "BrushBigger",         "Pincel mas grande",   "Buildings Editor"));
             list.Add(Tool(MapBuildingsEditor, "ToggleColliderScope", "Alcance CG / CU",     "Buildings Editor"));
+            // Ctrl+C / Ctrl+V on a placed building. Declared as this editor's OWN Ctrl tools
+            // rather than as shared verbs, because "copy" means nothing in fourteen of the
+            // seventeen editors and a shared verb is one every editor has to answer. The Tile
+            // editor's clipboard already established the per-editor shape.
+            list.Add(Tool(MapBuildingsEditor, "Copy",                "Copiar edificio",     "Buildings Editor", requiresCtrl: true));
+            list.Add(Tool(MapBuildingsEditor, "Paste",               "Pegar edificio",      "Buildings Editor", requiresCtrl: true));
+
+            // ── Selection tool ──────────────────────────────────────────────────
+            //
+            // The owner is "Seleccion" — the editor's EXACT EditorName, accents and all.
+            // Getting that string wrong is silent and kills every tool of the editor: it is
+            // what InputContexts.Current puts in the context id and what InputContextPolicy
+            // compares against, and it shipped wrong once for all 35 per-editor tools.
+            //
+            // The Tile and Buildings editors already established that a clipboard is a
+            // PER-EDITOR Ctrl tool rather than a shared verb, because "copy" means nothing in
+            // fourteen of the seventeen editors and a shared verb is one every editor has to
+            // answer. Three editors now bind Ctrl+C on the same key, which is not a conflict:
+            // each is live only inside its own context, and that is the property
+            // InputContextLayerTests exists to protect.
+            list.Add(Tool(MapSelectionEditor, "Copy",  "Copiar seleccion", "Seleccion", requiresCtrl: true));
+            list.Add(Tool(MapSelectionEditor, "Paste", "Pegar seleccion",  "Seleccion", requiresCtrl: true));
 
             // The perf probes' bisection keys. They are only read while the probe overlay is
             // SHOWING (Shift+F8 on Tile, a menu button on Buildings), which is the only reason
@@ -495,11 +522,17 @@ namespace Valkur.Core.Input
         /// <c>EditorReachabilityTests</c> asserts each owner against the shipped
         /// EditorNames.</para>
         /// </summary>
+        /// <param name="requiresCtrl">True for a tool that only fires while Ctrl is held — the
+        /// clipboard verbs, and nothing else so far. It is the SAME fact
+        /// <see cref="InputActionDescriptor.RequiresCtrl"/> carries for the shared verbs, read
+        /// by <see cref="EditorInput.Tool"/> and by <see cref="InputConflictScanner"/>, so a
+        /// Ctrl tool and a bare tool sharing one key can never be called a double fire.</param>
         public static InputActionDescriptor Tool(string map, string action, string label,
-                                                 string ownerEditor) =>
+                                                 string ownerEditor, bool requiresCtrl = false) =>
             new InputActionDescriptor(map, action, label, InputActionCategory.Editor,
                 InputContextMask.Editors, reachesDamage: false, rebindable: true,
-                payloadKey: "", ownerEditor: ownerEditor);
+                payloadKey: "", ownerEditor: ownerEditor, contextLocked: false,
+                coexistGroup: "", requiresCtrl: requiresCtrl);
 
         private static InputActionDescriptor Ed(string action, string label,
                                                 bool rebindable = true, string coexistGroup = "",

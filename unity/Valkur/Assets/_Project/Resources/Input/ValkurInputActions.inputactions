@@ -2056,6 +2056,22 @@
                     "interactions": ""
                 },
                 {
+                    "name": "Copy",
+                    "type": "Button",
+                    "id": "5206df6d-eb38-4206-8410-8815b32f7daa",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Paste",
+                    "type": "Button",
+                    "id": "786f6050-e41d-4c49-ae79-32b6ad4fae97",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
                     "name": "ProbeExtraCameras",
                     "type": "Button",
                     "id": "8b35cb1f-27c5-40bd-ac8e-d5eb16106907",
@@ -2212,6 +2228,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "ToggleColliderScope",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "cb191eb3-6ad6-4edf-a6db-f3c5360138e0",
+                    "path": "<Keyboard>/c",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Copy",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "a98e0e43-0856-4bf8-a8c3-085e229a9d20",
+                    "path": "<Keyboard>/v",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Paste",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -2389,6 +2427,52 @@
                     "processors": "",
                     "groups": "",
                     "action": "TapCue",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "Editor.Selection",
+            "id": "5a827df6-8be5-4a16-8365-67a6a9b7b125",
+            "actions": [
+                {
+                    "name": "Copy",
+                    "type": "Button",
+                    "id": "9b37b358-c78e-432f-9cb9-0630eacbafd7",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Paste",
+                    "type": "Button",
+                    "id": "2c56f253-a661-4c09-85a7-3d8c8357a834",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "ca775853-992f-4991-90ea-805b97ac9d8b",
+                    "path": "<Keyboard>/c",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Copy",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9fb4f7c0-9094-44ab-8b89-fb4ef2e8c97a",
+                    "path": "<Keyboard>/v",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Paste",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using Valkur.Core.Editors;
 using Valkur.Gameplay.Editors.Workspace;
@@ -23,6 +23,10 @@ namespace Valkur.Gameplay.Buildings
         private const string WS_SEARCH      = "search";
         private const string WS_CATEGORY    = "categoryTab";
         private const string WS_BRUSH_SIZE  = "colliderBrushSize";
+        // The Select tool's scope. The GROUP itself is deliberately not remembered: the
+        // selection record holds one id by design, and a group restored across a session
+        // is six buildings glowing for a reason the author has long forgotten.
+        private const string WS_SELECT_SCOPE = "selectScope";
 
         private const string WS_SELECTION_BUILDING = "building";
 
@@ -37,6 +41,7 @@ namespace Valkur.Gameplay.Buildings
             ws.SetString(WS_SEARCH, _searchFilter ?? string.Empty);
             ws.SetString(WS_CATEGORY, _categoryFilter ?? string.Empty);
             ws.SetInt(WS_BRUSH_SIZE, _collBrushSize);
+            ws.SetString(WS_SELECT_SCOPE, _selectScope.ToString());
 
             // A placed building's stable identity is its InstanceId — the same key the
             // buildings file is written with, so the selection lives exactly as long as the
@@ -71,6 +76,9 @@ namespace Valkur.Gameplay.Buildings
             }
 
             _collBrushSize = Mathf.Clamp(ws.GetInt(WS_BRUSH_SIZE, _collBrushSize), 1, 9);
+
+            if (Enum.TryParse(ws.GetString(WS_SELECT_SCOPE, null), out SelectScope scope))
+                SetSelectScope(scope);
 
             string search = ws.GetString(WS_SEARCH, null);
             if (search != null)

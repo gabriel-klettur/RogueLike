@@ -105,6 +105,25 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>
+        /// The cross-domain Selection tool. It carries no hotkey for the same reason the
+        /// Camera and Controls editors carry none — the F-row was retired and the General
+        /// Editor is the only door — and it sits behind the same authoring gate as the rest
+        /// of the toolbox, because everything it can do writes world-content files.
+        ///
+        /// It needs no catalogs of its own: it reaches buildings, particle emitters and
+        /// authored lights through those editors' own MultiSelect seams, so the only thing
+        /// this has to guarantee is that the component exists to be registered.
+        /// </summary>
+        private void EnsureSelectionEditor()
+        {
+            if (Valkur.Gameplay.Editors.MultiSelect.MultiSelectRuntimeEditor.Instance != null) return;
+            var go = new GameObject("SelectionEditor");
+            go.AddComponent<Valkur.Gameplay.Editors.MultiSelect.MultiSelectRuntimeEditor>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
+            Debug.Log("[GameplaySceneSetup] SelectionEditor created. Open it from the General Editor (ESC).");
+        }
+
+        /// <summary>
         /// The Controls editor has no hotkey for the same reason the Camera editor has none:
         /// all thirteen function keys are bound, and a surface for configuring keys is the
         /// last thing that should claim one the player might hit by accident. Reached from the

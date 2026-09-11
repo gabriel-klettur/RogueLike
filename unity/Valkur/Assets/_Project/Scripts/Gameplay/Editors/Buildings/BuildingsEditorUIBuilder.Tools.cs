@@ -60,6 +60,10 @@ namespace Valkur.Gameplay.Buildings
                 PanelDock.TopLeft, PANEL_GAP, PANEL_TOP_OFFSET,
                 MODES_W, MODES_H, "Tools", out var t, out refs.ModesPanelDrag);
 
+            // The Select TOOL, first because it is the resting state every other tool
+            // returns to. Its sub-label is the live scope (Simple / Multiple); clicking it
+            // opens the scope flyout rather than switching anything on its own.
+            refs.SelectBtnImg = AddToolBtn(t, "Select", "Simple", BTN_H, onSelect, out refs.SelectBtnSubText);
             AddActionBtn(t, "Undo", BTN_H, onUndo);
             AddActionBtn(t, "Redo", BTN_H, onRedo);
             refs.FillBtnImg  = AddActionBtnWithRef(t, "Fill",  BTN_H, onFill);
@@ -89,6 +93,29 @@ namespace Valkur.Gameplay.Buildings
             refs.EraseSubPanel.SetActive(false);
         }
 
+        // ── Select scope sub-panel ────────────────────────────────────────────────
+        // Floating panel just below the Tools panel, same slot as the Erase flyout. Three
+        // rows: "Simple" (one building at a time - the historical behaviour), "Multiple"
+        // (click toggles membership in a group) and "Area" (drag a box, select everything
+        // it touches). Hidden by default; shown by BuildingsRuntimeEditor when the Select
+        // tool button is clicked.
+        private static void BuildSelectSubPanel(Transform canvasT, ref UIRefs refs,
+            Action onSelectSimple, Action onSelectMultiple, Action onSelectArea)
+        {
+            refs.SelectSubPanel = MakeDrop("SelectScopePanel", canvasT,
+                PanelDock.TopLeft,
+                PANEL_GAP,
+                PANEL_TOP_OFFSET + MODES_H + PANEL_GAP,
+                SELECT_SUB_W, SELECT_SUB_H, "Select Scope",
+                out var t, out var _);
+
+            refs.SelectSimpleBtnImg   = AddActionBtnWithRef(t, "Simple",   BTN_H, onSelectSimple);
+            refs.SelectMultipleBtnImg = AddActionBtnWithRef(t, "Multiple", BTN_H, onSelectMultiple);
+            refs.SelectAreaBtnImg     = AddActionBtnWithRef(t, "Area",     BTN_H, onSelectArea);
+
+            refs.SelectSubPanel.SetActive(false);
+        }
+
         /// <summary>Adds an action button and returns its Image for highlight control.</summary>
         private static Image AddActionBtnWithRef(Transform parent, string label, float height, Action onClick)
         {
@@ -114,8 +141,14 @@ namespace Valkur.Gameplay.Buildings
 
         // icon-style tool button (same pattern as TileEditor CreateToolBtn)
         private static Image AddToolBtn(Transform parent, string label, string sub,
-            float height, Action onClick)
+            float height, Action onClick) => AddToolBtn(parent, label, sub, height, onClick, out _);
+
+        /// <summary>The same button, handing back its sub-label so a caller can rewrite it
+        /// (the Select tool prints its live scope there).</summary>
+        private static Image AddToolBtn(Transform parent, string label, string sub,
+            float height, Action onClick, out TextMeshProUGUI subTmp)
         {
+            subTmp = null;
             var go = CreateUI($"ToolBtn_{label}", parent);
             go.AddComponent<LayoutElement>().preferredHeight = height;
 
@@ -153,7 +186,7 @@ namespace Valkur.Gameplay.Buildings
             {
                 var subGo = CreateUI("Sub", go.transform);
                 subGo.AddComponent<LayoutElement>().preferredHeight = 10f;
-                var subTmp       = subGo.AddComponent<TextMeshProUGUI>();
+                subTmp           = subGo.AddComponent<TextMeshProUGUI>();
                 subTmp.text      = sub;
                 subTmp.fontSize  = 8f;
                 subTmp.alignment = TextAlignmentOptions.Center;

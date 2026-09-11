@@ -69,6 +69,11 @@ namespace Valkur.Gameplay.Buildings
                 if (_canvas != null) { _canvas.enabled = false; _canvas.gameObject.SetActive(false); }
             }
             HideOutlines();
+            HideSelectSubPanel();
+            CancelAreaSelect();
+            _selection.Clear();
+            _dragGroup.Clear();
+            _dragGroupStart.Clear();
             _selectedTemplateId = -1;
             _propertiesMode = PropertiesMode.None;
             _activeBuilding = null;
@@ -189,6 +194,7 @@ namespace Valkur.Gameplay.Buildings
             if (_activeFx != null) { _activeFx.Follow(null); _activeFx.SetVisible(false); }
             foreach (var fx in _sameTemplateFxPool)
                 if (fx != null) { fx.Follow(null); fx.SetVisible(false); }
+            HideMultiSelectOutlines();
             if (_idLabelRt  != null) _idLabelRt.gameObject.SetActive(false);
             if (_handlesRoot != null) _handlesRoot.SetActive(false);
             if (_zTopBadgeRt != null) _zTopBadgeRt.gameObject.SetActive(false);

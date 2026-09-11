@@ -397,6 +397,7 @@ namespace Valkur.Gameplay.Buildings
             // whatever width the drag (or a restored workspace) left it at.
             UpdatePickerLayoutIfResized();
             UpdateOutlineState();
+            UpdateSelectionState();
             UpdateFloatingHandles();
             UpdateIdLabel();
             UpdateZBadges();

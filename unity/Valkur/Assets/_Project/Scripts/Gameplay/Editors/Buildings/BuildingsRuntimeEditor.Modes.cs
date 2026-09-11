@@ -37,6 +37,14 @@ namespace Valkur.Gameplay.Buildings
             // world-space doorway overlay, or an external SetMode leaves both on screen.
             if (_mode != EditorMode.Door) ExitDoorMode(setSelectMode: false);
             else                          EnterDoorModeUi();
+            // A group is a Select-tool thing. Every other mode reads _activeBuilding alone,
+            // so leaving Select keeps the primary and drops the rest - otherwise a Door
+            // edit would sit on one building while five others still glowed as chosen.
+            if (_mode != EditorMode.Select)
+            {
+                _selection.CollapseTo(_activeBuilding);
+                HideSelectSubPanel();
+            }
             RefreshModeButtons();
             if (_statusTmp == null) return;
             _statusTmp.text = _mode switch
@@ -143,6 +151,20 @@ namespace Valkur.Gameplay.Buildings
             if (EditorInput.DeletePressed() && _activeBuilding != null) RequestDeleteActiveWithConfirm();
             if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "ResetActive") && _activeBuilding != null && !ctrl) ResetActiveBuilding();
             if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "ResizeMode") && _activeBuilding != null) SetMode(EditorMode.Resize);
+
+            // Ctrl+C / Ctrl+V. Both are declared with `requiresCtrl: true`, so EditorInput
+            // answers them only while Ctrl is held and refuses every bare-key tool in that
+            // same state — the modifier is matched in ONE place rather than tested here as
+            // well, or the two answers could disagree about what was pressed.
+            //
+            // Refused while a modal is up: a confirm dialog is a question the author has been
+            // asked and not yet answered, and a paste behind it lands a building they cannot
+            // see on a map they cannot click.
+            if (!AnyModalOpen())
+            {
+                if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "Copy"))  CopyActiveBuilding();
+                if (EditorInput.Tool(InputActionCatalog.MapBuildingsEditor, "Paste")) PasteClipboardAtCursor();
+            }
             if (EditorInput.ClosePressed())
             {
                 if (_confirmModal != null && _confirmModal.activeSelf) HideConfirm();
@@ -152,6 +174,12 @@ namespace Valkur.Gameplay.Buildings
                 else if (_mode == EditorMode.Erase) ExitEraseMode();
                 else if (_mode == EditorMode.Door) ExitDoorMode();
                 else if (_tutorialRoot != null && _tutorialRoot.activeSelf) _tutorialRoot.SetActive(false);
+                else if (_areaSelecting) CancelAreaSelect();
+                else if (_selectSubPanel != null && _selectSubPanel.activeSelf) HideSelectSubPanel();
+                // A group is a state the author wants a way OUT of, and Escape is the way
+                // out of everything else here. A single selection does not count: Escape
+                // with one building picked has always closed the editor.
+                else if (_selection.Count > 1) ClearSelection("Selection cleared.");
                 else { SaveInstancesToJson(); Deactivate(); }
             }
 
@@ -162,6 +190,14 @@ namespace Valkur.Gameplay.Buildings
             if (_openDropdowns.Contains("colliders"))
                 HandleColliderEditorShortcuts();
         }
+
+        /// <summary>Is one of this editor's modal dialogs on screen? They are three separate
+        /// GameObjects with no shared owner, so the question is asked in one place rather than
+        /// re-listed at every call site that has to defer to them.</summary>
+        private bool AnyModalOpen() =>
+            (_confirmModal      != null && _confirmModal.activeSelf) ||
+            (_fillSpacingModal  != null && _fillSpacingModal.activeSelf) ||
+            (_eraseConfirmModal != null && _eraseConfirmModal.activeSelf);
 
         private void HandleColliderEditorShortcuts()
         {

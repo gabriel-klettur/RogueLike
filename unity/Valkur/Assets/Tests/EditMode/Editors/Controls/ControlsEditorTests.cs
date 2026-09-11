@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
@@ -679,15 +679,25 @@ namespace Valkur.Tests.EditMode.Editors.Controls
         }
 
         /// <summary>
-        /// The five Ctrl verbs, named rather than derived. A test that read the flag off the
+        /// The Ctrl actions, named rather than derived. A test that read the flag off the
         /// catalog would pass whatever the catalog said, and this flag is what the scanner uses
         /// to decide a key is NOT double-booked — the direction in which being wrong is silent.
+        ///
+        /// <para>The last five are one editor's own CLIPBOARD tools rather than shared verbs,
+        /// and they are the reason <see cref="InputActionCatalog.Tool"/> takes the flag at all:
+        /// <c>EditorInput</c> used to refuse every tool outright while Ctrl was held, so the
+        /// Tile editor's Ctrl+C / Ctrl+X / Ctrl+V could not fire at any time.</para>
         /// </summary>
         [TestCase("EditorShared/Undo")]
         [TestCase("EditorShared/Redo")]
         [TestCase("EditorShared/Save")]
         [TestCase("Editors/QuickSave")]
         [TestCase("Editors/QuickLoad")]
+        [TestCase("Editor.Tile/Copy")]
+        [TestCase("Editor.Tile/Cut")]
+        [TestCase("Editor.Tile/Paste")]
+        [TestCase("Editor.Buildings/Copy")]
+        [TestCase("Editor.Buildings/Paste")]
         public void TheCtrlVerbs_AreDeclaredAsSuch(string id)
         {
             var d = InputActionCatalog.Find(id);

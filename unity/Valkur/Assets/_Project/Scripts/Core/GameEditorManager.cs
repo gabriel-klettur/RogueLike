@@ -66,13 +66,77 @@ namespace Valkur.Core
         {
             if (editor == null) return;
             if (_activeEditor == editor) _activeEditor = null;
+            // A destroyed editor cannot be returned to, and a dangling pointer to one would be
+            // reopened as a MissingReference the next time Escape was pressed.
+            if (ReferenceEquals(_returnTo, editor)) _returnTo = null;
             _registered.Remove(editor);
         }
 
         /// <summary>
+        /// Where Escape should go back to, once, instead of opening the launcher.
+        ///
+        /// <para>It exists because an editor can now be opened FROM another editor — the
+        /// Selection tool double-clicks a building and lands in the Buildings editor — and the
+        /// author expects Escape to undo that step rather than to dump them at the launcher
+        /// with their selection stranded behind it.</para>
+        ///
+        /// <para>IT IS CONSUMED ONCE and armed only by the overload that takes it, so a stale
+        /// target cannot exist: any other <see cref="OpenExclusive(IGameEditor)"/> clears it.
+        /// A return pointer that survived an unrelated editor change would send Escape
+        /// somewhere surprising minutes later, which is worse than not having one.</para>
+        /// </summary>
+        private IGameEditor _returnTo;
+
+        /// <summary>The armed return target, or null. Read by the launcher and the tests.</summary>
+        public IGameEditor ReturnTarget => _returnTo;
+
+        /// <summary>
         /// Opens the target editor exclusively — closes any other active editor first.
+        ///
+        /// <para>Clears any armed return target. Opening an editor by any route other than the
+        /// two-argument overload means the author is somewhere new on purpose, and the old
+        /// "go back to" no longer describes anywhere they have been.</para>
         /// </summary>
         public void OpenExclusive(IGameEditor target)
+        {
+            _returnTo = null;
+            OpenExclusiveInternal(target);
+        }
+
+        /// <summary>
+        /// Open <paramref name="target"/> and remember that Escape should return to
+        /// <paramref name="returnTo"/> rather than open the launcher.
+        ///
+        /// <para>THE TARGET IS ARMED AFTER THE SWITCH, and the order is the whole of why this
+        /// works. Opening tears down the previous editor, whose <c>Deactivate</c> calls
+        /// <see cref="NotifyDeactivated"/> — which clears the trail, correctly, because an
+        /// editor closing itself has ended one. Arming first means arming a pointer that the
+        /// very next line erases, and the feature would simply never fire. Same shape as the
+        /// shield having to <c>Track</c> before it claims invincibility.</para>
+        /// </summary>
+        public void OpenExclusive(IGameEditor target, IGameEditor returnTo)
+        {
+            if (target == null) return;
+            OpenExclusiveInternal(target);
+            // Returning to the editor just opened would make Escape a no-op that reads as a
+            // frozen key, so that pairing is refused rather than armed.
+            _returnTo = ReferenceEquals(target, returnTo) ? null : returnTo;
+        }
+
+        /// <summary>
+        /// Take the armed return target, if there is one. Consumed: Escape goes back exactly
+        /// once, and a second press behaves as it always did.
+        /// </summary>
+        public bool TryConsumeReturnTarget(out IGameEditor back)
+        {
+            back = _returnTo;
+            _returnTo = null;
+            // A target unregistered while it was armed (a scene teardown) must not be reopened.
+            if (back != null && !_registered.Contains(back)) back = null;
+            return back != null;
+        }
+
+        private void OpenExclusiveInternal(IGameEditor target)
         {
             if (target == null) return;
 
@@ -100,6 +164,7 @@ namespace Valkur.Core
                 CaptureWorkspace(target);
                 target.Deactivate();
                 _activeEditor = null;
+                _returnTo = null;   // closing to gameplay ends the trail
                 OnEditorStateChanged?.Invoke(false);
             }
             else
@@ -113,6 +178,7 @@ namespace Valkur.Core
         /// </summary>
         public void CloseAll()
         {
+            _returnTo = null;
             if (_activeEditor != null)
             {
                 CaptureWorkspace(_activeEditor);
@@ -131,6 +197,7 @@ namespace Valkur.Core
                 // capture — see CaptureWorkspace.
                 CaptureWorkspace(editor);
                 _activeEditor = null;
+                _returnTo = null;   // an editor that closed itself ends the trail too
                 OnEditorStateChanged?.Invoke(false);
             }
         }

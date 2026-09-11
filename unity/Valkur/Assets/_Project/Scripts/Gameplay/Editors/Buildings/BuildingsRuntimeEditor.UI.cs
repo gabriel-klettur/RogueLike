@@ -37,7 +37,7 @@ namespace Valkur.Gameplay.Buildings
                 onRedo:            () => _undo.Redo(),
                 onSave:            () => SaveInstancesToJson(),
                 onReload:          () => ReloadFromJson(),
-                onModeSelect:      () => SetMode(EditorMode.Select),
+                onModeSelect:      () => OnSelectButtonClicked(),
                 onModePlace:       () => SetMode(EditorMode.Place),
                 onModeResize:      () => SetMode(EditorMode.Resize),
                 onModeDelete:      () => SetMode(EditorMode.Delete),
@@ -89,7 +89,10 @@ namespace Valkur.Gameplay.Buildings
                 onDoorSizeMinus:             () => NudgeDoorSize(-1),
                 onDoorSizePlus:              () => NudgeDoorSize(+1),
                 onDoorApply:                 () => ApplyDoorFromPanel(),
-                onDoorClear:                 () => ClearDoorOnActive());
+                onDoorClear:                 () => ClearDoorOnActive(),
+                onSelectSimple:              () => OnSelectScopeChosen(SelectScope.Simple),
+                onSelectMultiple:            () => OnSelectScopeChosen(SelectScope.Multiple),
+                onSelectArea:                () => OnSelectScopeChosen(SelectScope.Area));
 
             // Wire panel close callbacks to keep dropdown state in sync
             if (_uiRefs.ModesPanelDrag     != null)
@@ -119,6 +122,12 @@ namespace Valkur.Gameplay.Buildings
             _interactableBtnImg   = _uiRefs.InteractableBtnImg;
             _interactableBtnLabel = _uiRefs.InteractableBtnLabel;
             _selectBtnImg  = _uiRefs.SelectBtnImg;
+            _selectBtnSubTmp      = _uiRefs.SelectBtnSubText;
+            _selectSubPanel       = _uiRefs.SelectSubPanel;
+            _selectSimpleBtnImg   = _uiRefs.SelectSimpleBtnImg;
+            _selectMultipleBtnImg = _uiRefs.SelectMultipleBtnImg;
+            _selectAreaBtnImg     = _uiRefs.SelectAreaBtnImg;
+            RefreshSelectScopeHighlights();
             _placeBtnImg   = _uiRefs.PlaceBtnImg;
             _resizeBtnImg  = _uiRefs.ResizeBtnImg;
             _deleteBtnImg  = _uiRefs.DeleteBtnImg;
