@@ -196,6 +196,9 @@ namespace Valkur.Core.Input
             Hotkey.AltModifier        => "<Keyboard>/leftAlt",
             Hotkey.ToggleDevConsole   => "<Keyboard>/backquote",
             Hotkey.OpenGeneralEditor  => "<Keyboard>/escape",
+            // Not an editor, so not retired: the debug HUD cycles its levels on F1. F2-F8 are
+            // held by the Tile and Buildings perf probes; F1 answers to nothing else.
+            Hotkey.ToggleDebugHUD     => "<Keyboard>/f1",
             _ => null
         };
 

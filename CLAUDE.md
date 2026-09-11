@@ -41,7 +41,7 @@ Every input read in Valkur goes through one of four centralized helpers. Touchin
 | **`MouseInputManager`** | `Scripts/Core/Input/MouseInputManager.cs` | Mouse buttons + position + wheel. `IsLeftMouseButtonPressed()`, `WasLeftMouseButtonReleasedThisFrame()`, `GetScreenMousePosition()`, `GetMouseWheelDelta()`, etc. ORs new InputSystem with legacy `UnityEngine.Input` automatically. |
 | **`KeyboardInputManager`** | `Scripts/Core/Input/KeyboardInputManager.cs` | Keyboard keys. `WasKeyPressedThisFrame(Key, KeyCode)`, `IsCtrlHeld()`, `WasEnterPressedThisFrame()`, `WasEscapePressedThisFrame()`, etc. Same OR-fallback pattern. |
 | **`InputCompat`** | `Scripts/Core/Input/InputCompat.cs` | Semantic menu helpers — `NavUpPressed()`, `ConfirmPressed()`, `CancelPressed()`. Wraps `KeyboardInputManager`. |
-| **`EditorHotkeyBindings`** | `Scripts/Core/Input/EditorHotkeyBindings.cs` | The `Editors` map's hotkeys — Escape, backquote, Ctrl+F5/F9, the Ctrl/Alt modifier probes, plus the fourteen editor toggles that now ship UNBOUND. Stateless API: `WasPerformedThisFrame(Hotkey.ToggleTile)`. Resolves the live action from `InputService.Editors` on every call (immune to zombie-after-hot-reload) and derives its legacy half from that binding. |
+| **`EditorHotkeyBindings`** | `Scripts/Core/Input/EditorHotkeyBindings.cs` | The `Editors` map's hotkeys — Escape, backquote, Ctrl+F5/F9, the Ctrl/Alt modifier probes, F1 for the debug HUD, plus the thirteen editor toggles that now ship UNBOUND. Stateless API: `WasPerformedThisFrame(Hotkey.ToggleTile)`. Resolves the live action from `InputService.Editors` on every call (immune to zombie-after-hot-reload) and derives its legacy half from that binding. |
 | **`InputBindingResolver`** | `Scripts/Core/Input/InputBindingResolver.cs` | The OR-gate itself. `WasPerformedThisFrame(action)` / `IsPressed(action)` / `WasReleasedThisFrame(action)` / `ReadVectorFallback(action)` — derives the LEGACY half from the action's own live binding, so a rebind moves both. Prefer it over a bare `action.WasPerformedThisFrame()` plus a literal `KeyCode`. |
 
 ### The binding layer (one model, not two)
@@ -132,8 +132,9 @@ Rules that follow:
   moved both. `InputServiceTests.AssetIds_AreUnique` pins it.
 ### Editors are reached from Escape, not from the F-row
 
-**The fourteen editor toggles ship UNBOUND.** Every runtime editor is opened from the General
-Editor on **Escape**. The F-row is free.
+**The thirteen editor toggles ship UNBOUND.** Every runtime editor is opened from the General
+Editor on **Escape**. The F-row is free except F1, which cycles the debug HUD's levels (it is an
+overlay you flip while PLAYING, not an editor — see "The debug HUD" below).
 
 That retired every same-map collision the project had: F2 held Combat Ranges AND Time &
 Weather, F3 held Spawner AND Lighting, F5 held Entities AND QuickSave, F9 held Debug HUD AND
@@ -160,7 +161,9 @@ C# rather than in the binding.
   about which keys exist.
 - **Still bound, because they are not editors:** Escape (General Editor — the only way in),
   backquote (DevConsole), Ctrl+F5 / Ctrl+F9 (quick save / load), leftCtrl / leftAlt (the
-  modifier probes).
+  modifier probes), and F1 (`Editors/ToggleDebugHUD`, the debug HUD's level cycle). F1 and not
+  F3: F2-F8 belong to the Tile and Buildings perf probes while their overlay is up.
+  `EditorEntryPointTests.TheDebugHud_CyclesOnF1_AndF1MeansNothingElse` pins it.
 - `EditorEntryPointTests` pins all of it, including the half that makes it safe: every retired
   toggle has a General Editor entry. An editor with no hotkey AND no menu entry is one nothing
   can open, and it would fail silently — nothing throws when a key never fires.
@@ -5360,6 +5363,61 @@ InventoryPointerRelay                   Gameplay/Inventory/UI/
   no Start or OnDestroy to a component added in Edit Mode, and `CurrencyWallet.OnCoinsChanged` is a
   STATIC event a fixture's window would otherwise stay subscribed to. A source guard that greps for
   `"Tab` matches `"Tab" + i`, and `| Q` matches `|| Quantity` — guard on the real phrases.
+
+## The debug HUD (F1): an instrument in the tool dialect
+
+Audited 2026-09-11 at **2.5/10** and rebuilt the same day to **8.3** — findings, measurements and
+what is open in `.github/DEBUG_HUD_BEAUTY_AUDIT_2026-09-11.md`; the visual rules are section 6 of
+`.github/HUD_VISUAL_LANGUAGE.md` ("same theme and grid as the HUD, different accent": no gold, no
+game colours, a state triad of its own).
+
+```text
+Core/Diagnostics/          FrameTimeHistory, FrameHitchLog, ConsoleLogTally — pure, tested
+Core/PerformanceMonitor    the ONE owner of frame measurement; samples every frame, open or not
+Data/UI/DebugHudStyle      Resources/UI/DebugHudStyle.asset
+UI/HUD/Debug/              DebugHUD (+.Build/.Readouts/.Events), DebugFrameGraph, DebugHudCounters,
+                           DebugHudRow/Section/Art/Text/Nearby/Click
+debughud [0-3|informe|copiar|reiniciar]   DevConsole, category "hud"
+```
+
+- **Levels: 0 hidden, 1 chip, 2 panel, 3 panel + `ai on` + combat ranges.** A release player
+  stops at 1 (`RuntimeEditorPolicy`). Level 3 turns on only the overlays that were OFF and hands
+  back exactly those. The level and the author's section folds persist in PlayerPrefs
+  (`valkur.debughud.*`) — machine state, like the boot weights.
+- **The old background measured 0 px tall for its whole life.** A `ContentSizeFitter` asks the
+  `ILayoutElement`s on ITS OWN object; the only one was an `Image` with no sprite, whose preferred
+  height is 0, and the TMP child was never consulted. It was legible only when the world behind it
+  was dark — the hour of the day decided whether the tool worked. The panel lays itself out in
+  texels now and no fitter is involved.
+- **The band is derived:** `HudLayout.ToolColumnTop` (under the clock and stance chip) down to the
+  combo badge on the player panel; `DebugHUD.BandTexels` is pure. It is ~181 texels at 1600x800 and
+  less at 1080p, so sections FOLD like an accordion: the one the author opened last keeps its room,
+  and a fold the screen made is never persisted as the author's choice.
+- **Only the headers and COPIAR are raycast targets.** The combat poll refuses a click over any
+  UI; a debug panel with a raycastable background is a dead zone for the left click wherever it sits.
+- **Every row reads the system's own seam (H8)**: the mouse buttons from `PlayerController` with
+  the BOOK cooldown (the old rows read `SpellCaster`'s internal slots, where 1-3 are empty for the
+  player and printed "RDY"), CERCA from `EntityFaction.SideOf` sorted by distance (6 of the 11
+  `EntityRegistry.Monsters` entries are neutral vendors — the old panel painted them as monsters).
+- **`ZoneManager` is not in the ServiceLocator.** `ServiceLocator.Get<ZoneManager>()` answers null
+  with one in the scene; the quest locator and the debug HUD fall back to a cached scene search.
+- **The graph is a ring in a texture scrolled by UV**, one column per frame, against a FIXED 50 ms
+  ceiling (an auto-scaling graph moves its budget lines whenever a spike arrives). A hitch writes a
+  white-hot top texel INTO its column, so the mark travels with the frame and falls off with it.
+- **Motes answer events only, and never land on a number.** The first build's GC puff was born on
+  its own counter and turned "4.9" into an unreadable glyph; row events now rise from the frame's
+  border and rings start outside the digits.
+- **`ConsoleCommand.Handler` is an `Action<string[]>` that receives the command NAME in `args[0]`
+  and DISCARDS the lambda's value.** `args => CmdBoot(args)` compiles and prints nothing: the `boot`
+  probe shipped that way and `boot all` never worked. A command that returns its answer is
+  registered as `args => Log(CmdX(args))` and reads its subcommand from `args[1]`;
+  `DevConsoleHandlerContractTests` refuses the bare form.
+- **A nearest-rank percentile needs an epsilon in float**: `0.99f * 100` is 99.0000x, so a bare
+  `Ceiling` made the p99 of 1..100 come out 100.
+- **Rewriting several files that depend on each other can break every session's compile.** Unity
+  recompiled halfway through this rebuild (an interface had gained members its only implementer
+  did not have yet) and blocked two other sessions' test runs. Make each save compile on its own,
+  or write the dependents first.
 
 ## Incident reports
 

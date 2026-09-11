@@ -96,5 +96,32 @@ namespace Valkur.Core.UI
         /// minimap, and its first rebuild still covered the music panel's medallion.
         /// </summary>
         public const float GameWindowRightInset = ScreenMargin + MusicPanelWidth + StackGap;
+
+        // ── The tool column (HUD_VISUAL_LANGUAGE.md, H6) ─────────────────────
+
+        /// <summary>
+        /// Distance from the TOP of the screen to the bottom of the top-left instruments: the
+        /// day/night clock and the stance chip under it (<c>StanceHUD</c>: top 186 + height 26).
+        /// Declared here so the tool column below them is derived rather than guessed.
+        /// </summary>
+        public const float TopLeftColumnBottom = 212f;
+
+        /// <summary>
+        /// Distance from the TOP of the screen to the first pixel the debug HUD may use. It is the
+        /// only tall band on screen no instrument occupies: between the top-left instruments and
+        /// the player panel. The old debug HUD sat in the top-right and covered 65 % of the
+        /// minimap at a higher sorting order.
+        /// </summary>
+        public const float ToolColumnTop = TopLeftColumnBottom + StackGap;
+
+        /// <summary>Distance from the LEFT screen edge to the tool column: the same margin as the clock.</summary>
+        public const float ToolColumnLeft = ScreenMargin;
+
+        /// <summary>
+        /// Sorting order of the debug HUD: over every instrument (the HUD canvas 100, the minimap
+        /// and the clock 105, music 140, spell bar 150) and under the game windows that may be
+        /// opened over it (inventory, chat and toasts at 200, the shop at 220).
+        /// </summary>
+        public const int ToolSortingOrder = 190;
     }
 }

@@ -32,13 +32,16 @@ namespace Valkur.Gameplay
                 Usage    = "boot [all|fallos|weights|recalibrar]",
                 Help     = "desglose del arranque: etapas, coste por etapa y fallos",
                 Category = "boot",
-                Handler  = args => CmdBoot(args)
+                // Log(...) and args[1]. The handler is an Action that receives the command NAME in
+                // args[0] and discards the lambda's value, so this command used to print nothing
+                // at all and read "boot" as its own subcommand — "boot all" never worked.
+                Handler  = args => Log(CmdBoot(args))
             });
         }
 
         private string CmdBoot(string[] args)
         {
-            string sub = args != null && args.Length > 0 ? args[0].ToLowerInvariant() : string.Empty;
+            string sub = args != null && args.Length > 1 ? args[1].ToLowerInvariant() : string.Empty;
 
             switch (sub)
             {

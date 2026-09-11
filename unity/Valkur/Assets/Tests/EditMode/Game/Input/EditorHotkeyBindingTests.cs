@@ -81,6 +81,8 @@ namespace Valkur.Tests.EditMode.Game.Input
             new object[] { EditorHotkeyBindings.Hotkey.QuickLoad,         "<Keyboard>/f9" },
             new object[] { EditorHotkeyBindings.Hotkey.CtrlModifier,      "<Keyboard>/leftCtrl" },
             new object[] { EditorHotkeyBindings.Hotkey.AltModifier,       "<Keyboard>/leftAlt" },
+            // Not an editor toggle: the debug HUD's level cycle keeps a key.
+            new object[] { EditorHotkeyBindings.Hotkey.ToggleDebugHUD,    "<Keyboard>/f1" },
         };
 
         // ── 1. Existence ────────────────────────────────────────────────────────

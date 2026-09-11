@@ -335,7 +335,8 @@ deberían renumerarse a R17-R20.
   botones del ratón de `PlayerController`, la facción de `EntityFaction.SideOf`), nunca de una
   estructura parecida. Una casilla vacía que dice "listo" es peor que una fila menos.
 - **H9 — En español y alcanzable con una tecla.** Cadenas desde una tabla; un binding en el asset
-  (el HUD de depuración: F3, ciclando niveles), además de la entrada del Editor General.
+  (el HUD de depuración: F1, ciclando niveles — no F3, porque F2-F8 son de las sondas de
+  rendimiento de Tile y Buildings), además de la entrada del Editor General.
 
 ### 6.4 Comprobaciones
 

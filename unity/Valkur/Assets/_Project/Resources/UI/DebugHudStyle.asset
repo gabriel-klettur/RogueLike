@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e788115cb2ae77d4b902787a50d52e68, type: 3}
+  m_Name: DebugHudStyle
+  m_EditorClassIdentifier: 
+  followPlayerHudTokens: 1
+  outline: {r: 0.03, g: 0.03, b: 0.05, a: 1}
+  panel: {r: 0.08, g: 0.08, b: 0.11, a: 1}
+  header: {r: 0.17, g: 0.17, b: 0.22, a: 1}
+  recess: {r: 0.05, g: 0.05, b: 0.08, a: 1}
+  text: {r: 1, g: 0.98, b: 0.93, a: 1}
+  textDim: {r: 0.72, g: 0.74, b: 0.82, a: 1}
+  title: {r: 0.58, g: 0.8, b: 0.84, a: 1}
+  budgetLine: {r: 0.72, g: 0.74, b: 0.82, a: 0.38}
+  good: {r: 0.3, g: 0.8, b: 0.72, a: 1}
+  warn: {r: 0.98, g: 0.6, b: 0.22, a: 1}
+  bad: {r: 0.95, g: 0.32, b: 0.45, a: 1}
+  hostile: {r: 0.96, g: 0.28, b: 0.22, a: 1}
+  neutral: {r: 0.95, g: 0.9, b: 0.7, a: 1}
+  ally: {r: 0.46, g: 0.86, b: 0.98, a: 1}
+  widthTexels: 150
+  paddingTexels: 3
+  rowTexels: 8
+  headerTexels: 10
+  graphTexels: 26
+  sectionGapTexels: 2
+  chipGraphWidthTexels: 48
+  goodMs: 17.5
+  warnMs: 34
+  graphCeilingMs: 50
+  rebuildSeconds: 0.2
+  nearbyRadius: 15
+  nearbyRows: 4
+  fadeSeconds: 0.12
+  moteCapacity: 48
+  motesOnHitch: 5
+  motesOnGc: 2
+  motesOnError: 4
+  motesOnStateChange: 8
+  motesOnCopy: 8
+  moteLifeSeconds: 0.5
+  moteSpeedTexels: 26

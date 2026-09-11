@@ -27,12 +27,16 @@ namespace Valkur.Tests.EditMode.Game.Bootstrap
     [TestFixture]
     public class EditorEntryPointTests
     {
-        /// <summary>The fourteen that were on F1-F12 and now ship unbound.</summary>
+        /// <summary>
+        /// The thirteen EDITOR toggles that were on F1-F12 and now ship unbound. The fourteenth,
+        /// <c>ToggleDebugHUD</c>, is not an editor — it is an overlay that cycles levels — and
+        /// is bound to F1; <see cref="TheDebugHud_CyclesOnF1_AndF1MeansNothingElse"/> pins it.
+        /// </summary>
         private static readonly string[] RetiredToggles =
         {
             "ToggleParticles", "ToggleCombatRanges", "ToggleTimeWeather", "ToggleSpawner",
             "ToggleLighting", "ToggleSpells", "ToggleEntities", "ToggleInventory",
-            "ToggleItems", "ToggleTile", "ToggleDebugHUD", "ToggleBuildings",
+            "ToggleItems", "ToggleTile", "ToggleBuildings",
             "ToggleMap", "ToggleFSM",
         };
 
@@ -187,6 +191,43 @@ namespace Valkur.Tests.EditMode.Game.Bootstrap
             Assert.IsEmpty(unreachable,
                 "These editors lost their hotkey and have no menu entry, so nothing can open " +
                 "them:\n" + string.Join("\n", unreachable));
+        }
+
+        /// <summary>
+        /// The debug HUD is the one former F-key toggle that keeps a key, because it is not an
+        /// editor: it is an overlay a developer flips while PLAYING, and three trips through a
+        /// menu to see a frame time is the usability defect its audit measured. F1 and not F3:
+        /// F2-F8 belong to the Tile and Buildings perf probes. It still keeps its General
+        /// Editor entry, and the binding still ships in ONE slot so the Controls editor can
+        /// move it.
+        /// </summary>
+        [Test]
+        public void TheDebugHud_CyclesOnF1_AndF1MeansNothingElse()
+        {
+            var asset = InputService.Initialize().Asset;
+            var action = EditorsMap().FindAction("ToggleDebugHUD", throwIfNotFound: false);
+            Assert.IsNotNull(action);
+            var slots = action.bindings.Where(b => !b.isComposite).ToList();
+            Assert.AreEqual(1, slots.Count, "one rebindable slot");
+            Assert.AreEqual("<Keyboard>/f1", slots[0].effectivePath);
+            Assert.AreEqual("<Keyboard>/f1",
+                EditorHotkeyBindings.FallbackPath(EditorHotkeyBindings.Hotkey.ToggleDebugHUD),
+                "the EditMode fallback mirrors the asset");
+
+            var others = new List<string>();
+            foreach (var map in asset.actionMaps)
+                foreach (var a in map.actions)
+                {
+                    if (a == action) continue;
+                    foreach (var b in a.bindings)
+                        if (string.Equals(b.effectivePath, "<Keyboard>/f1", System.StringComparison.OrdinalIgnoreCase))
+                            others.Add(map.name + "/" + a.name);
+                }
+            Assert.IsEmpty(others, "F1 must answer to the debug HUD alone:\n" + string.Join("\n", others));
+
+            var entries = GeneralEditorRegistry.BuildEntries().Select(e => Normalize(e.Label)).ToList();
+            Assert.IsTrue(entries.Any(e => e.StartsWith("debughud", System.StringComparison.Ordinal)),
+                "the key is a shortcut, not the only way in");
         }
 
         private static string Normalize(string s) =>

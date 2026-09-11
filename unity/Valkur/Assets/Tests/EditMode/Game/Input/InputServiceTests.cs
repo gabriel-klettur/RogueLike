@@ -171,6 +171,7 @@ namespace Valkur.Tests.EditMode.Game.Input
         [TestCase("AltModifier",        "<Keyboard>/leftAlt")]
         [TestCase("ToggleDevConsole",   "<Keyboard>/backquote")]
         [TestCase("OpenGeneralEditor",  "<Keyboard>/escape")]
+        [TestCase("ToggleDebugHUD",     "<Keyboard>/f1")]
         public void EditorsMap_ActionHasExpectedBinding(string actionName, string expectedPath)
         {
             var svc = InputService.Initialize();

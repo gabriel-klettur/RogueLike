@@ -62,6 +62,10 @@ namespace Valkur.UI.HUD
                 ['/'] = new[] { "   #", "   #", "  # ", "  # ", " #  ", " #  ", "#   " },
                 ['+'] = new[] { "     ", "  #  ", "  #  ", "#####", "  #  ", "  #  ", "     " },
                 ['-'] = new[] { "     ", "     ", "     ", "#####", "     ", "     ", "     " },
+                // Narrow on purpose: the debug HUD prints "10.3" and "01:23" in this face, and a
+                // full-width point would put a digit-sized gap in the middle of a number.
+                ['.'] = new[] { "  ", "  ", "  ", "  ", "  ", "##", "##" },
+                [':'] = new[] { "  ", "##", "##", "  ", "##", "##", "  " },
             };
         }
 
@@ -111,6 +115,22 @@ namespace Valkur.UI.HUD
                 ['.'] = new[] { " ", " ", " ", " ", "#" },
                 [':'] = new[] { " ", "#", " ", "#", " " },
                 ['%'] = new[] { "# #", "  #", " # ", "#  ", "# #" },
+                // Punctuation the debug HUD needs to print entity names, counters and states
+                // without falling back to TMP. Appended only: no existing glyph changed, and
+                // HudAbilitySlot's CanSpell check can only get MORE labels to fit.
+                ['('] = new[] { " #", "# ", "# ", "# ", " #" },
+                [')'] = new[] { "# ", " #", " #", " #", "# " },
+                ['['] = new[] { "##", "# ", "# ", "# ", "##" },
+                [']'] = new[] { "##", " #", " #", " #", "##" },
+                ['='] = new[] { "   ", "###", "   ", "###", "   " },
+                [','] = new[] { " ", " ", " ", "#", "#" },
+                ['<'] = new[] { "  #", " # ", "#  ", " # ", "  #" },
+                ['>'] = new[] { "#  ", " # ", "  #", " # ", "#  " },
+                ['#'] = new[] { "# #", "###", "# #", "###", "# #" },
+                ['!'] = new[] { "#", "#", "#", " ", "#" },
+                ['?'] = new[] { "## ", "  #", " # ", "   ", " # " },
+                ['_'] = new[] { "   ", "   ", "   ", "   ", "###" },
+                ['\''] = new[] { "#", "#", " ", " ", " " },
             };
         }
 

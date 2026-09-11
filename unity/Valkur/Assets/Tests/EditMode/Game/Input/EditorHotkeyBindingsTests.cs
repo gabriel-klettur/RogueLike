@@ -110,6 +110,7 @@ namespace Valkur.Tests.EditMode.Game.Input
         [TestCase(EditorHotkeyBindings.Hotkey.AltModifier,        "<Keyboard>/leftAlt")]
         [TestCase(EditorHotkeyBindings.Hotkey.ToggleDevConsole,   "<Keyboard>/backquote")]
         [TestCase(EditorHotkeyBindings.Hotkey.OpenGeneralEditor,  "<Keyboard>/escape")]
+        [TestCase(EditorHotkeyBindings.Hotkey.ToggleDebugHUD,     "<Keyboard>/f1")]
         public void Resolve_WithoutService_BindingPath_MatchesFallbackTable(
             EditorHotkeyBindings.Hotkey hotkey, string expectedPath)
         {

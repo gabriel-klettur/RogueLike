@@ -571,6 +571,10 @@ namespace Valkur.Gameplay
             // Same rule as the doors above: its own category, registered in one
             // contiguous block, so CmdHelp prints exactly one "quests" header.
             RegisterQuestCommands();
+
+            // The debug HUD (F1) — see DevConsole.Commands.DebugHud.cs. Its own category,
+            // registered last, for the same one-header rule as the two blocks above.
+            RegisterDebugHudCommands();
         }
 
         // ------------------------------------------------------------------
