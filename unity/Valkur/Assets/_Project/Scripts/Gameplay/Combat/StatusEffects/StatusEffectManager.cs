@@ -152,6 +152,23 @@ namespace Valkur.Gameplay.Combat
             OnEffectRemoved?.Invoke(effect);
         }
 
+        /// <summary>
+        /// Copy the live effects into a caller-owned buffer.
+        ///
+        /// <para>Exists for the world-space status row, which needs both MEMBERSHIP and each
+        /// effect's <c>EndTime</c> — the apply/remove events give the first and not the second,
+        /// and <see cref="GetSnapshot"/> allocates a list and a tuple per call and reports a type
+        /// NAME rather than a <see cref="StatusEffectKind"/>. The buffer is cleared here so a
+        /// caller cannot accumulate a stale entry by forgetting to.</para>
+        /// </summary>
+        public void CopyActiveTo(List<StatusEffect> buffer)
+        {
+            if (buffer == null) return;
+            buffer.Clear();
+            foreach (var kv in _active)
+                buffer.Add(kv.Value);
+        }
+
         // ── Serialization helper (for Save system) ──────────────────────────
 
         /// <summary>

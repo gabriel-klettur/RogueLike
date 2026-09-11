@@ -87,10 +87,16 @@ namespace Valkur.Gameplay
 
             var playerBar = go.GetComponent<WorldHealthBar>();
             if (playerBar == null) playerBar = go.AddComponent<WorldHealthBar>();
-            playerBar.SetBarColors(
-                new Color(0.2f, 0.9f, 0.25f, 1f),
-                new Color(0.95f, 0.85f, 0.15f, 1f));
-            playerBar.SetHideAtFullHp(false); // Python always shows player health bar
+            // Colours come from WorldBarStyle now. Three call sites each passing their own
+            // literals is precisely what made that asset unable to change anything, and the
+            // player's rank is resolved from the tag, which is set before this call.
+            //
+            // The bar no longer pins itself on screen either. It used to ("Python always shows
+            // player health bar"), and the cost was measured: three permanent bars over the head,
+            // 34 screen pixels of silhouette on a 149-pixel character, repeating what PlayerHUD
+            // and DashMeterHUD already show in the corner. It fades on the idle clock and comes
+            // straight back on the frame anything moves.
+            playerBar.SetHideAtFullHp(WorldBarStyle.Active.playerBarsHideWhenIdle);
 
             // World-space dash bar (above health bar) — Python parity
             if (go.GetComponent<WorldDashBar>() == null)

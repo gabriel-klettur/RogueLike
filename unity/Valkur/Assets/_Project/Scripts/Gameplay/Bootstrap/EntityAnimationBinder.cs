@@ -41,7 +41,17 @@ namespace Valkur.Gameplay
         {
             if (go == null || config == null)
                 return false;
-            return ApplyVisuals(go, config, config.FindLoadout(loadoutKey));
+            bool applied = ApplyVisuals(go, config, config.FindLoadout(loadoutKey));
+
+            // A swap replaces up to four sprite sets, and the readout over the character's head
+            // is placed from the top of the one it was born with. WorldBarRig measures on demand
+            // rather than every frame — measuring per frame would make the bar bob with the walk
+            // cycle, since each animation frame has its own trimmed height — so this is the seam
+            // that has to say the body changed.
+            if (applied)
+                go.GetComponent<Combat.WorldBarRig>()?.Remeasure();
+
+            return applied;
         }
 
         /// <summary>

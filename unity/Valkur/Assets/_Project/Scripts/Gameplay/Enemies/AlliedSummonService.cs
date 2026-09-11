@@ -101,10 +101,11 @@ namespace Valkur.Gameplay
             // for the same reason ConfigureMonster does it -- Gameplay may not reference UI.
             EntitySetup.ConfigureMinimapDot(go, "Ally", new Color(0.4f, 0.95f, 0.5f, 1f));
 
+            // Rank rather than two literals: the ally frame and the ally fill both live in
+            // WorldBarStyle now. Set explicitly because the bar's own Awake ran during
+            // ConfigureMonster, before AlliedUnit was attached, so it resolved as Normal.
             var bar = go.GetComponent<WorldHealthBar>();
-            if (bar != null)
-                bar.SetBarColors(new Color(0.3f, 0.85f, 0.45f, 1f),
-                                 new Color(0.45f, 0.95f, 0.55f, 1f));
+            if (bar != null) bar.SetRank(Valkur.Core.UI.WorldBarRank.Ally);
 
             ally.OnExpired += () => AllyDismissFX.Play(go);
         }

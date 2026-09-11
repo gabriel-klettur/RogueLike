@@ -1,215 +1,146 @@
 using UnityEngine;
+using Valkur.Core.UI;
 
 namespace Valkur.Gameplay.Combat
 {
     /// <summary>
-    /// World-space health bar rendered above an entity using SpriteRenderers.
-    /// Mirrors Python's HealthBarSystem: bar above sprite with smooth fill animation.
-    /// Hides when entity is at full HP or dead.
-    /// Colors are configurable per-entity via SetBarColors().
+    /// The health driver: it reports a number to <see cref="WorldBarRig"/> and owns no pixels.
+    ///
+    /// <para>It kept its name and its whole public surface because six systems attach or address
+    /// it — <c>EntitySetup</c> twice, <c>AlliedSummonService</c>, <c>NPCRespawnSystem</c>,
+    /// <c>UnconsciousState</c>, and both <c>InteractionPromptView</c> and <c>HarvestNodeBar</c>
+    /// for its shared sprite and material — but everything it used to DO now lives in the rig.
+    /// The split is what stops the mana and dash bars re-deriving this bar's geometry from
+    /// private copies of its constants, which is what they did.</para>
+    ///
+    /// <para><b>It distinguishes a blow from a heal, and that is new.</b> The old bar subscribed
+    /// to <c>OnHpChanged</c> alone, so it could see that a number had moved and never why: no
+    /// chip, no flash, no shake, and a heal that looked exactly like a hit. <c>OnDamaged</c> fires
+    /// immediately before <c>OnHpChanged</c> inside <c>Health.TakeDamage</c>, which is what makes
+    /// the distinction free.</para>
     /// </summary>
     public class WorldHealthBar : MonoBehaviour
     {
-        [Header("Settings")]
-        [SerializeField, Tooltip("Extra margin above sprite top edge.")]
-        private float marginAboveSprite = 0.12f;
-        [SerializeField] private float barWidth = 0.8f;
-        [SerializeField] private float barHeight = 0.1f;
-        [SerializeField] private float lowThreshold = 0.3f;
-        [SerializeField] private bool hideAtFullHp = true;
-
-        [Header("Colors")]
-        [SerializeField] private Color fillColor = new Color(0.2f, 0.9f, 0.2f, 1f);
-        [SerializeField] private Color lowColor = new Color(0.95f, 0.2f, 0.15f, 1f);
-        [SerializeField] private Color bgColor = new Color(0.12f, 0.12f, 0.12f, 0.95f);
-        [SerializeField] private Color borderColor = new Color(0f, 0f, 0f, 0.9f);
-
         private Health _health;
-        private Transform _barRoot;
-        private SpriteRenderer _borderRenderer;
-        private SpriteRenderer _bgRenderer;
-        private SpriteRenderer _fillRenderer;
-        private float _targetFill = 1f;
-
-        private const string SORTING_LAYER = "UI_World";
-        private const int SORT_BORDER = 200;
-        private const int SORT_BG = 201;
-        private const int SORT_FILL = 202;
+        private WorldBarRig _rig;
+        private int _lastHp = int.MinValue;
+        private bool _blowPending;
 
         private void Awake()
         {
             _health = GetComponent<Health>();
-            CreateBarVisuals();
+            _rig = WorldBarRig.Ensure(gameObject);
+            _rig.SetRank(ResolveRank());
+        }
+
+        private void OnEnable()
+        {
+            if (_rig == null) return;
+            _rig.SetSuppressed(false);
+            if (_health == null) return;
+
+            _health.OnHpChanged += OnHpChanged;
+            _health.OnDamaged += OnDamaged;
+            _lastHp = int.MinValue;
+            OnHpChanged(_health.CurrentHp, _health.MaxHp);
+        }
+
+        private void OnDisable()
+        {
+            if (_health != null)
+            {
+                _health.OnHpChanged -= OnHpChanged;
+                _health.OnDamaged -= OnDamaged;
+            }
+            // UnconsciousState disables this component to put a downed NPC's readout away. The
+            // rig is a separate object, so saying so explicitly is the only thing that hides it.
+            if (_rig != null) _rig.SetSuppressed(true);
+        }
+
+        private void OnDamaged(int amount) => _blowPending = amount > 0;
+
+        private void OnHpChanged(int current, int max)
+        {
+            if (_rig == null) return;
+
+            WorldBarChange change;
+            if (_blowPending) change = WorldBarChange.Damage;
+            else if (_lastHp != int.MinValue && current > _lastHp) change = WorldBarChange.Heal;
+            else change = WorldBarChange.Silent;
+
+            _blowPending = false;
+            _lastHp = current;
+            _rig.SetHealth(current, max, change);
         }
 
         /// <summary>
-        /// Compute the local-space Y of the sprite's top edge (above pivot).
-        /// Works regardless of entity scale.
+        /// What the frame says about this creature. Player and ally are answered here because
+        /// both are properties of the object itself; elite and boss come from the
+        /// <c>MonsterDefinition</c>, which only <c>EntitySetup</c> holds, through
+        /// <see cref="SetRank"/>.
+        /// </summary>
+        private WorldBarRank ResolveRank()
+        {
+            if (CompareTag("Player")) return WorldBarRank.Player;
+            if (AlliedUnit.IsAllied(gameObject)) return WorldBarRank.Ally;
+            return WorldBarRank.Normal;
+        }
+
+        /// <summary>Set the frame's rank explicitly. Player and Ally are resolved without it.</summary>
+        public void SetRank(WorldBarRank rank)
+        {
+            if (_rig == null) _rig = WorldBarRig.Ensure(gameObject);
+            _rig.SetRank(rank);
+        }
+
+        /// <summary>
+        /// Override the health colours for this entity.
+        ///
+        /// <para>Kept for compatibility and deliberately no longer called by the shipped setup:
+        /// the palette lives in <c>WorldBarStyle</c> now, and three call sites each passing their
+        /// own literals is what made the asset unable to change anything.</para>
+        /// </summary>
+        public void SetBarColors(Color fill, Color low)
+        {
+            if (_rig == null) _rig = WorldBarRig.Ensure(gameObject);
+            _rig.SetHealthColours(fill, low);
+        }
+
+        /// <summary>Whether this bar may fade away when it has nothing to report.</summary>
+        public void SetHideAtFullHp(bool hide)
+        {
+            if (_rig == null) _rig = WorldBarRig.Ensure(gameObject);
+            _rig.SetHideAtFullHealth(hide);
+        }
+
+        /// <summary>Re-measure the body. Call after a loadout swap or a scale change.</summary>
+        public void Remeasure() => _rig?.Remeasure();
+
+        /// <summary>
+        /// Local-space Y of the top of an entity's sprite, above its pivot. Kept public because
+        /// it predates the rig and reads correctly for any caller that wants to hang something
+        /// over a creature's head.
         /// </summary>
         public static float GetSpriteTopY(GameObject entity)
         {
             var sr = entity.GetComponentInChildren<SpriteRenderer>();
             if (sr != null && sr.sprite != null)
             {
-                // bounds.max.y is the world-space top of the sprite.
-                // Subtract entity position to get local-space distance from pivot (feet) to top.
                 float worldTopY = sr.bounds.max.y - entity.transform.position.y;
                 float scaleY = entity.transform.localScale.y;
                 return scaleY > 0f ? worldTopY / scaleY : worldTopY;
             }
-            return 1.4f; // fallback for ~22px tall sprite at PPU 16
+            return 1.4f; // fallback for a ~22px tall sprite at PPU 16
         }
 
-        private void OnEnable()
-        {
-            if (_health != null)
-            {
-                _health.OnHpChanged += OnHpChanged;
-                OnHpChanged(_health.CurrentHp, _health.MaxHp);
-            }
-        }
-
-        private void OnDisable()
-        {
-            if (_health != null)
-                _health.OnHpChanged -= OnHpChanged;
-        }
-
-        /// <summary>
-        /// Configure bar colors externally (e.g., green for player, red for NPCs).
-        /// </summary>
-        public void SetBarColors(Color fill, Color low)
-        {
-            fillColor = fill;
-            lowColor = low;
-        }
-
-        /// <summary>
-        /// Python always shows the health bar for the player (no hide-at-full).
-        /// Monsters keep hideAtFullHp=true to reduce clutter.
-        /// </summary>
-        public void SetHideAtFullHp(bool hide)
-        {
-            hideAtFullHp = hide;
-            UpdateVisibility();
-        }
-
-        private void CreateBarVisuals()
-        {
-            _barRoot = new GameObject("HealthBar").transform;
-            _barRoot.SetParent(transform);
-
-            // Position above sprite top edge (like Python's screen_y - margin)
-            float spriteTopY = GetSpriteTopY(gameObject);
-            float barY = spriteTopY + marginAboveSprite;
-
-            // Compensate for entity visual scaling so bar stays constant size
-            float parentScaleY = transform.localScale.y;
-            if (parentScaleY > 0f && !Mathf.Approximately(parentScaleY, 1f))
-            {
-                float inv = 1f / parentScaleY;
-                _barRoot.localPosition = new Vector3(0f, barY * inv, 0f);
-                _barRoot.localScale = new Vector3(inv, inv, 1f);
-            }
-            else
-            {
-                _barRoot.localPosition = new Vector3(0f, barY, 0f);
-                _barRoot.localScale = Vector3.one;
-            }
-
-            float borderPad = 0.04f;
-
-            // Border (slightly larger than bg)
-            _borderRenderer = CreateBarPart("Border",
-                new Vector3(barWidth + borderPad, barHeight + borderPad, 1f),
-                Vector3.zero, borderColor, SORT_BORDER);
-
-            // Background
-            _bgRenderer = CreateBarPart("BG",
-                new Vector3(barWidth, barHeight, 1f),
-                Vector3.zero, bgColor, SORT_BG);
-
-            // Fill
-            _fillRenderer = CreateBarPart("Fill",
-                new Vector3(barWidth, barHeight, 1f),
-                Vector3.zero, fillColor, SORT_FILL);
-
-            UpdateVisibility();
-        }
-
-        private SpriteRenderer CreateBarPart(string name, Vector3 scale, Vector3 localPos,
-            Color color, int sortOrder)
-        {
-            var go = new GameObject(name);
-            go.transform.SetParent(_barRoot);
-            go.transform.localPosition = localPos;
-            go.transform.localScale = scale;
-            var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = GetSharedPixelSprite();
-            sr.color = color;
-            sr.sortingLayerName = SORTING_LAYER;
-            sr.sortingOrder = sortOrder;
-            sr.material = GetSharedSpriteMaterial();
-            return sr;
-        }
-
-        private void Update()
-        {
-            if (_fillRenderer == null || _barRoot == null) return;
-            // Fast-path: bar root is hidden (full HP / dead). Skip the 4 per-frame
-            // transform writes and the colour assignment — they would do nothing
-            // visually. With ~7 enemies at full HP most of the time this saves
-            // 7 × ~0.05ms = ~0.35ms/frame in typical gameplay.
-            if (!_barRoot.gameObject.activeSelf) return;
-
-            // Smooth fill animation
-            float currentFill = _fillRenderer.transform.localScale.x;
-            float targetScaleX = _targetFill * barWidth;
-            // Second fast-path: nothing to lerp toward — skip transform writes
-            // once the fill has settled within 1/100 of a pixel of the target.
-            if (Mathf.Abs(currentFill - targetScaleX) < 0.001f)
-            {
-                // Still keep rotation reset cheap in case the parent rotated
-                // (this is one of the cheapest possible transform reads/writes
-                // when no change is needed — Unity early-exits internally).
-                _barRoot.rotation = Quaternion.identity;
-                return;
-            }
-            float newFill = Mathf.Lerp(currentFill, targetScaleX, Time.deltaTime * 10f);
-            _fillRenderer.transform.localScale = new Vector3(newFill, barHeight, 1f);
-
-            // Left-align the fill bar
-            float fillOffset = (newFill - barWidth) * 0.5f;
-            _fillRenderer.transform.localPosition = new Vector3(fillOffset, 0f, 0f);
-
-            // Color based on HP ratio
-            float ratio = barWidth > 0 ? newFill / barWidth : 0f;
-            _fillRenderer.color = ratio <= lowThreshold ? lowColor : fillColor;
-
-            // Keep bar facing camera (no rotation from parent)
-            _barRoot.rotation = Quaternion.identity;
-        }
-
-        private void OnHpChanged(int current, int max)
-        {
-            _targetFill = max > 0 ? (float)current / max : 0f;
-            UpdateVisibility();
-        }
-
-        private void UpdateVisibility()
-        {
-            if (_barRoot == null || _health == null) return;
-
-            bool show = true;
-            if (_health.IsDead) show = false;
-            if (hideAtFullHp && _health.CurrentHp >= _health.MaxHp) show = false;
-
-            _barRoot.gameObject.SetActive(show);
-        }
+        // -- Shared white pixel, kept for the two callers outside this subsystem --------------
+        // InteractionPromptView and HarvestNodeBar both build their own plates from these. They
+        // are NOT what the bars draw with any more; the bars use WorldBarArt's atlas.
 
         private static Sprite _sharedPixelSprite;
         private static Material _sharedMaterial;
 
+        /// <summary>A 4x4 white sprite. Shared by the interaction prompt and the harvest bar.</summary>
         public static Sprite GetSharedPixelSprite()
         {
             if (_sharedPixelSprite != null) return _sharedPixelSprite;
@@ -223,6 +154,7 @@ namespace Valkur.Gameplay.Combat
             return _sharedPixelSprite;
         }
 
+        /// <summary>The shared unlit material those same two callers point at.</summary>
         public static Material GetSharedSpriteMaterial()
         {
             if (_sharedMaterial != null) return _sharedMaterial;

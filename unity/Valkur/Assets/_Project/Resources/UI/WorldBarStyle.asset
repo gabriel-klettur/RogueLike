@@ -1,0 +1,89 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d114ab9510bbe1b4b8a9958afd3cc663, type: 3}
+  m_Name: WorldBarStyle
+  m_EditorClassIdentifier: 
+  widthFollowsBody: 1
+  minWidthTexels: 14
+  maxWidthTexels: 30
+  fallbackWidthTexels: 20
+  maxWidthFractionOfHeight: 0.7
+  healthRowTexels: 6
+  resourceRowTexels: 4
+  rowGapTexels: 1
+  headMarginTexels: 1
+  pipTexels: 6
+  iconTexels: 10
+  iconGapTexels: 1
+  maxIcons: 4
+  drawPlate: 0
+  showQuarterNotches: 0
+  notchMinWidthTexels: 12
+  plate: {r: 0.15, g: 0.15, b: 0.19, a: 0.97}
+  frameNormal: {r: 0.02, g: 0.02, b: 0.03, a: 0.98}
+  frameAlly: {r: 0.35, g: 0.8, b: 0.45, a: 0.95}
+  frameElite: {r: 0.8, g: 0.8, b: 0.88, a: 0.95}
+  frameBoss: {r: 0.95, g: 0.78, b: 0.25, a: 1}
+  framePlayer: {r: 0.02, g: 0.02, b: 0.04, a: 0.98}
+  healthPlayer: {r: 0.3, g: 0.88, b: 0.34, a: 1}
+  healthAlly: {r: 0.36, g: 0.85, b: 0.52, a: 1}
+  healthHostile: {r: 0.86, g: 0.24, b: 0.22, a: 1}
+  healthLow: {r: 0.96, g: 0.72, b: 0.16, a: 1}
+  healthChip: {r: 1, g: 0.93, b: 0.85, a: 0.95}
+  lowThreshold: 0.3
+  mana: {r: 0.36, g: 0.55, b: 1, a: 1}
+  manaSpent: {r: 0.75, g: 0.86, b: 1, a: 0.9}
+  dashReady: {r: 0.2, g: 0.86, b: 1, a: 1}
+  dashCharging: {r: 0.32, g: 0.55, b: 0.68, a: 1}
+  notch: {r: 0, g: 0, b: 0, a: 0.55}
+  statusTints:
+  - {r: 1, g: 0.52, b: 0.16, a: 1}
+  - {r: 0.55, g: 0.9, b: 0.3, a: 1}
+  - {r: 1, g: 0.9, b: 0.35, a: 1}
+  - {r: 0.6, g: 0.88, b: 1, a: 1}
+  - {r: 0.7, g: 0.75, b: 0.9, a: 1}
+  - {r: 0.72, g: 0.55, b: 0.32, a: 1}
+  - {r: 1, g: 0.4, b: 0.65, a: 1}
+  - {r: 0.72, g: 0.45, b: 0.95, a: 1}
+  skin:
+    frameHealth: {fileID: -2297194410623772784, guid: 849a0a52eff8ab943a42a619a38b87d7, type: 3}
+    frameResource: {fileID: -6103066458257624387, guid: 849a0a52eff8ab943a42a619a38b87d7, type: 3}
+    plateHealth: {fileID: 0}
+    plateResource: {fileID: 0}
+    fillHealth: {fileID: 0}
+    fillResource: {fileID: 0}
+    solid: {fileID: 0}
+    pipFrame: {fileID: -3404413338114308592, guid: 849a0a52eff8ab943a42a619a38b87d7, type: 3}
+    pipCore: {fileID: -440788841395226311, guid: 849a0a52eff8ab943a42a619a38b87d7, type: 3}
+    statusIcons:
+    - {fileID: 6934086728263231946, guid: 849a0a52eff8ab943a42a619a38b87d7, type: 3}
+    - {fileID: -229256013063241344, guid: 849a0a52eff8ab943a42a619a38b87d7, type: 3}
+    - {fileID: -3885610455112514396, guid: 849a0a52eff8ab943a42a619a38b87d7, type: 3}
+    - {fileID: -7441382367286639308, guid: 849a0a52eff8ab943a42a619a38b87d7, type: 3}
+    - {fileID: 1618293649664528702, guid: 849a0a52eff8ab943a42a619a38b87d7, type: 3}
+    - {fileID: 8049885976776599914, guid: 849a0a52eff8ab943a42a619a38b87d7, type: 3}
+    - {fileID: 4014287730522540239, guid: 849a0a52eff8ab943a42a619a38b87d7, type: 3}
+    - {fileID: 4743126897691936252, guid: 849a0a52eff8ab943a42a619a38b87d7, type: 3}
+  chipHoldSeconds: 0.22
+  chipDrainSeconds: 0.35
+  hitShakeTexels: 1.5
+  hitShakeSeconds: 0.18
+  hitFlashSeconds: 0.09
+  fillLerpSpeed: 12
+  healPulseSeconds: 0.3
+  heartbeatHz: 2.2
+  heartbeatDepth: 0.55
+  dashReadyFlashSeconds: 0.25
+  idleFadeDelay: 4
+  fadeSeconds: 0.45
+  hostilesHideAtFullHealth: 1
+  playerBarsHideWhenIdle: 1

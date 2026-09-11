@@ -116,6 +116,26 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>InventoryUI + SpellBarHUD + HUDIconBar + CombatRangeVisualizer.</summary>
+        /// <summary>
+        /// What this creature's bar frame says about it.
+        ///
+        /// <para>Elite is not an authored flag - no such field exists on <c>MonsterDefinition</c> -
+        /// so it is derived from the one fact that already means "this one is harder than its
+        /// kind": the level the SPAWN was stamped with is above the definition's own. That is
+        /// exactly what <c>SpawnerTemplateData.levelBonus</c> and <c>scaleWithPlayerLevel</c>
+        /// produce, so a deep camp's guards are framed as elites without anybody authoring the
+        /// fact twice.</para>
+        /// </summary>
+        internal static Valkur.Core.UI.WorldBarRank ResolveBarRank(GameObject go, MonsterDefinition def)
+        {
+            if (def == null) return Valkur.Core.UI.WorldBarRank.Normal;
+            if (def.bossDefinition != null) return Valkur.Core.UI.WorldBarRank.Boss;
+            int spawned = SpawnLevel.Of(go, def);
+            return spawned > def.level
+                ? Valkur.Core.UI.WorldBarRank.Elite
+                : Valkur.Core.UI.WorldBarRank.Normal;
+        }
+
         internal static void ConfigurePlayerHUD()
         {
             EnsureInventoryUI();
@@ -191,9 +211,7 @@ namespace Valkur.Gameplay
 
             var npcBar = go.GetComponent<WorldHealthBar>();
             if (npcBar == null) npcBar = go.AddComponent<WorldHealthBar>();
-            npcBar.SetBarColors(
-                new Color(0.9f, 0.25f, 0.2f, 1f),
-                new Color(0.95f, 0.15f, 0.1f, 1f));
+            npcBar.SetRank(ResolveBarRank(go, def));
 
             var ySort = go.GetComponent<YSortEntity>();
             if (ySort == null) ySort = go.AddComponent<YSortEntity>();

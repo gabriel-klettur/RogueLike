@@ -146,6 +146,30 @@ namespace Valkur.Editor
                 importer.spritePixelsPerUnit = NPC_PPU;
                 SetPivot(importer, new Vector2(0.5f, 0f));
             }
+            else if (assetPath.Contains("/Art/WorldBars/"))
+            {
+                // WORLD-space UI, not screen UI, and the distinction is why this art lives in its
+                // own folder rather than under Art/UI/.
+                //
+                // The bars drawn over an entity's head are pixel art on the same 16-texel grid as
+                // the tiles: WorldBarGeometry sizes every piece in texels and CameraSetup keeps a
+                // texel a whole number of screen pixels. Imported under the rule below they would
+                // arrive at PPU 100 — a sixth of their intended size — with bilinear filtering
+                // softening a 5x5 status glyph into a smudge, and NOTHING would log it. The PNG
+                // would be correct and the import would be wrong, which is the shape this project
+                // keeps paying for.
+                //
+                // The folder ALSO has to stay out of every SpriteAtlas group whose filter is
+                // bilinear: an atlas overrides the filter of the textures it packs, so a sheet
+                // imported Point here still renders soft once ui.spriteatlas swallows it. That is
+                // not hypothetical — it is what the first version of this branch did, from
+                // Art/UI/world_bars/. Nothing packs Art/WorldBars/ today, and WorldBarArt refuses
+                // a piece whose filter is not Point, which is the guard if something ever does.
+                importer.spritePixelsPerUnit = DEFAULT_PPU;
+                importer.filterMode = FilterMode.Point;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.maxTextureSize = 512;
+            }
             else if (assetPath.Contains("/UI/"))
             {
                 importer.spritePixelsPerUnit = UI_PPU;
