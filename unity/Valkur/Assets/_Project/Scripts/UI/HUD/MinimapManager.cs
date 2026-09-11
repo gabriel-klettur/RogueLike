@@ -1,168 +1,60 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
-using Valkur.Core;
+using Valkur.Data;
 
 namespace Valkur.UI.HUD
 {
     /// <summary>
-    /// Minimap system: renders entity positions as coloured pixels on a Texture2D displayed in a RawImage.
-    /// Mirrors Python MinimapController + MinimapView:
-    ///   - Background tile layer (static, rate-limited)
-    ///   - Entity layer (player=green dot, monsters=red dots) updated every frame
-    ///   - Rate-limited tile redraw tied to player tile movement threshold
+    /// The minimap's model: which entities and landmarks exist, what the player has explored,
+    /// and how far the dial is zoomed. It draws nothing — <see cref="MinimapHUD"/> and
+    /// <see cref="WorldMapPanel"/> draw from it through <see cref="MinimapView"/>.
     ///
-    /// Usage:
-    ///   - Add MinimapManager to a Canvas child; wire rawImage and configure size.
-    ///   - Entities register themselves via MinimapDot.
+    /// <para><b>What it used to do, and why that is gone.</b> This class painted a 160x160
+    /// <c>Texture2D</c> pixel by pixel twelve times a second: 25,600 <c>SetPixel</c> calls for
+    /// the background, another 25,600 hash lookups for the fog, then flat squares for dots.
+    /// Measured at 4.26 ms a redraw — a spike every fifth frame — for a map with no terrain on
+    /// it at all. The terrain is now a baked atlas the GPU samples, the fog a byte grid
+    /// uploaded only when it changes, and the glyphs one mesh; none of it costs a
+    /// <c>SetPixel</c>.</para>
+    ///
+    /// <para>Its public surface is kept: <see cref="MinimapDot"/> and <see cref="MinimapMarker"/>
+    /// register here, gameplay reaches both through reflection (<c>EntitySetup</c>), and the
+    /// fog and zoom API is what the tests drive.</para>
     /// </summary>
     public partial class MinimapManager : MonoBehaviour
     {
-        [Header("Display")]
-        [Tooltip("The RawImage UI element to which the minimap texture is assigned.")]
-        [SerializeField] private UnityEngine.UI.RawImage rawImage;
-
-        [Tooltip("Minimap pixel dimensions (Python: 200x200 approx).")]
-        [SerializeField] private int texWidth  = 160;
-        [SerializeField] private int texHeight = 160;
-
-        [Header("World")]
-        [Tooltip("World-space radius visible on the minimap (zoom control). Persisted between sessions via PlayerPrefs.")]
-        [SerializeField] private float viewRadius = DEFAULT_VIEW_RADIUS;
-
-        // Zoom range: too small (<6) makes a single tile fill the dial, too
-        // large (>72) flattens the world. Geometric step keeps each wheel
-        // detent feeling proportional regardless of current zoom.
+        // Zoom range: too small (<8) makes a single tile fill the dial, too large (>64)
+        // flattens the world. Geometric step keeps each wheel detent feeling proportional.
         public  const float MIN_VIEW_RADIUS     = 8f;
         public  const float MAX_VIEW_RADIUS     = 64f;
         public  const float DEFAULT_VIEW_RADIUS = 24f;
         private const float ZOOM_STEP_FACTOR    = 1.18f;
         private const string ZOOM_PREF_KEY      = "valkur.minimap.viewRadius";
 
-        [Header("Rate Limits")]
-        [Tooltip("How often (seconds) the background tile layer redraws.")]
-#pragma warning disable CS0414
-        [SerializeField] private float tileRedrawInterval = 0.5f;
-#pragma warning restore CS0414
-
-        [Header("Dot sizes (pixels)")]
-        [SerializeField] private int playerDotSize  = 3;
-        [SerializeField] private int monsterDotSize = 2;
-        [SerializeField] private int npcDotSize     = 2;
-        [Tooltip("An ally is the player's own summon: drawn one pixel bigger than a monster so it can be picked out of a fight.")]
-        [SerializeField] private int allyDotSize    = 3;
-
-        [Header("Colors")]
-        [SerializeField] private Color bgColor      = new Color(0.06f, 0.06f, 0.10f, 0.85f);
-        [SerializeField] private Color playerColor  = new Color(0.2f,  0.95f, 0.3f,  1f);
-        [SerializeField] private Color monsterColor = new Color(0.9f,  0.2f,  0.2f,  1f);
-        [SerializeField] private Color npcColor     = new Color(0.9f,  0.85f, 0.3f,  1f);
-        [SerializeField] private Color allyColor    = new Color(0.4f,  0.95f, 0.5f,  1f);
-        [SerializeField] private Color borderColor  = new Color(0.3f,  0.3f,  0.35f, 1f);
-        [SerializeField] private Color fogColor     = new Color(0.03f, 0.03f, 0.05f, 1f);
+        [Header("World")]
+        [Tooltip("World-space radius visible on the minimap (zoom). Persisted between sessions via PlayerPrefs.")]
+        [SerializeField] private float viewRadius = DEFAULT_VIEW_RADIUS;
 
         [Header("Fog of War")]
-        [Tooltip("Enable exploration-based fog of war. Once a cell has been within reveal radius, it stays unfogged.")]
+        [Tooltip("Enable exploration-based fog of war. Once a cell has been within reveal radius, it stays explored.")]
         [SerializeField] private bool fogOfWarEnabled = true;
-        [Tooltip("World-space radius around the player that counts as explored each frame.")]
-        [SerializeField] private float revealRadius = 14f;
-        [Tooltip("World units covered by one fog cell; smaller = finer detail, more memory.")]
-        [SerializeField] private float fogCellSize = 1f;
 
         // ── Static registry ───────────────────────────────────────────────
         private static readonly List<MinimapDot> _dots = new List<MinimapDot>();
         private static readonly List<MinimapMarker> _markers = new List<MinimapMarker>();
 
-        public static void Register(MinimapDot dot)   { if (!_dots.Contains(dot)) _dots.Add(dot); }
+        public static void Register(MinimapDot dot)   { if (dot != null && !_dots.Contains(dot)) _dots.Add(dot); }
         public static void Unregister(MinimapDot dot) { _dots.Remove(dot); }
         public static void RegisterMarker(MinimapMarker m)   { if (m != null && !_markers.Contains(m)) _markers.Add(m); }
         public static void UnregisterMarker(MinimapMarker m) { _markers.Remove(m); }
 
-        /// <summary>
-        /// Read-only view of every registered marker. Lets MinimapHUD project
-        /// markers to disc-local UI coordinates without exposing the static
-        /// list for mutation.
-        /// </summary>
+        /// <summary>Every registered entity dot. Read-only view.</summary>
+        public static IReadOnlyList<MinimapDot> Dots => _dots;
+
+        /// <summary>Every registered landmark marker. Read-only view.</summary>
         public static IReadOnlyList<MinimapMarker> Markers => _markers;
 
-        // ── Board marker styling ────────────────────────────────────────────
-        //
-        // Colour and shape carry the MEANING, because a minimap dot has no room for a word
-        // and the label beside it is often the character's name rather than what they want.
-        // Gold diamond = work on offer, green plus = something finished to hand in, pale
-        // blue diamond = where an accepted objective is pointing.
-
-        /// <summary>Fill colour for a published marker.</summary>
-        public static Color BoardMarkerColor(Valkur.Core.UI.WorldMarkerKind kind)
-        {
-            switch (kind)
-            {
-                case Valkur.Core.UI.WorldMarkerKind.QuestOffer:   return new Color(0.95f, 0.78f, 0.20f, 1f);
-                case Valkur.Core.UI.WorldMarkerKind.QuestTurnIn:  return new Color(0.42f, 0.85f, 0.38f, 1f);
-                default:                                          return new Color(0.55f, 0.78f, 0.95f, 1f);
-            }
-        }
-
-        /// <summary>Glyph for a published marker.</summary>
-        public static MinimapMarker.MarkerShape BoardMarkerShape(Valkur.Core.UI.WorldMarkerKind kind) =>
-            kind == Valkur.Core.UI.WorldMarkerKind.QuestTurnIn
-                ? MinimapMarker.MarkerShape.Plus
-                : MinimapMarker.MarkerShape.Diamond;
-
-        /// <summary>
-        /// Size for a published marker. The turn-in is deliberately the biggest: it is the
-        /// one the player has already earned and the only one with a reward behind it.
-        /// </summary>
-        public static int BoardMarkerPixelSize(Valkur.Core.UI.WorldMarkerKind kind) =>
-            kind == Valkur.Core.UI.WorldMarkerKind.QuestTurnIn ? 7 : 5;
-
-        /// <summary>
-        /// Wire the host RawImage at runtime. Lets MinimapHUD build the chrome
-        /// programmatically and then plug the freshly-created RawImage into the
-        /// already-Awake() manager — no scene-side serialization required.
-        /// </summary>
-        public void BindRawImage(UnityEngine.UI.RawImage img)
-        {
-            rawImage = img;
-            if (img != null && _tex != null) img.texture = _tex;
-        }
-
-        /// <summary>Current visible world radius (zoom level). See <see cref="SetViewRadius"/>.</summary>
-        public float ViewRadius => viewRadius;
-
-        /// <summary>
-        /// Apply a new zoom level. Clamped to [MIN_VIEW_RADIUS, MAX_VIEW_RADIUS]
-        /// and persisted to PlayerPrefs so the player keeps their preferred zoom
-        /// across sessions (same convention as MusicPlayerHUD's size persistence).
-        /// </summary>
-        public void SetViewRadius(float radius)
-        {
-            float clamped = Mathf.Clamp(radius, MIN_VIEW_RADIUS, MAX_VIEW_RADIUS);
-            if (Mathf.Approximately(clamped, viewRadius)) return;
-
-            viewRadius = clamped;
-            PlayerPrefs.SetFloat(ZOOM_PREF_KEY, viewRadius);
-            PlayerPrefs.Save();
-
-            // Clear fog so the back-projected fog grid (which depends on
-            // viewRadius via worldPerPx) snaps to the new pixel sampling cleanly
-            // on the next redraw — without this, stale fog cells can briefly
-            // show through at the new zoom.
-            _exploredCells.Clear();
-        }
-
-        /// <summary>
-        /// Adjust zoom by integer detents. Positive detents zoom *out* (larger
-        /// view radius — see more world); negative detents zoom *in*. Step is
-        /// geometric so each click feels equally weighted at any zoom level.
-        /// </summary>
-        public void AdjustZoom(int detents)
-        {
-            if (detents == 0) return;
-            float factor = Mathf.Pow(ZOOM_STEP_FACTOR, detents);
-            SetViewRadius(viewRadius * factor);
-        }
-
-        // ── Static instance for MinimapDot color lookups ──────────────────
+        // ── Static instance ───────────────────────────────────────────────
         public static MinimapManager Instance { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -173,131 +65,95 @@ namespace Valkur.UI.HUD
             _markers?.Clear();
         }
 
-        // ── Runtime state ─────────────────────────────────────────────────
-        private Texture2D _tex;
-        private Color[] _bgPixels;          // pre-filled background row
-#pragma warning disable CS0414
-        private float _lastTileRedraw = -99f;
-#pragma warning restore CS0414
-        private Transform _playerTransform;
+        private MinimapFogMap _fog;
+        private bool _prefsRead;
 
-        // Fog-of-war: coarse 2D grid of explored cells in world space.
-        // Key = (cellX, cellY); value true once revealed.
-        private readonly System.Collections.Generic.HashSet<long> _exploredCells
-            = new System.Collections.Generic.HashSet<long>();
+        /// <summary>The explored mask. Created on first use, so EditMode tests need no Awake.</summary>
+        public MinimapFogMap Fog => _fog ??= new MinimapFogMap();
 
-        // Throttle the (very expensive) full-texture redraw + GPU upload.
-        // Texture2D.Apply() with 25k pixels every frame was the dominant CPU+GC cost
-        // (~400 KB/s alloc, ~30 ms/frame stall on integrated GPUs).
-        // 12 Hz is plenty smooth for a minimap and cuts the cost ~5x.
-        private const float REDRAW_INTERVAL = 1f / 12f;
-        private float _nextRedrawTime;
-
-        // ── Lifecycle ─────────────────────────────────────────────────────
+        /// <summary>True when fog of war is on.</summary>
+        public bool FogOfWarEnabled => fogOfWarEnabled;
 
         private void Awake()
         {
             Instance = this;
-
-            // Restore the player's last zoom preference. Out-of-range values
-            // from older or corrupted prefs are clamped silently.
-            if (PlayerPrefs.HasKey(ZOOM_PREF_KEY))
-            {
-                float saved = PlayerPrefs.GetFloat(ZOOM_PREF_KEY, DEFAULT_VIEW_RADIUS);
-                viewRadius = Mathf.Clamp(saved, MIN_VIEW_RADIUS, MAX_VIEW_RADIUS);
-            }
-
-            _tex = new Texture2D(texWidth, texHeight, TextureFormat.RGBA32, false)
-            {
-                filterMode = FilterMode.Point,
-                wrapMode   = TextureWrapMode.Clamp,
-            };
-
-            // Pre-compute solid background pixel array
-            _bgPixels = new Color[texWidth * texHeight];
-            for (int i = 0; i < _bgPixels.Length; i++)
-                _bgPixels[i] = bgColor;
-
-            if (rawImage != null)
-                rawImage.texture = _tex;
+            ReadZoomPreference();
         }
 
         private void OnDestroy()
         {
-            if (_tex != null)
-                Destroy(_tex);
+            SaveFogNow();
+            _fog?.Dispose();
+            if (Instance == this) Instance = null;
         }
 
-        private void LateUpdate()
+        private void OnApplicationQuit() => SaveFogNow();
+
+        private void ReadZoomPreference()
         {
-            // Throttle the entire redraw + GPU upload pipeline.
-            if (Time.unscaledTime < _nextRedrawTime) return;
-            _nextRedrawTime = Time.unscaledTime + REDRAW_INTERVAL;
-
-            // Resolve player transform lazily
-            if (_playerTransform == null)
-            {
-                var player = EntityRegistry.Player;
-                if (player != null) _playerTransform = player.transform;
-            }
-
-            if (_playerTransform == null) return;
-
-            Vector2 center = _playerTransform.position;
-
-            // Reveal cells around the player before rendering.
-            if (fogOfWarEnabled) RevealAround(center, revealRadius);
-
-            // Clear to background
-            _tex.SetPixels(_bgPixels);
-
-            // Fog-of-war pass: darken pixels that map to unexplored cells.
-            if (fogOfWarEnabled) PaintFog(center);
-
-            // Draw border
-            DrawBorder();
-
-            // Draw world markers (portals, vendors, quests).
-            foreach (var m in _markers)
-            {
-                if (m == null || !m.isActiveAndEnabled) continue;
-                if (!TryProject(m.WorldPosition, center, out int mx, out int my)) continue;
-                DrawMarker(mx, my, m.pixelSize, m.shape, m.EffectiveColor);
-            }
-
-            // Markers published as DATA by an assembly that cannot reference this one.
-            // The quest layer is Valkur.Gameplay and this is Valkur.UI, and neither may
-            // reference the other, so a MonoBehaviour marker was not an option — see
-            // WorldMarkerBoard. Drawn after the component markers and before the entity
-            // dots, so a quest target never hides the player.
-            var board = Valkur.Core.UI.WorldMarkerBoard.All;
-            for (int i = 0; i < board.Count; i++)
-            {
-                var wm = board[i];
-                if (!TryProject(wm.Position, center, out int bx, out int by)) continue;
-                DrawMarker(bx, by, BoardMarkerPixelSize(wm.Kind), BoardMarkerShape(wm.Kind),
-                           BoardMarkerColor(wm.Kind));
-            }
-
-            // Draw entity dots (drawn after markers so player/enemies are on top)
-            foreach (var dot in _dots)
-            {
-                if (dot == null || !dot.enabled) continue;
-                Vector2 wPos = dot.transform.position;
-                Vector2 rel  = wPos - center;
-                int px = Mathf.RoundToInt((rel.x / viewRadius) * (texWidth  * 0.5f) + texWidth  * 0.5f);
-                int py = Mathf.RoundToInt((rel.y / viewRadius) * (texHeight * 0.5f) + texHeight * 0.5f);
-
-                // Clip to texture bounds
-                int half = GetDotHalf(dot);
-                px = Mathf.Clamp(px, half, texWidth  - half - 1);
-                py = Mathf.Clamp(py, half, texHeight - half - 1);
-
-                DrawDot(px, py, half, dot.DotColor);
-            }
-
-            _tex.Apply(false);
+            if (_prefsRead) return;
+            _prefsRead = true;
+            if (PlayerPrefs.HasKey(ZOOM_PREF_KEY))
+                viewRadius = Mathf.Clamp(PlayerPrefs.GetFloat(ZOOM_PREF_KEY, DEFAULT_VIEW_RADIUS), MIN_VIEW_RADIUS, MAX_VIEW_RADIUS);
         }
 
+        // ── Zoom ──────────────────────────────────────────────────────────
+
+        /// <summary>Current visible world radius (the zoom TARGET; the dial eases toward it).</summary>
+        public float ViewRadius => viewRadius;
+
+        /// <summary>Apply a new zoom level, clamped and persisted.</summary>
+        public void SetViewRadius(float radius)
+        {
+            float clamped = Mathf.Clamp(radius, MIN_VIEW_RADIUS, MAX_VIEW_RADIUS);
+            if (Mathf.Approximately(clamped, viewRadius)) return;
+            viewRadius = clamped;
+            PlayerPrefs.SetFloat(ZOOM_PREF_KEY, viewRadius);
+            PlayerPrefs.Save();
+        }
+
+        /// <summary>
+        /// Adjust zoom by detents. Positive zooms OUT (see more world). Geometric, so each
+        /// click weighs the same at any zoom.
+        /// </summary>
+        public void AdjustZoom(int detents)
+        {
+            if (detents == 0) return;
+            SetViewRadius(viewRadius * Mathf.Pow(ZOOM_STEP_FACTOR, detents));
+        }
+
+        // ── Fog facade (kept for callers and tests) ───────────────────────
+
+        /// <summary>Mark everything within <paramref name="radius"/> of a world position explored.</summary>
+        public void RevealAround(Vector2 worldCenter, float radius) => Fog.Reveal(worldCenter, radius);
+
+        /// <summary>Forget the live world's explored cells.</summary>
+        public void ClearFog() => Fog.ClearActive();
+
+        /// <summary>True when a world position is explored (always, with fog of war off).</summary>
+        public bool IsExplored(Vector2 worldPos) => !fogOfWarEnabled || Fog.IsExplored(worldPos);
+
+        // ── Colours ───────────────────────────────────────────────────────
+
+        /// <summary>Default dot colour for a dot type, from the shipped style.</summary>
+        public Color GetDefaultColor(MinimapDotType type)
+        {
+            var s = MinimapStyle.Active;
+            switch (type)
+            {
+                case MinimapDotType.Player:  return s.playerColor;
+                case MinimapDotType.Monster: return s.enemyColor;
+                case MinimapDotType.Ally:    return s.allyColor;
+                default:                     return s.neutralColor;
+            }
+        }
     }
+
+    /// <summary>
+    /// APPEND ONLY, never renumber: the value is serialized on every <see cref="MinimapDot"/>
+    /// and is also reached BY NAME through reflection from Valkur.Gameplay
+    /// (<c>EntitySetup.ConfigureMinimapDot</c>), which the compiler cannot check —
+    /// <c>MinimapDotNameContractTests</c> asks that question instead.
+    /// </summary>
+    public enum MinimapDotType { Player, Monster, NPC, Ally }
 }

@@ -6,58 +6,42 @@ using Valkur.UIKit;
 namespace Valkur.UI.HUD
 {
     /// <summary>
-    /// Visual chrome for the top-right minimap. Mirrors the design language of
-    /// <see cref="DayNightClockHUD"/>: a circular dial up top (the live map) and
-    /// a rectangular info plate beneath (zone name + coords). The dial wears an
-    /// accent ring with N/E/S/W cardinal letters so the player can orient even
-    /// when the world is monochrome (spirit world / dungeon dark zones).
+    /// The dial's chrome, built in code: drop shadow, the map disc with its three quad layers,
+    /// the bevelled ring and its flash overlay, cardinal letters, three buttons that surface on
+    /// hover, and the plate with the zone name and a live subtitle.
     ///
-    /// Every sprite — disc, ring, and cardinal-tick fills — is generated in
-    /// code, so no scene assets are required. All sprites are white and tinted
-    /// at runtime by Image.color (UITheme palette).
+    /// <para><b>No Mask.</b> The previous build clipped the map with a stencil Mask on a
+    /// circle sprite, which gives an aliased edge and forces a material copy per graphic. The
+    /// composite shader antialiases its own circle; glyphs are kept inside the rim by the
+    /// projection; the ring's inner lip overlaps the map's edge so no seam can show.</para>
     /// </summary>
     public sealed partial class MinimapHUD
     {
-        // ── Layout (mirrors DayNightClockHUD's dial proportions) ────────────
-        private const float DISC_SIZE        = Valkur.Core.UI.HudLayout.TopRightColumnWidth;
-        private const float RING_THICK       = 6f;
-        private const float MAP_INSET        = 4f;
-        private const float INFO_BAND_H      = 40f;
-        private const float INFO_BAND_GAP    = 4f;
-        private const float CARDINAL_SIZE    = 16f;
-        private const float CARDINAL_INSET   = 3f;
-        private const float ARROW_SIZE       = 14f;
+        private const float DISC_SIZE     = Valkur.Core.UI.HudLayout.TopRightColumnWidth;
+        private const float MAP_FRACTION  = 0.925f;   // of the disc; just under the ring's lip
+        private const float INFO_BAND_H   = 40f;
+        private const float INFO_BAND_GAP = 4f;
+        private const float BUTTON_SIZE   = 20f;
 
-        // ── Theme handles (kept local so the file stays self-contained) ─────
-        private static readonly Color DISC_BG        = new Color(0.06f, 0.07f, 0.10f, 0.94f);
-        private static readonly Color RING_OUTER     = new Color(0.90f, 0.76f, 0.38f, 0.55f);
-        private static readonly Color CARDINAL_TINT  = new Color(0.95f, 0.85f, 0.45f, 0.95f);
-        private static readonly Color INFO_BG        = new Color(0.04f, 0.05f, 0.08f, 0.92f);
-        private static readonly Color INFO_BORDER    = new Color(0.90f, 0.76f, 0.38f, 0.45f);
-        private static readonly Color ARROW_TINT     = new Color(0.95f, 0.97f, 1.00f, 0.95f);
+        private Canvas              _canvas;
+        private RectTransform       _root;
+        private RectTransform       _discRt;
+        private RawImage            _mapImage;
+        private MinimapDiscInput    _discInput;
+        private MinimapQuadGraphic  _fxUnder, _glyphs, _fxOver;
+        private Image               _ring, _ringFlash, _plate;
+        private CanvasGroup         _buttons;
+        private CanvasGroup         _dialGroup;
+        private TextMeshProUGUI     _zoneLabel, _coordsLabel;
+        private TextMeshProUGUI[]   _cardinals;
+        private CanvasGroup         _scaleGroup;
+        private RectTransform       _scaleBar;
+        private TextMeshProUGUI     _scaleLabel;
+        private float               _scaleShow;
+        private float               _scaleSeenRadius = -1f;
 
-        // ── Sprite cache (Domain Reload OFF → reset hook below) ─────────────
-        private static Sprite _solidSprite;
-        private static Sprite _circleSprite;
-        private static Sprite _ringSprite;
-        private static Sprite _arrowSprite;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetSpriteCacheOnPlayModeEnter()
-        {
-            _solidSprite = _circleSprite = _ringSprite = _arrowSprite = null;
-        }
-
-        // ── UI handles (extra ones for the dial layout) ─────────────────────
-        private TextMeshProUGUI _coordsLabel;
-        private RectTransform   _discRt;
-        private float           _mapDiameter;
-
-        // ── Build entry point ───────────────────────────────────────────────
         private void BuildUI()
         {
-            // Own canvas: same sortingOrder as DayNightClockHUD so the two
-            // top-corner widgets share a layer and never fight z-order.
             var canvasGo = new GameObject("MinimapHUDCanvas");
             canvasGo.transform.SetParent(transform, false);
             _canvas = canvasGo.AddComponent<Canvas>();
@@ -66,190 +50,350 @@ namespace Valkur.UI.HUD
 
             var scaler = canvasGo.AddComponent<CanvasScaler>();
             scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(
-                Valkur.Core.UI.HudLayout.ReferenceWidth, Valkur.Core.UI.HudLayout.ReferenceHeight);
+            scaler.referenceResolution = new Vector2(Valkur.Core.UI.HudLayout.ReferenceWidth, Valkur.Core.UI.HudLayout.ReferenceHeight);
             scaler.matchWidthOrHeight  = Valkur.Core.UI.HudLayout.Match;
-            // GraphicRaycaster is needed so EventSystem.IsPointerOverGameObject()
-            // returns true when the cursor is over the disc — that's how
-            // CameraSetup.cs:262 knows to skip its own wheel-zoom logic while
-            // the player is scrolling to zoom the minimap.
+            // The raycaster is what makes the pointer over the dial count as "over UI", which is
+            // how the combat poll and the camera wheel know to leave it alone.
             canvasGo.AddComponent<GraphicRaycaster>();
 
             _root = NewRect("Root", canvasGo.transform);
-            _root.anchorMin        = new Vector2(1f, 1f);
-            _root.anchorMax        = new Vector2(1f, 1f);
-            _root.pivot            = new Vector2(1f, 1f);
+            _root.anchorMin = _root.anchorMax = new Vector2(1f, 1f);
+            _root.pivot = new Vector2(1f, 1f);
             _root.anchoredPosition = new Vector2(-MARGIN_RIGHT, -MARGIN_TOP);
-            _root.sizeDelta        = new Vector2(DISC_SIZE, DISC_SIZE + INFO_BAND_GAP + INFO_BAND_H);
+            _root.sizeDelta = new Vector2(DISC_SIZE, DISC_SIZE + INFO_BAND_GAP + INFO_BAND_H);
+            _dialGroup = _root.gameObject.AddComponent<CanvasGroup>();
 
-            // Build order matters for z-ordering: later siblings render on top.
-            BuildDiscWithMap();
-            BuildOuterRing();
-            BuildCardinalLetters();
-            BuildInfoPanel();
+            BuildShadow();
+            BuildMap();
+            BuildRing();
+            BuildCardinals();
+            BuildButtons();
+            BuildScaleBar();
+            BuildPlate();
+            BuildOverlays();
         }
 
-        // ── Disc (circular bg + Mask) + RawImage map + heading arrow ────────
-        private void BuildDiscWithMap()
+        /// <summary>
+        /// A scale bar that surfaces for a moment after the zoom changes: the one question a
+        /// zoomed map raises ("how far is that?") answered where the eye already is, and gone
+        /// again before it becomes furniture.
+        /// </summary>
+        private void BuildScaleBar()
         {
-            // Disc itself: circular sprite acts as both the dark backdrop and
-            // the alpha-shape mask that clips the inner RawImage to a circle.
-            // showMaskGraphic = true keeps the disc visible behind the map.
+            var root = NewRect("Scale", _root);
+            root.anchorMin = root.anchorMax = new Vector2(0.5f, 1f);
+            root.pivot = new Vector2(0.5f, 0.5f);
+            root.anchoredPosition = DiscCentre + new Vector2(0f, -DISC_SIZE * 0.29f);
+            root.sizeDelta = new Vector2(90f, 22f);
+            _scaleGroup = root.gameObject.AddComponent<CanvasGroup>();
+            _scaleGroup.alpha = 0f;
+            _scaleGroup.blocksRaycasts = false;
+
+            var back = AddImage(root, "Back", MinimapIconAtlas.SpriteOf(MinimapIcon.Glow), new Color(0f, 0f, 0f, 0.55f));
+            var br = back.rectTransform;
+            br.anchorMin = br.anchorMax = br.pivot = new Vector2(0.5f, 0.5f);
+            br.sizeDelta = new Vector2(96f, 34f);
+            back.raycastTarget = false;
+
+            var bar = AddImage(root, "Bar", MinimapIconAtlas.SpriteOf(MinimapIcon.Bar), _style.ringHighlight);
+            _scaleBar = bar.rectTransform;
+            _scaleBar.anchorMin = _scaleBar.anchorMax = _scaleBar.pivot = new Vector2(0.5f, 0.5f);
+            _scaleBar.anchoredPosition = new Vector2(0f, -5f);
+            _scaleBar.sizeDelta = new Vector2(40f, 2f);
+            bar.raycastTarget = false;
+            foreach (float side in new[] { -1f, 1f })
+            {
+                var tick = AddImage(_scaleBar, "Tick", MinimapIconAtlas.SpriteOf(MinimapIcon.Bar), _style.ringHighlight);
+                var tr = tick.rectTransform;
+                tr.anchorMin = tr.anchorMax = new Vector2(side < 0 ? 0f : 1f, 0.5f);
+                tr.pivot = new Vector2(0.5f, 0.5f);
+                tr.anchoredPosition = Vector2.zero;
+                tr.sizeDelta = new Vector2(2f, 7f);
+                tick.raycastTarget = false;
+            }
+
+            _scaleLabel = AddLabel(root, "Label", 10f, FontStyles.Bold, _style.ringHighlight);
+            _scaleLabel.alignment = TextAlignmentOptions.Center;
+            _scaleLabel.enableWordWrapping = false;
+            _scaleLabel.outlineWidth = 0.2f;
+            _scaleLabel.outlineColor = new Color32(0, 0, 0, 220);
+            var lr = _scaleLabel.rectTransform;
+            lr.anchorMin = lr.anchorMax = lr.pivot = new Vector2(0.5f, 0.5f);
+            lr.anchoredPosition = new Vector2(0f, 5f);
+            lr.sizeDelta = new Vector2(80f, 12f);
+        }
+
+        private const int ScaleStepCount = 7;
+        private static float ScaleStep(int i)
+        {
+            switch (i)
+            {
+                case 0: return 2f;  case 1: return 5f;  case 2: return 10f; case 3: return 20f;
+                case 4: return 25f; case 5: return 50f; default: return 100f;
+            }
+        }
+        private float _scaleUnitsShown = -1f;
+
+        private void UpdateScaleBar(float dt)
+        {
+            if (_scaleGroup == null || _view == null) return;
+            float target = _manager.ViewRadius;
+            if (_scaleSeenRadius >= 0f && !Mathf.Approximately(target, _scaleSeenRadius)) _scaleShow = 1.8f;
+            _scaleSeenRadius = target;
+            _scaleShow = Mathf.Max(0f, _scaleShow - dt);
+            _scaleGroup.alpha = Mathf.Clamp01(_scaleShow / 0.4f);
+            if (_scaleShow <= 0f) return;
+
+            // The longest round distance that fits in ~70 px at the CURRENT (eased) zoom, so the
+            // bar grows and shrinks with the map as it settles.
+            float upw = _view.UnitsPerWorld;
+            float units = ScaleStep(0);
+            for (int i = 0; i < ScaleStepCount; i++) if (ScaleStep(i) * upw <= 70f) units = ScaleStep(i);
+            _scaleBar.sizeDelta = new Vector2(Mathf.Max(8f, units * upw), 2f);
+            if (!Mathf.Approximately(units, _scaleUnitsShown))
+            {
+                _scaleUnitsShown = units;
+                _scaleLabel.text = units.ToString("0") + " m";
+            }
+        }
+
+        private Vector2 DiscCentre => new Vector2(0f, -DISC_SIZE * 0.5f);
+
+        private void BuildShadow()
+        {
+            var img = AddImage(_root, "DiscShadow", MinimapChromeSprites.DiscShadow(), new Color(1f, 1f, 1f, 0.72f));
+            Place(img.rectTransform, DiscCentre + new Vector2(2f, -4f), DISC_SIZE + 18f);
+            img.raycastTarget = false;
+        }
+
+        private void BuildMap()
+        {
             _discRt = NewRect("Disc", _root);
-            var discRt = _discRt;
-            discRt.anchorMin = new Vector2(0.5f, 1f);
-            discRt.anchorMax = new Vector2(0.5f, 1f);
-            discRt.pivot     = new Vector2(0.5f, 1f);
-            discRt.anchoredPosition = Vector2.zero;
-            discRt.sizeDelta = new Vector2(DISC_SIZE, DISC_SIZE);
+            Place(_discRt, DiscCentre, DISC_SIZE * MAP_FRACTION);
 
-            _bgPanel = discRt.gameObject.AddComponent<Image>();
-            _bgPanel.sprite = CircleSprite();
-            _bgPanel.color  = DISC_BG;
-            // raycastTarget = true so EventSystem.IsPointerOverGameObject()
-            // detects hover; the disc is the wheel-zoom hit shape. The sprite's
-            // alpha provides the round hit area (everywhere outside the circle
-            // is alpha 0 → not hit).
-            _bgPanel.raycastTarget = true;
-            _bgPanel.alphaHitTestMinimumThreshold = 0.5f;
+            _mapImage = _discRt.gameObject.AddComponent<RawImage>();
+            _mapImage.raycastTarget = true;
+            _discInput = _discRt.gameObject.AddComponent<MinimapDiscInput>();
+            _discInput.Clicked += ToggleWorldMap;
 
-            var mask = discRt.gameObject.AddComponent<Mask>();
-            mask.showMaskGraphic = true; // keep disc visible behind the clipped content
-
-            // Inner RawImage (hosts MinimapManager.Texture2D). Sized to fit
-            // INSIDE the accent ring so the ring is never overdrawn by map.
-            float mapSize = DISC_SIZE - (RING_THICK + MAP_INSET) * 2f;
-            _mapDiameter = mapSize;
-            var mapRt = NewRect("Map", discRt);
-            mapRt.anchorMin = new Vector2(0.5f, 0.5f);
-            mapRt.anchorMax = new Vector2(0.5f, 0.5f);
-            mapRt.pivot     = new Vector2(0.5f, 0.5f);
-            mapRt.anchoredPosition = Vector2.zero;
-            mapRt.sizeDelta = new Vector2(mapSize, mapSize);
-            _mapImage = mapRt.gameObject.AddComponent<RawImage>();
-            _mapImage.raycastTarget = false;
-
-            // Heading arrow (child of the disc so it's clipped if it ever
-            // strays out — but at 14px it never will). Drawn over the map.
-            _headingArrow = AddImage(discRt, "HeadingArrow", ArrowSprite(), ARROW_TINT);
-            var arrowRt = _headingArrow.rectTransform;
-            arrowRt.anchorMin = new Vector2(0.5f, 0.5f);
-            arrowRt.anchorMax = new Vector2(0.5f, 0.5f);
-            arrowRt.pivot     = new Vector2(0.5f, 0.5f);
-            arrowRt.anchoredPosition = Vector2.zero;
-            arrowRt.sizeDelta = new Vector2(ARROW_SIZE, ARROW_SIZE);
+            _fxUnder = AddQuadLayer(_discRt, "FxUnder", _additiveMaterial);
+            _glyphs  = AddQuadLayer(_discRt, "Glyphs", null);
+            _fxOver  = AddQuadLayer(_discRt, "FxOver", _additiveMaterial);
         }
 
-        // ── Outer accent ring ───────────────────────────────────────────────
-        private void BuildOuterRing()
+        private static MinimapQuadGraphic AddQuadLayer(RectTransform parent, string name, Material material)
         {
-            _bgBorder = AddImage(_root, "OuterRing", RingSprite(), RING_OUTER);
-            var rt = _bgBorder.rectTransform;
-            rt.anchorMin = new Vector2(0.5f, 1f);
-            rt.anchorMax = new Vector2(0.5f, 1f);
-            rt.pivot     = new Vector2(0.5f, 1f);
+            var rt = NewRect(name, parent);
+            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+            var g = rt.gameObject.AddComponent<MinimapQuadGraphic>();
+            g.raycastTarget = false;
+            if (material != null) g.material = material;
+            return g;
+        }
+
+        private void BuildRing()
+        {
+            _ring = AddImage(_root, "Ring", MinimapChromeSprites.Ring(_style), Color.white);
+            Place(_ring.rectTransform, DiscCentre, DISC_SIZE);
+            _ring.raycastTarget = false;
+
+            _ringFlash = AddImage(_root, "RingFlash", MinimapChromeSprites.RingFlash(_style), new Color(1f, 1f, 1f, 0f));
+            Place(_ringFlash.rectTransform, DiscCentre, DISC_SIZE);
+            _ringFlash.raycastTarget = false;
+            if (_additiveMaterial != null) _ringFlash.material = _additiveMaterial;
+        }
+
+        private void BuildCardinals()
+        {
+            float r = DISC_SIZE * 0.5f * (MinimapChromeSprites.RingInner + MinimapChromeSprites.RingOuter) * 0.5f;
+            _cardinals = new[]
+            {
+                BuildCardinal("N", 90f, r, _style.northColor, 13f),
+                BuildCardinal("E", 0f, r, _style.cardinalColor, 10f),
+                BuildCardinal("S", 270f, r, _style.cardinalColor, 10f),
+                BuildCardinal("O", 180f, r, _style.cardinalColor, 10f),
+            };
+        }
+
+        private TextMeshProUGUI BuildCardinal(string glyph, float angleDeg, float radius, Color color, float size)
+        {
+            // A dark stud under the letter so it reads over the bright bevel.
+            float a = angleDeg * Mathf.Deg2Rad;
+            Vector2 pos = DiscCentre + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * radius;
+            var stud = AddImage(_root, "Stud" + glyph, MinimapChromeSprites.Button(_style), Color.white);
+            Place(stud.rectTransform, pos, size + 5f);
+            stud.raycastTarget = false;
+
+            var tmp = AddLabel(_root, "Cardinal" + glyph, size, FontStyles.Bold, color);
+            tmp.text = glyph;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.enableWordWrapping = false;
+            tmp.outlineWidth = 0.22f;
+            tmp.outlineColor = new Color32(12, 8, 4, 255);
+            Place(tmp.rectTransform, pos + new Vector2(0f, 0.5f), 18f);
+            return tmp;
+        }
+
+        private void BuildButtons()
+        {
+            var groupRt = NewRect("Buttons", _root);
+            groupRt.anchorMin = groupRt.anchorMax = new Vector2(0f, 1f);
+            groupRt.pivot = new Vector2(0f, 1f);
+            groupRt.anchoredPosition = Vector2.zero;
+            groupRt.sizeDelta = new Vector2(DISC_SIZE, DISC_SIZE);
+            _buttons = groupRt.gameObject.AddComponent<CanvasGroup>();
+            _buttons.alpha = 0f;
+            _buttons.interactable = true;
+            _buttons.blocksRaycasts = true;
+
+            float r = DISC_SIZE * 0.5f * 0.99f;
+            // Local to the group, whose pivot is the top-left of the disc's square.
+            Vector2 centre = new Vector2(DISC_SIZE * 0.5f, -DISC_SIZE * 0.5f);
+            BuildButton(groupRt, "ZoomIn",  MinimapIcon.Plus,    centre, -22f, r, () => _manager.AdjustZoom(-1));
+            BuildButton(groupRt, "ZoomOut", MinimapIcon.Minus,   centre, -44f, r, () => _manager.AdjustZoom(1));
+            BuildButton(groupRt, "WorldMap", MinimapIcon.MapFold, centre, 214f, r, ToggleWorldMap);
+        }
+
+        private void BuildButton(RectTransform parent, string name, MinimapIcon icon, Vector2 centre, float angleDeg,
+                                 float radius, UnityEngine.Events.UnityAction onClick)
+        {
+            float a = angleDeg * Mathf.Deg2Rad;
+            Vector2 pos = centre + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * radius;
+
+            var img = AddImage(parent, name, MinimapChromeSprites.Button(_style), Color.white);
+            var rt = img.rectTransform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = pos;
+            rt.sizeDelta = new Vector2(BUTTON_SIZE, BUTTON_SIZE);
+
+            var btn = img.gameObject.AddComponent<Button>();
+            btn.targetGraphic = img;
+            var colors = btn.colors;
+            colors.normalColor = Color.white;
+            colors.highlightedColor = new Color(1f, 0.95f, 0.8f, 1f);
+            colors.pressedColor = new Color(0.8f, 0.7f, 0.5f, 1f);
+            colors.fadeDuration = 0.06f;
+            btn.colors = colors;
+            btn.onClick.AddListener(onClick);
+
+            var glyph = AddImage(rt, "Icon", MinimapIconAtlas.SpriteOf(icon), _style.ringHighlight);
+            var grt = glyph.rectTransform;
+            grt.anchorMin = grt.anchorMax = grt.pivot = new Vector2(0.5f, 0.5f);
+            grt.anchoredPosition = Vector2.zero;
+            grt.sizeDelta = new Vector2(BUTTON_SIZE * 0.72f, BUTTON_SIZE * 0.72f);
+            glyph.raycastTarget = false;
+        }
+
+        private void BuildPlate()
+        {
+            _plate = AddImage(_root, "InfoPlate", MinimapChromeSprites.Plate(_style), Color.white);
+            _plate.type = Image.Type.Sliced;
+            _plate.pixelsPerUnitMultiplier = 2f;
+            var rt = _plate.rectTransform;
+            rt.anchorMin = new Vector2(0f, 0f); rt.anchorMax = new Vector2(1f, 0f);
+            rt.pivot = new Vector2(0.5f, 0f);
             rt.anchoredPosition = Vector2.zero;
-            rt.sizeDelta = new Vector2(DISC_SIZE, DISC_SIZE);
-            _bgBorder.raycastTarget = false;
-        }
+            rt.sizeDelta = new Vector2(-8f, INFO_BAND_H);
+            _plate.raycastTarget = false;
 
-        // ── Cardinal letters (N/E/S/W) ─────────────────────────────────────
-        private void BuildCardinalLetters()
-        {
-            // Anchored to the *root* so they sit on top of the ring and aren't
-            // clipped by the disc's Mask. Positions use the disc center + the
-            // disc radius pushed inward by RING_THICK so the letters straddle
-            // the ring nicely. The disc is anchored top-center of the root.
-            float discCenterX = _root.sizeDelta.x * 0.5f;
-            float discCenterY = -DISC_SIZE * 0.5f; // disc is top-aligned, pivot top
-            float r = DISC_SIZE * 0.5f - RING_THICK - CARDINAL_INSET;
-
-            BuildCardinalLetter("CardinalN", "N", new Vector2(discCenterX, discCenterY + r));
-            BuildCardinalLetter("CardinalS", "S", new Vector2(discCenterX, discCenterY - r));
-            BuildCardinalLetter("CardinalE", "E", new Vector2(discCenterX + r, discCenterY));
-            BuildCardinalLetter("CardinalW", "W", new Vector2(discCenterX - r, discCenterY));
-        }
-
-        private void BuildCardinalLetter(string name, string glyph, Vector2 anchoredPos)
-        {
-            var go = new GameObject(name, typeof(RectTransform));
-            go.transform.SetParent(_root, false);
-            var tmp = go.AddComponent<TextMeshProUGUI>();
-            tmp.text                  = glyph;
-            tmp.color                 = CARDINAL_TINT;
-            tmp.fontSize              = 11;
-            tmp.fontStyle             = FontStyles.Bold;
-            tmp.alignment             = TextAlignmentOptions.Center;
-            tmp.enableWordWrapping    = false;
-            tmp.raycastTarget         = false;
-
-            var rt = tmp.rectTransform;
-            // Anchor to top-left of root and use anchoredPosition in screen-down y
-            // (pivot top-left ⇒ y is negative going down, matching discCenterY).
-            rt.anchorMin = new Vector2(0f, 1f);
-            rt.anchorMax = new Vector2(0f, 1f);
-            rt.pivot     = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = anchoredPos;
-            rt.sizeDelta = new Vector2(CARDINAL_SIZE, CARDINAL_SIZE);
-        }
-
-        // ── Bottom info panel (zone + coords) ───────────────────────────────
-        private void BuildInfoPanel()
-        {
-            // Background plate — solid dark with a top accent line that visually
-            // ties it to the ring above.
-            _labelBand = AddImage(_root, "InfoPlate", SolidSprite(), INFO_BG);
-            var bandRt = _labelBand.rectTransform;
-            bandRt.anchorMin = new Vector2(0f, 0f);
-            bandRt.anchorMax = new Vector2(1f, 0f);
-            bandRt.pivot     = new Vector2(0.5f, 0f);
-            bandRt.anchoredPosition = Vector2.zero;
-            bandRt.sizeDelta = new Vector2(0f, INFO_BAND_H);
-            _labelBand.raycastTarget = false;
-
-            // Thin gold separator at the top of the plate (matches DayNightClock
-            // BG_BOTTOM seam style).
-            var seam = AddImage(_root, "InfoSeam", SolidSprite(), INFO_BORDER);
-            var seamRt = seam.rectTransform;
-            seamRt.anchorMin = new Vector2(0f, 0f);
-            seamRt.anchorMax = new Vector2(1f, 0f);
-            seamRt.pivot     = new Vector2(0.5f, 0f);
-            seamRt.anchoredPosition = new Vector2(0f, INFO_BAND_H - 1f);
-            seamRt.sizeDelta = new Vector2(0f, 1f);
-            seam.raycastTarget = false;
-
-            // Zone name (top line, bold, primary color)
-            _zoneLabel = AddLabel(_root, "ZoneLabel", 13, FontStyles.Bold, UITheme.TEXT_PRIMARY);
-            var zoneRt = _zoneLabel.rectTransform;
-            zoneRt.anchorMin = new Vector2(0f, 0f);
-            zoneRt.anchorMax = new Vector2(1f, 0f);
-            zoneRt.pivot     = new Vector2(0.5f, 0f);
-            zoneRt.anchoredPosition = new Vector2(0f, INFO_BAND_H - 20f);
-            zoneRt.sizeDelta = new Vector2(-12f, 16f);
+            _zoneLabel = AddLabel(_root, "ZoneLabel", 14f, FontStyles.Bold, UITheme.TEXT_PRIMARY);
+            var zr = _zoneLabel.rectTransform;
+            zr.anchorMin = new Vector2(0f, 0f); zr.anchorMax = new Vector2(1f, 0f);
+            zr.pivot = new Vector2(0.5f, 0f);
+            zr.anchoredPosition = new Vector2(0f, INFO_BAND_H - 21f);
+            zr.sizeDelta = new Vector2(-18f, 17f);
             _zoneLabel.alignment = TextAlignmentOptions.Center;
             _zoneLabel.enableWordWrapping = false;
             _zoneLabel.overflowMode = TextOverflowModes.Ellipsis;
+            // Shrink before truncating: a long place name is still a name, "House Interior
+            // Small...." is not.
+            _zoneLabel.enableAutoSizing = true;
+            _zoneLabel.fontSizeMin = 10f;
+            _zoneLabel.fontSizeMax = 14f;
+            _zoneLabel.characterSpacing = 2f;
+            _zoneLabel.outlineWidth = 0.18f;
+            _zoneLabel.outlineColor = new Color32(0, 0, 0, 200);
             _zoneLabel.text = "—";
 
-            // Coords (bottom line, smaller, secondary color)
-            _coordsLabel = AddLabel(_root, "CoordsLabel", 10, FontStyles.Normal, UITheme.TEXT_SECONDARY);
-            var coordsRt = _coordsLabel.rectTransform;
-            coordsRt.anchorMin = new Vector2(0f, 0f);
-            coordsRt.anchorMax = new Vector2(1f, 0f);
-            coordsRt.pivot     = new Vector2(0.5f, 0f);
-            coordsRt.anchoredPosition = new Vector2(0f, 4f);
-            coordsRt.sizeDelta = new Vector2(-12f, 12f);
+            _coordsLabel = AddLabel(_root, "SubtitleLabel", 10.5f, FontStyles.Normal, UITheme.TEXT_SECONDARY);
+            var cr = _coordsLabel.rectTransform;
+            cr.anchorMin = new Vector2(0f, 0f); cr.anchorMax = new Vector2(1f, 0f);
+            cr.pivot = new Vector2(0.5f, 0f);
+            cr.anchoredPosition = new Vector2(0f, 5f);
+            cr.sizeDelta = new Vector2(-14f, 13f);
             _coordsLabel.alignment = TextAlignmentOptions.Center;
             _coordsLabel.enableWordWrapping = false;
-            _coordsLabel.text = "—";
+            _coordsLabel.overflowMode = TextOverflowModes.Ellipsis;
+            _coordsLabel.richText = true;
+            _coordsLabel.text = string.Empty;
+        }
+
+        // ── Per-frame chrome ────────────────────────────────────────────────
+
+        private void UpdateChrome(float dt, float now)
+        {
+            if (_ringFlash != null)
+            {
+                var c = _style.damageFlash;
+                c.a = _flash * _flash * 0.9f;
+                _ringFlash.color = c;
+            }
+
+            if (_ring != null)
+            {
+                // A spirit sees the dial cold: the gold drains toward moonlight.
+                var target = _scene.PlayerIsSpirit ? new Color(0.72f, 0.84f, 1f, 1f) : Color.white;
+                _ring.color = Color.Lerp(_ring.color, target, 1f - Mathf.Pow(0.02f, dt));
+                if (_cardinals != null)
+                    for (int i = 0; i < _cardinals.Length; i++)
+                    {
+                        var baseCol = i == 0 ? _style.northColor : _style.cardinalColor;
+                        _cardinals[i].color = Color.Lerp(_cardinals[i].color, baseCol * target, 1f - Mathf.Pow(0.02f, dt));
+                    }
+            }
+
+            bool hover = _discInput != null && _discInput.Hovered
+                         || RectTransformUtility.RectangleContainsScreenPoint(_root, Valkur.Core.Input.MouseInputManager.GetScreenMousePosition(), null);
+            _hoverAlpha = Mathf.MoveTowards(_hoverAlpha, hover ? 1f : 0f, dt * 6f);
+            if (_buttons != null)
+            {
+                _buttons.alpha = _hoverAlpha;
+                _buttons.blocksRaycasts = _hoverAlpha > 0.5f;
+            }
+
+            UpdateScaleBar(dt);
+
+            // The world map shows everything the dial does, larger; the dial peeking out beside
+            // its frame is the same information twice.
+            if (_dialGroup != null)
+                _dialGroup.alpha = Mathf.MoveTowards(_dialGroup.alpha, WorldMapOpen ? 0f : 1f, dt * 6f);
+
+            if (_zoneLabel != null)
+            {
+                _zoneFlash = Mathf.Max(0f, _zoneFlash - dt / 1.6f);
+                _zoneLabel.color = Color.Lerp(UITheme.TEXT_PRIMARY, _style.ringHighlight, _zoneFlash);
+                float punch = 1f + 0.12f * _zoneFlash * _zoneFlash;
+                _zoneLabel.rectTransform.localScale = new Vector3(punch, punch, 1f);
+            }
         }
 
         // ── Helpers ─────────────────────────────────────────────────────────
+
+        private static void Place(RectTransform rt, Vector2 centre, float size)
+        {
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = centre;
+            rt.sizeDelta = new Vector2(size, size);
+        }
+
         private static RectTransform NewRect(string name, Transform parent)
         {
             var go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
-            return go.GetComponent<RectTransform>();
+            return (RectTransform)go.transform;
         }
 
         private static Image AddImage(RectTransform parent, string name, Sprite sprite, Color color)
@@ -258,7 +402,7 @@ namespace Valkur.UI.HUD
             go.transform.SetParent(parent, false);
             var img = go.AddComponent<Image>();
             img.sprite = sprite;
-            img.color  = color;
+            img.color = color;
             return img;
         }
 
@@ -267,136 +411,11 @@ namespace Valkur.UI.HUD
             var go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
             var tmp = go.AddComponent<TextMeshProUGUI>();
-            tmp.fontSize  = size;
+            tmp.fontSize = size;
             tmp.fontStyle = style;
-            tmp.color     = color;
+            tmp.color = color;
             tmp.raycastTarget = false;
             return tmp;
-        }
-
-        // ── Sprite factory (white, tinted by Image.color) ───────────────────
-        private static Sprite SolidSprite()
-        {
-            if (_solidSprite != null) return _solidSprite;
-            var tex = new Texture2D(4, 4, TextureFormat.RGBA32, false)
-            { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
-            var px = new Color32[16];
-            for (int i = 0; i < 16; i++) px[i] = new Color32(255, 255, 255, 255);
-            tex.SetPixels32(px); tex.Apply();
-            _solidSprite = Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f));
-            return _solidSprite;
-        }
-
-        // Soft-edge filled circle. The Mask component on the disc uses the
-        // sprite's alpha for clipping, so anti-aliased edges give a clean
-        // round perimeter even when the widget is scaled by CanvasScaler.
-        private static Sprite CircleSprite()
-        {
-            if (_circleSprite != null) return _circleSprite;
-            const int N = 128;
-            var tex = NewIconTex(N);
-            var px  = new Color32[N * N];
-            float r = N * 0.5f;
-            for (int y = 0; y < N; y++)
-            for (int x = 0; x < N; x++)
-            {
-                float dx = x - r + 0.5f, dy = y - r + 0.5f;
-                float d  = Mathf.Sqrt(dx * dx + dy * dy);
-                float a  = Mathf.Clamp01(r - d);
-                px[y * N + x] = new Color32(255, 255, 255, (byte)(a * 255));
-            }
-            tex.SetPixels32(px); tex.Apply();
-            _circleSprite = Sprite.Create(tex, new Rect(0, 0, N, N), new Vector2(0.5f, 0.5f));
-            return _circleSprite;
-        }
-
-        // Hollow ring. The two soft thresholds give a clean band that scales
-        // smoothly. RING_THICK_PX matches the visual ring width at design size.
-        private static Sprite RingSprite()
-        {
-            if (_ringSprite != null) return _ringSprite;
-            const int N = 128;
-            // Map design-space RING_THICK into 0..N texture space. DISC_SIZE is
-            // the design-space disc diameter; the texture diameter is N. So the
-            // ring thickness in texture pixels is RING_THICK * (N / DISC_SIZE).
-            float ringThickTex = RING_THICK * (N / DISC_SIZE);
-
-            var tex = NewIconTex(N);
-            var px  = new Color32[N * N];
-            float r       = N * 0.5f;
-            float ringIn  = r - ringThickTex;
-            float ringOut = r - 0.5f;
-            for (int y = 0; y < N; y++)
-            for (int x = 0; x < N; x++)
-            {
-                float dx = x - r + 0.5f, dy = y - r + 0.5f;
-                float d  = Mathf.Sqrt(dx * dx + dy * dy);
-                float aIn  = Mathf.Clamp01(d - ringIn);
-                float aOut = Mathf.Clamp01(ringOut - d);
-                float a    = Mathf.Min(aIn, aOut);
-                px[y * N + x] = new Color32(255, 255, 255, (byte)(Mathf.Clamp01(a) * 255));
-            }
-            tex.SetPixels32(px); tex.Apply();
-            _ringSprite = Sprite.Create(tex, new Rect(0, 0, N, N), new Vector2(0.5f, 0.5f));
-            return _ringSprite;
-        }
-
-        private static Sprite ArrowSprite()
-        {
-            if (_arrowSprite != null) return _arrowSprite;
-
-            // Up-pointing triangle in a 16×16 RGBA texture. Pivot (0.5, 0.5) so
-            // the arrow rotates about its visual center when LateUpdate sets
-            // localRotation.z from PlayerController.FacingDirection.
-            const int W = 16;
-            const int H = 16;
-            var tex = new Texture2D(W, H, TextureFormat.RGBA32, false)
-            { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
-            var px = new Color32[W * H];
-
-            Vector2 apex = new Vector2(W * 0.5f, H - 1.5f);
-            Vector2 baseL = new Vector2(2f, 2f);
-            Vector2 baseR = new Vector2(W - 2f, 2f);
-
-            for (int y = 0; y < H; y++)
-            for (int x = 0; x < W; x++)
-            {
-                var p = new Vector2(x + 0.5f, y + 0.5f);
-                if (!PointInTriangle(p, apex, baseL, baseR))
-                {
-                    px[y * W + x] = new Color32(0, 0, 0, 0);
-                    continue;
-                }
-                float dMin = Mathf.Min(
-                    DistToSeg(p, apex, baseL),
-                    Mathf.Min(DistToSeg(p, baseL, baseR), DistToSeg(p, baseR, apex)));
-                float a = Mathf.Clamp01(dMin);
-                px[y * W + x] = new Color32(255, 255, 255, (byte)(a * 255));
-            }
-            tex.SetPixels32(px); tex.Apply();
-            _arrowSprite = Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f));
-            return _arrowSprite;
-        }
-
-        private static Texture2D NewIconTex(int n) =>
-            new Texture2D(n, n, TextureFormat.RGBA32, false)
-            { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
-
-        private static bool PointInTriangle(Vector2 p, Vector2 a, Vector2 b, Vector2 c)
-        {
-            float s1 = (p.x - b.x) * (a.y - b.y) - (a.x - b.x) * (p.y - b.y);
-            float s2 = (p.x - c.x) * (b.y - c.y) - (b.x - c.x) * (p.y - c.y);
-            float s3 = (p.x - a.x) * (c.y - a.y) - (c.x - a.x) * (p.y - a.y);
-            bool hasNeg = (s1 < 0f) || (s2 < 0f) || (s3 < 0f);
-            bool hasPos = (s1 > 0f) || (s2 > 0f) || (s3 > 0f);
-            return !(hasNeg && hasPos);
-        }
-
-        private static float DistToSeg(Vector2 p, Vector2 a, Vector2 b)
-        {
-            Vector2 ab = b - a;
-            float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / Mathf.Max(0.0001f, ab.sqrMagnitude));
-            return Vector2.Distance(p, a + ab * t);
         }
     }
 }

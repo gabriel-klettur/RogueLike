@@ -8,7 +8,8 @@
         "Valkur.Infrastructure",
         "Valkur.UIKit",
         "Unity.TextMeshPro",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

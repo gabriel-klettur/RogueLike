@@ -206,8 +206,15 @@ namespace Valkur.Gameplay
             ConfigureBoss(go, def);
             ConfigureChat(go, def);
 
-            // Minimap dot (monster = red) — uses reflection to avoid Gameplay→UI circular dependency
-            ConfigureMinimapDot(go, "Monster", new Color(0.9f, 0.2f, 0.2f, 1f));
+            // Minimap dot — reflection, because Gameplay may not reference UI. The type follows
+            // the FACTION: every NPC used to be registered as a Monster, so the six vendors in
+            // town were six red enemy dots under their own gold markers. ConfigureFactionAndThreat
+            // ran above, so the side is already resolvable here. Two literal calls rather than a
+            // ternary, because MinimapDotNameContractTests reads the literal to check the name.
+            if (EntityFaction.SideOf(go) == FactionSide.Neutral)
+                ConfigureMinimapDot(go, "NPC", new Color(0.95f, 0.90f, 0.70f, 1f));
+            else
+                ConfigureMinimapDot(go, "Monster", new Color(0.96f, 0.28f, 0.22f, 1f));
 
             var npcBar = go.GetComponent<WorldHealthBar>();
             if (npcBar == null) npcBar = go.AddComponent<WorldHealthBar>();

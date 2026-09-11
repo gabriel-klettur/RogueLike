@@ -58,6 +58,11 @@ namespace Valkur.Tests.EditMode.Game.World
             "Gameplay/Editors/Spells/SpellPreviewService.Framing.cs",
             "Gameplay/Editors/Particles/ParticlePreviewService.cs",
 
+            // The minimap's terrain bake. A disabled camera that renders one chunk of the world
+            // into a RenderTexture per Camera.Render call; its ortho is the chunk's half size and
+            // never touches the game view, the lens Cinemachine drives or the PPU ladder.
+            "UI/HUD/Minimap/MinimapWorldBaker.Bake.cs",
+
             // Inspector preview for a ParticlePresetDefinition. The camera
             // belongs to a PreviewRenderUtility and lives in its own preview
             // scene — it is not the game camera and Cinemachine never sees it.

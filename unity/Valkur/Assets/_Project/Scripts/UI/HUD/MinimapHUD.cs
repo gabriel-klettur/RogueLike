@@ -4,263 +4,548 @@ using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
 using Valkur.Core.Input;
+using Valkur.Data;
 using Valkur.Gameplay;
 using Valkur.Gameplay.World;
+using Valkur.Gameplay.World.Weather;
 
 namespace Valkur.UI.HUD
 {
     /// <summary>
-    /// Top-right minimap HUD. Owns the dial-style chrome (circular disc + accent
-    /// ring + N/E/S/W cardinals + dual-line info plate) and instantiates a
-    /// <see cref="MinimapManager"/> on the same GameObject for the actual
-    /// texture rendering. Reuses the existing dot/marker/fog system unchanged
-    /// — this class wraps it in a polished runtime-built UI that visually
-    /// matches <see cref="DayNightClockHUD"/>.
+    /// The top-right minimap: a bevelled gold dial over a live miniature of the world.
     ///
-    /// Mounted by <see cref="HUDBootstrap"/> into the <c>[UI]</c> container so
-    /// <see cref="HUDVisibilityController"/> hides it automatically while any
-    /// runtime editor (F1–F12) is open.
+    /// <para><b>What is on the dial.</b> The world's own art, baked by
+    /// <see cref="MinimapWorldBaker"/> and drawn through the composite shader with fog of war,
+    /// a gold frontier, a dimmed "remembered" band beyond what the player can currently see,
+    /// the day/night light, the weather and a sonar ping. Over it, one mesh of outlined glyphs
+    /// (<see cref="MinimapScene"/>) and one of additive glows and particles
+    /// (<see cref="MinimapFx"/>). The world map (<see cref="WorldMapPanel"/>) is the same
+    /// renderer at a different size.</para>
+    ///
+    /// <para><b>Everything moves every frame and nothing costs a SetPixel.</b> The dial this
+    /// replaced repainted a CPU texture twelve times a second, so its dots stepped and each
+    /// repaint cost 4.3 ms. The terrain is a GPU texture now, the glyph mesh is rebuilt per
+    /// frame, and the zoom eases instead of jumping.</para>
+    ///
+    /// Mounted by <see cref="HUDBootstrap"/> into the <c>[UI]</c> container, so
+    /// <c>HUDVisibilityController</c> hides it — and pauses its bake — while an editor is open.
     /// </summary>
     public sealed partial class MinimapHUD : MonoBehaviour
     {
-        // ── Root layout (margins; widget dimensions live in the UIBuilder) ──
-        // Taken from HudLayout, not typed here, because the quest log stacks under
-        // this widget and lives in an assembly that may not reference this one. Two
-        // hand-kept copies of a margin is how the two corners drifted apart before:
-        // measured, the minimap covered 29.4 % of the log and won on sortingOrder.
         private const float MARGIN_TOP   = Valkur.Core.UI.HudLayout.ScreenMargin;
         private const float MARGIN_RIGHT = Valkur.Core.UI.HudLayout.ScreenMargin;
+        private const float ZOOM_HALF_LIFE = 0.07f;
+        private const float REVEAL_INTERVAL = 0.08f;
 
-        // ── UI handles ──────────────────────────────────────────────────────
-        private Canvas        _canvas;
-        private RectTransform _root;
-        private Image         _bgPanel;
-        private Image         _bgBorder;
-        private Image         _labelBand;
-        private RawImage      _mapImage;
-        private Image         _headingArrow;
-        private TextMeshProUGUI _zoneLabel;
+        // ── Model ───────────────────────────────────────────────────────────
+        private MinimapManager    _manager;
+        private MinimapStyle      _style;
+        private MinimapWorldBaker _baker;
+        private readonly MinimapScene _scene = new MinimapScene();
+        private readonly MinimapFx    _fx    = new MinimapFx();
+        private MinimapView       _view;
+        private Material          _mapMaterial;
+        private Material          _additiveMaterial;
+        private WorldMapPanel     _worldMap;
 
-        // ── Runtime state ───────────────────────────────────────────────────
-        private MinimapManager   _manager;
-        private ZoneManager      _zoneManager;
-        private PlayerController _playerController;
-        private string           _lastZoneShown;
-        private Vector2Int       _lastCoordsShown = new Vector2Int(int.MinValue, int.MinValue);
+        // ── World ───────────────────────────────────────────────────────────
+        private ZoneManager       _zoneManager;
+        private PlayerController  _playerController;
+        private Health            _playerHealth;
+        private Valkur.Gameplay.Quests.QuestManager _quests;
+        private float             _nextWorldLookup;
 
-        // Pool of TMP labels parented to the disc — one per visible marker
-        // that has a non-empty caption. Captions are vendor role initials
-        // ("BS", "LJ"). Re-uses the same instances frame after frame; never
-        // grows beyond the highest historic count.
-        private readonly List<TextMeshProUGUI> _markerLabels = new List<TextMeshProUGUI>();
-        private static readonly Color MARKER_LABEL_COLOR = new Color(1.00f, 0.96f, 0.78f, 0.95f);
+        // ── State ───────────────────────────────────────────────────────────
+        private float  _displayRadius;
+        private float  _flash;
+        private string _worldKey;
+        private string _zoneShown;
+        private float  _zoneFlash;
+        private float  _nextInfo;
+        private float  _nextReveal;
+        private float  _moteCredit;
+        private int    _waypointRevision = -1;
+        private bool   _boardPrimed;
+        private bool   _wasSpirit;
+        private float  _hoverAlpha;
+        private readonly HashSet<int> _boardKeys = new HashSet<int>();
+        private readonly HashSet<int> _boardKeysNext = new HashSet<int>();
+        private readonly List<Vector2> _revealed = new List<Vector2>(64);
+
+        /// <summary>The dial's view. Exposed for diagnostics and tests.</summary>
+        public MinimapView View => _view;
+
+        /// <summary>The terrain baker. Exposed for diagnostics and the console.</summary>
+        public MinimapWorldBaker Baker => _baker;
+
+        /// <summary>The per-frame item collection shared with the world map.</summary>
+        public MinimapScene Scene => _scene;
+
+        /// <summary>True while the world map is open.</summary>
+        public bool WorldMapOpen => _worldMap != null && _worldMap.IsOpen;
 
         private void Awake()
         {
-            // Manager lives on the same GameObject so the [UI] hierarchy stays
-            // flat: a single MinimapHUD GameObject contains both the chrome and
-            // the rendering pipeline.
-            _manager = gameObject.GetComponent<MinimapManager>();
-            if (_manager == null)
-                _manager = gameObject.AddComponent<MinimapManager>();
+            _manager = GetComponent<MinimapManager>();
+            if (_manager == null) _manager = gameObject.AddComponent<MinimapManager>();
+            _style = MinimapStyle.Active;
         }
 
         private void Start()
         {
+            CreateMaterials();
             BuildUI();
-            if (_manager != null && _mapImage != null)
-                _manager.BindRawImage(_mapImage);
-
-            _zoneManager = FindObjectOfType<ZoneManager>();
-            if (_zoneManager != null)
-                _zoneManager.OnZoneChanged += HandleZoneChanged;
+            _view = new MinimapView(_mapImage, _fxUnder, _glyphs, _fxOver, _mapMaterial, circle: true);
+            _baker = new MinimapWorldBaker(transform, _style);
+            _displayRadius = _manager.ViewRadius;
+            _worldMap = WorldMapPanel.Create(transform, this, _mapMaterial.shader, _additiveMaterial);
         }
 
         private void OnDestroy()
         {
-            if (_zoneManager != null)
-                _zoneManager.OnZoneChanged -= HandleZoneChanged;
+            UnbindPlayerHealth();
+            if (_quests != null) _quests.OnQuestCompleted -= HandleQuestCompleted;
+            _baker?.Dispose();
+            if (_mapMaterial != null) Destroy(_mapMaterial);
+            if (_additiveMaterial != null) Destroy(_additiveMaterial);
         }
+
+        private void CreateMaterials()
+        {
+            var composite = MinimapStyle.ResolveShader(_style.compositeShader, "Valkur/UI/MinimapComposite");
+            var additive  = MinimapStyle.ResolveShader(_style.additiveShader, "Valkur/UI/MinimapAdditive");
+            if (composite == null || additive == null)
+                Debug.LogError("[Minimap] The minimap shaders are missing — assign them on Resources/UI/MinimapStyle.asset.");
+            _mapMaterial = new Material(composite != null ? composite : Shader.Find("UI/Default")) { name = "MinimapComposite (dial)" };
+            _additiveMaterial = new Material(additive != null ? additive : Shader.Find("UI/Default")) { name = "MinimapAdditive" };
+        }
+
+        // ── Frame ───────────────────────────────────────────────────────────
 
         private void LateUpdate()
         {
-            UpdateHeadingArrow();
-            UpdateZoneLabel();
-            UpdateCoordsLabel();
-            UpdateMarkerLabels();
+            if (_view == null) return;
+            long started = System.Diagnostics.Stopwatch.GetTimestamp();
+            float dt = Time.unscaledDeltaTime;
+            float now = Time.unscaledTime;
+            RegisterConsoleCommand();
+
+            _manager.TickPersistence(now);
+            ResolveWorld(now);
+
+            var playerT = EntityRegistry.PlayerTransform;
+            bool hasPlayer = playerT != null;
+            Vector2 player = hasPlayer ? (Vector2)playerT.position : _view.Centre;
+
+            string key = ResolveWorldKey();
+            if (key != _worldKey)
+            {
+                _worldKey = key;
+                _manager.Fog.SetActiveKey(key);
+                _fx.Clear();
+                _baker.MarkAllDirty();
+            }
+
+            if (hasPlayer && _manager.FogOfWarEnabled && now >= _nextReveal)
+            {
+                _nextReveal = now + REVEAL_INTERVAL;
+                _revealed.Clear();
+                _manager.Fog.Reveal(player, _style.revealRadius, _revealed, 24);
+                EmitRevealMotes(dt);
+            }
+
+            Vector2 bakeFocus = WorldMapOpen ? _worldMap.View.Centre : player;
+            _baker.Tick(bakeFocus, key);
+            RevealInteriorOnce();
+            _scene.Collect(_style, now);
+
+            TrackEvents(player, hasPlayer);
+            TickAmbient(now);
+            TickWeather(dt);
+            _fx.Tick(dt);
+            _flash = Mathf.Max(0f, _flash - dt / Mathf.Max(0.05f, _style.damageFlashSeconds));
+
+            _displayRadius = MinimapProjection.Damp(_displayRadius, _manager.ViewRadius, ZOOM_HALF_LIFE, dt);
+            _view.Centre = player;
+            _view.HalfHeightWorld = _displayRadius;
+
+            var frame = BuildFrame(now, hasPlayer, player);
+            _view.Draw(in frame, _scene, _fx);
+            if (WorldMapOpen) _worldMap.Draw(in frame, _scene);
+
             HandleZoomWheel();
+            HandleMapHotkey();
+            UpdateChrome(dt, now);
+            UpdateOverlays();
+            if (now >= _nextInfo)
+            {
+                _nextInfo = now + 0.5f;
+                UpdateInfoPlate();
+            }
+
+            double ms = (System.Diagnostics.Stopwatch.GetTimestamp() - started) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+            _frameMs = Mathf.Lerp(_frameMs, (float)ms, 0.1f);
+        }
+
+        private MinimapFrame BuildFrame(float now, bool hasPlayer, Vector2 player)
+        {
+            var f = new MinimapFrame
+            {
+                Style = _style,
+                Atlas = _baker.Atlas,
+                AtlasRect = _baker.AtlasWorldRect,
+                Fog = _manager.FogOfWarEnabled ? _manager.Fog.GetTexture() : Texture2D.whiteTexture,
+                FogRect = _manager.FogOfWarEnabled ? _manager.Fog.WorldRect : new Vector4(-100000f, -100000f, 200000f, 200000f),
+                HasPlayer = hasPlayer,
+                Player = player,
+                Facing = _playerController != null ? _playerController.FacingDirection : Vector2.up,
+                Time = now,
+                DayTint = ResolveDayTint(),
+                Spirit = _scene.PlayerIsSpirit,
+                FogMap = _manager.FogOfWarEnabled ? _manager.Fog : null,
+                SightRadius = _style.revealRadius * 1.15f,
+                ConfineToBounds = IsInterior,
+            };
+            var ar = _baker.AtlasWorldRect;
+            f.Bounds = new Rect(ar.x, ar.y, ar.z, ar.w);
+
+            ResolveWeather(out f.Desaturate, out f.Whiten);
+            // A spirit sees the world in grey (SpiritWorldGrayscale); a full-colour map beside a
+            // grey world reads as two different places. Most of the colour goes, not all of it,
+            // so the altars' glow and the frontier still carry.
+            if (f.Spirit) f.Desaturate = Mathf.Max(f.Desaturate, 0.7f);
+
+            float period = _style.sonarPeriod;
+            if (period > 0.1f && hasPlayer)
+            {
+                float t = (now % period) / period;
+                f.PingRadius = t * _style.revealRadius * 1.5f;
+                f.PingStrength = _style.sonarStrength * Mathf.Pow(1f - t, 1.6f) * Mathf.Clamp01(t * 8f);
+            }
+
+            var cam = Camera.main;
+            if (cam != null && cam.orthographic)
+            {
+                f.CameraHalfExtent = new Vector2(cam.orthographicSize * cam.aspect, cam.orthographicSize);
+                f.CameraCentre = cam.transform.position;
+            }
+            return f;
+        }
+
+        // ── Events worth a particle ─────────────────────────────────────────
+
+        private void EmitRevealMotes(float dt)
+        {
+            if (_revealed.Count == 0) return;
+            _moteCredit = Mathf.Min(_moteCredit + _style.revealMotesPerSecond * REVEAL_INTERVAL, 8f);
+            var c = _style.frontierGlow;
+            c.a = 0.9f;
+            for (int i = 0; i < _revealed.Count && _moteCredit >= 1f; i++)
+            {
+                if (Random.value > 0.35f) continue;
+                _fx.RevealMote(_revealed[i], c);
+                _moteCredit -= 1f;
+            }
+        }
+
+        private void TrackEvents(Vector2 player, bool hasPlayer)
+        {
+            // New quest marks announce themselves with a ring. The first pass only primes the
+            // set: every mark already on the board at load is not "new".
+            _boardKeysNext.Clear();
+            var items = _scene.Items;
+            for (int i = 0; i < items.Count; i++)
+            {
+                var it = items[i];
+                if (it.Layer != MinimapLayer.Quest) continue;
+                _boardKeysNext.Add(it.Key);
+                if (_boardPrimed && !_boardKeys.Contains(it.Key)) _fx.Pulse(it.World, it.Color, it.Size * 1.2f, 0.9f);
+            }
+            _boardKeys.Clear();
+            foreach (int k in _boardKeysNext) _boardKeys.Add(k);
+            _boardPrimed = true;
+
+            // The pin: arriving clears it with a burst; setting it (from the world map) pings it.
+            if (hasPlayer && MinimapWaypoint.HasWaypoint)
+            {
+                Vector2 pin = MinimapWaypoint.Position;
+                if (MinimapWaypoint.ClearIfReached(player))
+                {
+                    _fx.Burst(pin, _style.waypointColor, 12, 70f);
+                    _fx.Pulse(pin, _style.waypointColor, 18f, 0.8f);
+                }
+            }
+            if (MinimapWaypoint.Revision != _waypointRevision)
+            {
+                if (_waypointRevision >= 0 && MinimapWaypoint.HasWaypoint)
+                    _fx.Pulse(MinimapWaypoint.Position, _style.waypointColor, 16f, 0.8f);
+                _waypointRevision = MinimapWaypoint.Revision;
+            }
+
+            // Becoming a spirit: the dial breathes cold, and every altar rings once.
+            bool spirit = _scene.PlayerIsSpirit;
+            if (spirit && !_wasSpirit)
+            {
+                for (int i = 0; i < items.Count; i++)
+                    if (items[i].Icon == MinimapIcon.Ankh) _fx.Pulse(items[i].World, _style.altarColor, 22f, 1.2f);
+            }
+            _wasSpirit = spirit;
+        }
+
+        private void TickWeather(float dt)
+        {
+            var w = WeatherManager.Instance;
+            if (w == null || w.IsIndoors || (_worldKey != null && _worldKey != MinimapFogMap.WorldKey)) return;
+            _fx.Weather(w.DensityOf(WeatherType.Rain), w.DensityOf(WeatherType.Snow), w.DensityOf(WeatherType.Wind),
+                        _view.Radius, dt);
+        }
+
+        private void TickAmbient(float now)
+        {
+            int want = IsNight() ? _style.nightMotes : 0;
+            if (_fx.AmbientCount < want && Random.value < 0.05f)
+                _fx.AmbientMote(_view.Radius, new Color(0.75f, 0.85f, 1f, 0.22f));
+        }
+
+        // ── Player health (the rim flash) ───────────────────────────────────
+
+        private void BindPlayerHealth(Health h)
+        {
+            if (h == _playerHealth) return;
+            UnbindPlayerHealth();
+            _playerHealth = h;
+            if (_playerHealth != null) _playerHealth.OnDamagedBy += HandlePlayerDamaged;
+        }
+
+        private void UnbindPlayerHealth()
+        {
+            if (_playerHealth != null) _playerHealth.OnDamagedBy -= HandlePlayerDamaged;
+            _playerHealth = null;
+        }
+
+        private void HandlePlayerDamaged(int amount, GameObject attacker)
+        {
+            if (amount <= 0) return;
+            _flash = 1f;
+            var pt = EntityRegistry.PlayerTransform;
+            if (attacker == null || pt == null || _view == null) return;
+            Vector2 d = (Vector2)attacker.transform.position - (Vector2)pt.position;
+            if (d.sqrMagnitude < 1e-4f) return;
+            float bearing = Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg;
+            _fx.RimStrike(bearing, _view.Radius, _style.damageFlash);
         }
 
         /// <summary>
-        /// Project every <see cref="MinimapMarker"/> with a non-empty caption
-        /// onto the disc, positioning a small TMP label just above the marker
-        /// dot. Markers outside the current view radius (or with empty labels)
-        /// don't allocate a TMP — the pool only grows to the max historic
-        /// active count.
+        /// A finished errand bursts gold from the player — the one moment the map can say "that
+        /// is done" in the place the eye already is, before the mark that sent them disappears.
         /// </summary>
-        private void UpdateMarkerLabels()
+        private void HandleQuestCompleted(string questId)
         {
-            if (_manager == null || _discRt == null) return;
             var pt = EntityRegistry.PlayerTransform;
-            if (pt == null) { HideUnusedMarkerLabels(0); return; }
-
-            Vector2 center = pt.position;
-            float halfMap = _mapDiameter * 0.5f;
-            float scale   = halfMap / Mathf.Max(0.01f, _manager.ViewRadius);
-            // Reserve a small inset from the disc edge so labels don't get cut
-            // off by the circular Mask. Half a label height (~6 px) is enough.
-            float maxRadius = halfMap - 6f;
-            float maxRadiusSqr = maxRadius * maxRadius;
-
-            int active = 0;
-            var markers = MinimapManager.Markers;
-            for (int i = 0; i < markers.Count; i++)
-            {
-                var m = markers[i];
-                if (m == null || !m.isActiveAndEnabled) continue;
-                if (string.IsNullOrEmpty(m.label)) continue;
-
-                Vector2 rel = m.WorldPosition - center;
-                Vector2 uiPos = rel * scale;
-                if (uiPos.sqrMagnitude > maxRadiusSqr) continue;
-
-                var tmp = GetOrCreateMarkerLabel(active);
-                if (!tmp.gameObject.activeSelf) tmp.gameObject.SetActive(true);
-                if (tmp.text != m.label) tmp.text = m.label;
-
-                // Lift the label slightly above the dot so it doesn't overlap.
-                // Worth more at larger marker sizes; +8 px reads well at the
-                // default vendor pixelSize (4) and stays inside the disc when
-                // the dot is anywhere within maxRadius - 6 px.
-                tmp.rectTransform.anchoredPosition = new Vector2(uiPos.x, uiPos.y + 8f);
-                active++;
-            }
-            HideUnusedMarkerLabels(active);
+            if (pt == null) return;
+            _fx.Burst(pt.position, _style.questOfferColor, 16, 85f);
+            _fx.Pulse(pt.position, _style.questOfferColor, 26f, 1.0f);
         }
 
-        private TextMeshProUGUI GetOrCreateMarkerLabel(int idx)
+        // ── World lookups ───────────────────────────────────────────────────
+
+        private void ResolveWorld(float now)
         {
-            while (_markerLabels.Count <= idx)
+            if (now < _nextWorldLookup) return;
+            _nextWorldLookup = now + 1f;
+
+            if (_zoneManager == null) _zoneManager = FindObjectOfType<ZoneManager>();
+            if (_quests == null)
             {
-                var go = new GameObject($"MarkerLabel{_markerLabels.Count}", typeof(RectTransform));
-                go.transform.SetParent(_discRt, false);
-                var tmp = go.AddComponent<TextMeshProUGUI>();
-                tmp.fontSize  = 9f;
-                tmp.fontStyle = FontStyles.Bold;
-                tmp.color     = MARKER_LABEL_COLOR;
-                tmp.alignment = TextAlignmentOptions.Center;
-                tmp.enableWordWrapping = false;
-                tmp.raycastTarget = false;
-                tmp.overflowMode  = TextOverflowModes.Overflow;
-
-                var rt = tmp.rectTransform;
-                rt.anchorMin = new Vector2(0.5f, 0.5f);
-                rt.anchorMax = new Vector2(0.5f, 0.5f);
-                rt.pivot     = new Vector2(0.5f, 0.5f);
-                rt.sizeDelta = new Vector2(28f, 12f);
-
-                _markerLabels.Add(tmp);
+                _quests = FindObjectOfType<Valkur.Gameplay.Quests.QuestManager>();
+                if (_quests != null) _quests.OnQuestCompleted += HandleQuestCompleted;
             }
-            return _markerLabels[idx];
+
+            var p = EntityRegistry.Player;
+            if (p == null) { _playerController = null; UnbindPlayerHealth(); return; }
+            if (_playerController == null || _playerController.gameObject != p)
+                _playerController = p.GetComponent<PlayerController>();
+            BindPlayerHealth(p.GetComponent<Health>());
         }
 
-        private void HideUnusedMarkerLabels(int activeCount)
+        /// <summary>
+        /// Which world the player is in: the outdoor world, or one interior. Each keeps its own
+        /// fog, and a change rebakes the terrain.
+        /// </summary>
+        private bool IsInterior => _worldKey != null && _worldKey != MinimapFogMap.WorldKey;
+
+        private Vector4 _revealedInteriorRect;
+
+        /// <summary>
+        /// A room is not explored, it is seen: the moment its terrain bounds are known the whole
+        /// of it is revealed. Walking a 14x10 bedroom to clear its fog is busywork, and the
+        /// frontier ring drawn inside four walls reads as a fault in the map.
+        /// </summary>
+        private void RevealInteriorOnce()
         {
-            for (int i = activeCount; i < _markerLabels.Count; i++)
-            {
-                var tmp = _markerLabels[i];
-                if (tmp != null && tmp.gameObject.activeSelf)
-                    tmp.gameObject.SetActive(false);
-            }
+            if (!IsInterior || !_manager.FogOfWarEnabled || _baker.PixelsPerUnit <= 0) return;
+            var r = _baker.AtlasWorldRect;
+            if (r == _revealedInteriorRect) return;
+            _revealedInteriorRect = r;
+            var centre = new Vector2(r.x + r.z * 0.5f, r.y + r.w * 0.5f);
+            float radius = Mathf.Sqrt(r.z * r.z + r.w * r.w) * 0.5f;
+            // A rect this big is not a room — the bounds are still the outdoor world's for a
+            // frame — and revealing it would clear a town's worth of the interior's fog layer.
+            if (radius > 48f) { _revealedInteriorRect = default; return; }
+            _manager.Fog.Reveal(centre, radius);
         }
+
+        private string ResolveWorldKey()
+        {
+            bool interior = WorldTransitionService.IsBaseWorldContentSuspended
+                            || (_zoneManager != null && _zoneManager.IsDetectionSuspended);
+            if (!interior) return MinimapFogMap.WorldKey;
+            string zone = _zoneManager != null ? _zoneManager.CurrentZone : null;
+            return "interior:" + (string.IsNullOrEmpty(zone) ? "room" : zone);
+        }
+
+        private static Color ResolveDayTint()
+        {
+            if (!DayNightCycle.HasInstance) return Color.white;
+            var c = DayNightCycle.Instance.CurrentColor;
+            float max = Mathf.Max(c.r, Mathf.Max(c.g, c.b));
+            if (max < 1e-3f) return new Color(0.62f, 0.66f, 0.8f);
+            // Keep the HUE of the light and only some of its darkness: a map that went as dark
+            // as the midnight world would be unreadable exactly when the player needs it.
+            var hue = new Color(c.r / max, c.g / max, c.b / max);
+            float bright = Mathf.Lerp(0.62f, 1f, max);
+            return hue * bright;
+        }
+
+        private static bool IsNight()
+        {
+            if (!DayNightCycle.HasInstance) return false;
+            var ph = DayNightCycle.Instance.CurrentPhase;
+            return ph == DayNightCycle.DayPhase.Night || ph == DayNightCycle.DayPhase.BlueHour;
+        }
+
+        private void ResolveWeather(out float desaturate, out float whiten)
+        {
+            desaturate = 0f;
+            whiten = 0f;
+            var w = WeatherManager.Instance;
+            if (w == null || w.IsIndoors) return;
+            desaturate = _style.rainDesaturation * w.DensityOf(WeatherType.Rain);
+            whiten = _style.snowWhiten * w.DensityOf(WeatherType.Snow);
+        }
+
+        // ── Input ───────────────────────────────────────────────────────────
 
         private void HandleZoomWheel()
         {
-            if (_manager == null || _bgPanel == null) return;
-
-            // GetMouseWheelDelta() returns ~±120 per notch (legacy-style). It
-            // already swallows wheel events while a modal panel is focused.
+            if (_discInput == null) return;
             float wheel = MouseInputManager.GetMouseWheelDelta();
             if (Mathf.Abs(wheel) < 0.1f) return;
-
-            // Only consume the wheel when the cursor is over the disc itself
-            // (not the info plate underneath). The disc has alphaHitTestMinimum-
-            // Threshold so this rect check is the inscribed square — close
-            // enough; anything outside the visible circle would already have
-            // been raycast-rejected by the disc's alpha.
-            Vector2 screenPos = MouseInputManager.GetScreenMousePosition();
-            if (!RectTransformUtility.RectangleContainsScreenPoint(_bgPanel.rectTransform, screenPos, null))
-                return;
-
-            // Wheel up (positive) → zoom IN (smaller radius, see less area, more
-            // detail). Match the OS convention used by Tile/Buildings editors.
-            int detents = wheel > 0 ? -1 : 1;
-            _manager.AdjustZoom(detents);
+            if (!_discInput.Contains(MouseInputManager.GetScreenMousePosition())) return;
+            // Wheel up zooms IN — the convention the Tile and Buildings editors use.
+            _manager.AdjustZoom(wheel > 0 ? -1 : 1);
         }
 
-        private void UpdateHeadingArrow()
+        private static InputActionDescriptor MapDescriptor =>
+            InputActionCatalog.Find(InputActionCatalog.MapGameplay, "OpenWorldMap");
+
+        private void HandleMapHotkey()
         {
-            if (_headingArrow == null) return;
+            if (_worldMap == null) return;
+            var action = InputService.Instance?.Gameplay?.OpenWorldMap;
+            if (action == null) return;
 
-            if (_playerController == null)
+            // Closing is always allowed from the map itself; opening respects the same
+            // suppressions Pause does, and the posture mask the Controls editor edits.
+            if (!_worldMap.IsOpen)
             {
-                var p = EntityRegistry.Player;
-                if (p != null) _playerController = p.GetComponent<PlayerController>();
+                if (InputBlocker.IsGameplayBlocked) return;
+                if (GameEditorManager.HasInstance && GameEditorManager.Instance.AnyEditorActive) return;
+                var descriptor = MapDescriptor;
+                if (descriptor != null && !InputContextPolicy.IsLive(descriptor)) return;
             }
-            if (_playerController == null) return;
-
-            Vector2 facing = _playerController.FacingDirection;
-            if (facing.sqrMagnitude < 0.0001f) return;
-
-            // Arrow sprite points up (+Y) at rotation 0. atan2(y, x) returns
-            // the angle from +X CCW; subtract 90° to align our +Y-default arrow
-            // with the world heading.
-            float deg = Mathf.Atan2(facing.y, facing.x) * Mathf.Rad2Deg - 90f;
-            _headingArrow.rectTransform.localRotation = Quaternion.Euler(0f, 0f, deg);
+            if (!InputBindingResolver.WasPerformedThisFrame(action)) return;
+            ToggleWorldMap();
         }
 
-        private void UpdateZoneLabel()
+        /// <summary>Open or close the world map.</summary>
+        public void ToggleWorldMap()
+        {
+            if (_worldMap == null) return;
+            if (_worldMap.IsOpen) _worldMap.Close();
+            else _worldMap.Open(_view != null ? _view.Centre : Vector2.zero);
+        }
+
+        // ── Info plate ──────────────────────────────────────────────────────
+
+        private void UpdateInfoPlate()
         {
             if (_zoneLabel == null) return;
-            if (_zoneManager == null) return;
-
-            string zone = _zoneManager.CurrentZone;
-            if (zone == _lastZoneShown) return;
-
-            _lastZoneShown = zone;
-            _zoneLabel.text = string.IsNullOrEmpty(zone) ? "—" : PrettifyZoneName(zone);
+            string zone = _zoneManager != null ? _zoneManager.CurrentZone : null;
+            if (zone != _zoneShown)
+            {
+                bool first = _zoneShown == null;
+                _zoneShown = zone;
+                _zoneLabel.text = DisplayZoneName(zone);
+                if (!first && !string.IsNullOrEmpty(zone))
+                {
+                    _zoneFlash = 1f;
+                    _fx.RimSweep(_view.Radius, _style.ringHighlight);
+                }
+            }
+            if (_coordsLabel != null) _coordsLabel.text = BuildSubtitle(zone);
         }
 
-        private void UpdateCoordsLabel()
+        private string BuildSubtitle(string zone)
         {
-            if (_coordsLabel == null) return;
+            if (_scene.PlayerIsSpirit) return "<color=#9fd4ff>Forma espiritual · busca un altar</color>";
 
-            var pt = EntityRegistry.PlayerTransform;
-            if (pt == null) return;
+            bool interior = _worldKey != null && _worldKey.StartsWith("interior:");
+            string place;
+            if (interior) place = "Interior";
+            else if (_zoneManager != null && !string.IsNullOrEmpty(zone) && _manager.FogOfWarEnabled)
+            {
+                var rect = _zoneManager.GetZoneRect(zone);
+                int pct = Mathf.RoundToInt(_manager.Fog.ExploredFraction(rect) * 100f);
+                place = "Explorado " + pct + " %";
+            }
+            else place = string.Empty;
 
-            // Whole-tile coords match the world grid (1 unit = 1 tile in Valkur),
-            // so the player can correlate the HUD value with the in-world cells
-            // they're stepping over. Round half-away-from-zero so −0.4 → 0, not −1.
-            Vector3 p = pt.position;
-            int tx = Mathf.FloorToInt(p.x);
-            int ty = Mathf.FloorToInt(p.y);
-            if (tx == _lastCoordsShown.x && ty == _lastCoordsShown.y) return;
-
-            _lastCoordsShown = new Vector2Int(tx, ty);
-            _coordsLabel.text = $"X {tx}    Y {ty}";
+            string weather = WeatherWord();
+            if (string.IsNullOrEmpty(weather)) return place;
+            return string.IsNullOrEmpty(place) ? weather : place + "  ·  " + weather;
         }
 
-        private void HandleZoneChanged(string oldZone, string newZone)
+        private static string WeatherWord()
         {
-            // Forget explored cells from the previous zone so the fog of war
-            // doesn't leak between maps. ClearFog() is cheap (HashSet.Clear).
-            if (_manager != null) _manager.ClearFog();
+            var w = WeatherManager.Instance;
+            if (w == null || w.IsIndoors) return null;
+            if (w.DensityOf(WeatherType.Snow) > 0.15f) return "Nieve";
+            float rain = w.DensityOf(WeatherType.Rain);
+            if (rain > 0.75f) return "Tormenta";
+            if (rain > 0.15f) return "Lluvia";
+            if (w.DensityOf(WeatherType.Wind) > 0.15f) return "Viento";
+            return null;
         }
 
-        private static string PrettifyZoneName(string raw)
+        /// <summary>
+        /// What the plate calls a zone. Generated zones are named after their grid offset
+        /// ("zone_0_-50"), which is an identifier and not a place; the plate says so honestly
+        /// rather than printing "Zone 0 -50" at the top of the screen.
+        /// </summary>
+        internal static string DisplayZoneName(string raw)
         {
-            // "lobby" → "Lobby"; "dungeon_001" → "Dungeon 001". Keeps the label
-            // readable when zone identifiers are filenames or snake_case.
+            if (string.IsNullOrEmpty(raw)) return "—";
+            if (raw.StartsWith("zone_", System.StringComparison.OrdinalIgnoreCase)) return "Tierras salvajes";
+            // Interiors are named after their overlay FILE ("house_interior_small.overlay").
+            int dot = raw.IndexOf('.');
+            if (dot > 0) raw = raw.Substring(0, dot);
+            return PrettifyZoneName(raw);
+        }
+
+        internal static string PrettifyZoneName(string raw)
+        {
+            // "lobby" → "Lobby"; "zone_100_50" → "Zone 100 50".
             var chars = raw.Replace('_', ' ').ToCharArray();
             bool nextUpper = true;
             for (int i = 0; i < chars.Length; i++)

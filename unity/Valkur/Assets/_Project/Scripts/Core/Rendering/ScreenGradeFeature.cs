@@ -56,6 +56,12 @@ namespace Valkur.Core.Rendering
             // back in every time the grade passed through 1.0.
             ScreenGradeSettings.FeaturePresent = true;
 
+            // An offscreen camera is not the screen. The minimap bakes the world through one,
+            // chunk by chunk, and a vignette graded into every chunk would tile the map with
+            // dark corners; the spell and particle previews render through one too. Those are
+            // measurements of the art, and the grade is a property of the frame the player sees.
+            if (renderingData.cameraData.camera != null && renderingData.cameraData.camera.targetTexture != null) return;
+
             if (_material == null)
             {
                 if (!_warnedMissingShader)

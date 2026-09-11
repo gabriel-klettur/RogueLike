@@ -1,7 +1,6 @@
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using UnityEngine.UI;
 using Valkur.UI.HUD;
 
 namespace Valkur.Tests.EditMode.Game.World
@@ -18,10 +17,7 @@ namespace Valkur.Tests.EditMode.Game.World
         public void RevealAround_MarksNearbyCellsExplored()
         {
             var go = new GameObject("Minimap", typeof(RectTransform));
-            var raw = go.AddComponent<RawImage>();
             var mm = go.AddComponent<MinimapManager>();
-            typeof(MinimapManager).GetField("rawImage", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                .SetValue(mm, raw);
 
             mm.RevealAround(new Vector2(0f, 0f), 3f);
             Assert.IsTrue(mm.IsExplored(new Vector2(0f, 0f)));
@@ -35,10 +31,7 @@ namespace Valkur.Tests.EditMode.Game.World
         public void ClearFog_ForgetsExplored()
         {
             var go = new GameObject("Minimap", typeof(RectTransform));
-            var raw = go.AddComponent<RawImage>();
             var mm = go.AddComponent<MinimapManager>();
-            typeof(MinimapManager).GetField("rawImage", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                .SetValue(mm, raw);
 
             mm.RevealAround(Vector2.zero, 5f);
             mm.ClearFog();
