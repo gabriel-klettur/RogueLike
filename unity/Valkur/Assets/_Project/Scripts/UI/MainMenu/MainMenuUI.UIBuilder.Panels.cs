@@ -1,209 +1,216 @@
-﻿using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.UI;
-using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
 using Valkur.Core;
-using Valkur.Data;
+using Valkur.Core.UI;
 using Valkur.Gameplay.Save;
+using Valkur.UI.MainMenu.Kit;
 
 namespace Valkur.UI.MainMenu
 {
+    /// <summary>
+    /// The main menu's own panel, the footer and the credits sheet.
+    ///
+    /// <para><b>The rows are dispatched by an ENUM, never by their label.</b> The shipped menu
+    /// did <c>switch (_menuOptions[index]) { case "New Game": ... }</c> and the pause menu did
+    /// the same — so the text on screen was also the key to the logic, translating the menu
+    /// broke the navigation, and <c>MainMenuUITests</c> pinned the English with
+    /// <c>Assert.Contains("New Game")</c>. A label that is also a key is a label nobody can
+    /// change.</para>
+    /// </summary>
     public partial class MainMenuUI
     {
+        /// <summary>What a main-menu row MEANS. The label is just how it is spelled today.</summary>
+        private enum MainMenuItem
+        {
+            Continue,
+            LoadGame,
+            NewGame,
+            Options,
+            Credits,
+            Exit,
+        }
+
+        private readonly List<MainMenuItem> _menuItems = new List<MainMenuItem>();
+        private MenuList _menuList;
+        private MenuPanelView _creditsPanel;
+        private TextMeshProUGUI _footerHint;
+        private TextMeshProUGUI _footerVersion;
+
+        private void BuildMenuOptions()
+        {
+            _menuItems.Clear();
+            bool hasSaves = SaveFileManager.ListSaves().Count > 0;
+
+            // "Continue" CONTINUES — it loads the newest save. The shipped menu used that word
+            // for a row that opened a file browser, which is a different promise: a player who
+            // wants to get back into their run should not have to pick their run out of a list.
+            if (hasSaves)
+            {
+                _menuItems.Add(MainMenuItem.Continue);
+                _menuItems.Add(MainMenuItem.LoadGame);
+            }
+            _menuItems.Add(MainMenuItem.NewGame);
+            _menuItems.Add(MainMenuItem.Options);
+            _menuItems.Add(MainMenuItem.Credits);
+            _menuItems.Add(MainMenuItem.Exit);
+
+            _menuOptions = new string[_menuItems.Count];
+            for (int i = 0; i < _menuItems.Count; i++) _menuOptions[i] = LabelFor(_menuItems[i]);
+        }
+
+        private static string LabelFor(MainMenuItem item)
+        {
+            switch (item)
+            {
+                case MainMenuItem.Continue: return MenuText.Continue;
+                case MainMenuItem.LoadGame: return MenuText.LoadGame;
+                case MainMenuItem.NewGame: return MenuText.NewGame;
+                case MainMenuItem.Options: return MenuText.Options;
+                case MainMenuItem.Credits: return MenuText.Credits;
+                default: return MenuText.Exit;
+            }
+        }
 
         private void BuildMenuPanel(Transform canvas)
         {
-            const float rowH   = 42f;
-            const float padX   = 28f;
-            const float padY   = 20f;
-            const float gap    = 8f;
-            const float panelW = 300f;
+            var style = Style;
+            var panelGo = MenuUIKit.Rect("MenuPanel", canvas);
+            _menuPanelGo = panelGo.gameObject;
 
-            int   count  = _menuOptions.Length;
-            float panelH = padY * 2 + count * rowH + (count - 1) * gap;
+            panelGo.anchorMin = panelGo.anchorMax = new Vector2(0.5f, 0.5f);
+            panelGo.pivot = new Vector2(0.5f, 0.5f);
+            panelGo.anchoredPosition = new Vector2(0f, -138f);
 
-            var panelGo   = CreateUIObject("MenuPanel", canvas);
-            _menuPanelGo  = panelGo;
-            var panelRect = panelGo.GetComponent<RectTransform>();
-            panelRect.anchorMin        = new Vector2(0.5f, 0.5f);
-            panelRect.anchorMax        = new Vector2(0.5f, 0.5f);
-            panelRect.pivot            = new Vector2(0.5f, 0.5f);
-            panelRect.anchoredPosition = new Vector2(0f, -150f);
-            panelRect.sizeDelta        = new Vector2(panelW, panelH);
-            panelGo.AddComponent<Image>().color = PanelBg;
+            float bodyHeight = _menuItems.Count * style.rowHeight
+                             + Mathf.Max(0, _menuItems.Count - 1) * style.rowGap;
+            float pad = style.panelPadding;
+            panelGo.sizeDelta = new Vector2(style.menuPanelWidth, bodyHeight + pad * 2f);
 
-            _pillImages = new Image[count];
-            _accentBars = new Image[count];
-            _menuTexts  = new TextMeshProUGUI[count];
+            var frame = MenuUIKit.Panel("Frame", panelGo, _art, style);
+            var frt = (RectTransform)frame.transform;
+            frt.anchorMin = Vector2.zero;
+            frt.anchorMax = Vector2.one;
+            frt.offsetMin = Vector2.zero;
+            frt.offsetMax = Vector2.zero;
 
-            for (int i = 0; i < count; i++)
+            var body = MenuUIKit.Rect("Body", panelGo);
+            body.anchorMin = Vector2.zero;
+            body.anchorMax = Vector2.one;
+            body.offsetMin = new Vector2(pad, pad);
+            body.offsetMax = new Vector2(-pad, -pad);
+
+            _menuList = new MenuList(body, _art, style, ReduceMotion);
+            for (int i = 0; i < _menuItems.Count; i++)
+                _menuList.Add(_art, _menuOptions[i]);
+
+            _menuList.Changed += OnMenuSelectionChanged;
+            _menuList.Chosen += ExecuteOption;
+            _menuList.Index = 0;
+        }
+
+        private void OnMenuSelectionChanged(int index)
+        {
+            _selectedIndex = index;
+            _sfx?.Move();
+            // Two motes off the leading edge of the highlight, in the direction it travelled.
+            // The cheapest possible acknowledgement that a key press did something.
+            if (_fx != null && !ReduceMotion && _menuList != null)
             {
-                float rowCY = -padY - i * (rowH + gap) - rowH * 0.5f;
-
-                // Translucent gold pill
-                var pill  = CreateUIObject($"Pill_{i}", panelGo.transform);
-                var pillR = pill.GetComponent<RectTransform>();
-                pillR.anchorMin        = new Vector2(0f, 1f);
-                pillR.anchorMax        = new Vector2(1f, 1f);
-                pillR.pivot            = new Vector2(0.5f, 0.5f);
-                pillR.anchoredPosition = new Vector2(0f, rowCY);
-                pillR.sizeDelta        = new Vector2(0f, rowH);
-                _pillImages[i] = pill.AddComponent<Image>();
-                _pillImages[i].color = Color.clear;
-
-                // 4 px gold left bar
-                var bar  = CreateUIObject($"Bar_{i}", panelGo.transform);
-                var barR = bar.GetComponent<RectTransform>();
-                barR.anchorMin        = new Vector2(0f, 1f);
-                barR.anchorMax        = new Vector2(0f, 1f);
-                barR.pivot            = new Vector2(0f, 0.5f);
-                barR.anchoredPosition = new Vector2(0f, rowCY);
-                barR.sizeDelta        = new Vector2(4f, rowH - 4f);
-                _accentBars[i] = bar.AddComponent<Image>();
-                _accentBars[i].color = Color.clear;
-
-                // Label
-                var label  = CreateUIObject($"Label_{i}", panelGo.transform);
-                var labelR = label.GetComponent<RectTransform>();
-                labelR.anchorMin        = new Vector2(0f, 1f);
-                labelR.anchorMax        = new Vector2(1f, 1f);
-                labelR.pivot            = new Vector2(0f, 0.5f);
-                labelR.anchoredPosition = new Vector2(padX + 12f, rowCY);
-                labelR.sizeDelta        = new Vector2(-(padX + 12f), rowH);
-                var tmp = label.AddComponent<TextMeshProUGUI>();
-                tmp.text      = _menuOptions[i];
-                tmp.fontSize  = 22f;
-                tmp.alignment = TextAlignmentOptions.Left;
-                tmp.color     = TextNormal;
-                _menuTexts[i] = tmp;
-
-                // Invisible clickable row
-                var row  = CreateUIObject($"Row_{i}", panelGo.transform);
-                var rowR = row.GetComponent<RectTransform>();
-                rowR.anchorMin        = new Vector2(0f, 1f);
-                rowR.anchorMax        = new Vector2(1f, 1f);
-                rowR.pivot            = new Vector2(0.5f, 0.5f);
-                rowR.anchoredPosition = new Vector2(0f, rowCY);
-                rowR.sizeDelta        = new Vector2(0f, rowH);
-                var hitImg = row.AddComponent<Image>();
-                hitImg.color = Color.clear;
-                var btn = row.AddComponent<Button>();
-                btn.targetGraphic = hitImg;
-                var bc = btn.colors;
-                bc.normalColor      = Color.clear;
-                bc.highlightedColor = Color.clear;
-                bc.pressedColor     = new Color(1f, 1f, 1f, 0.05f);
-                bc.selectedColor    = Color.clear;
-                btn.colors = bc;
-
-                int cap = i;
-                btn.onClick.AddListener(() => ExecuteOption(cap));
-
-                var trig       = row.AddComponent<EventTrigger>();
-                var enterEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
-                enterEntry.callback.AddListener(_ => { _selectedIndex = cap; UpdateSelection(); });
-                trig.triggers.Add(enterEntry);
+                var centre = MoteSpaceOf(_menuList.Rows[index].Root);
+                _fx.Burst(centre + new Vector2(-Style.menuPanelWidth * 0.42f, 0f), 2,
+                          Style.Gold, 42f, 0.45f, MenuMoteShape.Dot, spreadDegrees: 70f, direction: 0f);
             }
         }
 
         private void BuildFooter(Transform canvas)
         {
-            var verGo = CreateUIObject("Version", canvas);
-            var verR  = verGo.GetComponent<RectTransform>();
-            verR.anchorMin        = new Vector2(1f, 0f);
-            verR.anchorMax        = new Vector2(1f, 0f);
-            verR.pivot            = new Vector2(1f, 0f);
-            verR.anchoredPosition = new Vector2(-15f, 10f);
-            verR.sizeDelta        = new Vector2(400f, 30f);
-            var verTMP = verGo.AddComponent<TextMeshProUGUI>();
-            verTMP.text      = $"v{Application.version} | Unity {Application.unityVersion}";
-            verTMP.fontSize  = 14f;
-            verTMP.alignment = TextAlignmentOptions.Right;
-            verTMP.color     = VersionCol;
+            var style = Style;
 
-            var hintGo = CreateUIObject("ControlsHint", canvas);
-            var hintR  = hintGo.GetComponent<RectTransform>();
-            hintR.anchorMin        = new Vector2(0f, 0f);
-            hintR.anchorMax        = new Vector2(0f, 0f);
-            hintR.pivot            = new Vector2(0f, 0f);
-            hintR.anchoredPosition = new Vector2(15f, 10f);
-            hintR.sizeDelta        = new Vector2(500f, 30f);
-            var hintTMP = hintGo.AddComponent<TextMeshProUGUI>();
-            hintTMP.text      = "Mouse or W/S Navigate  |  Click or Enter Select";
-            hintTMP.fontSize  = 14f;
-            hintTMP.alignment = TextAlignmentOptions.Left;
-            hintTMP.color     = VersionCol;
+            var verRt = MenuUIKit.Rect("Version", canvas);
+            verRt.anchorMin = verRt.anchorMax = new Vector2(1f, 0f);
+            verRt.pivot = new Vector2(1f, 0f);
+            verRt.anchoredPosition = new Vector2(-18f, 12f);
+            verRt.sizeDelta = new Vector2(400f, 26f);
+            // The engine version is gone. It told the player nothing, and a build number is the
+            // only part of that line a bug report can use.
+            _footerVersion = MenuTypography.Label(verRt.gameObject, style, $"v{Application.version}",
+                                                  style.hintFontSize - 1f, style.TextMuted,
+                                                  TextAlignmentOptions.Right);
+
+            var hintRt = MenuUIKit.Rect("ControlsHint", canvas);
+            hintRt.anchorMin = hintRt.anchorMax = new Vector2(0f, 0f);
+            hintRt.pivot = new Vector2(0f, 0f);
+            hintRt.anchoredPosition = new Vector2(18f, 12f);
+            hintRt.sizeDelta = new Vector2(620f, 26f);
+            _footerHint = MenuTypography.Label(hintRt.gameObject, style, MenuText.MainMenuHint,
+                                               style.hintFontSize - 1f, style.TextMuted);
+            ApplyHintVisibility();
         }
 
-        private IEnumerator RunCarousel()
+        /// <summary>The hint line is a setting, and it is ON by default for a reason: this menu
+        /// is navigable by keyboard and nothing else on screen says so.</summary>
+        private void ApplyHintVisibility()
         {
-            if (BgPaths.Length < 2) yield break;
-            while (true)
-            {
-                yield return new WaitForSeconds(CAROUSEL_INTERVAL);
-
-                int nextBg   = (_bgIndex + 1) % BgPaths.Length;
-                int nextSlot = 1 - _carouselSlot;
-
-                var tex = Resources.Load<Texture2D>(BgPaths[nextBg]);
-                if (tex == null) { _bgIndex = nextBg; continue; }
-
-                _bgImages[nextSlot].sprite = MakeSprite(tex);
-                _bgImages[nextSlot].color  = Color.clear;
-                var fitter = _bgImages[nextSlot].GetComponent<AspectRatioFitter>();
-                if (fitter != null)
-                    fitter.aspectRatio = (float)tex.width / tex.height;
-
-                float elapsed = 0f;
-                while (elapsed < CAROUSEL_CROSSFADE)
-                {
-                    elapsed += Time.deltaTime;
-                    float t = Mathf.Clamp01(elapsed / CAROUSEL_CROSSFADE);
-                    _bgImages[nextSlot].color     = new Color(1f, 1f, 1f, t);
-                    _bgImages[_carouselSlot].color = new Color(1f, 1f, 1f, 1f - t);
-                    yield return null;
-                }
-
-                _bgImages[nextSlot].color     = Color.white;
-                _bgImages[_carouselSlot].color = Color.clear;
-                _carouselSlot = nextSlot;
-                _bgIndex      = nextBg;
-            }
+            bool show = GameSettings.Instance == null || GameSettings.Instance.showHints;
+            if (_footerHint != null) _footerHint.enabled = show;
         }
 
-        private IEnumerator DeferredInit()
+        private void BuildCreditsPanel(Transform canvas)
         {
-            yield return null;
+            var style = Style;
+            _creditsPanel = new MenuPanelView(canvas, _art, style, MenuText.CreditsTitle,
+                                              style.panelWidth, ReduceMotion);
+
+            var bodyRt = MenuUIKit.Stretch("Text", _creditsPanel.Body);
+            var tmp = MenuTypography.Label(bodyRt.gameObject, style, MenuText.CreditsBody,
+                                           style.rowFontSize - 3f, style.TextPrimary,
+                                           TextAlignmentOptions.Top);
+            tmp.enableWordWrapping = true;
+            tmp.lineSpacing = 6f;
+
+            _creditsPanel.FitToContent(300f);
+            _creditsPanel.SetHint(MenuText.Back + "  ·  Esc");
+            _creditsPanel.Close();
+        }
+
+        /// <summary>Advances every panel's open animation. Called from the shell's one tick.</summary>
+        private void TickPanels(float dt)
+        {
+            _creditsPanel?.Tick(dt);
+            _optionsPanel?.Tick(dt);
+            _audioPanel?.Tick(dt);
+            _videoPanel?.Tick(dt);
+            _gameplayPanel?.Tick(dt);
+            _controlsPanel?.Tick(dt);
+            _optionsList?.Tick(dt);
+            _audioList?.Tick(dt);
+            _videoList?.Tick(dt);
+            _gameplayList?.Tick(dt);
+            _controlsList?.Tick(dt);
+        }
+
+        /// <summary>
+        /// Rebuilds the main panel — after deleting the last save, so "Continue" and "Load game"
+        /// disappear. The panel is destroyed through the kit's helper because
+        /// <c>Object.Destroy</c> is an outright ERROR in Edit Mode and this path is reached by
+        /// the EditMode fixtures.
+        /// </summary>
+        private void RebuildMenuPanel()
+        {
+            if (_canvasTransform == null) return;
+            BuildMenuOptions();
+            if (_menuPanelGo != null) MenuUIKit.Destroy(_menuPanelGo);
+            _menuList = null;
+
+            BuildMenuPanel(_canvasTransform);
+            _selectedIndex = Mathf.Clamp(_selectedIndex, 0, Mathf.Max(0, _menuOptions.Length - 1));
+            if (_menuList != null) _menuList.Index = _selectedIndex;
             UpdateSelection();
-        }
 
-        // ── UI helper methods shared across partial files ─────────────────
-
-        private static GameObject CreateUIObject(string name, Transform parent)
-        {
-            var go = new GameObject(name, typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-            return go;
-        }
-
-        private static void StretchFull(GameObject go)
-        {
-            var r = go.GetComponent<RectTransform>();
-            r.anchorMin = Vector2.zero;
-            r.anchorMax = Vector2.one;
-            r.sizeDelta = Vector2.zero;
-            r.anchoredPosition = Vector2.zero;
-        }
-
-        private static Sprite MakeSprite(Texture2D tex)
-        {
-            return Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
-                new Vector2(0.5f, 0.5f), 100f);
+            if (_menuPanelGo != null)
+                _menuPanelGo.SetActive(_menuScreen == MenuScreen.Main);
         }
     }
 }

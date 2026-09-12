@@ -992,6 +992,35 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   every subsequent `execute_code` running against the STALE assembly. After any C# change,
   confirm the new code is actually loaded — `typeof(X).GetMethod("NewThing") != null` through
   `execute_code` — before trusting a measurement or a green console.
+- **ONE RED ASSEMBLY FREEZES THE WHOLE DOMAIN, so reflection then lies about the assemblies
+  that DID compile.** Measured 2026-09-12 with three sessions in one Editor: `Valkur.UI` was
+  broken for half an hour while `Valkur.Gameplay` compiled cleanly in every round — and
+  `System.Type.GetType("…, Valkur.Gameplay")` answered null for six new members, because Unity
+  writes the new DLLs to disk and does NOT reload the domain until every assembly builds. Both
+  probes this file recommends are true at once and answer different questions: the timestamp
+  one reads DISK (`Valkur.Gameplay.dll` was newer than the newest `.cs`), the reflection one
+  reads MEMORY (the previous domain). While anything is red, neither settles "is my code
+  loaded" — and a per-assembly timestamp comparison (`Library/ScriptAssemblies/X.dll` against
+  the newest `.cs` under X's own folder) is what tells you whether YOUR half compiled, since
+  the DLL of a failing assembly is the one that does not move.
+- **BEFORE CALLING SOMETHING STUCK, ASK HOW LONG IT NORMALLY TAKES.** Measured 2026-09-12: a
+  session saw a test run alive for **3 m 38 s** with `isCompiling` true the whole time, read the
+  two together as starvation, and asked three other sessions to stop working. Both numbers were
+  real. The full EditMode suite is 8858 tests and takes **233 s** — the measurement fell INSIDE a
+  healthy run, which closed seconds later. It is the "a number about another question" pattern
+  above, committed with that very vocabulary to hand, and the structural check that refutes it is
+  one step away and costs nothing: compare the elapsed time against what that job normally takes,
+  exactly as `completed > total` is compared against what is possible rather than against zero.
+  What DOES survive such a measurement is the cheaper claim: with several sessions writing, Unity
+  queues compilations behind the runner and every run gets longer — a coordination cost, not a
+  fault.
+- **`[SelfHealingStatic]` is the CORRECT answer for a `static readonly` array, not a patch.**
+  `DomainReloadStaticResetTests` only recognises a reset written as `stsfld` or `field.Clear()`,
+  and a read-only array field can be neither — so giving it a reset hook is giving it one it
+  cannot satisfy, and the honest move is to declare it safe with the reason. Four sessions hit
+  this in one night on seventeen constant lookup tables between them. A DELEGATE is the opposite
+  case and never qualifies: it really does keep a subscriber across a Play session, so
+  `GameBootstrap.SplashHandler` got a real hook.
 - **A number can be real, internally consistent, and about something other than what you
   asked.** Three sightings in one day, three different mechanisms, one shape — which is why
   this is a named pattern here rather than three anecdotes. `Time.deltaTime` read **0.0016**

@@ -83,7 +83,6 @@ COLLECTION	Valkur.Gameplay.World.Layering.WorldCollisionLayers._worldLayerIndice
 COLLECTION	Valkur.UI.HUD.ComboHUD.CountLabelCache
 COLLECTION	Valkur.UI.HUD.HUDVisibilityController.RootHUDCanvasNames
 COLLECTION	Valkur.UI.MainMenu.MainMenuUI.BgPaths
-COLLECTION	Valkur.UI.MainMenu.MainMenuUI.ClassBorderColors
 COLLECTION	Valkur.UI.MainMenu.MainMenuUI.ClassFaceUvRects
 COLLECTION	Valkur.UI.MainMenu.MainMenuUI.ClassPortraitPaths
 COLLECTION	Valkur.UIKit.DraggablePanel._allPanels

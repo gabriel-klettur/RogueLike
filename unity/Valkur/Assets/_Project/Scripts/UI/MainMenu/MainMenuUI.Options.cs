@@ -1,198 +1,278 @@
-﻿using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
-using TMPro;
 using Valkur.Core;
+using Valkur.Core.Input;
+using Valkur.Core.UI;
+using Valkur.UI.MainMenu.Kit;
 
 namespace Valkur.UI.MainMenu
 {
     /// <summary>
-    /// Options sub-menu for the main menu.
-    /// Mirrors Python: Opciones → Inputs / Sonido / Volver.
-    /// Each sub-screen uses the same visual style as PauseMenuUI.
+    /// Which screen is on, and how the keyboard reaches it.
+    ///
+    /// <para><b>One root per screen and exactly one active</b>, so two panels can never overlap
+    /// and intercept each other's clicks. That part the shipped menu had right and it is kept
+    /// verbatim.</para>
+    ///
+    /// <para><b>What changed is the dispatch.</b> Choosing a row used to compare its English
+    /// label; it now carries an <see cref="OptionsItem"/>. Same fix as the main menu's, same
+    /// reason: a label that is also a key cannot be translated.</para>
     /// </summary>
     public partial class MainMenuUI
     {
-        // ── Screen state ─────────────────────────────────────────────────────
-        private enum MenuScreen { Main, Options, Sounds, Video, Inputs, LoadGame, ClassSelector }
+        private enum MenuScreen
+        {
+            Main,
+            Options,
+            Audio,
+            Video,
+            Gameplay,
+            Controls,
+            LoadGame,
+            Credits,
+            ClassSelector,
+        }
+
+        private enum OptionsItem { Audio, Video, Controls, Gameplay, Back }
+
         private MenuScreen _menuScreen = MenuScreen.Main;
 
-        // ── Options overlay & panels ─────────────────────────────────────────
-        private GameObject _optOverlay;
-        private GameObject _optPanel;
-        private GameObject _optSoundsPanel;
-        private GameObject _optInputsPanel;
-
-        // ── Options list ─────────────────────────────────────────────────────
-        private readonly string[] _optMenuOptions = { "Inputs", "Sound", "Video", "Back" };
-        private int      _optMenuSel;
-        private Image[]  _optMenuPills;
-        private Image[]  _optMenuBars;
-        private TextMeshProUGUI[] _optMenuTexts;
-
-        // ── Sounds panel ─────────────────────────────────────────────────────
-        private struct SoundRow
+        private MenuPanelView _optionsPanel;
+        private MenuList _optionsList;
+        private readonly OptionsItem[] _optionsItems =
         {
-            public TextMeshProUGUI valueText;
-            public UnityEngine.UI.Slider slider;
-            public float min, max, step;
-            public System.Func<float> get;
-            public System.Action<float> set;
+            OptionsItem.Audio, OptionsItem.Video, OptionsItem.Controls,
+            OptionsItem.Gameplay, OptionsItem.Back,
+        };
+
+        /// <summary>The panel a screen is drawn on, or null for the two that own no panel.</summary>
+        private MenuPanelView PanelFor(MenuScreen screen)
+        {
+            switch (screen)
+            {
+                case MenuScreen.Options: return _optionsPanel;
+                case MenuScreen.Audio: return _audioPanel;
+                case MenuScreen.Video: return _videoPanel;
+                case MenuScreen.Gameplay: return _gameplayPanel;
+                case MenuScreen.Controls: return _controlsPanel;
+                case MenuScreen.Credits: return _creditsPanel;
+                default: return null;
+            }
         }
-        private readonly List<SoundRow> _optSoundRows = new List<SoundRow>();
-        private int      _optSoundSel;
-        private Image[]  _optSoundPills;
-        private Image[]  _optSoundBars;
-        private TextMeshProUGUI[] _optSoundLabels;
 
-        // ── Inputs panel ─────────────────────────────────────────────────────
-        // The tab index and the tab labels went with the rebindable rows they drove. The
-        // panel is a read-only summary of the live bindings now.
-        // Selected editor sub-tab when the "Editors" main tab is active (0–11).
-
-        // ════════════════════════════════════════════════════════════════════
-        // Screen management
-        // ════════════════════════════════════════════════════════════════════
+        private static bool IsSubScreen(MenuScreen screen) => screen != MenuScreen.Main;
 
         /// <summary>
-        /// Single source of truth for which menu screen is visible.
-        ///
-        /// Every screen has its own root container (<c>_menuPanelGo</c> for
-        /// Main, <c>_optOverlay</c> for Options/Sounds/Inputs, <c>_mmLoadOverlay</c>
-        /// for LoadGame). Exactly one root is kept active at a time so panels
-        /// can never overlap and intercept each other's mouse events.
-        ///
-        /// Calling this method also bumps the active overlay to the last sibling
-        /// so it's drawn (and raycast) on top of any always-on layers (footer,
-        /// title, etc.) regardless of when those siblings were created.
+        /// The single source of truth for which screen is visible. Also deepens the veil and
+        /// dims the title, so an open panel sits on art that has been darkened ONCE — the
+        /// shipped menu stacked a second 55 % black inside every sub-screen's overlay.
         /// </summary>
         private void ShowMenuScreen(MenuScreen screen)
         {
+            var previous = _menuScreen;
+            EnsureScreenBuilt(screen);
             _menuScreen = screen;
 
-            // Clear EventSystem focus so a Selectable left over from the
-            // previous screen (e.g. a slider clicked in Sound Options) can't
-            // intercept keyboard navigation in the new screen via OnMove /
-            // OnCancel dispatch.
+            // Clear EventSystem focus so a Selectable left over from the previous screen (a
+            // slider clicked in Audio, say) cannot intercept keyboard navigation in the new one
+            // through OnMove / OnCancel dispatch.
             var es = UnityEngine.EventSystems.EventSystem.current;
             if (es != null) es.SetSelectedGameObject(null);
 
-            bool showMain  = screen == MenuScreen.Main;
-            bool showOpt   = screen == MenuScreen.Options || screen == MenuScreen.Sounds
-                          || screen == MenuScreen.Video   || screen == MenuScreen.Inputs;
-            bool showLoad  = screen == MenuScreen.LoadGame;
-            bool showClass = screen == MenuScreen.ClassSelector;
+            _showingClassSelector = screen == MenuScreen.ClassSelector;
 
-            // Sync legacy input-routing flag with screen state so Update()
-            // dispatches keyboard/gamepad input to the correct handler.
-            _showingClassSelector = showClass;
+            if (_menuPanelGo != null) _menuPanelGo.SetActive(screen == MenuScreen.Main);
+            if (_mmLoadOverlay != null) _mmLoadOverlay.SetActive(screen == MenuScreen.LoadGame);
+            if (_classSelectionPanel != null) _classSelectionPanel.SetActive(_showingClassSelector);
 
-            // Main menu panel is hidden whenever a sub-screen is open.
-            if (_menuPanelGo        != null) _menuPanelGo.SetActive(showMain);
-            if (_optOverlay         != null) _optOverlay.SetActive(showOpt);
-            if (_optPanel           != null) _optPanel.SetActive(screen == MenuScreen.Options);
-            if (_optSoundsPanel     != null) _optSoundsPanel.SetActive(screen == MenuScreen.Sounds);
-            if (_optVideoPanel      != null) _optVideoPanel.SetActive(screen == MenuScreen.Video);
-            if (_optInputsPanel     != null) _optInputsPanel.SetActive(screen == MenuScreen.Inputs);
-            if (_mmLoadOverlay      != null) _mmLoadOverlay.SetActive(showLoad);
-            if (_classSelectionPanel != null) _classSelectionPanel.SetActive(showClass);
+            // Only panels that EXIST. A screen nobody has opened has no panel, and building one
+            // here in order to close it would undo the whole point of building on demand.
+            foreach (MenuScreen s in System.Enum.GetValues(typeof(MenuScreen)))
+            {
+                var panel = PanelFor(s);
+                if (panel == null) continue;
+                if (s == screen) panel.Open();
+                else panel.Close();
+            }
 
-            // Defensive z-order: the active root is moved to the last sibling so
-            // it's always drawn on top of anything created after BuildUI() (e.g.
-            // a rebuilt _menuPanelGo after a save was deleted).
-            if      (showClass && _classSelectionPanel != null) _classSelectionPanel.transform.SetAsLastSibling();
-            else if (showLoad  && _mmLoadOverlay       != null) _mmLoadOverlay.transform.SetAsLastSibling();
-            else if (showOpt   && _optOverlay          != null) _optOverlay.transform.SetAsLastSibling();
-            else if (showMain  && _menuPanelGo         != null) _menuPanelGo.transform.SetAsLastSibling();
+            SetScrimForScreen(IsSubScreen(screen));
 
-            if (screen == MenuScreen.Options)
-            { _optMenuSel = 0; UpdateOptListVisuals(); }
-            if (screen == MenuScreen.Sounds)
-            { _optSoundSel = 0; UpdateOptSoundsVisuals(); }
-            if (screen == MenuScreen.Video)
-            { _optVideoSel = 0; LoadOptVideoFromSettings(); RefreshOptVideoRows(); UpdateOptVideoVisuals(); }
-            if (screen == MenuScreen.Inputs)
-                UpdateOptInputsPanel();
-            if (screen == MenuScreen.LoadGame)
-            { RefreshMMLoadPanel(); }
+            // Defensive z-order: whatever is on goes last, so it is drawn and raycast above any
+            // sibling created after BuildUI (a rebuilt main panel, for one).
+            var active = PanelFor(screen);
+            if (active != null) active.Root.SetAsLastSibling();
+            else if (screen == MenuScreen.LoadGame && _mmLoadOverlay != null)
+                _mmLoadOverlay.transform.SetAsLastSibling();
+            else if (_showingClassSelector && _classSelectionPanel != null)
+                _classSelectionPanel.transform.SetAsLastSibling();
+            else if (screen == MenuScreen.Main && _menuPanelGo != null)
+                _menuPanelGo.transform.SetAsLastSibling();
+
+            switch (screen)
+            {
+                case MenuScreen.Options: if (_optionsList != null) _optionsList.Index = 0; break;
+                case MenuScreen.Audio:
+                    RefreshAudioRows(); if (_audioList != null) _audioList.Index = 0; break;
+                case MenuScreen.Video:
+                    LoadVideoFromSettings(); RefreshVideoRows();
+                    if (_videoList != null) _videoList.Index = 0; break;
+                case MenuScreen.Gameplay:
+                    RefreshGameplayRows(); if (_gameplayList != null) _gameplayList.Index = 0; break;
+                case MenuScreen.Controls: RefreshControlsRows(); break;
+                case MenuScreen.LoadGame: RefreshMMLoadPanel(); break;
+            }
+
+            if (previous != screen && _sfx != null)
+            {
+                if (screen == MenuScreen.Main && IsSubScreen(previous)) _sfx.Cancel();
+                else if (IsSubScreen(screen)) _sfx.Confirm();
+            }
         }
 
         private void OptionsGoBack()
         {
             switch (_menuScreen)
             {
-                case MenuScreen.Options:  ShowMenuScreen(MenuScreen.Main); break;
-                case MenuScreen.Sounds:   ShowMenuScreen(MenuScreen.Options); break;
-                case MenuScreen.Video:    ShowMenuScreen(MenuScreen.Options); break;
-                case MenuScreen.Inputs:   ShowMenuScreen(MenuScreen.Options); break;
+                case MenuScreen.Options:
+                case MenuScreen.Credits:
+                    ShowMenuScreen(MenuScreen.Main);
+                    break;
+                case MenuScreen.Audio:
+                case MenuScreen.Video:
+                case MenuScreen.Gameplay:
+                    ShowMenuScreen(MenuScreen.Options);
+                    break;
+                case MenuScreen.Controls:
+                    if (CancelControlsCapture()) return;   // Esc first cancels a rebind
+                    ShowMenuScreen(MenuScreen.Options);
+                    break;
                 case MenuScreen.LoadGame:
-                    // Saves may have been deleted while in the load panel.
-                    // Rebuild first (so _menuPanelGo is fresh) then switch screens —
-                    // ShowMenuScreen will activate the rebuilt panel and put it on top.
+                    // Saves may have been deleted in there, so the main panel is rebuilt BEFORE
+                    // the switch: ShowMenuScreen then activates the fresh one and puts it on top.
                     RebuildMenuPanel();
                     ShowMenuScreen(MenuScreen.Main);
                     break;
-                default: break;
             }
-        }
-
-        // ════════════════════════════════════════════════════════════════════
-        // Input handlers
-        // ════════════════════════════════════════════════════════════════════
-
-        private void HandleOptionsListInput()
-        {
-            // InputCompat already ORs the new InputSystem with the legacy backend.
-            if (Valkur.Core.Input.InputCompat.NavUpPressed())
-            { _optMenuSel = (_optMenuSel - 1 + _optMenuOptions.Length) % _optMenuOptions.Length; UpdateOptListVisuals(); }
-            else if (Valkur.Core.Input.InputCompat.NavDownPressed())
-            { _optMenuSel = (_optMenuSel + 1) % _optMenuOptions.Length; UpdateOptListVisuals(); }
-            else if (Valkur.Core.Input.InputCompat.ConfirmPressed())
-            { ExecuteOptionsItem(_optMenuSel); }
-            else if (Valkur.Core.Input.InputCompat.CancelPressed())
-            { OptionsGoBack(); }
-        }
-
-        private void HandleOptionsSoundsInput()
-        {
-            if (Valkur.Core.Input.InputCompat.NavUpPressed())
-            { _optSoundSel = (_optSoundSel - 1 + _optSoundRows.Count) % _optSoundRows.Count; UpdateOptSoundsVisuals(); }
-            else if (Valkur.Core.Input.InputCompat.NavDownPressed())
-            { _optSoundSel = (_optSoundSel + 1) % _optSoundRows.Count; UpdateOptSoundsVisuals(); }
-            else if (Valkur.Core.Input.InputCompat.NavLeftPressed())
-            { ChangeOptSound(_optSoundSel, -1); }
-            else if (Valkur.Core.Input.InputCompat.NavRightPressed())
-            { ChangeOptSound(_optSoundSel, +1); }
-            else if (Valkur.Core.Input.InputCompat.ConfirmPressed())
-            { GameSettings.Instance?.Save(); ServiceLocator.Get<IAudioService>()?.ApplySettings(); OptionsGoBack(); }
-            else if (Valkur.Core.Input.InputCompat.CancelPressed())
-            { OptionsGoBack(); }
         }
 
         /// <summary>
-        /// The controls panel is read-only, so the only verb it needs is "go back". The Q/E
-        /// tab cycling went with the four tabs of rebindable rows.
+        /// Builds a screen the first time it is asked for.
+        ///
+        /// <para>Everything used to be built in <c>Start</c>, whether or not the player ever
+        /// opened it. The four option panels alone carry a slider, a value column and a hit
+        /// target per row; the class selector carries six cards of six bars each. None of it is
+        /// reachable until somebody chooses a row, and uGUI charges for it at <c>Start</c>
+        /// either way.</para>
+        ///
+        /// <para><b>The panels are grouped the way they are REACHED, not one by one.</b> Opening
+        /// Options and then finding Audio unbuilt would cost a hitch in the middle of a
+        /// navigation the player is already performing; the four are built together the moment
+        /// the Options screen is first shown, which is one hitch behind a keypress that already
+        /// changed the screen.</para>
         /// </summary>
-        private void HandleOptionsInputsInput()
+        private void EnsureScreenBuilt(MenuScreen screen)
         {
-            if (Valkur.Core.Input.InputCompat.CancelPressed()) OptionsGoBack();
-        }
-
-        private void ExecuteOptionsItem(int idx)
-        {
-            switch (_optMenuOptions[idx])
+            if (_canvasTransform == null) return;
+            switch (screen)
             {
-                case "Inputs": ShowMenuScreen(MenuScreen.Inputs); break;
-                case "Sound":  ShowMenuScreen(MenuScreen.Sounds); break;
-                case "Video":  ShowMenuScreen(MenuScreen.Video);  break;
-                case "Back":   ShowMenuScreen(MenuScreen.Main);   break;
+                case MenuScreen.Options:
+                case MenuScreen.Audio:
+                case MenuScreen.Video:
+                case MenuScreen.Gameplay:
+                case MenuScreen.Controls:
+                    if (_optionsPanel == null) BuildOptionsSubmenu(_canvasTransform);
+                    break;
+                case MenuScreen.LoadGame:
+                    if (_mmLoadOverlay == null) BuildLoadGameSubmenu(_canvasTransform);
+                    break;
+                case MenuScreen.Credits:
+                    if (_creditsPanel == null) BuildCreditsPanel(_canvasTransform);
+                    break;
+                case MenuScreen.ClassSelector:
+                    if (_classSelectionPanel == null) BuildClassSelectorPanel(_canvasTransform);
+                    break;
             }
         }
 
-        // ════════════════════════════════════════════════════════════════════
-        // Panel builders (called from BuildUI)
-        // ════════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Builds every screen at once. The fixtures use it so a test about visibility does not
+        /// also have to be a test about lazy construction, and nothing in production calls it.
+        /// </summary>
+        internal void BuildAllScreensForTests()
+        {
+            foreach (MenuScreen s in System.Enum.GetValues(typeof(MenuScreen)))
+                EnsureScreenBuilt(s);
+        }
 
+        // ── Options list ─────────────────────────────────────────────────────
+
+        private void BuildOptionsSubmenu(Transform canvas)
+        {
+            var style = Style;
+            _optionsPanel = new MenuPanelView(canvas, _art, style, MenuText.OptionsTitle,
+                                              style.menuPanelWidth + 90f, ReduceMotion);
+            _optionsList = new MenuList(_optionsPanel.Body, _art, style, ReduceMotion);
+            foreach (var item in _optionsItems)
+                _optionsList.Add(_art, OptionsLabel(item));
+
+            _optionsList.Changed += _ => _sfx?.Move();
+            _optionsList.Chosen += ExecuteOptionsItem;
+            _optionsPanel.FitToContent(_optionsList.ContentHeight);
+            _optionsList.SetViewport(_optionsPanel.BodyHeight);
+            _optionsPanel.SetHint(MenuText.MainMenuHint);
+            _optionsPanel.Close();
+
+            BuildAudioPanel(canvas);
+            BuildVideoPanel(canvas);
+            BuildGameplayPanel(canvas);
+            BuildControlsPanel(canvas);
+        }
+
+        private static string OptionsLabel(OptionsItem item)
+        {
+            switch (item)
+            {
+                case OptionsItem.Audio: return MenuText.OptionsAudio;
+                case OptionsItem.Video: return MenuText.OptionsVideo;
+                case OptionsItem.Controls: return MenuText.OptionsControls;
+                case OptionsItem.Gameplay: return MenuText.OptionsGameplay;
+                default: return MenuText.OptionsBack;
+            }
+        }
+
+        private void ExecuteOptionsItem(int index)
+        {
+            if (index < 0 || index >= _optionsItems.Length) return;
+            switch (_optionsItems[index])
+            {
+                case OptionsItem.Audio: ShowMenuScreen(MenuScreen.Audio); break;
+                case OptionsItem.Video: ShowMenuScreen(MenuScreen.Video); break;
+                case OptionsItem.Controls: ShowMenuScreen(MenuScreen.Controls); break;
+                case OptionsItem.Gameplay: ShowMenuScreen(MenuScreen.Gameplay); break;
+                default: ShowMenuScreen(MenuScreen.Main); break;
+            }
+        }
+
+        // ── Input ────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Up / down / confirm / cancel for any list-shaped screen. One implementation, so every
+        /// list in the menu wraps at the same edge and plays the same sound — the five shipped
+        /// screens each had their own copy of this and they had already drifted.
+        /// </summary>
+        private bool HandleListInput(MenuList list, System.Action onCancel)
+        {
+            if (list == null) return false;
+            if (InputCompat.NavUpPressed()) { list.MoveBy(-1); return true; }
+            if (InputCompat.NavDownPressed()) { list.MoveBy(1); return true; }
+            if (InputCompat.ConfirmPressed())
+            {
+                if (!list.ChooseCurrent()) _sfx?.Refuse();
+                return true;
+            }
+            if (InputCompat.CancelPressed()) { onCancel?.Invoke(); return true; }
+            return false;
+        }
+
+        private void HandleOptionsListInput() => HandleListInput(_optionsList, OptionsGoBack);
     }
 }

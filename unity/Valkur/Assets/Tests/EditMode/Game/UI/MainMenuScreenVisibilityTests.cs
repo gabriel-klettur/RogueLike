@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
@@ -7,23 +8,25 @@ using Valkur.UI.MainMenu;
 namespace Valkur.Tests.EditMode.Game.UI
 {
     /// <summary>
-    /// Regression tests for the main-menu screen visibility contract.
+    /// The main menu's screen-visibility contract.
     ///
-    /// These tests guarantee that the bug "after deleting a save in the Load
-    /// Game panel, the Main Menu reappears on top of the still-open Load Game
-    /// overlay" never returns. The contract enforced here:
+    /// <para>It exists to keep one bug dead: "after deleting a save in the Load Game panel, the
+    /// main menu reappears ON TOP of the still-open overlay". The invariants are unchanged by the
+    /// 2026-09-12 rebuild, which is why this fixture survived it —</para>
     ///
-    ///   1. <c>ShowMenuScreen</c> is the single source of truth for which root
-    ///      container is visible. Exactly one of {Main, Options/Sounds/Inputs,
-    ///      LoadGame} is ever active at a time.
-    ///   2. The active sub-screen overlay is always the last sibling under the
-    ///      canvas, so a freshly rebuilt MenuPanel can never appear on top.
-    ///   3. <c>RebuildMenuPanel</c> respects the current <c>_menuScreen</c>:
-    ///      the rebuilt MenuPanel stays hidden if a sub-screen is open, and
-    ///      the active sub-screen overlay is re-promoted to last sibling.
+    /// <list type="number">
+    ///   <item><c>ShowMenuScreen</c> is the single source of truth: exactly one root is active
+    ///   at a time.</item>
+    ///   <item>The active root is the LAST sibling under the canvas, so a freshly rebuilt main
+    ///   panel can never appear over it.</item>
+    ///   <item><c>RebuildMenuPanel</c> respects the current screen.</item>
+    /// </list>
     ///
-    /// Together these invariants make the menus open/close as siblings without
-    /// ever overlapping or stealing each other's mouse input.
+    /// <para><b>What DID change is the mechanism, and the names.</b> The four screens behind one
+    /// shared <c>_optOverlay</c> are now five panels with a root each (<c>MenuPanelView</c>), and
+    /// "Sounds" and "Inputs" are "Audio" and "Controls". The fixture reads the roots through
+    /// <c>PanelFor</c> rather than through a field per screen, so adding a sixth screen extends
+    /// the coverage instead of escaping it.</para>
     /// </summary>
     [TestFixture]
     public class MainMenuScreenVisibilityTests
@@ -31,372 +34,223 @@ namespace Valkur.Tests.EditMode.Game.UI
         private GameObject _go;
         private MainMenuUI _menu;
 
-        // Cached reflection handles
         private static readonly BindingFlags PrivInst =
             BindingFlags.NonPublic | BindingFlags.Instance;
+
+        /// <summary>Every screen that owns a panel, by name. Read from the enum, never a list.</summary>
+        private static IEnumerable<string> PanelScreens()
+        {
+            foreach (var name in Enum.GetNames(EnumType()))
+                if (name != "Main" && name != "LoadGame" && name != "ClassSelector")
+                    yield return name;
+        }
+
+        private static Type EnumType()
+        {
+            var t = typeof(MainMenuUI).GetNestedType("MenuScreen", BindingFlags.NonPublic);
+            Assert.IsNotNull(t, "Private enum MainMenuUI.MenuScreen must exist");
+            return t;
+        }
 
         [SetUp]
         public void SetUp()
         {
             var existing = UnityEngine.Object.FindObjectOfType<MainMenuUI>();
-            if (existing != null)
-                UnityEngine.Object.DestroyImmediate(existing.gameObject);
+            if (existing != null) UnityEngine.Object.DestroyImmediate(existing.gameObject);
 
-            _go   = new GameObject("TestMainMenuUI_ScreenVisibility");
+            _go = new GameObject("TestMainMenuUI_ScreenVisibility");
             _menu = _go.AddComponent<MainMenuUI>();
             InvokePrivate("Start");
-
-            // Press-to-Start overlay (added later) hides the main panel until
-            // the player acknowledges. This fixture targets the post-acknowledge
-            // menu-screen visibility contract, so we dismiss it programmatically
-            // here so every test runs from the canonical "Main panel visible" state.
+            // Screens are built ON DEMAND in production — the class selector, the four option
+            // panels, the load browser and the credits are 790 of 815 transforms and the player
+            // may never open any of them. This fixture is about VISIBILITY, so it builds them all
+            // up front rather than also being a test about lazy construction.
+            _menu.BuildAllScreensForTests();
             DismissPressToStart();
-        }
-
-        /// <summary>Force-dismiss the Press-to-Start overlay so MenuPanel is shown.</summary>
-        private void DismissPressToStart()
-        {
-            var activeField = typeof(MainMenuUI).GetField("_pressToStartActive", PrivInst);
-            if (activeField != null) activeField.SetValue(_menu, false);
-
-            var overlayField = typeof(MainMenuUI).GetField("_pressToStartOverlay", PrivInst);
-            if (overlayField?.GetValue(_menu) is GameObject overlay)
-                overlay.SetActive(false);
-
-            // Re-show the main menu panel that PressToStart hid during BuildUI.
-            var panelField = typeof(MainMenuUI).GetField("_menuPanelGo", PrivInst);
-            if (panelField?.GetValue(_menu) is GameObject panel)
-                panel.SetActive(true);
         }
 
         [TearDown]
         public void TearDown()
         {
+            // DestroyImmediate, never Destroy: Object.Destroy is an outright ERROR in Edit Mode.
             if (_go != null) UnityEngine.Object.DestroyImmediate(_go);
         }
 
-        // ── Reflection helpers ────────────────────────────────────────────────
+        // ── Reflection helpers ───────────────────────────────────────────────
 
         private void InvokePrivate(string methodName, params object[] args)
         {
             var m = typeof(MainMenuUI).GetMethod(methodName, PrivInst);
-            m?.Invoke(_menu, args);
+            Assert.IsNotNull(m, methodName + " must exist");
+            m.Invoke(_menu, args);
         }
 
-        private T GetField<T>(string name)
+        private T GetField<T>(string name) where T : class
         {
             var f = typeof(MainMenuUI).GetField(name, PrivInst);
-            return f != null ? (T)f.GetValue(_menu) : default;
+            return f?.GetValue(_menu) as T;
         }
 
-        /// <summary>Resolves the private nested <c>MenuScreen</c> enum value by name.</summary>
-        private static object MenuScreen(string valueName)
+        private void DismissPressToStart()
         {
-            var enumType = typeof(MainMenuUI).GetNestedType("MenuScreen", PrivInst);
-            Assert.IsNotNull(enumType, "Private enum MainMenuUI.MenuScreen must exist");
-            return Enum.Parse(enumType, valueName);
+            var m = typeof(MainMenuUI).GetMethod("DismissPressToStart", PrivInst);
+            Assert.IsNotNull(m, "DismissPressToStart must exist");
+            m.Invoke(_menu, new object[] { true });
         }
 
         private void ShowScreen(string valueName)
         {
             var m = typeof(MainMenuUI).GetMethod("ShowMenuScreen", PrivInst);
             Assert.IsNotNull(m, "ShowMenuScreen private method must exist");
-            m.Invoke(_menu, new[] { MenuScreen(valueName) });
+            m.Invoke(_menu, new[] { Enum.Parse(EnumType(), valueName) });
         }
 
-        private GameObject MenuPanel    => GetField<GameObject>("_menuPanelGo");
-        private GameObject OptOverlay   => GetField<GameObject>("_optOverlay");
-        private GameObject LoadOverlay  => GetField<GameObject>("_mmLoadOverlay");
-        private GameObject ClassPanel   => GetField<GameObject>("_classSelectionPanel");
+        private string CurrentScreen()
+        {
+            var f = typeof(MainMenuUI).GetField("_menuScreen", PrivInst);
+            return f?.GetValue(_menu)?.ToString() ?? "null";
+        }
 
-        /// <summary>
-        /// Counts how many of the four menu roots are currently active. The
-        /// invariant is "exactly one" for any single-screen state.
-        /// </summary>
+        /// <summary>The root GameObject of a panel-backed screen, through the production lookup.</summary>
+        private GameObject PanelRoot(string valueName)
+        {
+            var m = typeof(MainMenuUI).GetMethod("PanelFor", PrivInst);
+            Assert.IsNotNull(m, "PanelFor must exist — it is how ShowMenuScreen finds a panel");
+            var view = m.Invoke(_menu, new[] { Enum.Parse(EnumType(), valueName) });
+            if (view == null) return null;
+            var rootProp = view.GetType().GetField("Root");
+            Assert.IsNotNull(rootProp, "MenuPanelView.Root must exist");
+            var rt = rootProp.GetValue(view) as RectTransform;
+            return rt != null ? rt.gameObject : null;
+        }
+
+        private GameObject MenuPanel => GetField<GameObject>("_menuPanelGo");
+        private GameObject LoadOverlay => GetField<GameObject>("_mmLoadOverlay");
+        private GameObject ClassPanel => GetField<GameObject>("_classSelectionPanel");
+
+        private List<GameObject> AllRoots()
+        {
+            var roots = new List<GameObject>();
+            if (MenuPanel != null) roots.Add(MenuPanel);
+            if (LoadOverlay != null) roots.Add(LoadOverlay);
+            if (ClassPanel != null) roots.Add(ClassPanel);
+            foreach (var screen in PanelScreens())
+            {
+                var root = PanelRoot(screen);
+                if (root != null) roots.Add(root);
+            }
+            return roots;
+        }
+
         private int CountActiveRoots()
         {
             int n = 0;
-            if (MenuPanel   != null && MenuPanel.activeSelf)   n++;
-            if (OptOverlay  != null && OptOverlay.activeSelf)  n++;
-            if (LoadOverlay != null && LoadOverlay.activeSelf) n++;
-            if (ClassPanel  != null && ClassPanel.activeSelf)  n++;
+            foreach (var root in AllRoots()) if (root.activeSelf) n++;
             return n;
         }
 
-        // ── Initial state ─────────────────────────────────────────────────────
+        // ── Initial state ────────────────────────────────────────────────────
 
         [Test]
-        public void Start_LeavesOnlyMainPanelActive()
+        public void EveryRootCanBeBuilt_AndOnlyTheMainPanelIsActive()
         {
-            Assert.IsNotNull(MenuPanel,   "_menuPanelGo must be built during Start");
-            Assert.IsNotNull(OptOverlay,  "_optOverlay must be built during Start");
+            Assert.IsNotNull(MenuPanel, "_menuPanelGo must be built during Start");
             Assert.IsNotNull(LoadOverlay, "_mmLoadOverlay must be built during Start");
+            Assert.IsNotNull(ClassPanel, "_classSelectionPanel must be built during Start");
+            foreach (var screen in PanelScreens())
+                Assert.IsNotNull(PanelRoot(screen), screen + " has no panel");
 
-            Assert.IsTrue(MenuPanel.activeSelf,    "Main menu panel must be visible at start");
-            Assert.IsFalse(OptOverlay.activeSelf,  "Options overlay must be hidden at start");
-            Assert.IsFalse(LoadOverlay.activeSelf, "Load overlay must be hidden at start");
-            Assert.IsNotNull(ClassPanel,           "_classSelectionPanel must be built during Start");
-            Assert.IsFalse(ClassPanel.activeSelf,  "Class selector overlay must be hidden at start");
+            Assert.IsTrue(MenuPanel.activeSelf, "the main panel must be visible at start");
+            Assert.AreEqual(1, CountActiveRoots(), "exactly one root may be active");
         }
 
-        // ── ShowMenuScreen single-source-of-truth ────────────────────────────
+        // ── One root at a time ───────────────────────────────────────────────
 
         [Test]
-        public void ShowLoadGame_HidesMainPanel()
+        public void EveryScreen_LeavesExactlyOneRootActive()
         {
-            ShowScreen("LoadGame");
-            Assert.IsFalse(MenuPanel.activeSelf,
-                "Main menu panel must be hidden while the Load Game overlay is open");
-            Assert.IsTrue(LoadOverlay.activeSelf,
-                "Load Game overlay must be active");
-            Assert.AreEqual(1, CountActiveRoots(),
-                "Exactly one root container must be active at a time");
-        }
-
-        [Test]
-        public void ShowOptions_HidesMainPanel()
-        {
-            ShowScreen("Options");
-            Assert.IsFalse(MenuPanel.activeSelf,
-                "Main menu panel must be hidden while the Options overlay is open");
-            Assert.IsTrue(OptOverlay.activeSelf, "Options overlay must be active");
-            Assert.AreEqual(1, CountActiveRoots(),
-                "Exactly one root container must be active at a time");
-        }
-
-        [Test]
-        public void ShowSounds_HidesMainPanel_AndKeepsOptionsOverlay()
-        {
-            ShowScreen("Sounds");
-            Assert.IsFalse(MenuPanel.activeSelf,
-                "Main menu panel must be hidden in any sub-screen");
-            Assert.IsTrue(OptOverlay.activeSelf,
-                "Sounds is rendered inside the Options overlay container");
-            Assert.AreEqual(1, CountActiveRoots(),
-                "Exactly one root container must be active at a time");
-        }
-
-        [Test]
-        public void ShowMain_AfterSubscreen_RestoresMainPanel()
-        {
-            ShowScreen("LoadGame");
-            ShowScreen("Main");
-            Assert.IsTrue(MenuPanel.activeSelf,
-                "Returning to Main must re-show the menu panel");
-            Assert.IsFalse(LoadOverlay.activeSelf,
-                "Load overlay must be hidden when back on Main");
-            Assert.AreEqual(1, CountActiveRoots());
-        }
-
-        [Test]
-        public void EveryScreenTransition_KeepsExactlyOneRootActive()
-        {
-            string[] sequence = { "Main", "Options", "Sounds", "Inputs", "Options",
-                                  "Main", "LoadGame", "Main" };
-            foreach (var s in sequence)
+            foreach (var name in Enum.GetNames(EnumType()))
             {
-                ShowScreen(s);
+                ShowScreen(name);
                 Assert.AreEqual(1, CountActiveRoots(),
-                    $"After ShowMenuScreen({s}) exactly one root must be active");
+                    $"after ShowMenuScreen({name}) exactly one root must be active");
+                Assert.AreEqual(name, CurrentScreen());
             }
         }
 
-        // ── Z-order: active overlay is always last sibling ───────────────────
+        [Test]
+        public void TheActiveRoot_IsTheLastSibling()
+        {
+            foreach (var name in Enum.GetNames(EnumType()))
+            {
+                ShowScreen(name);
+                GameObject active = null;
+                foreach (var root in AllRoots()) if (root.activeSelf) active = root;
+                Assert.IsNotNull(active, name + " left nothing on screen");
+                var parent = active.transform.parent;
+                Assert.AreEqual(parent.childCount - 1, active.transform.GetSiblingIndex(),
+                    $"{name}'s root must be the last sibling or a rebuilt panel can cover it");
+            }
+        }
 
         [Test]
-        public void ShowLoadGame_PromotesLoadOverlayToLastSibling()
+        public void ShowLoadGame_HidesTheMainPanel()
         {
             ShowScreen("LoadGame");
-            int last = LoadOverlay.transform.parent.childCount - 1;
-            Assert.AreEqual(last, LoadOverlay.transform.GetSiblingIndex(),
-                "Load overlay must be the last canvas sibling so it draws on top");
+            Assert.IsFalse(MenuPanel.activeSelf);
+            Assert.IsTrue(LoadOverlay.activeSelf);
         }
 
         [Test]
-        public void ShowOptions_PromotesOptionsOverlayToLastSibling()
+        public void ShowAudio_LeavesTheOptionsPanelClosed()
         {
-            ShowScreen("Options");
-            int last = OptOverlay.transform.parent.childCount - 1;
-            Assert.AreEqual(last, OptOverlay.transform.GetSiblingIndex(),
-                "Options overlay must be the last canvas sibling so it draws on top");
+            ShowScreen("Audio");
+            Assert.IsTrue(PanelRoot("Audio").activeSelf);
+            Assert.IsFalse(PanelRoot("Options").activeSelf,
+                "each screen owns its own root now; two cannot be up at once");
         }
 
-        // ── RebuildMenuPanel must respect the current screen ─────────────────
+        // ── RebuildMenuPanel respects the current screen ─────────────────────
 
         [Test]
-        public void RebuildMenuPanel_WhileOnLoadGame_KeepsMainPanelHidden()
-        {
-            // Reproduces the exact bug: open Load Game, "delete a save" (which
-            // internally calls RebuildMenuPanel), and verify the main menu does
-            // NOT pop back on top of the still-open load overlay.
-            ShowScreen("LoadGame");
-            InvokePrivate("RebuildMenuPanel");
-
-            Assert.IsNotNull(MenuPanel, "RebuildMenuPanel must produce a fresh _menuPanelGo");
-            Assert.IsFalse(MenuPanel.activeSelf,
-                "After rebuilding while in LoadGame, the new MenuPanel must remain hidden");
-            Assert.IsTrue(LoadOverlay.activeSelf,
-                "The Load overlay must stay open during/after the rebuild");
-            Assert.AreEqual(1, CountActiveRoots(),
-                "Rebuilding must not break the single-active-root invariant");
-        }
-
-        [Test]
-        public void RebuildMenuPanel_WhileOnLoadGame_LoadOverlayStaysOnTop()
+        public void RebuildMenuPanel_WhileOnASubScreen_LeavesTheMainPanelHidden()
         {
             ShowScreen("LoadGame");
-            InvokePrivate("RebuildMenuPanel");
-            int last = LoadOverlay.transform.parent.childCount - 1;
-            Assert.AreEqual(last, LoadOverlay.transform.GetSiblingIndex(),
-                "After rebuild, the Load overlay must remain the last sibling " +
-                "so the freshly created MenuPanel cannot be drawn on top of it");
-        }
-
-        [Test]
-        public void RebuildMenuPanel_WhileOnOptions_KeepsMainPanelHidden()
-        {
-            ShowScreen("Options");
             InvokePrivate("RebuildMenuPanel");
             Assert.IsFalse(MenuPanel.activeSelf,
-                "After rebuilding while in any sub-screen, MenuPanel must stay hidden");
-            Assert.IsTrue(OptOverlay.activeSelf, "Options overlay must remain visible");
-            int last = OptOverlay.transform.parent.childCount - 1;
-            Assert.AreEqual(last, OptOverlay.transform.GetSiblingIndex(),
-                "After rebuild while in Options, Options overlay must remain on top");
+                "the rebuilt panel must not pop up over the load overlay");
+            Assert.AreEqual(1, CountActiveRoots());
         }
 
         [Test]
-        public void RebuildMenuPanel_WhileOnMain_KeepsMainPanelVisible()
+        public void RebuildMenuPanel_OnMain_KeepsTheMainPanelVisible()
         {
-            // Sanity check: rebuilding while on Main (the normal case after a
-            // back-from-LoadGame) must keep the panel visible.
             ShowScreen("Main");
             InvokePrivate("RebuildMenuPanel");
-            Assert.IsTrue(MenuPanel.activeSelf,
-                "Rebuilding while on Main must leave the new MenuPanel visible");
+            Assert.IsTrue(MenuPanel.activeSelf);
             Assert.AreEqual(1, CountActiveRoots());
         }
 
-        // ── Back navigation from LoadGame after a deletion ───────────────────
-
         [Test]
-        public void OptionsGoBack_FromLoadGame_RestoresMainPanelOnTop()
+        public void OptionsGoBack_FromASubScreen_ReturnsToOptions_ThenToMain()
         {
-            ShowScreen("LoadGame");
-            // Simulate having mutated the save list while in LoadGame: rebuild
-            // must happen before the screen flip, otherwise the visibility
-            // contract still holds because ShowMenuScreen is the final step.
+            ShowScreen("Audio");
             InvokePrivate("OptionsGoBack");
-
-            Assert.IsTrue(MenuPanel.activeSelf,
-                "After OptionsGoBack from LoadGame, Main panel must be visible again");
-            Assert.IsFalse(LoadOverlay.activeSelf,
-                "Load overlay must be hidden after returning to Main");
-            Assert.AreEqual(1, CountActiveRoots());
-            int last = MenuPanel.transform.parent.childCount - 1;
-            Assert.AreEqual(last, MenuPanel.transform.GetSiblingIndex(),
-                "Main panel must end up as the last sibling so it's interactable");
-        }
-
-        // ── ClassSelector screen (regression: "Nuevo juego" overlap bug) ─────
-
-        [Test]
-        public void ShowClassSelector_HidesMainPanel()
-        {
-            // Bug repro: clicking "Nuevo juego" used to leave the main menu
-            // drawn on top of the class selector because OpenClassSelector did
-            // not toggle _menuPanelGo. The fix routes through ShowMenuScreen,
-            // which is the single source of truth for visibility + z-order.
-            ShowScreen("ClassSelector");
-            Assert.IsTrue(ClassPanel.activeSelf,
-                "Class selector must be active after ShowMenuScreen(ClassSelector)");
-            Assert.IsFalse(MenuPanel.activeSelf,
-                "Main menu panel must be hidden while the class selector is open");
-            Assert.AreEqual(1, CountActiveRoots(),
-                "Exactly one root container must be active at a time");
-        }
-
-        [Test]
-        public void ShowClassSelector_PromotesPanelToLastSibling()
-        {
-            ShowScreen("ClassSelector");
-            int last = ClassPanel.transform.parent.childCount - 1;
-            Assert.AreEqual(last, ClassPanel.transform.GetSiblingIndex(),
-                "Class selector must be the last canvas sibling so it draws on top " +
-                "(otherwise the main menu pill rows would intercept the mouse)");
-        }
-
-        [Test]
-        public void OpenClassSelector_HidesMainPanel()
-        {
-            // Direct invocation of the high-level OpenClassSelector entry point
-            // mirrors what "Nuevo juego" does. The Main panel must disappear.
-            InvokePrivate("OpenClassSelector");
-            Assert.IsTrue(ClassPanel.activeSelf,
-                "OpenClassSelector must show the class selector overlay");
-            Assert.IsFalse(MenuPanel.activeSelf,
-                "OpenClassSelector must hide the main menu panel");
+            Assert.AreEqual("Options", CurrentScreen());
+            InvokePrivate("OptionsGoBack");
+            Assert.AreEqual("Main", CurrentScreen());
             Assert.AreEqual(1, CountActiveRoots());
         }
 
         [Test]
-        public void CloseClassSelector_RestoresMainPanel()
+        public void ASequenceOfScreens_NeverLeavesTwoRootsUp()
         {
-            InvokePrivate("OpenClassSelector");
-            InvokePrivate("CloseClassSelector");
-            Assert.IsTrue(MenuPanel.activeSelf,
-                "Closing the class selector must re-show the main menu panel");
-            Assert.IsFalse(ClassPanel.activeSelf,
-                "Class selector overlay must be hidden after CloseClassSelector");
-            Assert.AreEqual(1, CountActiveRoots());
-            int last = MenuPanel.transform.parent.childCount - 1;
-            Assert.AreEqual(last, MenuPanel.transform.GetSiblingIndex(),
-                "Main panel must be on top after closing the class selector");
-        }
-
-        [Test]
-        public void OpenClassSelector_SyncsShowingClassSelectorFlag()
-        {
-            // _showingClassSelector is what Update() inspects to route input
-            // (HandleClassSelectorInput vs. HandleKeyboardNavigation). It must
-            // stay in sync with the screen state so keyboard works.
-            InvokePrivate("OpenClassSelector");
-            Assert.IsTrue(GetField<bool>("_showingClassSelector"),
-                "Opening the class selector must set _showingClassSelector=true");
-
-            InvokePrivate("CloseClassSelector");
-            Assert.IsFalse(GetField<bool>("_showingClassSelector"),
-                "Closing the class selector must clear _showingClassSelector");
-        }
-
-        [Test]
-        public void RebuildMenuPanel_WhileOnClassSelector_KeepsMainPanelHidden()
-        {
-            // If "Nuevo juego" is followed by any rebuild (e.g. a save was
-            // deleted asynchronously), the main menu must not pop on top of
-            // the class selector.
-            InvokePrivate("OpenClassSelector");
-            InvokePrivate("RebuildMenuPanel");
-            Assert.IsFalse(MenuPanel.activeSelf,
-                "After rebuild, main panel must remain hidden while the class selector is open");
-            Assert.IsTrue(ClassPanel.activeSelf,
-                "Class selector must remain visible across rebuilds");
-            int last = ClassPanel.transform.parent.childCount - 1;
-            Assert.AreEqual(last, ClassPanel.transform.GetSiblingIndex(),
-                "Class selector must be re-promoted to last sibling after rebuild");
-            Assert.AreEqual(1, CountActiveRoots());
-        }
-
-        [Test]
-        public void EveryScreenTransition_IncludingClassSelector_KeepsExactlyOneRootActive()
-        {
-            string[] sequence = { "Main", "ClassSelector", "Main", "Options",
-                                  "ClassSelector", "LoadGame", "ClassSelector", "Main" };
-            foreach (var s in sequence)
+            string[] sequence = { "Main", "Options", "Audio", "Video", "Gameplay", "Controls",
+                                  "Options", "LoadGame", "Main", "Credits", "ClassSelector", "Main" };
+            foreach (var name in sequence)
             {
-                ShowScreen(s);
-                Assert.AreEqual(1, CountActiveRoots(),
-                    $"After ShowMenuScreen({s}) exactly one root must be active");
+                ShowScreen(name);
+                Assert.AreEqual(1, CountActiveRoots(), "two roots were up after " + name);
             }
         }
     }

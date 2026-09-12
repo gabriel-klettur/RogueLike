@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.Core.UI;
 
 namespace Valkur.UI.MainMenu
 {
@@ -23,8 +24,11 @@ namespace Valkur.UI.MainMenu
             _mmRunFaceImages   = new RawImage[MM_RUN_ROWS];
             _mmRunHoverBorders = new Image[MM_RUN_ROWS][];
 
-            const float runRowH = 37f;
-            const float runGap  = 3f;
+            // Two lines per row now — a name and, under it, the level and the date — so the row
+            // is tall enough to hold them. The shipped row was 37 px because its entire content
+            // was the string "Lv.1".
+            const float runRowH = 46f;
+            const float runGap  = 4f;
 
             for (int i = 0; i < MM_RUN_ROWS; i++)
             {
@@ -35,14 +39,22 @@ namespace Valkur.UI.MainMenu
                 pRt.anchorMin = new Vector2(0f, 1f); pRt.anchorMax = new Vector2(1f, 1f);
                 pRt.pivot = new Vector2(0.5f, 1f);
                 pRt.anchoredPosition = new Vector2(0f, cy); pRt.sizeDelta = new Vector2(0f, runRowH);
-                _mmRunPills[i] = pillGo.AddComponent<Image>(); _mmRunPills[i].color = Color.clear;
+                _mmRunPills[i] = pillGo.AddComponent<Image>();
+                _mmRunPills[i].sprite = _art.Pill;
+                _mmRunPills[i].type = Image.Type.Sliced;
+                _mmRunPills[i].raycastTarget = false;
+                _mmRunPills[i].color = Color.clear;
 
                 var barGo = CreateUIObject($"RnBar_{i}", runList.transform);
                 var bRt = barGo.GetComponent<RectTransform>();
                 bRt.anchorMin = new Vector2(0f, 1f); bRt.anchorMax = new Vector2(0f, 1f);
                 bRt.pivot = new Vector2(0f, 1f);
                 bRt.anchoredPosition = new Vector2(0f, cy); bRt.sizeDelta = new Vector2(4f, runRowH);
-                _mmRunBars[i] = barGo.AddComponent<Image>(); _mmRunBars[i].color = Color.clear;
+                _mmRunBars[i] = barGo.AddComponent<Image>();
+                _mmRunBars[i].sprite = _art.AccentBar;
+                _mmRunBars[i].type = Image.Type.Sliced;
+                _mmRunBars[i].raycastTarget = false;
+                _mmRunBars[i].color = Color.clear;
 
                 // Character face thumbnail (crops portrait to face area via uvRect)
                 float faceSize = runRowH - 4f;
@@ -60,10 +72,10 @@ namespace Valkur.UI.MainMenu
                 txtR.anchorMin = new Vector2(0f, 1f); txtR.anchorMax = new Vector2(1f, 1f);
                 txtR.pivot = new Vector2(0f, 1f);
                 txtR.anchoredPosition = new Vector2(46f, cy); txtR.sizeDelta = new Vector2(-46f, runRowH);
-                _mmRunTexts[i] = txtGo.AddComponent<TextMeshProUGUI>();
-                _mmRunTexts[i].text = ""; _mmRunTexts[i].fontSize = 12f;
-                _mmRunTexts[i].alignment = TextAlignmentOptions.Left; _mmRunTexts[i].color = TextNormal;
-                _mmRunTexts[i].enableWordWrapping = false;
+                _mmRunTexts[i] = MenuTypography.Label(txtGo, Style, string.Empty,
+                                                      Style.detailFontSize + 1f, Style.TextPrimary,
+                                                      TextAlignmentOptions.Left);
+                _mmRunTexts[i].lineSpacing = -18f;
 
                 var runHitGo = CreateUIObject($"RnHit_{i}", runList.transform);
                 var runHitRt = runHitGo.GetComponent<RectTransform>();
@@ -123,24 +135,31 @@ namespace Valkur.UI.MainMenu
                 pRt.anchorMin = new Vector2(0f, 1f); pRt.anchorMax = new Vector2(1f, 1f);
                 pRt.pivot = new Vector2(0.5f, 1f);
                 pRt.anchoredPosition = new Vector2(0f, cy); pRt.sizeDelta = new Vector2(0f, svRowH);
-                _mmSavePills[i] = pillGo.AddComponent<Image>(); _mmSavePills[i].color = Color.clear;
+                _mmSavePills[i] = pillGo.AddComponent<Image>();
+                _mmSavePills[i].sprite = _art.Pill;
+                _mmSavePills[i].type = Image.Type.Sliced;
+                _mmSavePills[i].raycastTarget = false;
+                _mmSavePills[i].color = Color.clear;
 
                 var barGo = CreateUIObject($"SvBar_{i}", saveList.transform);
                 var bRt = barGo.GetComponent<RectTransform>();
                 bRt.anchorMin = new Vector2(0f, 1f); bRt.anchorMax = new Vector2(0f, 1f);
                 bRt.pivot = new Vector2(0f, 1f);
                 bRt.anchoredPosition = new Vector2(0f, cy); bRt.sizeDelta = new Vector2(4f, svRowH);
-                _mmSaveBars[i] = barGo.AddComponent<Image>(); _mmSaveBars[i].color = Color.clear;
+                _mmSaveBars[i] = barGo.AddComponent<Image>();
+                _mmSaveBars[i].sprite = _art.AccentBar;
+                _mmSaveBars[i].type = Image.Type.Sliced;
+                _mmSaveBars[i].raycastTarget = false;
+                _mmSaveBars[i].color = Color.clear;
 
                 var txtGo = CreateUIObject($"SvTxt_{i}", saveList.transform);
                 var txtR = txtGo.GetComponent<RectTransform>();
                 txtR.anchorMin = new Vector2(0f, 1f); txtR.anchorMax = new Vector2(1f, 1f);
                 txtR.pivot = new Vector2(0f, 1f);
                 txtR.anchoredPosition = new Vector2(12f, cy); txtR.sizeDelta = new Vector2(-12f, svRowH);
-                _mmSaveTexts[i] = txtGo.AddComponent<TextMeshProUGUI>();
-                _mmSaveTexts[i].text = ""; _mmSaveTexts[i].fontSize = 14f;
-                _mmSaveTexts[i].alignment = TextAlignmentOptions.Left; _mmSaveTexts[i].color = TextNormal;
-                _mmSaveTexts[i].enableWordWrapping = false;
+                _mmSaveTexts[i] = MenuTypography.Label(txtGo, Style, string.Empty,
+                                                       Style.detailFontSize + 2f, Style.TextPrimary,
+                                                       TextAlignmentOptions.Left);
 
                 var svHitGo = CreateUIObject($"SvHit_{i}", saveList.transform);
                 var svHitRt = svHitGo.GetComponent<RectTransform>();
@@ -188,16 +207,17 @@ namespace Valkur.UI.MainMenu
             var detRt = detGo.GetComponent<RectTransform>();
             detRt.anchorMin = Vector2.zero; detRt.anchorMax = Vector2.one;
             detRt.sizeDelta = Vector2.zero; detRt.anchoredPosition = Vector2.zero;
-            _mmLoadDetailText = detGo.AddComponent<TextMeshProUGUI>();
-            _mmLoadDetailText.fontSize = 14f;
-            _mmLoadDetailText.alignment = TextAlignmentOptions.TopLeft;
-            _mmLoadDetailText.color = TextNormal;
-            _mmLoadDetailText.text = "Select a save.";
+            _mmLoadDetailText = MenuTypography.Label(detGo, Style, MenuText.LoadPickOne,
+                                                     Style.detailFontSize + 1f, Style.TextPrimary,
+                                                     TextAlignmentOptions.TopLeft);
+            _mmLoadDetailText.enableWordWrapping = true;
         }
 
         // ── Hover border helpers ──────────────────────────────────────────────────
 
-        private static readonly Color HoverBorderColor = new Color(1f, 0.84f, 0f, 0.85f);
+        /// <summary>The hover outline. Dimmer than the selection fill on purpose: hovering says
+        /// "this is what you would pick", selecting says "this is what you picked".</summary>
+        private Color HoverBorderColor => new Color(Style.Gold.r, Style.Gold.g, Style.Gold.b, 0.55f);
 
         /// <summary>Creates 4 thin strip Images around a row rect to form an outline.</summary>
         private Image[] BuildHoverBorderStrips(Transform parent, float cy, float rowH)

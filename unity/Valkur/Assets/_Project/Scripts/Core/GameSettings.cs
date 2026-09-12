@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using UnityEngine;
 
@@ -40,6 +40,50 @@ namespace Valkur.Core
         public float duckingAttenuation = -4.0f;
         public float duckingHoldMs      = 250f;
         public float duckingReleaseMs   = 200f;
+
+        /// <summary>
+        /// One dial in front of the three channels. It exists because the shipped Audio panel
+        /// had eight rows and not one of them was "turn the game down": Music, Ambience and SFX
+        /// each had their own slider and five of the eight rows were mixing knobs (the ducking
+        /// attenuation, hold and release, and the ambience interval pair) that belong to whoever
+        /// tunes the mix, not to whoever is playing.
+        /// </summary>
+        public float masterVolume   = 1.0f;
+
+        // ── Video ────────────────────────────────────────────────────────────
+
+        /// <summary>0 off, 1 every v-blank, 2 every second one. Applied through QualitySettings.</summary>
+        public int vSyncCount = 1;
+
+        /// <summary>0 means no cap. Only consulted when vSync is off; Unity ignores it otherwise.</summary>
+        public int frameRateCap = 0;
+
+        /// <summary>
+        /// Multiplies the HUD and menu canvas scale. 0 means "follow the resolution", which is
+        /// what every canvas did before this existed — correct for a 1600x800 window and small
+        /// for somebody playing a pixel-art game on a 4K display.
+        /// </summary>
+        public float uiScale = 0f;
+
+        // ── Accessibility ────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Turns off the menu's particles, the title's assembly, the carousel's slow push and
+        /// every panel animation. It is a real accessibility setting and not a performance one:
+        /// what it removes is MOVEMENT, and everything it removes is decoration by construction —
+        /// no state in this game is readable only from something that moves.
+        /// </summary>
+        public bool reduceMotion = false;
+
+        /// <summary>Shakes the camera on impacts. Separate from reduceMotion: one is the world,
+        /// the other is the interface, and a player may well want one and not the other.</summary>
+        public bool screenShake = true;
+
+        /// <summary>-1 small, 0 normal, 1 large. Scales menu and HUD type.</summary>
+        public int textSize = 0;
+
+        /// <summary>Shows the control hints at the foot of every menu panel.</summary>
+        public bool showHints = true;
 
         // ── Input bindings ───────────────────────────────────────────────────
         //
@@ -126,7 +170,41 @@ namespace Valkur.Core
             duckingAttenuation  = fresh.duckingAttenuation;
             duckingHoldMs       = fresh.duckingHoldMs;
             duckingReleaseMs    = fresh.duckingReleaseMs;
+            masterVolume        = fresh.masterVolume;
+            // Video
+            vSyncCount   = fresh.vSyncCount;
+            frameRateCap = fresh.frameRateCap;
+            uiScale      = fresh.uiScale;
+            // Accessibility
+            reduceMotion = fresh.reduceMotion;
+            screenShake  = fresh.screenShake;
+            textSize     = fresh.textSize;
+            showHints    = fresh.showHints;
             // Input
+        }
+
+        /// <summary>
+        /// Pushes the video settings Unity owns. Called on boot and on every Apply, because
+        /// QualitySettings is engine state and a value that only lives in this object is the
+        /// authored-and-inert shape this project already records a dozen times.
+        /// </summary>
+        public void ApplyVideoSettings()
+        {
+            QualitySettings.vSyncCount = Mathf.Clamp(vSyncCount, 0, 2);
+            // Unity ignores targetFrameRate entirely while vSync is on, so a cap set there would
+            // be a control that silently does nothing — set it to -1 so the two never disagree.
+            Application.targetFrameRate = vSyncCount > 0 ? -1 : (frameRateCap <= 0 ? -1 : frameRateCap);
+        }
+
+        /// <summary>The multiplier every menu and HUD canvas applies on top of its own scale.</summary>
+        public float TextScale()
+        {
+            switch (Mathf.Clamp(textSize, -1, 1))
+            {
+                case -1: return 0.88f;
+                case 1: return 1.18f;
+                default: return 1f;
+            }
         }
     }
 }

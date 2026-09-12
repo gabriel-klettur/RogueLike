@@ -1,3 +1,4 @@
+using UnityEngine;
 namespace Valkur.Core.UI
 {
     /// <summary>
@@ -41,6 +42,46 @@ namespace Valkur.Core.UI
         /// 0 (pure width) is what made the quest log's font explode.
         /// </summary>
         public const float Match = 0.5f;
+
+        /// <summary>
+        /// Configures a HUD or menu <c>CanvasScaler</c>: the shared reference, the shared match,
+        /// and the player's own interface-size preference on top of both.
+        ///
+        /// <para><b>Why one helper and not three lines per canvas.</b> Twelve canvases set these
+        /// by hand today, and the audit that produced <see cref="Match"/> found one of them
+        /// (the quest tracker) on Unity's default 800x600 with <c>matchWidthOrHeight = 0</c> —
+        /// a scale factor of 2.0 against every other canvas's 1.0, so its text rendered at
+        /// double size and the two corners of the screen drifted apart on every resize. A
+        /// constant that each caller copies is a constant each caller can copy wrongly.</para>
+        ///
+        /// <para><b>The interface size is a real setting and it must reach every canvas.</b>
+        /// A preference the player watches work on one screen and not on the next is the exact
+        /// shape this project keeps having to remove. 0 means "follow the resolution", which is
+        /// what every canvas did before the setting existed.</para>
+        /// </summary>
+        public static void ApplyScaler(UnityEngine.UI.CanvasScaler scaler, float interfaceScale = -1f)
+        {
+            if (scaler == null) return;
+            scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(ReferenceWidth, ReferenceHeight);
+            scaler.matchWidthOrHeight = Match;
+
+            float scale = interfaceScale >= 0f ? interfaceScale : InterfaceScale();
+            scaler.scaleFactor = scale > 0.01f ? scale : 1f;
+        }
+
+        /// <summary>
+        /// The player's interface size, or 1 when they have asked for "follow the resolution".
+        /// Reads <c>GameSettings</c> directly: it is a plain serializable object in this same
+        /// assembly, so there is no layering question to answer.
+        /// </summary>
+        public static float InterfaceScale()
+        {
+            var settings = GameSettings.Instance;
+            if (settings == null) return 1f;
+            float scale = settings.uiScale > 0.01f ? settings.uiScale : 1f;
+            return scale * settings.TextScale();
+        }
 
         /// <summary>Gap between the screen edge and the top-right widget column.</summary>
         public const float ScreenMargin = 24f;
@@ -96,6 +137,32 @@ namespace Valkur.Core.UI
         /// minimap, and its first rebuild still covered the music panel's medallion.
         /// </summary>
         public const float GameWindowRightInset = ScreenMargin + MusicPanelWidth + StackGap;
+
+        /// <summary>
+        /// Sorting order of a game window the player opens over the instruments: the inventory,
+        /// and the next one. Over every instrument (HUD canvas 100, minimap and clock 105, music
+        /// 140, spell bar 150, the debug HUD's 190) and under the shop, which is opened from
+        /// inside a conversation and has to stay reachable.
+        /// </summary>
+        public const int GameWindowSortingOrder = 200;
+
+        /// <summary>
+        /// Sorting order of the character sheet's panels — the stats, talents, grimoire and
+        /// records tabs. Above <see cref="GameWindowSortingOrder"/> because the sheet and the
+        /// inventory can be open at once and the sheet is the one the player just asked for;
+        /// still under the shop at 220.
+        ///
+        /// <para>It replaces the 60 / 60 / 60 / 70 the four panels each wrote for themselves,
+        /// which put every one of them UNDER the minimap (105) and the music panel (140): an
+        /// open grimoire had the minimap drawn on top of it.</para>
+        /// </summary>
+        public const int CharacterSheetSortingOrder = 210;
+
+        /// <summary>
+        /// The sheet's tab strip, one step above the panels it switches between — it is the only
+        /// way back out of them, so nothing the sheet itself draws may cover it.
+        /// </summary>
+        public const int CharacterSheetChromeSortingOrder = CharacterSheetSortingOrder + 1;
 
         // ── The tool column (HUD_VISUAL_LANGUAGE.md, H6) ─────────────────────
 

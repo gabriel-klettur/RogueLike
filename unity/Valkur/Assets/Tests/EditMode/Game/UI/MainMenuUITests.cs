@@ -109,19 +109,19 @@ namespace Valkur.Tests.EditMode.Game.UI
         }
 
         [Test]
-        public void OptionsGoBack_FromSounds_GoesToOptions()
+        public void OptionsGoBack_FromAudio_GoesToOptions()
         {
-            InvokeShowMenuScreen("Sounds");
-            Assert.AreEqual("Sounds", GetMenuScreen());
+            InvokeShowMenuScreen("Audio");
+            Assert.AreEqual("Audio", GetMenuScreen());
             InvokePrivate("OptionsGoBack");
             Assert.AreEqual("Options", GetMenuScreen());
         }
 
         [Test]
-        public void OptionsGoBack_FromInputs_GoesToOptions()
+        public void OptionsGoBack_FromControls_GoesToOptions()
         {
-            InvokeShowMenuScreen("Inputs");
-            Assert.AreEqual("Inputs", GetMenuScreen());
+            InvokeShowMenuScreen("Controls");
+            Assert.AreEqual("Controls", GetMenuScreen());
             InvokePrivate("OptionsGoBack");
             Assert.AreEqual("Options", GetMenuScreen());
         }
@@ -137,31 +137,45 @@ namespace Valkur.Tests.EditMode.Game.UI
 
         // ── Menu options (dynamic) ───────────────────────────────────────────
 
+        /// <summary>
+        /// These three used to assert the ENGLISH labels — <c>Contains("New Game")</c> — so
+        /// translating the menu put them red for doing the right thing, and the literal was also
+        /// what <c>ExecuteOption</c> switched on. The rows carry a <c>MainMenuItem</c> now, and
+        /// that is what is worth pinning: the meaning, not the spelling.
+        /// </summary>
         [Test]
-        public void MenuOptions_AlwaysContains_NewGame()
+        public void MenuItems_AlwaysContain_NewGame_Options_And_Exit()
         {
-            var options = GetPrivateField<string[]>("_menuOptions");
-            Assert.IsNotNull(options);
-            Assert.Contains("New Game", options);
+            var items = MenuItems();
+            Assert.IsNotNull(items);
+            CollectionAssert.Contains(items, "NewGame");
+            CollectionAssert.Contains(items, "Options");
+            CollectionAssert.Contains(items, "Exit");
         }
 
         [Test]
-        public void MenuOptions_AlwaysContains_Options()
+        public void EveryMenuItem_HasALabel()
         {
-            var options = GetPrivateField<string[]>("_menuOptions");
-            Assert.IsNotNull(options);
-            Assert.Contains("Options", options);
+            var items = MenuItems();
+            var labels = GetPrivateField<string[]>("_menuOptions");
+            Assert.IsNotNull(labels);
+            Assert.AreEqual(items.Count, labels.Length,
+                "every row must carry both a meaning and a label");
+            foreach (var label in labels)
+                Assert.IsFalse(string.IsNullOrWhiteSpace(label), "a row was built with no label");
         }
 
-        [Test]
-        public void MenuOptions_AlwaysContains_Exit()
+        /// <summary>The meanings of the rows, as strings, without leaking the private enum.</summary>
+        private System.Collections.Generic.List<string> MenuItems()
         {
-            var options = GetPrivateField<string[]>("_menuOptions");
-            Assert.IsNotNull(options);
-            Assert.Contains("Exit", options);
+            var field = typeof(MainMenuUI).GetField("_menuItems",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.IsNotNull(field, "MainMenuUI._menuItems must exist");
+            var list = (System.Collections.IEnumerable)field.GetValue(_menu);
+            var names = new System.Collections.Generic.List<string>();
+            foreach (var item in list) names.Add(item.ToString());
+            return names;
         }
-
-        // ── Class selector ───────────────────────────────────────────────────
 
         [Test]
         public void ClassSelector_NotShowingByDefault()

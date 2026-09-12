@@ -1,35 +1,45 @@
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
+using UnityEngine;
+using UnityEngine.InputSystem;
 using Valkur.Core;
 using Valkur.Core.Input;
+using Valkur.Core.UI;
+using Valkur.UI.MainMenu.Kit;
 
 namespace Valkur.UI.MainMenu
 {
+    /// <summary>
+    /// Options → Controls, and it REBINDS now.
+    ///
+    /// <para><b>The defect this closes is not cosmetic.</b> The only rebinding surface in the
+    /// game is <c>ControlsRuntimeEditor</c>, and it is built inside the <c>if (editors)</c> block
+    /// of <c>GameplaySceneSetup.Sequence</c> — behind
+    /// <c>RuntimeEditorPolicy.AuthoringEditorsAvailable</c>, which is FALSE in a release player.
+    /// Both read-only panels (this one and the pause menu's) and a loading tip all told the
+    /// player to go and use it. In a shipped build the player could not remap a single key.</para>
+    ///
+    /// <para><b>It writes the real model.</b> Overrides go through the same
+    /// <c>InputBindingStore</c> the in-game editor writes, so a key set here is the key the game
+    /// reads — unlike the panel this replaces twice over: the one before the read-only summary
+    /// wrote <c>GameSettings.*KeyA</c>, a parallel string table with zero production readers.</para>
+    ///
+    /// <para><b>Twelve actions, not sixty.</b> This is the pre-game panel; the 24 spell slots and
+    /// the editors' verbs belong to the in-game Controls editor, which can draw a whole keyboard.
+    /// The hint says so rather than leaving the player to wonder whether the list is all of
+    /// them.</para>
+    /// </summary>
     public partial class MainMenuUI
     {
-        // ── Controls panel ───────────────────────────────────────────────────
-        //
-        // WHAT THIS USED TO BE. Four tabs of rebindable rows writing GameSettings.*KeyA
-        // strings — 392 lines over a model that gameplay did not read. Every gameplay field
-        // it wrote had zero production readers, measured: moveUpKeyA, dashKeyA,
-        // spell1KeyA..4, primaryAttackMouse. Only twelve editor F-keys were bridged to the
-        // real bindings, and only slot 0 of each. A player could rebind their movement here,
-        // watch the panel update, save it, and change nothing about the game.
-        //
-        // The real model is ValkurInputActions and its editor is the in-game Controls editor
-        // (ESC → Controls), which draws the keyboard and mouse and binds any action to any key
-        // per War/Peace stance. The main menu has no gameplay scene to host that editor, so
-        // here it reads the same live bindings and says where to change them. A read-only view
-        // that is true beats an interactive one that is not.
+        private MenuPanelView _controlsPanel;
+        private MenuList _controlsList;
+        private TextMeshProUGUI _controlsBanner;
 
-        private readonly List<TextMeshProUGUI> _optInputValues = new List<TextMeshProUGUI>();
-        private readonly List<InputActionDescriptor> _optInputActions = new List<InputActionDescriptor>();
+        private readonly List<InputActionDescriptor> _controlsActions = new List<InputActionDescriptor>();
+        private int _capturingRow = -1;
 
-        [Valkur.Core.SelfHealingStatic("Immutable list of action ids, built once from string literals. Holds no Unity object and is never mutated, so it cannot go stale across a Play session.")]
-
-        private static readonly string[] OPT_SUMMARY_ACTION_IDS =
+        [SelfHealingStatic("Immutable table built once from literals. Nothing writes to it after the static initialiser, it holds no Unity object and no subscription, so it cannot carry a destroyed reference or a session decision across Play.")]
+        private static readonly string[] ControlsActionIds =
         {
             "Gameplay/Move",
             "Gameplay/Dash",
@@ -45,96 +55,195 @@ namespace Valkur.UI.MainMenu
             "Editors/ToggleDevConsole",
         };
 
-        private void BuildOptInputsPanel(Transform parent)
+        private void BuildControlsPanel(Transform canvas)
         {
-            const float panelW = 760f;
-            const float panelH = 520f;
+            var style = Style;
+            _controlsPanel = new MenuPanelView(canvas, _art, style, MenuText.ControlsTitle,
+                                               style.widePanelWidth, ReduceMotion);
+            _controlsList = new MenuList(_controlsPanel.Body, _art, style, ReduceMotion);
+            _controlsActions.Clear();
 
-            _optInputsPanel = CreateUIObject("OptInputsPanel", parent);
-            var r = _optInputsPanel.GetComponent<RectTransform>();
-            r.anchorMin = new Vector2(0.5f, 0.5f); r.anchorMax = new Vector2(0.5f, 0.5f);
-            r.pivot = new Vector2(0.5f, 0.5f); r.anchoredPosition = Vector2.zero;
-            r.sizeDelta = new Vector2(panelW, panelH);
-            _optInputsPanel.AddComponent<Image>().color = PanelBg;
-
-            AddOptNote(_optInputsPanel.transform,
-                "CONTROLES",
-                -30f, 26f, TextSelected, TextAlignmentOptions.Center);
-
-            AddOptNote(_optInputsPanel.transform,
-                "Controles activos, leidos de los bindings reales del juego.\n" +
-                "Para cambiarlos: entra en la partida y abre ESC -> Controls.\n" +
-                "Ahi tienes el teclado y el raton dibujados, y puedes asignar\n" +
-                "cualquier accion a cualquier tecla, por postura (Guerra / Paz).",
-                -72f, 84f, TextNormal, TextAlignmentOptions.Top);
-
-            _optInputValues.Clear();
-            _optInputActions.Clear();
-
-            float top = -176f;
-            const float rowH = 26f;
-            int shown = 0;
-            foreach (var id in OPT_SUMMARY_ACTION_IDS)
+            foreach (var id in ControlsActionIds)
             {
                 var descriptor = InputActionCatalog.Find(id);
                 if (descriptor == null) continue;
-                AddOptSummaryRow(_optInputsPanel.transform, descriptor, top - shown * rowH, rowH);
-                shown++;
+                var row = _controlsList.Add(_art, descriptor.DisplayName);
+                row.Value.text = string.Empty;
+                // An action the catalogue marks non-rebindable is SHOWN and greyed rather than
+                // hidden: a control the player can see and cannot change is information, and one
+                // that is simply absent looks like a control the game does not have.
+                row.Interactable = descriptor.Rebindable;
+                _controlsActions.Add(descriptor);
+            }
+
+            var resetRow = _controlsList.Add(_art, MenuText.ControlsReset);
+            resetRow.Value.text = string.Empty;
+
+            _controlsList.Changed += _ => _sfx?.Move();
+            _controlsList.Chosen += OnControlsRowChosen;
+
+            _controlsPanel.FitToContent(_controlsList.ContentHeight, 44f);
+            // Thirteen rows plus the reset row do not fit under the title on an 800-unit canvas,
+            // so this list is the one that really scrolls. Measured before the clamp: the panel
+            // reached 1100 on an 800 screen.
+            _controlsList.SetViewport(_controlsPanel.BodyHeight);
+
+            var noteRt = MenuUIKit.Rect("Note", _controlsPanel.Root);
+            noteRt.anchorMin = new Vector2(0f, 0f);
+            noteRt.anchorMax = new Vector2(1f, 0f);
+            noteRt.pivot = new Vector2(0.5f, 0f);
+            noteRt.anchoredPosition = new Vector2(0f, style.hintBarHeight + 2f);
+            noteRt.sizeDelta = new Vector2(-30f, 38f);
+            _controlsBanner = MenuTypography.Label(noteRt.gameObject, style,
+                                                   MenuText.ControlsMoreInGame,
+                                                   style.detailFontSize, style.TextMuted,
+                                                   TextAlignmentOptions.Center);
+            _controlsBanner.enableWordWrapping = true;
+
+            _controlsPanel.SetHint(MenuText.ControlsHint);
+            _controlsPanel.Close();
+        }
+
+        private void RefreshControlsRows()
+        {
+            if (_controlsList == null) return;   // not built yet: nothing to repaint
+            var asset = InputService.Instance?.Asset;
+            var rows = _controlsList.Rows;
+
+            for (int i = 0; i < _controlsActions.Count && i < rows.Count; i++)
+            {
+                var descriptor = _controlsActions[i];
+                var map = asset?.FindActionMap(descriptor.Map, throwIfNotFound: false);
+                var action = map?.FindAction(descriptor.Action, throwIfNotFound: false);
+                string label = action == null ? "?" : InputBindingResolver.PrimaryLabel(action);
+                bool unbound = string.IsNullOrEmpty(label);
+                rows[i].Value.text = unbound ? MenuText.ControlsUnbound : label;
+                rows[i].Value.color = unbound ? Style.TextMuted
+                                     : rows[i].Selected ? Style.textOnSelection : Style.Gold;
+            }
+
+            if (_controlsBanner != null && _capturingRow < 0)
+                _controlsBanner.text = MenuText.ControlsMoreInGame;
+        }
+
+        private void OnControlsRowChosen(int index)
+        {
+            if (index == _controlsActions.Count) { ResetControlsToDefaults(); return; }
+            BeginControlsCapture(index);
+        }
+
+        private void BeginControlsCapture(int index)
+        {
+            if (index < 0 || index >= _controlsActions.Count) { _sfx?.Refuse(); return; }
+            if (!_controlsActions[index].Rebindable) { _sfx?.Refuse(); return; }
+            _capturingRow = index;
+            if (_controlsBanner != null)
+            {
+                _controlsBanner.text = MenuText.ControlsCapture;
+                _controlsBanner.color = Style.Gold;
+            }
+            _sfx?.Confirm();
+        }
+
+        /// <summary>True when there WAS a capture to cancel, so Esc can be consumed by it.</summary>
+        private bool CancelControlsCapture()
+        {
+            if (_capturingRow < 0) return false;
+            _capturingRow = -1;
+            if (_controlsBanner != null)
+            {
+                _controlsBanner.text = MenuText.ControlsMoreInGame;
+                _controlsBanner.color = Style.TextMuted;
+            }
+            _sfx?.Cancel();
+            return true;
+        }
+
+        private void HandleControlsInput()
+        {
+            if (_capturingRow >= 0) { PollControlsCapture(); return; }
+            HandleListInput(_controlsList, OptionsGoBack);
+        }
+
+        /// <summary>
+        /// Reads the next key or mouse button pressed and binds it.
+        ///
+        /// <para><b>Through the centralized helpers, never the raw device.</b> The in-game
+        /// editor's first version walked <c>Keyboard.current</c> directly, which meant no mouse
+        /// button could ever be assigned AND that it stopped working under exactly the
+        /// InputSystem event-drop bug that sends a player looking for the Controls screen in the
+        /// first place. <c>KeyboardInputManager</c> and <c>MouseInputManager</c> OR both
+        /// backends.</para>
+        ///
+        /// <para><b>The LEFT mouse button is not polled.</b> It is how the player clicked the row
+        /// to start the capture, so polling it would bind LMB to whatever they were pointing at.
+        /// Right click CLEARS the binding, which is also why it is not a candidate.</para>
+        /// </summary>
+        private void PollControlsCapture()
+        {
+            if (KeyboardInputManager.WasEscapePressedThisFrame()) { CancelControlsCapture(); return; }
+
+            if (MouseInputManager.WasRightMouseButtonPressedThisFrame())
+            {
+                ApplyCapturedPath(string.Empty);
+                return;
+            }
+            if (MouseInputManager.WasMiddleMouseButtonPressedThisFrame())
+            {
+                ApplyCapturedPath(InputControlPaths.PathForMouse(MouseControl.Middle));
+                return;
+            }
+
+            foreach (var entry in InputControlPaths.Entries)
+            {
+                if (!InputControlPaths.IsKeyboardPath(entry.Path)) continue;
+                if (!KeyboardInputManager.WasKeyPressedThisFrame(entry.Key, entry.Legacy)) continue;
+                ApplyCapturedPath(entry.Path);
+                return;
             }
         }
 
-        private void AddOptNote(Transform parent, string text, float y, float height,
-                                Color color, TextAlignmentOptions align)
+        private void ApplyCapturedPath(string path)
         {
-            var go = CreateUIObject("OptNote", parent);
-            var rt = go.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0f, 1f); rt.anchorMax = new Vector2(1f, 1f);
-            rt.pivot = new Vector2(0.5f, 1f);
-            rt.anchoredPosition = new Vector2(0f, y);
-            rt.sizeDelta = new Vector2(-64f, height);
+            int index = _capturingRow;
+            _capturingRow = -1;
+            if (index < 0 || index >= _controlsActions.Count) return;
 
-            var tmp = go.AddComponent<TextMeshProUGUI>();
-            tmp.text = text;
-            tmp.fontSize = 15f;
-            tmp.color = color;
-            tmp.alignment = align;
-            tmp.raycastTarget = false;
+            var descriptor = _controlsActions[index];
+            var asset = InputService.Instance?.Asset;
+            var map = asset?.FindActionMap(descriptor.Map, throwIfNotFound: false);
+            var action = map?.FindAction(descriptor.Action, throwIfNotFound: false);
+            if (action == null) { _sfx?.Refuse(); RefreshControlsRows(); return; }
+
+            // Slot 0 of the action's own bindings, skipping composite headers: an override that
+            // lands on a 2DVector header moves nothing while reporting success — the defect the
+            // in-game editor already had to fix.
+            int slot = FirstBindableSlot(action);
+            if (slot < 0) { _sfx?.Refuse(); RefreshControlsRows(); return; }
+
+            action.ApplyBindingOverride(slot, path);
+            InputBindingResolver.Invalidate();
+            InputBindingStore.MarkDirty();
+            InputBindingStore.Save();
+
+            _sfx?.Confirm();
+            RefreshControlsRows();
         }
 
-        private void AddOptSummaryRow(Transform parent, InputActionDescriptor descriptor,
-                                      float y, float rowH)
+        private static int FirstBindableSlot(InputAction action)
         {
-            var row = CreateUIObject("ORow_" + descriptor.Action, parent);
-            var rt = row.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0f, 1f); rt.anchorMax = new Vector2(1f, 1f);
-            rt.pivot = new Vector2(0.5f, 1f);
-            rt.anchoredPosition = new Vector2(0f, y);
-            rt.sizeDelta = new Vector2(-72f, rowH);
+            var bindings = action.bindings;
+            for (int i = 0; i < bindings.Count; i++)
+                if (!bindings[i].isComposite) return i;
+            return bindings.Count > 0 ? 0 : -1;
+        }
 
-            var label = CreateUIObject("Label", row.transform);
-            var lrt = label.GetComponent<RectTransform>();
-            lrt.anchorMin = new Vector2(0f, 0f); lrt.anchorMax = new Vector2(0.55f, 1f);
-            lrt.offsetMin = Vector2.zero; lrt.offsetMax = Vector2.zero;
-            var ltmp = label.AddComponent<TextMeshProUGUI>();
-            ltmp.text = descriptor.DisplayName;
-            ltmp.fontSize = 15f;
-            ltmp.color = TextNormal;
-            ltmp.alignment = TextAlignmentOptions.Left;
-            ltmp.raycastTarget = false;
-
-            var value = CreateUIObject("Value", row.transform);
-            var vrt = value.GetComponent<RectTransform>();
-            vrt.anchorMin = new Vector2(0.55f, 0f); vrt.anchorMax = new Vector2(1f, 1f);
-            vrt.offsetMin = Vector2.zero; vrt.offsetMax = Vector2.zero;
-            var vtmp = value.AddComponent<TextMeshProUGUI>();
-            vtmp.text = "";
-            vtmp.fontSize = 15f;
-            vtmp.color = TextSelected;
-            vtmp.alignment = TextAlignmentOptions.Right;
-            vtmp.raycastTarget = false;
-
-            _optInputValues.Add(vtmp);
-            _optInputActions.Add(descriptor);
+        private void ResetControlsToDefaults()
+        {
+            InputBindingStore.ResetToDefaults();
+            InputBindingResolver.Invalidate();
+            _sfx?.Confirm();
+            RefreshControlsRows();
         }
     }
 }

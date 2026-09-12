@@ -1,0 +1,184 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f00c0e5b3bde4e40abb2b0ad9829f24, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hudFxShader: {fileID: 4800000, guid: 26a514c443ab6964192d7486350c6664, type: 3}
+  referenceResolution: {x: 1600, y: 800}
+  followHudTheme: 1
+  panel: {r: 0.055, g: 0.058, b: 0.075, a: 0.965}
+  panelEdge: {r: 0.015, g: 0.015, b: 0.025, a: 1}
+  panelBevel: {r: 0.16, g: 0.16, b: 0.21, a: 1}
+  header: {r: 0.035, g: 0.035, b: 0.048, a: 1}
+  gold: {r: 0.91, g: 0.76, b: 0.36, a: 1}
+  goldDim: {r: 0.55, g: 0.44, b: 0.19, a: 1}
+  textPrimary: {r: 0.93, g: 0.93, b: 0.96, a: 1}
+  textDim: {r: 0.6, g: 0.62, b: 0.69, a: 1}
+  textMuted: {r: 0.4, g: 0.42, b: 0.48, a: 1}
+  textOnSelection: {r: 0.055, g: 0.045, b: 0.02, a: 1}
+  danger: {r: 0.9, g: 0.3, b: 0.28, a: 1}
+  success: {r: 0.38, g: 0.8, b: 0.42, a: 1}
+  menuPanelWidth: 328
+  panelWidth: 560
+  widePanelWidth: 820
+  rowHeight: 46
+  rowGap: 4
+  panelPadding: 18
+  titleBarHeight: 54
+  hintBarHeight: 34
+  accentBarWidth: 4
+  panelTopOffset: 296
+  menuFontResource: 
+  rowFontSize: 22
+  titleFontSize: 28
+  hintFontSize: 15
+  detailFontSize: 14
+  titleCapHeight: 132
+  titleStrokeWidth: 21
+  titlePointSpacing: 3.2
+  titleRowsAcross: 6
+  titleMaxPoints: 5000
+  titleTracking: 0.17
+  titleMoteSize: 3.9
+  titleSparkScale: 1.45
+  titleWeightContrast: 0.62
+  titleTerminalFlare: 0.34
+  titleTopOffset: 92
+  titleAssembleSeconds: 1.45
+  titleScatterRadius: 0.62
+  titleShimmerAmplitude: 1.5
+  titleShimmerSpeed: 0.55
+  titleSweepInterval: 6.5
+  titleSweepSeconds: 1.1
+  titleCore: {r: 1, g: 0.96, b: 0.86, a: 1}
+  titleMid: {r: 1, g: 0.8, b: 0.38, a: 1}
+  titleEdge: {r: 0.98, g: 0.48, b: 0.16, a: 1}
+  titleEmber: {r: 0.55, g: 0.68, b: 1, a: 1}
+  titleEmberRate: 7
+  titleHaloStrength: 0.74
+  titleHaloPadding: 0.42
+  titleLook: volcan
+  titleLooks:
+  - name: ascua
+    hot: {r: 1, g: 0.96, b: 0.86, a: 1}
+    warm: {r: 1, g: 0.8, b: 0.38, a: 1}
+    cool: {r: 0.98, g: 0.48, b: 0.16, a: 1}
+    coolAcross: 1
+    coolUpward: 0
+    flickerAmount: 0
+    flickerSpeed: 5.5
+    flickerTogether: 0.35
+    shimmerAmplitude: 1.5
+    shimmerSpeed: 0.55
+    driftAspect: 0.45
+    riseBias: 0
+    glowGain: 1
+    haloStrength: 0.74
+    haloPadding: 0.42
+    haloTint: {r: 0, g: 0, b: 0, a: 1}
+    ember: {r: 0.55, g: 0.68, b: 1, a: 1}
+    sweepInterval: 6.5
+    sweepSeconds: 1.1
+    contrastTarget: 5.5
+    haloCeiling: 0.9
+    ignitionSeconds: 0
+    emberRate: 7
+  - name: volcan
+    hot: {r: 1, g: 0.94, b: 0.72, a: 1}
+    warm: {r: 1, g: 0.42, b: 0.09, a: 1}
+    cool: {r: 0.85, g: 0.13, b: 0.03, a: 1}
+    coolAcross: 0.8
+    coolUpward: 0.55
+    flickerAmount: 0.3
+    flickerSpeed: 4.6
+    flickerTogether: 0.32
+    shimmerAmplitude: 2.1
+    shimmerSpeed: 0.8
+    driftAspect: 1.7
+    riseBias: 2.2
+    glowGain: 1.45
+    haloStrength: 0.88
+    haloPadding: 0.55
+    haloTint: {r: 0.1, g: 0.015, b: 0.0, a: 1}
+    ember: {r: 0.2, g: 0.17, b: 0.19, a: 1}
+    sweepInterval: 0
+    sweepSeconds: 1.1
+    contrastTarget: 6.5
+    haloCeiling: 0.94
+    ignitionSeconds: 1.15
+    emberRate: 22
+  - name: colada
+    hot: {r: 1, g: 0.72, b: 0.24, a: 1}
+    warm: {r: 0.85, g: 0.2, b: 0.04, a: 1}
+    cool: {r: 0.16, g: 0.05, b: 0.05, a: 1}
+    coolAcross: 1.15
+    coolUpward: 0.35
+    flickerAmount: 0.22
+    flickerSpeed: 2.1
+    flickerTogether: 0.55
+    shimmerAmplitude: 1.1
+    shimmerSpeed: 0.4
+    driftAspect: 0.8
+    riseBias: 0.6
+    glowGain: 1.15
+    haloStrength: 0.9
+    haloPadding: 0.5
+    haloTint: {r: 0.06, g: 0.01, b: 0.0, a: 1}
+    ember: {r: 0.95, g: 0.3, b: 0.06, a: 1}
+    sweepInterval: 9
+    sweepSeconds: 1.4
+    contrastTarget: 6.0
+    haloCeiling: 0.95
+    ignitionSeconds: 1.5
+    emberRate: 13
+  - name: forja
+    hot: {r: 1, g: 0.97, b: 0.88, a: 1}
+    warm: {r: 1, g: 0.58, b: 0.16, a: 1}
+    cool: {r: 0.8, g: 0.16, b: 0.05, a: 1}
+    coolAcross: 0.9
+    coolUpward: 0.35
+    flickerAmount: 0.14
+    flickerSpeed: 1.6
+    flickerTogether: 0.75
+    shimmerAmplitude: 1.6
+    shimmerSpeed: 0.5
+    driftAspect: 0.7
+    riseBias: 0.9
+    glowGain: 1.15
+    haloStrength: 0.8
+    haloPadding: 0.46
+    haloTint: {r: 0.05, g: 0.01, b: 0.0, a: 1}
+    ember: {r: 1, g: 0.55, b: 0.15, a: 1}
+    sweepInterval: 6.5
+    sweepSeconds: 1.1
+    contrastTarget: 6.0
+    haloCeiling: 0.92
+    ignitionSeconds: 0.9
+    emberRate: 11
+  carouselHold: 7
+  carouselFade: 1.3
+  carouselZoom: 1.045
+  carouselVerticalBias: -0.16
+  scrimBase: 0.34
+  scrimPanel: 0.62
+  vignetteStrength: 0.55
+  panelFadeSeconds: 0.16
+  panelOpenScale: 0.965
+  selectionSlideSeconds: 0.09
+  moteCapacity: 96
+  sfxMove: ui_move
+  sfxConfirm: ui_confirm
+  sfxCancel: ui_cancel
+  sfxRefuse: ui_refuse
+  sfxStart: ui_start
+  sfxVolume: 0.5
+  reduceMotionDefault: 0

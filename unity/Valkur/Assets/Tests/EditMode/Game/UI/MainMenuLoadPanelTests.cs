@@ -39,6 +39,10 @@ namespace Valkur.Tests.EditMode.Game.UI
             _go   = new GameObject("TestMainMenuUI_LoadPanel");
             _menu = _go.AddComponent<MainMenuUI>();
             InvokePrivate("Start");
+            // The load browser is built the first time it is opened, not in Start — the player
+            // may never open it, and uGUI charges for every widget either way. This fixture is
+            // about the panel's behaviour, so it asks for the panel.
+            _menu.BuildAllScreensForTests();
         }
 
         [TearDown]

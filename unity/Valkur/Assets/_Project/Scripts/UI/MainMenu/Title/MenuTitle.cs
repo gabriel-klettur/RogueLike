@@ -1,0 +1,311 @@
+using TMPro;
+using UnityEngine;
+using Valkur.Core.UI;
+using Valkur.Data;
+
+namespace Valkur.UI.MainMenu.Title
+{
+    /// <summary>
+    /// The game's name at the top of every pre-game screen: the particle field, the tagline
+    /// under it, and the beats that join them.
+    ///
+    /// <para>It owns three things and nothing else — WHERE the title sits, WHEN it gathers, and
+    /// the embers that come off it once it has. The letterforms belong to
+    /// <see cref="TitleGlyphStrokes"/> and the drawing to <see cref="TitleParticleField"/>, which
+    /// is what lets the whole thing be tested without a scene.</para>
+    ///
+    /// <para><b>The tagline arrives after the word does</b>, and that order is the design. Two
+    /// pieces of type appearing together read as one block of text; a name that assembles out of
+    /// embers and only THEN is named reads as an introduction. It is ordinary TMP, because a
+    /// sentence in two languages is what a font is for — the particles are for the six letters
+    /// that are the game's mark.</para>
+    /// </summary>
+    public sealed class MenuTitle : MonoBehaviour
+    {
+        private MenuStyle _style;
+        private MenuArt _art;
+        private MenuFxLayer _fx;
+        private TitleParticleField _field;
+        private UnityEngine.UI.Image _halo;
+        private TextMeshProUGUI _tagline;
+        private RectTransform _root;
+
+        private float _emberDebt;
+        private float _taglineAlpha;
+        private bool _reduceMotion;
+        private float _alpha = 1f;
+
+        /// <summary>The particle field, so a test can read the cloud without a lookup.</summary>
+        public TitleParticleField Field => _field;
+
+        /// <summary>0 while the word is scattered, 1 once it has settled.</summary>
+        public float Assembly => _field != null ? _field.Assembly : 0f;
+
+        /// <summary>Fades the whole title. Sub-screens dim it rather than hiding it.</summary>
+        public float Alpha
+        {
+            get => _alpha;
+            set
+            {
+                _alpha = Mathf.Clamp01(value);
+                if (_field != null) _field.Alpha = _alpha;
+                ApplyHaloColour();
+                if (_tagline != null)
+                {
+                    var c = _tagline.color;
+                    c.a = _taglineAlpha * _alpha;
+                    _tagline.color = c;
+                }
+            }
+        }
+
+        public static MenuTitle Create(Transform canvas, MenuArt art, MenuStyle style,
+                                       Material additive, MenuFxLayer fx, string text,
+                                       string tagline, bool reduceMotion)
+        {
+            var go = new GameObject("MenuTitle", typeof(RectTransform));
+            go.transform.SetParent(canvas, false);
+            var root = (RectTransform)go.transform;
+            root.anchorMin = root.anchorMax = new Vector2(0.5f, 1f);
+            root.pivot = new Vector2(0.5f, 1f);
+            root.anchoredPosition = Vector2.zero;
+            root.sizeDelta = new Vector2(10f, 10f);
+
+            var t = go.AddComponent<MenuTitle>();
+            t._style = style;
+            t._art = art;
+            t._fx = fx;
+            t._root = root;
+            t._reduceMotion = reduceMotion;
+
+            // The halo is built FIRST so it sits behind the motes. It is the one piece of the
+            // title that is not additive: it has to take light OUT of the picture.
+            var haloRt = new GameObject("Halo", typeof(RectTransform)).GetComponent<RectTransform>();
+            haloRt.SetParent(go.transform, false);
+            haloRt.anchorMin = haloRt.anchorMax = new Vector2(0.5f, 1f);
+            haloRt.pivot = new Vector2(0.5f, 1f);
+            t._halo = haloRt.gameObject.AddComponent<UnityEngine.UI.Image>();
+            t._halo.sprite = art.SoftPlate;
+            t._halo.type = UnityEngine.UI.Image.Type.Simple;
+            t._halo.raycastTarget = false;
+            t._halo.color = new Color(0f, 0f, 0f, style.titleHaloStrength);
+
+            t._field = TitleParticleField.Create(go.transform, art, style, additive);
+            t._field.SetText(text, reduceMotion);
+
+            var tagGo = new GameObject("Tagline", typeof(RectTransform));
+            tagGo.transform.SetParent(go.transform, false);
+            var tagRt = (RectTransform)tagGo.transform;
+            tagRt.anchorMin = tagRt.anchorMax = new Vector2(0.5f, 1f);
+            tagRt.pivot = new Vector2(0.5f, 1f);
+            tagRt.sizeDelta = new Vector2(720f, 30f);
+            t._tagline = MenuTypography.Label(tagGo, style, tagline, style.hintFontSize + 1f,
+                                              style.TextDim, TextAlignmentOptions.Center);
+            t._tagline.characterSpacing = 14f;                 // a tagline is set wide, not tight
+            var tc = t._tagline.color;
+            tc.a = 0f;
+            t._tagline.color = tc;
+
+            t.Layout();
+            if (reduceMotion)
+            {
+                t._taglineAlpha = 1f;
+                var c = t._tagline.color; c.a = 1f; t._tagline.color = c;
+            }
+            return t;
+        }
+
+        /// <summary>Re-lays the word out — a language change, or a new title.</summary>
+        public void SetText(string text, string tagline)
+        {
+            if (_field != null) _field.SetText(text, _reduceMotion);
+            if (_tagline != null) _tagline.text = tagline;
+            _taglineAlpha = _reduceMotion ? 1f : 0f;
+            Layout();
+        }
+
+        public void SetReduceMotion(bool reduce)
+        {
+            _reduceMotion = reduce;
+            if (_field != null) _field.SetReduceMotion(reduce);
+            if (reduce) _taglineAlpha = 1f;
+        }
+
+        /// <summary>Gathers the word again. The title screen does it when it is returned to.</summary>
+        public void Replay()
+        {
+            if (_field == null) return;
+            _field.Replay();
+            _taglineAlpha = _reduceMotion ? 1f : 0f;
+        }
+
+        /// <summary>
+        /// Opens with the word already there. The brand plane assembled it seconds ago; the menu
+        /// inheriting that state is what makes the two one introduction instead of two.
+        /// </summary>
+        public void SnapSettled()
+        {
+            _field?.SnapToSettled();
+            _taglineAlpha = 1f;
+            if (_tagline != null)
+            {
+                var c = _tagline.color;
+                c.a = _alpha;
+                _tagline.color = c;
+            }
+        }
+
+        /// <summary>A sweep of light across the word. The confirm beat of the main menu.</summary>
+        public void Sweep() => _field?.Sweep();
+
+        private void Layout()
+        {
+            if (_field == null || _style == null) return;
+            var frt = (RectTransform)_field.transform;
+            var size = _field.TitleSize;
+
+            // The field's rect is the word's own bounding box; the title is centred on the canvas
+            // by moving the RECT, never by moving the motes, so the cloud's coordinates stay the
+            // ones a test can compare against the stroke table.
+            frt.anchoredPosition = new Vector2(0f, -_style.titleTopOffset);
+            frt.pivot = new Vector2(0.5f, 1f);
+            frt.sizeDelta = size;
+
+            if (_halo != null)
+            {
+                // Sized from the WORD, not from a constant, so a longer title darkens more of the
+                // art and a shorter one darkens less.
+                // The halo belongs to the LOOK: red carries under a third of white's luminance
+                // per unit of colour, so a fire word needs more plate under it than a cream one
+                // to stay legible over the same painted carousel. One shared constant would be
+                // tuned for whichever look was authored last.
+                var look = _style.ResolveTitleLook();
+                float padX = size.x * look.haloPadding;
+                float padY = size.y * look.haloPadding * 1.6f;
+                var hrt = (RectTransform)_halo.transform;
+                hrt.sizeDelta = new Vector2(size.x + padX * 2f, size.y + padY * 2f);
+                hrt.anchoredPosition = new Vector2(0f, -_style.titleTopOffset + padY);
+                ApplyHaloColour();
+            }
+
+            if (_tagline != null)
+            {
+                var trt = (RectTransform)_tagline.transform;
+                trt.anchoredPosition = new Vector2(0f, -_style.titleTopOffset - size.y - 18f);
+            }
+        }
+
+        /// <summary>
+        /// Advances the title. Public and taking its own delta so an EditMode test can drive it
+        /// without a clock, exactly as <c>HudMoteLayer.Tick</c> and <c>WorldBarRig</c> do.
+        /// </summary>
+        public void Tick(float dt)
+        {
+            if (dt <= 0f || _field == null) return;
+            _field.Tick(dt);
+
+            // The tagline follows the word rather than running its own clock: a fade on a timer
+            // can land before the letters do on a slow machine, and then the sentence introduces
+            // a name that is not there yet.
+            float want = _field.Assembly >= 1f ? 1f : 0f;
+            if (!Mathf.Approximately(_taglineAlpha, want))
+            {
+                _taglineAlpha = Mathf.MoveTowards(_taglineAlpha, want, dt / 0.9f);
+                if (_tagline != null)
+                {
+                    var c = _tagline.color;
+                    c.a = _taglineAlpha * _alpha;
+                    _tagline.color = c;
+                }
+            }
+
+            EmitEmbers(dt);
+        }
+
+        /// <summary>
+        /// Embers rising off the settled word. The ONE loop the menu allows itself, and it is
+        /// kept under the attention floor by its rate: seven a second spread over six letters is
+        /// a spark every couple of seconds in any one place, which reads as heat rather than as
+        /// an animation. Off entirely under reduce motion.
+        /// </summary>
+        private void EmitEmbers(float dt)
+        {
+            if (_fx == null || _field == null || _reduceMotion || _alpha <= 0.05f) return;
+            if (_field.Assembly < 1f) return;
+            // The rate belongs to the LOOK: a bar of cooling metal throws the odd spark, and a
+            // word that is on fire throws a lot more. One shared number would be tuned for
+            // whichever of the two was authored last.
+            float rate = _style != null ? _style.ResolveTitleLook().emberRate : 0f;
+            if (rate <= 0f) return;
+
+            _emberDebt += rate * dt;
+            while (_emberDebt >= 1f)
+            {
+                _emberDebt -= 1f;
+                if (!_field.TryPickEmberSource(out var local, out var colour)) return;
+
+                // The field's rect and the mote layer's rect are different spaces, so the point
+                // has to go through the world. Doing this by adding the anchored positions works
+                // until the first time somebody moves one of the two, and then it is wrong in a
+                // way nothing logs.
+                var fieldRt = (RectTransform)_field.transform;
+                var world = fieldRt.TransformPoint(new Vector3(local.x + fieldRt.rect.xMin,
+                                                              local.y + fieldRt.rect.yMin, 0f));
+                var fxRt = (RectTransform)_fx.transform;
+                var localInFx = (Vector2)fxRt.InverseTransformPoint(world) - fxRt.rect.min;
+
+                _fx.Emit(localInFx,
+                         new Vector2(Random.Range(-6f, 6f), Random.Range(14f, 34f)),
+                         colour, Random.Range(0.9f, 1.9f),
+                         Random.value < 0.25f ? MenuMoteShape.Spark : MenuMoteShape.Dot,
+                         gravity: -4f, drag: 0.5f, size: Random.Range(0.7f, 1.15f), twinkle: true);
+            }
+        }
+    
+        // ── The plate, solved rather than tuned ──────────────────────────────
+
+        /// <summary>How bright the carousel frame under the word is. Measured, never assumed.</summary>
+        private float _backdropLuminance = 0.18f;
+
+        /// <summary>
+        /// Tells the title which image the carousel is holding, so its plate can be solved for a
+        /// contrast ratio instead of carrying a constant.
+        ///
+        /// <para>Called on every carousel change rather than every frame: the measurement is a
+        /// GPU blit and one small readback, which is cheap once per seven seconds and wasteful
+        /// sixty times a second — and the answer cannot change in between, because the image
+        /// does not.</para>
+        /// </summary>
+        public void SetBackdrop(Sprite sprite)
+        {
+            float measured = BackdropLuminance.Measure(sprite);
+            if (Mathf.Approximately(measured, _backdropLuminance)) return;
+            _backdropLuminance = measured;
+            ApplyHaloColour();
+        }
+
+        /// <summary>The plate's live colour: its own tint, at the alpha the contrast target asks for.</summary>
+        private void ApplyHaloColour()
+        {
+            if (_halo == null) return;
+
+            var look = _style != null ? _style.ResolveTitleLook() : null;
+            if (look == null)
+            {
+                _halo.color = new Color(0f, 0f, 0f, 0.6f * _alpha);
+                return;
+            }
+
+            // What the word READS as is its middle tone: most motes land near it, so that is the
+            // ink the ratio has to be solved for rather than the white-hot core, which is a
+            // minority of the cloud and would under-plate the word.
+            float ink = BackdropLuminance.Luminance(look.Sample(0.5f));
+            float plate = BackdropLuminance.Luminance(look.haloTint);
+            float alpha = BackdropLuminance.PlateAlphaFor(ink, _backdropLuminance, plate,
+                                                          look.contrastTarget,
+                                                          look.haloStrength, look.haloCeiling);
+            var tint = look.haloTint;
+            _halo.color = new Color(tint.r, tint.g, tint.b, alpha * _alpha);
+        }
+}
+}

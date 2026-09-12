@@ -118,8 +118,11 @@ namespace Valkur.Tests.EditMode.Game.UI
             Assert.AreEqual(progress, bar.fillAmount, 0.001f,
                 $"fillAmount must equal applied progress {progress}");
 
-            int expectedPct = Mathf.RoundToInt(progress * 100f);
-            Assert.AreEqual($"{expectedPct}%", pct.text,
+            // Against the formatter, not against a spelling. Pinning the literal "0%" put a
+            // correct label in the red the day the typography changed (Spanish sets a space
+            // before the sign) — the same defect as a menu row dispatching on its own English
+            // text. The RULE is "the label mirrors the fill"; the spelling is not the rule.
+            Assert.AreEqual(LoadingScreenController.FormatPercent(progress), pct.text,
                 "Percentage label must mirror the fill amount");
         }
 
@@ -152,7 +155,7 @@ namespace Valkur.Tests.EditMode.Game.UI
 
                 Assert.GreaterOrEqual(bar.fillAmount, previous,
                     $"Bar fill must never decrease as progress advances (step {i})");
-                Assert.AreEqual(Mathf.RoundToInt(p * 100f) + "%", pct.text,
+                Assert.AreEqual(LoadingScreenController.FormatPercent(p), pct.text,
                     $"Label must agree with fill at step {i}");
                 previous = bar.fillAmount;
             }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Core.UI;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Gameplay.Save;
@@ -62,27 +63,19 @@ namespace Valkur.UI.MainMenu
                 if (hasRun)
                 {
                     var run = _mmLoadRuns[dataIdx];
-                    if (run.isLegacy)
+                    if (_mmRunFaceImages?[i] != null)
                     {
-                        if (_mmRunFaceImages?[i] != null) _mmRunFaceImages[i].color = Color.clear;
-                        _mmRunTexts[i].text = "<color=#808080>Legacy</color>";
+                        var tex = GetCachedPortraitTexture(run.playerClass);
+                        _mmRunFaceImages[i].texture = tex;
+                        _mmRunFaceImages[i].uvRect = GetFaceUvRect(run.playerClass);
+                        _mmRunFaceImages[i].color = tex != null ? Color.white : Color.clear;
                     }
-                    else
-                    {
-                        if (_mmRunFaceImages?[i] != null)
-                        {
-                            var tex = GetCachedPortraitTexture(run.playerClass);
-                            _mmRunFaceImages[i].texture = tex;
-                            _mmRunFaceImages[i].uvRect  = GetFaceUvRect(run.playerClass);
-                            _mmRunFaceImages[i].color   = tex != null ? Color.white : Color.clear;
-                        }
-                        _mmRunTexts[i].text = $"<color=#808080>Lv.{run.maxLevel}</color>";
-                    }
+                    _mmRunTexts[i].text = DescribeRun(run);
                 }
                 else
                 {
                     if (_mmRunFaceImages?[i] != null) _mmRunFaceImages[i].color = Color.clear;
-                    _mmRunTexts[i].text = "";
+                    _mmRunTexts[i].text = string.Empty;
                 }
             }
 
@@ -102,12 +95,11 @@ namespace Valkur.UI.MainMenu
                 if (hasSave)
                 {
                     var sv = currentRun.saves[i];
-                    string display = sv.isAutoSave
-                        ? $"<b><color=#FFC800>{Valkur.Gameplay.Save.SaveFileManager.AUTOSAVE_DISPLAY}</color></b>"
-                        : sv.fileName;
+                    string name = sv.isAutoSave ? MenuText.LoadAutoSave : sv.fileName;
+                    string when = HumanTime(sv.timestamp);
                     _mmSaveTexts[i].text = sv.isCorrupted
-                        ? $"<color=#FF6666>[Corrupted]</color> {display}"
-                        : $"{display}  <color=#808080><size=12>{sv.timestamp}</size></color>";
+                        ? $"<color=#{Hex(Style.Danger)}>{MenuText.LoadCorrupted}</color>  {name}"
+                        : $"{name}   <color=#{Hex(Style.TextMuted)}><size=90%>{when}</size></color>";
                 }
                 else _mmSaveTexts[i].text = "";
             }
@@ -117,8 +109,8 @@ namespace Valkur.UI.MainMenu
             {
                 if (TryGetSelectedSave(out var tsv))
                 {
-                    string label = tsv.isAutoSave ? Valkur.Gameplay.Save.SaveFileManager.AUTOSAVE_DISPLAY : tsv.fileName;
-                    _mmLoadTargetLabel.text = $"Will operate on: <b>{label}</b>";
+                    string label = tsv.isAutoSave ? MenuText.LoadAutoSave : tsv.fileName;
+                    _mmLoadTargetLabel.text = MenuText.LoadSelected("<b>" + label + "</b>");
                 }
                 else
                     _mmLoadTargetLabel.text = "";
@@ -129,36 +121,38 @@ namespace Valkur.UI.MainMenu
             {
                 if (_mmLoadRuns.Count == 0)
                 {
-                    _mmLoadDetailText.text = "No saved games.";
+                    _mmLoadDetailText.text = MenuText.LoadNoSaves;
                 }
                 else if (TryGetSelectedSave(out var info))
                 {
+                    string gold = Hex(Style.Gold);
+                    string muted = Hex(Style.TextMuted);
                     if (info.isCorrupted)
                     {
                         _mmLoadDetailText.text =
-                            "<color=#FF6666><b>Corrupted save</b></color>\n\n" +
-                            $"<color=#FFC800>File:</color> {info.fileName}\n\n" +
-                            "This save cannot be loaded.\n" +
-                            "You can delete it with <b>Del</b>.";
+                            $"<color=#{Hex(Style.Danger)}><b>{MenuText.LoadCorrupted}</b></color>\n\n" +
+                            $"<color=#{gold}>{MenuText.LoadSaved}:</color> {HumanTime(info.timestamp)}\n\n" +
+                            MenuText.LoadCorruptedDetail + "\n\n" +
+                            $"<color=#{muted}><size=85%>{info.fileName}</size></color>";
                     }
                     else
                     {
-                        string cls  = FormatClassName(info.playerClass);
+                        string cls = FormatClassName(info.playerClass);
                         string zone = string.IsNullOrEmpty(info.currentZone) ? "—" : info.currentZone;
-                        string hp   = info.maxHp > 0 ? $"{info.hp}/{info.maxHp}" : "—";
+                        string hp = info.maxHp > 0 ? $"{info.hp} / {info.maxHp}" : "—";
                         _mmLoadDetailText.text =
-                            $"<color=#FFC800>Class:</color> {cls}\n" +
-                            $"<color=#FFC800>Zone:</color>  {zone}\n\n" +
-                            $"<color=#FFC800>Level:</color> {info.level}     " +
-                            $"<color=#FFC800>XP:</color>  {info.experience}\n" +
-                            $"<color=#FFC800>HP:</color>    {hp}\n\n" +
-                            $"<color=#FFC800>Saved:</color> {info.timestamp}\n\n" +
-                            $"<color=#808080><size=12>{info.fileName}</size></color>";
+                            $"<color=#{gold}>{MenuText.LoadClass}:</color> {cls}\n" +
+                            $"<color=#{gold}>{MenuText.LoadZone}:</color> {zone}\n\n" +
+                            $"<color=#{gold}>{MenuText.LoadLevel}:</color> {info.level}    " +
+                            $"<color=#{gold}>{MenuText.LoadXp}:</color> {info.experience}\n" +
+                            $"<color=#{gold}>{MenuText.LoadHp}:</color> {hp}\n\n" +
+                            $"<color=#{gold}>{MenuText.LoadSaved}:</color> {HumanTime(info.timestamp)}\n\n" +
+                            $"<color=#{muted}><size=85%>{info.fileName}</size></color>";
                     }
                 }
                 else
                 {
-                    _mmLoadDetailText.text = "Select a save.";
+                    _mmLoadDetailText.text = MenuText.LoadPickOne;
                 }
             }
 
@@ -198,6 +192,43 @@ namespace Valkur.UI.MainMenu
 
         // ── Helpers ───────────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// What a run row SAYS. The shipped panel printed the whole row as <c>Lv.1</c> — three
+        /// consecutive rows of a save folder read "Lv.1", "Lv.1", "Lv.1" over the same face, so
+        /// the list whose only job is "choose which of your runs" could not tell them apart. The
+        /// run's own <c>displayName</c> was already in <c>RunGroupInfo</c> and was never read.
+        /// </summary>
+        private static string DescribeRun(Valkur.Gameplay.RunGroupInfo run)
+        {
+            if (run == null) return string.Empty;
+            if (run.isLegacy) return "<color=#808080>" + MenuText.LoadLegacyRun + "</color>";
+
+            string name = !string.IsNullOrWhiteSpace(run.displayName)
+                ? run.displayName
+                : FormatClassName(run.playerClass);
+            string when = HumanTime(run.latestTimestamp);
+            return name + "\n<color=#808080><size=85%>" + MenuText.LoadLevel + " " + run.maxLevel
+                 + "  ·  " + when + "</size></color>";
+        }
+
+        /// <summary>
+        /// A date a person reads. The panel used to print the save's raw metadata stamp —
+        /// <c>2026-09-12T02:16:34</c> — in the list the player chooses from. An unparseable
+        /// stamp is shown VERBATIM rather than swallowed: it is still the only thing telling two
+        /// saves apart, and hiding it would make them identical.
+        /// </summary>
+        private static string HumanTime(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return "—";
+            if (System.DateTime.TryParse(raw, System.Globalization.CultureInfo.InvariantCulture,
+                                         System.Globalization.DateTimeStyles.None, out var when))
+                return MenuText.FormatTimestamp(when);
+            return raw;
+        }
+
+        /// <summary>A theme colour as a TMP rich-text hex, so no panel writes a literal.</summary>
+        private static string Hex(Color c) => ColorUtility.ToHtmlStringRGB(c);
+
         private static string FormatClassName(string key)
         {
             if (string.IsNullOrEmpty(key)) return "—";
@@ -216,6 +247,12 @@ namespace Valkur.UI.MainMenu
                 { "mague",     new Rect(0.352f, 0.449f, 0.182f, 0.273f) },
                 { "valkyrie",  new Rect(0.592f, 0.576f, 0.182f, 0.273f) },
                 { "dwarf",     new Rect(0.801f, 0.547f, 0.182f, 0.273f) },
+                // The vampire was MISSING, and the failure was silent: GetFaceUvRect fell back
+                // to the whole 0..1 rect, so her thumbnail showed the entire 1536x1024 tavern
+                // plate squeezed into 33 x 33 px instead of a face. Her portrait is composed
+                // against the empty plate (see ClassPortraitPaths), so she stands where the
+                // group's fifth figure would be.
+                { "vampire",   new Rect(0.801f, 0.547f, 0.182f, 0.273f) },
             };
 
         private static Rect GetFaceUvRect(string playerClass)
@@ -226,13 +263,5 @@ namespace Valkur.UI.MainMenu
             return new Rect(0f, 0f, 1f, 1f);
         }
 
-        private Texture2D GetCachedPortraitTexture(string playerKey)
-        {
-            if (string.IsNullOrEmpty(playerKey)) return null;
-            if (_portraitSpriteCache.TryGetValue(playerKey, out var cached) && cached != null)
-                return cached.texture;
-            if (!ClassPortraitPaths.TryGetValue(playerKey, out var path)) return null;
-            return Resources.Load<Texture2D>(path);
-        }
     }
 }

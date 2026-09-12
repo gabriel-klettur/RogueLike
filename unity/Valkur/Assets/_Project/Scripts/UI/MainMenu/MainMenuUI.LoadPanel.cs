@@ -5,6 +5,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
+using Valkur.Core.UI;
 using Valkur.Core.Input;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Save;
@@ -79,41 +80,48 @@ namespace Valkur.UI.MainMenu
         {
             _mmLoadOverlay = CreateUIObject("LoadOverlay", canvas);
             StretchFull(_mmLoadOverlay);
-            _mmLoadOverlay.AddComponent<Image>().color = OverlayColor;
+            // TRANSPARENT. The shell owns the one veil over the art and deepens it while any
+            // sub-screen is open; this overlay used to paint a second 55 % black of its own, so
+            // the load panel sat on a painting darkened twice.
+            var blocker = _mmLoadOverlay.AddComponent<Image>();
+            blocker.color = new Color(0f, 0f, 0f, 0f);
 
-            const float panelW = 700f;
-            const float panelH = 480f;
+            float panelW = Style.widePanelWidth;
+            const float panelH = 520f;
             const float splitX = 0.41f;
 
-            var panel = CreateUIObject("LoadPanel", _mmLoadOverlay.transform);
-            var pr = panel.GetComponent<RectTransform>();
-            // Anchored below the ROGUELIKE 1.0 logo (logo bottom = -260 from canvas top).
-            pr.anchorMin = new Vector2(0.5f, 1f); pr.anchorMax = new Vector2(0.5f, 1f);
-            pr.pivot = new Vector2(0.5f, 1f); pr.anchoredPosition = new Vector2(0f, -280f);
-            pr.sizeDelta = new Vector2(panelW, panelH);
-            panel.AddComponent<Image>().color = PanelBg;
+            // The panel's frame, header band and hint bar all come from MenuArt now, at the one
+            // anchor every sub-screen shares. What this replaces is a bare Image of a flat colour
+            // with square corners, anchored by a comment that named the old game's logo.
+            var panelRt = Kit.MenuUIKit.Rect("LoadPanel", _mmLoadOverlay.transform);
+            panelRt.anchorMin = new Vector2(0.5f, 1f);
+            panelRt.anchorMax = new Vector2(0.5f, 1f);
+            panelRt.pivot = new Vector2(0.5f, 1f);
+            panelRt.anchoredPosition = new Vector2(0f, -Style.panelTopOffset);
+            panelRt.sizeDelta = new Vector2(panelW, panelH);
+            var panel = panelRt.gameObject;
 
-            var titleGo = CreateUIObject("LoadTitle", panel.transform);
-            var tR = titleGo.GetComponent<RectTransform>();
-            tR.anchorMin = new Vector2(0f, 1f); tR.anchorMax = new Vector2(1f, 1f);
-            tR.pivot = new Vector2(0.5f, 1f);
-            tR.anchoredPosition = new Vector2(0f, -8f);
-            tR.sizeDelta = new Vector2(0f, 40f);
-            var titleTMP = titleGo.AddComponent<TextMeshProUGUI>();
-            titleTMP.text = "Load Game"; titleTMP.fontSize = 28f;
-            titleTMP.alignment = TextAlignmentOptions.Center;
-            titleTMP.color = AccentGold; titleTMP.fontStyle = FontStyles.Bold;
+            var frame = Kit.MenuUIKit.Panel("Frame", panelRt, _art, Style);
+            var frameRt = (RectTransform)frame.transform;
+            frameRt.anchorMin = Vector2.zero; frameRt.anchorMax = Vector2.one;
+            frameRt.offsetMin = Vector2.zero; frameRt.offsetMax = Vector2.zero;
+
+            Kit.MenuUIKit.PanelHeader(panelRt, _art, Style, MenuText.LoadTitle);
+            Kit.MenuUIKit.PanelHint(panelRt, Style, MenuText.LoadHint);
 
             // Column separator
-            var sep = CreateUIObject("ColSep", panel.transform);
-            var sepRt = sep.GetComponent<RectTransform>();
+            var sepRt = Kit.MenuUIKit.Rect("ColSep", panelRt);
             sepRt.anchorMin = new Vector2(splitX + 0.005f, 0.10f);
-            sepRt.anchorMax = new Vector2(splitX + 0.005f, 0.90f);
-            sepRt.pivot = new Vector2(0.5f, 0.5f); sepRt.sizeDelta = new Vector2(1f, 0f);
-            sep.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.08f);
+            sepRt.anchorMax = new Vector2(splitX + 0.005f, 0.86f);
+            sepRt.pivot = new Vector2(0.5f, 0.5f); sepRt.sizeDelta = new Vector2(3f, 0f);
+            var sepImg = sepRt.gameObject.AddComponent<Image>();
+            sepImg.sprite = _art.Divider;
+            sepImg.type = Image.Type.Sliced;
+            sepImg.color = new Color(Style.Gold.r, Style.Gold.g, Style.Gold.b, 0.20f);
+            sepImg.raycastTarget = false;
 
-            BuildMMColHeader("RUNS",  panel.transform, 0.01f, splitX);
-            BuildMMColHeader("SAVES", panel.transform, splitX + 0.02f, 0.98f);
+            BuildMMColHeader(MenuText.LoadRuns,  panel.transform, 0.01f, splitX);
+            BuildMMColHeader(MenuText.LoadSaves, panel.transform, splitX + 0.02f, 0.98f);
 
             BuildRunListRows(panel.transform, splitX);
             BuildSaveListRows(panel.transform, splitX);
@@ -137,15 +145,19 @@ namespace Valkur.UI.MainMenu
             // Action buttons (bottom of right column)
             float bL = splitX + 0.02f;
             float bW = (0.96f - splitX) / 3f;
-            AddMMLoadButton(panel.transform, "Load",
+            AddMMLoadButton(panel.transform, MenuText.LoadLoad,
                 new Vector2(bL,              0f), new Vector2(bL + bW,          0f),
-                new Color(0.24f, 0.47f, 0.2f, 1f), MMLoadSelectedSave);
-            AddMMLoadButton(panel.transform, "Rename",
+                Style.Success, MMLoadSelectedSave);
+            AddMMLoadButton(panel.transform, MenuText.LoadRename,
                 new Vector2(bL + bW + 0.01f, 0f), new Vector2(bL + bW * 2f + 0.01f, 0f),
-                new Color(0.30f, 0.40f, 0.55f, 1f), BeginRenameSelectedSave);
-            AddMMLoadButton(panel.transform, "Delete",
+                Style.PanelBevel, BeginRenameSelectedSave);
+            // Danger is drawn DIM at rest and only lights on hover: a permanently saturated red
+            // button beside two neutral ones is the loudest thing on a panel whose job is to
+            // load, not to delete.
+            AddMMLoadButton(panel.transform, MenuText.LoadDelete,
                 new Vector2(bL + bW * 2f + 0.02f, 0f), new Vector2(0.97f, 0f),
-                new Color(0.47f, 0.2f, 0.2f, 1f), RequestDeleteSelectedSave);
+                new Color(Style.Danger.r * 0.55f, Style.Danger.g * 0.28f, Style.Danger.b * 0.28f, 1f),
+                RequestDeleteSelectedSave);
 
             BuildRenameOverlay(_mmLoadOverlay.transform);
             BuildDeleteConfirmOverlay(_mmLoadOverlay.transform);
@@ -158,37 +170,24 @@ namespace Valkur.UI.MainMenu
             var go = CreateUIObject($"ColHdr_{label}", parent);
             var rt = go.GetComponent<RectTransform>();
             // Lowered from [0.88, 0.94] to [0.82, 0.87] so the title has clear airspace above.
-            rt.anchorMin = new Vector2(anchorL, 0.82f); rt.anchorMax = new Vector2(anchorR, 0.87f);
+            rt.anchorMin = new Vector2(anchorL, 0.83f); rt.anchorMax = new Vector2(anchorR, 0.88f);
             rt.pivot = new Vector2(0f, 0.5f); rt.sizeDelta = Vector2.zero; rt.anchoredPosition = Vector2.zero;
-            var tmp = go.AddComponent<TextMeshProUGUI>();
-            tmp.text = label; tmp.fontSize = 12f; tmp.fontStyle = FontStyles.Bold;
-            tmp.alignment = TextAlignmentOptions.Left; tmp.color = VersionCol;
-            tmp.raycastTarget = false;
+            var tmp = MenuTypography.Label(go, Style, label, Style.detailFontSize - 1f,
+                                           Style.TextMuted, TextAlignmentOptions.Left, bold: true);
+            tmp.characterSpacing = 8f;
         }
 
         private void AddMMLoadButton(Transform parent, string label,
             Vector2 anchorMin, Vector2 anchorMax, Color bg,
             UnityEngine.Events.UnityAction action)
         {
-            var go = CreateUIObject($"MMLoadBtn_{label}", parent);
-            var rt = go.GetComponent<RectTransform>();
+            var btn = Kit.MenuUIKit.Button("MMLoadBtn_" + label, parent, _art, Style, label, bg, action);
+            var rt = (RectTransform)btn.transform;
             rt.anchorMin = new Vector2(anchorMin.x, 0f);
             rt.anchorMax = new Vector2(anchorMax.x, 0f);
             rt.pivot = new Vector2(0.5f, 0f);
-            rt.anchoredPosition = new Vector2(0f, 36f);
-            rt.sizeDelta = new Vector2(0f, 32f);
-            var img = go.AddComponent<Image>(); img.color = bg;
-            var btn = go.AddComponent<Button>(); btn.targetGraphic = img;
-            btn.onClick.AddListener(action);
-
-            var txtGo = CreateUIObject("Label", go.transform);
-            var txtR = txtGo.GetComponent<RectTransform>();
-            txtR.anchorMin = Vector2.zero; txtR.anchorMax = Vector2.one;
-            txtR.sizeDelta = Vector2.zero; txtR.anchoredPosition = Vector2.zero;
-            var tmp = txtGo.AddComponent<TextMeshProUGUI>();
-            tmp.text = label; tmp.fontSize = 16f;
-            tmp.alignment = TextAlignmentOptions.Center; tmp.color = Color.white;
-            tmp.fontStyle = FontStyles.Bold; tmp.raycastTarget = false;
+            rt.anchoredPosition = new Vector2(0f, Style.hintBarHeight + 6f);
+            rt.sizeDelta = new Vector2(0f, 34f);
         }
 
         /// <summary>

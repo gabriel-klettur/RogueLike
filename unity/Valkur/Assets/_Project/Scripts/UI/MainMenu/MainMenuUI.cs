@@ -1,26 +1,33 @@
-﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.UI;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
-using TMPro;
+using UnityEngine.UI;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Data;
-using Valkur.Infrastructure;
 using Valkur.Gameplay.Save;
+using Valkur.Infrastructure;
 
 namespace Valkur.UI.MainMenu
 {
     /// <summary>
-    /// Main menu UI that mirrors the Python MenuRenderer visual style:
-    ///   - Animated background carousel (5 images, 2s interval, 0.6s crossfade)
-    ///   - game_name.png logo at the top
-    ///   - Dark panel with gold 4-px left-bar + translucent gold pill for selected row
-    ///   - Dynamic options: "Continuar" / "Cargar juego" only when saves exist
-    ///   - Mouse + keyboard supported
+    /// The pre-game menu: press-to-start, title screen, Options (Audio / Video / Controls /
+    /// Gameplay), Load game, the class selector and the credits.
+    ///
+    /// <para><b>What this was.</b> A port of the Python <c>MenuRenderer</c>, kept literally: a
+    /// 2 s carousel, a flat dark rectangle for every panel, seven private colour constants, the
+    /// whole UI in English in front of a Spanish game, and a logo PNG that said
+    /// <c>ROGUELIKE 1.0</c> — the prototype's name — on all ten screens. It was audited on
+    /// 2026-09-12 at 3.4/10 (<c>.github/FRONTEND_MENUS_AUDIT_2026-09-12.md</c>).</para>
+    ///
+    /// <para><b>What it is now.</b> One style asset (<see cref="MenuStyle"/>), one generated
+    /// atlas (<see cref="MenuArt"/>), one string table (<c>MenuText</c>), one shared widget kit
+    /// (<c>Kit/</c>), one mote layer, and a title drawn out of particles from a stroke font
+    /// rather than out of a texture.</para>
+    ///
+    /// <para><b>Nothing here has its own Update.</b> Everything that moves is advanced from
+    /// <see cref="TickShell"/>, once per frame, so a test can step the whole screen and so two
+    /// animations cannot disagree about what time it is.</para>
     /// </summary>
     public partial class MainMenuUI : MonoBehaviour
     {
@@ -29,16 +36,10 @@ namespace Valkur.UI.MainMenu
         [Header("Scene")]
         [SerializeField] private string gameplaySceneName = "MainGameplay";
 
-        // Colors matching Python MenuRenderer
-        private static readonly Color PanelBg      = new Color(22 / 255f, 24 / 255f, 28 / 255f, 235 / 255f);
-        private static readonly Color OverlayColor  = new Color(0f, 0f, 0f, 140 / 255f);
-        private static readonly Color TextNormal    = new Color(230 / 255f, 233 / 255f, 240 / 255f, 1f);
-        private static readonly Color TextSelected  = new Color(255 / 255f, 200 / 255f,   0 / 255f, 1f);
-        private static readonly Color AccentGold    = new Color(255 / 255f, 200 / 255f,   0 / 255f, 1f);
-        private static readonly Color PillColor     = new Color(255 / 255f, 200 / 255f,   0 / 255f, 38 / 255f);
-        private static readonly Color VersionCol    = new Color(0.5f, 0.5f, 0.5f, 0.7f);
-
-        // Carousel
+        /// <summary>
+        /// The background carousel. Five class portraits plus the vampire, who was missing: she
+        /// has been playable since wave11 and the shipped list had the other five.
+        /// </summary>
         private static readonly string[] BgPaths =
         {
             "UI/Intro/Intro_elven",
@@ -46,44 +47,42 @@ namespace Valkur.UI.MainMenu
             "UI/Intro/intro_mague",
             "UI/Intro/Intro_valkyrie",
             "UI/Intro/Intro_barbarian",
+            "UI/Intro/Intro_vampire",
         };
-
-        private const float CAROUSEL_INTERVAL  = 2.0f;
-        private const float CAROUSEL_CROSSFADE = 0.6f;
 
         private readonly Image[] _bgImages = new Image[2];
         private int _carouselSlot;
         private int _bgIndex;
 
         // Menu
-        private int                  _selectedIndex;
-        private string[]             _menuOptions;
-        private Image[]              _pillImages;
-        private Image[]              _accentBars;
-        private TextMeshProUGUI[]    _menuTexts;
-        private GameObject           _menuPanelGo;
-        private Transform            _canvasTransform;
+        private int _selectedIndex;
+        private string[] _menuOptions;
+        private GameObject _menuPanelGo;
+        private Transform _canvasTransform;
+
+        // ── Palette ──────────────────────────────────────────────────────────
+        //
+        // These used to be seven private `static readonly Color` constants — part of the 67 raw
+        // literals the audit counted across the menus, with nothing tying them to the game's own
+        // theme. They are DERIVED from MenuStyle now, so the menu and the HUD cannot disagree
+        // about what gold is, and the screens that still read them (the load panel, the class
+        // selector) are reading the one source of truth while their own art is rebuilt.
+
+        private Color PanelBg => Style.Panel;
+        private Color TextNormal => Style.TextPrimary;
+        private Color TextSelected => Style.textOnSelection;
+        private Color AccentGold => Style.Gold;
+        private Color PillColor => Style.Gold;
+        private Color VersionCol => Style.TextMuted;
 
         // Class selector
         private GameObject _classSelectionPanel;
-        private readonly List<Button>          _classButtons     = new List<Button>();
-        private readonly List<TextMeshProUGUI> _classMarkerTexts = new List<TextMeshProUGUI>();
-        private readonly List<string>          _classKeys        = new List<string>();
-        private int  _selectedClassIndex;
+        private readonly List<string> _classKeys = new List<string>();
+        private int _selectedClassIndex;
         private bool _showingClassSelector;
 
-        // Class selector – enhanced visuals (Python parity)
-        private Image _classHeaderPortrait;
-        private readonly List<Image> _classCardBorderImages = new List<Image>();
-        private readonly List<RectTransform> _classCardBgRects = new List<RectTransform>();
-        private readonly Dictionary<string, Sprite> _portraitSpriteCache = new Dictionary<string, Sprite>();
-
-        // Menu input is read directly from Valkur.Core.Input.InputCompat (which
-        // already ORs the new InputSystem with the legacy backend) so this UI
-        // doesn't need to spin up its own InputActions. The previous ad-hoc
-        // _navUp/Down/Left/Right/_confirm/_cancel fields were removed in favour
-        // of the centralized InputCompat helpers — single source of truth for
-        // menu navigation.
+        // Menu input goes through Valkur.Core.Input.InputCompat, which already ORs the new
+        // InputSystem with the legacy backend — so this UI needs no InputActions of its own.
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoBootstrap()
@@ -103,21 +102,21 @@ namespace Valkur.UI.MainMenu
             if (FindObjectOfType<MainMenuUI>() != null) return;
             var go = new GameObject("MainMenuUI");
             go.AddComponent<MainMenuUI>();
-            Debug.Log("[MainMenuUI] Auto-bootstrapped.");
         }
 
         private void Start()
         {
             EnsureCamera();
             EnsureAudioManager();
-            // Drop phantom Lv.0/Lobby run folders that accumulated from earlier
-            // sessions where the player exited without doing anything worth
-            // saving. The PauseMenu Exit gate now prevents new ones, but legacy
-            // junk on disk would still pollute the Load Game panel until pruned.
-            // Runs at MainMenu Start (no active SaveService run to protect).
+            GameSettings.Instance?.ApplyVideoSettings();
+
+            // Drop phantom Lv.0/Lobby run folders left by sessions that exited without doing
+            // anything worth saving. The pause menu's Exit gate stops new ones; legacy junk on
+            // disk would still pollute the Load Game panel until it is pruned.
             try { SaveFileManager.PrunePhantomRuns(); }
             catch (System.Exception ex)
             { Debug.LogWarning($"[MainMenu] PrunePhantomRuns failed: {ex.Message}"); }
+
             BuildMenuOptions();
             BuildUI();
             PlayMenuMusic();
@@ -125,31 +124,26 @@ namespace Valkur.UI.MainMenu
 
         private void Update()
         {
+            float dt = Time.unscaledDeltaTime;
+            TickShell(dt);
+
             if (HandlePressToStart()) return;
             if (_showingClassSelector) { HandleClassSelectorInput(); return; }
 
-            // Universal ESC fallback for sub-screens. The per-screen handlers
-            // also check Cancel, but reading it here at the top guarantees ESC
-            // always returns the user to the parent screen even if the
-            // EventSystem is holding a Selectable focus (e.g. a slider in
-            // Sound Options that captured keyboard input on its last click).
-            // Skipped while the Inputs panel is mid-rebind so ESC still
-            // cancels the rebind dialog instead of leaving the Inputs panel.
-            // LoadGame has its own modal ESC semantics (Rename / ConfirmDelete)
-            // and is left alone here.
-            if (Valkur.Core.Input.InputCompat.CancelPressed())
+            // Universal Esc for sub-screens. Each screen also reads Cancel, but reading it here
+            // first guarantees Esc always returns to the parent even when the EventSystem is
+            // holding a Selectable's focus (a slider clicked in Audio, say). LoadGame has its
+            // own modal semantics (Rename / ConfirmDelete) and is left alone.
+            if (InputCompat.CancelPressed())
             {
                 switch (_menuScreen)
                 {
                     case MenuScreen.Options:
-                    case MenuScreen.Sounds:
+                    case MenuScreen.Audio:
                     case MenuScreen.Video:
-                        OptionsGoBack();
-                        return;
-                    case MenuScreen.Inputs:
-                        // The controls panel is read-only, so Cancel always means "go back".
-                        // It used to guard against closing mid-capture, which the KeyRebinder
-                        // that panel owned needed; nothing captures here any more.
+                    case MenuScreen.Gameplay:
+                    case MenuScreen.Controls:
+                    case MenuScreen.Credits:
                         OptionsGoBack();
                         return;
                 }
@@ -157,27 +151,41 @@ namespace Valkur.UI.MainMenu
 
             switch (_menuScreen)
             {
-                case MenuScreen.Main:     HandleKeyboardNavigation(); break;
-                case MenuScreen.Options:  HandleOptionsListInput();   break;
-                case MenuScreen.Sounds:   HandleOptionsSoundsInput(); break;
-                case MenuScreen.Video:    HandleOptionsVideoInput();  break;
-                case MenuScreen.Inputs:   HandleOptionsInputsInput(); break;
-                case MenuScreen.LoadGame: HandleMMLoadInput();        break;
+                case MenuScreen.Main: HandleKeyboardNavigation(); break;
+                case MenuScreen.Options: HandleOptionsListInput(); break;
+                case MenuScreen.Audio: HandleAudioInput(); break;
+                case MenuScreen.Video: HandleVideoInput(); break;
+                case MenuScreen.Gameplay: HandleGameplayInput(); break;
+                case MenuScreen.Controls: HandleControlsInput(); break;
+                case MenuScreen.Credits: HandleCreditsInput(); break;
+                case MenuScreen.LoadGame: HandleMMLoadInput(); break;
             }
         }
 
+        /// <summary>
+        /// Frees only what this menu MADE.
+        ///
+        /// <para>It used to destroy every sprite in the portrait cache, and most of those are
+        /// shipped assets under <c>Resources/</c> that the menu merely borrowed: Unity refused
+        /// with <c>Destroying assets is not permitted to avoid data loss</c>, six times per
+        /// session, on a console this project requires to be clean. The message suggests
+        /// <c>DestroyImmediate(theObject, true)</c>, which would have deleted the PNGs from the
+        /// project — so the fix is the opposite of what the error asks for, and it lives at the
+        /// point where ownership is still known (<c>LoadSprite</c>'s <c>ownedByUs</c>) rather
+        /// than being guessed here.</para>
+        /// </summary>
         private void OnDestroy()
         {
-            // Nav/Confirm/Cancel actions live in InputCompat (no per-instance state
-            // to dispose). Only the portrait cache is owned here now — the KeyRebinder went
-            // with the rebindable rows it served.
-
-            foreach (var s in _portraitSpriteCache.Values)
+            foreach (var s in _ownedPortraitSprites)
                 if (s != null) Destroy(s);
+            _ownedPortraitSprites.Clear();
             _portraitSpriteCache.Clear();
         }
 
-
+        private void HandleCreditsInput()
+        {
+            if (InputCompat.ConfirmPressed() || InputCompat.CancelPressed()) OptionsGoBack();
+        }
 
         private void EnsureCamera()
         {
@@ -196,18 +204,11 @@ namespace Valkur.UI.MainMenu
 
         private void EnsureAudioManager()
         {
-            // Reuse existing AudioManager if already instantiated in ServiceLocator
-            if (ServiceLocator.Get<IAudioService>() != null)
-            {
-                Debug.Log("[MainMenuUI] AudioManager already running (singleton persists).");
-                return;
-            }
+            if (ServiceLocator.Get<IAudioService>() != null) return;
 
-            // Check if AudioManager exists in scene (e.g., created by GlobalBootstrap)
             if (AudioManager.HasInstance)
             {
                 ServiceLocator.Register<IAudioService>(AudioManager.Instance);
-                Debug.Log("[MainMenuUI] AudioManager found in scene, registered with ServiceLocator.");
                 return;
             }
 
@@ -221,76 +222,8 @@ namespace Valkur.UI.MainMenu
             var go = new GameObject("AudioManager");
             var mgr = go.AddComponent<AudioManager>();
             mgr.SetCatalog(catalogAsset);
-            Debug.Log("[MainMenuUI] AudioManager bootstrapped for menu (first creation).");
         }
 
-        private void PlayMenuMusic()
-        {
-            var audio = ServiceLocator.Get<IAudioService>();
-            if (audio == null) return;
-            audio.PlayMenuMusic();
-        }
-
-        private void BuildMenuOptions()
-        {
-            bool hasSaves = SaveFileManager.ListSaves().Count > 0;
-            var opts = new List<string>();
-            if (hasSaves) opts.Add("Continue");
-            opts.Add("New Game");
-            opts.Add("Options");
-            opts.Add("Exit");
-            _menuOptions = opts.ToArray();
-        }
-
-        /// <summary>
-        /// Rebuilds the main menu panel (e.g. after deleting all saves so the
-        /// "Continuar" entry must disappear). Safe to call any time after BuildUI().
-        ///
-        /// The new <c>_menuPanelGo</c> is created as a sibling of the canvas
-        /// (always at the end of the sibling list) and is freshly active by
-        /// default. To prevent it from popping up over any open sub-screen
-        /// (LoadGame, Options, ...), its <c>activeSelf</c> is forced to match
-        /// the current <c>_menuScreen</c>: only visible when on the Main screen.
-        /// </summary>
-        private void RebuildMenuPanel()
-        {
-            if (_canvasTransform == null) return;
-            BuildMenuOptions();
-            if (_menuPanelGo != null)
-            {
-                if (Application.isPlaying) Destroy(_menuPanelGo);
-                else DestroyImmediate(_menuPanelGo);
-            }
-            BuildMenuPanel(_canvasTransform);
-            _selectedIndex = Mathf.Clamp(_selectedIndex, 0, Mathf.Max(0, _menuOptions.Length - 1));
-            UpdateSelection();
-
-            // Honour the current screen so the rebuilt panel doesn't appear on
-            // top of an open sub-screen (e.g. after deleting a save from the
-            // Load Game panel).
-            if (_menuPanelGo != null)
-                _menuPanelGo.SetActive(_menuScreen == MenuScreen.Main);
-
-            // If a sub-screen is open, make sure its overlay stays on top of the
-            // freshly created main-menu sibling.
-            switch (_menuScreen)
-            {
-                case MenuScreen.LoadGame:
-                    if (_mmLoadOverlay != null) _mmLoadOverlay.transform.SetAsLastSibling();
-                    break;
-                case MenuScreen.Options:
-                case MenuScreen.Sounds:
-                case MenuScreen.Video:
-                case MenuScreen.Inputs:
-                    if (_optOverlay != null) _optOverlay.transform.SetAsLastSibling();
-                    break;
-                case MenuScreen.ClassSelector:
-                    if (_classSelectionPanel != null) _classSelectionPanel.transform.SetAsLastSibling();
-                    break;
-            }
-        }
-
-
-
+        private void PlayMenuMusic() => ServiceLocator.Get<IAudioService>()?.PlayMenuMusic();
     }
 }

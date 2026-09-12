@@ -1,27 +1,52 @@
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
 using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+using Valkur.Core;
+using Valkur.Core.UI;
 using Valkur.Data;
+using Valkur.UI.MainMenu.Kit;
 
 namespace Valkur.UI.MainMenu
 {
+    /// <summary>
+    /// The class selector: the screen that decides what the player does for the next several
+    /// hours.
+    ///
+    /// <para><b>What it was.</b> Six flat grey rectangles headed by the raw internal key in
+    /// lowercase — <c>barbarian</c>, <c>mague</c>, <c>drwaft</c>'s neighbour <c>dwarf</c> — over
+    /// six unlabelled abbreviations (<c>HP ATK ARM SPD MANA ENG</c>) whose values are 1 and 2
+    /// for attack and 0 and 5 for armour. No description, no art on the card, and a selection
+    /// marker whose COLOUR CHANGED PER CLASS, so the barbarian's selected card wore a 2 px red
+    /// border that reads as a validation error and no two rows ever agreed on what "chosen"
+    /// looks like.</para>
+    ///
+    /// <para><b>What changed.</b> Real names from <c>PlayerClassPreset.DisplayName</c> (which
+    /// existed and was never read), one written line per class, bars instead of bare integers,
+    /// and ONE selection colour for all six. The class's own colour survives as a thin accent on
+    /// the card's top edge — it is useful as identity and useless as a state.</para>
+    ///
+    /// <para><b>The group portrait has five figures and there are six classes.</b> That is the
+    /// painting's limit, recorded in <c>ClassPortraitPaths</c>: the five are one re-lit scene and
+    /// the vampire is composed against the empty plate. The header shows whichever portrait the
+    /// selected class has, so the mismatch is invisible instead of being a card with nobody in
+    /// the picture.</para>
+    /// </summary>
     public partial class MainMenuUI
     {
-        // ── Per-class selection border colors (Python: class_border_colors) ──
-        private static readonly Dictionary<string, Color> ClassBorderColors =
+        /// <summary>Per-class identity, used as an ACCENT and never as the selection state.</summary>
+        [SelfHealingStatic("Immutable table built once from literals. Nothing writes to it after the static initialiser, it holds no Unity object and no subscription, so it cannot carry a destroyed reference or a session decision across Play.")]
+        private static readonly Dictionary<string, Color> ClassAccent =
             new Dictionary<string, Color>(System.StringComparer.OrdinalIgnoreCase)
             {
-                { "barbarian", new Color(220f / 255f, 50f / 255f, 50f / 255f) },
-                { "elven",     new Color(50f / 255f, 200f / 255f, 90f / 255f) },
-                { "mague",     new Color(255f / 255f, 220f / 255f, 90f / 255f) },
-                { "valkyrie",  new Color(255f / 255f, 105f / 255f, 180f / 255f) },
-                { "dwarf",     new Color(70f / 255f, 120f / 255f, 255f / 255f) },
-                { "vampire",   new Color(215f / 255f, 45f / 255f, 75f / 255f) },
+                { "barbarian", new Color(0.86f, 0.28f, 0.24f) },
+                { "elven",     new Color(0.32f, 0.78f, 0.42f) },
+                { "mague",     new Color(0.62f, 0.48f, 0.95f) },
+                { "valkyrie",  new Color(0.98f, 0.52f, 0.72f) },
+                { "dwarf",     new Color(0.38f, 0.58f, 0.98f) },
+                { "vampire",   new Color(0.84f, 0.22f, 0.36f) },
             };
 
-        // Per-class portrait image Resource paths
         private static readonly Dictionary<string, string> ClassPortraitPaths =
             new Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase)
             {
@@ -30,227 +55,288 @@ namespace Valkur.UI.MainMenu
                 { "mague",     "UI/CharacterSelection/character_selection_mague" },
                 { "valkyrie",  "UI/CharacterSelection/character_selection_valkyrie" },
                 { "dwarf",     "UI/CharacterSelection/character_selection_drwaft" },
-                // TEMPORARY. The five above are one painted tavern GROUP, re-lit per
-                // class -- a sixth character cannot join that scene without it being
-                // repainted. This one is composed from the shipped empty plate
-                // (taberna.png) with the vampire's own idle frame standing in it, by
-                // tools/atlas/wave11/build_vampire_portrait.py. Delete both when the
-                // group plate is repainted with six figures.
+                // TEMPORARY. The five above are one painted tavern GROUP, re-lit per class — a
+                // sixth character cannot join that scene without it being repainted. This one is
+                // composed from the shipped empty plate (taberna.png) with the vampire's own idle
+                // frame standing in it, by tools/atlas/wave11/build_vampire_portrait.py. Delete
+                // both when the group plate is repainted with six figures.
                 { "vampire",   "UI/CharacterSelection/character_selection_vampire" },
             };
 
-        // UI colors matching Python ClassSelectorManager
-        private static readonly Color CellBorderUnselected = new Color(95f / 255f, 95f / 255f, 95f / 255f);
-        private static readonly Color CellBackground       = new Color(62f / 255f, 62f / 255f, 62f / 255f);
-        private static readonly Color CellTitleColor       = new Color(240f / 255f, 240f / 255f, 240f / 255f);
-        private static readonly Color CellStatsColor       = new Color(200f / 255f, 200f / 255f, 200f / 255f);
+        /// <summary>What a bar is drawn against. Per stat, so "fast" and "tough" are comparable.</summary>
+        private struct StatBar
+        {
+            public string Label;
+            public float Value;
+            public float Max;
+        }
+
+        private readonly Dictionary<string, Sprite> _portraitSpriteCache = new Dictionary<string, Sprite>();
+
+        /// <summary>
+        /// The subset of that cache this menu BUILT, and therefore the only entries it may free.
+        /// Everything else in it is a shipped asset shared with the rest of the game.
+        /// </summary>
+        private readonly HashSet<Sprite> _ownedPortraitSprites = new HashSet<Sprite>();
+        private readonly List<Image> _classCardAccents = new List<Image>();
+        private readonly List<Image> _classCardFrames = new List<Image>();
+        private readonly List<Button> _classButtons = new List<Button>();
+        private Image _classHeaderPortrait;
+        private TextMeshProUGUI _classDescription;
+        private TextMeshProUGUI _classChosenName;
 
         private void BuildClassSelectorPanel(Transform canvasTransform)
         {
-            // ── Full-screen overlay container ────────────────────────────────
-            _classSelectionPanel = CreateUIObject("ClassSelectionOverlay", canvasTransform);
+            var style = Style;
+
+            _classSelectionPanel = MenuUIKit.Rect("ClassSelectionOverlay", canvasTransform).gameObject;
             StretchFull(_classSelectionPanel);
+            var overlay = _classSelectionPanel.transform;
 
-            // 1. Tavern background (Python: scale_mode="cover")
-            var tavernContainer = CreateUIObject("TavernBgContainer", _classSelectionPanel.transform);
-            StretchFull(tavernContainer);
-            tavernContainer.AddComponent<RectMask2D>();
+            // 1. The tavern, cropped to cover, with the same downward bias the carousel uses so
+            //    the figures' heads are not the part that gets cut.
+            var tavernContainer = MenuUIKit.Stretch("TavernBgContainer", overlay);
+            tavernContainer.gameObject.AddComponent<RectMask2D>();
 
-            var tavernGo = CreateUIObject("TavernBg", tavernContainer.transform);
-            StretchFull(tavernGo);
-            var tavernImg = tavernGo.AddComponent<Image>();
-            tavernImg.preserveAspect = true;
+            var tavernRt = MenuUIKit.Rect("TavernBg", tavernContainer);
+            tavernRt.anchorMin = tavernRt.anchorMax = new Vector2(0.5f, 0.5f);
+            tavernRt.pivot = new Vector2(0.5f, 0.5f);
+            var tavernImg = tavernRt.gameObject.AddComponent<Image>();
             tavernImg.raycastTarget = false;
-            var tavernTex = Resources.Load<Texture2D>("UI/CharacterSelection/taberna");
-            if (tavernTex != null)
+            var tavern = LoadSprite("UI/CharacterSelection/taberna");
+            if (tavern != null)
             {
-                tavernImg.sprite = MakeSprite(tavernTex);
+                tavernImg.sprite = tavern;
                 tavernImg.color = Color.white;
-                // EnvelopeParent = CSS "object-fit: cover"
-                var arf = tavernGo.AddComponent<AspectRatioFitter>();
+                var arf = tavernRt.gameObject.AddComponent<AspectRatioFitter>();
                 arf.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
-                arf.aspectRatio = (float)tavernTex.width / tavernTex.height;
+                var tex = tavern.texture;
+                arf.aspectRatio = tex != null ? tex.width / Mathf.Max(1f, tex.height) : 1.5f;
             }
+            else tavernImg.color = Color.black;
 
-            // 2. Semi-transparent dark overlay (Python: (0,0,0,128))
-            var dimGo = CreateUIObject("DimOverlay", _classSelectionPanel.transform);
-            StretchFull(dimGo);
-            var dimImg = dimGo.AddComponent<Image>();
-            dimImg.color = new Color(0f, 0f, 0f, 128f / 255f);
+            var dim = MenuUIKit.Stretch("Dim", overlay);
+            var dimImg = dim.gameObject.AddComponent<Image>();
+            dimImg.color = new Color(0f, 0f, 0f, 0.46f);
             dimImg.raycastTarget = false;
 
-            // 3. Header portrait area (contain-scaled, changes per selected class)
-            var headerGo = CreateUIObject("HeaderPortrait", _classSelectionPanel.transform);
-            var headerRect = headerGo.GetComponent<RectTransform>();
-            headerRect.anchorMin = new Vector2(0.1f, 0.30f);
-            headerRect.anchorMax = new Vector2(0.9f, 0.98f);
-            headerRect.sizeDelta = Vector2.zero;
-            headerRect.anchoredPosition = Vector2.zero;
-            _classHeaderPortrait = headerGo.AddComponent<Image>();
+            // 2. Header portrait, above the cards.
+            var headerRt = MenuUIKit.Rect("HeaderPortrait", overlay);
+            headerRt.anchorMin = new Vector2(0.12f, 0.42f);
+            headerRt.anchorMax = new Vector2(0.88f, 0.97f);
+            headerRt.offsetMin = Vector2.zero;
+            headerRt.offsetMax = Vector2.zero;
+            _classHeaderPortrait = headerRt.gameObject.AddComponent<Image>();
             _classHeaderPortrait.preserveAspect = true;
             _classHeaderPortrait.raycastTarget = false;
-            _classHeaderPortrait.color = Color.clear; // updated by UpdateClassSelectionUI
+            _classHeaderPortrait.color = Color.clear;
 
-            // 4. Cards container (bottom portion of screen)
-            var cardsContainerGo = CreateUIObject("CardsContainer", _classSelectionPanel.transform);
-            var containerRect = cardsContainerGo.GetComponent<RectTransform>();
-            containerRect.anchorMin = new Vector2(0.02f, 0.03f);
-            containerRect.anchorMax = new Vector2(0.98f, 0.30f);
-            containerRect.sizeDelta = Vector2.zero;
-            containerRect.anchoredPosition = Vector2.zero;
+            var titleRt = MenuUIKit.Rect("Title", overlay);
+            titleRt.anchorMin = titleRt.anchorMax = new Vector2(0.5f, 1f);
+            titleRt.pivot = new Vector2(0.5f, 1f);
+            titleRt.anchoredPosition = new Vector2(0f, -18f);
+            titleRt.sizeDelta = new Vector2(900f, 40f);
+            MenuTypography.Label(titleRt.gameObject, style, MenuText.ClassTitle,
+                                 style.titleFontSize, style.Gold, TextAlignmentOptions.Center, bold: true);
 
-            // Panel drop shadow (Python: (0,0,0,100) offset Y+6)
-            var shadowGo = CreateUIObject("PanelShadow", cardsContainerGo.transform);
-            var shadowRect = shadowGo.GetComponent<RectTransform>();
-            shadowRect.anchorMin = Vector2.zero;
-            shadowRect.anchorMax = Vector2.one;
-            shadowRect.sizeDelta = Vector2.zero;
-            shadowRect.anchoredPosition = new Vector2(0f, -6f);
-            var shadowImg = shadowGo.AddComponent<Image>();
-            shadowImg.color = new Color(0f, 0f, 0f, 100f / 255f);
-            shadowImg.raycastTarget = false;
+            // 3. The chosen class's name and its sentence, between the portrait and the cards —
+            //    the one place the eye already is when it moves from the picture to the choice.
+            var nameRt = MenuUIKit.Rect("ChosenName", overlay);
+            nameRt.anchorMin = new Vector2(0.5f, 0.40f);
+            nameRt.anchorMax = new Vector2(0.5f, 0.40f);
+            nameRt.pivot = new Vector2(0.5f, 0f);
+            nameRt.sizeDelta = new Vector2(960f, 34f);
+            _classChosenName = MenuTypography.Label(nameRt.gameObject, style, string.Empty,
+                                                    style.titleFontSize, style.Gold,
+                                                    TextAlignmentOptions.Center, bold: true);
 
-            // Panel background (Python: (44,44,44,235))
-            var panelBgGo = CreateUIObject("PanelBg", cardsContainerGo.transform);
-            StretchFull(panelBgGo);
-            var panelBgImg = panelBgGo.AddComponent<Image>();
-            panelBgImg.color = new Color(44f / 255f, 44f / 255f, 44f / 255f, 235f / 255f);
-            panelBgImg.raycastTarget = false;
+            var descRt = MenuUIKit.Rect("Description", overlay);
+            descRt.anchorMin = new Vector2(0.5f, 0.34f);
+            descRt.anchorMax = new Vector2(0.5f, 0.34f);
+            descRt.pivot = new Vector2(0.5f, 0f);
+            descRt.sizeDelta = new Vector2(980f, 44f);
+            _classDescription = MenuTypography.Label(descRt.gameObject, style, string.Empty,
+                                                     style.rowFontSize - 4f, style.TextPrimary,
+                                                     TextAlignmentOptions.Top);
+            _classDescription.enableWordWrapping = true;
 
-            // Cards row with horizontal layout (Python: columns=5, cell_h_margin=16)
-            var rowGo = CreateUIObject("CardsRow", cardsContainerGo.transform);
-            var rowRect = rowGo.GetComponent<RectTransform>();
-            rowRect.anchorMin = Vector2.zero;
-            rowRect.anchorMax = Vector2.one;
-            rowRect.offsetMin = new Vector2(16f, 16f);
-            rowRect.offsetMax = new Vector2(-16f, -16f);
-            var rowLayout = rowGo.AddComponent<HorizontalLayoutGroup>();
-            rowLayout.spacing = 16f;
-            rowLayout.childControlWidth = true;
-            rowLayout.childControlHeight = true;
-            rowLayout.childForceExpandWidth = true;
-            rowLayout.childForceExpandHeight = true;
-            rowLayout.childAlignment = TextAnchor.MiddleCenter;
+            // 4. The cards.
+            var row = MenuUIKit.Rect("CardsRow", overlay);
+            row.anchorMin = new Vector2(0.02f, 0.05f);
+            row.anchorMax = new Vector2(0.98f, 0.32f);
+            row.offsetMin = Vector2.zero;
+            row.offsetMax = Vector2.zero;
+            var layout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = 14f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = true;
+            layout.childAlignment = TextAnchor.MiddleCenter;
 
-            // ── Build class cards ────────────────────────────────────────────
             _classButtons.Clear();
-            _classMarkerTexts.Clear();
             _classKeys.Clear();
-            _classCardBorderImages.Clear();
-            _classCardBgRects.Clear();
+            _classCardAccents.Clear();
+            _classCardFrames.Clear();
 
             var presets = PlayerClassCatalog.AllPresets;
             for (int i = 0; i < presets.Count; i++)
-            {
-                var preset = presets[i];
-                var key = preset.PlayerKey;
+                BuildClassCard(row, presets[i], i);
 
-                // Card root = border image (gap between this and inner bg = border width)
-                var cardGo = CreateUIObject($"Class_{key}", rowGo.transform);
-                cardGo.AddComponent<LayoutElement>();
-                var borderImg = cardGo.AddComponent<Image>();
-                borderImg.color = CellBorderUnselected;
-                _classCardBorderImages.Add(borderImg);
-
-                // Click + hover
-                var btn = cardGo.AddComponent<Button>();
-                btn.targetGraphic = borderImg;
-                btn.transition = Selectable.Transition.None;
-                int captured = i;
-                btn.onClick.AddListener(() => OnClassCardClicked(captured));
-
-                var trigger = cardGo.AddComponent<EventTrigger>();
-                var hoverEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
-                hoverEntry.callback.AddListener(_ => SetSelectedClassIndex(captured));
-                trigger.triggers.Add(hoverEntry);
-
-                // Card inner background (Python: (62,62,62), border_radius=10)
-                var bgGo = CreateUIObject("CardBg", cardGo.transform);
-                var bgRect = bgGo.GetComponent<RectTransform>();
-                bgRect.anchorMin = Vector2.zero;
-                bgRect.anchorMax = Vector2.one;
-                bgRect.offsetMin = new Vector2(2f, 2f);   // 2px border when unselected
-                bgRect.offsetMax = new Vector2(-2f, -2f);
-                var bgImg = bgGo.AddComponent<Image>();
-                bgImg.color = CellBackground;
-                bgImg.raycastTarget = false;
-                _classCardBgRects.Add(bgRect);
-
-                // Class name (Python: font_size=36, top-left, bold, lowercase)
-                var nameGo = CreateUIObject("Name", bgGo.transform);
-                var nameRect = nameGo.GetComponent<RectTransform>();
-                nameRect.anchorMin = new Vector2(0f, 1f);
-                nameRect.anchorMax = new Vector2(1f, 1f);
-                nameRect.pivot = new Vector2(0f, 1f);
-                nameRect.anchoredPosition = new Vector2(10f, -8f);
-                nameRect.sizeDelta = new Vector2(-20f, 36f);
-                var nameTMP = nameGo.AddComponent<TextMeshProUGUI>();
-                nameTMP.text = key;
-                nameTMP.fontSize = 28f;
-                nameTMP.alignment = TextAlignmentOptions.TopLeft;
-                nameTMP.color = CellTitleColor;
-                nameTMP.fontStyle = FontStyles.Bold;
-                nameTMP.raycastTarget = false;
-
-                // Stats block (Python: small_font=20, lines: HP,ATK,ARM,SPD,MANA,ENG)
-                var statsGo = CreateUIObject("Stats", bgGo.transform);
-                var statsRect = statsGo.GetComponent<RectTransform>();
-                statsRect.anchorMin = Vector2.zero;
-                statsRect.anchorMax = Vector2.one;
-                statsRect.offsetMin = new Vector2(10f, 8f);
-                statsRect.offsetMax = new Vector2(-10f, -48f);
-                var statsTMP = statsGo.AddComponent<TextMeshProUGUI>();
-                statsTMP.text = FormatClassStats(preset);
-                statsTMP.fontSize = 18f;
-                statsTMP.alignment = TextAlignmentOptions.TopLeft;
-                statsTMP.color = CellStatsColor;
-                statsTMP.raycastTarget = false;
-
-                _classButtons.Add(btn);
-                _classKeys.Add(key);
-            }
-
-            // Hint text at bottom
-            var hintGo = CreateUIObject("SelectorHint", _classSelectionPanel.transform);
-            var hintR = hintGo.GetComponent<RectTransform>();
-            hintR.anchorMin = new Vector2(0.5f, 0f);
-            hintR.anchorMax = new Vector2(0.5f, 0f);
-            hintR.pivot = new Vector2(0.5f, 0f);
-            hintR.anchoredPosition = new Vector2(0f, 4f);
-            hintR.sizeDelta = new Vector2(900f, 24f);
-            var hintTMP = hintGo.AddComponent<TextMeshProUGUI>();
-            hintTMP.text = "Click selecciona y empieza  |  A/D \u2190 \u2192 elegir  |  Enter confirmar  |  Esc volver";
-            hintTMP.fontSize = 16f;
-            hintTMP.alignment = TextAlignmentOptions.Center;
-            hintTMP.color = VersionCol;
-            hintTMP.raycastTarget = false;
+            var hintRt = MenuUIKit.Rect("SelectorHint", overlay);
+            hintRt.anchorMin = hintRt.anchorMax = new Vector2(0.5f, 0f);
+            hintRt.pivot = new Vector2(0.5f, 0f);
+            hintRt.anchoredPosition = new Vector2(0f, 8f);
+            hintRt.sizeDelta = new Vector2(1000f, 24f);
+            MenuTypography.Label(hintRt.gameObject, style, MenuText.ClassHint,
+                                 style.hintFontSize, style.TextMuted, TextAlignmentOptions.Center);
 
             _classSelectionPanel.SetActive(false);
             _selectedClassIndex = FindSelectedClassIndex();
             UpdateClassSelectionUI();
         }
 
-        private static string FormatClassStats(PlayerClassCatalog.PlayerClassPreset preset)
+        private void BuildClassCard(Transform row, PlayerClassCatalog.PlayerClassPreset preset, int index)
         {
-            return $"HP: {preset.MaxStrength}\n" +
-                   $"ATK: {preset.BasicAttack}\n" +
-                   $"ARM: {preset.BasicArmor}\n" +
-                   $"SPD: {preset.BasicSpeed:0.#}\n" +
-                   $"MANA: {preset.MaxIntelligence}\n" +
-                   $"ENG: {preset.MaxDexterity}";
+            var style = Style;
+            string key = preset.PlayerKey;
+
+            var card = MenuUIKit.Sprite($"Class_{key}", row, _art.CardFrame, Color.white,
+                                        Image.Type.Sliced, raycast: true);
+            card.gameObject.AddComponent<LayoutElement>();
+            _classCardFrames.Add(card);
+            // FOUR lists are index-parallel and all four are filled HERE, in the one method that
+            // makes a card. This one was cleared in the builder and never added to, which is not
+            // a cosmetic slip: every reader of it opens with
+            // `if (_selectedClassIndex >= _classKeys.Count) return;`, so an empty list made the
+            // header portrait, the chosen-class name, the accent AND
+            // `PlayerSelectionState.SetSelectedPlayer` all unreachable — the screen drew six
+            // cards, moved its highlight, and could not record which class the player picked.
+            // Nothing failed; the run simply started as whatever class was stored last.
+            _classKeys.Add(key);
+
+            var btn = card.gameObject.AddComponent<Button>();
+            btn.targetGraphic = card;
+            btn.transition = Selectable.Transition.None;
+            int captured = index;
+            btn.onClick.AddListener(() => OnClassCardClicked(captured));
+            MenuUIKit.OnHover(card.gameObject, _ => SetSelectedClassIndex(captured));
+            _classButtons.Add(btn);
+
+            // The class's own colour, as a 3 px bar along the top. Identity, not state.
+            var accent = MenuUIKit.Sprite("Accent", card.transform, _art.White,
+                                          ClassAccent.TryGetValue(key, out var c) ? c : style.Gold);
+            var art = (RectTransform)accent.transform;
+            art.anchorMin = new Vector2(0f, 1f);
+            art.anchorMax = new Vector2(1f, 1f);
+            art.pivot = new Vector2(0.5f, 1f);
+            art.offsetMin = new Vector2(5f, -8f);
+            art.offsetMax = new Vector2(-5f, -5f);
+            _classCardAccents.Add(accent);
+
+            var nameRt = MenuUIKit.Rect("Name", card.transform);
+            nameRt.anchorMin = new Vector2(0f, 1f);
+            nameRt.anchorMax = new Vector2(1f, 1f);
+            nameRt.pivot = new Vector2(0.5f, 1f);
+            nameRt.anchoredPosition = new Vector2(0f, -12f);
+            nameRt.sizeDelta = new Vector2(-16f, 30f);
+            MenuTypography.Label(nameRt.gameObject, style,
+                                 string.IsNullOrEmpty(preset.DisplayName) ? key : preset.DisplayName,
+                                 style.rowFontSize, style.TextPrimary, TextAlignmentOptions.Center,
+                                 bold: true);
+
+            // Bars, each against the largest value any class has for that stat, so the six cards
+            // are comparable at a glance. Six bare integers were not: "ATK 2" against "ATK 1"
+            // tells a player nothing about how much harder that is.
+            var bars = StatBarsFor(preset);
+            float y = -48f;
+            foreach (var bar in bars)
+            {
+                BuildStatBar(card.transform, bar, y);
+                y -= 22f;
+            }
+        }
+
+        private static List<StatBar> StatBarsFor(PlayerClassCatalog.PlayerClassPreset p)
+        {
+            // The maxima are read off the catalogue rather than written down, so a retune of any
+            // class rescales every bar instead of leaving one card's bar past the end of its
+            // track.
+            float maxHp = 1f, maxMana = 1f, maxSta = 1f, maxSpd = 1f, maxAtk = 1f, maxArm = 1f;
+            foreach (var q in PlayerClassCatalog.AllPresets)
+            {
+                maxHp = Mathf.Max(maxHp, q.MaxStrength);
+                maxMana = Mathf.Max(maxMana, q.MaxIntelligence);
+                maxSta = Mathf.Max(maxSta, q.MaxDexterity);
+                maxSpd = Mathf.Max(maxSpd, q.BasicSpeed);
+                maxAtk = Mathf.Max(maxAtk, q.BasicAttack);
+                maxArm = Mathf.Max(maxArm, q.BasicArmor);
+            }
+            return new List<StatBar>
+            {
+                new StatBar { Label = MenuText.ClassHealth, Value = p.MaxStrength, Max = maxHp },
+                new StatBar { Label = MenuText.ClassAttack, Value = p.BasicAttack, Max = maxAtk },
+                new StatBar { Label = MenuText.ClassArmour, Value = p.BasicArmor, Max = maxArm },
+                new StatBar { Label = MenuText.ClassSpeed, Value = p.BasicSpeed, Max = maxSpd },
+                new StatBar { Label = MenuText.ClassMana, Value = p.MaxIntelligence, Max = maxMana },
+                new StatBar { Label = MenuText.ClassStamina, Value = p.MaxDexterity, Max = maxSta },
+            };
+        }
+
+        private void BuildStatBar(Transform card, StatBar bar, float y)
+        {
+            var style = Style;
+            var rt = MenuUIKit.Rect("Stat_" + bar.Label, card);
+            rt.anchorMin = new Vector2(0f, 1f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.anchoredPosition = new Vector2(0f, y);
+            rt.sizeDelta = new Vector2(-20f, 18f);
+
+            var labelRt = MenuUIKit.Rect("L", rt);
+            labelRt.anchorMin = new Vector2(0f, 0f);
+            labelRt.anchorMax = new Vector2(0.52f, 1f);
+            labelRt.offsetMin = Vector2.zero;
+            labelRt.offsetMax = Vector2.zero;
+            MenuTypography.Label(labelRt.gameObject, style, bar.Label, style.detailFontSize,
+                                 style.TextDim);
+
+            var trackRt = MenuUIKit.Rect("T", rt);
+            trackRt.anchorMin = new Vector2(0.54f, 0.5f);
+            trackRt.anchorMax = new Vector2(1f, 0.5f);
+            trackRt.pivot = new Vector2(0.5f, 0.5f);
+            trackRt.sizeDelta = new Vector2(0f, 8f);
+            trackRt.anchoredPosition = Vector2.zero;
+            MenuUIKit.Sprite("Bg", trackRt, _art.SliderTrack, Color.white).rectTransform
+                .SetAsFirstSibling();
+
+            var fillHolder = MenuUIKit.Rect("F", trackRt);
+            fillHolder.anchorMin = new Vector2(0f, 0.5f);
+            fillHolder.anchorMax = new Vector2(Mathf.Clamp01(bar.Value / Mathf.Max(0.0001f, bar.Max)), 0.5f);
+            fillHolder.pivot = new Vector2(0f, 0.5f);
+            fillHolder.offsetMin = new Vector2(2f, -3f);
+            fillHolder.offsetMax = new Vector2(-2f, 3f);
+            MenuUIKit.Sprite("Fill", fillHolder, _art.SliderFill, style.Gold);
         }
 
         private Sprite GetCachedPortraitSprite(string playerKey)
         {
-            if (_portraitSpriteCache.TryGetValue(playerKey, out var cached))
-                return cached;
-            if (!ClassPortraitPaths.TryGetValue(playerKey, out var path))
-                return null;
-            var tex = Resources.Load<Texture2D>(path);
-            if (tex == null) return null;
-            var sprite = MakeSprite(tex);
+            if (_portraitSpriteCache.TryGetValue(playerKey, out var cached)) return cached;
+            if (!ClassPortraitPaths.TryGetValue(playerKey, out var path)) return null;
+            var sprite = LoadSprite(path, out bool ownedByUs);
             _portraitSpriteCache[playerKey] = sprite;
+            // Recorded HERE, at the one moment it is known. A shipped asset and a sprite built
+            // from a loose texture are indistinguishable afterwards without AssetDatabase.
+            if (ownedByUs && sprite != null) _ownedPortraitSprites.Add(sprite);
             return sprite;
+        }
+
+        /// <summary>The texture behind a class's portrait, for the load panel's face thumbnails.</summary>
+        private Texture2D GetCachedPortraitTexture(string playerKey)
+        {
+            if (string.IsNullOrEmpty(playerKey)) return null;
+            var sprite = GetCachedPortraitSprite(playerKey);
+            return sprite != null ? sprite.texture : null;
         }
     }
 }
