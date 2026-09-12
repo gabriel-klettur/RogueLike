@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1acad13f12612824abfacfe8a248ec7b, type: 3}
+  m_Name: SkillsHudStyle
+  m_EditorClassIdentifier: 
+  paddingTexels: 6
+  titleBarTexels: 14
+  flavourTexels: 11
+  footerTexels: 13
+  cardWidthTexels: 148
+  cardGapTexels: 6
+  iconInsetTexels: 4
+  pipTexels: 3
+  pipGapTexels: 1
+  pipTopGapTexels: 2
+  fadeSeconds: 0.12
+  pipSnapSeconds: 0.18
+  edgeLightSeconds: 0.25
+  refuseShakeSeconds: 0.2
+  moteCapacity: 48
+  motesPerRank: 10
+  motesPerUnlock: 6
+  motesPerPoint: 3
+  moteLifeSeconds: 0.45
+  respecStaggerSeconds: 0.03
+  veilAlpha: 0.55

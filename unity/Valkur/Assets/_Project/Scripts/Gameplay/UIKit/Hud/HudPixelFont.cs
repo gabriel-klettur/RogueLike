@@ -36,6 +36,37 @@ namespace Valkur.UI.HUD
         /// <summary>Glyph height of a face, without the outline.</summary>
         public static int HeightOf(HudFontFace face) => face == HudFontFace.Large ? 7 : 5;
 
+        /// <summary>
+        /// Extra rows a Spanish glyph claims ABOVE the cap line, for its accent or its
+        /// inverted mark.
+        ///
+        /// <para><b>Why a glyph may be taller than its own face.</b> A five-row face has no
+        /// room for an accent INSIDE the height of a capital — put it there and it either
+        /// eats the crossbar or touches the letter, which at two screen pixels per texel reads
+        /// as one blob. The renderer does not require every glyph to be the face's height:
+        /// <c>HudPixelText</c> seats every quad on the same baseline (<c>qy = y0 - 1f</c>) and
+        /// takes its height from the glyph (<c>g.CellHeight</c>), so a taller glyph grows
+        /// UPWARD, which is exactly where an accent goes.</para>
+        ///
+        /// <para>Declared here rather than written as a 2 in the fixture that checks it: a
+        /// literal in the test is a number that goes stale the day the face changes, and the
+        /// font is the thing that knows.</para>
+        /// </summary>
+        public const int AccentRows = 2;
+
+        /// <summary>
+        /// The characters allowed to be <see cref="AccentRows"/> taller than their face.
+        ///
+        /// <para>A CLOSED set, and that is the half that keeps this an invariant rather than a
+        /// loophole: without it "a glyph may be taller" lets any glyph be any height, and the
+        /// next ragged or oversized one lands with nothing to catch it. Ragged glyphs — rows of
+        /// differing width — stay forbidden outright, because those really do break the atlas
+        /// packing, while a taller one does not.</para>
+        /// </summary>
+        public static bool ClaimsAccentRows(char c) =>
+            c == 'Á' || c == 'É' || c == 'Í' || c == 'Ó' || c == 'Ú' || c == 'Ü' || c == 'Ñ'
+            || c == '¿' || c == '¡';
+
         /// <summary>Width of a space in a face.</summary>
         public static int SpaceWidthOf(HudFontFace face) => face == HudFontFace.Large ? 3 : 2;
 
@@ -131,6 +162,23 @@ namespace Valkur.UI.HUD
                 ['?'] = new[] { "## ", "  #", " # ", "   ", " # " },
                 ['_'] = new[] { "   ", "   ", "   ", "   ", "###" },
                 ['\''] = new[] { "#", "#", " ", " ", " " },
+
+                // Spanish. SEVEN rows in a five-row face, on purpose: the renderer takes each
+                // quad's height from the glyph itself (HudGlyph.CellHeight) and seats every
+                // glyph on the same baseline, so the two extra rows land ABOVE the cap line —
+                // which is exactly where an accent goes. The blank second row is load-bearing:
+                // an accent touching the letter under it reads as one blob at 2 screen pixels
+                // per texel. Appended only; no existing glyph changed, and CanSpell can only
+                // get MORE labels to fit.
+                ['Á'] = new[] { "  #", "   ", " # ", "# #", "###", "# #", "# #" },
+                ['É'] = new[] { "  #", "   ", "###", "#  ", "## ", "#  ", "###" },
+                ['Í'] = new[] { "  #", "   ", "###", " # ", " # ", " # ", "###" },
+                ['Ó'] = new[] { "  #", "   ", " # ", "# #", "# #", "# #", " # " },
+                ['Ú'] = new[] { "  #", "   ", "# #", "# #", "# #", "# #", "###" },
+                ['Ü'] = new[] { "# #", "   ", "# #", "# #", "# #", "# #", "###" },
+                ['Ñ'] = new[] { "###", "   ", "## ", "# #", "# #", "# #", "# #" },
+                ['¿'] = new[] { " # ", "   ", " # ", "#  ", "#  ", "# #", " # " },
+                ['¡'] = new[] { "#", " ", "#", "#", "#", "#", "#" },
             };
         }
 

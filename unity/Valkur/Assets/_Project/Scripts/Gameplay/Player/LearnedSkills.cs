@@ -58,11 +58,23 @@ namespace Valkur.Gameplay
             OnLoadoutChanged?.Invoke();
         }
 
+        /// <summary>
+        /// Grants skill points — from a level, from a quest, from the console.
+        ///
+        /// <para>It raises <see cref="OnLoadoutChanged"/> as well as
+        /// <see cref="OnPointsChanged"/>, and that second raise is not redundant: receiving a
+        /// point changes WHAT CAN BE BOUGHT, which is the question every view of this tree is
+        /// drawing. The talents panel subscribes only to the loadout event (the spells panel
+        /// does the same), so before this a player who levelled up with the panel open watched
+        /// it go on saying "0 puntos" and every node go on saying "te falta 1 punto" until they
+        /// closed and reopened it. Neither event was wrong on its own; the composition was.</para>
+        /// </summary>
         public void AddPoints(int amount)
         {
             if (amount <= 0) return;
             availablePoints += amount;
             OnPointsChanged?.Invoke(availablePoints);
+            OnLoadoutChanged?.Invoke();
         }
 
         public int RankOf(string skillId)
@@ -76,36 +88,45 @@ namespace Valkur.Gameplay
         public bool IsLearned(string skillId) => RankOf(skillId) > 0;
 
         /// <summary>
-        /// True when the next rank of <paramref name="node"/> can be bought right now.
-        /// <paramref name="reason"/> is always set on rejection so the tree view can say
-        /// "Requires level 12" instead of greying a button out with no explanation — a
-        /// locked node with no stated reason is the thing that makes a tree feel broken.
+        /// Every reason the next rank of <paramref name="node"/> cannot be bought right now,
+        /// appended to <paramref name="into"/>. Returns true when there are none.
+        ///
+        /// <para><b>The ORDER is a design decision and it used to be backwards.</b> The old
+        /// body tested affordability FIRST and returned a single reason, so a character with
+        /// no points was told "Need 2 skill point(s)" about every node in the tree — including
+        /// the ones whose real gate is a prerequisite five ranks deep. Measured on the shipped
+        /// dwarf: Bulwark reported a 2-point shortfall when what actually closes it is
+        /// Stoneflesh at rank 5, which is eight points of commitment away. Level first, then
+        /// the prerequisite, then the cost, because that is descending order of how little the
+        /// player can do about it — the same ordering <c>CraftingService</c> and
+        /// <c>KnownSpells</c> already use.</para>
+        ///
+        /// <para><b>Every reason, not the first.</b> Naming one gate at a time makes the player
+        /// clear it and come back to find another, which is the same complaint the quest audit
+        /// made about ingredient shortfalls.</para>
         /// </summary>
-        public bool CanLearn(SkillNode node, int playerLevel, out string reason)
+        public bool CollectLockReasons(SkillNode node, int playerLevel, List<SkillLock> into)
         {
-            if (node == null)                       { reason = "Null skill node.";  return false; }
-            if (string.IsNullOrEmpty(node.skillId)) { reason = "Skill has no id.";  return false; }
+            if (into == null) return false;
+            int before = into.Count;
+
+            if (node == null || string.IsNullOrEmpty(node.skillId))
+            {
+                into.Add(SkillLock.Malformed());
+                return false;
+            }
 
             int rank = RankOf(node.skillId);
-            int nextRank = rank + 1;
-
-            if (rank >= Mathf.Max(1, node.maxRank))
+            int maxRank = Mathf.Max(1, node.maxRank);
+            if (rank >= maxRank)
             {
-                reason = "Already at max rank.";
-                return false;
-            }
-            if (availablePoints < node.pointCost)
-            {
-                reason = $"Need {node.pointCost} skill point(s), have {availablePoints}.";
+                into.Add(SkillLock.Maxed(rank));
                 return false;
             }
 
-            int levelNeeded = node.LevelRequirementForRank(nextRank);
+            int levelNeeded = node.LevelRequirementForRank(rank + 1);
             if (playerLevel < levelNeeded)
-            {
-                reason = $"Requires level {levelNeeded}.";
-                return false;
-            }
+                into.Add(SkillLock.Level(levelNeeded, playerLevel));
 
             // A prerequisite must be at FULL rank, not merely started. A partial
             // prerequisite would let a player reach a capstone with one point in each
@@ -115,16 +136,38 @@ namespace Valkur.Gameplay
                 foreach (var prereq in node.prerequisites)
                 {
                     if (prereq == null) continue;
-                    if (RankOf(prereq.skillId) < Mathf.Max(1, prereq.maxRank))
-                    {
-                        reason = $"Requires '{prereq.displayName}' at max rank.";
-                        return false;
-                    }
+                    int prereqMax = Mathf.Max(1, prereq.maxRank);
+                    int prereqRank = RankOf(prereq.skillId);
+                    if (prereqRank < prereqMax)
+                        into.Add(SkillLock.Prerequisite(prereq, prereqMax - prereqRank));
                 }
             }
 
-            reason = string.Empty;
-            return true;
+            if (availablePoints < node.pointCost)
+                into.Add(SkillLock.Points(node.pointCost, availablePoints));
+
+            return into.Count == before;
+        }
+
+        private readonly List<SkillLock> _lockScratch = new List<SkillLock>(4);
+
+        /// <summary>
+        /// True when the next rank of <paramref name="node"/> can be bought right now.
+        /// <paramref name="reason"/> carries the FIRST gate in English, for the console and for
+        /// the callers that predate the list form; a view that draws the node uses
+        /// <see cref="CollectLockReasons"/>, which names every one.
+        /// </summary>
+        public bool CanLearn(SkillNode node, int playerLevel, out string reason)
+        {
+            _lockScratch.Clear();
+            if (CollectLockReasons(node, playerLevel, _lockScratch))
+            {
+                reason = string.Empty;
+                return true;
+            }
+
+            reason = _lockScratch.Count > 0 ? _lockScratch[0].Describe() : "Cannot learn.";
+            return false;
         }
 
         public bool TryLearn(SkillNode node, int playerLevel, out string reason)

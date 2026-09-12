@@ -43,6 +43,20 @@ namespace Valkur.UI.HUD
         /// <summary>What a click does. Null makes the slot display-only.</summary>
         public Action Invoke;
 
+        /// <summary>
+        /// A count the verb wants to announce while its panel is CLOSED — unspent talent points,
+        /// unread quests, new items. Null, or a value of 0, draws nothing.
+        ///
+        /// <para>It exists because a window the player has to open to find out whether it has
+        /// anything for them is a window they stop opening. Levelling up granted a skill point and
+        /// the game said so nowhere at all: the number lived in a panel reached from this very
+        /// slot, and nothing on the slot changed.</para>
+        /// </summary>
+        public Func<int> Badge;
+
+        /// <summary>The count to draw, or 0 for none.</summary>
+        public int BadgeCount => Badge == null ? 0 : Mathf.Max(0, Badge());
+
         public bool Available => IsAvailable == null || IsAvailable();
         public bool Active => IsActive != null && IsActive();
     }

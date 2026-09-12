@@ -94,6 +94,10 @@ namespace Valkur.UI.HUD
                     verb.IsActive = () => SheetShowing(CharacterSheetController.TabSkills);
                     verb.Detail = () => "Gasta los puntos de habilidad";
                     verb.Invoke = () => ToggleSheet(CharacterSheetController.TabSkills);
+                    // Levelling up granted a point and the game said so nowhere: the number lived
+                    // inside the panel this slot opens, so the only way to learn you had one was
+                    // to go and look. The badge is the notice.
+                    verb.Badge = UnspentSkillPoints;
                     break;
                 case "grimoire":
                     verb.IsActive = () => SheetShowing(CharacterSheetController.TabGrimoire);
@@ -166,6 +170,18 @@ namespace Valkur.UI.HUD
         }
 
         // -- The character sheet ----------------------------------------------------------------
+
+        /// <summary>
+        /// Skill points the player has not spent, read from the model the talents board reads —
+        /// never from the board itself, which is normally not built at all while the bar is up.
+        /// </summary>
+        private static int UnspentSkillPoints()
+        {
+            var player = EntityRegistry.PlayerTransform;
+            if (player == null) return 0;
+            var skills = player.GetComponent<Valkur.Gameplay.LearnedSkills>();
+            return skills != null ? skills.AvailablePoints : 0;
+        }
 
         private static bool SheetShowing(int tab)
         {

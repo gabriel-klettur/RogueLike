@@ -58,6 +58,9 @@ namespace Valkur.UI.HUD
         private readonly Image _mouseGlyph;
         private readonly HudPixelText _seconds;
         private readonly HudPixelText _keyLabel;
+        private readonly HudPixelText _badge;
+        private readonly Image _badgePip;
+        private int _badgeShown = -1;
         private readonly HudArt _art;
         private readonly int _size;
         private readonly Func<string> _spellKey;
@@ -156,6 +159,14 @@ namespace Valkur.UI.HUD
             _mouseGlyph.enabled = false;
             _keyLabel = HudPixelText.Create(Root, "Key", art, HudFontFace.Small, HudTextAlign.Right,
                                             1, 0, size - 2, 7);
+
+            // The verb's badge: top-right, opposite the key label at the bottom, on its own dark
+            // pip so a count over a bright glyph is still legible.
+            _badgePip = HudRect.MakeImage("BadgePip", Root, art.PipFrame, size - 9, size - 8, 8, 7);
+            _badgePip.enabled = false;
+            _badge = HudPixelText.Create(Root, "Badge", art, HudFontFace.Small, HudTextAlign.Centre,
+                                         size - 9, size - 8, 8, 7);
+            _badge.gameObject.SetActive(false);
         }
 
         /// <summary>Panel-space centre of the slot, given the slot row's origin.</summary>
@@ -195,6 +206,7 @@ namespace Valkur.UI.HUD
             HudRect.Place(_glyph.rectTransform, _glyphAt.x, _glyphAt.y, w, h);
             _glyph.enabled = verb.Glyph != null;
             _verbSeen = false;
+            _badgeShown = -1;   // a new verb re-decides its own badge on the next tick
         }
 
         /// <summary>The colour this slot's flashes take: the verb's tint or the spell's swatch.</summary>
@@ -369,7 +381,28 @@ namespace Valkur.UI.HUD
                 if ((int)p.y != y) _glyph.rectTransform.anchoredPosition = new Vector2(_glyphAt.x, y);
             }
 
+            DrawBadge(style);
             DrawFeedback(dt, style, _verb.Tint, _state == HudSlotState.Active ? 0.55f : 0f);
+        }
+
+        /// <summary>
+        /// The verb's unread count. Written only when it CHANGES: a <c>SpriteRenderer</c> or a
+        /// Graphic colour set every frame dirties the batch, and this one is usually 0 forever.
+        /// </summary>
+        private void DrawBadge(PlayerHudStyle style)
+        {
+            int count = _verb != null ? _verb.BadgeCount : 0;
+            if (count == _badgeShown) return;
+            _badgeShown = count;
+
+            bool show = count > 0;
+            _badgePip.enabled = show;
+            _badge.gameObject.SetActive(show);
+            if (!show) return;
+
+            _badgePip.color = style.outline;
+            _badge.color = style.gold;
+            _badge.SetText(count > 9 ? "9+" : count.ToString());
         }
 
         private static Color WithAlpha(Color c, float a)

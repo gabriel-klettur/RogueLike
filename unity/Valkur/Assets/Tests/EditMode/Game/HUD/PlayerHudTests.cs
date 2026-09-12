@@ -422,10 +422,51 @@ namespace Valkur.Tests.EditMode.Game.HUD
             int h = HudPixelFont.HeightOf(face);
             foreach (var kv in HudPixelFont.Glyphs(face))
             {
-                Assert.AreEqual(h, kv.Value.Length, "'" + kv.Key + "' has the wrong number of rows.");
+                // RECTANGULAR is the invariant the atlas packing depends on, and it holds for
+                // every glyph without exception: rows of differing width really do break it.
                 int w = kv.Value[0].Length;
                 foreach (var row in kv.Value)
                     Assert.AreEqual(w, row.Length, "'" + kv.Key + "' is ragged: every row must be as wide.");
+
+                // HEIGHT is not that invariant, and asserting it was is what made a correct
+                // feature fail. HudPixelText seats every quad on the same baseline and takes
+                // its height from the glyph, so a Spanish capital grows UPWARD by
+                // HudPixelFont.AccentRows to carry its accent — a five-row face has no room for
+                // one inside the height of a capital. The set allowed to do it is closed, so
+                // "a glyph may be taller" cannot become "any glyph may be any height".
+                int allowed = HudPixelFont.ClaimsAccentRows(kv.Key) ? h + HudPixelFont.AccentRows : h;
+                Assert.AreEqual(allowed, kv.Value.Length,
+                    "'" + kv.Key + "' has the wrong number of rows. Only the Spanish set may be " +
+                    "taller, and only by HudPixelFont.AccentRows — do NOT fix a red here by " +
+                    "trimming rows, which removes the accent or the crossbar.");
+            }
+        }
+
+        [Test]
+        public void TheSmallFace_SpellsTheSpanishTheHudActuallyDraws()
+        {
+            // Counting one accented glyph is not counting the set. The words below are drawn
+            // TODAY by the grimoire's role filter and its card, upper-cased into this face, so
+            // a missing glyph is a chip with a hole in it rather than a hypothetical.
+            var small = HudPixelFont.Glyphs(HudFontFace.Small);
+            foreach (var word in new[] { "DAÑO", "PROTECCIÓN", "CURACIÓN", "MOVILIDAD",
+                                         "INVOCACIÓN", "UTILIDAD", "NIVEL", "TE QUEDAN" })
+                Assert.IsTrue(HudPixelFont.CanSpell(word, small), word);
+        }
+
+        [Test]
+        public void EveryGlyphAllowedToBeTaller_IsActuallyInTheFace()
+        {
+            // The other direction of the same rule: a character declared as accent-claiming
+            // but absent from the font is a permission for something that does not exist, and
+            // it would let the closed set drift away from the glyphs without anything failing.
+            var small = HudPixelFont.Glyphs(HudFontFace.Small);
+            foreach (var c in "ÁÉÍÓÚÜÑ¿¡")
+            {
+                Assert.IsTrue(HudPixelFont.ClaimsAccentRows(c), "'" + c + "' should be declared");
+                Assert.IsTrue(small.ContainsKey(c), "'" + c + "' is declared but not drawn");
+                Assert.AreEqual(HudPixelFont.HeightOf(HudFontFace.Small) + HudPixelFont.AccentRows,
+                                small[c].Length, "'" + c + "'");
             }
         }
 
