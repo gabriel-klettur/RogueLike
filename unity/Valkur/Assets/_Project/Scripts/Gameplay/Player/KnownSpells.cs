@@ -142,29 +142,42 @@ namespace Valkur.Gameplay
             return tree.ResolveCost(node, classKey);
         }
 
-        public bool CanLearn(SpellTree tree, SpellNode node, int playerLevel, out string reason)
+        /// <summary>
+        /// Everything standing between the character and <paramref name="node"/>, appended to
+        /// <paramref name="into"/> in the order the player can act on them. Returns true when
+        /// nothing is.
+        ///
+        /// <para><b>The order is the design and it used to be backwards.</b> This tested COST
+        /// first and returned the first failure, so a node gated on level 15 behind three
+        /// prerequisites answered "Need 2 arcane point(s), have 1" — the player was told to save
+        /// up for a spell they could not reach for fifteen levels. LEVEL is the only refusal they
+        /// cannot fix by spending or by walking, so it is named first; then the prerequisites,
+        /// which are a plan; then the points, which are the easiest to change. It is the same
+        /// order <c>CraftingService</c> already uses, and for the same reason.</para>
+        ///
+        /// <para><b>And it reports ALL of them.</b> One reason at a time makes the player come
+        /// back for the next one; the grimoire's card has room for the list.</para>
+        /// </summary>
+        public bool CollectLockReasons(SpellTree tree, SpellNode node, int playerLevel,
+                                       List<SpellLock> into)
         {
-            if (node == null)                      { reason = "Null spell node."; return false; }
-            if (string.IsNullOrEmpty(node.nodeId)) { reason = "Node has no id.";  return false; }
-            if (_learnedNodes.Contains(node.nodeId)) { reason = "Already known."; return false; }
+            if (into == null) return false;
+            int before = into.Count;
 
-            int cost = ResolveCost(tree, node);
-            if (availablePoints < cost)
+            if (node == null || string.IsNullOrEmpty(node.nodeId))
             {
-                // Say the surcharge out loud. A node that costs 2 in a panel whose other
-                // rows cost 1 reads as a bug unless the reason names the affinity.
-                bool surcharged = tree != null && !tree.HasAffinity(classKey) && cost > node.pointCost;
-                reason = surcharged
-                    ? $"Need {cost} arcane point(s) — {tree.displayName} is not a {classKey} school."
-                    : $"Need {cost} arcane point(s), have {availablePoints}.";
+                into.Add(SpellLock.Malformed());
+                return false;
+            }
+
+            if (_learnedNodes.Contains(node.nodeId))
+            {
+                into.Add(SpellLock.AlreadyKnown());
                 return false;
             }
 
             if (playerLevel < node.levelRequirement)
-            {
-                reason = $"Requires level {node.levelRequirement}.";
-                return false;
-            }
+                into.Add(SpellLock.Level(node.levelRequirement, playerLevel));
 
             if (node.prerequisites != null)
             {
@@ -172,16 +185,41 @@ namespace Valkur.Gameplay
                 {
                     if (prereq == null) continue;
                     if (!_learnedNodes.Contains(prereq.nodeId))
-                    {
-                        reason = $"Requires '{prereq.ResolveDisplayName()}'.";
-                        return false;
-                    }
+                        into.Add(SpellLock.Prerequisite(prereq));
                 }
             }
 
-            reason = string.Empty;
-            return true;
+            int cost = ResolveCost(tree, node);
+            if (availablePoints < cost)
+            {
+                // Say the surcharge out loud. A node that costs 2 in a panel whose other
+                // rows cost 1 reads as a bug unless the reason names the affinity.
+                bool surcharged = tree != null && !tree.HasAffinity(classKey) && cost > node.pointCost;
+                into.Add(SpellLock.Points(cost, availablePoints, surcharged, tree));
+            }
+
+            return into.Count == before;
         }
+
+        /// <summary>
+        /// Whether the node can be bought right now, with the FIRST and most structural reason
+        /// it cannot as a single sentence. Kept for the console and for callers that only need
+        /// one line; the grimoire uses <see cref="CollectLockReasons"/>, which names every one.
+        /// </summary>
+        public bool CanLearn(SpellTree tree, SpellNode node, int playerLevel, out string reason)
+        {
+            _lockScratch.Clear();
+            if (CollectLockReasons(tree, node, playerLevel, _lockScratch))
+            {
+                reason = string.Empty;
+                return true;
+            }
+
+            reason = _lockScratch.Count > 0 ? _lockScratch[0].Describe() : "Cannot learn.";
+            return false;
+        }
+
+        private readonly List<SpellLock> _lockScratch = new List<SpellLock>(4);
 
         public bool TryLearn(SpellTree tree, SpellNode node, int playerLevel, out string reason)
         {

@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85b372633a950a24799708c1bc4485ca, type: 3}
+  m_Name: GrimoireStyle
+  m_EditorClassIdentifier: 
+  widthTexels: 340
+  heightTexels: 208
+  paddingTexels: 6
+  titleBarTexels: 11
+  footerTexels: 11
+  railWidthTexels: 100
+  railRowTexels: 18
+  railRowGapTexels: 1
+  cardWidthTexels: 92
+  cardIconTexels: 32
+  nodeTexels: 26
+  nodeIconInsetTexels: 4
+  linkTexels: 3
+  captionTexels: 7
+  lockedSocketFactor: 0.42
+  learnedPlateFactor: 0.35
+  learnedPlateAlpha: 0.95
+  lockedPlateAlpha: 0.92
+  lockedIconTint: {r: 0.62, g: 0.63, b: 0.7, a: 0.7}
+  roleMarkLitFactor: 0.95
+  roleMarkDimFactor: 0.45
+  haloBreathLow: 0.14
+  haloBreathHigh: 0.38
+  haloLearnedAlpha: 0.16
+  linkOpenAlpha: 0.85
+  linkNextAlpha: 0.34
+  linkDarkAlpha: 0.55
+  linkFlowAlpha: 0.95
+  disabledButtonFactor: 0.35
+  filterChipTexels: 13
+  filterChipGapTexels: 2
+  filteredAlpha: 0.2
+  openSeconds: 0.12
+  closeSeconds: 0.09
+  openRiseTexels: 4
+  chainFlowSeconds: 0.35
+  availablePulseSeconds: 2.2
+  refusalSeconds: 0.28
+  refusalShakeTexels: 1
+  schoolSwapSeconds: 0.22
+  moteCapacity: 96
+  learnMotes: 16
+  affordableMotes: 3
+  schoolSwapMotes: 9
+  pointsGainedMotes: 6
+  capstoneMotes: 24
+  moteLifeSeconds: 0.55
+  capstoneMoteLifeSeconds: 0.9
+  volume: 0.5
+  openSfxId: 
+  learnSfxId: 
+  refuseSfxId: 
+  schoolSfxId: 
+  hudFxShader: {fileID: 4800000, guid: 26a514c443ab6964192d7486350c6664, type: 3}

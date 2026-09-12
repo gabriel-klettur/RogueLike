@@ -1,40 +1,61 @@
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
-using UnityEngine.UI;
 using Valkur.Core;
 using Valkur.Data;
 
 namespace Valkur.Gameplay.HUD
 {
     /// <summary>
-    /// The character sheet's GRIMOIRE tab: the schools of magic, what each teaches, and
-    /// what the character may buy next with arcane points.
+    /// The character sheet's GRIMOIRE tab: the schools of magic drawn as constellations, what
+    /// each teaches, and what the character may buy next with arcane points.
     ///
-    /// It is a separate panel from <see cref="SkillTreeHUD"/> for the same reason the data
-    /// is separate: a talent is a number and a spell is a verb, they cost different
-    /// currencies, and putting them in one list makes the player compare "+5 % melee
-    /// damage" against "unlock Meteor Shower" as if those were the same kind of choice.
+    /// It is a separate panel from the talents tree for the same reason the data is separate:
+    /// a talent is a number and a spell is a verb, they cost different currencies, and putting
+    /// them in one list makes the player compare "+5 % melee damage" against "unlock Meteor
+    /// Shower" as if those were the same kind of choice.
     ///
-    /// A school the character has no affinity for is shown, not hidden — it just costs
-    /// more, and the row says so. Hiding it would turn a class into a wall; charging for it
-    /// turns a class into a tendency, which is the design <see cref="SpellTree"/> records.
+    /// A school the character has no affinity for is shown, not hidden — it just costs more,
+    /// and the rail says so. Hiding it would turn a class into a wall; charging for it turns a
+    /// class into a tendency, which is the design <see cref="SpellTree"/> records.
+    ///
+    /// <para><b>Rebuilt 2026-09-12</b> (<c>.github/GRIMOIRE_BEAUTY_AUDIT_2026-09-12.md</c>).
+    /// What it replaced was a list of <c>UnityEngine.UI.Text</c> in Arial on a translucent
+    /// black rectangle, which drew none of the 71 icons every node resolves and none of the 62
+    /// prerequisite chains they declare — while the Spells editor had been drawing exactly this
+    /// board, for the author, in the same assembly, all along. The scaffold is SHARED with it
+    /// (<c>SpellGraphLayout</c> places the nodes, <c>SpellGraphSprites</c> draws the sockets);
+    /// what is ours is the player's reading of it: six states, the frontier of what is
+    /// reachable, and a card that says every reason a node is shut.</para>
     /// </summary>
-    public sealed class SpellTreeHUD : SingletonMonoBehaviour<SpellTreeHUD>
+    public sealed partial class SpellTreeHUD : SingletonMonoBehaviour<SpellTreeHUD>
     {
         [SerializeField] private KnownSpells grimoire;
         [SerializeField] private int playerLevel = 1;
 
-        private Canvas _canvas;
-        private GameObject _root;
-        private GameObject _listContainer;
-        private GameObject _tabStrip;
-        private Text _headerLabel;
         private int _activeSchool;
+        private SpellNode _selected;
+
+        private readonly List<SpellLock> _locks = new List<SpellLock>(4);
+        private readonly StringBuilder _sb = new StringBuilder(160);
+
+        /// <summary>What the board last drew, so a refresh can tell what CHANGED and emit for
+        /// it. Without it the panel can see that a number moved and never why — the defect the
+        /// old bars over an entity's head had, for the same reason.</summary>
+        private readonly Dictionary<string, GrimoireNodeState> _lastStates =
+            new Dictionary<string, GrimoireNodeState>();
+
+        private int _lastPoints = -1;
 
         public bool IsOpen { get; private set; }
         public int ActiveSchool => _activeSchool;
 
+        /// <summary>The node the card is showing, or null. Selection, never a purchase.</summary>
+        public SpellNode Selected => _selected;
+
         protected override bool Persist => false;
+
+        // ── Binding ───────────────────────────────────────────────────────
 
         public void Bind(KnownSpells value, int level)
         {
@@ -43,37 +64,6 @@ namespace Valkur.Gameplay.HUD
             playerLevel = level;
             if (grimoire != null) grimoire.OnLoadoutChanged += Refresh;
             if (IsOpen) Refresh();
-        }
-
-        public void Open()
-        {
-            EnsureBuilt();
-            if (grimoire == null) AutoResolve();
-            IsOpen = true;
-            if (_root != null) _root.SetActive(true);
-            Refresh();
-        }
-
-        public void Close()
-        {
-            IsOpen = false;
-            if (_root != null) _root.SetActive(false);
-        }
-
-        public void Toggle() { if (IsOpen) Close(); else Open(); }
-
-        public void SelectSchool(int index)
-        {
-            _activeSchool = Mathf.Max(0, index);
-            Refresh();
-        }
-
-        protected override void OnSingletonAwake() => EnsureBuilt();
-
-        protected override void OnDestroy()
-        {
-            Unbind();
-            base.OnDestroy();
         }
 
         private void Unbind()
@@ -89,11 +79,149 @@ namespace Valkur.Gameplay.HUD
                  player.GetComponent<Experience>()?.Level ?? 1);
         }
 
+        // ── Open / close ──────────────────────────────────────────────────
+
+        public void Open()
+        {
+            EnsureBuilt();
+            if (grimoire == null) AutoResolve();
+
+            IsOpen = true;
+            if (_root != null) _root.SetActive(true);
+
+            // The panel opens on the school the character has an affinity for, not on index 0.
+            // Nine schools and one of them is yours: opening on somebody else's is a first
+            // frame that says nothing about this character.
+            _activeSchool = PreferredSchool();
+            _selected = null;
+
+            SeedStateCache();
+            Refresh();
+            BeginOpenMotion();
+            GrimoireAudio.Play(GrimoireSound.Open, _style);
+        }
+
+        public void Close()
+        {
+            IsOpen = false;
+            if (_motes != null) _motes.Clear();
+            if (_root != null) _root.SetActive(false);
+        }
+
+        public void Toggle() { if (IsOpen) Close(); else Open(); }
+
+        public void SelectSchool(int index)
+        {
+            int next = Mathf.Max(0, index);
+            bool changed = next != _activeSchool;
+            _activeSchool = next;
+            _selected = null;
+
+            SeedStateCache();
+            Refresh();
+
+            if (!changed) return;
+            EmitSchoolSwap();
+            GrimoireAudio.Play(GrimoireSound.School, _style);
+        }
+
+        /// <summary>Shows a node in the card. Does NOT buy it — the card's button does.</summary>
+        public void SelectNode(SpellNode node)
+        {
+            if (_selected == node) return;
+            _selected = node;
+            RefreshCard();
+            RefreshBoardSelection();
+            GrimoireAudio.Play(GrimoireSound.Select, _style);
+        }
+
+        // ── Lifecycle ─────────────────────────────────────────────────────
+
+        protected override void OnSingletonAwake() => EnsureBuilt();
+
+        protected override void OnDestroy()
+        {
+            Unbind();
+            base.OnDestroy();
+        }
+
+        private void Update()
+        {
+            if (!IsOpen) return;
+
+            float dt = Time.unscaledDeltaTime;
+            TickOpenMotion(dt);
+            TickSpirit(dt);
+            TickNavigation();
+            TickBoard(dt);
+            if (_motes != null) _motes.Tick(dt);
+        }
+
+        // ── Model helpers ─────────────────────────────────────────────────
+
         private SpellTree ActiveTree()
         {
             if (grimoire == null || grimoire.Trees.Count == 0) return null;
             int index = Mathf.Clamp(_activeSchool, 0, grimoire.Trees.Count - 1);
             return grimoire.Trees[index];
+        }
+
+        /// <summary>
+        /// The school to open on: the first the character has an affinity for, else the first
+        /// there is. Affinity is the only fact in the data that says "this one is yours".
+        /// </summary>
+        private int PreferredSchool()
+        {
+            if (grimoire == null) return 0;
+            var trees = grimoire.Trees;
+            for (int i = 0; i < trees.Count; i++)
+                if (trees[i] != null && trees[i].HasAffinity(grimoire.ClassKey)) return i;
+            return 0;
+        }
+
+        private GrimoireNodeState StateOf(SpellTree tree, SpellNode node)
+        {
+            if (node == null || grimoire == null) return GrimoireNodeState.Malformed;
+            _locks.Clear();
+            bool learned = grimoire.IsNodeLearned(node);
+            if (!learned) grimoire.CollectLockReasons(tree, node, playerLevel, _locks);
+            return GrimoireNodeStatus.Resolve(learned, _locks);
+        }
+
+        /// <summary>Every reason the node is shut, on one line, in the player's language.</summary>
+        private string ReasonOf(SpellTree tree, SpellNode node)
+        {
+            if (node == null || grimoire == null) return string.Empty;
+            if (grimoire.IsNodeLearned(node)) return GrimoireText.Known;
+
+            _locks.Clear();
+            if (grimoire.CollectLockReasons(tree, node, playerLevel, _locks))
+                return GrimoireText.Available;
+
+            return GrimoireText.Reasons(_locks, _sb);
+        }
+
+        /// <summary>
+        /// The FIRST reason only, for the caption under a node on the board.
+        ///
+        /// <para>The board and the card answer different questions and this is where that got
+        /// decided. Captured live, the full composite — "Level 6 · Needs Dash" — wrapped to
+        /// three lines under every node and the block fell across the socket below it; before
+        /// that, unwrapped, three captions printed on top of each other. One short phrase fits
+        /// on one line at a readable size, and it is the most structural of the reasons because
+        /// the model collects them in the order the player can act on. The card, which has a
+        /// column to itself, keeps the whole list.</para>
+        /// </summary>
+        private string ShortReasonOf(SpellTree tree, SpellNode node)
+        {
+            if (node == null || grimoire == null) return string.Empty;
+            if (grimoire.IsNodeLearned(node)) return GrimoireText.Known;
+
+            _locks.Clear();
+            if (grimoire.CollectLockReasons(tree, node, playerLevel, _locks))
+                return GrimoireText.Available;
+
+            return _locks.Count > 0 ? GrimoireText.Reason(_locks[0]) : string.Empty;
         }
 
         /// <summary>Test seam — the active school as text, one line per node.</summary>
@@ -102,7 +230,7 @@ namespace Valkur.Gameplay.HUD
             var tree = ActiveTree();
             if (tree == null) return string.Empty;
 
-            var sb = new System.Text.StringBuilder();
+            var sb = new StringBuilder();
             foreach (var node in tree.Nodes)
             {
                 if (node == null) continue;
@@ -110,218 +238,29 @@ namespace Valkur.Gameplay.HUD
                 sb.Append(" (");
                 sb.Append(grimoire.ResolveCost(tree, node));
                 sb.Append("): ");
-                sb.Append(StatusFor(tree, node));
+                sb.Append(ReasonOf(tree, node));
                 sb.Append('\n');
             }
             return sb.ToString();
         }
 
-        private string StatusFor(SpellTree tree, SpellNode node)
+        /// <summary>
+        /// Records what every node in the active school looks like RIGHT NOW, without emitting.
+        /// Called when the panel opens and when the school changes, so the first refresh after
+        /// either does not read a whole school as "everything just happened".
+        /// </summary>
+        private void SeedStateCache()
         {
-            if (node == null) return "?";
-            if (grimoire.IsNodeLearned(node)) return "Known";
-            if (grimoire.CanLearn(tree, node, playerLevel, out string reason)) return "Available";
-            return "Locked: " + reason;
-        }
-
-        private void Refresh()
-        {
-            if (_listContainer == null || grimoire == null) return;
-
-            RebuildTabs();
-
-            for (int i = _listContainer.transform.childCount - 1; i >= 0; i--)
-                Object.Destroy(_listContainer.transform.GetChild(i).gameObject);
+            _lastStates.Clear();
+            _lastPoints = grimoire != null ? grimoire.AvailablePoints : -1;
 
             var tree = ActiveTree();
-            if (tree == null)
-            {
-                if (_headerLabel != null)
-                    _headerLabel.text = "Grimoire   —   no schools loaded";
-                return;
-            }
-
-            if (_headerLabel != null)
-            {
-                string affinity = tree.HasAffinity(grimoire.ClassKey)
-                    ? "affinity"
-                    : $"off-affinity ×{tree.offAffinityCostMultiplier:0.#}";
-                _headerLabel.text = $"{tree.displayName}  ({affinity})   —   " +
-                                    $"{grimoire.AvailablePoints} arcane point(s)";
-            }
-
+            if (tree == null) return;
             foreach (var node in tree.Nodes)
             {
-                if (node == null) continue;
-                BuildRow(tree, node);
+                if (node == null || string.IsNullOrEmpty(node.nodeId)) continue;
+                _lastStates[node.nodeId] = StateOf(tree, node);
             }
-        }
-
-        private void RebuildTabs()
-        {
-            if (_tabStrip == null) return;
-
-            for (int i = _tabStrip.transform.childCount - 1; i >= 0; i--)
-                Object.Destroy(_tabStrip.transform.GetChild(i).gameObject);
-
-            var trees = grimoire.Trees;
-            for (int i = 0; i < trees.Count; i++)
-            {
-                var tree = trees[i];
-                if (tree == null) continue;
-
-                var tabGo = new GameObject("Tab_" + tree.schoolKey);
-                tabGo.transform.SetParent(_tabStrip.transform, false);
-                var img = tabGo.AddComponent<Image>();
-                // The school's own accent, dimmed when it is not the open one. Colour is
-                // what makes eight tabs scannable at a glance; the label alone is not.
-                img.color = i == _activeSchool
-                    ? new Color(tree.accent.r, tree.accent.g, tree.accent.b, 0.65f)
-                    : new Color(tree.accent.r * 0.35f, tree.accent.g * 0.35f, tree.accent.b * 0.35f, 0.5f);
-
-                var btn = tabGo.AddComponent<Button>();
-                int captured = i;
-                btn.onClick.AddListener(() => SelectSchool(captured));
-
-                var labelGo = new GameObject("Label");
-                labelGo.transform.SetParent(tabGo.transform, false);
-                var labelRt = labelGo.AddComponent<RectTransform>();
-                labelRt.anchorMin = Vector2.zero;
-                labelRt.anchorMax = Vector2.one;
-                labelRt.offsetMin = labelRt.offsetMax = Vector2.zero;
-                var label = labelGo.AddComponent<Text>();
-                label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                label.alignment = TextAnchor.MiddleCenter;
-                label.color = Color.white;
-                label.fontSize = 12;
-                label.text = tree.displayName;
-            }
-        }
-
-        private void BuildRow(SpellTree tree, SpellNode node)
-        {
-            var row = new GameObject("Row_" + node.nodeId);
-            row.transform.SetParent(_listContainer.transform, false);
-            var rt = row.AddComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(0, 30);
-
-            var rowImg = row.AddComponent<Image>();
-            rowImg.color = grimoire.IsNodeLearned(node)
-                ? new Color(0.12f, 0.18f, 0.14f, 0.85f)
-                : new Color(0.10f, 0.10f, 0.12f, 0.85f);
-
-            var labelGo = new GameObject("Label");
-            labelGo.transform.SetParent(row.transform, false);
-            var labelRt = labelGo.AddComponent<RectTransform>();
-            labelRt.anchorMin = new Vector2(0f, 0f);
-            labelRt.anchorMax = new Vector2(0.74f, 1f);
-            labelRt.offsetMin = new Vector2(8, 3);
-            labelRt.offsetMax = new Vector2(-4, -3);
-            var label = labelGo.AddComponent<Text>();
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            label.alignment = TextAnchor.MiddleLeft;
-            label.color = Color.white;
-            label.fontSize = 13;
-
-            string effects = node.DescribeEffects();
-            label.text = $"{node.ResolveDisplayName()} ({grimoire.ResolveCost(tree, node)} AP) — " +
-                         $"{StatusFor(tree, node)}" +
-                         (string.IsNullOrEmpty(effects) ? string.Empty : $"  ·  {effects}");
-
-            if (!grimoire.CanLearn(tree, node, playerLevel, out _)) return;
-
-            var btnGo = new GameObject("LearnBtn");
-            btnGo.transform.SetParent(row.transform, false);
-            var btnRt = btnGo.AddComponent<RectTransform>();
-            btnRt.anchorMin = new Vector2(0.76f, 0.12f);
-            btnRt.anchorMax = new Vector2(0.98f, 0.88f);
-            btnRt.offsetMin = btnRt.offsetMax = Vector2.zero;
-            var btnImg = btnGo.AddComponent<Image>();
-            btnImg.color = new Color(tree.accent.r, tree.accent.g, tree.accent.b, 0.85f);
-            var btn = btnGo.AddComponent<Button>();
-
-            var btnLabelGo = new GameObject("BtnLabel");
-            btnLabelGo.transform.SetParent(btnGo.transform, false);
-            var btnLabelRt = btnLabelGo.AddComponent<RectTransform>();
-            btnLabelRt.anchorMin = Vector2.zero;
-            btnLabelRt.anchorMax = Vector2.one;
-            btnLabelRt.offsetMin = btnLabelRt.offsetMax = Vector2.zero;
-            var btnLabel = btnLabelGo.AddComponent<Text>();
-            btnLabel.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            btnLabel.alignment = TextAnchor.MiddleCenter;
-            btnLabel.color = Color.black;
-            btnLabel.fontSize = 13;
-            btnLabel.text = "Learn";
-
-            var capturedTree = tree;
-            var capturedNode = node;
-            btn.onClick.AddListener(() => grimoire.TryLearn(capturedTree, capturedNode, playerLevel, out _));
-        }
-
-        public void EnsureBuilt()
-        {
-            if (_canvas != null) return;
-
-            _root = new GameObject("SpellTreeHUD_Root");
-            _root.transform.SetParent(transform, false);
-
-            _canvas = _root.AddComponent<Canvas>();
-            _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            _canvas.sortingOrder = 60;
-            _root.AddComponent<CanvasScaler>().uiScaleMode =
-                CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            _root.AddComponent<GraphicRaycaster>();
-
-            var panel = new GameObject("Panel");
-            panel.transform.SetParent(_root.transform, false);
-            var panelRt = panel.AddComponent<RectTransform>();
-            panelRt.anchorMin = new Vector2(0.2f, 0.15f);
-            panelRt.anchorMax = new Vector2(0.8f, 0.85f);
-            panelRt.offsetMin = panelRt.offsetMax = Vector2.zero;
-            var panelImg = panel.AddComponent<Image>();
-            panelImg.color = new Color(0f, 0f, 0f, 0.85f);
-
-            var header = new GameObject("Header");
-            header.transform.SetParent(panel.transform, false);
-            var hdrRt = header.AddComponent<RectTransform>();
-            hdrRt.anchorMin = new Vector2(0, 0.93f);
-            hdrRt.anchorMax = new Vector2(1, 1);
-            hdrRt.offsetMin = hdrRt.offsetMax = Vector2.zero;
-            _headerLabel = header.AddComponent<Text>();
-            _headerLabel.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            _headerLabel.alignment = TextAnchor.MiddleCenter;
-            _headerLabel.color = Color.white;
-            _headerLabel.fontSize = 17;
-            _headerLabel.fontStyle = FontStyle.Bold;
-            _headerLabel.text = "Grimoire";
-
-            _tabStrip = new GameObject("Tabs");
-            _tabStrip.transform.SetParent(panel.transform, false);
-            var tabsRt = _tabStrip.AddComponent<RectTransform>();
-            tabsRt.anchorMin = new Vector2(0.03f, 0.855f);
-            tabsRt.anchorMax = new Vector2(0.97f, 0.925f);
-            tabsRt.offsetMin = tabsRt.offsetMax = Vector2.zero;
-            var hlg = _tabStrip.AddComponent<HorizontalLayoutGroup>();
-            hlg.spacing = 3;
-            hlg.childForceExpandWidth = true;
-            hlg.childForceExpandHeight = true;
-            hlg.childControlWidth = true;
-            hlg.childControlHeight = true;
-
-            _listContainer = new GameObject("List");
-            _listContainer.transform.SetParent(panel.transform, false);
-            var listRt = _listContainer.AddComponent<RectTransform>();
-            listRt.anchorMin = new Vector2(0.03f, 0.03f);
-            listRt.anchorMax = new Vector2(0.97f, 0.845f);
-            listRt.offsetMin = listRt.offsetMax = Vector2.zero;
-            var vlg = _listContainer.AddComponent<VerticalLayoutGroup>();
-            vlg.spacing = 3;
-            vlg.childForceExpandHeight = false;
-            vlg.childForceExpandWidth = true;
-            vlg.childControlHeight = false;
-            vlg.childControlWidth = true;
-
-            _root.SetActive(false);
         }
     }
 }
