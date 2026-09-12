@@ -264,6 +264,14 @@
                     "interactions": ""
                 },
                 {
+                    "name": "SpellWeaponToggleGreatsword",
+                    "type": "Button",
+                    "id": "a1b2c3d4-0002-0033-0002-000000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
                     "name": "Pause",
                     "type": "Button",
                     "id": "a1b2c3d4-0002-000c-0001-000000000001",
@@ -802,6 +810,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "SpellWeaponToggle",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1000033-0002-0001-0001-000000000001",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SpellWeaponToggleGreatsword",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

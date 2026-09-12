@@ -65,6 +65,20 @@ namespace Valkur.Gameplay.Spells
                 return;
             }
 
+            // A loadout this CHARACTER does not have is not a data bug and must not be
+            // reported as one. Every weapon-draw verb is innate (see
+            // SpellTreeSeeds.InnateSpellKeys) because a draw is a costume rather than power,
+            // so all six classes know all of them and only the valkyrie owns a greatsword —
+            // five of six casting the greatsword verb is the NORMAL case. Without this check
+            // it reaches PlayerLoadoutController.SetLoadout, whose warning exists for a
+            // genuinely wrong loadoutKey and would fire on every one of those casts.
+            //
+            // The two warnings above stay: an empty loadoutKey can never work for anybody,
+            // and a character with no loadouts at all being handed this spell is a catalog
+            // decision worth saying out loud.
+            if (!controller.HasLoadout(spell.loadoutKey))
+                return;
+
             // The toggle owns everything from here: which direction the swap goes, when its
             // art lands, and the flare that covers the cut. A refused swap (unknown key)
             // returns false and produces no flare, so the spell cannot look like it worked

@@ -241,10 +241,26 @@ namespace Valkur.Tests.EditMode.Game.Data
             // The cap still means what it says. What it guards is the grimoire being bypassed,
             // and a mouse button is not a purchase. If a SIXTH key appears, ask which control
             // needs it before raising this again.
-            Assert.LessOrEqual(_catalog.alwaysKnownSpellKeys.Length, 5,
+            //
+            // Raised 5 -> 6 for `weapon_toggle_greatsword`, and it answers that question: it is
+            // not CONTENT either, it is the second half of a control that is already innate.
+            // `weapon_toggle` has been in the kit since it existed, on the argument that a
+            // weapon draw is a costume rather than power — and a WeaponLoadout spell names
+            // exactly ONE loadout key, so one verb cannot reach a character's second weapon
+            // set. The valkyrie (wave14) is the first with two: without this key her greatsword
+            // loadout — idle, walk, run, five attacks and its own draw, nine sheets of art — is
+            // unreachable in play, while the sword-and-shield half works for free because it is
+            // keyed `armed`, which is what the existing verb names. Charging an arcane point to
+            // hold a sword the character already owns is the thing the `weapon_toggle` entry
+            // itself rejected.
+            //
+            // The shape to keep: one innate verb per WEAPON-DRAW key, and nothing else joins on
+            // that argument. A SEVENTH entry needs either a third weapon set or a reason of the
+            // mouse buttons' weight.
+            Assert.LessOrEqual(_catalog.alwaysKnownSpellKeys.Length, 6,
                 "The starting kit is the only content the grimoire cannot charge for. Keep " +
-                "it the size of a tutorial. Three of the five are the mouse buttons; a new " +
-                "entry needs a reason of that weight.");
+                "it the size of a tutorial. Three of the six are the mouse buttons and two " +
+                "are weapon draws; a new entry needs a reason of that weight.");
         }
     }
 }

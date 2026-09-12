@@ -330,6 +330,14 @@ namespace Valkur.Core.Input
             AddSpell(list, "SpellSummonBarbol",      "summon_barbol",       "Invocar barbol");
             AddSpell(list, "SpellWallIce",           "wall_ice",            "Muro de hielo");
             AddSpell(list, "SpellWeaponToggle",      "weapon_toggle",       "Guardar / sacar arma");
+            // A SECOND weapon-draw verb, because a WeaponLoadout spell names exactly one
+            // loadout key and the valkyrie carries two weapon sets: `weapon_toggle` draws
+            // whatever a character keys `armed` (her sword and shield), this one draws her
+            // greatsword. It ships UNBOUND in the asset -- an empty binding slot, the same
+            // shape the retired editor toggles use -- so it is assignable in the Controls
+            // editor and steals no key from a player who will never own a greatsword.
+            AddSpell(list, "SpellWeaponToggleGreatsword", "weapon_toggle_greatsword",
+                     "Sacar mandoble");
 
             // ── UI ───────────────────────────────────────────────────────────
             // The UI map is always enabled and is what menus, the EventSystem and every panel

@@ -12,15 +12,17 @@ namespace Valkur.Editor
     /// and binds resulting sprites into PlayerDefinition.assetConfig sheet lists.
     /// Baseline scope: players with idle + walk animations.
     ///
-    /// This owns only <b>mague</b> and <b>valkyrie</b> now. dwarf, barbarian and elven moved
-    /// to <see cref="Valkur.Editor.Players.PlayerFramesImporter"/>, which binds one
-    /// tightly-cropped PNG per frame out of side-view art mirrored into two directions —
-    /// there is no <c>&lt;key&gt;_idle.png</c> strip left for them to slice, and their strips
-    /// were deleted rather than left to rot beside the art that replaced them.
+    /// This owns <b>nothing on the shipped roster any more</b>. All six playable characters
+    /// moved to <see cref="Valkur.Editor.Players.PlayerFramesImporter"/>, which binds one
+    /// tightly-cropped PNG per frame out of side-view art mirrored into two directions; the
+    /// valkyrie was the last, in wave14. It is kept because it is the only tool that can
+    /// bind an 8-direction strip, and a character may arrive that way again.
     ///
-    /// Running this is still safe for the migrated three: <see cref="BindClassSheets"/> finds
-    /// no sheets, warns, and returns false WITHOUT writing, so it cannot blank a config the
-    /// other importer owns. Do not "fix" that warning by re-adding strips.
+    /// Which pipeline owns a character is decided per run by <see cref="OwnedByFramesImporter"/>
+    /// from the shape of its art, NOT from a list here — see that method for the clobber it
+    /// closes. The dwarf's, the barbarian's and the elf's strips were deleted outright;
+    /// mague's and the valkyrie's are still on disk on purpose and are exactly why the check
+    /// has to exist.
     /// </summary>
     public static class PlayerCharacterAssetBinder
     {
@@ -56,6 +58,16 @@ namespace Valkur.Editor
                     continue;
                 }
 
+                if (OwnedByFramesImporter(classKey))
+                {
+                    // Not a warning: the migrated characters are the normal case now, and an
+                    // operator re-running this tool for one legacy character should not be
+                    // told five times that the others moved.
+                    Debug.Log($"[PlayerCharacterAssetBinder] Skipping '{classKey}': its art is " +
+                              "per-frame folders, so PlayerFramesImporter owns its assetConfig.");
+                    continue;
+                }
+
                 bool changed = BindClassSheets(playerDef, classKey, ref configuredSheets);
                 if (changed)
                 {
@@ -68,6 +80,36 @@ namespace Valkur.Editor
             AssetDatabase.Refresh();
 
             Debug.Log($"[PlayerCharacterAssetBinder] Updated {updatedDefs} PlayerDefinition assets. Configured/Reimported {configuredSheets} sheets.");
+        }
+
+        /// <summary>
+        /// Whether <see cref="Valkur.Editor.Players.PlayerFramesImporter"/> owns this
+        /// character's <c>assetConfig</c>, decided from the SHAPE OF ITS ART.
+        ///
+        /// <para>The two pipelines lay art out differently and cannot be mistaken for each
+        /// other: this one slices flat <c>&lt;key&gt;_idle.png</c> strips sitting directly in
+        /// the character folder, and the frames importer writes one SUBFOLDER per animation
+        /// state holding one tightly-cropped PNG per frame. So "does this folder contain
+        /// subfolders" is the question, and it cannot go stale the way a hand-kept list of
+        /// migrated characters does.</para>
+        ///
+        /// <para>It closes a real clobber, not a hypothetical one. The class doc used to say
+        /// running this was safe for the migrated characters because <see cref="BindClassSheets"/>
+        /// finds no strips, warns and returns without writing — true only while the strips are
+        /// GONE. The dwarf's, the barbarian's and the elf's were deleted; mague's and the
+        /// valkyrie's are still on disk, kept because <c>CharacterSpriteQualityTests</c> reads
+        /// them as its import-policy sample. So for exactly those two this tool would have
+        /// found the legacy strips, bound them, and overwritten a wave12 and a wave14 config
+        /// with three 8-direction sheets — silently, and only when somebody re-ran an
+        /// unrelated setup menu item.</para>
+        /// </summary>
+        private static bool OwnedByFramesImporter(string classKey)
+        {
+            string folder = $"{CharactersRoot}/{classKey}";
+            string abs = System.IO.Path.GetFullPath(System.IO.Path.Combine(
+                Application.dataPath, "..", folder));
+            return System.IO.Directory.Exists(abs) &&
+                   System.IO.Directory.GetDirectories(abs).Length > 0;
         }
 
         private static bool BindClassSheets(PlayerDefinition playerDef, string classKey, ref int configuredSheets)

@@ -410,6 +410,32 @@ SCALE_OVERRIDE: dict[str, float] = {
     "vampire_knockdown_recovery": 0.947,  # face 39.0 -> 426, f0 reads 404
     "vampire_spellcasting_1": 0.854,      # face 39.0 -> 426, f0 reads 364
     "vampire_running_attack": 0.740,      # face 34.5 -> 377, f0 reads 279 (opens airborne)
+
+    # -- valkyrie wave14 -----------------------------------------------------
+    # ONE entry out of forty-five sheets, which is the whole report: measured per frame,
+    # every other sheet's frame 0 sits within 8% of its own median foot-to-crown, so the
+    # automatic per-sheet reference is already right and the 266-653px spread it reads is
+    # ZOOM, which normalising removes. Only the leaping greatsword attack has no neutral
+    # frame at all -- it opens on the crouch-and-launch and ends on the recovery, reading
+    # 266 303 450 565 352 428 258 238 -- so there is no frame to point REFERENCE_FRAME at
+    # and the multiplier is the only tool left.
+    #
+    # 0.66 is where two independent measurements agree. AREA as a zoom proxy: across the
+    # eight greatsword sheets whose frame 0 IS standing, f0 / sqrt(solid area) lands at
+    # 2.098 (spread 1.768-2.236), and this sheet's own ratio is 1.389 -- far below all
+    # eight, which is what "frame 0 is a crouch" looks like in the numbers; that fit puts
+    # its standing height at 402px and the override at 0.662. FACE height rendered at
+    # scale: the reference greatsword idle draws a 22px face on a 473px body, i.e. 5.35px
+    # once scaled to 115, and this sheet's 19px face matches that at 0.651.
+    #
+    # The FACE method the vampire is calibrated with was tried as the primary and REJECTED
+    # on its own control, recorded so nobody re-derives it: this character's bangs cover
+    # her forehead in profile and not front-on, so the visible skin blob is 22px in profile
+    # and 50px front-on for the same head, and the controls that must answer 1.000 came
+    # back 0.769 (walk), 1.241 (greatsword walk) and 1.953 (greatsword run). It is usable
+    # only as a relative check between two sheets of the same yaw, which is what the second
+    # measurement above is.
+    "valkyrie_greatsword_attack_6": 0.66,
 }
 
 
@@ -863,6 +889,168 @@ PLAYERS = {
                                             "so the state reads from standing to standing",
         },
     },
+    # The last character off the legacy 8-direction strips, and the first with TWO
+    # weapon loadouts. Forty-five sheets, every one of them shipped -- which is the
+    # constraint this entry was built around and the reason its cast lists are long.
+    #
+    # Three weapon sets are drawn: a sword-and-shield, a two-handed greatsword, and a
+    # lone sword with no shield. Only the first two carry locomotion, so only those two
+    # are loadouts; the lone sword's two sheets are pinned to the slash family from the
+    # UNARMED lists, which is exactly what the dwarf does with `armed_slash` -- a slash
+    # is always swung with a weapon whether or not a loadout is worn.
+    #
+    # The sword-and-shield set is keyed `armed` rather than `shield` on purpose: that is
+    # the key the shipped `weapon_toggle` spell names, and it is what makes this
+    # character's signature loadout reachable with no new data at all. The greatsword
+    # needs its own verb, and `PlayerLoadoutController.ToggleLoadout` was already built
+    # for it ("a second weapon added later needs no new verb" -- toggling to a different
+    # key while one is worn puts the new one on).
+    "valkyrie": {
+        "source": "valkyrie_wave14",
+        "states": {
+            "idle":    "valkyrie_idle",
+            "walk":    "valkyrie_walk",
+            "chase":   "valkyrie_run",
+            "cast":    "valkyrie_spellcast_1",
+            "attack":  "valkyrie_punch",
+            "damage":  "valkyrie_hit_reaction",
+            "death":   "valkyrie_die",
+            "recover": "valkyrie_knockdown_recovery",
+        },
+        "state_variants": {
+            "recover": ["valkyrie_knockdown_recovery_2"],
+        },
+        # Rotated per swing by PlayerController.NextVariant, so all six are reachable
+        # with no reservation at all; index 0 is the fallback a picker lands on.
+        # `sweep` is the odd one and is named for what it draws rather than for the
+        # sheet it came from: a low crouching strike with the lead hand planted on the
+        # floor, which is not a punch and would have shipped as `punch_2`.
+        "variants": [
+            ("punch",        "valkyrie_punch"),
+            ("punch_combo",  "valkyrie_punch_combo"),
+            ("sweep",        "valkyrie_sweep"),
+            ("kick",         "valkyrie_kick"),
+            ("ground_smash", "valkyrie_ground_smash"),
+            # The lone sword, swung bare-handed. Reserved for the one slash that runs
+            # through AnimState.Attack rather than AnimState.Cast.
+            ("sword_slash",  "valkyrie_sword_attack", ["slash_regular"]),
+        ],
+        # spell_1..spell_5 are deliberately UNRESERVED, the way the barbarian's and the
+        # elf's are: unreserved cast variants are what NextVariant rotates through, so
+        # five authored spellcasts cover every spell the player owns instead of five
+        # named ones. Everything below them IS reserved, and that is what keeps a
+        # weapon-draw out of the rotation -- an unreserved equip would play on an
+        # ordinary fireball.
+        "cast_variants": [
+            ("spell_1", "valkyrie_spellcast_1"),
+            ("spell_2", "valkyrie_spellcast_2"),
+            ("spell_3", "valkyrie_spellcast_3"),
+            ("spell_4", "valkyrie_spellcast_4"),
+            ("spell_5", "valkyrie_spellcast_5"),
+            ("charge",  "valkyrie_charging_sprint", ["dash"], {"speed": 4.0, "hold": True}),
+            ("sword_slash_2", "valkyrie_sword_attack_2",
+             ["slash", "slash_cleave", "slash_combo", "slash_stab"]),
+            # These two are the SECOND take on each weapon draw, and they are pinned to a
+            # probe rather than to the toggle because the toggle cannot reach them.
+            #
+            # The obvious arrangement -- draw in the unarmed list, stow inside the loadout --
+            # was tried first and is WRONG, and it took casting the spell in a running game to
+            # see it. `ToggleLoadout` applies `SetLoadout` IMMEDIATELY on a draw, so by the
+            # time `TriggerCastAnimation` resolves the variant the character is already ARMED:
+            # the loadout's list answers, and the loadout's take plays in BOTH directions --
+            # forward for the draw, reversed for the stow. Measured live, a draw from empty
+            # hands rendered `valkyrie_shield_equip_2` and `valkyrie_greatsword_equip_2`, and
+            # take 1 never played at all. Every structural check passed while that was true:
+            # both takes existed, both were reserved, no null sprites, whole suite green.
+            #
+            # So the toggle is claimed INSIDE each loadout (see below) where it is actually
+            # read, and these keep the animations reachable the only other way there is.
+            ("shield_equip",     "valkyrie_shield_equip",
+             ["anim_valkyrie_shield_equip"]),
+            ("greatsword_equip", "valkyrie_greatsword_equip",
+             ["anim_valkyrie_greatsword_equip"]),
+            # Five further takes on the same two draws. They exist, they are distinct
+            # drawings, and there is no gameplay selector left for them -- one spell may
+            # be claimed by one variant, so `weapon_toggle` is spent. Pinned to an
+            # AnimationProbe each: inert spells whose whole job is that an animation can
+            # be selected and watched, which is what SpellType.AnimationProbe was added
+            # for. Reserving them also keeps them OUT of the unreserved rotation, so
+            # none of them can play on a spell that is not asking for it.
+            ("shield_equip_3", "valkyrie_shield_equip_3", ["anim_valkyrie_shield_equip_3"]),
+            ("shield_equip_4", "valkyrie_shield_equip_4", ["anim_valkyrie_shield_equip_4"]),
+            ("shield_equip_5", "valkyrie_shield_equip_5", ["anim_valkyrie_shield_equip_5"]),
+            ("greatsword_equip_3", "valkyrie_greatsword_equip_3",
+             ["anim_valkyrie_greatsword_equip_3"]),
+            ("greatsword_equip_4", "valkyrie_greatsword_equip_4",
+             ["anim_valkyrie_greatsword_equip_4"]),
+        ],
+        "loadouts": [
+            # `cast` points at an ATTACK sheet in both loadouts, and it has to point
+            # somewhere: a loadout that names no cast falls back to the BASE cast, which
+            # is drawn empty-handed, so the weapon would vanish for the length of every
+            # spell the player casts while holding it. The dragon's `cast` points at its
+            # attack sheet for the same reason. The overhead raise is the frame of each
+            # set that reads least like a swing and most like a wind-up.
+            ("armed", {
+                "idle":   "valkyrie_shield_idle",
+                "walk":   "valkyrie_shield_walk",
+                "chase":  "valkyrie_shield_run",
+                "attack": "valkyrie_shield_attack",
+                "cast":   "valkyrie_shield_attack_3",
+            }, {
+                "variants": [
+                    ("shield_attack",   "valkyrie_shield_attack"),
+                    ("shield_attack_2", "valkyrie_shield_attack_2"),
+                    ("shield_attack_3", "valkyrie_shield_attack_3"),
+                    ("shield_attack_4", "valkyrie_shield_attack_4"),
+                ],
+                "cast_variants": [
+                    # The toggle is claimed HERE and not in the unarmed list, because this
+                    # is the list that is actually read: a draw applies the loadout before
+                    # the animation resolves, so this variant plays forward for the draw and
+                    # reversed for the stow. Named `equip` rather than `stow` for that
+                    # reason -- it is both halves of the verb, not the second one.
+                    ("shield_equip_2",  "valkyrie_shield_equip_2", ["weapon_toggle"]),
+                    ("shield_slash", "valkyrie_shield_attack_2",
+                     ["slash", "slash_cleave", "slash_combo", "slash_stab"]),
+                ],
+            }),
+            ("greatsword", {
+                "idle":   "valkyrie_greatsword_idle",
+                "walk":   "valkyrie_greatsword_walk",
+                "chase":  "valkyrie_greatsword_run",
+                "attack": "valkyrie_greatsword_attack",
+                "cast":   "valkyrie_greatsword_attack_3",
+            }, {
+                "variants": [
+                    ("greatsword_attack",   "valkyrie_greatsword_attack"),
+                    ("greatsword_attack_3", "valkyrie_greatsword_attack_3"),
+                    ("greatsword_attack_4", "valkyrie_greatsword_attack_4"),
+                    ("greatsword_attack_5", "valkyrie_greatsword_attack_5"),
+                    ("greatsword_attack_6", "valkyrie_greatsword_attack_6"),
+                ],
+                "cast_variants": [
+                    # Same as the shield's: this is the take the toggle actually plays,
+                    # in both directions.
+                    ("greatsword_equip_2",  "valkyrie_greatsword_equip_2",
+                     ["weapon_toggle_greatsword"]),
+                    ("greatsword_slash", "valkyrie_greatsword_attack_2",
+                     ["slash", "slash_cleave", "slash_combo", "slash_stab"]),
+                ],
+            }),
+        ],
+        "staged": {
+            "valkyrie_equip_combo / _2 / _3": "SPLIT rather than held back. Each drew two "
+                        "independent animations, one per row -- the greatsword draw on top "
+                        "and the sword-and-shield draw below -- and one sheet is one "
+                        "animation everywhere downstream. The six halves ship as "
+                        "greatsword_equip_2..4 and shield_equip_3..5; the originals are kept "
+                        "in staging/players/valkyrie_wave14/_combined_src/",
+            "legacy valkyrie_idle / _walking / _casting": "the previous 8-direction 128px "
+                        "strips, superseded wholesale by this wave. Kept on disk because "
+                        "CharacterSpriteQualityTests reads them as its import-policy sample",
+        },
+    },
 }
 
 
@@ -1038,10 +1226,21 @@ def build_state(slices_root: str, stem: str):
     sheet_h, sheet_w = sheet.shape[:2]
     items = manifest["items"]
 
-    grid = infer_grid(items, sheet_h)
-    if grid is None:
-        raise SystemExit(f"{stem}: rows came out ragged -- not an even grid")
-    rows, cols = grid
+    # A slicer that already knows the grid says so, and then it is not inferred. The
+    # inference clusters item centres by their vertical gaps, which is the right answer
+    # for a sheet whose layout has to be discovered and a needless failure mode for one
+    # whose slicer declared and CHECKED it (wave14). Both are still (rows, cols).
+    declared_grid = manifest.get("grid")
+    if declared_grid:
+        cols, rows = int(declared_grid[0]), int(declared_grid[1])
+        if rows * cols != len(items):
+            raise SystemExit(f"{stem}: manifest declares a {cols}x{rows} grid but "
+                             f"carries {len(items)} items")
+    else:
+        grid = infer_grid(items, sheet_h)
+        if grid is None:
+            raise SystemExit(f"{stem}: rows came out ragged -- not an even grid")
+        rows, cols = grid
     cell_w, cell_h = sheet_w / cols, sheet_h / rows
 
     frames = []
@@ -1066,14 +1265,33 @@ def build_state(slices_root: str, stem: str):
         # to the frame's own object does, and it runs BEFORE the geometry below,
         # because a neighbour's blade lying at boot height would otherwise drag the
         # ground line down with it.
-        patch = sheet[y0:y1, x0:x1].copy()
-        patch[..., 3] = np.where(patch[..., 3] < ALPHA_KEEP, 0, patch[..., 3])
-        patch, stray = own_object_only(
-            patch,
-            (col * cell_w, (col + 1) * cell_w, row * cell_h, (row + 1) * cell_h),
-            x0, y0)
-        if stray:
-            strays.append((index, stray))
+        # A slicer may hand over a patch whose OWNERSHIP IS ALREADY RESOLVED, and when it
+        # does, re-deciding it here would be worse rather than merely redundant.
+        # ``own_object_only`` keeps the largest core in the box, which is only the right
+        # frame while the boxes are roughly cell-sized; wave14's valkyrie holds a
+        # greatsword longer than a cell, so her boxes overlap by more than half of one and
+        # the largest core inside a box is sometimes the NEIGHBOUR. The patch is the box in
+        # sheet coordinates with foreign ink erased -- not trimmed to its own alpha, which
+        # is the thing this file's docstring refuses, because a per-frame trim is what makes
+        # a walk jitter.
+        patch_rel = item.get("patch")
+        if patch_rel:
+            patch = np.asarray(Image.open(os.path.join(slices_root, patch_rel))
+                               .convert("RGBA")).copy()
+            if patch.shape[:2] != (y1 - y0, x1 - x0):
+                raise SystemExit(f"{stem}#{index}: patch is {patch.shape[1]}x"
+                                 f"{patch.shape[0]} but its sheet_box is "
+                                 f"{x1 - x0}x{y1 - y0}")
+            patch[..., 3] = np.where(patch[..., 3] < ALPHA_KEEP, 0, patch[..., 3])
+        else:
+            patch = sheet[y0:y1, x0:x1].copy()
+            patch[..., 3] = np.where(patch[..., 3] < ALPHA_KEEP, 0, patch[..., 3])
+            patch, stray = own_object_only(
+                patch,
+                (col * cell_w, (col + 1) * cell_w, row * cell_h, (row + 1) * cell_h),
+                x0, y0)
+            if stray:
+                strays.append((index, stray))
         bb = body_box(patch)
         feet = foot_line(patch)
         if bb is None or feet is None:

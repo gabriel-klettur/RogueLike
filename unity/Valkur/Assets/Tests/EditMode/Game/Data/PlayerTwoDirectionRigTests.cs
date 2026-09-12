@@ -29,8 +29,18 @@ namespace Valkur.Tests.EditMode.Game.Data
     {
         private const string PlayerCatalog = "Assets/_Project/Data/Catalogs/Players";
 
-        /// <summary>The players built by wave3. mague and valkyrie are still 8-directional.</summary>
-        private static readonly string[] TwoDirectionPlayers = { "dwarf", "barbarian", "elven" };
+        /// <summary>
+        /// The players built by the wave3 two-direction pipeline — which is now all six, the
+        /// valkyrie having been the last one on the legacy 8-direction strips (wave14).
+        ///
+        /// <para>mague had been missing from this list since wave12 moved it, so it was
+        /// shipping an unchecked rig; adding it back is the same edit as adding the valkyrie
+        /// and not a separate decision. The list is kept explicit rather than derived from
+        /// the catalog so a character deliberately left on the legacy pipeline can be, and
+        /// the omission has to be written down.</para>
+        /// </summary>
+        private static readonly string[] TwoDirectionPlayers =
+            { "dwarf", "barbarian", "elven", "mague", "valkyrie", "vampire" };
 
         /// <summary>
         /// Bucket order as <c>DirectionalAnimator.BuildEightDirectionalSet</c> slices a linear

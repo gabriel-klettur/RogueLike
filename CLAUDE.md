@@ -2438,13 +2438,15 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
 
 ## Player character pipeline (2 directions)
 
-`dwarf`, `barbarian`, `elven`, `vampire` and `mague` are built from **side-view art drawn in
-ONE direction**, and mirrored. Which direction is a per-sheet fact to be measured, not
-assumed — wave4 faces west, wave5 faces east, and every one of wave12's thirty-one mague
-sheets faces west. Only `valkyrie` still runs on the legacy 8-direction strips. The two
-pipelines coexist on purpose and have different owners:
+**All six playable characters** are built from **side-view art drawn in ONE direction**, and
+mirrored. Which direction is a per-sheet fact to be measured, not assumed — wave4 faces west,
+wave5 faces east, every one of wave12's thirty-one mague sheets faces west, and all
+forty-five of wave14's valkyrie sheets face west. The valkyrie was the last one on the legacy
+8-direction strips and moved in wave14, so the legacy column below now describes a pipeline
+with **no character on it**; it is kept because it is the only thing that can bind a
+128px-cell strip, and a character may arrive that way again.
 
-| | wave3 (dwarf, barbarian, elven, vampire, mague) | legacy (valkyrie) |
+| | wave3 (all six) | legacy (nobody) |
 |---|---|---|
 | Source | `staging/players/<char>/` (gitignored, repo root); elven is `elf_wave4/` **plus `elf_wave5/`**, dwarf is `knight_wave4/` **plus `knight_wave4_armed/`** | `Art/Characters/<key>/<key>_<state>.png` |
 | Cutter | `tools/atlas/wave3/build_player_frames.py` | — |
@@ -2932,6 +2934,154 @@ resliced without its `--config` and quietly reshipped.
   `GrayscaleDeath` is what sells the death. `staging/players/` also holds a full unshipped
   sword-and-shield loadout for the knight and an axe-less one for the barbarian — see
   `stagedNotShipped` in the manifest for what was held back and why.
+
+### wave14: the valkyrie, and the first character with TWO weapon loadouts
+
+Forty-five sheets, **every one of them shipped** — the constraint the whole entry was built
+around, and the reason its cast lists are long. Three weapon sets are drawn: sword-and-shield,
+a two-handed greatsword, and a lone sword with no shield.
+
+```text
+staging/players/valkyrie_wave14/           the 42 renamed sheets (gitignored, OUTSIDE Assets)
+  _combined_src/                           the 3 two-row originals, kept as the record
+wave14/split_valkyrie_combos.py            2-row equip sheets -> one sheet per animation
+wave14/slice_valkyrie_sheets.py            grid-checked cut + per-frame cleaned patches
+wave3/build_player_frames.py --only valkyrie
+Valkur > Players > Seed Variant Spells     the spells the reservations name
+Valkur > Players > Import Frame Sheets
+Valkur > Characters > Build Character Atlas (Players)
+```
+
+- **The sheets ARE on a grid and the POSES TOUCH, which is the opposite of wave13's problem
+  and needs the opposite fix.** wave13's barbols overlap in bounding BOX and never touch, so
+  connected components work and grid-slicing is what fails. This character holds a greatsword
+  longer than a cell, so one pose's blade runs THROUGH the next pose's body and the two become
+  a single core: `slice_prop_sheet` returned five items for `shield_attack`'s eight frames,
+  with one 1150px box holding four poses, and twelve of the forty-five sheets came back short.
+  Two came back LONG — `spellcast_3`'s golden rune FX is drawn detached from the hand, the same
+  shape as `elf_archer_cast`'s summoned bow.
+- **The declared frame count is a CHECK, not the source of truth** — wave13's position, for
+  wave13's reason. A box about k cells wide holds k poses and gets k-1 cuts at the column of
+  LEAST SOLID INK inside ±30% of a cell; a fragment too small to be a pose joins whichever pose
+  is nearest. That turns forty-odd hand-written `drop`/`merge`/`split` indices into arithmetic,
+  and both failure directions stop the run by name instead of shipping a frame with two
+  characters in it or half of one.
+- **`build_state` honours a per-item `patch`, and on this wave it has to.** It normally
+  re-reads the SOURCE SHEET through each item's `sheet_box` and calls `own_object_only`, which
+  keeps the largest core in the box — correct only while the boxes are roughly cell-sized.
+  Here they overlap by more than half a cell, so the largest core inside a box is sometimes the
+  NEIGHBOUR, and `own_object_only` would keep the wrong character AND take this pose's own
+  sword with it whenever the sword is what bridges two frames. A `patch` is the box in sheet
+  coordinates with foreign ink erased — **not trimmed to its own alpha**, which is the thing
+  this pipeline's docstring refuses, because a per-frame trim is what makes a walk jitter.
+  Every other wave is byte-identical to before.
+- **A manifest may DECLARE its grid**, and then it is not inferred. `infer_grid` clusters item
+  centres by their vertical gaps, which is right for a layout that must be discovered and a
+  needless failure mode for one whose slicer already checked it.
+- **The three two-row equip sheets were SPLIT at source, and `die`/`spellcast_3` were not.**
+  Each equip combo draws two independent animations — greatsword draw on top, sword-and-shield
+  draw below — while `die` and `spellcast_3` genuinely read across their rows as one 8-frame
+  animation laid out 4x2. One sheet is one animation everywhere downstream, so a builder flag
+  saying "this sheet's rows are separate" would be a second, contradicting answer to what a row
+  means. The cut is `height // 2` and the script ASSERTS it lands inside the transparent band
+  between the rows (measured 498-642, 354-400, 510-670) rather than trusting it.
+- **Facing was measured off the HEAD and the automatic metric was thrown away.** All
+  forty-five face WEST: the face is on the left and the hair streams right in every profile
+  sheet, and `valkyrie_idle` is drawn front-on, where mirroring is a no-op. A hair-vs-skin
+  centroid metric flagged nine sheets as east and was wrong about all nine — front-on frames
+  are symmetric, so the sign of a near-zero margin is noise.
+- **The FACE method the vampire is calibrated with FAILS ITS OWN CONTROL on this art**, and
+  the cause is her bangs: they cover her forehead in profile and not front-on, so the visible
+  skin blob is 22px in profile and 50px front-on for one head. Controls that must answer 1.000
+  came back 0.769, 1.241 and 1.953. Recorded so nobody re-derives it — it is usable only as a
+  relative check between two sheets of the same yaw.
+- **ONE `SCALE_OVERRIDE` out of forty-five, and the test that found it is worth reusing:**
+  compare each sheet's frame-0 foot-to-crown against the MEDIAN of its own frames. Every sheet
+  but one sits within 8% of its own median, which says frame 0 is the neutral pose and the
+  automatic per-sheet reference is already right — the 266-653px spread it reads is ZOOM, which
+  normalising removes. Two apparent failures were false: `spellcast_5` reads 0.88 because its
+  arms-overhead frames inflate the median (frames 0/6/7 are 440/435/441, a plateau), and `die`
+  reads 2.14 because she collapses. The real one is `greatsword_attack_6`, a leap with no
+  neutral frame at all, at 0.66 — where an AREA proxy (f0 / sqrt(solid area), 2.098 across the
+  eight standing greatsword sheets against this sheet's own 1.389) and a face-height comparison
+  at matched scale agree to within 2%.
+- **She stays at 115px / PPU 64 = 1.797 world units, deliberately.** That is the dwarf's and
+  the barbarian's pair and it is what her legacy strips already rendered at, so no melee reach,
+  collider or camera lead moves, and she stays in `players.spriteatlas` (1185 sprites) instead
+  of joining the 256/96 characters and their uncompressed VRAM bill. The source carries 256px
+  on most sheets, so raising her is a real option — it is a world-height change plus an atlas
+  move, not a quality knob.
+- **Two loadouts, and the KEY of the first one is load-bearing.** The sword-and-shield set is
+  keyed **`armed`** because that is what the shipped `weapon_toggle` spell names, so her
+  signature loadout works with no new data at all. The greatsword needs its own verb —
+  `weapon_toggle_greatsword` — and `PlayerLoadoutController.ToggleLoadout` was already built
+  for it ("toggling to a DIFFERENT key while one is worn puts the new one on"). Its action
+  ships **UNBOUND** in `ValkurInputActions`, the same empty-binding shape the retired editor
+  toggles use, so it is assignable in the Controls editor and steals no key from the five
+  classes that will never own a greatsword.
+- **Every weapon-draw verb is INNATE, which is only safe because the executor refuses a
+  loadout the caster lacks.** A draw is a costume rather than power, so charging an arcane
+  point for it would be charging for art the player already owns — `weapon_toggle_greatsword`
+  joins `slash_regular` and `weapon_toggle` in `SpellTreeSeeds.InnateSpellKeys`. All six
+  classes therefore know it, and five of six casting it is the NORMAL case; without a
+  `HasLoadout` check in `WeaponLoadoutExecutor` it reaches `SetLoadout`, whose warning exists
+  for a genuinely wrong `loadoutKey`, and fires on every one of those casts.
+- **A loadout that names no `cast` shows the character casting EMPTY-HANDED.** Neither weapon
+  set has spellcast art, so both loadouts point `cast` at their own overhead-raise attack sheet
+  — the frame that reads least like a swing. The dragon's `cast` points at its attack sheet for
+  the same reason; falling back to the base unarmed cast would make the weapon vanish for the
+  length of every spell.
+- **THE TOGGLE IS CLAIMED INSIDE THE LOADOUT, NOT IN THE UNARMED LIST, AND THE OBVIOUS
+  ARRANGEMENT IS THE WRONG ONE.** "A draw is cast from empty hands, so it belongs to the
+  unarmed list; the stow is cast from inside the loadout" is true about the PLAYER and false
+  about the order the code runs in. `ToggleLoadout` applies `SetLoadout` IMMEDIATELY on a draw
+  — deliberately, because `ShouldPlayCastReversed` reads `SwappedThisFrame` in the same frame
+  the executor ran — so by the time `TriggerCastAnimation` resolves the variant the character
+  is already ARMED, the loadout's list answers, and the loadout's take plays in BOTH
+  directions: forward for the draw, reversed for the stow. Measured live, a draw from empty
+  hands rendered `valkyrie_shield_equip_2` and `valkyrie_greatsword_equip_2`; take 1 never
+  played at all.
+  **Every structural check passed while that was true** — both takes existed, both were
+  reserved, no null sprites, the whole 8862-test suite green — because a structural test asks
+  whether the thing is THERE and the question that was missing is which of the two APPEARS.
+  Only a rendered frame answers that: what exposed it was casting the spell in a running game
+  and reading `SpriteRenderer.sprite.name` back. Same defect shape as a panel that is only
+  correct once its data arrives.
+- **Nine drawings of two weapon draws, and a spell may be claimed by only one variant.**
+  `PlayerCastVariantReservationTests.NoCharacter_ClaimsTheSameSpellTwice` is a hard
+  constraint — within the BASE list; a loadout's list is its own namespace. Two takes are
+  reserved to the real verbs, one inside each loadout, and the other seven to an
+  `AnimationProbe` each. Reserving them all is what keeps them out of the unreserved rotation:
+  an equip animation with no reservation plays on an ordinary fireball.
+- **A reservation the importer already wrote does NOT move when the builder's default
+  changes.** `PlayerFramesImporter` carries authored reservations across BY KEY and the
+  manifest's third element is only a CREATION default — the same "authored value wins"
+  contract the tileset and persona importers use. So correcting the two base equip
+  reservations was a data edit on `valkyrie.asset`, not a re-import: the re-import reported
+  "created 0 spell(s)" and left both variants claiming the toggle, which is the contract
+  working, not a bug. Check the ASSET after a re-import whenever the thing being changed is a
+  default rather than a sheet.
+- **Probes are CHARACTER-SCOPED now** (`anim_valkyrie_<state>`), because they stopped being one
+  character's. `AnimationProbeSpellTests` resolves the owner from the key — longest player key
+  first — and builds one rig per owner; un-prefixed keys stay the dwarf's, and the valkyrie
+  reserving `anim_punch` as well is legal because a reservation lives on the CHARACTER.
+- **`PlayerCharacterAssetBinder` would have CLOBBERED both migrated characters that kept their
+  legacy strips.** Its own doc claimed running it was safe because `BindClassSheets` finds no
+  strips and returns without writing — true only where the strips were DELETED. The dwarf's,
+  barbarian's and elf's were; mague's and the valkyrie's are still on disk because
+  `CharacterSpriteQualityTests` reads them as its import-policy sample. So for exactly those
+  two it would have bound three 8-direction sheets over a wave12 and a wave14 config, silently,
+  on the next run of an unrelated setup menu item. `OwnedByFramesImporter` decides from the
+  SHAPE OF THE ART — a character folder containing subfolders is the frames importer's — which
+  cannot go stale the way a hand-kept list of migrated characters did.
+- **`valkyrie_punch_2` was renamed `valkyrie_sweep` before anything was cut**, because it is a
+  low crouching strike with the lead hand planted on the floor and not a punch. A variant key
+  is what the Entities editor's Animation panel and the Inspector show, so it is worth getting
+  right while a rename is still free.
+- Renames worth knowing: `Blonde Warrior Sword Walk Cycle` is the GREATSWORD walk and
+  `Pixel Art Warrior Sword Slash` a greatsword attack (the original names call both a "sword");
+  `Blonde Knight Sword-and-Shield Animation Sheet` starts with EMPTY HANDS and is therefore an
+  equip, not an idle.
 
 ## The Dark roster (hostile twins of the playable classes)
 

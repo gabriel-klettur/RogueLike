@@ -23,11 +23,24 @@ namespace Valkur.EditorTools.Progression
     internal static class SpellTreeSeeds
     {
         /// <summary>
-        /// Known without spending a point. Kept to two: the swing the character is holding
-        /// a weapon for, and the toggle that puts it away. A starting kit is the only
-        /// content the grimoire cannot charge for, so it stays the size of a tutorial.
+        /// Known without spending a point: the swing the character is holding a weapon for,
+        /// and the verbs that put a weapon in their hands. A starting kit is the only content
+        /// the grimoire cannot charge for, so it stays the size of a tutorial.
+        ///
+        /// <para>A weapon draw is innate rather than taught because it is not POWER — it
+        /// changes which art the character is wearing and nothing else, and a player who had
+        /// to spend an arcane point to hold the sword they already own would be paying for a
+        /// costume. <c>weapon_toggle_greatsword</c> joins for that reason and not because the
+        /// valkyrie is special: a WeaponLoadout spell names exactly one loadout key, so a
+        /// second weapon set needs a second verb, and every future one does too.</para>
+        ///
+        /// <para>Granting all three to every class is safe because
+        /// <c>WeaponLoadoutExecutor</c> refuses a loadout the caster does not have. A dwarf
+        /// who casts the greatsword verb gets nothing, silently, which is the honest answer
+        /// for a class that owns no greatsword.</para>
         /// </summary>
-        public static readonly string[] InnateSpellKeys = { "slash_regular", "weapon_toggle" };
+        public static readonly string[] InnateSpellKeys =
+            { "slash_regular", "weapon_toggle", "weapon_toggle_greatsword" };
 
         private sealed class Entry
         {
@@ -197,8 +210,8 @@ namespace Valkur.EditorTools.Progression
         {
             new SchoolSeed
             {
-                Key = "martial", DisplayName = "Martial Forms",
-                Flavour = "No words. Just the weight of the thing in your hands.",
+                Key = "martial", DisplayName = "Formas Marciales",
+                Flavour = "Sin palabras. Solo el peso de lo que llevas en las manos.",
                 Accent = new Color(0.82f, 0.80f, 0.74f),
                 Affinities = new[] { "dwarf", "barbarian", "valkyrie" },
                 Entries = new[]
@@ -221,8 +234,8 @@ namespace Valkur.EditorTools.Progression
 
             new SchoolSeed
             {
-                Key = "pyromancy", DisplayName = "Pyromancy",
-                Flavour = "Fire is the only school that answers before it is finished being asked.",
+                Key = "pyromancy", DisplayName = "Piromancia",
+                Flavour = "El fuego es la única escuela que responde antes de que acabes de preguntar.",
                 Accent = new Color(1f, 0.45f, 0.15f),
                 Affinities = new[] { "mague", "barbarian" },
                 Entries = new[]
@@ -243,8 +256,8 @@ namespace Valkur.EditorTools.Progression
 
             new SchoolSeed
             {
-                Key = "cryomancy", DisplayName = "Cryomancy",
-                Flavour = "Not colder. Slower, until nothing moves at all.",
+                Key = "cryomancy", DisplayName = "Criomancia",
+                Flavour = "No más frío. Más lento, hasta que ya nada se mueve.",
                 Accent = new Color(0.45f, 0.78f, 1f),
                 Affinities = new[] { "mague", "elven" },
                 Entries = new[]
@@ -265,8 +278,8 @@ namespace Valkur.EditorTools.Progression
 
             new SchoolSeed
             {
-                Key = "storm", DisplayName = "Stormcalling",
-                Flavour = "The sky keeps no ledger and settles all at once.",
+                Key = "storm", DisplayName = "Tormentas",
+                Flavour = "El cielo no lleva libros y lo salda todo de golpe.",
                 Accent = new Color(0.95f, 0.90f, 0.35f),
                 Affinities = new[] { "mague", "valkyrie" },
                 Entries = new[]
@@ -285,8 +298,8 @@ namespace Valkur.EditorTools.Progression
 
             new SchoolSeed
             {
-                Key = "arcane", DisplayName = "Arcana",
-                Flavour = "The school that studies the other schools.",
+                Key = "arcane", DisplayName = "Arcanismo",
+                Flavour = "La escuela que estudia a las demás escuelas.",
                 Accent = new Color(0.70f, 0.45f, 1f),
                 Affinities = new[] { "mague", "elven" },
                 Entries = new[]
@@ -308,8 +321,8 @@ namespace Valkur.EditorTools.Progression
 
             new SchoolSeed
             {
-                Key = "radiance", DisplayName = "Radiance",
-                Flavour = "Keeping people alive is the harder half of any fight.",
+                Key = "radiance", DisplayName = "Fulgor",
+                Flavour = "Mantener viva a la gente es la mitad difícil de cualquier pelea.",
                 Accent = new Color(1f, 0.95f, 0.72f),
                 Affinities = new[] { "valkyrie", "mague" },
                 Entries = new[]
@@ -333,8 +346,8 @@ namespace Valkur.EditorTools.Progression
 
             new SchoolSeed
             {
-                Key = "shadow", DisplayName = "Umbramancy",
-                Flavour = "Not being seen is a form of armour.",
+                Key = "shadow", DisplayName = "Umbramancia",
+                Flavour = "No ser visto es una forma de armadura.",
                 Accent = new Color(0.45f, 0.35f, 0.55f),
                 Affinities = new[] { "elven", "mague" },
                 Entries = new[]
@@ -356,8 +369,8 @@ namespace Valkur.EditorTools.Progression
 
             new SchoolSeed
             {
-                Key = "verdant", DisplayName = "Verdant Rites",
-                Flavour = "Ask the ground for help. It usually agrees.",
+                Key = "verdant", DisplayName = "Ritos Verdes",
+                Flavour = "Pídele ayuda a la tierra. Suele acceder.",
                 Accent = new Color(0.45f, 0.85f, 0.40f),
                 Affinities = new[] { "elven", "dwarf" },
                 Entries = new[]
@@ -378,8 +391,8 @@ namespace Valkur.EditorTools.Progression
 
             new SchoolSeed
             {
-                Key = "ki", DisplayName = "Inner Fire",
-                Flavour = "Seven ways of burning without being consumed.",
+                Key = "ki", DisplayName = "Fuego Interior",
+                Flavour = "Siete maneras de arder sin consumirse.",
                 Accent = new Color(0.55f, 0.85f, 0.95f),
                 Affinities = new[] { "dwarf", "barbarian", "valkyrie", "elven", "mague" },
                 Entries = new[]

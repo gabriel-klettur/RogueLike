@@ -29,6 +29,73 @@ namespace Valkur.Tests.EditMode.Game.Spells
         private const string DwarfArt = "Assets/_Project/Art/Characters/dwarf";
         private const string DwarfDefinition = "Assets/_Project/Data/Catalogs/Players/dwarf.asset";
         private const string SpellCatalogPath = "Assets/_Project/Data/Catalogs/SpellCatalog.asset";
+        private const string PlayerCatalog = "Assets/_Project/Data/Catalogs/Players";
+
+        /// <summary>
+        /// (player key, animation folder) for one probe.
+        ///
+        /// <para>A probe is CHARACTER-SCOPED when its key names a player: <c>anim_valkyrie_
+        /// shield_equip_3</c> belongs to the valkyrie's <c>shield_equip_3</c> folder. Anything
+        /// else belongs to the dwarf, which is where the convention started and where all
+        /// twenty-two of the original probes live.</para>
+        ///
+        /// <para>The scoping exists because the probes stopped being one character's. A cast
+        /// variant is chosen by spell key and by nothing else, so an animation no gameplay
+        /// spell wants needs a key of its own — and a second character with unpinned
+        /// animations therefore needs probe keys that cannot collide with the first's.
+        /// Un-prefixed keys are NOT re-pointed: <c>anim_punch</c> is the dwarf's and the
+        /// valkyrie reserves it too, which is legal because a reservation lives on the
+        /// CHARACTER.</para>
+        ///
+        /// <para>Matched longest-key-first, so a player key that happened to prefix another
+        /// cannot win over the more specific one.</para>
+        /// </summary>
+        private static (string player, string folder) OwnerOf(SpellDefinition probe)
+        {
+            string body = probe.spellKey.Substring("anim_".Length);
+            var keys = new List<string>(KnownPlayerKeys());
+            keys.Sort((a, b) => b.Length.CompareTo(a.Length));
+            foreach (string key in keys)
+            {
+                if (body.StartsWith(key + "_", StringComparison.Ordinal))
+                    return (key, body.Substring(key.Length + 1));
+            }
+            return ("dwarf", body);
+        }
+
+        private static IEnumerable<string> KnownPlayerKeys()
+        {
+            foreach (string guid in AssetDatabase.FindAssets("t:PlayerDefinition",
+                                                             new[] { PlayerCatalog }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                yield return Path.GetFileNameWithoutExtension(path);
+            }
+        }
+
+        private static void CollectClaims(List<CastVariant> casts, List<AttackVariant> attacks,
+                                          HashSet<string> into)
+        {
+            if (casts != null)
+                foreach (CastVariant v in casts)
+                    if (v?.spellKeys != null)
+                        foreach (string k in v.spellKeys)
+                            if (!string.IsNullOrEmpty(k)) into.Add(k);
+            if (attacks != null)
+                foreach (AttackVariant v in attacks)
+                    if (v?.spellKeys != null)
+                        foreach (string k in v.spellKeys)
+                            if (!string.IsNullOrEmpty(k)) into.Add(k);
+        }
+
+        private static PlayerDefinition DefinitionFor(string playerKey)
+        {
+            var def = AssetDatabase.LoadAssetAtPath<PlayerDefinition>(
+                $"{PlayerCatalog}/{playerKey}.asset");
+            Assert.IsNotNull(def, $"PlayerDefinition '{playerKey}.asset' should exist.");
+            Assert.IsNotNull(def.assetConfig, $"'{playerKey}' assetConfig must not be null.");
+            return def;
+        }
 
         /// <summary>The manifest's state names — the same vocabulary
         /// <c>SpellPreviewService.TryParseAnimState</c> accepts.</summary>
@@ -143,26 +210,35 @@ namespace Valkur.Tests.EditMode.Game.Spells
         [Test]
         public void EveryProbe_RendersItsOwnAnimation()
         {
-            var def = AssetDatabase.LoadAssetAtPath<PlayerDefinition>(DwarfDefinition);
-            Assert.IsNotNull(def?.assetConfig);
-
             var created = new List<UnityEngine.Object>();
+            // One live player per owner, built the way EntitySetup builds it and reused across
+            // that owner's probes. Built lazily so a character with no probes of its own costs
+            // nothing.
+            var rigs = new Dictionary<string, (Valkur.Gameplay.DirectionalAnimator anim,
+                                              Valkur.Gameplay.PlayerLoadoutController loadouts)>();
             try
             {
-                // The live player, as EntitySetup builds it.
-                var playerGo = new GameObject("ProbeTestPlayer");
-                created.Add(playerGo);
-                playerGo.AddComponent<SpriteRenderer>();
-                Assert.IsTrue(Valkur.Gameplay.EntityAnimationBinder.ApplyPlayerVisuals(playerGo, def));
-                var loadouts = playerGo.AddComponent<Valkur.Gameplay.PlayerLoadoutController>();
-                loadouts.Initialize(def.assetConfig);
-                var playerAnim = playerGo.GetComponent<Valkur.Gameplay.DirectionalAnimator>();
-
                 var wrong = new List<string>();
                 foreach (SpellDefinition probe in Probes())
                 {
-                    string rendered = RenderProbe(probe, playerAnim, loadouts, created);
-                    string family = "dwarf_" + probe.spellKey.Substring("anim_".Length) + "_";
+                    (string owner, string folder) = OwnerOf(probe);
+                    if (!rigs.TryGetValue(owner, out var rig))
+                    {
+                        PlayerDefinition def = DefinitionFor(owner);
+                        var playerGo = new GameObject($"ProbeTestPlayer_{owner}");
+                        created.Add(playerGo);
+                        playerGo.AddComponent<SpriteRenderer>();
+                        Assert.IsTrue(
+                            Valkur.Gameplay.EntityAnimationBinder.ApplyPlayerVisuals(playerGo, def),
+                            $"'{owner}' has no idle art, so nothing binds.");
+                        var loadouts = playerGo.AddComponent<Valkur.Gameplay.PlayerLoadoutController>();
+                        loadouts.Initialize(def.assetConfig);
+                        rig = (playerGo.GetComponent<Valkur.Gameplay.DirectionalAnimator>(), loadouts);
+                        rigs[owner] = rig;
+                    }
+
+                    string rendered = RenderProbe(probe, rig.anim, rig.loadouts, created);
+                    string family = owner + "_" + folder + "_";
                     if (rendered == null || !rendered.StartsWith(family, StringComparison.Ordinal))
                         wrong.Add($"'{probe.spellKey}' rendered '{rendered ?? "nothing"}', expected {family}*");
                 }
@@ -252,17 +328,15 @@ namespace Valkur.Tests.EditMode.Game.Spells
         [Test]
         public void EveryProbe_RendersItsOwnAnimation_WhenCastInGame()
         {
-            var def = AssetDatabase.LoadAssetAtPath<PlayerDefinition>(DwarfDefinition);
-            Assert.IsNotNull(def?.assetConfig);
-
             var created = new List<UnityEngine.Object>();
             try
             {
                 var wrong = new List<string>();
                 foreach (SpellDefinition probe in Probes())
                 {
-                    string rendered = RenderProbeAsCast(probe, def, created);
-                    string family = "dwarf_" + probe.spellKey.Substring("anim_".Length) + "_";
+                    (string owner, string folder) = OwnerOf(probe);
+                    string rendered = RenderProbeAsCast(probe, DefinitionFor(owner), created);
+                    string family = owner + "_" + folder + "_";
                     if (rendered == null || !rendered.StartsWith(family, StringComparison.Ordinal))
                         wrong.Add($"'{probe.spellKey}' cast in game rendered '{rendered ?? "nothing"}', expected {family}*");
                 }
@@ -381,16 +455,17 @@ namespace Valkur.Tests.EditMode.Game.Spells
         [Test]
         public void EveryVariantBackedProbe_ResolvesItsOwnVariant()
         {
-            var def = AssetDatabase.LoadAssetAtPath<PlayerDefinition>(DwarfDefinition);
-            Assert.IsNotNull(def?.assetConfig);
-
             // A probe whose state carries variants must be RESERVED on one, or it previews
             // whatever the base set holds and shows the same pose as its neighbours.
-            var claimed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var v in def.assetConfig.castVariants)
-                if (v?.spellKeys != null) foreach (string k in v.spellKeys) claimed.Add(k);
-            foreach (var v in def.assetConfig.attackVariants)
-                if (v?.spellKeys != null) foreach (string k in v.spellKeys) claimed.Add(k);
+            //
+            // Per OWNER, and a loadout's own lists count. A reservation lives on the character
+            // (see OwnerOf), so collecting only the dwarf's claims reports every other
+            // character's probes as unpinned — which is exactly what it did when the valkyrie's
+            // five arrived, all five of them correctly reserved on HER cast list. And a
+            // loadout's variants have to be read too: the stow of each of her weapon sets is
+            // declared inside the loadout, because that is where it is cast from.
+            var claimedByOwner = new Dictionary<string, HashSet<string>>(
+                StringComparer.OrdinalIgnoreCase);
 
             var unpinned = new List<string>();
             foreach (SpellDefinition probe in Probes())
@@ -398,6 +473,21 @@ namespace Valkur.Tests.EditMode.Game.Spells
                 string state = probe.animState?.Trim().ToLowerInvariant();
                 bool stateCarriesVariants = state == "cast" || state == "attack";
                 if (!stateCarriesVariants) continue;
+
+                (string owner, string _) = OwnerOf(probe);
+                if (!claimedByOwner.TryGetValue(owner, out HashSet<string> claimed))
+                {
+                    PlayerDefinition def = DefinitionFor(owner);
+                    claimed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    CollectClaims(def.assetConfig.castVariants, def.assetConfig.attackVariants,
+                                  claimed);
+                    if (def.assetConfig.loadouts != null)
+                        foreach (Loadout loadout in def.assetConfig.loadouts)
+                            if (loadout != null)
+                                CollectClaims(loadout.castVariants, loadout.attackVariants,
+                                              claimed);
+                    claimedByOwner[owner] = claimed;
+                }
 
                 if (!claimed.Contains(probe.spellKey)) unpinned.Add(probe.spellKey);
             }
