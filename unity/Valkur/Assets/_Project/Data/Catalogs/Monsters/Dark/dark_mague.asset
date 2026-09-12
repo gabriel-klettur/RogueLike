@@ -666,6 +666,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: kick
       damageMultiplier: 1
       rangeMultiplier: 1
@@ -750,6 +757,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: staff_swing
       damageMultiplier: 1
       rangeMultiplier: 1
@@ -835,6 +849,13 @@ MonoBehaviour:
       - slash_regular
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     castVariants:
     - key: spell_1
       directional:
@@ -914,6 +935,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: spell_2
       directional:
         south: {fileID: 0}
@@ -992,6 +1020,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: spell_3
       directional:
         south: {fileID: 0}
@@ -1070,6 +1105,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: spell_4
       directional:
         south: {fileID: 0}
@@ -1148,6 +1190,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: spell_5
       directional:
         south: {fileID: 0}
@@ -1226,6 +1275,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: armed_equip
       directional:
         south: {fileID: 0}
@@ -1305,6 +1361,13 @@ MonoBehaviour:
       - weapon_toggle
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: run_cast
       directional:
         south: {fileID: 0}
@@ -1384,6 +1447,13 @@ MonoBehaviour:
       - dash
       animationSpeedMultiplier: 4
       holdLastFrame: 1
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     stateVariants:
     - state: walk
       variants:
@@ -2680,6 +2750,13 @@ MonoBehaviour:
         spellKeys: []
         animationSpeedMultiplier: 1
         holdLastFrame: 0
+        timeline:
+          steps: []
+          releaseStep: 0
+          recoverStep: 2147483647
+          prepareMode: 0
+          channelMode: 0
+          recoverMode: 2
       - key: staff_thrust
         damageMultiplier: 1
         rangeMultiplier: 1
@@ -2764,6 +2841,13 @@ MonoBehaviour:
         spellKeys: []
         animationSpeedMultiplier: 1
         holdLastFrame: 0
+        timeline:
+          steps: []
+          releaseStep: 0
+          recoverStep: 2147483647
+          prepareMode: 0
+          channelMode: 0
+          recoverMode: 2
       castVariants:
       - key: staff_cast_1
         directional:
@@ -2843,6 +2927,13 @@ MonoBehaviour:
         spellKeys: []
         animationSpeedMultiplier: 1
         holdLastFrame: 0
+        timeline:
+          steps: []
+          releaseStep: 0
+          recoverStep: 2147483647
+          prepareMode: 0
+          channelMode: 0
+          recoverMode: 2
       - key: staff_cast_2
         directional:
           south: {fileID: 0}
@@ -2921,6 +3012,13 @@ MonoBehaviour:
         spellKeys: []
         animationSpeedMultiplier: 1
         holdLastFrame: 0
+        timeline:
+          steps: []
+          releaseStep: 0
+          recoverStep: 2147483647
+          prepareMode: 0
+          channelMode: 0
+          recoverMode: 2
       - key: staff_cast_5
         directional:
           south: {fileID: 0}
@@ -2999,6 +3097,13 @@ MonoBehaviour:
         spellKeys: []
         animationSpeedMultiplier: 1
         holdLastFrame: 0
+        timeline:
+          steps: []
+          releaseStep: 0
+          recoverStep: 2147483647
+          prepareMode: 0
+          channelMode: 0
+          recoverMode: 2
       - key: staff_slash
         directional:
           south: {fileID: 0}
@@ -3081,6 +3186,13 @@ MonoBehaviour:
         - slash_stab
         animationSpeedMultiplier: 1
         holdLastFrame: 0
+        timeline:
+          steps: []
+          releaseStep: 0
+          recoverStep: 2147483647
+          prepareMode: 0
+          channelMode: 0
+          recoverMode: 2
       - key: armed_equip
         directional:
           south: {fileID: 0}
@@ -3160,6 +3272,15 @@ MonoBehaviour:
         - weapon_toggle
         animationSpeedMultiplier: 1
         holdLastFrame: 0
+        timeline:
+          steps: []
+          releaseStep: 0
+          recoverStep: 2147483647
+          prepareMode: 0
+          channelMode: 0
+          recoverMode: 2
+    castMuzzle: {x: 0, y: 0}
+    castMuzzleFrames: []
     scaleConfig:
       scaleIdle: 0
       tint: {r: 0, g: 0, b: 0, a: 1}

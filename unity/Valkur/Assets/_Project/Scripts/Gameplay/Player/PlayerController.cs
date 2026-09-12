@@ -159,6 +159,10 @@ namespace Valkur.Gameplay
         {
             EnableGameplayMap();
             PlayerStance.OnChanged += OnStanceChanged;
+            // Being hit cancels a spell still winding up, for the spells whose data says so.
+            // OnDamagedBy rather than OnHpChanged: a heal must not interrupt a cast, and a blow
+            // armour reduced to nothing still counts as being hit.
+            if (_health != null) _health.OnDamagedBy += HandleCastInterruption;
         }
 
         // The Gameplay map itself is owned by InputService and the player creates no
@@ -168,6 +172,7 @@ namespace Valkur.Gameplay
         private void OnDisable()
         {
             PlayerStance.OnChanged -= OnStanceChanged;
+            if (_health != null) _health.OnDamagedBy -= HandleCastInterruption;
         }
     }
 }

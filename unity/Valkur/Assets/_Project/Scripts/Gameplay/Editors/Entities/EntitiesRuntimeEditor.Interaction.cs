@@ -74,7 +74,7 @@ namespace Valkur.Gameplay.Entities
             Apply(_ui.AddBtnImg,         _ui.AddBtnTmp,         _mode == EditorMode.Spawn);
             Apply(_ui.RemoveBtnImg,      _ui.RemoveBtnTmp,      _mode == EditorMode.Delete, danger: true);
             Apply(_ui.AddOnSystemBtnImg, _ui.AddOnSystemBtnTmp, _mode == EditorMode.AddOnSystem);
-            // Confirm is an action button, not a mode â€” keep neutral.
+            // Confirm is an action button, not a mode -- keep neutral.
             Apply(_ui.ConfirmBtnImg,     _ui.ConfirmBtnTmp,     false);
         }
 
@@ -123,9 +123,7 @@ namespace Valkur.Gameplay.Entities
                     if (!PassesFilter(name, key, filter)) continue;
                     shown++;
 
-                    Sprite icon = null;
-                    if (def.assetConfig != null && def.assetConfig.idle.south != null)
-                        icon = def.assetConfig.idle.south;
+                    Sprite icon = ResolveMonsterIconSprite(def);
                     Color tint = def.assetConfig != null
                         ? NormalizeTint(def.assetConfig.scaleConfig.tint)
                         : Color.white;
@@ -242,6 +240,33 @@ namespace Valkur.Gameplay.Entities
         private Dictionary<string, Sprite> _playerIconCache;
         private PlayerDefinition[] _allPlayerDefsCache;
 
+        /// <summary>
+        /// The sprite that stands for <paramref name="def"/> -- in the picker grid and in the
+        /// Assets row, which ask the same question and must not answer it differently.
+        ///
+        /// The sheet fallback is not cosmetic. Every monster built by the frame-sheet pipeline
+        /// (the six dark twins, wave13's barbols and the dragon) leaves <c>idle.south</c> null
+        /// and keeps its art in <c>idleSheets</c>, whose first frame IS the south-facing one:
+        /// <see cref="DirectionalAnimator.CreateSetFromLinearFrames"/> cuts that list into eight
+        /// contiguous buckets starting at South. Without it those entities showed no icon at all
+        /// and described themselves as a dash, which reads as "this monster has no art"
+        /// rather than "this monster is animated".
+        /// <see cref="ResolvePlayerSouthSprite"/> already answered this for players.
+        /// </summary>
+        private static Sprite ResolveMonsterIconSprite(MonsterDefinition def)
+        {
+            var config = def != null ? def.assetConfig : null;
+            if (config == null) return null;
+            if (config.idle.south != null) return config.idle.south;
+            if (config.idleSheets == null) return null;
+
+            for (int i = 0; i < config.idleSheets.Count; i++)
+            {
+                if (config.idleSheets[i] != null) return config.idleSheets[i];
+            }
+            return null;
+        }
+
         private Sprite ResolvePlayerSouthSprite(string playerKey)
         {
             if (string.IsNullOrEmpty(playerKey)) return null;
@@ -257,7 +282,7 @@ namespace Valkur.Gameplay.Entities
             Sprite icon = def.assetConfig.idle.south;
 
             // Fallback: first frame of the idle spritesheet (south-facing in the
-            // 8-direction Ã— 5-frame layout used by all migrated player sheets).
+            // 8-direction x 5-frame layout used by all migrated player sheets).
             if (icon == null && def.assetConfig.idleSheets != null)
             {
                 for (int i = 0; i < def.assetConfig.idleSheets.Count; i++)
@@ -318,6 +343,7 @@ namespace Valkur.Gameplay.Entities
             _selectedIsPlayer = false;
             RefreshPicker();
             ShowMonsterProperties(key);
+            NotifyAnimationSelectionChanged();
         }
 
         private void SelectPlayerClass(string key)
@@ -326,6 +352,7 @@ namespace Valkur.Gameplay.Entities
             _selectedIsPlayer = true;
             RefreshPicker();
             ShowPlayerProperties(key);
+            NotifyAnimationSelectionChanged();
         }
 
         // ── Editable stat rows ──────────────────────────────────────────────────
@@ -588,9 +615,11 @@ namespace Valkur.Gameplay.Entities
                 });
             }
 
-            string idle = (def.assetConfig != null && def.assetConfig.idle.south != null)
-                ? def.assetConfig.idle.south.name : "â€”";
-            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAssetsSection, "Idle Sprite", idle);
+            // Resolved through the SAME helper the picker grid uses, so the icon and this row
+            // can never name different sprites.
+            Sprite idleSprite = ResolveMonsterIconSprite(def);
+            EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAssetsSection, "Idle Sprite",
+                idleSprite != null ? idleSprite.name : "\u2014");
 
             // Show "Open Boss Editor →" button when the monster has a BossDefinition.
             UpdateBossHandoffButton(key);
@@ -712,7 +741,7 @@ namespace Valkur.Gameplay.Entities
                 case EditorMode.Spawn       when !string.IsNullOrEmpty(_selectedKey): SpawnEntityAtPosition(worldPos);  break;
                 case EditorMode.Delete:                                                DeleteEntityAtPosition(worldPos); break;
                 case EditorMode.Select:                                                SelectEntityAtPosition(worldPos); break;
-                case EditorMode.AddOnSystem when !string.IsNullOrEmpty(_selectedKey): SetStatus($"Add-On-System: ({worldPos.x:F1}, {worldPos.y:F1}) â€” Confirm to persist."); break;
+                case EditorMode.AddOnSystem when !string.IsNullOrEmpty(_selectedKey): SetStatus($"Add-On-System: ({worldPos.x:F1}, {worldPos.y:F1}) \u2014 Confirm to persist."); break;
             }
         }
 

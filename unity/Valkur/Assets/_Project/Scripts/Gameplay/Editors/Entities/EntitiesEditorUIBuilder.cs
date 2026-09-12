@@ -84,6 +84,56 @@ namespace Valkur.Gameplay.Entities
 
             // Boss Editor handoff button (shown only when selected entity is a boss).
             public GameObject       BossHandoffBtnGo;
+
+            // Animation panel — the live preview stage and its selectors.
+            public Image            AnimMenuBtnImg;      public TextMeshProUGUI AnimMenuBtnTmp;
+            public GameObject       AnimDropdown;        public DraggablePanel  AnimPanelDrag;
+            public RawImage         AnimStage;
+            public TextMeshProUGUI  AnimSubjectText;
+            public TMP_Dropdown     AnimStateDd;
+            public TMP_Dropdown     AnimVariantDd;
+            public TMP_Dropdown     AnimLoadoutDd;
+            /// <summary>The 3x3 direction pad, reading order. Slot 4 (the centre) is the
+            /// "show all eight" toggle rather than a direction — no body faces the camera.</summary>
+            public Image[]          AnimDirBtnImgs;
+            public TextMeshProUGUI[] AnimDirBtnTmps;
+            public TextMeshProUGUI  AnimInfoText;
+
+            // Transport + frame strip.
+            public Image            AnimPlayPauseImg;    public TextMeshProUGUI AnimPlayPauseTmp;
+            public Image            AnimReverseImg;      public TextMeshProUGUI AnimReverseTmp;
+            /// <summary>Pooled strip cells: background, thumbnail and index label per frame.
+            /// Realised once and shown or hidden after that — the Items editor's 3.5 s table
+            /// is what rebuilding a row list per change costs.</summary>
+            public Image[]          AnimStripCellImgs;
+            public Image[]          AnimStripThumbs;
+            public TextMeshProUGUI[] AnimStripLabels;
+            public TextMeshProUGUI  AnimStripOverflowText;
+
+            // Pacing editors — the three multipliers and the hold, where the state and the
+            // variant they belong to are the ones being watched.
+            public TMP_InputField   AnimEntitySpeedInput;
+            public TMP_InputField   AnimStateSpeedInput;
+            public TMP_InputField   AnimVariantSpeedInput;
+            public Toggle           AnimHoldToggle;
+            public TMP_Dropdown     AnimLayoutDd;
+
+            // Cast timeline — the spell's phases and the animation's steps on one axis.
+            public Image            TimelineMenuBtnImg;  public TextMeshProUGUI TimelineMenuBtnTmp;
+            public GameObject       TimelineDropdown;    public DraggablePanel  TimelinePanelDrag;
+            public TextMeshProUGUI  TimelineSubjectText;
+            public TextMeshProUGUI  TimelineReadoutText;
+            public TextMeshProUGUI  TimelineWarningText;
+            public Image[]          TimelinePhaseImgs;
+            public TextMeshProUGUI[] TimelinePhaseTmps;
+            public Image[]          TimelineStepImgs;
+            public TextMeshProUGUI[] TimelineStepTmps;
+            public TMP_InputField   TimelineStepDurationInput;
+            public TMP_Dropdown     TimelineReleaseDd;
+            public TMP_Dropdown     TimelineRecoverDd;
+            public TMP_Dropdown     TimelinePrepModeDd;
+            public TMP_Dropdown     TimelineChanModeDd;
+            public Image            TimelineApplyBtnImg; public TextMeshProUGUI TimelineApplyBtnTmp;
         }
 
         // ── Panel sizes ───────────────────────────────────────────────────────────
@@ -113,6 +163,8 @@ namespace Valkur.Gameplay.Entities
         private const float PICKER_BTN_W     = 70f;
         private const float ADDREM_BTN_W     = 110f;
         private const float PROPS_BTN_W      = 96f;
+        private const float ANIM_BTN_W       = 96f;
+        private const float TIMELINE_BTN_W   = 88f;
         private const float TUTORIAL_BTN_W   = 40f;
 
         // ── BuildAll ──────────────────────────────────────────────────────────────
@@ -221,6 +273,10 @@ namespace Valkur.Gameplay.Entities
                 () => onToggle?.Invoke("addremove"),   out refs.AddRemoveMenuBtnTmp);
             refs.PropsMenuBtnImg      = AddMenuBtn(t, "Properties v",  PROPS_BTN_W,
                 () => onToggle?.Invoke("props"),       out refs.PropsMenuBtnTmp);
+            refs.AnimMenuBtnImg       = AddMenuBtn(t, "Animation v",   ANIM_BTN_W,
+                () => onToggle?.Invoke("animation"),   out refs.AnimMenuBtnTmp);
+            refs.TimelineMenuBtnImg   = AddMenuBtn(t, "Timeline v",    TIMELINE_BTN_W,
+                () => onToggle?.Invoke("timeline"),    out refs.TimelineMenuBtnTmp);
 
             // Flexible spacer
             CreateUI("Spacer", t).AddComponent<LayoutElement>().flexibleWidth = 1f;

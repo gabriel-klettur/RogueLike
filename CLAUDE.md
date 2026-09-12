@@ -3221,6 +3221,60 @@ Gatita is the first NPC animated from art drawn as ONE front-facing view, cut by
   "walking west while facing east", while velocity and facing read in the SAME frame agreed
   exactly. Read a state and its cause in one frame, never across two.
 
+## Watching an animation: the Entities editor's Animation panel
+
+Built 2026-09-12. Before it, the only way to see a monster animate was to spawn it and play —
+the Spells editor's preview clones the LIVE PLAYER's animator, so it can show a player's cast
+pose and nothing else. Roadmap, measurements and what was left out:
+`.github/ENTITIES_ANIMATION_EDITOR_ROADMAP.md`.
+
+```text
+EntityAnimationPreviewService      Gameplay/Editors/Entities/   the off-screen stage
+EntitiesEditorUIBuilder.AnimationPanel.cs                       the panel
+EntitiesRuntimeEditor.Animation.cs / .AnimationEditing.cs       wiring, readouts, the dials
+DirectionalAnimator.Transport.cs   Gameplay/Player/             pause, step, scrub, the index
+ESC -> Entities -> Animation                                    the way in
+```
+
+- **The rig is built by `EntityAnimationBinder.ApplyLoadout`, the game's own bind** (a null
+  loadout key IS the base bind). A second implementation would answer differently the day a
+  state has no art — and what a state without art shows is one of the questions the panel
+  exists to answer. It reports the fallback in words, because nothing else can: measured on
+  `red_dragon`, chase shows walk and damage, death and recover all show idle.
+- **It reuses the `SpellPreview` Unity layer.** All 32 physics layers are spent, and
+  `GameEditorManager` opens editors exclusively, so the two stages can never render in the same
+  frame; they still sit at different Y.
+- **`_frameIndex` IS NOT THE FRAME ON SCREEN — it is the next one.** Every branch of
+  `AdvanceFrame` increments it after drawing, so a strip that highlights it names a frame
+  nobody has seen. `ApplyFrame` takes the INDEX now and is the single place that records what
+  was drawn (`DisplayedFrameIndex`). The same trap waits for any future readout of the cursor.
+- **A variant is addressed by its AUTHORED KEY, never by index.** The binder DROPS variants
+  that resolved to no frames, so the rig's index 2 can be the asset's index 3 — writing pacing
+  by position retunes the neighbour. `SetVariants` carries the keys through from the binder,
+  which is also what lets the panel name a rotation (`punch [vortex_push, anim_punch]`).
+- **The three speed dials are shown SEPARATELY** (entity x state x variant), because the
+  product hides which one is doing the work and they are authored in three different places.
+  `FrameIntervalFor` is public so the panel shows the number the clock uses rather than
+  recomputing it and forgetting a dial.
+- **Retiming an attack is a BALANCE change and the panel says so.** One blow is attempted per
+  swing, at the windup, and `meleeCooldown` only REFUSES attempts — so the realised interval is
+  the swing rounded up to the next multiple that clears the cooldown. Measured live:
+  `barbol_muscle`'s four swings all land every ~1.7-2.2 s with one attempt refused each time,
+  and `dark_dwarf`'s punch lands every 1.80 s while its other six land every 1.20 s.
+- **Frame ORDER is deliberately not editable.** The importers rewrite the frame lists wholesale
+  from the Python manifest, so a reordering made here would last until the next wave. The
+  pacing dials are safe for the opposite reason: pacing is applied only when a variant is
+  CREATED, so an authored value always wins.
+- **`EntityAssetConfig.SetStateSpeedMultiplier` writes the per-state row and REMOVES it when
+  the value is exactly 1** — which is what an absent row already means. The writer sits beside
+  its reader on purpose; in another assembly the two eventually disagree about what absent
+  means. The shipped data has exactly one authored row (Gatita's 0.40 idle).
+- **Onion skin only while paused, ground line always.** At speed a ghost is another moving body
+  and reads as a rendering fault; paused, it is the only way to see a pivot jump between frames.
+- Test traps, all of them already in this file: no Awake, no Update and no layout pass in Edit
+  Mode, so the fixtures assert STRUCTURE (layer, camera, rig count, resolved art, the index)
+  and never a size — and `Object.Destroy` is an error there, so every teardown is immediate.
+
 ## Monster sheet pipeline (wave13: barbol_muscle, barbol_young, red_dragon)
 
 Three hostiles cut from side-view character sheets. The pipeline is the one

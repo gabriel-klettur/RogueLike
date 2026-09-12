@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: war_cry
   m_EditorClassIdentifier: 
   spellKey: war_cry
-  displayName: War Cry
+  displayName: Grito de Guerra
   type: 28
   audience: 1
   usesAttackAnimation: 0
@@ -25,7 +25,7 @@ MonoBehaviour:
   automatic: 0
   automaticCastPunish: 1
   lockCastDirection: 1
-  prepareDuration: 0
+  prepareDuration: 0.9
   channelDuration: 0
   cooldownDuration: 20
   speed: 0

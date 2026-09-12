@@ -105,9 +105,10 @@ namespace Valkur.Gameplay.Entities
         private enum EditorMode { Select, Spawn, Delete, AddOnSystem }
         private EditorMode _mode = EditorMode.Select;
         private string     _selectedKey;
-#pragma warning disable CS0414 // assigned-but-not-yet-read; reserved for Phase 2 player/monster property dispatch
+        /// <summary>Which catalogue the selection came from. Read by the Animation panel,
+        /// which has to ask a PlayerDefinition or a MonsterDefinition for the asset config —
+        /// the two live in different catalogues and the key alone cannot say which.</summary>
         private bool       _selectedIsPlayer;
-#pragma warning restore CS0414
 
         private enum EntityCategory { Hostiles, Neutrals, Specials, Players }
         private EntityCategory _category = EntityCategory.Hostiles;
@@ -232,6 +233,7 @@ namespace Valkur.Gameplay.Entities
             // Stopping Play Mode without closing F5 first still has to persist whatever is
             // pending — this is what makes "place a monster, hit Stop" keep it.
             FlushEntityPlacementAutosave();
+            ShutdownAnimationPreview();
             if (_ownsToggleAction) _toggleAction?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();
@@ -269,6 +271,9 @@ namespace Valkur.Gameplay.Entities
             // even while a picker drag or entity drag is in progress.
             _cameraPan.Tick();
             _cameraZoom.Tick();
+
+            TickAnimationPreview();
+            TickTimelinePanel();
 
             UpdatePickerDrag();
             // Suppress click-spawn while a drag is active so releasing over the
@@ -312,6 +317,10 @@ namespace Valkur.Gameplay.Entities
             // Drop world-side selection + outlines so the next Activate starts clean.
             _entityDragging = false;
             SetActiveEntity(null);
+            // The preview camera renders every frame it is enabled, so closing the editor has
+            // to stop it — a panel nobody can see still costs a draw.
+            SetAnimationPanelOpen(false);
+            SetTimelinePanelOpen(false);
             // Reattach the camera follow target if MMB pan had detached it.
             _cameraPan.Reset();
             Valkur.Gameplay.CameraSetup.Instance?.ReattachFollow();
@@ -352,6 +361,39 @@ namespace Valkur.Gameplay.Entities
                 onDuplicate:      () => DuplicateSelectedDefinition(),
                 onRename:         () => RenameSelectedDefinition(_pendingKeyInput),
                 onToggleTutorial: ToggleTutorial);
+
+            // Built outside BuildAll: it needs six callbacks no other panel shares, and
+            // BuildAll already carries eighteen.
+            EntitiesEditorUIBuilder.BuildAnimationPanel(
+                _root.transform, ref _ui,
+                onStateChanged:   OnAnimationStateChanged,
+                onVariantChanged: OnAnimationVariantChanged,
+                onLoadoutChanged: OnAnimationLoadoutChanged,
+                onDirectionSlot:  OnAnimationDirectionSlot,
+                onZoomIn:         () => OnAnimationZoom(1f),
+                onZoomOut:        () => OnAnimationZoom(-1f),
+                onTogglePlay:     OnAnimationTogglePlay,
+                onStepBack:       () => OnAnimationStep(-1),
+                onStepForward:    () => OnAnimationStep(1),
+                onToggleReverse:  OnAnimationToggleReverse,
+                onStripCell:      OnAnimationStripCell,
+                onEntitySpeed:    OnAnimationEntitySpeedCommitted,
+                onStateSpeed:     OnAnimationStateSpeedCommitted,
+                onVariantSpeed:   OnAnimationVariantSpeedCommitted,
+                onHoldLastFrame:  OnAnimationHoldToggled,
+                onLayoutChanged:  OnAnimationLayoutChanged);
+
+            EntitiesEditorUIBuilder.BuildTimelinePanel(
+                _root.transform, ref _ui,
+                onSeed:            OnTimelineSeed,
+                onClear:           OnTimelineClear,
+                onApplyToSpell:    ApplyTimelineToSpell,
+                onStepClicked:     OnTimelineStepClicked,
+                onStepDuration:    OnTimelineStepDuration,
+                onReleaseChanged:  OnTimelineReleaseChanged,
+                onRecoverChanged:  OnTimelineRecoverChanged,
+                onPrepareMode:     OnTimelinePrepareMode,
+                onChannelMode:     OnTimelineChannelMode);
 
             // Tutorial overlay (F5-aware hotkey list)
             _tutorial = TutorialOverlay.Build(_root.transform, "ENTITIES HOTKEYS", new[]
@@ -405,6 +447,12 @@ namespace Valkur.Gameplay.Entities
             if (open) _openDropdowns.Add(name);
             else      _openDropdowns.Remove(name);
             go.SetActive(open);
+
+            // The Animation panel owns an off-screen camera and a RenderTexture, so opening
+            // and closing the dropdown is what starts and stops them. Every other panel is
+            // pure UI and needs no such hook.
+            if (name == "animation") SetAnimationPanelOpen(open);
+            if (name == "timeline")  SetTimelinePanelOpen(open);
         }
 
         private GameObject GetDropdown(string name) => name switch
@@ -414,6 +462,8 @@ namespace Valkur.Gameplay.Entities
             "picker"     => _ui.PickerDropdown,
             "addremove"  => _ui.AddRemoveDropdown,
             "props"      => _ui.PropsDropdown,
+            "animation"  => _ui.AnimDropdown,
+            "timeline"   => _ui.TimelineDropdown,
             _            => null
         };
 
@@ -424,6 +474,8 @@ namespace Valkur.Gameplay.Entities
             EntitiesEditorUIBuilder.ApplyMenuBtnStyle(_ui.PickerMenuBtnImg,     _ui.PickerMenuBtnTmp,     _openDropdowns.Contains("picker"));
             EntitiesEditorUIBuilder.ApplyMenuBtnStyle(_ui.AddRemoveMenuBtnImg,  _ui.AddRemoveMenuBtnTmp,  _openDropdowns.Contains("addremove"));
             EntitiesEditorUIBuilder.ApplyMenuBtnStyle(_ui.PropsMenuBtnImg,      _ui.PropsMenuBtnTmp,      _openDropdowns.Contains("props"));
+            EntitiesEditorUIBuilder.ApplyMenuBtnStyle(_ui.AnimMenuBtnImg,       _ui.AnimMenuBtnTmp,       _openDropdowns.Contains("animation"));
+            EntitiesEditorUIBuilder.ApplyMenuBtnStyle(_ui.TimelineMenuBtnImg,   _ui.TimelineMenuBtnTmp,   _openDropdowns.Contains("timeline"));
         }
 
         private void ToggleTutorial()

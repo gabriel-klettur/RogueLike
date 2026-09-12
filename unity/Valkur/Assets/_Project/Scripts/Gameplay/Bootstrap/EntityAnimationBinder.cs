@@ -136,13 +136,15 @@ namespace Valkur.Gameplay
             animator.SetSpriteSets(idleSet, walkSet, chaseSet, castSet, attackSet, damageSet, deathSet, preferCardinalDirectionSampling);
             animator.SetRecoverSprites(recoverSet);
             var attackSets = BuildAttackVariants(assetConfig, loadout, layout,
-                                                 out var attackSpellKeys, out var attackPacing);
+                                                 out var attackSpellKeys, out var attackPacing,
+                                                 out var attackLabels, out var attackTimelines);
             animator.SetVariants(DirectionalAnimator.AnimState.Attack, attackSets,
-                                 attackSpellKeys, attackPacing);
+                                 attackSpellKeys, attackPacing, attackLabels, attackTimelines);
             var castSets = BuildCastVariants(assetConfig, loadout, layout,
-                                             out var castSpellKeys, out var castPacing);
+                                             out var castSpellKeys, out var castPacing,
+                                             out var castLabels, out var castTimelines);
             animator.SetVariants(DirectionalAnimator.AnimState.Cast, castSets,
-                                 castSpellKeys, castPacing);
+                                 castSpellKeys, castPacing, castLabels, castTimelines);
             ApplyStateVariants(animator, assetConfig, loadout, layout);
             animator.SetAnimationSpeedMultiplier(assetConfig.scaleConfig.animationSpeedMultiplier);
             ApplyStatePacing(animator, assetConfig);
@@ -345,10 +347,14 @@ namespace Valkur.Gameplay
         private static List<DirectionalAnimator.DirectionalSpriteSet> BuildAttackVariants(
             EntityAssetConfig assetConfig, Loadout loadout, EntitySheetDirectionLayout layout,
             out List<IReadOnlyList<string>> spellKeys,
-            out List<DirectionalAnimator.VariantPacing> pacing)
+            out List<DirectionalAnimator.VariantPacing> pacing,
+            out List<string> labels,
+            out List<AnimationTimeline> timelines)
         {
             spellKeys = null;
             pacing = null;
+            labels = null;
+            timelines = null;
             // The loadout's own swings REPLACE the base rotation when it declares any, so a
             // character holding a staff never rotates into a bare-handed punch. An empty list
             // is "this loadout does not change how I swing", not "I swing once".
@@ -365,6 +371,8 @@ namespace Valkur.Gameplay
             // authored list would point one variant off from the first empty one onwards.
             var keys = new List<IReadOnlyList<string>>(authored.Count);
             var paces = new List<DirectionalAnimator.VariantPacing>(authored.Count);
+            var names = new List<string>(authored.Count);
+            var plans = new List<AnimationTimeline>(authored.Count);
             bool anyReserved = false;
 
             for (int i = 0; i < authored.Count; i++)
@@ -378,12 +386,16 @@ namespace Valkur.Gameplay
                 sets.Add(set);
                 keys.Add(variant.spellKeys);
                 paces.Add(PacingOf(variant.animationSpeedMultiplier, variant.holdLastFrame));
+                names.Add(variant.key);
+                plans.Add(variant.timeline);
                 anyReserved |= variant.IsReservedForSpell;
             }
 
             if (sets.Count == 0) return null;
             if (anyReserved) spellKeys = keys;
             pacing = paces;
+            labels = names;
+            timelines = plans;
             return sets;
         }
 
@@ -405,10 +417,14 @@ namespace Valkur.Gameplay
         private static List<DirectionalAnimator.DirectionalSpriteSet> BuildCastVariants(
             EntityAssetConfig assetConfig, Loadout loadout, EntitySheetDirectionLayout layout,
             out List<IReadOnlyList<string>> spellKeys,
-            out List<DirectionalAnimator.VariantPacing> pacing)
+            out List<DirectionalAnimator.VariantPacing> pacing,
+            out List<string> labels,
+            out List<AnimationTimeline> timelines)
         {
             spellKeys = null;
             pacing = null;
+            labels = null;
+            timelines = null;
             // Same replacement rule as the swings, and the reason bites harder here: the
             // sheathe is a CAST, reserved to weapon_toggle, and it is cast from inside the
             // loadout. A loadout that overrides casting and forgets to re-declare it stows
@@ -427,6 +443,8 @@ namespace Valkur.Gameplay
             // would reserve its neighbour's animation.
             var keys = new List<IReadOnlyList<string>>(authored.Count);
             var paces = new List<DirectionalAnimator.VariantPacing>(authored.Count);
+            var names = new List<string>(authored.Count);
+            var plans = new List<AnimationTimeline>(authored.Count);
             bool anyReserved = false;
 
             for (int i = 0; i < authored.Count; i++)
@@ -440,12 +458,16 @@ namespace Valkur.Gameplay
                 sets.Add(set);
                 keys.Add(variant.spellKeys);
                 paces.Add(PacingOf(variant.animationSpeedMultiplier, variant.holdLastFrame));
+                names.Add(variant.key);
+                plans.Add(variant.timeline);
                 anyReserved |= variant.IsReservedForSpell;
             }
 
             if (sets.Count == 0) return null;
             if (anyReserved) spellKeys = keys;
             pacing = paces;
+            labels = names;
+            timelines = plans;
             return sets;
         }
 
@@ -486,8 +508,8 @@ namespace Valkur.Gameplay
                 }
 
                 var sets = BuildStateVariants(assetConfig, loadout, StateNames[i], layout,
-                                              out var pacing);
-                animator.SetVariants(state, sets, null, pacing);
+                                              out var pacing, out var labels);
+                animator.SetVariants(state, sets, null, pacing, labels);
             }
         }
 
@@ -508,9 +530,11 @@ namespace Valkur.Gameplay
         private static List<DirectionalAnimator.DirectionalSpriteSet> BuildStateVariants(
             EntityAssetConfig assetConfig, Loadout loadout, string state,
             EntitySheetDirectionLayout layout,
-            out List<DirectionalAnimator.VariantPacing> pacing)
+            out List<DirectionalAnimator.VariantPacing> pacing,
+            out List<string> labels)
         {
             pacing = null;
+            labels = null;
 
             LoadoutStateSheets over = loadout?.Find(state);
             List<StateVariant> authored = over != null
@@ -521,6 +545,7 @@ namespace Valkur.Gameplay
 
             var sets = new List<DirectionalAnimator.DirectionalSpriteSet>(authored.Count);
             var paces = new List<DirectionalAnimator.VariantPacing>(authored.Count);
+            var names = new List<string>(authored.Count);
             for (int i = 0; i < authored.Count; i++)
             {
                 StateVariant variant = authored[i];
@@ -531,10 +556,12 @@ namespace Valkur.Gameplay
 
                 sets.Add(set);
                 paces.Add(PacingOf(variant.animationSpeedMultiplier, variant.holdLastFrame));
+                names.Add(variant.key);
             }
 
             if (sets.Count == 0) return null;
             pacing = paces;
+            labels = names;
             return sets;
         }
 

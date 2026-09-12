@@ -61,7 +61,7 @@ namespace Valkur.Gameplay
             // Single frame — no animation needed
             if (frames.Length == 1)
             {
-                ApplyFrame(frames[0]);
+                ApplyFrame(frames, 0);
                 return;
             }
 
@@ -73,13 +73,13 @@ namespace Valkur.Gameplay
                 {
                     if (Time.time - _stateStartTime < idleHoldTime)
                     {
-                        ApplyFrame(frames[0]);
+                        ApplyFrame(frames, 0);
                         return;
                     }
                     _frameIndex = 1;
                     _stateStartTime = Time.time;
                 }
-                ApplyFrame(frames[_frameIndex]);
+                ApplyFrame(frames, _frameIndex);
                 _frameIndex++;
                 if (_frameIndex >= frames.Length)
                     _frameIndex = 1;
@@ -91,7 +91,7 @@ namespace Valkur.Gameplay
             if (_currentState == AnimState.Walk || _currentState == AnimState.Chase)
             {
                 if (_frameIndex < 1) _frameIndex = 1;
-                ApplyFrame(frames[_frameIndex]);
+                ApplyFrame(frames, _frameIndex);
                 _frameIndex++;
                 if (_frameIndex >= frames.Length)
                     _frameIndex = 1;
@@ -102,7 +102,7 @@ namespace Valkur.Gameplay
             if (_currentState == AnimState.Death)
             {
                 int idx = Mathf.Min(_frameIndex, frames.Length - 1);
-                ApplyFrame(frames[idx]);
+                ApplyFrame(frames, idx);
                 if (_frameIndex < frames.Length - 1)
                     _frameIndex++;
                 return;
@@ -116,7 +116,7 @@ namespace Valkur.Gameplay
             if (PacingOf(_currentState, _activeVariant).HoldLastFrame)
             {
                 int held = Mathf.Min(_frameIndex, frames.Length - 1);
-                ApplyFrame(frames[FrameAt(held, frames.Length)]);
+                ApplyFrame(frames, FrameAt(held, frames.Length));
                 if (_frameIndex < frames.Length - 1)
                     _frameIndex++;
                 return;
@@ -126,7 +126,7 @@ namespace Valkur.Gameplay
             // into a back-to-front read, so reversed playback inherits the loop, the hold and
             // the frame clock rather than reimplementing all three.
             _frameIndex %= frames.Length;
-            ApplyFrame(frames[FrameAt(_frameIndex, frames.Length)]);
+            ApplyFrame(frames, FrameAt(_frameIndex, frames.Length));
             _frameIndex = (_frameIndex + 1) % frames.Length;
         }
 
@@ -213,6 +213,23 @@ namespace Valkur.Gameplay
         private static Sprite[] ToSingleFrameArray(Sprite sprite)
         {
             return sprite == null ? Array.Empty<Sprite>() : new[] { sprite };
+        }
+
+        /// <summary>
+        /// The ONE seam every frame reaches the renderer through, and the only place that
+        /// knows WHICH frame is on screen.
+        ///
+        /// <para>It takes the index rather than just the sprite because <c>_frameIndex</c> is
+        /// the cursor for the NEXT tick — every branch above increments it after drawing — so
+        /// a reader that highlights it names the frame that has not been shown yet. That is
+        /// invisible while nothing reads the cursor, and it is exactly what a frame strip
+        /// does.</para>
+        /// </summary>
+        private void ApplyFrame(Sprite[] frames, int index)
+        {
+            if (frames == null || index < 0 || index >= frames.Length) return;
+            _displayedFrameIndex = index;
+            ApplyFrame(frames[index]);
         }
 
         private void ApplyFrame(Sprite sprite)

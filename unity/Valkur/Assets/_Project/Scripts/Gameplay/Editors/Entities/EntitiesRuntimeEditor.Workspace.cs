@@ -11,6 +11,8 @@ namespace Valkur.Gameplay.Entities
         private const string WS_CATEGORY = "category";
         private const string WS_SEARCH   = "search";
         private const string WS_ENTITY   = "selectedEntity";
+        private const string WS_ANIM_STATE = "animState";
+        private const string WS_ANIM_DIR   = "animDirection";
 
         public Transform WorkspaceRoot => _root != null ? _root.transform : null;
 
@@ -21,6 +23,12 @@ namespace Valkur.Gameplay.Entities
             ws.SetString(WS_CATEGORY, _category.ToString());
             ws.SetString(WS_SEARCH, _searchFilter ?? string.Empty);
             ws.SetString(WS_ENTITY, _selectedKey ?? string.Empty);
+
+            // Which animation the author was looking at. Not the panel's open state: opening it
+            // builds a camera and a RenderTexture, and a session that starts by paying for a
+            // panel nobody asked for is the opposite of what restoring a workspace is for.
+            ws.SetString(WS_ANIM_STATE, _animPreview.CurrentState.ToString());
+            ws.SetString(WS_ANIM_DIR,   _animPreview.CurrentDirection.ToString());
         }
 
         public void RestoreWorkspace(EditorWorkspace ws)
@@ -47,6 +55,13 @@ namespace Valkur.Gameplay.Entities
             // leaves nothing selected rather than selecting a neighbour.
             string key = ws.GetString(WS_ENTITY, null);
             if (!string.IsNullOrEmpty(key)) SelectEntity(key);
+
+            if (Enum.TryParse(ws.GetString(WS_ANIM_STATE, null),
+                              out DirectionalAnimator.AnimState animState))
+                _animPreview.SetState(animState);
+            if (Enum.TryParse(ws.GetString(WS_ANIM_DIR, null),
+                              out DirectionalAnimator.Direction animDir))
+                _animPreview.SetDirection(animDir);
         }
     }
 }

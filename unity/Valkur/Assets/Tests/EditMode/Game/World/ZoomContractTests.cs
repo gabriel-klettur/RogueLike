@@ -58,6 +58,13 @@ namespace Valkur.Tests.EditMode.Game.World
             "Gameplay/Editors/Spells/SpellPreviewService.Framing.cs",
             "Gameplay/Editors/Particles/ParticlePreviewService.cs",
 
+            // The Entities editor's animation stage. Same shape as the two above: its own
+            // disabled camera 30,000 units off-screen, rendering one entity into a
+            // RenderTexture. It never touches the game view, the lens Cinemachine drives or
+            // the PPU ladder — and because it renders no tiles, it is also free of the
+            // pixel-snap reason the ladder exists.
+            "Gameplay/Editors/Entities/EntityAnimationPreviewService.cs",
+
             // The minimap's terrain bake. A disabled camera that renders one chunk of the world
             // into a RenderTexture per Camera.Render call; its ortho is the chunk's half size and
             // never touches the game view, the lens Cinemachine drives or the PPU ladder.

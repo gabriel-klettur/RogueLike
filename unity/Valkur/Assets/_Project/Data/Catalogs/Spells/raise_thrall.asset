@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: raise_thrall
   m_EditorClassIdentifier: 
   spellKey: raise_thrall
-  displayName: Raise Thrall
+  displayName: Alzar Siervo
   type: 0
   audience: 1
   usesAttackAnimation: 0
@@ -25,7 +25,7 @@ MonoBehaviour:
   automatic: 0
   automaticCastPunish: 1
   lockCastDirection: 1
-  prepareDuration: 0
+  prepareDuration: 1
   channelDuration: 0
   cooldownDuration: 28
   speed: 20

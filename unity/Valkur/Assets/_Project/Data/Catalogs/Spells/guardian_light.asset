@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: guardian_light
   m_EditorClassIdentifier: 
   spellKey: guardian_light
-  displayName: Guardian Light
+  displayName: Luz Guardiana
   type: 18
   audience: 1
   usesAttackAnimation: 0
@@ -25,7 +25,7 @@ MonoBehaviour:
   automatic: 0
   automaticCastPunish: 1
   lockCastDirection: 1
-  prepareDuration: 0
+  prepareDuration: 0.8
   channelDuration: 0
   cooldownDuration: 24
   speed: 0

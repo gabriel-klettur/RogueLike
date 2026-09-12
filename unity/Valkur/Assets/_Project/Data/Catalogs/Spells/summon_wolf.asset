@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: summon_wolf
   m_EditorClassIdentifier: 
   spellKey: summon_wolf
-  displayName: Summon Wolf
+  displayName: Invocar Lobo
   type: 23
   audience: 1
   usesAttackAnimation: 0
@@ -25,7 +25,7 @@ MonoBehaviour:
   automatic: 0
   automaticCastPunish: 1
   lockCastDirection: 1
-  prepareDuration: 0
+  prepareDuration: 1.2
   channelDuration: 0
   cooldownDuration: 25
   speed: 0

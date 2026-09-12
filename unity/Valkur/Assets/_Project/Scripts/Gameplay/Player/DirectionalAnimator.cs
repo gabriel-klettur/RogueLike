@@ -143,6 +143,19 @@ namespace Valkur.Gameplay
         /// keys are — installed in the same call, after the binder has dropped the empties.
         /// </summary>
         private VariantPacing[][] _variantPacingByState;
+        /// <summary>Per state, per variant, the AUTHORED key ("punch", "armed_slash").
+        /// Index-aligned with <see cref="_variantsByState"/> for the same reason the two
+        /// tables above are: the binder drops variants that resolved to no frames, so a label
+        /// taken from the authored list would name the wrong animation from the first empty
+        /// slot on. It exists because a rotation is otherwise only addressable as "#2", which
+        /// is unreadable in the Entities editor's preview and unwritable back to the asset.
+        /// </summary>
+        private string[][] _variantLabelsByState;
+        /// <summary>Per state, per variant, the AUTHORED timeline — the plan that says which
+        /// frames a cast plays and where the spell's phases cut them. Index-aligned with
+        /// <see cref="_variantsByState"/> like every other table here, and null for the
+        /// overwhelming majority of variants, which have none.</summary>
+        private Valkur.Data.AnimationTimeline[][] _variantTimelinesByState;
 
         /// <summary>
         /// Per-state playback multiplier, indexed by <see cref="AnimState"/>. Null until an
@@ -262,7 +275,9 @@ namespace Valkur.Gameplay
         /// </summary>
         public void SetVariants(AnimState state, IReadOnlyList<DirectionalSpriteSet> variants,
                                 IReadOnlyList<IReadOnlyList<string>> variantSpellKeys = null,
-                                IReadOnlyList<VariantPacing> variantPacing = null)
+                                IReadOnlyList<VariantPacing> variantPacing = null,
+                                IReadOnlyList<string> variantLabels = null,
+                                IReadOnlyList<Valkur.Data.AnimationTimeline> variantTimelines = null)
         {
             int stateCount = Enum.GetValues(typeof(AnimState)).Length;
             if (_variantsByState == null || _variantsByState.Length != stateCount)
@@ -271,6 +286,10 @@ namespace Valkur.Gameplay
                 _variantSpellKeysByState = new string[stateCount][][];
             if (_variantPacingByState == null || _variantPacingByState.Length != stateCount)
                 _variantPacingByState = new VariantPacing[stateCount][];
+            if (_variantLabelsByState == null || _variantLabelsByState.Length != stateCount)
+                _variantLabelsByState = new string[stateCount][];
+            if (_variantTimelinesByState == null || _variantTimelinesByState.Length != stateCount)
+                _variantTimelinesByState = new Valkur.Data.AnimationTimeline[stateCount][];
 
             int index = (int)state;
             if (index < 0 || index >= stateCount)
@@ -281,6 +300,8 @@ namespace Valkur.Gameplay
                 _variantsByState[index] = null;
                 _variantSpellKeysByState[index] = null;
                 _variantPacingByState[index] = null;
+                _variantLabelsByState[index] = null;
+                _variantTimelinesByState[index] = null;
             }
             else
             {
@@ -291,6 +312,8 @@ namespace Valkur.Gameplay
 
                 _variantSpellKeysByState[index] = CopySpellKeys(variants.Count, variantSpellKeys);
                 _variantPacingByState[index] = CopyPacing(variants.Count, variantPacing);
+                _variantLabelsByState[index] = CopyLabels(variants.Count, variantLabels);
+                _variantTimelinesByState[index] = CopyTimelines(variants.Count, variantTimelines);
             }
 
             if (_entryVariantCursor != null && index < _entryVariantCursor.Length)
@@ -342,6 +365,79 @@ namespace Valkur.Gameplay
                     : VariantPacing.Default;
             }
             return copy;
+        }
+
+        /// <summary>
+        /// Defensive copy of the label table, padded to the variant count. A null entry is a
+        /// variant whose asset left <c>key</c> empty, which a reader shows as its index.
+        /// </summary>
+        private static string[] CopyLabels(int variantCount, IReadOnlyList<string> source)
+        {
+            if (source == null) return null;
+
+            var copy = new string[variantCount];
+            for (int i = 0; i < variantCount && i < source.Count; i++)
+                copy[i] = source[i];
+            return copy;
+        }
+
+        /// <summary>Defensive copy of the timeline table, padded to the variant count.</summary>
+        private static Valkur.Data.AnimationTimeline[] CopyTimelines(
+            int variantCount, IReadOnlyList<Valkur.Data.AnimationTimeline> source)
+        {
+            if (source == null) return null;
+
+            Valkur.Data.AnimationTimeline[] copy = null;
+            for (int i = 0; i < variantCount && i < source.Count; i++)
+            {
+                var timeline = source[i];
+                if (timeline == null || !timeline.HasSteps) continue;
+                copy ??= new Valkur.Data.AnimationTimeline[variantCount];
+                copy[i] = timeline;
+            }
+            return copy;
+        }
+
+        /// <summary>
+        /// The authored timeline of one variant, or null when it has none — which is every
+        /// variant in the game until an author draws one. The CALLER resolves it against the
+        /// spell's phases (<see cref="Valkur.Data.CastTimelineResolver"/>), because only the
+        /// caller knows which spell is being cast.
+        /// </summary>
+        public Valkur.Data.AnimationTimeline TimelineFor(AnimState state, int index)
+        {
+            int i = (int)state;
+            var table = _variantTimelinesByState != null && i >= 0 &&
+                        i < _variantTimelinesByState.Length
+                ? _variantTimelinesByState[i]
+                : null;
+            return table != null && index >= 0 && index < table.Length ? table[index] : null;
+        }
+
+        /// <summary>
+        /// The authored key of one variant, or null when the asset named none. Never an
+        /// index-derived placeholder: "the asset did not name this" and "the asset called it
+        /// 2" are different facts, and only the caller knows how to show the first.
+        /// </summary>
+        public string VariantLabel(AnimState state, int index)
+        {
+            int i = (int)state;
+            string[] table = _variantLabelsByState != null && i >= 0 &&
+                             i < _variantLabelsByState.Length
+                ? _variantLabelsByState[i]
+                : null;
+            return table != null && index >= 0 && index < table.Length ? table[index] : null;
+        }
+
+        /// <summary>
+        /// The spell keys <paramref name="index"/> is reserved for, or null when it stays in
+        /// the generic rotation. Read-only view of the table <see cref="VariantForSpell"/>
+        /// searches, so a screen can SHOW the reservation the selector obeys.
+        /// </summary>
+        public IReadOnlyList<string> ReservedSpellKeys(AnimState state, int index)
+        {
+            string[][] table = SpellKeysFor(state);
+            return table != null && index >= 0 && index < table.Length ? table[index] : null;
         }
 
         /// <summary>
@@ -400,6 +496,13 @@ namespace Valkur.Gameplay
         /// <c>VariantForSpell</c> answers -1 for everything, so every spell previewed the
         /// character's BASE cast pose and the pinning of an animation to a spell was
         /// invisible in the one screen built for looking at spells.
+        ///
+        /// The PER-STATE speed is copied too, and it was the half this method used to drop:
+        /// three multipliers decide a frame's duration (entity, state, variant) and only two of
+        /// them travelled, so a character whose idle is authored slow -- Gatita breathes at
+        /// 0.40x -- previewed at full rate. Nothing failed; the preview simply disagreed with
+        /// the game about the one quantity it exists to show. It is copied for EVERY state,
+        /// including the ones carrying no variants, because state pacing is independent of them.
         /// </summary>
         public void CopyVariantsFrom(DirectionalAnimator source)
         {
@@ -409,6 +512,8 @@ namespace Valkur.Gameplay
             for (int i = 0; i < stateCount; i++)
             {
                 var state = (AnimState)i;
+                SetStateSpeed(state, source.StateSpeedOf(state));
+
                 DirectionalSpriteSet[] sets = source.VariantsFor(state);
                 if (sets == null || sets.Length == 0)
                 {
@@ -418,6 +523,7 @@ namespace Valkur.Gameplay
 
                 var keys = new List<IReadOnlyList<string>>(sets.Length);
                 var pacing = new List<VariantPacing>(sets.Length);
+                var labels = new List<string>(sets.Length);
                 for (int v = 0; v < sets.Length; v++)
                 {
                     string[] row = source.SpellKeysFor(state) != null && v < source.SpellKeysFor(state).Length
@@ -425,8 +531,9 @@ namespace Valkur.Gameplay
                         : null;
                     keys.Add(row);
                     pacing.Add(source.PacingOf(state, v));
+                    labels.Add(source.VariantLabel(state, v));
                 }
-                SetVariants(state, sets, keys, pacing);
+                SetVariants(state, sets, keys, pacing, labels);
             }
 
             SetRecoverSprites(source.RecoverSprites);
@@ -530,7 +637,13 @@ namespace Valkur.Gameplay
         /// teleports in a single physics step and its wake lasts 0.14 s, against eight charge
         /// frames that read for 1.2 s at the normal rate.
         /// </summary>
-        private float FrameIntervalFor(AnimState state, int variant)
+        /// <summary>
+        /// Seconds one frame of <paramref name="state"/> is held, with all three multipliers
+        /// applied — the entity's, the state's and the variant's. Public so the Entities
+        /// editor can SHOW the number the render clock actually uses instead of recomputing it
+        /// from the asset and disagreeing by whichever multiplier it forgot.
+        /// </summary>
+        public float FrameIntervalFor(AnimState state, int variant)
         {
             float variantSpeed = PacingOf(state, variant).SpeedMultiplier;
             if (variantSpeed <= 0f) variantSpeed = 1f;
@@ -585,6 +698,13 @@ namespace Valkur.Gameplay
         /// </summary>
         public float GetStateLength(AnimState state, int attackVariant = -1)
         {
+            // An installed timeline IS the length of that state. Answering with the frame count
+            // instead would size the cast window against art that is no longer being played at
+            // the frame rate — a wind-up stretched over a 1.2 s summon would have its window
+            // closed at 0.9 s, which is the very failure this mechanism exists to remove.
+            if (HasTimeline && _timelineState == state && _timelineVariant == attackVariant)
+                return TimelineDuration;
+
             Sprite[] frames = ResolveFrames(state, _currentDirection, attackVariant);
             return frames == null || frames.Length == 0
                 ? 0f
@@ -618,6 +738,19 @@ namespace Valkur.Gameplay
 
         private void Update()
         {
+            // Frozen by the Entities editor's frame strip. Nothing in gameplay writes it, so
+            // this is one compare per animator per frame and no behaviour change anywhere else.
+            if (Paused) return;
+
+            // An authored timeline REPLACES the frame clock: its steps carry their own seconds,
+            // which is the whole point — a wind-up stretched over a 1.2 s summon has nothing to
+            // do with the entity's frame interval.
+            if (HasTimeline)
+            {
+                TickTimeline(Time.deltaTime);
+                return;
+            }
+
             _frameTimer += Time.deltaTime;
             float interval = FrameIntervalFor(_currentState, _activeVariant);
             if (_frameTimer < interval) return;
@@ -765,6 +898,13 @@ namespace Valkur.Gameplay
             if (!stateChanged && !directionChanged && !variantChanged && !reversedChanged)
                 return;
 
+            // A timeline belongs to ONE cast. Anything but a turn ends it: a state or variant
+            // change means a different animation is on screen now, and a plan left running
+            // would keep drawing the previous spell's frame indices out of the new set.
+            // A DIRECTION change deliberately does not — the plan's indices are per direction,
+            // so a character who turns mid-cast keeps their place and simply faces the other way.
+            if (stateChanged || variantChanged || reversedChanged) ClearTimeline();
+
             if ((variantChanged || reversedChanged) && !stateChanged)
             {
                 // Same state, different animation: the frame cursor has to go back to 0 or
@@ -791,6 +931,14 @@ namespace Valkur.Gameplay
                 _stateStartTime = Time.time;
                 // Apply immediately so the new state is visible without frame-interval lag.
                 AdvanceFrame();
+            }
+            else if (HasTimeline)
+            {
+                // A turn mid-cast. The plan keeps its place; only the bucket it reads from
+                // changes, which is the same guarantee RefreshCurrentFrame gives the ordinary
+                // cursor — and going through that method instead would put the frame clock's
+                // index on screen and fight the plan until its next step.
+                ApplyTimelineFrame();
             }
             else
             {
@@ -829,7 +977,7 @@ namespace Valkur.Gameplay
 
             if (frames.Length == 1)
             {
-                ApplyFrame(frames[0]);
+                ApplyFrame(frames, 0);
                 return;
             }
 
@@ -840,7 +988,7 @@ namespace Valkur.Gameplay
             // Mapped like AdvanceFrame does, or turning mid-sheathe would jump the character
             // to the mirror-image frame of the one it is on — visible as the draw snapping
             // back to its start every time the facing sector changes.
-            ApplyFrame(frames[FrameAt(idx, frames.Length)]);
+            ApplyFrame(frames, FrameAt(idx, frames.Length));
         }
 
         /// <summary>

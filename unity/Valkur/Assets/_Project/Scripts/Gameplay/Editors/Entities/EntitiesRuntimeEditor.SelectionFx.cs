@@ -11,10 +11,10 @@ namespace Valkur.Gameplay.Entities
     /// <summary>
     /// World-side selection + drag for the Entities Editor (F5), mirroring the
     /// Buildings Editor (F10):
-    ///   â€¢ LMB on an NPC in Select mode â†’ set as active (YELLOW outline);
+    ///   - LMB on an NPC in Select mode -> set as active (YELLOW outline);
     ///     all other NPCs sharing the same <c>MonsterDefinition.monsterKey</c>
     ///     get an ORANGE outline.
-    ///   â€¢ RMB-press on a hovered NPC â†’ start a move-drag (the NPC follows the
+    ///   - RMB-press on a hovered NPC -> start a move-drag (the NPC follows the
     ///     cursor while RMB is held; release commits with undo support, parity
     ///     with Buildings <c>FinalizeMoveDrag</c>).
     ///
@@ -249,7 +249,7 @@ namespace Valkur.Gameplay.Entities
                     _entityDragging = true;
                     _entityDragStartWorldPos = hit.transform.position;
                     _entityDragOffset = hit.transform.position - worldPos;
-                    SetStatus($"Move drag: '{hit.gameObject.name}' â€” release RMB to commit.");
+                    SetStatus($"Move drag: '{hit.gameObject.name}' \u2014 release RMB to commit.");
                     return true;
                 }
             }

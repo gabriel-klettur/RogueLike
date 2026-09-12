@@ -95,6 +95,43 @@ namespace Valkur.Gameplay.Spells
         public event System.Action<string> OnCastRefusedForMana;
 
         public CastPhase CurrentPhase => _phase;
+
+        /// <summary>
+        /// The spell currently winding up, channelling or cooling down — null when Ready.
+        ///
+        /// <para>Exists so a caller can ask what the caster is BUSY WITH rather than inferring it
+        /// from a slot index. Two of <see cref="SpellDefinition"/>'s casting flags were authored
+        /// on all 104 spells and read by nobody because there was no way to name the spell in
+        /// flight: <c>allowMovement</c> (does this plant the caster) and <c>interruptible</c>
+        /// (does a blow cancel it), both of which mean nothing until a wind-up is long enough to
+        /// stand in.</para>
+        /// </summary>
+        public SpellDefinition CurrentSpell
+        {
+            get
+            {
+                if (_phase == CastPhase.Ready) return null;
+                if (!string.IsNullOrEmpty(_activeKey) && _spellBook.TryGetValue(_activeKey, out var byKey))
+                    return byKey;
+                return _activeSlot >= 0 ? GetSpellAtSlot(_activeSlot) : null;
+            }
+        }
+
+        /// <summary>
+        /// Cancels a cast that has not fired yet. Returns false in every other phase, which is
+        /// the honest answer: once <c>ExecuteSpell</c> has run there is a projectile in the world
+        /// and nothing to take back.
+        ///
+        /// <para>The mana is NOT refunded. It is spent at the start of the cast, and a wind-up
+        /// that costs nothing to be interrupted out of is a wind-up with no risk in it — which
+        /// is the whole reason the flag exists.</para>
+        /// </summary>
+        public bool CancelPreparingCast()
+        {
+            if (_phase != CastPhase.Prepare) return false;
+            ResetPhase();
+            return true;
+        }
         public int ActiveSlot => _activeSlot;
         public float PhaseTimer => _phaseTimer;
         public int SlotCount => spellSlots != null ? spellSlots.Length : 0;

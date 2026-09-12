@@ -667,6 +667,13 @@ MonoBehaviour:
       - anim_punch
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: kick
       damageMultiplier: 1
       rangeMultiplier: 1
@@ -753,6 +760,13 @@ MonoBehaviour:
       - anim_kick
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: charge
       damageMultiplier: 1
       rangeMultiplier: 1
@@ -837,6 +851,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: armed_slash
       damageMultiplier: 1
       rangeMultiplier: 1
@@ -922,6 +943,13 @@ MonoBehaviour:
       - slash_regular
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: chop
       damageMultiplier: 1
       rangeMultiplier: 1
@@ -1008,6 +1036,13 @@ MonoBehaviour:
       - anim_chop
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: fish
       damageMultiplier: 1
       rangeMultiplier: 1
@@ -1094,6 +1129,13 @@ MonoBehaviour:
       - anim_fish
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: mine
       damageMultiplier: 1
       rangeMultiplier: 1
@@ -1180,6 +1222,13 @@ MonoBehaviour:
       - anim_mine
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     castVariants:
     - key: spell_1
       directional:
@@ -1261,6 +1310,13 @@ MonoBehaviour:
       - anim_spellcasting_1
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: spell_2
       directional:
         south: {fileID: 0}
@@ -1341,6 +1397,13 @@ MonoBehaviour:
       - anim_spellcasting_2
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: spell_3
       directional:
         south: {fileID: 0}
@@ -1421,6 +1484,13 @@ MonoBehaviour:
       - anim_spellcasting_3
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: spell_4
       directional:
         south: {fileID: 0}
@@ -1501,6 +1571,13 @@ MonoBehaviour:
       - anim_spellcasting_4
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: spell_5
       directional:
         south: {fileID: 0}
@@ -1581,6 +1658,13 @@ MonoBehaviour:
       - anim_spellcasting_5
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: armed_equip
       directional:
         south: {fileID: 0}
@@ -1661,6 +1745,13 @@ MonoBehaviour:
       - anim_armed_equip
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: armed_slash
       directional:
         south: {fileID: 0}
@@ -1744,6 +1835,13 @@ MonoBehaviour:
       - anim_armed_attack_1
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: charge
       directional:
         south: {fileID: 0}
@@ -1824,6 +1922,13 @@ MonoBehaviour:
       - anim_charging_sprint
       animationSpeedMultiplier: 4
       holdLastFrame: 1
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     stateVariants: []
     statePacing: []
     loadouts:
@@ -2119,6 +2224,8 @@ MonoBehaviour:
         variants: []
       attackVariants: []
       castVariants: []
+    castMuzzle: {x: 0, y: 0}
+    castMuzzleFrames: []
     scaleConfig:
       scaleIdle: 0
       tint: {r: 0, g: 0, b: 0, a: 1}

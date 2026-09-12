@@ -282,6 +282,59 @@ namespace Valkur.Tests.EditMode.Editors.Entities
             }
         }
 
+        /// <summary>
+        /// The Animation panel is built OUTSIDE <c>BuildAll</c> — it needs eleven callbacks no
+        /// other panel shares — so it is the one panel that can be forgotten by a refactor of
+        /// BuildUI without anything else going red. Every widget the runtime editor writes to
+        /// is listed here; a null one is a control that silently does nothing.
+        ///
+        /// <para>This asserts STRUCTURE, not layout. uGUI performs no layout pass in Edit Mode,
+        /// so reading back a size would report the value that was written and never what a
+        /// layout would have made of it — the trap that shipped the Controls editor with its
+        /// buttons printed one letter per line.</para>
+        /// </summary>
+        [Test]
+        public void BuildUI_Populates_The_Animation_Panel()
+        {
+            LogAssert.ignoreFailingMessages = true;
+            var ed = CreateEditorWithUI();
+            var ui = GetFieldValue(ed, "_ui");
+
+            var panel = (GameObject) ui.GetType().GetField("AnimDropdown").GetValue(ui);
+            Assert.IsNotNull(panel, "The Animation panel must be built.");
+            Assert.IsFalse(panel.activeSelf,
+                "It must start hidden: opening it builds a camera and a RenderTexture, and a " +
+                "session that pays for a panel nobody asked for is the opposite of the point.");
+
+            string[] widgets = {
+                "AnimMenuBtnImg", "AnimStage", "AnimSubjectText",
+                "AnimStateDd", "AnimVariantDd", "AnimLoadoutDd", "AnimLayoutDd",
+                "AnimInfoText", "AnimPlayPauseTmp", "AnimReverseImg",
+                "AnimStripOverflowText",
+                "AnimEntitySpeedInput", "AnimStateSpeedInput", "AnimVariantSpeedInput",
+                "AnimHoldToggle",
+            };
+            foreach (var w in widgets)
+            {
+                var value = ui.GetType().GetField(w).GetValue(ui);
+                Assert.IsNotNull(value, $"UIRefs.{w} must be populated by BuildAnimationPanel.");
+            }
+
+            var pad = (Image[]) ui.GetType().GetField("AnimDirBtnImgs").GetValue(ui);
+            Assert.IsNotNull(pad, "The direction pad must exist.");
+            Assert.AreEqual(9, pad.Length,
+                "Nine cells: eight facings and a centre that is the grid toggle, because no " +
+                "body faces the camera.");
+
+            var cells = (Image[]) ui.GetType().GetField("AnimStripCellImgs").GetValue(ui);
+            Assert.IsNotNull(cells, "The frame strip must realise its cells once, up front.");
+            Assert.Greater(cells.Length, 0);
+            foreach (var cell in cells)
+                Assert.IsFalse(cell.gameObject.activeSelf,
+                    "A strip cell starts hidden and is shown by RefreshAnimationStrip — the " +
+                    "pool is realised once and never rebuilt.");
+        }
+
         [Test]
         public void BuildUI_Populates_Picker_Search_And_Status()
         {

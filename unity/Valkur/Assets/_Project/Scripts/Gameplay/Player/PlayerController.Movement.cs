@@ -162,6 +162,20 @@ namespace Valkur.Gameplay
             if (_dashAbility != null && _dashAbility.IsDashing)
                 return;
 
+            // A spell that does not allow movement plants the caster for as long as it is
+            // WINDING UP or CHANNELLING — never for its cooldown, which is when it may be cast
+            // again rather than time the caster is busy.
+            //
+            // `allowMovement` was authored on all 104 spells and read by nobody for the life of
+            // the project, which was harmless while the longest wind-up in the catalogue was
+            // half a second. It stops being harmless the moment a summon takes 1.2 s: without
+            // this the player walks away mid-cast and the spell lands from wherever they got to.
+            if (IsPlantedByCast())
+            {
+                _rb.velocity = Vector2.zero;
+                return;
+            }
+
             // M1.9 — hard-stop on void cells. When the predicted next cell has
             // zero tiles in any visible layer it's a "you can't walk here"
             // wall, even if the cell has no Collision tile. Axis-split clamp
@@ -620,7 +634,17 @@ namespace Valkur.Gameplay
             // marking the moment it started.
             if (!sameCastStillPlaying) NotifyPlayerActed();
 
-            _animator.SetState(state, dir, variant, ShouldPlayCastReversed());
+            // An authored timeline takes over the frames, and only on a FRESH cast: reinstalling
+            // it on every frame of a held channel would restart the plan sixty times a second,
+            // which is the same failure the variant reuse above exists to prevent.
+            if (!sameCastStillPlaying && TryPlayCastTimeline(state, dir, variant, spellKey))
+            {
+                // PlayTimeline poses the animator itself.
+            }
+            else
+            {
+                _animator.SetState(state, dir, variant, ShouldPlayCastReversed());
+            }
             _castAnimSpellKey = spellKey;
             // Remembered so the revert below can hand back control from WHATEVER state this
             // cast entered, not just from the three it used to be able to reach.
@@ -636,7 +660,19 @@ namespace Valkur.Gameplay
             float floor = isRegularSlash
                 ? REGULAR_SLASH_ANIMATION_DURATION
                 : CAST_ANIMATION_DURATION;
-            _castAnimEndTime = Time.time + Mathf.Max(floor, _animator.GetStateLength(state, variant));
+            // The window has to cover the CAST, not just the art.
+            //
+            // It used to be sized from the animation alone, which was invisible while every
+            // shipped spell's wind-up was a rounding error: the longest prepareDuration in the
+            // whole catalogue was 0.5 s and most were 0.1. Author a real one — a 1.2 s summon,
+            // a 0.9 s war cry — and the animation runs out first, locomotion takes the animator
+            // back mid-charge, and the character walks away while the spell is still counting
+            // down and then fires it from wherever they got to. The spell's own phases are the
+            // floor now; the art is what may be LONGER than them.
+            float castPhases = ResolveCastPhaseDuration(spellKey);
+            _castAnimEndTime = Time.time + Mathf.Max(
+                Mathf.Max(floor, castPhases),
+                _animator.GetStateLength(state, variant));
 
             // A stow commits on the cast frame but its ART is deferred to the END of the
             // sheathe — the sword has to still be in hand for the animation to be putting it
@@ -716,6 +752,101 @@ namespace Valkur.Gameplay
         /// preview — so the historical behaviour is what a missing lookup falls back to
         /// rather than something new.
         /// </summary>
+        /// <summary>
+        /// True while a spell in flight forbids movement.
+        ///
+        /// <para>Asked of the CASTER rather than of the animation window: the window is sized by
+        /// art and can outlast the cast, and planting a character for the tail of an animation
+        /// would be a different rule than the one the field is named after.</para>
+        /// </summary>
+        private bool IsPlantedByCast()
+        {
+            if (_spellCaster == null) return false;
+
+            var phase = _spellCaster.CurrentPhase;
+            if (phase != SpellCaster.CastPhase.Prepare && phase != SpellCaster.CastPhase.Channel)
+                return false;
+
+            var spell = _spellCaster.CurrentSpell;
+            return spell != null && !spell.allowMovement;
+        }
+
+        /// <summary>
+        /// Cancels a spell still winding up when its caster is hit, for the spells whose data
+        /// says so. The other half of the pair above, and dead for the same reason until
+        /// wind-ups were long enough to be interrupted at all.
+        ///
+        /// <para>Subscribed to <c>OnDamagedBy</c> rather than to <c>OnHpChanged</c> so a heal
+        /// cannot interrupt a cast, and so a blow that armour reduced to nothing still counts —
+        /// being hit is the event, not losing health.</para>
+        /// </summary>
+        private void HandleCastInterruption(int amount, GameObject attacker)
+        {
+            if (_spellCaster == null) return;
+            if (_spellCaster.CurrentPhase != SpellCaster.CastPhase.Prepare) return;
+
+            var spell = _spellCaster.CurrentSpell;
+            if (spell == null || !spell.interruptible) return;
+
+            if (_spellCaster.CancelPreparingCast())
+            {
+                // The animation window is what holds locomotion off; a cancelled cast has to
+                // hand it straight back or the character stands in a pose they are no longer
+                // performing.
+                _castAnimEndTime = 0f;
+                _castAnimSpellKey = null;
+            }
+        }
+
+        /// <summary>
+        /// Installs the variant's authored timeline, resolved against THIS spell's phases.
+        ///
+        /// <para>This is the seam where the two clocks finally meet. The spell owns the absolute
+        /// times — <c>prepareDuration</c> is when it fires — and the timeline owns which frame is
+        /// on screen at each of them; <see cref="CastTimelineResolver"/> turns the pair into a
+        /// flat list of frames and seconds. A variant with no timeline returns false and the
+        /// caller poses the animator exactly as it always did, which is every animation in the
+        /// game until somebody draws one.</para>
+        /// </summary>
+        private bool TryPlayCastTimeline(DirectionalAnimator.AnimState state,
+                                         DirectionalAnimator.Direction dir,
+                                         int variant, string spellKey)
+        {
+            if (_animator == null || variant < 0) return false;
+
+            AnimationTimeline timeline = _animator.TimelineFor(state, variant);
+            if (timeline == null || !timeline.HasSteps) return false;
+
+            SpellDefinition spell = _spellCaster != null ? _spellCaster.GetSpellByKey(spellKey) : null;
+            float prepare = spell != null ? Mathf.Max(0f, spell.prepareDuration) : 0f;
+            float channel = spell != null ? Mathf.Max(0f, spell.channelDuration) : 0f;
+
+            var steps = CastTimelineResolver.Resolve(timeline, prepare, channel);
+            if (steps.Count == 0) return false;
+
+            _animator.PlayTimeline(state, dir, variant, steps, ShouldPlayCastReversed());
+            return true;
+        }
+
+        /// <summary>
+        /// How long the spell itself occupies the caster: wind-up plus channel.
+        ///
+        /// <para>Deliberately NOT including the cooldown. A cooldown is when the spell may be
+        /// cast AGAIN — <c>war_cry</c> authors twenty seconds of it — and holding the casting
+        /// pose for that long would freeze the character out of their own turn. Prepare and
+        /// channel are the phases during which the cast is happening.</para>
+        ///
+        /// <para>Zero for an unknown key, which is the honest answer for the paths that pass
+        /// none (the slash, the dash and the beam refresh) and leaves the historical floor in
+        /// charge exactly as before.</para>
+        /// </summary>
+        private float ResolveCastPhaseDuration(string spellKey)
+        {
+            SpellDefinition spell = _spellCaster != null ? _spellCaster.GetSpellByKey(spellKey) : null;
+            if (spell == null) return 0f;
+            return Mathf.Max(0f, spell.prepareDuration) + Mathf.Max(0f, spell.channelDuration);
+        }
+
         private bool UsesAttackAnimation(string spellKey)
         {
             SpellDefinition spell = _spellCaster != null ? _spellCaster.GetSpellByKey(spellKey) : null;

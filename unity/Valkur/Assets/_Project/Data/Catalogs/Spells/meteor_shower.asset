@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: meteor_shower
   m_EditorClassIdentifier: 
   spellKey: meteor_shower
-  displayName: Meteor Shower
+  displayName: Lluvia de Meteoros
   type: 11
   audience: 1
+  usesAttackAnimation: 0
   manaCost: 18
   maxInstances: 1
   allowOverlap: 1
@@ -24,7 +25,7 @@ MonoBehaviour:
   automatic: 0
   automaticCastPunish: 1
   lockCastDirection: 1
-  prepareDuration: 0.3
+  prepareDuration: 0.8
   channelDuration: 0.2
   cooldownDuration: 6
   speed: 0
@@ -39,6 +40,7 @@ MonoBehaviour:
   distance: 0
   knockback: 0
   collisionDamage: 0
+  infinite: 0
   duration: 0
   damagePerTick: 0
   tickPeriod: 0
@@ -48,6 +50,9 @@ MonoBehaviour:
   forceMode: 
   followCaster: 0
   spawnAtMouse: 1
+  statusApplications: []
+  castAnchor: 0
+  castForwardOffset: 0
   meteorCount: 8
   meteorInterval: 0.25
   meteorAreaRadius: 32.5
@@ -68,6 +73,21 @@ MonoBehaviour:
   totemKind: 
   coneArc: 0
   coneLength: 0
+  animState: 
+  loadoutAnimKey: 
+  loadoutKey: 
+  statModifiers: []
+  buffKey: 
+  pierceCount: 0
+  pierceDamageFalloff: 0
+  homingStrength: 0
+  homingRange: 0
+  projectileCount: 1
+  spreadDegrees: 0
+  chargeMaxSeconds: 0
+  chargeMinFraction: 0.45
+  chargeDamageMultiplier: 1
+  chargeScaleMultiplier: 1
   sprite: {fileID: 0}
   scale: 1
   speedMultiplier: 1
@@ -85,3 +105,9 @@ MonoBehaviour:
   emitRate: 0
   vfxPreset: 
   impactPreset: explosion_small
+  vfxPresetLayers: []
+  impactPresetLayers: []
+  castPreset: 
+  castPresetLayers: []
+  gatherOverride:
+    fields: []

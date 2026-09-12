@@ -179,6 +179,12 @@ namespace Valkur.Data
                  "move that ENDS in a pose rather than returning to where it started.")]
         public bool holdLastFrame;
 
+        [Header("Cast timeline")]
+        [Tooltip("Optional authored plan: which frames play, in what order and for how long, " +
+                 "and where the spell's phases cut them. Empty = the natural frames at the " +
+                 "entity's own rate, exactly as before.")]
+        public AnimationTimeline timeline = new AnimationTimeline();
+
 
         /// <summary>
         /// True when this variant is spoken for by at least one spell — see
@@ -246,6 +252,12 @@ namespace Valkur.Data
         [Tooltip("Play the frames once and hold the last one, instead of looping. Use for a " +
                  "move that ENDS in a pose rather than returning to where it started.")]
         public bool holdLastFrame;
+
+        [Header("Cast timeline")]
+        [Tooltip("Optional authored plan: which frames play, in what order and for how long, " +
+                 "and where the spell's phases cut them. Empty = the natural frames at the " +
+                 "entity's own rate, exactly as before.")]
+        public AnimationTimeline timeline = new AnimationTimeline();
 
 
         /// <summary>
@@ -605,6 +617,44 @@ namespace Valkur.Data
                     return Mathf.Max(0.05f, statePacing[i].animationSpeedMultiplier);
             }
             return 1f;
+        }
+
+        /// <summary>
+        /// Writes one state's multiplier, adding the row when there is none.
+        ///
+        /// <para>A value of exactly 1 REMOVES the row rather than storing it, because 1 is what
+        /// <see cref="StateSpeedMultiplier"/> already answers for an absent state: keeping it
+        /// would fill an asset with rows that say nothing, and the shipped data has exactly ONE
+        /// authored row (Gatita's 0.40 idle) — which is what makes that list worth reading.</para>
+        ///
+        /// <para>It lives here rather than in the editor that calls it because the list is this
+        /// class's, and a writer that sat beside the reader in another assembly is how the two
+        /// eventually disagree about what an absent row means.</para>
+        /// </summary>
+        public void SetStateSpeedMultiplier(string state, float multiplier)
+        {
+            if (string.IsNullOrEmpty(state)) return;
+            statePacing ??= new List<StatePacing>();
+
+            bool neutral = Mathf.Approximately(multiplier, 1f);
+            for (int i = 0; i < statePacing.Count; i++)
+            {
+                var entry = statePacing[i];
+                if (entry == null ||
+                    !string.Equals(entry.state, state, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (neutral) statePacing.RemoveAt(i);
+                else         entry.animationSpeedMultiplier = Mathf.Max(0.05f, multiplier);
+                return;
+            }
+
+            if (neutral) return;
+            statePacing.Add(new StatePacing
+            {
+                state = state,
+                animationSpeedMultiplier = Mathf.Max(0.05f, multiplier)
+            });
         }
 
         [Header("Loadouts")]

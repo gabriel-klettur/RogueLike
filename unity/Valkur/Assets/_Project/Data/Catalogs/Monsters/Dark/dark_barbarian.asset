@@ -545,6 +545,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: leap
       damageMultiplier: 1
       rangeMultiplier: 1
@@ -629,6 +636,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     castVariants:
     - key: spell_1
       directional:
@@ -708,6 +722,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: spell_2
       directional:
         south: {fileID: 0}
@@ -786,6 +807,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: spell_3
       directional:
         south: {fileID: 0}
@@ -864,6 +892,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: spell_4
       directional:
         south: {fileID: 0}
@@ -942,6 +977,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: spell_5
       directional:
         south: {fileID: 0}
@@ -1020,9 +1062,18 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     stateVariants: []
     statePacing: []
     loadouts: []
+    castMuzzle: {x: 0, y: 0}
+    castMuzzleFrames: []
     scaleConfig:
       scaleIdle: 0
       tint: {r: 0, g: 0, b: 0, a: 1}

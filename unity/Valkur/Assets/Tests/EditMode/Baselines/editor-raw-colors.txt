@@ -38,6 +38,8 @@
 3	Camera/CameraEditorUIBuilder.cs
 4	DungeonNodeGraph/DungeonNodeGraphEditor.UI.cs
 2	Entities/EntitiesEditorUIBuilder.Properties.cs
+3	Entities/EntityAnimationPreviewService.cs
+2	Entities/EntitiesRuntimeEditor.Timeline.cs
 1	Entities/EntitiesRuntimeEditor.Interaction.cs
 2	Entities/EntitiesRuntimeEditor.PickerDrag.cs
 2	Entities/EntitiesRuntimeEditor.SelectionFx.cs
