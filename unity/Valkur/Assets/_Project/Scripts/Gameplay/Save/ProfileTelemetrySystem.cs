@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Gameplay;
 using Valkur.Gameplay.FSM;
 using Valkur.Infrastructure.Persistence.Profile;
 
@@ -127,11 +128,26 @@ namespace Valkur.Gameplay.Save
             // Skip the player — that's tracked separately by OnPlayerDied.
             if (victim.CompareTag("Player")) return;
 
+            // Only a HOSTILE counts as a kill. Without this the "top monsters killed" board
+            // listed the shopkeepers by name — measured, 3 of its 7 rows were vendors — and a
+            // player who shot a vendor by accident had that on their record forever. The
+            // AUTHORED faction is what answers it, never the derived side: a charmed monster is
+            // still a monster, exactly as the loot and coin gates already decide.
+            if (EntityFaction.AuthoredSideOf(victim) != FactionSide.Hostile) return;
+
             string entityKey = ResolveEntityKey(victim);
             if (string.IsNullOrEmpty(entityKey)) return;
 
             _db.KillStats.RecordKill(entityKey);
-            if (_activeRun != null) _activeRun.totalKills++;
+            if (_activeRun != null)
+            {
+                _activeRun.totalKills++;
+                // Persisted as it happens. It used to be written only from OnPlayerDied and
+                // OnRunEnded, and OnRunEnded never fired — so 249 of 251 shipped run rows read
+                // kills=0 while the lifetime table held 39 kills. A run without a death recorded
+                // nothing it did.
+                _db.Runs.Update(_activeRun);
+            }
         }
 
         private void OnPlayerDied()
@@ -148,22 +164,58 @@ namespace Valkur.Gameplay.Save
                 _db.Runs.Update(_activeRun);
             }
             _db.SaveAll();
+
+            // Under permadeath the run really is over — there is no altar to walk to and the
+            // save is about to be deleted — so it is closed here rather than waiting for the
+            // scene to go away. Everywhere else the spirit flow lets the player carry on, which
+            // is why an ordinary death does NOT end the run.
+            if (GameSettings.Instance != null && GameSettings.Instance.permadeath) EndActiveRun();
         }
 
-        private void OnRunEnded()
+        private void OnRunEnded() => EndActiveRun();
+
+        /// <summary>
+        /// Closes the open run: stamps its end, its duration, and folds it into the lifetime
+        /// counters. Idempotent — a run can only be ended once.
+        ///
+        /// <para><b>Why this is reached from four places and not from one event.</b>
+        /// <c>GameEvents.FireRunEnded()</c> had ZERO production callers for the life of the
+        /// project: only a test raised it. So the game opened a run on every boot
+        /// (<c>StartRun</c> IS called, from the boot sequence) and closed none — measured on this
+        /// machine's profile, <b>251 run rows and every one of them with duration 0</b>, while
+        /// the panel that draws them printed "Total runs: 0" above the list.</para>
+        ///
+        /// <para>The fix is not a fifth event nobody remembers to raise. The system that OWNS
+        /// the run closes it when its own scene goes away (<c>OnDestroy</c>), when the
+        /// application quits, and when permadeath makes the run over by definition. Those are
+        /// conditions, not calls, so a new way of leaving the world cannot forget to end it.</para>
+        /// </summary>
+        private void EndActiveRun()
         {
-            if (_db == null || _activeRun == null) return;
+            if (_db == null || _activeRun == null || _runEnded) return;
+            _runEnded = true;
 
             _activeRun.endedAtIso = DateTime.UtcNow.ToString("o");
             _activeRun.durationSeconds = Time.time - _runStartTime;
             _db.Runs.Update(_activeRun);
 
+            // The lifetime counters are kept for anything that already reads them, but they are
+            // no longer the SOURCE: the panel derives its totals from the run table. Two paths to
+            // one number is how the two came to disagree by 251.
             _db.Profile.IncrementInt("total_runs");
             _db.Profile.SetFloat("total_playtime_sec",
                 _db.Profile.GetFloat("total_playtime_sec") + _activeRun.durationSeconds);
 
             _db.SaveAll();
         }
+
+        private bool _runEnded;
+
+        /// <summary>The scene holding the run is going away, so the run is over.</summary>
+        private void OnDestroy() => EndActiveRun();
+
+        /// <summary>Quitting from inside a run ends it; otherwise it is lost like every other.</summary>
+        private void OnApplicationQuit() => EndActiveRun();
 
         private void OnXpGained(GameObject entity, int amount)
         {

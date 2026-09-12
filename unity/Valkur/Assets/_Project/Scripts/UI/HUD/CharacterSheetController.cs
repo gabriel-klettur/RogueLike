@@ -123,8 +123,8 @@ namespace Valkur.UI.HUD
             _tabs.Add(new SheetTab
             {
                 Label = "CHARACTER",
-                Show  = () => EnsurePanel<CharacterStatsHUD>("CharacterStatsHUD").Open(),
-                Hide  = () => EnsurePanel<CharacterStatsHUD>("CharacterStatsHUD").Close(),
+                Show  = () => EnsurePanel<CharacterSheetHUD>("CharacterSheetHUD").Open(),
+                Hide  = () => EnsurePanel<CharacterSheetHUD>("CharacterSheetHUD").Close(),
             });
 
             _tabs.Add(new SheetTab
@@ -148,8 +148,8 @@ namespace Valkur.UI.HUD
             _tabs.Add(new SheetTab
             {
                 Label = "RECORDS",
-                Show  = () => EnsurePanel<StatisticsHUD>("StatisticsHUD").Open(),
-                Hide  = () => EnsurePanel<StatisticsHUD>("StatisticsHUD").Close(),
+                Show  = () => EnsurePanel<RecordsHUD>("RecordsHUD").Open(),
+                Hide  = () => EnsurePanel<RecordsHUD>("RecordsHUD").Close(),
             });
         }
 

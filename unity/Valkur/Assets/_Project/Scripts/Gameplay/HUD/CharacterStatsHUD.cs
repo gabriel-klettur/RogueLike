@@ -2,6 +2,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using Valkur.Core;
+using Valkur.Core.UI;
 using Valkur.Data;
 
 namespace Valkur.Gameplay.HUD
@@ -171,9 +172,17 @@ namespace Valkur.Gameplay.HUD
 
             _canvas = _root.AddComponent<Canvas>();
             _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            _canvas.sortingOrder = 60;
-            _root.AddComponent<CanvasScaler>().uiScaleMode =
-                CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            _canvas.sortingOrder = HudLayout.CharacterSheetSortingOrder;
+
+            // The canvas contract every HUD surface shares (HUD_VISUAL_LANGUAGE.md, R9).
+            // This panel shipped on Unity's default 800x600 with match 0: a 2.0 scale factor
+            // at 1600 wide against everything else's 1.0, and at sortingOrder 60 it also drew
+            // under the minimap (105) and the music plaque (140).
+            var scaler = _root.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(HudLayout.ReferenceWidth,
+                                                     HudLayout.ReferenceHeight);
+            scaler.matchWidthOrHeight = HudLayout.Match;
             _root.AddComponent<GraphicRaycaster>();
 
             // Same rect as SkillTreeHUD and StatisticsHUD: the character sheet's tab strip

@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Valkur.Core;
 using Valkur.Core.Input;
+using Valkur.Core.UI;
 
 namespace Valkur.UI.HUD
 {
@@ -21,16 +22,65 @@ namespace Valkur.UI.HUD
         private const float StripBottom = 0.855f;
         private const float StripTop    = 0.915f;
 
-        private const float TabWidth    = 132f;
+        /// <summary>
+        /// Widest a tab may get. It used to be the ONLY width, and a fixed width in a strip
+        /// whose size comes from the screen is an overflow waiting for its fourth tab:
+        /// measured at 1600x800 on the shipped 800x600 canvas, four tabs plus the close
+        /// button needed 548 units in a 480-unit strip, so RECORDS was drawn 136 px outside
+        /// the panel and the X landed on top of its label — the "RX" in the bug report.
+        /// The strip divides what it HAS now, and this is only a ceiling.
+        /// </summary>
+        private const float TabMaxWidth = 132f;
+
+        /// <summary>
+        /// Narrowest a tab may get before the strip admits it cannot fit them. Below this the
+        /// labels are unreadable and silently shrinking them further would trade one invisible
+        /// failure for another; the strip clamps here and the test says so.
+        /// </summary>
+        private const float TabMinWidth = 72f;
+
         private const float TabGap      = 4f;
         private const float CloseSize   = 30f;
-        private const int   CanvasOrder = 120;   // above SkillTree (60) and Statistics (70)
+        private const float StripInset  = 8f;
+
+        /// <summary>
+        /// The strip draws over the panels it switches between, and it is the only way out of
+        /// them. Band, not a number: the panels themselves each wrote 60 / 60 / 60 / 70, which
+        /// put all four under the minimap and the music plaque.
+        /// </summary>
+        private const int   CanvasOrder = HudLayout.CharacterSheetChromeSortingOrder;
 
         private static readonly Color StripColor    = new Color(0.05f, 0.05f, 0.07f, 0.94f);
         private static readonly Color TabIdleColor  = new Color(0.13f, 0.13f, 0.17f, 0.95f);
         private static readonly Color TabHotColor   = new Color(0.22f, 0.24f, 0.32f, 1f);
         private static readonly Color AccentColor   = new Color(1f, 0.78f, 0.30f, 1f);
         private static readonly Color LabelIdle     = new Color(0.78f, 0.80f, 0.86f, 1f);
+
+        // ── The fit, as arithmetic a test can run ─────────────────────────
+        // uGUI performs no layout in EditMode, so the only honest way to pin "the tabs fit"
+        // is to state the rule as a function. The shipped panel failed it by 68 units and
+        // nothing could see that: the overflow was only visible on screen, as an X drawn
+        // over the last tab's label.
+
+        /// <summary>Width the tab strip has, in canvas units, at the reference resolution.</summary>
+        public static float StripWidthAtReference() =>
+            (StripRight - StripLeft) * HudLayout.ReferenceWidth;
+
+        /// <summary>What <paramref name="count"/> tabs want: their ceiling width, plus the
+        /// gaps, the inset and the reserved close button.</summary>
+        public static float TabsPreferredWidth(int count) => TabsWidth(count, TabMaxWidth);
+
+        /// <summary>The least the same tabs can be squeezed into before the strip gives up.</summary>
+        public static float TabsMinimumWidth(int count) => TabsWidth(count, TabMinWidth);
+
+        private static float TabsWidth(int count, float each)
+        {
+            if (count <= 0) return StripInset * 3f + CloseSize;
+            return StripInset                       // left inset
+                 + count * each                     // the tabs
+                 + (count - 1) * TabGap             // the gaps between them
+                 + StripInset * 2f + CloseSize;     // the reserved close button
+        }
 
         private GameObject _root;
         private Image[]    _tabBackgrounds;
@@ -52,7 +102,17 @@ namespace Valkur.UI.HUD
             var canvas = _root.AddComponent<Canvas>();
             canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = CanvasOrder;
-            _root.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+
+            var scaler = _root.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            // HUD_VISUAL_LANGUAGE.md R9. Unity's default 800x600 with match 0 is a 2.0 scale
+            // factor at 1600 wide against every other HUD surface's 1.0, and it is what made
+            // the fixed-width tabs overflow a strip that looked twice as wide in code as it
+            // was on screen.
+            scaler.referenceResolution = new Vector2(HudLayout.ReferenceWidth,
+                                                     HudLayout.ReferenceHeight);
+            scaler.matchWidthOrHeight = HudLayout.Match;
+
             _root.AddComponent<GraphicRaycaster>();
 
             var strip = NewChild("Strip", _root.transform);
@@ -77,17 +137,32 @@ namespace Valkur.UI.HUD
             _tabUnderlines  = new Image[count];
             _tabLabels      = new TextMeshProUGUI[count];
 
+            // The strip DIVIDES the width it has instead of each tab claiming a fixed one.
+            // The right padding is what reserves the close button, so the X can never be
+            // dealt a tab's space and drawn on top of its label.
+            var layout = stripRt.gameObject.AddComponent<HorizontalLayoutGroup>();
+            layout.padding = new RectOffset(
+                (int)StripInset, (int)(StripInset * 2f + CloseSize), 6, 6);
+            layout.spacing                = TabGap;
+            layout.childAlignment         = TextAnchor.MiddleLeft;
+            layout.childControlWidth      = true;
+            layout.childControlHeight     = true;
+            layout.childForceExpandWidth  = false;
+            layout.childForceExpandHeight = true;
+
             for (int i = 0; i < count; i++)
             {
                 int index = i;   // captured per iteration for the click handler
 
                 var tabGo = NewChild("Tab_" + _tabs[i].Label, stripRt);
-                var tabRt = tabGo.GetComponent<RectTransform>();
-                tabRt.anchorMin = new Vector2(0f, 0f);
-                tabRt.anchorMax = new Vector2(0f, 1f);
-                tabRt.pivot     = new Vector2(0f, 0.5f);
-                tabRt.sizeDelta = new Vector2(TabWidth, -12f);
-                tabRt.anchoredPosition = new Vector2(8f + i * (TabWidth + TabGap), 0f);
+
+                // Prefer TabMaxWidth, shrink proportionally toward TabMinWidth when a fifth
+                // tab arrives or the window narrows. uGUI hands out min widths first and then
+                // distributes what is left up to preferred, which is exactly this rule.
+                var element = tabGo.AddComponent<LayoutElement>();
+                element.minWidth       = TabMinWidth;
+                element.preferredWidth = TabMaxWidth;
+                element.flexibleWidth  = 0f;
 
                 var bg = tabGo.AddComponent<Image>();
                 bg.sprite = WhiteSprite();
@@ -99,7 +174,7 @@ namespace Valkur.UI.HUD
                 button.onClick.AddListener(() => SelectTab(index));
 
                 // Label on its own GameObject — TMP and Image must not share one.
-                var labelGo = NewChild("Label", tabRt);
+                var labelGo = NewChild("Label", tabGo.transform);
                 var labelRt = labelGo.GetComponent<RectTransform>();
                 labelRt.anchorMin = Vector2.zero;
                 labelRt.anchorMax = Vector2.one;
@@ -108,6 +183,13 @@ namespace Valkur.UI.HUD
 
                 var label = labelGo.AddComponent<TextMeshProUGUI>();
                 label.text             = _tabs[i].Label;
+                // Auto-sized, because the tab is no longer a fixed width: a strip that
+                // shrinks its tabs and keeps a fixed point size has only moved the overflow
+                // from the strip into the label.
+                label.enableAutoSizing = true;
+                label.fontSizeMin      = 9f;
+                label.fontSizeMax      = 15f;
+                label.enableWordWrapping = false;
                 label.fontSize         = 15f;
                 label.fontStyle        = FontStyles.Bold;
                 label.characterSpacing = 6f;
@@ -117,7 +199,7 @@ namespace Valkur.UI.HUD
                 _tabLabels[i] = label;
 
                 // Accent underline marking the active tab.
-                var lineGo = NewChild("Underline", tabRt);
+                var lineGo = NewChild("Underline", tabGo.transform);
                 var lineRt = lineGo.GetComponent<RectTransform>();
                 lineRt.anchorMin = new Vector2(0f, 0f);
                 lineRt.anchorMax = new Vector2(1f, 0f);
@@ -138,6 +220,9 @@ namespace Valkur.UI.HUD
         {
             var closeGo = NewChild("Close", stripRt);
             var closeRt = closeGo.GetComponent<RectTransform>();
+            // Anchored, never laid out: the strip's right padding reserves its space and the
+            // HorizontalLayoutGroup must not deal it a tab's slot.
+            closeGo.AddComponent<LayoutElement>().ignoreLayout = true;
             closeRt.anchorMin = new Vector2(1f, 0.5f);
             closeRt.anchorMax = new Vector2(1f, 0.5f);
             closeRt.pivot     = new Vector2(1f, 0.5f);

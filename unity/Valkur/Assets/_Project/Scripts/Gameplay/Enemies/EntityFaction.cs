@@ -106,6 +106,27 @@ namespace Valkur.Gameplay
         private const string PlayerTag = "Player";
 
         /// <summary>
+        /// The side an entity was AUTHORED as, ignoring who it happens to be fighting for right
+        /// now. <see cref="SideOf"/> lets <see cref="AlliedUnit"/> win, which is the right answer
+        /// for "whom does this attack" and the wrong one for "what is this".
+        ///
+        /// <para>The distinction is load-bearing wherever a REWARD is decided. The loot and coin
+        /// gates already record it: routing them through the derived side would make a charmed
+        /// monster silently stop dropping anything, taking the reward away on exactly the enemies
+        /// the player worked hardest for. The kill board needs the same answer for the same
+        /// reason — a summoned ally dying is not a trophy, and a charmed barbol still is.</para>
+        /// </summary>
+        public static FactionSide AuthoredSideOf(GameObject go)
+        {
+            if (go == null) return FactionSide.Hostile;
+            if (go == EntityRegistry.Player) return FactionSide.PlayerSide;
+            if (go.CompareTag(PlayerTag)) return FactionSide.PlayerSide;
+
+            var component = go.GetComponent<EntityFaction>();
+            return component != null ? Parse(component.faction) : FactionSide.Hostile;
+        }
+
+        /// <summary>
         /// True when <paramref name="a"/> would attack <paramref name="b"/> unprompted.
         ///
         /// <para>Neutral is on NEITHER side of this: it never initiates and is never chosen as
