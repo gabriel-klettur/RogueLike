@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8770dafe3e2eea64d90791fb3fe76644, type: 3}
   m_Name: radiance_school
   m_EditorClassIdentifier: 
-  displayName: Radiance
+  displayName: Fulgor
   schoolKey: radiance
-  flavour: Keeping people alive is the harder half of any fight.
+  flavour: "Mantener viva a la gente es la mitad dif\xEDcil de cualquier pelea."
   accent: {r: 1, g: 0.95, b: 0.72, a: 1}
   classAffinities:
   - valkyrie

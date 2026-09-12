@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: lightning
   m_EditorClassIdentifier: 
   spellKey: lightning
-  displayName: Lightning
+  displayName: "Rel\xE1mpago"
   type: 12
   audience: 1
   manaCost: 10

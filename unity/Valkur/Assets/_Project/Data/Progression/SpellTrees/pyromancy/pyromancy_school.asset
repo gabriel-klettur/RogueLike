@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8770dafe3e2eea64d90791fb3fe76644, type: 3}
   m_Name: pyromancy_school
   m_EditorClassIdentifier: 
-  displayName: Pyromancy
+  displayName: Piromancia
   schoolKey: pyromancy
-  flavour: Fire is the only school that answers before it is finished being asked.
+  flavour: "El fuego es la \xFAnica escuela que responde antes de que acabes de preguntar."
   accent: {r: 1, g: 0.45, b: 0.15, a: 1}
   classAffinities:
   - mague

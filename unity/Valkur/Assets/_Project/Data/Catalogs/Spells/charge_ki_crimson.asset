@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: charge_ki_crimson
   m_EditorClassIdentifier: 
   spellKey: charge_ki_crimson
-  displayName: 'Ki Charge: Crimson'
+  displayName: "Ki Carmes\xED"
   type: 27
   audience: 1
   usesAttackAnimation: 0

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: barb_warcry
   m_EditorClassIdentifier: 
   skillId: barb_warcry
-  displayName: War Cry
-  description: Loud enough to make the next swing easier.
+  displayName: Grito de Guerra
+  description: Lo bastante alto como para facilitar el siguiente golpe.
   icon: {fileID: 0}
   pointCost: 2
   maxRank: 3

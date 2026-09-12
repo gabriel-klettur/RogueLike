@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: arcane_flame
   m_EditorClassIdentifier: 
   spellKey: arcane_flame
-  displayName: Arcane Flame
+  displayName: Llama Arcana
   type: 15
   audience: 1
   manaCost: 10

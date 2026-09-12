@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: elf_woodlore
   m_EditorClassIdentifier: 
   skillId: elf_woodlore
-  displayName: Woodlore
-  description: Every fight teaches you a little more than it should.
+  displayName: Saber del Bosque
+  description: "Cada pelea te ense\xF1a algo m\xE1s de lo que deber\xEDa."
   icon: {fileID: 0}
   pointCost: 1
   maxRank: 4

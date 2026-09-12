@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Valkur.Core;
 
 namespace Valkur.Gameplay.Chat
 {
@@ -28,73 +29,46 @@ namespace Valkur.Gameplay.Chat
     /// </summary>
     public static class ChatLanguage
     {
-        public const string SPANISH = "es";
-        public const string ENGLISH = "en";
+        // ── The mechanism moved to Valkur.Core.GameLanguage ──────────────────
+        //
+        // This class kept a persisted, announced EN/ES preference and its own doc argued the
+        // right principle: "a language preference is a fact about the person holding the
+        // controller, not about Gatita". That was true one screen wider than it was applied.
+        // The ten pre-game panels were hard-coded English while this panel, the loading screen
+        // and the HUD were Spanish, so the game shipped three languages on adjacent screens.
+        //
+        // The decision now lives in Core, where LoadingText and MenuText can also read it —
+        // Core may reference neither Gameplay nor UI, so it is the only assembly all three
+        // share. Everything below FORWARDS: the constants, Current, Toggle, Set and OnChanged
+        // all keep their exact signatures and their PlayerPrefs key, so ChatSystem's per-NPC
+        // sync and ChatUI's chrome subscription needed no change at all.
+        //
+        // The strings below stay here. They are the chat panel's own vocabulary and belong
+        // beside it; what was global was never the words, it was the switch.
 
-        private const string PREF_KEY = "valkur.chat.language";
-
-        private static string _current = SPANISH;
-        private static bool _loaded;
+        public const string SPANISH = GameLanguage.SPANISH;
+        public const string ENGLISH = GameLanguage.ENGLISH;
 
         /// <summary>Raised when the language changes. Never for a repeat.</summary>
-        public static event Action<string> OnChanged;
-
-        /// <summary>
-        /// Static mutable state with Domain Reload off. Assignment rather than a helper
-        /// call, because <c>DomainReloadStaticResetTests</c> reads this method's raw IL and
-        /// only recognises a direct <c>stsfld</c>.
-        /// </summary>
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics()
+        public static event Action<string> OnChanged
         {
-            _current = SPANISH;
-            _loaded = false;
-            OnChanged = null;
+            add => GameLanguage.OnChanged += value;
+            remove => GameLanguage.OnChanged -= value;
         }
 
         /// <summary>The active language code, loaded from PlayerPrefs on first read.</summary>
-        public static string Current
-        {
-            get
-            {
-                if (!_loaded)
-                {
-                    _loaded = true;
-                    _current = Normalize(PlayerPrefs.GetString(PREF_KEY, SPANISH));
-                }
-                return _current;
-            }
-        }
+        public static string Current => GameLanguage.Current;
 
-        public static bool IsEnglish => Current == ENGLISH;
+        public static bool IsEnglish => GameLanguage.IsEnglish;
 
         /// <summary>The two-letter code the button shows.</summary>
-        public static string Label => Current.ToUpperInvariant();
+        public static string Label => GameLanguage.Label;
 
         /// <summary>Switches to the other language and writes it through.</summary>
-        public static string Toggle() => Set(Current == SPANISH ? ENGLISH : SPANISH);
+        public static string Toggle() => GameLanguage.Toggle();
 
-        /// <summary>
-        /// Sets the language, persists it, and announces it. Anything unrecognised falls
-        /// back to Spanish rather than being stored — a preference file holding "fr" would
-        /// otherwise put the panel in a language with no strings and no way back.
-        /// </summary>
-        public static string Set(string language)
-        {
-            string next = Normalize(language);
-            _loaded = true;
-            if (next == _current) return _current;
-
-            _current = next;
-            PlayerPrefs.SetString(PREF_KEY, next);
-            PlayerPrefs.Save();
-
-            OnChanged?.Invoke(next);
-            return next;
-        }
-
-        private static string Normalize(string language) =>
-            string.Equals(language, ENGLISH, StringComparison.OrdinalIgnoreCase) ? ENGLISH : SPANISH;
+        /// <summary>Sets the language, persists it, and announces it.</summary>
+        public static string Set(string language) => GameLanguage.Set(language);
 
         // ── Panel strings ───────────────────────────────────────────────────
         //

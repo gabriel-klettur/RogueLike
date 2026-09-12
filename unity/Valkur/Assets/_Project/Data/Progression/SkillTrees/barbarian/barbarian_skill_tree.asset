@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36d1094d9ba7ed546a6bd9f0b160891f, type: 3}
   m_Name: barbarian_skill_tree
   m_EditorClassIdentifier: 
-  displayName: Path of Fury
+  displayName: Senda de la Furia
   classKey: barbarian
-  flavour: Every problem is a matter of how hard you hit it.
+  flavour: "Todo problema es cuesti\xF3n de con cu\xE1nta fuerza lo golpeas."
   nodes:
   - {fileID: 11400000, guid: 4b807f08159257740a7205424262527c, type: 2}
   - {fileID: 11400000, guid: bb6377a91b5c650429ea9651c94eff52, type: 2}

@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8770dafe3e2eea64d90791fb3fe76644, type: 3}
   m_Name: shadow_school
   m_EditorClassIdentifier: 
-  displayName: Umbramancy
+  displayName: Umbramancia
   schoolKey: shadow
-  flavour: Not being seen is a form of armour.
+  flavour: No ser visto es una forma de armadura.
   accent: {r: 0.45, g: 0.35, b: 0.55, a: 1}
   classAffinities:
   - elven

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: barb_thickskin
   m_EditorClassIdentifier: 
   skillId: barb_thickskin
-  displayName: Thick Skin
-  description: Being reckless is cheaper with more blood in you.
+  displayName: Piel Dura
+  description: "Ser temerario sale m\xE1s barato con m\xE1s sangre dentro."
   icon: {fileID: 0}
   pointCost: 1
   maxRank: 4

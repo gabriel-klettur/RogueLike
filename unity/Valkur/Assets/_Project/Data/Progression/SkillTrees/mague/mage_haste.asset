@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: mage_haste
   m_EditorClassIdentifier: 
   skillId: mage_haste
-  displayName: Arcane Haste
-  description: The pause between castings, shortened.
+  displayName: Premura Arcana
+  description: La pausa entre conjuros, acortada.
   icon: {fileID: 0}
   pointCost: 2
   maxRank: 3

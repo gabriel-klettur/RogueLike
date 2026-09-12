@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: firework_launch
   m_EditorClassIdentifier: 
   spellKey: firework_launch
-  displayName: Firework Launch
+  displayName: Fuego Artificial
   type: 16
   audience: 1
   usesAttackAnimation: 0

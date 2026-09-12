@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: elf_fleetfoot
   m_EditorClassIdentifier: 
   skillId: elf_fleetfoot
-  displayName: Fleet Foot
-  description: The ground barely gets a say.
+  displayName: Pie Ligero
+  description: El suelo apenas tiene voz.
   icon: {fileID: 0}
   pointCost: 1
   maxRank: 5

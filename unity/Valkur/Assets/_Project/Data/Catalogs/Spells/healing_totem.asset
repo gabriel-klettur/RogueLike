@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: healing_totem
   m_EditorClassIdentifier: 
   spellKey: healing_totem
-  displayName: Healing Totem
+  displayName: "T\xF3tem Sanador"
   type: 24
   audience: 1
   manaCost: 16

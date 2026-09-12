@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: vortex_push
   m_EditorClassIdentifier: 
   spellKey: vortex_push
-  displayName: Vortex Push
+  displayName: "V\xF3rtice Repulsor"
   type: 21
   audience: 1
   usesAttackAnimation: 1

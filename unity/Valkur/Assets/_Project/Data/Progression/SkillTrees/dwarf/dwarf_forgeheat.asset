@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: dwarf_forgeheat
   m_EditorClassIdentifier: 
   skillId: dwarf_forgeheat
-  displayName: Forge Heat
-  description: The swing comes round faster than it has any right to.
+  displayName: Calor de Fragua
+  description: El golpe vuelve antes de lo que le corresponde.
   icon: {fileID: 0}
   pointCost: 2
   maxRank: 3

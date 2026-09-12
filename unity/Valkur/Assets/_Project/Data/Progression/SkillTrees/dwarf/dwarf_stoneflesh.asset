@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: dwarf_stoneflesh
   m_EditorClassIdentifier: 
   skillId: dwarf_stoneflesh
-  displayName: Stoneflesh
-  description: Years underground thicken more than the skin.
+  displayName: Piel de Piedra
+  description: "Los a\xF1os bajo tierra espesan algo m\xE1s que la piel."
   icon: {fileID: 0}
   pointCost: 1
   maxRank: 5

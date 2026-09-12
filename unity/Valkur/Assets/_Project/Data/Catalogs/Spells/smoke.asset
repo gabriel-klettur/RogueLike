@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: smoke
   m_EditorClassIdentifier: 
   spellKey: smoke
-  displayName: Smoke
+  displayName: Humo
   type: 6
   audience: 1
   manaCost: 10

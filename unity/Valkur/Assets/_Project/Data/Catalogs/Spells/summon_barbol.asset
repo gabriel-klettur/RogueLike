@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: summon_barbol
   m_EditorClassIdentifier: 
   spellKey: summon_barbol
-  displayName: Summon Barbol
+  displayName: Invocar Barbol
   type: 23
   audience: 1
   usesAttackAnimation: 0

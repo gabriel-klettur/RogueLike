@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: blessing
   m_EditorClassIdentifier: 
   spellKey: blessing
-  displayName: Blessing
+  displayName: "Bendici\xF3n"
   type: 28
   audience: 1
   usesAttackAnimation: 0

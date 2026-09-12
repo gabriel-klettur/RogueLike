@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: arcane_barrier
   m_EditorClassIdentifier: 
   spellKey: arcane_barrier
-  displayName: Arcane Barrier
+  displayName: Barrera Arcana
   type: 7
   audience: 1
   usesAttackAnimation: 0

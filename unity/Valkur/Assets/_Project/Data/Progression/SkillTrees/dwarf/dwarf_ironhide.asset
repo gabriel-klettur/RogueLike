@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: dwarf_ironhide
   m_EditorClassIdentifier: 
   skillId: dwarf_ironhide
-  displayName: Iron Hide
-  description: Blows land. They just stop meaning as much.
+  displayName: Cuero de Hierro
+  description: Los golpes llegan. Solo que dejan de significar tanto.
   icon: {fileID: 0}
   pointCost: 1
   maxRank: 5

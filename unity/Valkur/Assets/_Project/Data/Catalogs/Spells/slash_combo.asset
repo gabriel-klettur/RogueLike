@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: slash_combo
   m_EditorClassIdentifier: 
   spellKey: slash_combo
-  displayName: Slash (Combo)
+  displayName: Tajo (Combo)
   type: 1
   audience: 1
   manaCost: 0

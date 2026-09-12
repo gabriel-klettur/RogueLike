@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: sanctuary
   m_EditorClassIdentifier: 
   spellKey: sanctuary
-  displayName: Sanctuary
+  displayName: Santuario
   type: 24
   audience: 1
   usesAttackAnimation: 0

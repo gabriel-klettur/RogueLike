@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: charge_ki_void
   m_EditorClassIdentifier: 
   spellKey: charge_ki_void
-  displayName: 'Ki Charge: Void'
+  displayName: "Ki del Vac\xEDo"
   type: 27
   audience: 1
   usesAttackAnimation: 0

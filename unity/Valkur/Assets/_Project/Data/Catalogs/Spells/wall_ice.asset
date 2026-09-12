@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: wall_ice
   m_EditorClassIdentifier: 
   spellKey: wall_ice
-  displayName: Ice Wall
+  displayName: Muro de Hielo
   type: 7
   audience: 1
   manaCost: 0

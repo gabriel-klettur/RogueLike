@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: mage_economy
   m_EditorClassIdentifier: 
   skillId: mage_economy
-  displayName: Economy of Motion
-  description: Nothing wasted. Not a syllable.
+  displayName: "Econom\xEDa de Movimiento"
+  description: "Nada desperdiciado. Ni una s\xEDlaba."
   icon: {fileID: 0}
   pointCost: 2
   maxRank: 3

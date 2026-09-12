@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: valk_ascendance
   m_EditorClassIdentifier: 
   skillId: valk_ascendance
-  displayName: Ascendance
-  description: Less waiting between miracles.
+  displayName: "Ascensi\xF3n"
+  description: Menos espera entre milagros.
   icon: {fileID: 0}
   pointCost: 2
   maxRank: 3

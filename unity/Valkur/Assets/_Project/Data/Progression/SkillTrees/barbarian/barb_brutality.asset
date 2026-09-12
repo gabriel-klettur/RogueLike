@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: barb_brutality
   m_EditorClassIdentifier: 
   skillId: barb_brutality
-  displayName: Brutality
-  description: The axe does not need to be sharp.
+  displayName: Brutalidad
+  description: El hacha no necesita estar afilada.
   icon: {fileID: 0}
   pointCost: 1
   maxRank: 5

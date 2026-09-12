@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: smoke_emitter
   m_EditorClassIdentifier: 
   spellKey: smoke_emitter
-  displayName: Smoke Emitter
+  displayName: Emisor de Humo
   type: 17
   audience: 1
   manaCost: 10

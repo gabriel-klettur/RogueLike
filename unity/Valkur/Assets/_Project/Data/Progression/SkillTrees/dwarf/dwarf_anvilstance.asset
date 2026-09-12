@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: dwarf_anvilstance
   m_EditorClassIdentifier: 
   skillId: dwarf_anvilstance
-  displayName: Anvil Stance
-  description: Planted. Slower, and much harder to shift.
+  displayName: Postura de Yunque
+  description: "Plantado. M\xE1s lento, y mucho m\xE1s dif\xEDcil de mover."
   icon: {fileID: 0}
   pointCost: 2
   maxRank: 3

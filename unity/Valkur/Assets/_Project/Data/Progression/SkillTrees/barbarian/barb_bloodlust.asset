@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: barb_bloodlust
   m_EditorClassIdentifier: 
   skillId: barb_bloodlust
-  displayName: Bloodlust
-  description: Openings you did not notice you were looking for.
+  displayName: Sed de Sangre
+  description: "Huecos que no sab\xEDas que estabas buscando."
   icon: {fileID: 0}
   pointCost: 1
   maxRank: 5

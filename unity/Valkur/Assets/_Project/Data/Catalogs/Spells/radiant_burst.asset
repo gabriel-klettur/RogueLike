@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: radiant_burst
   m_EditorClassIdentifier: 
   spellKey: radiant_burst
-  displayName: Radiant Burst
+  displayName: Estallido Radiante
   type: 2
   audience: 1
   usesAttackAnimation: 0

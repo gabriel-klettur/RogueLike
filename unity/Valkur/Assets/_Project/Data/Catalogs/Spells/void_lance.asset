@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: void_lance
   m_EditorClassIdentifier: 
   spellKey: void_lance
-  displayName: Void Lance
+  displayName: "Lanza del Vac\xEDo"
   type: 0
   audience: 1
   usesAttackAnimation: 0

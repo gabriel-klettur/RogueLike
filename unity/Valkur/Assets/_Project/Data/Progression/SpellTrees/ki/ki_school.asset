@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8770dafe3e2eea64d90791fb3fe76644, type: 3}
   m_Name: ki_school
   m_EditorClassIdentifier: 
-  displayName: Inner Fire
+  displayName: Fuego Interior
   schoolKey: ki
-  flavour: Seven ways of burning without being consumed.
+  flavour: Siete maneras de arder sin consumirse.
   accent: {r: 0.55, g: 0.85, b: 0.95, a: 1}
   classAffinities:
   - dwarf

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: valk_chooser
   m_EditorClassIdentifier: 
   skillId: valk_chooser
-  displayName: Chooser of the Slain
-  description: Both halves, at once, without the cost of either.
+  displayName: "Elegidora de los Ca\xEDdos"
+  description: Las dos mitades, a la vez, sin el coste de ninguna.
   icon: {fileID: 0}
   pointCost: 3
   maxRank: 1

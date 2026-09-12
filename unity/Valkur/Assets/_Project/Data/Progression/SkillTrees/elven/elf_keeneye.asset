@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: elf_keeneye
   m_EditorClassIdentifier: 
   skillId: elf_keeneye
-  displayName: Keen Eye
-  description: You see the gap before it opens.
+  displayName: Ojo Certero
+  description: Ves el hueco antes de que se abra.
   icon: {fileID: 0}
   pointCost: 1
   maxRank: 5

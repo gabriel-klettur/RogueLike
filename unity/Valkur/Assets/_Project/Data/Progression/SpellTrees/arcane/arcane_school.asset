@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8770dafe3e2eea64d90791fb3fe76644, type: 3}
   m_Name: arcane_school
   m_EditorClassIdentifier: 
-  displayName: Arcana
+  displayName: Arcanismo
   schoolKey: arcane
-  flavour: The school that studies the other schools.
+  flavour: "La escuela que estudia a las dem\xE1s escuelas."
   accent: {r: 0.7, g: 0.45, b: 1, a: 1}
   classAffinities:
   - mague

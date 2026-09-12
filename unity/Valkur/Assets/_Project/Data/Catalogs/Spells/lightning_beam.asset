@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: lightning_beam
   m_EditorClassIdentifier: 
   spellKey: lightning_beam
-  displayName: Lightning Beam
+  displayName: Haz de Rayos
   type: 5
   audience: 1
   manaCost: 2

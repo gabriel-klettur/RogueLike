@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: spore_cloud
   m_EditorClassIdentifier: 
   spellKey: spore_cloud
-  displayName: Spore Cloud
+  displayName: Nube de Esporas
   type: 17
   audience: 1
   usesAttackAnimation: 0

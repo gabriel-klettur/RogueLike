@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: laser_beam_red
   m_EditorClassIdentifier: 
   spellKey: laser_beam_red
-  displayName: Laser Red
+  displayName: "L\xE1ser Rojo"
   type: 5
   audience: 1
   usesAttackAnimation: 0

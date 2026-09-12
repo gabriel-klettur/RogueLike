@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8770dafe3e2eea64d90791fb3fe76644, type: 3}
   m_Name: storm_school
   m_EditorClassIdentifier: 
-  displayName: Stormcalling
+  displayName: Tormentas
   schoolKey: storm
-  flavour: The sky keeps no ledger and settles all at once.
+  flavour: El cielo no lleva libros y lo salda todo de golpe.
   accent: {r: 0.95, g: 0.9, b: 0.35, a: 1}
   classAffinities:
   - mague

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: charge_ki_verdant
   m_EditorClassIdentifier: 
   spellKey: charge_ki_verdant
-  displayName: 'Ki Charge: Verdant'
+  displayName: Ki Verde
   type: 27
   audience: 1
   usesAttackAnimation: 0

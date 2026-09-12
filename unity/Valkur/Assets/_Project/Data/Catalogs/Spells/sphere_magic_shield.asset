@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: sphere_magic_shield
   m_EditorClassIdentifier: 
   spellKey: sphere_magic_shield
-  displayName: Sphere Magic Shield
+  displayName: Esfera de Escudo
   type: 18
   audience: 1
   manaCost: 10

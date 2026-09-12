@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: laser_beam_black
   m_EditorClassIdentifier: 
   spellKey: laser_beam_black
-  displayName: Laser Void
+  displayName: "L\xE1ser del Vac\xEDo"
   type: 5
   audience: 1
   usesAttackAnimation: 0

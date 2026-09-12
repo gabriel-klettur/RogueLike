@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: charge_ki_violet
   m_EditorClassIdentifier: 
   spellKey: charge_ki_violet
-  displayName: 'Ki Charge: Violet'
+  displayName: Ki Violeta
   type: 27
   audience: 1
   usesAttackAnimation: 0

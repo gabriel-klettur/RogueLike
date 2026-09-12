@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36d1094d9ba7ed546a6bd9f0b160891f, type: 3}
   m_Name: mague_skill_tree
   m_EditorClassIdentifier: 
-  displayName: Path of the Deep Library
+  displayName: Senda de la Biblioteca Profunda
   classKey: mague
-  flavour: Power is a reading problem.
+  flavour: El poder es un problema de lectura.
   nodes:
   - {fileID: 11400000, guid: 51aefb6eaa836ed4d976c3eeb7c3a207, type: 2}
   - {fileID: 11400000, guid: 8f77d90e9bf88734990e12ad742e03ea, type: 2}

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: teleport
   m_EditorClassIdentifier: 
   spellKey: teleport
-  displayName: Teleport
+  displayName: "Teleportaci\xF3n"
   type: 4
   audience: 1
   manaCost: 10

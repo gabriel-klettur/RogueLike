@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: scatter_volley
   m_EditorClassIdentifier: 
   spellKey: scatter_volley
-  displayName: Scatter Volley
+  displayName: Andanada
   type: 0
   audience: 1
   usesAttackAnimation: 1

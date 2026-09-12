@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: dwarf_bulwark
   m_EditorClassIdentifier: 
   skillId: dwarf_bulwark
-  displayName: Bulwark
-  description: Ten percent more of you to get through.
+  displayName: Baluarte
+  description: "Un diez por ciento m\xE1s de ti que atravesar."
   icon: {fileID: 0}
   pointCost: 2
   maxRank: 3

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: mage_archmage
   m_EditorClassIdentifier: 
   skillId: mage_archmage
-  displayName: Archmage
-  description: The library, finished.
+  displayName: Archimago
+  description: La biblioteca, terminada.
   icon: {fileID: 0}
   pointCost: 3
   maxRank: 1

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: barb_execution
   m_EditorClassIdentifier: 
   skillId: barb_execution
-  displayName: Execution
-  description: When it lands right, it lands very right.
+  displayName: "Ejecuci\xF3n"
+  description: Cuando entra bien, entra muy bien.
   icon: {fileID: 0}
   pointCost: 2
   maxRank: 3

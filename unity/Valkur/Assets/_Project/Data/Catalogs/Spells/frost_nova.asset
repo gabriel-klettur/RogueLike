@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: frost_nova
   m_EditorClassIdentifier: 
   spellKey: frost_nova
-  displayName: Frost Nova
+  displayName: Nova de Escarcha
   type: 2
   audience: 1
   usesAttackAnimation: 0

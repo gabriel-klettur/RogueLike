@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: entangle
   m_EditorClassIdentifier: 
   spellKey: entangle
-  displayName: Entangle
+  displayName: "Enmara\xF1ar"
   type: 2
   audience: 1
   usesAttackAnimation: 0

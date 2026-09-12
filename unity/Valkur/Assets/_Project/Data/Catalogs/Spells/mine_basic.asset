@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: mine_basic
   m_EditorClassIdentifier: 
   spellKey: mine_basic
-  displayName: Basic Mine
+  displayName: Mina
   type: 20
   audience: 1
   manaCost: 6

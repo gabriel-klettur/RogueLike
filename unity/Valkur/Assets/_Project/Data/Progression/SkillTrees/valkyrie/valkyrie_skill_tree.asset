@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36d1094d9ba7ed546a6bd9f0b160891f, type: 3}
   m_Name: valkyrie_skill_tree
   m_EditorClassIdentifier: 
-  displayName: Path of the Chooser
+  displayName: Senda de la Elegidora
   classKey: valkyrie
-  flavour: Half a warrior and half a spell, and neither half apologises.
+  flavour: Media guerrera y medio hechizo, y ninguna mitad se disculpa.
   nodes:
   - {fileID: 11400000, guid: 686e07cd58aa5774d930e2c313c43569, type: 2}
   - {fileID: 11400000, guid: 6b018bfad11733b4ca3d91c8baded4c6, type: 2}

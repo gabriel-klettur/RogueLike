@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36d1094d9ba7ed546a6bd9f0b160891f, type: 3}
   m_Name: dwarf_skill_tree
   m_EditorClassIdentifier: 
-  displayName: Path of the Mountain
+  displayName: "Senda de la Monta\xF1a"
   classKey: dwarf
-  flavour: Stone does not dodge. It simply refuses to move.
+  flavour: La piedra no esquiva. Simplemente se niega a moverse.
   nodes:
   - {fileID: 11400000, guid: 2d5662709cbcfed48932ae2fdc71667a, type: 2}
   - {fileID: 11400000, guid: a49b03583b448e842a32636626ab50ab, type: 2}

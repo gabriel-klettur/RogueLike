@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: barkskin
   m_EditorClassIdentifier: 
   spellKey: barkskin
-  displayName: Barkskin
+  displayName: Piel de Corteza
   type: 28
   audience: 1
   usesAttackAnimation: 0

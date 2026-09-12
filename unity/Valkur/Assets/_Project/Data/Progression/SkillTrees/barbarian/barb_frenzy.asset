@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: barb_frenzy
   m_EditorClassIdentifier: 
   skillId: barb_frenzy
-  displayName: Frenzy
-  description: Faster, and not noticeably more careful.
+  displayName: "Frenes\xED"
+  description: "M\xE1s r\xE1pido, y no mucho m\xE1s prudente."
   icon: {fileID: 0}
   pointCost: 2
   maxRank: 3

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: elf_precision
   m_EditorClassIdentifier: 
   skillId: elf_precision
-  displayName: Precision
-  description: Where, not how hard.
+  displayName: "Precisi\xF3n"
+  description: "D\xF3nde, no con cu\xE1nta fuerza."
   icon: {fileID: 0}
   pointCost: 2
   maxRank: 3

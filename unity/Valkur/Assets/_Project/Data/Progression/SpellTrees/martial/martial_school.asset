@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8770dafe3e2eea64d90791fb3fe76644, type: 3}
   m_Name: martial_school
   m_EditorClassIdentifier: 
-  displayName: Martial Forms
+  displayName: Formas Marciales
   schoolKey: martial
-  flavour: No words. Just the weight of the thing in your hands.
+  flavour: Sin palabras. Solo el peso de lo que llevas en las manos.
   accent: {r: 0.82, g: 0.8, b: 0.74, a: 1}
   classAffinities:
   - dwarf

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: mage_warding
   m_EditorClassIdentifier: 
   skillId: mage_warding
-  displayName: Warding
-  description: A mage who is hit twice is usually not hit a third time.
+  displayName: "Protecci\xF3n"
+  description: A un mago al que golpean dos veces no suelen golpearlo una tercera.
   icon: {fileID: 0}
   pointCost: 2
   maxRank: 3

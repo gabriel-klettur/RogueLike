@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: charge_ki_solar
   m_EditorClassIdentifier: 
   spellKey: charge_ki_solar
-  displayName: 'Ki Charge: Solar'
+  displayName: Ki Solar
   type: 27
   audience: 1
   usesAttackAnimation: 0

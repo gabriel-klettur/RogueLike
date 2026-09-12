@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: thorn_burst
   m_EditorClassIdentifier: 
   spellKey: thorn_burst
-  displayName: Thorn Burst
+  displayName: Estallido de Espinas
   type: 2
   audience: 1
   usesAttackAnimation: 0

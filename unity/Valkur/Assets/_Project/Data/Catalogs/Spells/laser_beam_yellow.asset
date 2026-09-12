@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: laser_beam_yellow
   m_EditorClassIdentifier: 
   spellKey: laser_beam_yellow
-  displayName: Laser Yellow
+  displayName: "L\xE1ser Amarillo"
   type: 5
   audience: 1
   usesAttackAnimation: 0

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: valk_shieldmaiden
   m_EditorClassIdentifier: 
   skillId: valk_shieldmaiden
-  displayName: Shieldmaiden
-  description: Survive the exchange you started.
+  displayName: Escudera
+  description: Sobrevive al intercambio que empezaste.
   icon: {fileID: 0}
   pointCost: 2
   maxRank: 3

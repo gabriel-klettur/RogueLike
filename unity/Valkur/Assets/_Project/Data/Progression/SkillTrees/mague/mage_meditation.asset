@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: mage_meditation
   m_EditorClassIdentifier: 
   skillId: mage_meditation
-  displayName: Meditation
-  description: Recovery between fights, and during them.
+  displayName: "Meditaci\xF3n"
+  description: "Recuperaci\xF3n entre peleas, y durante ellas."
   icon: {fileID: 0}
   pointCost: 1
   maxRank: 4

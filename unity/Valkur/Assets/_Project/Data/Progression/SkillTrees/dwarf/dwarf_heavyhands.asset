@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: dwarf_heavyhands
   m_EditorClassIdentifier: 
   skillId: dwarf_heavyhands
-  displayName: Heavy Hands
-  description: A hammer swung by someone who mines for a living.
+  displayName: Manos Pesadas
+  description: Un martillo blandido por alguien que se gana la vida picando.
   icon: {fileID: 0}
   pointCost: 1
   maxRank: 4

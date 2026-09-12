@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: barb_rampage
   m_EditorClassIdentifier: 
   skillId: barb_rampage
-  displayName: Rampage
-  description: There is no defensive half of this talent.
+  displayName: Arrasar
+  description: Este talento no tiene mitad defensiva.
   icon: {fileID: 0}
   pointCost: 3
   maxRank: 1

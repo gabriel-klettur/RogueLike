@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: elf_attunement
   m_EditorClassIdentifier: 
   skillId: elf_attunement
-  displayName: Attunement
-  description: The old songs are still worth a little power.
+  displayName: "Sinton\xEDa"
+  description: "Las canciones viejas todav\xEDa valen algo de poder."
   icon: {fileID: 0}
   pointCost: 2
   maxRank: 3

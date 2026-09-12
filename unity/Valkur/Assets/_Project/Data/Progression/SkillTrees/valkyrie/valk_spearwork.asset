@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: valk_spearwork
   m_EditorClassIdentifier: 
   skillId: valk_spearwork
-  displayName: Spearwork
-  description: Reach, and what to do with it.
+  displayName: Juego de Lanza
+  description: "Alcance, y qu\xE9 hacer con \xE9l."
   icon: {fileID: 0}
   pointCost: 1
   maxRank: 5

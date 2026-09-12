@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: charge_ki_azure
   m_EditorClassIdentifier: 
   spellKey: charge_ki_azure
-  displayName: 'Ki Charge: Azure'
+  displayName: Ki Azur
   type: 27
   audience: 1
   usesAttackAnimation: 0

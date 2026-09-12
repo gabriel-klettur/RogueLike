@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: flame_breath
   m_EditorClassIdentifier: 
   spellKey: flame_breath
-  displayName: Flame Breath
+  displayName: "Aliento \xCDgneo"
   type: 22
   audience: 1
   manaCost: 14

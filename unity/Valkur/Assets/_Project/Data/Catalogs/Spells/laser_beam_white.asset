@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: laser_beam_white
   m_EditorClassIdentifier: 
   spellKey: laser_beam_white
-  displayName: Laser White
+  displayName: "L\xE1ser Blanco"
   type: 5
   audience: 1
   usesAttackAnimation: 0

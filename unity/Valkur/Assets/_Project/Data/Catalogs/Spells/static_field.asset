@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: static_field
   m_EditorClassIdentifier: 
   spellKey: static_field
-  displayName: Static Field
+  displayName: "Campo Est\xE1tico"
   type: 14
   audience: 1
   usesAttackAnimation: 0

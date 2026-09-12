@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: valk_swiftness
   m_EditorClassIdentifier: 
   skillId: valk_swiftness
-  displayName: Swiftness
-  description: First to the fight, every time.
+  displayName: Celeridad
+  description: La primera en llegar a la pelea, siempre.
   icon: {fileID: 0}
   pointCost: 1
   maxRank: 5

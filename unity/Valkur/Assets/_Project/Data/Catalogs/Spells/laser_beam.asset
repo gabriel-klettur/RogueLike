@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: laser_beam
   m_EditorClassIdentifier: 
   spellKey: laser_beam
-  displayName: Laser
+  displayName: "L\xE1ser"
   type: 5
   audience: 1
   manaCost: 2

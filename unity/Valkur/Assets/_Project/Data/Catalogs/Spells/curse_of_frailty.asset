@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: curse_of_frailty
   m_EditorClassIdentifier: 
   spellKey: curse_of_frailty
-  displayName: Curse of Frailty
+  displayName: "Maldici\xF3n de Fragilidad"
   type: 0
   audience: 1
   usesAttackAnimation: 0

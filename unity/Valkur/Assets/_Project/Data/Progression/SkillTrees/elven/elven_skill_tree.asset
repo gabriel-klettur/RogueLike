@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36d1094d9ba7ed546a6bd9f0b160891f, type: 3}
   m_Name: elven_skill_tree
   m_EditorClassIdentifier: 
-  displayName: Path of the Wind
+  displayName: Senda del Viento
   classKey: elven
-  flavour: Arrive early. Leave earlier.
+  flavour: "Llega pronto. M\xE1rchate antes."
   nodes:
   - {fileID: 11400000, guid: 499176066d5843140b90c4fe4427101a, type: 2}
   - {fileID: 11400000, guid: 3f406043ba94e214691e3a7c7ea055dd, type: 2}

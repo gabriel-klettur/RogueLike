@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: seeking_shard
   m_EditorClassIdentifier: 
   spellKey: seeking_shard
-  displayName: Seeking Shard
+  displayName: Esquirla Rastreadora
   type: 0
   audience: 1
   usesAttackAnimation: 0

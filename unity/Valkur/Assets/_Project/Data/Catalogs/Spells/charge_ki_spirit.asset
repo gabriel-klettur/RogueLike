@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: charge_ki_spirit
   m_EditorClassIdentifier: 
   spellKey: charge_ki_spirit
-  displayName: 'Ki Charge: Spirit'
+  displayName: Ki Espiritual
   type: 27
   audience: 1
   usesAttackAnimation: 0

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: elf_windwalker
   m_EditorClassIdentifier: 
   skillId: elf_windwalker
-  displayName: Windwalker
-  description: Nothing about you is where it was a moment ago.
+  displayName: Caminavientos
+  description: "Nada en ti est\xE1 donde estaba hace un instante."
   icon: {fileID: 0}
   pointCost: 3
   maxRank: 1

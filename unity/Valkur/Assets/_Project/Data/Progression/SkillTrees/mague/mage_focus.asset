@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: mage_focus
   m_EditorClassIdentifier: 
   skillId: mage_focus
-  displayName: Focus
-  description: The same words, said with more behind them.
+  displayName: "Concentraci\xF3n"
+  description: "Las mismas palabras, dichas con m\xE1s detr\xE1s."
   icon: {fileID: 0}
   pointCost: 1
   maxRank: 5

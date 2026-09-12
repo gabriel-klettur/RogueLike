@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: glacial_step
   m_EditorClassIdentifier: 
   spellKey: glacial_step
-  displayName: Glacial Step
+  displayName: Paso Glacial
   type: 4
   audience: 1
   usesAttackAnimation: 0

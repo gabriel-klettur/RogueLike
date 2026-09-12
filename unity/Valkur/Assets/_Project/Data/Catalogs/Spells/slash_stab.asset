@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: slash_stab
   m_EditorClassIdentifier: 
   spellKey: slash_stab
-  displayName: Slash (Stab)
+  displayName: Tajo (Estocada)
   type: 1
   audience: 1
   manaCost: 0

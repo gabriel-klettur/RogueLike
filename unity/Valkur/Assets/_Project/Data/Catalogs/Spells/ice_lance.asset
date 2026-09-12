@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ice_lance
   m_EditorClassIdentifier: 
   spellKey: ice_lance
-  displayName: Ice Lance
+  displayName: Lanza de Hielo
   type: 0
   audience: 1
   usesAttackAnimation: 1

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: frozen_ward
   m_EditorClassIdentifier: 
   spellKey: frozen_ward
-  displayName: Frozen Ward
+  displayName: "\xC9gida Helada"
   type: 28
   audience: 1
   usesAttackAnimation: 0

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: elf_quickhands
   m_EditorClassIdentifier: 
   skillId: elf_quickhands
-  displayName: Quick Hands
-  description: Two strikes in the time most people manage one.
+  displayName: "Manos R\xE1pidas"
+  description: "Dos golpes en lo que la mayor\xEDa da uno."
   icon: {fileID: 0}
   pointCost: 2
   maxRank: 3

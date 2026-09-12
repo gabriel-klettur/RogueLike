@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: shadow_step
   m_EditorClassIdentifier: 
   spellKey: shadow_step
-  displayName: Shadow Step
+  displayName: "Paso Sombr\xEDo"
   type: 4
   audience: 1
   usesAttackAnimation: 0

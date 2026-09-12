@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: dash
   m_EditorClassIdentifier: 
   spellKey: dash
-  displayName: Dash
+  displayName: Impulso
   type: 3
   audience: 1
   manaCost: 0

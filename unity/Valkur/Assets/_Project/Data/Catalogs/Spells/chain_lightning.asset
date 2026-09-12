@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: chain_lightning
   m_EditorClassIdentifier: 
   spellKey: chain_lightning
-  displayName: Chain Lightning
+  displayName: Rayo en Cadena
   type: 13
   audience: 1
   manaCost: 14

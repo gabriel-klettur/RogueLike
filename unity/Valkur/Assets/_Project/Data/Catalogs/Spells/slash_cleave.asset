@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: slash_cleave
   m_EditorClassIdentifier: 
   spellKey: slash_cleave
-  displayName: Slash (Cleave)
+  displayName: Tajo (Hendidura)
   type: 1
   audience: 1
   manaCost: 0

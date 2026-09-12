@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: valk_devotion
   m_EditorClassIdentifier: 
   skillId: valk_devotion
-  displayName: Devotion
-  description: The other half of the gift.
+  displayName: "Devoci\xF3n"
+  description: La otra mitad del don.
   icon: {fileID: 0}
   pointCost: 1
   maxRank: 4

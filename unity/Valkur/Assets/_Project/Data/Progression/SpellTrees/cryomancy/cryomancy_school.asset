@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8770dafe3e2eea64d90791fb3fe76644, type: 3}
   m_Name: cryomancy_school
   m_EditorClassIdentifier: 
-  displayName: Cryomancy
+  displayName: Criomancia
   schoolKey: cryomancy
-  flavour: Not colder. Slower, until nothing moves at all.
+  flavour: "No m\xE1s fr\xEDo. M\xE1s lento, hasta que ya nada se mueve."
   accent: {r: 0.45, g: 0.78, b: 1, a: 1}
   classAffinities:
   - mague

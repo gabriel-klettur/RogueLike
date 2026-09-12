@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: boomerang
   m_EditorClassIdentifier: 
   spellKey: boomerang
-  displayName: Boomerang
+  displayName: "Bumer\xE1n"
   type: 10
   audience: 1
   usesAttackAnimation: 0

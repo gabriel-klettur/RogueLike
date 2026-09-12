@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: mage_wellspring
   m_EditorClassIdentifier: 
   skillId: mage_wellspring
-  displayName: Wellspring
-  description: A deeper pool to draw from.
+  displayName: Manantial
+  description: "Un pozo m\xE1s hondo del que sacar."
   icon: {fileID: 0}
   pointCost: 1
   maxRank: 5

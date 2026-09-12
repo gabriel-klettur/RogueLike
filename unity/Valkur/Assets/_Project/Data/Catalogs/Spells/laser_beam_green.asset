@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: laser_beam_green
   m_EditorClassIdentifier: 
   spellKey: laser_beam_green
-  displayName: Laser Green
+  displayName: "L\xE1ser Verde"
   type: 5
   audience: 1
   usesAttackAnimation: 0

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: vortex_pull
   m_EditorClassIdentifier: 
   spellKey: vortex_pull
-  displayName: Vortex Pull
+  displayName: "V\xF3rtice Atrayente"
   type: 21
   audience: 1
   usesAttackAnimation: 1

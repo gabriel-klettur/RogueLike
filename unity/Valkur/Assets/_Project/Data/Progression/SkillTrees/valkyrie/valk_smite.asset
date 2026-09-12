@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: valk_smite
   m_EditorClassIdentifier: 
   skillId: valk_smite
-  displayName: Smite
-  description: Weapon and word arriving together.
+  displayName: Castigo
+  description: Arma y palabra llegando juntas.
   icon: {fileID: 0}
   pointCost: 2
   maxRank: 3

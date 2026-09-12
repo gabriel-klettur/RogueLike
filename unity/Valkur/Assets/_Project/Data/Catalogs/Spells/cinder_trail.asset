@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: cinder_trail
   m_EditorClassIdentifier: 
   spellKey: cinder_trail
-  displayName: Cinder Trail
+  displayName: Rastro de Brasas
   type: 19
   audience: 1
   usesAttackAnimation: 0

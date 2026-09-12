@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: laser_beam_blue
   m_EditorClassIdentifier: 
   spellKey: laser_beam_blue
-  displayName: Laser Blue
+  displayName: "L\xE1ser Azul"
   type: 5
   audience: 1
   usesAttackAnimation: 0

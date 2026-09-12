@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: root_whip
   m_EditorClassIdentifier: 
   spellKey: root_whip
-  displayName: Root Whip
+  displayName: "L\xE1tigo de Ra\xEDces"
   type: 19
   audience: 1
   manaCost: 18

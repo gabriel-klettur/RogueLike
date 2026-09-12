@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: dwarf_unbroken
   m_EditorClassIdentifier: 
   skillId: dwarf_unbroken
-  displayName: Unbroken
-  description: What the mountain gives back.
+  displayName: Inquebrantable
+  description: "Lo que la monta\xF1a devuelve."
   icon: {fileID: 0}
   pointCost: 3
   maxRank: 1
