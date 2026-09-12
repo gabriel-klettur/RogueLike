@@ -545,6 +545,18 @@
       ],
       "grid_ref_size": [216, 256]
     },
+  "assets/buildings/statues/statue_wizard_staff.png": {
+      "width": 3,
+      "height": 5,
+      "collision": [
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."],
+        [".", ".", "."]
+      ],
+      "grid_ref_size": [73, 141]
+    },
   "assets/buildings/statues/sundial_gnomon_gold.png": {
       "width": 3,
       "height": 3,

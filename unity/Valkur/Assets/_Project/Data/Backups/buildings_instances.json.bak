@@ -722,7 +722,7 @@
   {"id": 139, "template_id": 935, "zone": "zone_100_50", "rel_x": 223, "rel_y": 405, "overrides": {"scale": [155, 144], "layer_top": 4}},
   {"id": 140, "template_id": 930, "zone": "zone_100_50", "rel_x": 475, "rel_y": 1058, "overrides": {"scale": [103, 187]}},
   {"id": 141, "template_id": 927, "zone": "Lobby", "rel_x": 1059, "rel_y": 1058, "overrides": {"scale": [106, 194], "split_ratio": 0.6922}},
-  {"id": 142, "template_id": 934, "zone": "Lobby", "rel_x": 204, "rel_y": 471, "overrides": {"split_ratio": 0.9900, "layer_bottom": 6}},
+  {"id": 142, "template_id": 934, "zone": "Lobby", "rel_x": 204, "rel_y": 471, "overrides": {"split_ratio": 0.9900, "layer_bottom": 8, "layer_top": 8}},
   {"id": 143, "template_id": 391, "zone": "zone_100_50", "rel_x": 679, "rel_y": 1189},
   {"id": 144, "template_id": 391, "zone": "zone_100_50", "rel_x": 630, "rel_y": 1167},
   {"id": 145, "template_id": 391, "zone": "zone_100_50", "rel_x": 590, "rel_y": 1191},

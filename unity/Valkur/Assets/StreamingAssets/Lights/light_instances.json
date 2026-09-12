@@ -20,16 +20,6 @@
     }
   },
   {
-    "id": 3,
-    "preset_id": "Torch",
-    "zone": "zone_100_50",
-    "rel_x": 365,
-    "rel_y": 93,
-    "overrides": {
-      "color": [255, 200, 140]
-    }
-  },
-  {
     "id": 6,
     "preset_id": "Torch",
     "zone": "lobby",
@@ -88,5 +78,166 @@
     "overrides": {
       "color": [255, 200, 140]
     }
+  },
+  {
+    "id": 15,
+    "preset_id": "Magic",
+    "zone": "zone_100_50",
+    "rel_x": 332.597,
+    "rel_y": 286.498
+  },
+  {
+    "id": 16,
+    "preset_id": "Magic",
+    "zone": "zone_100_50",
+    "rel_x": 222.207,
+    "rel_y": 272.138
+  },
+  {
+    "id": 17,
+    "preset_id": "Magic",
+    "zone": "zone_100_50",
+    "rel_x": 401.517,
+    "rel_y": 556.429
+  },
+  {
+    "id": 18,
+    "preset_id": "Magic",
+    "zone": "Lobby",
+    "rel_x": 1127.233,
+    "rel_y": 1162.651
+  },
+  {
+    "id": 19,
+    "preset_id": "Magic",
+    "zone": "zone_100_50",
+    "rel_x": 506.597,
+    "rel_y": 1210.927
+  },
+  {
+    "id": 21,
+    "preset_id": "Candle",
+    "zone": "zone_50_0",
+    "rel_x": 1153.042,
+    "rel_y": 1543.165
+  },
+  {
+    "id": 22,
+    "preset_id": "Candle",
+    "zone": "zone_50_0",
+    "rel_x": 1120.092,
+    "rel_y": 1544.698
+  },
+  {
+    "id": 23,
+    "preset_id": "Candle",
+    "zone": "zone_50_0",
+    "rel_x": 1182.161,
+    "rel_y": 1542.399
+  },
+  {
+    "id": 24,
+    "preset_id": "Candle",
+    "zone": "zone_50_0",
+    "rel_x": 1277.946,
+    "rel_y": 1559.257
+  },
+  {
+    "id": 25,
+    "preset_id": "Candle",
+    "zone": "Lobby",
+    "rel_x": 1279.479,
+    "rel_y": 34.353
+  },
+  {
+    "id": 26,
+    "preset_id": "Candle",
+    "zone": "Lobby",
+    "rel_x": 1278.712,
+    "rel_y": 106.383
+  },
+  {
+    "id": 27,
+    "preset_id": "Candle",
+    "zone": "Lobby",
+    "rel_x": 344.321,
+    "rel_y": 212.629
+  },
+  {
+    "id": 28,
+    "preset_id": "Candle",
+    "zone": "Lobby",
+    "rel_x": 310.605,
+    "rel_y": 211.096
+  },
+  {
+    "id": 29,
+    "preset_id": "Candle",
+    "zone": "Lobby",
+    "rel_x": 371.908,
+    "rel_y": 213.395
+  },
+  {
+    "id": 30,
+    "preset_id": "Candle",
+    "zone": "Lobby",
+    "rel_x": 295.279,
+    "rel_y": 286.958
+  },
+  {
+    "id": 31,
+    "preset_id": "Candle",
+    "zone": "Lobby",
+    "rel_x": 344.321,
+    "rel_y": 290.023
+  },
+  {
+    "id": 32,
+    "preset_id": "Candle",
+    "zone": "Lobby",
+    "rel_x": 388.766,
+    "rel_y": 284.659
+  },
+  {
+    "id": 33,
+    "preset_id": "Candle",
+    "zone": "Lobby",
+    "rel_x": 284.551,
+    "rel_y": 363.586
+  },
+  {
+    "id": 34,
+    "preset_id": "Candle",
+    "zone": "Lobby",
+    "rel_x": 347.387,
+    "rel_y": 377.38
+  },
+  {
+    "id": 35,
+    "preset_id": "Candle",
+    "zone": "Lobby",
+    "rel_x": 394.896,
+    "rel_y": 362.054
+  },
+  {
+    "id": 36,
+    "preset_id": "Candle",
+    "zone": "Lobby",
+    "rel_x": 434.743,
+    "rel_y": 374.315
+  },
+  {
+    "id": 37,
+    "preset_id": "Candle",
+    "zone": "Lobby",
+    "rel_x": 628.306,
+    "rel_y": 1071.525
+  },
+  {
+    "id": 38,
+    "preset_id": "Lamp",
+    "zone": "Lobby",
+    "rel_x": 1372.712,
+    "rel_y": 325.855
   }
 ]
