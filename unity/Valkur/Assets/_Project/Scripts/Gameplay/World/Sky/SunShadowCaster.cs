@@ -72,24 +72,37 @@ namespace Valkur.Gameplay.World.Sky
         /// </summary>
         public static SunShadowCaster Attach(SpriteRenderer source, bool withBlob,
                                              SpriteRenderer sortUnder = null,
-                                             SpriteRenderer groundReference = null)
+                                             SpriteRenderer groundReference = null,
+                                             float groundOffsetLocal = 0f)
         {
             if (source == null) return null;
             var caster = source.GetComponent<SunShadowCaster>();
             if (caster == null) caster = source.gameObject.AddComponent<SunShadowCaster>();
-            caster.Configure(source, withBlob, sortUnder, groundReference);
+            caster.Configure(source, withBlob, sortUnder, groundReference, groundOffsetLocal);
             return caster;
         }
 
         private SpriteRenderer _sortUnder;
+        private float _groundOffset;
 
-        private void Configure(SpriteRenderer source, bool withBlob, SpriteRenderer sortUnder, SpriteRenderer groundReference)
+        /// <summary>The foot-line offset this caster was attached with. Test seam.</summary>
+        public float GroundOffset => _groundOffset;
+
+        private void Configure(SpriteRenderer source, bool withBlob, SpriteRenderer sortUnder,
+                               SpriteRenderer groundReference, float groundOffsetLocal)
         {
             _source    = source;
             _withBlob  = withBlob;
             _sortUnder = sortUnder != null ? sortUnder : source;
             _ground    = groundReference != null ? groundReference : source;
+
+            // A changed offset has to reach the shader, and the only writer is RefreshFootLine,
+            // which runs on a sprite CHANGE. Re-attaching with a different offset (a template
+            // re-baked, a variant swapped) would otherwise keep the old foot line forever.
+            bool offsetChanged = !Mathf.Approximately(_groundOffset, groundOffsetLocal);
+            _groundOffset = groundOffsetLocal;
             EnsureBuilt();
+            if (offsetChanged && _shadow != null && _lastSprite != null) RefreshFootLine(_lastSprite);
         }
 
         /// <summary>
@@ -197,8 +210,16 @@ namespace Valkur.Gameplay.World.Sky
 
         /// <summary>
         /// The foot line in the SOURCE's object space: the bottom of the ground-reference
-        /// renderer. For a creature that is its own sprite's bottom edge, whatever the pivot;
-        /// for a canopy it is the footprint's bottom edge, so both halves shear from one line.
+        /// renderer, RAISED by the offset the caster was attached with. For a creature that is
+        /// its own sprite's bottom edge, whatever the pivot; for a canopy it is the footprint's
+        /// bottom edge, so both halves shear from one line.
+        ///
+        /// <para>The offset is what separates the RECT from the ART. A sprite's bottom edge is
+        /// the base of the thing drawn on it only when the ink reaches the bottom row, and 98 of
+        /// the 1256 building PNGs leave empty canvas underneath — up to 24 % of the height, which
+        /// is four world units on a shop. Sheared from the rect, such a shadow starts below the
+        /// ground the building stands on and slides out from under it; the caller passes the
+        /// distance up to the ink, and the shear starts where the art does.</para>
         /// </summary>
         private void RefreshFootLine(Sprite sprite)
         {
@@ -213,6 +234,7 @@ namespace Valkur.Gameplay.World.Sky
                 var groundWorld = new Vector3(0f, _ground.bounds.min.y, 0f);
                 footY = _source.transform.InverseTransformPoint(groundWorld).y;
             }
+            footY += _groundOffset;
             // GET before SET, always: a SpriteRenderer keeps its own _MainTex in the same
             // block, and replacing the block with a fresh one drops the sprite's texture on the
             // floor — the shader then samples a white default, every texel reads alpha 1, and

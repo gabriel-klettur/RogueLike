@@ -1,0 +1,99 @@
+asset,familia,veredicto,png,abajo_px,abajo_pct,cola_tenue_px,arriba,izq,der,colocado,motivo
+forest_decoration/corrupto/monton_ramas_afiladas,prop_suelo,recortar los 4 lados,1024x1024,330,32.2,0,309,172,177,0,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+forest_decoration/natural/seta_blanca,prop_suelo,recortar los 4 lados,1024x1024,308,30.1,1,304,319,318,1,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+forest_decoration/natural/piedras_musgo,prop_suelo,recortar los 4 lados,1024x1024,298,29.1,2,333,216,244,0,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+forest_decoration/natural/petalos_rosados_2,prop_suelo,recortar los 4 lados,1024x1024,297,29.0,0,278,225,193,1,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+forest_decoration/natural/hojas_frescas,prop_suelo,recortar los 4 lados,1024x1024,296,28.9,2,293,178,195,0,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+forest_decoration/natural/raiz_expuesta_suave,prop_suelo,recortar los 4 lados,1024x1024,295,28.8,0,284,141,150,0,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+forest_decoration/natural/petalos_rosados_3,prop_suelo,recortar los 4 lados,1024x1024,293,28.6,0,197,304,285,0,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+forest_decoration/corrupto/pozo_savia_corrupta,prop_suelo,recortar los 4 lados,1024x1024,286,27.9,0,294,161,161,0,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+forest_decoration/natural/nido_huevos,prop_suelo,recortar los 4 lados,1024x1024,286,27.9,1,288,184,191,0,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+forest_decoration/natural/champinones_agrupados_marrones,prop_suelo,recortar los 4 lados,1024x1024,280,27.3,0,268,245,268,1,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+forest_decoration/natural/petalos_rosados_1,prop_suelo,recortar los 4 lados,1024x1024,277,27.1,1,268,265,285,0,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+forest_decoration/corrupto/semilla_reventada,prop_suelo,recortar los 4 lados,1024x1024,260,25.4,0,285,223,225,0,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+shops/ukranian_super_2,en_pie,recortar abajo,1024x1536,368,24.0,0,149,29,24,1,"edificio en pie, la base visible coincide con el borde de la tinta"
+forest_decoration/natural/Flor_silvestre_azul,prop_suelo,recortar los 4 lados,1024x1024,227,22.2,0,245,320,320,1,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+portals/portal_2,en_pie,recortar abajo,1024x1536,304,19.8,0,144,16,22,0,"edificio en pie, la base visible coincide con el borde de la tinta"
+forest_decoration/corrupto/craneo_muzgo,prop_suelo,recortar los 4 lados,1024x1024,194,18.9,0,238,204,253,0,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+portals/portal,en_pie,recortar abajo,1024x1536,286,18.6,1,136,12,18,1,"edificio en pie, la base visible coincide con el borde de la tinta"
+forest_decoration/corrupto/hojas_marchitas,prop_suelo,recortar los 4 lados,1024x1024,186,18.2,0,335,124,134,0,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+forest_decoration/natural/mariposa_rama_caida,prop_suelo,recortar a tinta solida,1024x1024,182,17.8,159,326,0,0,1,lleva sombra/hierba PINTADA tenue de 159 px: recortar a alfa>8 la conserva y deja la linea de pies igual de baja
+forest_decoration/corrupto/raiz_retorcida,prop_suelo,recortar los 4 lados,1024x1024,156,15.2,1,190,188,193,0,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+forest_decoration/corrupto/hongos_liminiscentes_venenosos,prop_suelo,recortar los 4 lados,1024x1024,154,15.0,0,176,172,251,0,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+forest_decoration/corrupto/flor_carnivora,prop_suelo,recortar los 4 lados,1024x1024,146,14.3,1,142,272,231,0,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+forest_decoration/corrupto/totem_podrido,prop_suelo,recortar los 4 lados,1024x1024,142,13.9,0,146,212,238,0,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+forest_decoration/corrupto/piedra_runica_musgosa,prop_suelo,recortar los 4 lados,1024x1024,136,13.3,0,149,211,175,0,prop pequeno centrado en lienzo grande: recortar solo abajo lo descoloca
+combat/coliseo_2,cenital,no proyectar,1024x1024,128,12.5,0,66,54,58,0,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+portals/portal_dudgeon_2,en_pie,recortar abajo,1024x1024,123,12.0,2,114,118,130,0,"edificio en pie, la base visible coincide con el borde de la tinta"
+combat/combat_training_yard,cenital,no proyectar,1536x1024,117,11.4,2,23,0,20,0,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+combat/training,cenital,no proyectar,1536x1024,117,11.4,2,23,0,20,0,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+gardens/garden_2,cenital,no proyectar,1024x1024,114,11.1,1,18,73,77,0,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+gardens/garden_3,cenital,no proyectar,1024x1024,114,11.1,0,30,33,34,0,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+portals/portal_runes_inactive,cenital,no proyectar,1024x1024,109,10.6,3,61,177,177,0,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+shops/blacksmith,en_pie,recortar abajo,1024x1024,108,10.5,1,26,47,47,1,"edificio en pie, la base visible coincide con el borde de la tinta"
+vegetation/tree_5,en_pie,recortar abajo,256x256,26,10.2,0,3,13,5,0,"edificio en pie, la base visible coincide con el borde de la tinta"
+vegetation/tree_11,en_pie,recortar abajo,233x333,32,9.6,0,0,0,18,0,"edificio en pie, la base visible coincide con el borde de la tinta"
+others/guillotina,en_pie,recortar abajo,1024x1024,94,9.2,2,81,232,232,0,"edificio en pie, la base visible coincide con el borde de la tinta"
+shops/shop_alchemist_house,en_pie,recortar abajo,1024x1536,127,8.3,1,19,32,43,0,"edificio en pie, la base visible coincide con el borde de la tinta"
+shops/alchemy_tower,en_pie,recortar abajo,1024x1536,119,7.7,0,20,25,32,1,"edificio en pie, la base visible coincide con el borde de la tinta"
+vegetation/tree_azul,en_pie,recortar abajo,1024x1024,78,7.6,3,67,113,106,0,"edificio en pie, la base visible coincide con el borde de la tinta"
+portals/portal_well_closed,cenital,no proyectar,1024x1024,74,7.2,12,54,74,116,0,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+vegetation/tree_6,en_pie,recortar a tinta solida,540x540,39,7.2,15,39,81,75,1,lleva sombra/hierba PINTADA tenue de 15 px: recortar a alfa>8 la conserva y deja la linea de pies igual de baja
+houses/curse_house_topdown,en_pie,recortar abajo,1024x1024,73,7.1,0,48,74,90,1,"edificio en pie, la base visible coincide con el borde de la tinta"
+gardens/garden_tree_plaza,cenital,no proyectar,1024x1024,72,7.0,2,69,64,59,0,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+houses/curse_house_iso,en_pie,recortar abajo,1024x1024,72,7.0,1,68,59,56,1,"edificio en pie, la base visible coincide con el borde de la tinta"
+gardens/garden_1,cenital,no proyectar,1024x1024,71,6.9,4,16,0,6,0,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+totems/totem_destruido,en_pie,recortar abajo,1024x1536,89,5.8,3,80,184,156,1,"edificio en pie, la base visible coincide con el borde de la tinta"
+totems/totem_sufriendo,en_pie,recortar abajo,1024x1536,88,5.7,2,24,181,175,0,"edificio en pie, la base visible coincide con el borde de la tinta"
+shops/healer,en_pie,recortar abajo,1024x1024,54,5.3,0,50,72,71,1,"edificio en pie, la base visible coincide con el borde de la tinta"
+gardens/flowers_7,cenital,no proyectar,904x904,47,5.2,1,11,20,23,0,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+statues/statue_olim_01,en_pie,recortar abajo,1024x1024,53,5.2,1,17,232,247,1,"edificio en pie, la base visible coincide con el borde de la tinta"
+portals/portal_stone_arch,en_pie,recortar abajo,1024x1024,48,4.7,3,56,163,164,1,"edificio en pie, la base visible coincide con el borde de la tinta"
+shops/ukranian_super_1,en_pie,recortar abajo,1024x1024,48,4.7,0,16,24,40,1,"edificio en pie, la base visible coincide con el borde de la tinta"
+gardens/garden_4,cenital,no proyectar,1024x1024,47,4.6,0,54,38,38,0,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+shops/jewlery_shop,en_pie,recortar abajo,1024x1024,47,4.6,0,24,2,10,1,"edificio en pie, la base visible coincide con el borde de la tinta"
+shops/banco,en_pie,recortar abajo,1024x1536,69,4.5,1,38,27,26,1,"edificio en pie, la base visible coincide con el borde de la tinta"
+temples/catholic,en_pie,recortar abajo,1024x1536,63,4.1,0,67,19,21,1,"edificio en pie, la base visible coincide con el borde de la tinta"
+statues/statue_dwarf_warrior,en_pie,recortar abajo,1024x1024,41,4.0,1,31,203,207,0,"edificio en pie, la base visible coincide con el borde de la tinta"
+vegetation/tree_1,en_pie,recortar abajo,456x626,25,4.0,1,14,0,3,1,"edificio en pie, la base visible coincide con el borde de la tinta"
+totems/totem_cargando_energia,en_pie,recortar abajo,1024x1536,59,3.8,2,24,179,175,1,"edificio en pie, la base visible coincide con el borde de la tinta"
+gardens/garden_5,cenital,no proyectar,1024x1024,39,3.8,3,73,48,44,1,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+vegetation/tree_10,en_pie,recortar abajo,251x324,12,3.7,0,20,5,5,1,"edificio en pie, la base visible coincide con el borde de la tinta"
+shops/healer_1,en_pie,recortar abajo,1024x1024,37,3.6,1,16,91,125,1,"edificio en pie, la base visible coincide con el borde de la tinta"
+vegetation/tree_7,en_pie,recortar abajo,227x309,11,3.6,0,3,5,5,0,"edificio en pie, la base visible coincide con el borde de la tinta"
+gardens/flowers_8,cenital,no proyectar,444x174,6,3.4,1,10,4,5,0,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+vegetation/tree_9,en_pie,recortar abajo,251x324,10,3.1,0,8,6,3,0,"edificio en pie, la base visible coincide con el borde de la tinta"
+vegetation/tree_8,en_pie,no merece la pena,251x308,9,2.9,0,25,5,8,0,"9 px de margen, por debajo del umbral visible"
+totems/totem_forest,en_pie,no merece la pena,1024x1536,42,2.7,0,41,160,168,1,"42 px de margen, por debajo del umbral visible"
+gardens/flowers_2,cenital,no proyectar,412x412,11,2.7,0,9,22,5,0,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+market/cart_bakery_bread,en_pie,no merece la pena,104x80,2,2.5,0,0,0,0,0,"2 px de margen, por debajo del umbral visible"
+market/crate_eggplants_purple,en_pie,no merece la pena,55x42,1,2.4,0,0,1,0,0,"1 px de margen, por debajo del umbral visible"
+gardens/flowers_1,cenital,no proyectar,412x169,4,2.4,1,4,4,4,0,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+gardens/flowers_6,cenital,no proyectar,904x904,20,2.2,1,23,11,47,0,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+castles/castle_1,en_pie,no merece la pena,1536x1024,19,1.9,1,5,126,299,0,"19 px de margen, por debajo del umbral visible"
+signs/sign_alchemist_blue_flask,en_pie,no merece la pena,82x112,2,1.8,0,0,0,0,0,"2 px de margen, por debajo del umbral visible"
+totems/totem_riendo,en_pie,no merece la pena,1024x1536,27,1.8,1,61,172,176,0,"27 px de margen, por debajo del umbral visible"
+houses/orden_house_2,en_pie,no merece la pena,1024x1024,17,1.7,2,0,0,0,1,"17 px de margen, por debajo del umbral visible"
+props/net_drying_stand,en_pie,no merece la pena,93x64,1,1.6,0,0,0,0,0,"1 px de margen, por debajo del umbral visible"
+temples/satanist,en_pie,no merece la pena,1024x1024,16,1.6,1,27,19,21,1,"16 px de margen, por debajo del umbral visible"
+vegetation/tree_3,en_pie,no merece la pena,490x627,9,1.4,0,17,11,5,1,"9 px de margen, por debajo del umbral visible"
+gardens/flowers_5,cenital,no proyectar,904x904,11,1.2,2,47,23,20,0,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+vegetation/tree_4,en_pie,no merece la pena,96x192,2,1.0,0,11,6,9,0,"2 px de margen, por debajo del umbral visible"
+nature/tree_cherry_blossom_small,en_pie,recortar a tinta solida,73x102,1,1.0,4,0,0,0,0,lleva sombra/hierba PINTADA tenue de 4 px: recortar a alfa>8 la conserva y deja la linea de pies igual de baja
+castles/castle_2,en_pie,no merece la pena,1024x1024,10,1.0,0,0,34,35,1,"10 px de margen, por debajo del umbral visible"
+gardens/flowers_9,cenital,no proyectar,169x412,4,1.0,1,4,4,4,1,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+shops/magic_tower,en_pie,no merece la pena,1024x1536,14,0.9,1,0,25,32,1,"14 px de margen, por debajo del umbral visible"
+gardens/flowers_4,cenital,no proyectar,174x444,4,0.9,0,5,10,6,0,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+nature/tree_enchanted_pixel_4,en_pie,no merece la pena,150x224,2,0.9,0,0,0,0,0,"2 px de margen, por debajo del umbral visible"
+nature/tree_tropical_pixel_1,en_pie,no merece la pena,123x224,2,0.9,0,0,0,0,1,"2 px de margen, por debajo del umbral visible"
+signs/signpost_arrows_lantern,en_pie,no merece la pena,71x115,1,0.9,1,1,0,0,0,"1 px de margen, por debajo del umbral visible"
+others/fuente,cenital,no proyectar,1024x1024,8,0.8,12,16,32,32,1,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+shops/shop_apothecary,en_pie,no merece la pena,1024x1024,8,0.8,2,0,66,64,0,"8 px de margen, por debajo del umbral visible"
+gardens/flowers_3,cenital,no proyectar,462x451,3,0.7,0,4,3,2,0,"pieza cenital: es suelo dibujado desde arriba, no tiene base que arroje sombra"
+houses/building_bank_tall,en_pie,no merece la pena,242x211,1,0.5,0,0,0,0,0,"1 px de margen, por debajo del umbral visible"
+nature/tree_corrupted_fantasy_alt_2,en_pie,no merece la pena,149x224,1,0.4,1,0,0,0,0,"1 px de margen, por debajo del umbral visible"
+nature/tree_snowy_pixel_7,en_pie,no merece la pena,161x224,1,0.4,0,0,0,0,0,"1 px de margen, por debajo del umbral visible"
+nature/tree_winter_1,en_pie,no merece la pena,195x256,1,0.4,1,0,0,0,0,"1 px de margen, por debajo del umbral visible"
+nature/tree_snowy_conifer_5,en_pie,no merece la pena,161x288,1,0.3,1,0,0,0,0,"1 px de margen, por debajo del umbral visible"
+nature/tree_snowy_conifer_8,en_pie,no merece la pena,200x288,1,0.3,0,0,0,0,0,"1 px de margen, por debajo del umbral visible"
+nature/tree_pine_conifer,en_pie,no merece la pena,204x304,1,0.3,0,0,0,0,1,"1 px de margen, por debajo del umbral visible"

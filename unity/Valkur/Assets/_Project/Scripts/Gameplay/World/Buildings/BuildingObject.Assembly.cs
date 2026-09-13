@@ -241,6 +241,13 @@ namespace Valkur.Gameplay.World
             // purpose.
             _collider.enabled = false;
 
+            // Where the art's base sits inside its own rect, in the children's local units.
+            // Measured on the BASE sprite and applied to whichever variant is showing: the
+            // eleven shipped lit/unlit pairs differ in width and never in height, so the
+            // fraction transfers, and a fraction is also what survives a re-exported PNG.
+            _inkBottomLocal = Mathf.Clamp01(template != null ? template.inkBottomNormalized : 0f)
+                              * spriteH / PPU;
+
             // Light fixtures carry their own Light2D. Done last so the renderers and the final
             // localScale exist — the light is positioned from the rendered bounds.
             RefreshLightFromTemplate();

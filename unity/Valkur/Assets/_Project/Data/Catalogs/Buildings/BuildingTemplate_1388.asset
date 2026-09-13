@@ -23,8 +23,14 @@ MonoBehaviour:
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
+  windSway: 0
+  inkBottomNormalized: 0.011363637
+  projectedShadow: 0
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}
   doorSizeNormalized: {x: 0.18, y: 0.12}
   sourceImagePath: assets/buildings/water/fish_school_12.png
+  isResurrectionAltar: 0
+  resurrectionAnchor: 0
+  resurrectionRadius: 1.5
   destruction: {fileID: 11400000, guid: 97b362b0a9234d84a94ee6b9e7b867c8, type: 2}

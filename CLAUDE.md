@@ -5652,6 +5652,83 @@ debughud [0-3|informe|copiar|reiniciar]   DevConsole, category "hud"
   did not have yet) and blocked two other sessions' test runs. Make each save compile on its own,
   or write the dependents first.
 
+## La sombra de un edificio empieza donde empieza el DIBUJO, no donde empieza el PNG
+
+```text
+BuildingTemplateData.inkBottomNormalized   Data/World/            donde esta la base de la tinta
+BuildingTemplateData.projectedShadow       Data/World/            tri-estado: 0 por carpeta, 1 si, -1 no
+BuildingProjectedShadow                    Gameplay/World/Buildings/  quien NO proyecta, por carpeta
+BuildingInkBoundsBaker                     Editor/Buildings/      lo mide leyendo el PNG del disco
+SunShadowCaster.Attach(..., groundOffsetLocal)                    sube la linea de pies
+BuildingObject.Shadow.cs                   Gameplay/World/Buildings/  lo compone
+Valkur > Buildings > Bake Sprite Ink Bounds  (y su variante Report Only)
+```
+
+- **LA CIZALLA SALIA DEL RECT Y EL RECT NO ES EL EDIFICIO.** `SunShadowCaster.RefreshFootLine`
+  tomaba `sprite.bounds.min.y`, el borde inferior del PNG. **98 de los 1256 PNG de edificios**
+  llevan lienzo vacio debajo de la tinta con alfa>8, y **188 de 1256** con el umbral de tinta
+  solida. Consecuencia doble y simultanea: la sombra se DESPEGA `m x (1 - squash)` por debajo de
+  la base, y se DESPLAZA `m x skew` de lado, hasta 1.15·m al amanecer. Medido en vivo sobre
+  `shops/ukranian_super_2` (1024x1536, 368 filas vacias abajo): ancla en `y = 90.34`, base real
+  de la tinta en `y = 94.43`, **4.09 unidades de error**, es decir cuatro tiles de calle entre el
+  edificio y su propia sombra. Nada fallaba: cada numero era coherente consigo mismo y solo
+  discrepaba con la pantalla, que es la forma que este fichero ya documenta una docena de veces.
+- **NO SE PUEDE MEDIR EN RUNTIME, asi que se hornea.** Todo sprite de edificio esta empacado en
+  `buildings.spriteatlas`, cuya pagina no es legible: `GetPixels` lanza. El hecho pertenece al
+  PNG y no cambia mientras el PNG no cambie, que es exactamente el argumento de
+  `Valkur > Monsters > Bake Cast Muzzles`.
+- **Se hornea a TINTA SOLIDA (alfa>48), no a cualquier alfa, y esa es la mitad que el recorte no
+  puede arreglar.** Seis de los 98 llevan una sombra PINTADA, una mata de hierba o una cola
+  desvanecida debajo del edificio — `mariposa_rama_caida` tiene 159 px de ella. A alfa>0 esos
+  sprites parecen llegar a la fila de abajo y la cizalla sigue naciendo bajo el edificio; a
+  alfa>48 la linea de pies cae sobre su base real y la sombra pintada queda DENTRO de la
+  proyectada, que es para lo que esta. Recortar el PNG no arregla ninguno de los seis: esos
+  pixeles se quieren.
+- **Es una FRACCION del alto, nunca pixeles.** Sobrevive a un PNG reexportado a otra resolucion,
+  y los once pares iluminado/apagado difieren en ancho y jamas en alto, asi que la fraccion se
+  transfiere del arte base a la variante encendida sin medirla dos veces.
+- **UN SOLO desplazamiento sirve a las dos mitades.** Footprint y Canopy cuelgan del root a
+  `localScale` 1 y los dos sprites se cortan al mismo PPU, asi que `inkBottom_px / PPU` vale
+  igual para ambas — que es lo que permite que las dos cizallen desde una linea unica. La escala
+  del root lo lleva al mundo igual que lleva el arte.
+- **Re-atar con un desplazamiento distinto TIENE que reescribir la linea de pies.** El unico
+  escritor es `RefreshFootLine`, y solo corre cuando CAMBIA el sprite; sin eso, rehornear una
+  plantilla o cambiar de variante deja la linea vieja para siempre, en silencio.
+- **La caja de culling se mueve con la linea de pies.** La cizalla ocurre en el vertex shader y
+  Unity culla por el rect sin cizallar — el fallo que ya costo "las sombras aparecen un segundo
+  tarde en el borde de la pantalla". Subir la linea acorta la sombra, asi que el alcance lateral
+  reservado baja con ella en vez de quedarse en el valor antiguo.
+- **UNA FAMILIA ENTERA NO TIENE BASE, Y AHI NINGUNA LINEA DE PIES ES CORRECTA.** Buena parte del
+  catalogo no es una cosa sobre el suelo, ES el suelo: jardines, parterres, plazas, patios de
+  entrenamiento, el piso del coliseo, un pozo visto desde arriba. Dibujados en planta no tienen
+  silueta, y cizallarlos tumba una segunda copia del jardin al lado de la primera —
+  **estarian igual de mal recortados al pixel**. `BuildingProjectedShadow` los resuelve por la
+  CARPETA, como `BuildingWindSway`, para que un jardin nuevo importado en `Buildings/gardens/`
+  quede excluido sin tocar datos; `projectedShadow` es el tri-estado para las excepciones, con la
+  misma forma que `windSway` (0 por categoria, 1 siempre, -1 nunca). Y se QUITA el caster en vez
+  de dejarlo desactivado: una plantilla se puede reautorar en el editor de Buildings y una sombra
+  que siguiera atada volveria con ella.
+- Medido despues del horneado: **391 plantillas escritas sobre 1256 sprites distintos**,
+  **95 de las 324 colocaciones del mundo corregidas**, la peor 4.09 u, y **7 piezas colocadas**
+  (`others/fuente`, cinco `gardens/flowers_9`, `gardens/garden_5`) dejaron de proyectar. En vivo
+  sobre `Building_45_BuildingTemplate_243` la linea de pies paso de `y = 90.34` a **`y = 94.432`**
+  contra una base de tinta medida en 94.43, y las dos mitades comparten esa misma linea.
+- **RECORTAR EL ARTE ARREGLA 29 DE LOS 98, Y ESO SOLO SE VE MIRANDO.** Un umbral sobre el
+  porcentaje de padding no distingue un edificio en pie de un parterre ni de una sombra pintada,
+  asi que la revision fue visual: los 98 candidatos en nueve hojas de contactos con la linea de
+  tinta dibujada a dos umbrales. Salieron cinco veredictos — 29 `recortar abajo`, 20
+  `recortar los 4 lados` (props pequenos centrados en lienzos de 1024², donde recortar solo abajo
+  los descoloca), 25 `no merece la pena` (por debajo del 3 %), 21 `no proyectar` y 3
+  `recortar a tinta solida` — y son los que estan en `.github/building_trim_verdicts.csv`. El
+  recorte sigue valiendo la pena por otra razon: un recorte completo de los 1256 PNG ahorra
+  **25.7 % del atlas (115.6 -> 85.9 Mpx, ~113 MB de VRAM sin comprimir)**. Es un trabajo aparte y
+  NO es gratis — `BuildingObject.Apply` hace `localScale = effH / baseH` con el ancla en el borde
+  inferior-centro del PNG COMPLETO, asi que recortar `b` filas de un alto `h` hace el edificio
+  `h / (h - b)` veces mas alto y lo baja hasta apoyarlo; ademas
+  `BuildingCollisionLoader.ResampleGrid` remuestrea la rejilla sobre ese mismo rect completo, con
+  lo que un recorte mueve tambien la colision. La compensacion exacta esta en
+  `.github/BUILDING_SPRITE_PADDING_2026-09-13.md`.
+
 ## Incident reports
 
 Past incidents that left investigation hooks behind. Read these first when a

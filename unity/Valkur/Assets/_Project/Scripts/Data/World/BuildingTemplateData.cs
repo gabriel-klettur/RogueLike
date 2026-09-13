@@ -70,6 +70,22 @@ namespace Valkur.Data
                   "everything built does not), 1 = always, -1 = never. The footprint never moves.")]
         public int windSway = 0;
 
+        // ── Sun shadow ───────────────────────────────────────────────────────
+        // Where the art's BASE is, and whether it has one at all. Both are properties of the
+        // sprite, so they belong to the template; both are baked by
+        // `Valkur > Buildings > Bake Sprite Ink Bounds` rather than authored by hand.
+
+        [Tooltip("Transparent fraction of the sprite's HEIGHT below the ink, measured at the " +
+                  "solid-ink threshold. 0 = the art reaches the bottom row. The sun shadow is " +
+                  "sheared from this line instead of from the rect's bottom, so a sprite with " +
+                  "empty canvas under it stops throwing a detached shadow. Baked, not authored.")]
+        [Range(0f, 0.9f)] public float inkBottomNormalized = 0f;
+
+        [Tooltip("Whether this building casts a projected sun shadow: 0 = by folder (art drawn " +
+                  "in plan — gardens, plazas, training yards — casts none), 1 = always, " +
+                  "-1 = never. The contact blob is unaffected.")]
+        public int projectedShadow = 0;
+
         // ── Door ─────────────────────────────────────────────────────────────
         // WHERE the doorway sits is a property of the ART, so it belongs to the template:
         // every placement of house_a has its door on the same pixels. WHERE it LEADS is a

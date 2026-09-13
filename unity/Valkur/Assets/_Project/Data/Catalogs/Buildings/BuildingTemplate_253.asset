@@ -18,5 +18,19 @@ MonoBehaviour:
   solid: 1
   splitRatio: 0.374
   colliderScope: CG
+  interactable: 0
   originalScale: {x: 256, y: 256}
+  lightPresetKey: 
+  lightOffsetNormalized: {x: 0.5, y: 0.75}
+  litAssetPath: 
+  windSway: 0
+  inkBottomNormalized: 0.125
+  projectedShadow: 0
+  hasDoor: 0
+  doorOffsetNormalized: {x: 0.5, y: 0.06}
+  doorSizeNormalized: {x: 0.18, y: 0.12}
   sourceImagePath: assets/buildings/combat/coliseo_2.png
+  isResurrectionAltar: 0
+  resurrectionAnchor: 0
+  resurrectionRadius: 1.5
+  destruction: {fileID: 0}

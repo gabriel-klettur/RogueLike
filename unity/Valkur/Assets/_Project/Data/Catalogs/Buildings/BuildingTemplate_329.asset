@@ -23,8 +23,14 @@ MonoBehaviour:
   lightPresetKey: Lamp
   lightOffsetNormalized: {x: 0.5, y: 0.86}
   litAssetPath: 
+  windSway: 0
+  inkBottomNormalized: 0.008928572
+  projectedShadow: 0
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}
   doorSizeNormalized: {x: 0.18, y: 0.12}
   sourceImagePath: assets/buildings/lights/lamp_post_curved_lit.png
+  isResurrectionAltar: 0
+  resurrectionAnchor: 0
+  resurrectionRadius: 1.5
   destruction: {fileID: 0}
