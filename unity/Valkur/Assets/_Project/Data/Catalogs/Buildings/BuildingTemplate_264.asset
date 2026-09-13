@@ -16,15 +16,15 @@ MonoBehaviour:
   assetPath: Buildings/combat/coliseo_2
   previewSprite: {fileID: 21300000, guid: 6bf7985f072ae4a4488a72b16c9393fb, type: 3}
   solid: 1
-  splitRatio: 0.516
+  splitRatio: 0.5148
   colliderScope: CG
   interactable: 0
-  originalScale: {x: 256, y: 256}
+  originalScale: {x: 229, y: 226}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
   windSway: 0
-  inkBottomNormalized: 0.125
+  inkBottomNormalized: 0.07760532
   projectedShadow: 0
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}

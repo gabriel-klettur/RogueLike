@@ -18,5 +18,5 @@ MonoBehaviour:
   solid: 1
   splitRatio: 0.5
   colliderScope: CG
-  originalScale: {x: 1024, y: 1024}
+  originalScale: {x: 896, y: 1024}
   sourceImagePath: assets/buildings/temples/temple_dark_chapel.png

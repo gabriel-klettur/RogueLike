@@ -16,15 +16,15 @@ MonoBehaviour:
   assetPath: Buildings/portals/portal
   previewSprite: {fileID: 21300000, guid: c52b14bc51c699b45b46ded948a70d93, type: 3}
   solid: 1
-  splitRatio: 0.5029
+  splitRatio: 0.5
   colliderScope: CG
   interactable: 0
-  originalScale: {x: 1024, y: 1527}
+  originalScale: {x: 1024, y: 1536}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
   windSway: 0
-  inkBottomNormalized: 0.18205632
+  inkBottomNormalized: 0.18684895
   projectedShadow: 0
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}

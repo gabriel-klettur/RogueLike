@@ -19,7 +19,7 @@ MonoBehaviour:
   splitRatio: 0.8939
   colliderScope: CG
   interactable: 0
-  originalScale: {x: 233, y: 301}
+  originalScale: {x: 215, y: 301}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 

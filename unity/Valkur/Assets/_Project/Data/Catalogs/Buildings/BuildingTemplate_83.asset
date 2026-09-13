@@ -16,15 +16,15 @@ MonoBehaviour:
   assetPath: Buildings/forest_decoration/natural/Flor_silvestre_azul
   previewSprite: {fileID: 21300000, guid: 08feac73db207b54aab8863b5a528baf, type: 3}
   solid: 1
-  splitRatio: 0.5222
+  splitRatio: 0.5
   colliderScope: CG
   interactable: 0
-  originalScale: {x: 68, y: 67}
+  originalScale: {x: 71, y: 71}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
   windSway: 0
-  inkBottomNormalized: 0.18369453
+  inkBottomNormalized: 0.22167969
   projectedShadow: 0
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}

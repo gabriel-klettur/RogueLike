@@ -16,15 +16,15 @@ MonoBehaviour:
   assetPath: Buildings/gardens/flowers_6
   previewSprite: {fileID: 21300000, guid: 1c1df12c331429a4fabc03eb010fb2c8, type: 3}
   solid: 1
-  splitRatio: 0.5
+  splitRatio: 0.4977
   colliderScope: CG
   interactable: 0
-  originalScale: {x: 226, y: 226}
+  originalScale: {x: 212, y: 218}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
   windSway: 0
-  inkBottomNormalized: 0.023230089
+  inkBottomNormalized: 0.008027523
   projectedShadow: 0
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}

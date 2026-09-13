@@ -2229,11 +2229,11 @@
     "template_id": 12,
     "zone": "lobby",
     "rel_x": 931,
-    "rel_y": -203,
+    "rel_y": -193,
     "overrides": {
       "scale": [
-        414,
-        414
+        408,
+        398
       ],
       "collider_scope": "CU"
     }
@@ -3904,7 +3904,7 @@
     "overrides": {
       "scale": [
         222,
-        211
+        222
       ],
       "collider_scope": "CU",
       "collision_override": {
@@ -4552,7 +4552,7 @@
     "overrides": {
       "scale": [
         505,
-        454
+        505
       ],
       "collider_scope": "CU",
       "collision_override": {
@@ -6646,14 +6646,14 @@
     "id": 14,
     "template_id": 83,
     "zone": "Forest",
-    "rel_x": 422,
+    "rel_x": 419,
     "rel_y": 739,
     "overrides": {
       "scale": [
-        77,
-        77
+        81,
+        81
       ],
-      "split_ratio": 0.7905,
+      "split_ratio": 0.7539,
       "collider_scope": "CU",
       "collision_override": {
         "width": 1,
@@ -6749,9 +6749,9 @@
     "overrides": {
       "scale": [
         227,
-        344
+        346
       ],
-      "split_ratio": 0.6381,
+      "split_ratio": 0.6344,
       "collider_scope": "CU",
       "collision_override": {
         "width": 2,
@@ -7590,7 +7590,7 @@
     "overrides": {
       "scale": [
         331,
-        312
+        331
       ],
       "collider_scope": "CU",
       "collision_override": {
@@ -7694,7 +7694,7 @@
     "overrides": {
       "scale": [
         333,
-        318
+        333
       ],
       "collider_scope": "CU",
       "collision_override": {
@@ -7798,7 +7798,7 @@
     "overrides": {
       "scale": [
         344,
-        329
+        344
       ],
       "collider_scope": "CU",
       "collision_override": {
@@ -7926,14 +7926,14 @@
     "id": 36,
     "template_id": 307,
     "zone": "zone_100_50",
-    "rel_x": 989,
-    "rel_y": 915,
+    "rel_x": 1019,
+    "rel_y": 934,
     "overrides": {
       "scale": [
-        426,
-        396
+        359,
+        377
       ],
-      "split_ratio": 0.5633,
+      "split_ratio": 0.5411,
       "collider_scope": "CU",
       "door": {
         "target": "Interiors/house_interior_small.overlay.json",
@@ -7951,7 +7951,7 @@
     "overrides": {
       "scale": [
         157,
-        234
+        235
       ],
       "collider_scope": "CU",
       "collision_override": {
@@ -8095,7 +8095,7 @@
     "overrides": {
       "scale": [
         277,
-        268
+        277
       ],
       "collider_scope": "CU",
       "collision_override": {
@@ -8529,7 +8529,7 @@
     "overrides": {
       "scale": [
         364,
-        545
+        546
       ],
       "collider_scope": "CU",
       "collision_override": {
@@ -8673,7 +8673,7 @@
     "overrides": {
       "scale": [
         213,
-        264
+        274
       ],
       "collider_scope": "CU"
     }
@@ -8687,9 +8687,9 @@
     "overrides": {
       "scale": [
         405,
-        603
+        607
       ],
-      "split_ratio": 0.819,
+      "split_ratio": 0.8142,
       "collider_scope": "CU",
       "collision_override": {
         "width": 4,
@@ -9584,12 +9584,12 @@
     "id": 74,
     "template_id": 239,
     "zone": "Lobby",
-    "rel_x": 716,
-    "rel_y": 113,
+    "rel_x": 756,
+    "rel_y": 116,
     "overrides": {
       "scale": [
-        179,
-        170
+        96,
+        167
       ]
     }
   },

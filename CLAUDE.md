@@ -5721,7 +5721,7 @@ Valkur > Buildings > Bake Sprite Ink Bounds  (y su variante Report Only)
   los descoloca), 25 `no merece la pena` (por debajo del 3 %), 21 `no proyectar` y 3
   `recortar a tinta solida` — y son los que estan en `.github/building_trim_verdicts.csv`.
 
-### El recorte, ejecutado (50 PNG)
+### El recorte, ejecutado (52 PNG en dos olas)
 
 - **SE RECORTA A ALFA>0, NO A TINTA SOLIDA, y esa es la diferencia entre las dos mitades del
   problema.** El veredicto `recortar a tinta solida` existia para borrar la sombra pintada bajo
@@ -5734,8 +5734,13 @@ Valkur > Buildings > Bake Sprite Ink Bounds  (y su variante Report Only)
   pintada sobre 1532, es decir que el recorte le quito 4 px y el horneado sigue cargando con el
   99 % de su error de 4.09 u. Los dos mecanismos no se solapan: el recorte gana atlas, el
   horneado arregla la sombra.
-- **Lo que vale: 115.6 -> 105.0 Mpx, 9.2 % del atlas de edificios, ~42 MB de VRAM sin
-  comprimir.** El 25.7 % que citaba la auditoria es el recorte de los **1256** PNG; estos son 50.
+- **Lo que vale, neto tras las dos olas: 115.55 -> 102.36 Mpx, 11.4 % del atlas de edificios,
+  ~53 MB de VRAM sin comprimir**, sobre 52 PNG. La ola 1 fueron los 50 revisados a ojo (14 se
+  revirtieron despues, ver la rejilla abajo); la ola 2, los 24 del resto del catalogo cuyo recorte
+  sin perdida ahorra al menos un 3 % y 4096 px. **El 25.7 % que citaba la auditoria NO se puede
+  alcanzar sin perdida**: contaba los 1256 PNG, y quedan fuera los 11 pares iluminado/apagado
+  (tienen que compartir alto), los restos a escala nativa, los 71 sprites con rejilla de colision
+  y todo recorte por debajo del umbral, que es churn en el diff y no atlas.
 - **UN RECORTE MUEVE CINCO COSAS Y NINGUNA AVISA.** `effW`/`effH` (el TAMANO, porque
   `localScale = effH / baseH`), `rel_x`/`rel_y` (la POSICION — `rel_x` es el borde izquierdo en
   pixeles a 32 PPU y `rel_y` se mide hacia ABAJO desde el techo de la zona, asi que un recorte
@@ -5755,15 +5760,23 @@ Valkur > Buildings > Bake Sprite Ink Bounds  (y su variante Report Only)
   porque el termino `(ZH-1)` solo acierta para `offset_y = 50`. Un error que es EXACTAMENTE una
   constante del sistema es un fallo del medidor, no del dato. Deducir el offset de cada zona de
   sus propias colocaciones lo cancela y deja los 324 en 1.21 px.
-- **LA REJILLA DE COLISION TIENE UNA CELDA DE UNA UNIDAD DE MUNDO, asi que ningun remapeo es
-  gratis.** `ResampleGrid` re-corta la matriz guardada a `ceil(effW/32) x ceil(effH/32)` antes de
-  crear un solo collider, y un recorte cambia esa cuenta (medido: 11 filas -> 10). Medido en
-  mundo sobre los 136 edificios con rejilla: **un solo edificio abre 0.171 u** (`curse_house_iso`)
-  y el que mas crece son 0.390 u (`blacksmith`). Se dejo asi tras comprobar que la alternativa
-  conservadora — marcar solida toda celda que toque arte que lo era — cuesta una CELDA ENTERA,
-  0.79 u en ese mismo edificio: peor. Comparar celdas por INDICE no prueba nada despues de un
-  remapeo, porque la celda (r,c) cubre arte distinto; la pregunta hay que hacerla en espacio de
-  mundo, muestreando.
+- **UN SPRITE CON REJILLA DE COLISION NO SE RECORTA NUNCA, y la ola 1 lo aprendio al reves.**
+  `ResampleGrid` re-corta la matriz guardada a `ceil(effW/32) x ceil(effH/32)` celdas de UNA
+  unidad de mundo alineadas con el rect ENTERO del sprite, asi que un recorte no solo cambia la
+  cuenta (11 filas -> 10): desplaza la FASE de esa reticula, y cada borde de muro se cuantiza
+  distinto hagas lo que hagas con la matriz. Medido en area 2D en mundo, no por indice: con un
+  remapeo por OR conservador `tree_3` crecia **1.93 u** (una fila guardada entera por un recorte
+  de pocos pixeles); con muestreo por CENTRO y la rejilla reconstruida a la resolucion exacta de
+  runtime y `grid_ref_size` fijado para que no se re-corte, `castle_2` seguia ganando **16 u² de
+  muro**. Y los 14 sprites con rejilla que la ola 1 si recorto, medidos asi: `blacksmith`
+  +6.16 u², `curse_house_iso` ABRIA 1.77 u² de paso, `tree_10` +1.37, `healer` +1.37, `healer_1`
+  +1.09, `catholic` +0.60, `alchemy_tower` +0.19, `portal` +0.09. **Los 14 se revirtieron** — PNG,
+  49 plantillas, sus colocaciones y ambos JSON de rejilla, que vuelven a ser semanticamente
+  identicos a `d707166c5` — y la ola 2 excluye `grid_sprites.json` (71 sprites) de entrada. La
+  lectura anterior de este parrafo ("un solo edificio abre 0.171 u") media distancia de borde en
+  una dimension, que es la pregunta equivocada: una rejilla gana o pierde AREA. El unico
+  camino sin error seria re-pintar la rejilla a mano sobre el sprite recortado, y eso no lo decide
+  un script.
 - **Cinco `splitRatio` topan contra el borde, y en los cinco la mitad que se pierde era lienzo
   vacio** (comprobado: en tres la linea de corte caia fuera de la tinta, y en los otros dos a
   0.2 px y 4 px de su borde). Un `splitRatio` de 0.95 sobre un sprite cuyo 5 % inferior era
@@ -5783,6 +5796,16 @@ Valkur > Buildings > Bake Sprite Ink Bounds  (y su variante Report Only)
   familia que la sonda que dejo `Debug.unityLogger.logEnabled` en false: **una sonda no cambia
   el flujo de control del codigo que esta midiendo** — se importa la funcion y se la llama, o se
   le pasa un parametro; no se parchea su salida.
+- **Dos olas sobre el mismo sprite NO suman error.** Ocho PNG se recortaron en las dos, y cada
+  ola cuantiza hasta 1.24 px por su lado; la verificacion final se hizo contra el estado ANTERIOR
+  A CUALQUIER recorte (`d707166c5`), no contra el de la ola previa, y con el juego en marcha: los
+  324 edificios cargados, rect del sprite identico al que predicen los ficheros (0.0000 u, lo que
+  prueba el repack) y rect de TINTA a **maximo 0.0151 u, 1.21 px**, mediana 0. Verificar cada ola
+  contra la anterior habria dado dos numeros buenos y ninguna cota sobre su suma.
+- **El compensador de la ola 2 compensa tambien `lightOffsetNormalized`** cuando la plantilla
+  tiene `lightPresetKey`: la luz derivada se ancla en fraccion del sprite igual que la puerta, y
+  un recorte que la ignorara movia la llama fuera del farol. En esta ola ninguna plantilla
+  recortada tenia luz (0 cambios en ese campo), pero el camino existe para la siguiente.
 - El recorte NO es gratis por una razon mas, y es la que obliga a compensar: `BuildingObject.Apply`
   hace `localScale = effH / baseH` con el ancla en el borde inferior-centro del PNG COMPLETO, asi
   que recortar `b` filas de un alto `h` hace el edificio `h / (h - b)` veces mas alto y lo baja

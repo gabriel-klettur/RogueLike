@@ -16,10 +16,10 @@ MonoBehaviour:
   assetPath: Buildings/vegetation/tree_5
   previewSprite: {fileID: 21300000, guid: 9136c8cde59be5941b52e9e03211163c, type: 3}
   solid: 1
-  splitRatio: 0.5565
+  splitRatio: 0.5506
   colliderScope: CG
   interactable: 0
-  originalScale: {x: 256, y: 230}
+  originalScale: {x: 238, y: 227}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
