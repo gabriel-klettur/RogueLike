@@ -44,6 +44,14 @@ namespace Valkur.Core.Rendering
         private static Material[] _snowLit   = new Material[3];
         private static Material[] _snowUnlit = new Material[3];
 
+        // The swaying twins: same shader, same role, plus the _VALKUR_SWAY keyword. A separate
+        // material per role because the keyword is a VARIANT, and a variant is a material.
+        private static Material[] _swayLit   = new Material[3];
+        private static Material[] _swayUnlit = new Material[3];
+
+        /// <summary>The shader keyword that turns on the wind vertex sway.</summary>
+        public const string SwayKeyword = "_VALKUR_SWAY";
+
         /// <summary>
         /// How a surface collects snow. The distinction is not cosmetic: in a top-down
         /// projection the floor faces the sky across its whole area and collects evenly, while
@@ -75,6 +83,8 @@ namespace Valkur.Core.Rendering
             _ambientAvailable = false;
             _snowLit          = new Material[3];
             _snowUnlit        = new Material[3];
+            _swayLit          = new Material[3];
+            _swayUnlit        = new Material[3];
         }
 
         /// <summary>
@@ -122,10 +132,18 @@ namespace Valkur.Core.Rendering
         /// to <see cref="World"/> if the Valkur shader is missing from the build, so a
         /// stripped shader costs the snow and nothing else.
         /// </summary>
-        public static Material WorldWithSnow(SnowRole role)
+        public static Material WorldWithSnow(SnowRole role) => WorldWithSnow(role, sway: false);
+
+        /// <summary>
+        /// <see cref="WorldWithSnow(SnowRole)"/> for a sprite that also SWAYS with the wind —
+        /// a tree crown, a bush. Same shader with the sway variant on, so it still collects
+        /// snow and still takes the hit flash; the thousand renderers that never sway keep the
+        /// plain material and pay no vertex work.
+        /// </summary>
+        public static Material WorldWithSnow(SnowRole role, bool sway)
         {
             bool lit    = AmbientLightingAvailable;
-            var  cache  = lit ? _snowLit : _snowUnlit;
+            var  cache  = sway ? (lit ? _swayLit : _swayUnlit) : (lit ? _snowLit : _snowUnlit);
             int  index  = (int)role;
 
             if (cache[index] != null) return cache[index];
@@ -140,10 +158,11 @@ namespace Valkur.Core.Rendering
 
             var mat = new Material(shader)
             {
-                name      = $"WorldSnow_{(lit ? "Lit" : "Unlit")}_{role}",
+                name      = $"WorldSnow_{(lit ? "Lit" : "Unlit")}_{role}{(sway ? "_Sway" : "")}",
                 hideFlags = HideFlags.HideAndDontSave,
             };
             mat.SetFloat(SnowRoleId, (float)index);
+            if (sway) mat.EnableKeyword(SwayKeyword);
 
             cache[index] = mat;
             return mat;

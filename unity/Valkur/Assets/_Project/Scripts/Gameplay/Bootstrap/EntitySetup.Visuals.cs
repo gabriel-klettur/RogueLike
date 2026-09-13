@@ -119,6 +119,10 @@ namespace Valkur.Gameplay
             // a sprite that arrives later and syncs from whatever the animator draws.
             World.Sky.SunShadowCaster.Attach(SpriteTintStack.ResolveBodyRenderer(go), withBlob: true);
 
+            // And the dust every stride kicks up, coloured by what the foot lands on.
+            if (go.GetComponent<World.Ambience.FootstepEmitter>() == null)
+                go.AddComponent<World.Ambience.FootstepEmitter>();
+
             // The ring at the mouse pointer, fired by the same acts as the aim marker.
             // Player-only: it decorates the POINTER, and no NPC has one.
             if (go.CompareTag("Player") && go.GetComponent<CursorImpactFX>() == null)

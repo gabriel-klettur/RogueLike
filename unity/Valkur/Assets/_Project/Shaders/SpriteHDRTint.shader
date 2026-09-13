@@ -42,6 +42,7 @@ Shader "Valkur/SpriteHDRTint"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile _ _VALKUR_SWAY
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             struct Attributes
@@ -73,12 +74,16 @@ Shader "Valkur/SpriteHDRTint"
             CBUFFER_END
 
             #include "ValkurSnow.hlsl"
+            #include "ValkurWind.hlsl"
 
             Varyings vert(Attributes IN)
             {
                 Varyings OUT;
-                OUT.positionHCS = TransformObjectToHClip(IN.positionOS);
                 OUT.positionWS  = TransformObjectToWorld(IN.positionOS);
+                #if _VALKUR_SWAY
+                OUT.positionWS.x += ValkurWindSway(OUT.positionWS, IN.uv);
+                #endif
+                OUT.positionHCS = TransformWorldToHClip(OUT.positionWS);
                 // Vertex color carries SpriteRenderer.color (clamped to [0,1] via
                 // Color32). We keep using it for alpha fades / dim effects, but
                 // saturated-color tinting flows through the HDR _Color below.

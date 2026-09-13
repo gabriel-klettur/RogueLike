@@ -56,6 +56,9 @@ Shader "Valkur/SpriteHDRTintLit"
             #pragma multi_compile USE_SHAPE_LIGHT_TYPE_2 __
             #pragma multi_compile USE_SHAPE_LIGHT_TYPE_3 __
             #pragma multi_compile _ DEBUG_DISPLAY
+            // Wind sway on a canopy. A shader variant rather than a uniform test so the
+            // thousand renderers that never sway pay no vertex work at all.
+            #pragma multi_compile _ _VALKUR_SWAY
 
             struct Attributes
             {
@@ -93,6 +96,7 @@ Shader "Valkur/SpriteHDRTintLit"
             float  _SnowRole;
 
             #include "ValkurSnow.hlsl"
+            #include "ValkurWind.hlsl"
 
             #if USE_SHAPE_LIGHT_TYPE_0
             SHAPE_LIGHT(0)
@@ -116,8 +120,11 @@ Shader "Valkur/SpriteHDRTintLit"
                 #ifdef UNITY_INSTANCING_ENABLED
                 v.positionOS = UnityFlipSprite(v.positionOS, unity_SpriteFlip);
                 #endif
-                o.positionCS = TransformObjectToHClip(v.positionOS);
                 o.positionWS = TransformObjectToWorld(v.positionOS);
+                #if _VALKUR_SWAY
+                o.positionWS.x += ValkurWindSway(o.positionWS, v.uv);
+                #endif
+                o.positionCS = TransformWorldToHClip(o.positionWS);
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
                 o.lightingUV = half2(ComputeScreenPos(o.positionCS / o.positionCS.w).xy);
 

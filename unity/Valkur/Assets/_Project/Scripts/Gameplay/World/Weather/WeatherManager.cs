@@ -145,6 +145,9 @@ namespace Valkur.Gameplay.World.Weather
             RefreshActiveZone();
 
             WeatherWind.Tick(dt);
+            // The canopies read the same gust the rain slants with, published right after it
+            // so nothing in the frame sees two different winds.
+            WindSway.Publish(dt);
 
             float rain = DensityOf(WeatherType.Rain);
             float snow = DensityOf(WeatherType.Snow);

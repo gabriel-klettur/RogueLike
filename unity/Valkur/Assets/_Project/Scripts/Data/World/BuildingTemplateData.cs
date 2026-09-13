@@ -66,6 +66,10 @@ namespace Valkur.Data
                   "day and night. The art already ships in lit/unlit pairs.")]
         public string litAssetPath = "";
 
+        [Tooltip("Whether the CANOPY sways with the wind: 0 = by category (trees and flora sway, " +
+                  "everything built does not), 1 = always, -1 = never. The footprint never moves.")]
+        public int windSway = 0;
+
         // ── Door ─────────────────────────────────────────────────────────────
         // WHERE the doorway sits is a property of the ART, so it belongs to the template:
         // every placement of house_a has its door on the same pixels. WHERE it LEADS is a

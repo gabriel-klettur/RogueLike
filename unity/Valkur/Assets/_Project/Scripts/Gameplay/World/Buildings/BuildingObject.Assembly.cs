@@ -209,10 +209,13 @@ namespace Valkur.Gameplay.World
             // Bottom child at local (0, 0) → its bottom aligns with parent.
             // Top child    at local (0, bottomH) → its bottom aligns with top of footprint.
             EnsureRenderer(ref _bottomRenderer, "Footprint",
-                SortingConfig.PropSortingLayer(_zBottom), bottomSprite, Vector3.zero);
+                SortingConfig.PropSortingLayer(_zBottom), bottomSprite, Vector3.zero, sway: false);
 
+            // Only the canopy leans with the wind: the split line is the trunk's top, and a
+            // trunk that moved would open a crack against the footprint drawn under it.
             EnsureRenderer(ref _topRenderer, "Canopy",
-                SortingConfig.PropSortingLayer(_zTop), topSprite, new Vector3(0f, bottomH, 0f));
+                SortingConfig.PropSortingLayer(_zTop), topSprite, new Vector3(0f, bottomH, 0f),
+                sway: BuildingWindSway.Resolve(_template));
 
             // Delegate sortingLayer + sortingOrder assignment to ApplySorting()
             // so the Z-to-slot resolution lives in exactly one place. Both
@@ -331,7 +334,8 @@ namespace Valkur.Gameplay.World
             string              childName,
             string              layerName,
             Sprite              sprite,
-            Vector3             localPos)
+            Vector3             localPos,
+            bool                sway)
         {
             if (sr == null)
             {
@@ -362,7 +366,7 @@ namespace Valkur.Gameplay.World
             // templates without a single snow variant being drawn, and keep working after an
             // instance is rescaled or a new prop wave is imported.
             var mat = Valkur.Core.Rendering.WorldSpriteMaterials.WorldWithSnow(
-                Valkur.Core.Rendering.WorldSpriteMaterials.SnowRole.Cap);
+                Valkur.Core.Rendering.WorldSpriteMaterials.SnowRole.Cap, sway);
             if (mat != null)
                 sr.sharedMaterial = mat;
         }

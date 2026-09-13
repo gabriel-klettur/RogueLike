@@ -225,6 +225,12 @@ namespace Valkur.Gameplay
             if (ySort == null) ySort = go.AddComponent<YSortEntity>();
             ySort.ZLayerBase = SortingConfig.Z_ENTITY;
 
+            // The ground under a monster: its sun shadow and contact blob, and the dust its
+            // strides kick up. Same two components the player gets in InitSharedVisuals.
+            World.Sky.SunShadowCaster.Attach(spriteRenderer, withBlob: true);
+            if (go.GetComponent<World.Ambience.FootstepEmitter>() == null)
+                go.AddComponent<World.Ambience.FootstepEmitter>();
+
             EntityRegistry.RegisterMonster(go);
             Valkur.Core.VerboseLog.Log(Valkur.Core.VerboseLog.Category.Bootstrap,
                 () => $"[EntitySetup] Monster configured: {def.displayName}, HP={scaled.hp}");
