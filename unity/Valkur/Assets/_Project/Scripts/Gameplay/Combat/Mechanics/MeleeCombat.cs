@@ -183,7 +183,7 @@ namespace Valkur.Gameplay
                 // standing on the far side of one.
                 if (World.LineOfSight.IsBlocked(origin, victimPos)) continue;
 
-                health.TakeDamage(swingDamage, gameObject);
+                health.TakeDamage(swingDamage, gameObject, null, _lastSwingWasCrit);
                 hitCount++;
 
                 // Apply knockback via CombatFeedback

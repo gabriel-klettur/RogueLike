@@ -67,6 +67,8 @@ namespace Valkur.Gameplay
 
             if (go.GetComponent<StatusEffectManager>() == null)
                 go.AddComponent<StatusEffectManager>();
+            if (go.GetComponent<StatusEffectVisuals>() == null)
+                go.AddComponent<StatusEffectVisuals>();
 
             // Hit flash + knockback, same as monsters get in ConfigureMonster.
             if (go.GetComponent<CombatFeedback>() == null)

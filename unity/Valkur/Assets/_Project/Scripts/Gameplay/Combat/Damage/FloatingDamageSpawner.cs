@@ -48,7 +48,12 @@ namespace Valkur.Gameplay.Combat
 
         private void OnDamaged(int amount)
         {
-            SpawnNumber(amount, damageColor);
+            // Read inside the handler: Health annotates the blow in flight and the next hit
+            // overwrites it. Colour by element, size and gold by critical.
+            bool crit = _health != null && _health.LastHitWasCritical;
+            var  elem = _health != null ? _health.LastHitElement : null;
+            var  colour = crit || elem.HasValue ? DamageNumberPalette.ColourFor(elem, crit) : damageColor;
+            SpawnText(amount.ToString(), colour, amount, crit);
         }
 
         public void ShowHeal(int amount)
@@ -68,7 +73,7 @@ namespace Valkur.Gameplay.Combat
 
         private void SpawnNumber(int amount, Color color)
         {
-            SpawnText(amount.ToString(), color, amount);
+            SpawnText(amount.ToString(), color, amount, false);
         }
 
         /// <summary>
@@ -98,7 +103,7 @@ namespace Valkur.Gameplay.Combat
             dmgNum.Initialize(text, color);
         }
 
-        private void SpawnText(string text, Color color, int? numericFallback = null)
+        private void SpawnText(string text, Color color, int? numericFallback = null, bool critical = false)
         {
             EnsurePool();
             var go = _pool.Get(transform.position + spawnOffset, Quaternion.identity);
@@ -111,13 +116,17 @@ namespace Valkur.Gameplay.Combat
             dmgNum.OnFinished += ReturnToPool;
 
             if (numericFallback.HasValue)
-                dmgNum.Initialize(numericFallback.Value, color);
+                dmgNum.Initialize(numericFallback.Value, color, critical);
             else
                 dmgNum.Initialize(text, color);
 
             SpawnedCount++;
             LastSpawnedText = text;
+            LastSpawnWasCritical = critical;
         }
+
+        /// <summary>Whether the last number spawned was a critical — test seam.</summary>
+        public bool LastSpawnWasCritical { get; private set; }
 
         private static void ReturnToPool(FloatingDamageNumber num)
         {

@@ -94,6 +94,18 @@ namespace Valkur.Gameplay
         public event Action<int> OnDamaged;
 
         /// <summary>
+        /// Whether the blow <see cref="OnDamaged"/> is currently reporting was a critical hit.
+        /// Read INSIDE the handler: it describes the hit in flight, and is overwritten by the
+        /// next one. It exists because <c>OnDamaged</c> carries one int and the floating
+        /// number had no other way to learn that <c>CritResolver</c> rolled a crit — the stat
+        /// was live for the life of the project and never once visible on screen.
+        /// </summary>
+        public bool LastHitWasCritical { get; private set; }
+
+        /// <summary>The element of the blow in flight, or null for untyped damage. Same contract.</summary>
+        public SpellElement? LastHitElement { get; private set; }
+
+        /// <summary>
         /// The same blow as <see cref="OnDamaged"/>, plus WHO threw it — mitigated amount and
         /// attacker, which may be null for a hazard, a burn tick or anything with no source.
         ///
@@ -180,7 +192,17 @@ namespace Valkur.Gameplay
         /// </summary>
         public void TakeDamage(int amount, GameObject attacker, SpellElement? element)
         {
-            ApplyDamage(amount, attacker, element, respectGrace: true);
+            ApplyDamage(amount, attacker, element, respectGrace: true, critical: false);
+        }
+
+        /// <summary>
+        /// <see cref="TakeDamage(int, GameObject, SpellElement?)"/> for a hit
+        /// <c>CritResolver</c> already rolled. The flag only annotates the blow for its
+        /// listeners; the damage itself was multiplied before it got here.
+        /// </summary>
+        public void TakeDamage(int amount, GameObject attacker, SpellElement? element, bool critical)
+        {
+            ApplyDamage(amount, attacker, element, respectGrace: true, critical: critical);
         }
 
         /// <summary>
@@ -195,10 +217,10 @@ namespace Valkur.Gameplay
         /// </summary>
         public void TakeDotDamage(int amount, GameObject attacker = null, SpellElement? element = null)
         {
-            ApplyDamage(amount, attacker, element, respectGrace: false);
+            ApplyDamage(amount, attacker, element, respectGrace: false, critical: false);
         }
 
-        private void ApplyDamage(int amount, GameObject attacker, SpellElement? element, bool respectGrace)
+        private void ApplyDamage(int amount, GameObject attacker, SpellElement? element, bool respectGrace, bool critical)
         {
             if (IsDead || amount <= 0) return;
 
@@ -221,6 +243,8 @@ namespace Valkur.Gameplay
             if (respectGrace) _nextHitAllowedTime = Time.time + postHitGraceSeconds;
 
             currentHp = Mathf.Max(0, currentHp - mitigated);
+            LastHitWasCritical = critical;
+            LastHitElement     = element;
             OnDamaged?.Invoke(mitigated);
             OnDamagedBy?.Invoke(mitigated, attacker);
             OnHpChanged?.Invoke(currentHp, maxHp);

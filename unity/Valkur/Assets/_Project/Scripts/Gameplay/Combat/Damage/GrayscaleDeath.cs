@@ -32,6 +32,20 @@ namespace Valkur.Gameplay.Combat
         private bool _dying;
         private float _t;
         private float _fadeDuration;
+        private MaterialPropertyBlock _mpb;
+
+        private static readonly int DissolveId = Shader.PropertyToID("_Dissolve");
+
+        /// <summary>
+        /// Fraction of the corpse window over which the body crumbles away at the end. The
+        /// first part of the window is the darkening, so the corpse is still a corpse for most
+        /// of its life and only goes to pieces as it is about to despawn — a body that started
+        /// dissolving on the frame it fell would read as a kill with no corpse.
+        /// </summary>
+        public const float DissolveTail = 0.35f;
+
+        /// <summary>How far the body has crumbled, 0..1. Test seam.</summary>
+        public float DissolveAmount { get; private set; }
 
         private void Awake()
         {
@@ -91,19 +105,42 @@ namespace Valkur.Gameplay.Combat
             return defaultFadeDuration;
         }
 
-        private void Update()
+        private void Update() => Advance(Time.deltaTime);
+
+        /// <summary>Advance the corpse. Public so a test can run one out.</summary>
+        public void Advance(float dt)
         {
             if (!_dying || _tint == null) return;
-            _t += Time.deltaTime / Mathf.Max(0.0001f, _fadeDuration);
+            _t += dt / Mathf.Max(0.0001f, _fadeDuration);
             _tint.Set(TintLayer.Death, Color.Lerp(Color.white, _endFactor, Mathf.Clamp01(_t)));
+
+            // The tail: the body is eaten away cell by cell with an ember edge, so the despawn
+            // is something that happens to the corpse rather than something that happens TO
+            // the frame.
+            float tailStart = 1f - DissolveTail;
+            float amount = _t <= tailStart ? 0f : Mathf.Clamp01((_t - tailStart) / DissolveTail);
+            if (!Mathf.Approximately(amount, DissolveAmount)) WriteDissolve(amount);
         }
 
-        /// <summary>Reset to original color (e.g. on respawn).</summary>
+        private void WriteDissolve(float amount)
+        {
+            DissolveAmount = amount;
+            var sr = _tint != null ? _tint.BodyRenderer : SpriteTintStack.ResolveBodyRenderer(gameObject);
+            if (sr == null) return;
+            _mpb ??= new MaterialPropertyBlock();
+            // GET before SET: the hit flash and the HDR tint live in the same block.
+            sr.GetPropertyBlock(_mpb);
+            _mpb.SetFloat(DissolveId, amount);
+            sr.SetPropertyBlock(_mpb);
+        }
+
+        /// <summary>Reset to original color (e.g. on respawn), and put the body back together.</summary>
         public void ResetTint()
         {
             _dying = false;
             _t = 0f;
             if (_tint != null) _tint.Clear(TintLayer.Death);
+            if (DissolveAmount > 0f) WriteDissolve(0f);
         }
     }
 }

@@ -116,9 +116,21 @@ namespace Valkur.Gameplay
                     var despawn = pickup.gameObject.AddComponent<TimedDespawn>();
                     despawn.TTL = dropDespawnTime;
                 }
+                Throw(pickup, deathPos, dropPos);
                 dropped++;
             }
             return dropped;
+        }
+
+        /// <summary>
+        /// Throw a freshly spawned pickup out of the body along a short arc to where it lands.
+        /// The spawn position is the landing; the throw starts at the corpse.
+        /// </summary>
+        private static void Throw(WorldPickup pickup, Vector3 from, Vector3 landing)
+        {
+            if (pickup == null) return;
+            pickup.transform.position = from;
+            pickup.Launch(landing);
         }
 
         /// <summary>
@@ -280,6 +292,7 @@ namespace Valkur.Gameplay
             Vector3 dropPos = deathPos + new Vector3(offset.x, offset.y, 0f);
 
             var pickup = DropSystem.SpawnDrop(item, 1, dropPos);
+            Throw(pickup, deathPos, dropPos);
             if (pickup == null) return 0;
 
             if (dropDespawnTime > 0f)

@@ -25,7 +25,7 @@ namespace Valkur.Gameplay
     /// listener logic simple: each phase change is a permanent escalation.
     /// </summary>
     [RequireComponent(typeof(Health))]
-    public class BossPhaseController : MonoBehaviour
+    public partial class BossPhaseController : MonoBehaviour
     {
         [Serializable]
         public class PhaseBreakpoint
@@ -75,6 +75,7 @@ namespace Valkur.Gameplay
             // the controller never talks to the HUD directly.
             HUD.BossHealthBarHUD.RegisterBoss(this);
             Feel.CameraFeel.RegisterBoss(this);
+            SubscribeBurst();
         }
 
         private void OnDisable()
@@ -82,6 +83,7 @@ namespace Valkur.Gameplay
             if (_health != null) _health.OnHpChanged -= OnHpChanged;
             HUD.BossHealthBarHUD.UnregisterBoss(this);
             Feel.CameraFeel.UnregisterBoss(this);
+            UnsubscribeBurst();
         }
 
         // Internal seam used by tests in EditMode where Awake doesn't fire.

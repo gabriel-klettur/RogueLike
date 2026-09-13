@@ -20,6 +20,10 @@ Shader "Valkur/SpriteHDRTintLit"
         [HDR] _Color ("HDR Tint", Color) = (1,1,1,1)
         _FlashColor ("Flash Color", Color) = (1,1,1,1)
         _FlashAmount ("Flash Amount", Range(0,1)) = 0
+        // Death dissolve. 0 leaves the sprite whole; at 1 nothing is left. Eaten away in
+        // world-space cells with an ember edge, written per renderer by GrayscaleDeath.
+        _Dissolve ("Dissolve", Range(0,1)) = 0
+        _DissolveEdge ("Dissolve Edge", Color) = (1, 0.55, 0.2, 1)
         // Snow accumulation role: 0 none, 1 cap (silhouette edge), 2 blanket (ground).
         // See ValkurSnow.hlsl; the amount itself is a global, not a material property.
         _SnowRole ("Snow Role", Float) = 0
@@ -93,10 +97,13 @@ Shader "Valkur/SpriteHDRTintLit"
             half4  _RendererColor;
             float4 _FlashColor;
             float  _FlashAmount;
+            float  _Dissolve;
+            float4 _DissolveEdge;
             float  _SnowRole;
 
             #include "ValkurSnow.hlsl"
             #include "ValkurWind.hlsl"
+            #include "ValkurDissolve.hlsl"
 
             #if USE_SHAPE_LIGHT_TYPE_0
             SHAPE_LIGHT(0)
@@ -162,6 +169,7 @@ Shader "Valkur/SpriteHDRTintLit"
                 // Applied after lighting: a hit flash is feedback the player must see even in
                 // the dark. Alpha is untouched so the silhouette stays exact.
                 lit.rgb = lerp(lit.rgb, _FlashColor.rgb * lit.a, _FlashAmount);
+                lit = ValkurApplyDissolve(lit, i.positionWS.xy, _Dissolve, _DissolveEdge);
                 return lit;
             }
             ENDHLSL

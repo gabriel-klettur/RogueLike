@@ -15,6 +15,10 @@ Shader "Valkur/SpriteHDRTint"
         // is a no-op for every renderer that never sets it.
         _FlashColor ("Flash Color", Color) = (1,1,1,1)
         _FlashAmount ("Flash Amount", Range(0,1)) = 0
+        // Death dissolve. 0 leaves the sprite whole; at 1 nothing is left. Eaten away in
+        // world-space cells with an ember edge, written per renderer by GrayscaleDeath.
+        _Dissolve ("Dissolve", Range(0,1)) = 0
+        _DissolveEdge ("Dissolve Edge", Color) = (1, 0.55, 0.2, 1)
         // Snow accumulation role: 0 none, 1 cap (silhouette edge), 2 blanket (ground).
         // See ValkurSnow.hlsl; the amount itself is a global, not a material property.
         _SnowRole ("Snow Role", Float) = 0
@@ -69,12 +73,15 @@ Shader "Valkur/SpriteHDRTint"
                 float4 _Color;
                 float4 _FlashColor;
                 float  _FlashAmount;
+                float  _Dissolve;
+                float4 _DissolveEdge;
                 float  _SnowRole;
                 float4 _MainTex_TexelSize;
             CBUFFER_END
 
             #include "ValkurSnow.hlsl"
             #include "ValkurWind.hlsl"
+            #include "ValkurDissolve.hlsl"
 
             Varyings vert(Attributes IN)
             {
@@ -108,6 +115,7 @@ Shader "Valkur/SpriteHDRTint"
                 // already-white sprite by white changes nothing, which is why the
                 // old SpriteRenderer.color flash was invisible on white-tinted NPCs.
                 c.rgb = lerp(c.rgb, _FlashColor.rgb, _FlashAmount);
+                c = ValkurApplyDissolve(c, IN.positionWS.xy, _Dissolve, _DissolveEdge);
                 return c;
             }
             ENDHLSL

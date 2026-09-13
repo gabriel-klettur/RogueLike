@@ -173,7 +173,10 @@ namespace Valkur.Gameplay.Spells
             int before = health.CurrentHp;
             int damage = Mathf.Max(1, SpellPower.ScaleToInt(_context.Spell.damage, _context.Caster));
             GameObject casterGo = _context.Caster.gameObject;
-            health.TakeDamage(damage, casterGo, ProjectileExecutor.ResolveElement(_context.Spell));
+            // One roll per victim: the player's crit stat reaches every path that deals damage,
+            // and the number the victim shows is the one they were dealt.
+            damage = CritResolver.Resolve(damage, casterGo, out bool wasCrit);
+            health.TakeDamage(damage, casterGo, ProjectileExecutor.ResolveElement(_context.Spell), wasCrit);
             if (health.CurrentHp == before) return;
 
             _damaged.Add(health);

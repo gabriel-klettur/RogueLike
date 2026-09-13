@@ -312,7 +312,8 @@ namespace Valkur.Gameplay.Spells
                 int before = health.CurrentHp;
                 int damage = Mathf.Max(1, SpellPower.ScaleToInt(_context.Spell.damage, _context.Caster));
                 GameObject casterGo = _context.Caster.gameObject;
-                health.TakeDamage(damage, casterGo, ProjectileExecutor.ResolveElement(_context.Spell));
+                damage = CritResolver.Resolve(damage, casterGo, out bool wasCrit);
+                health.TakeDamage(damage, casterGo, ProjectileExecutor.ResolveElement(_context.Spell), wasCrit);
                 if (health.CurrentHp == before) continue;
 
                 _damaged.Add(health);

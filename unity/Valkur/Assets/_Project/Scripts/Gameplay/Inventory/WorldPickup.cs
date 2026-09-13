@@ -68,6 +68,16 @@ namespace Valkur.Gameplay.Inventory
         private CircleCollider2D _collider;
         private bool _pickedUp;
 
+        // -- The throw: a short arc from where it was dropped to where it lands --
+        private bool    _arcing;
+        private float   _arcT;
+        private Vector3 _arcFrom, _arcTo;
+        private const float ArcSeconds = 0.42f;
+        private const float ArcHeight  = 0.55f;
+
+        /// <summary>True while the pickup is still in the air after a throw. Test seam.</summary>
+        public bool IsArcing => _arcing;
+
         // Target footprint in world units (1 tile, since Valkur ground tiles are
         // 1 wu × 1 wu). Multiplied by `ItemDefinition.scaleMap` when present, so
         // a designer can author a wagon at scaleMap=2 and a coin at scaleMap=0.5.
@@ -181,6 +191,40 @@ namespace Valkur.Gameplay.Inventory
         }
 
         /// <summary>
+        /// Throw the pickup from where it is to <paramref name="landing"/> along a short hop.
+        /// A drop that appears already lying on the ground reads as having been there; one
+        /// that is thrown out of the body reads as having come OUT of it. The hop is drawn on
+        /// the sprite's Y and ends exactly on the bob baseline, so the landing is the rest
+        /// pose and nothing snaps.
+        /// </summary>
+        public void Launch(Vector3 landing)
+        {
+            _arcFrom = transform.position;
+            _arcTo   = new Vector3(landing.x, landing.y, 0f);
+            _arcT    = 0f;
+            _arcing  = true;
+            _baseY   = _arcTo.y;
+        }
+
+        /// <summary>Advance the throw. Public so a test can run one out.</summary>
+        public void AdvanceArc(float dt)
+        {
+            if (!_arcing) return;
+            _arcT += dt / ArcSeconds;
+            float u = Mathf.Clamp01(_arcT);
+            // Decelerating along the ground, a symmetric hop in the air.
+            float eased = 1f - (1f - u) * (1f - u);
+            var p = Vector3.Lerp(_arcFrom, _arcTo, eased);
+            p.y += Mathf.Sin(u * Mathf.PI) * ArcHeight;
+            transform.position = p;
+            if (u >= 1f)
+            {
+                _arcing = false;
+                transform.position = _arcTo;
+            }
+        }
+
+        /// <summary>
         /// Tag this pickup as deliberately removed (editor delete, undo) so the
         /// destruction event fires the right reason. Call before <c>Destroy()</c>.
         /// </summary>
@@ -206,6 +250,12 @@ namespace Valkur.Gameplay.Inventory
         private void Update()
         {
             if (_pickedUp) return;
+
+            if (_arcing)
+            {
+                AdvanceArc(Time.deltaTime);
+                return;
+            }
 
             // Bob animation
             float bob = Mathf.Sin((Time.time - _spawnTime) * bobFrequency * Mathf.PI * 2f) * bobAmplitude;
@@ -289,6 +339,12 @@ namespace Valkur.Gameplay.Inventory
             Debug.Log($"[WorldPickup] {collector.name} picked up {picked}x {itemDefinition.displayName} (slot={slotIndex})");
             GameEvents.FireItemPickedUp(collector, itemDefinition.displayName, picked);
 
+            // A pickup produced no pixel before this: the sprite vanished and the bag changed.
+            // The flash is in the item's rarity colour, the one fact about it worth a glance at
+            // the place the player was already looking.
+            if (Valkur.Gameplay.VFX.VFXManager.HasInstance)
+                Valkur.Gameplay.VFX.VFXManager.Instance.SpawnImpact(transform.position, RarityFlashColour(itemDefinition.rarity), 0.25f, 0.7f);
+
             if (quantity <= 0)
             {
                 _pickedUp = true;
@@ -299,6 +355,19 @@ namespace Valkur.Gameplay.Inventory
         }
 
         // ── Helpers ──────────────────────────────────────────────────────────
+
+        /// <summary>The flash a pickup makes on collection, by rarity. Pure.</summary>
+        public static Color RarityFlashColour(ItemRarity rarity)
+        {
+            switch (rarity)
+            {
+                case ItemRarity.Uncommon:  return new Color(0.45f, 1f, 0.50f, 1f);
+                case ItemRarity.Rare:      return new Color(0.45f, 0.70f, 1f, 1f);
+                case ItemRarity.Epic:      return new Color(0.80f, 0.45f, 1f, 1f);
+                case ItemRarity.Legendary: return new Color(1f, 0.70f, 0.25f, 1f);
+                default:                   return new Color(0.95f, 0.95f, 0.9f, 1f);
+            }
+        }
 
         private static float ComputeWorldScale(Sprite sprite, ItemDefinition item)
         {

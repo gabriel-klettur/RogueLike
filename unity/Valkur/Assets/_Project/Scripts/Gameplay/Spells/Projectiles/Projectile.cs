@@ -331,7 +331,8 @@ namespace Valkur.Gameplay.Spells
                 {
                     int dealt = Mathf.RoundToInt(damage);
                     GameObject casterGo = _caster != null ? _caster.gameObject : null;
-                    health.TakeDamage(dealt, casterGo, _element);
+                    dealt = Combat.CritResolver.Resolve(dealt, casterGo, out bool wasCrit);
+                    health.TakeDamage(dealt, casterGo, _element, wasCrit);
                     ReportHit(health.gameObject, dealt);
                     StatusApplicationFactory.ApplyAll(_statusApplications, health.gameObject, casterGo);
 
@@ -532,7 +533,8 @@ namespace Valkur.Gameplay.Spells
                     {
                         int dealt = Mathf.RoundToInt(_explosionDamage > 0f ? _explosionDamage : damage);
                         GameObject casterGo = _caster != null ? _caster.gameObject : null;
-                        h.TakeDamage(dealt, casterGo, _element);
+                        dealt = Combat.CritResolver.Resolve(dealt, casterGo, out bool wasCrit);
+                        h.TakeDamage(dealt, casterGo, _element, wasCrit);
                         ReportHit(h.gameObject, dealt);
                         StatusApplicationFactory.ApplyAll(_statusApplications, h.gameObject, casterGo);
                     }

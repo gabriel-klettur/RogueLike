@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: LightPreset_Torch
   m_EditorClassIdentifier: 
   presetKey: Torch
-  radius: 128
-  intensity: 0.35
+  radius: 160
+  intensity: 0.55
   falloff: 0.8
   surfaceMix: 0.75
   coreScale: 0.35

@@ -189,6 +189,10 @@ namespace Valkur.Gameplay
 
             var statusMgr = go.GetComponent<StatusEffectManager>();
             if (statusMgr == null) statusMgr = go.AddComponent<StatusEffectManager>();
+            // What each status looks like on the body: embers, drips, frost. Beside the manager
+            // it listens to, so a monster with immunities still gets nothing drawn for them.
+            if (go.GetComponent<StatusEffectVisuals>() == null)
+                go.AddComponent<StatusEffectVisuals>();
             statusMgr.SetImmunities(def.stats.statusImmunities);
 
             // Hit flash + knockback. Nothing attached this before, which is why
