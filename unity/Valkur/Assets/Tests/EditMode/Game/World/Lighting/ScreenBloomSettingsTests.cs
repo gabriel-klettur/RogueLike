@@ -88,9 +88,11 @@ namespace Valkur.Tests.EditMode.Game.World.Lighting
             // now well under 0.4, and a torch flame drawn at 0.6 has to cross the line or the
             // bloom is invisible for the whole night — measured at a delta of 20/255 before this.
             float night = DayNightCycle.BloomThresholdFor(new Color(0.55f, 0.65f, 1f), 0.35f);
-            Assert.That(night, Is.LessThan(0.6f), "A torch flame at 0.6 must bloom at night.");
-            Assert.That(night, Is.GreaterThan(0.2f), "A pitch-black ambient must not bloom its own dither.");
-            Assert.That(DayNightCycle.BloomThresholdFor(Color.black, 0f), Is.EqualTo(0.30f).Within(1e-4f));
+            Assert.That(night, Is.LessThan(0.6f), "A torch flame at 0.7 must bloom at night.");
+            // And the ground under a lantern must NOT: ambient-lit ground plus a 0.26 light is a
+            // lit surface, not an emissive one. Measured at a 0.30 floor: a white blob.
+            Assert.That(night, Is.GreaterThan(0.4f), "A lantern's pool on the ground is not a light source.");
+            Assert.That(DayNightCycle.BloomThresholdFor(Color.black, 0f), Is.EqualTo(0.45f).Within(1e-4f));
         }
 
         [Test]

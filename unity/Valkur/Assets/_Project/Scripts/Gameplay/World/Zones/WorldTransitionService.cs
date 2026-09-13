@@ -43,6 +43,10 @@ namespace Valkur.Gameplay.World
         /// <summary>Name of the scene object that parents the interior's exit trigger.</summary>
         public const string EXIT_ROOT_NAME = "[InteriorExit]";
 
+        /// <summary>How long the curtain takes to lift after a swap. Long enough to read as an
+        /// arrival, short enough that nobody waits for it.</summary>
+        public const float REVEAL_SECONDS = 0.45f;
+
         /// <summary>
         /// Overlay currently swapped in, or empty for the base world assembled by
         /// <c>WorldLoader</c> from its per-zone overlays. Not a substitute for
@@ -226,6 +230,11 @@ namespace Valkur.Gameplay.World
             Vector2 destination = useDefaultSpawn ? DEFAULT_SPAWN : spawn;
             string  zoneName    = Path.GetFileNameWithoutExtension(overlayFileName);
 
+            // The curtain drops over THIS frame — the one in which the world is torn down and
+            // repainted — and lifts over the new room. Without it the swap was a hard cut the
+            // player watched happen.
+            Valkur.Core.UI.ScreenFade.CoverAndReveal(REVEAL_SECONDS);
+
             // Base-world GameObjects are not part of the interior. They outlive ClearWorld,
             // which only touches Tilemaps, so they have to be destroyed explicitly.
             ClearBaseWorldContent();
@@ -284,6 +293,8 @@ namespace Valkur.Gameplay.World
             }
 
             DespawnInteriorExit();
+
+            Valkur.Core.UI.ScreenFade.CoverAndReveal(REVEAL_SECONDS);
 
             // The base world is many overlays plus its collision grids, so it is rebuilt
             // through WorldLoader rather than through a single LoadOverlay — the same recipe

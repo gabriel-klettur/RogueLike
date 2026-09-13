@@ -143,6 +143,15 @@ namespace Valkur.UI.HUD
                 if (quests != null && quests.Manager != null) log.BindManager(quests.Manager);
             }
 
+            // The name of the place, written across the screen on entering it. Under [UI]
+            // like the rest, so the editors' visibility switch hides it with them.
+            if (FindObjectOfType<ZoneBannerHUD>() == null)
+            {
+                var bannerGo = new GameObject("ZoneBannerHUD");
+                bannerGo.AddComponent<ZoneBannerHUD>();
+                if (uiContainer != null) bannerGo.transform.SetParent(uiContainer.transform, false);
+            }
+
             // Hide the HUD whenever any runtime editor opens, restore on close.
             // Hosted on this same GameObject ([Systems]/HUDBootstrap) so it lives
             // outside [UI] and survives the SetActive(false) it applies.

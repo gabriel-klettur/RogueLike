@@ -779,14 +779,22 @@ namespace Valkur.Gameplay.World
         public static float BloomThresholdFor(Color ambient, float ambientIntensity)
         {
             float luminance = ambientIntensity * (0.2126f * ambient.r + 0.7152f * ambient.g + 0.0722f * ambient.b);
-            return Mathf.Clamp(luminance * BloomThresholdOverAmbient, BloomThresholdFloor, 1f);
+            return Mathf.Clamp(luminance * BloomThresholdOverAmbient + BloomThresholdLightRoom, BloomThresholdFloor, 1f);
         }
 
         /// <summary>How far above the ambient's luminance the bloom threshold sits. See <see cref="BloomThresholdFor"/>.</summary>
         private const float BloomThresholdOverAmbient = 1.15f;
 
+        /// <summary>
+        /// Room above the ambient for a PLACED light's pool: a torch or the lantern adds up to
+        /// ~0.3 on top of the ambient-lit ground, and that ground is lit, not emissive. Measured
+        /// without it: the lantern's pool at 0.26 crossed a 0.30 floor and the character stood
+        /// in a white blob.
+        /// </summary>
+        private const float BloomThresholdLightRoom = 0.22f;
+
         /// <summary>The lowest the threshold may go, whatever the ambient. See <see cref="BloomThresholdFor"/>.</summary>
-        private const float BloomThresholdFloor = 0.30f;
+        private const float BloomThresholdFloor = 0.45f;
 
         /// <summary>How much of the ambient's saturation the bloom tint takes. See <see cref="BloomTintFor"/>.</summary>
         private const float BloomTintLean = 0.4f;

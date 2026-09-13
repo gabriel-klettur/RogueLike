@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Gameplay.World.Ambience;
 using Valkur.Gameplay.World.Sky;
 
 namespace Valkur.Gameplay
@@ -12,10 +13,21 @@ namespace Valkur.Gameplay
         /// </summary>
         private void EnsureSkyLayer()
         {
-            if (FindObjectOfType<CloudShadowLayer>() != null) return;
-            var go = new GameObject("CloudShadowLayer");
-            go.AddComponent<CloudShadowLayer>();
-            go.transform.SetParent(GetSceneContainer("[VFX]"), false);
+            if (FindObjectOfType<CloudShadowLayer>() == null)
+            {
+                var go = new GameObject("CloudShadowLayer");
+                go.AddComponent<CloudShadowLayer>();
+                go.transform.SetParent(GetSceneContainer("[VFX]"), false);
+            }
+
+            // The night's fireflies ride the same sun: they read the daylight the sky
+            // evaluates and appear only when it is gone.
+            if (FindObjectOfType<FireflyField>() == null)
+            {
+                var go = new GameObject("FireflyField");
+                go.AddComponent<FireflyField>();
+                go.transform.SetParent(GetSceneContainer("[VFX]"), false);
+            }
         }
     }
 }
