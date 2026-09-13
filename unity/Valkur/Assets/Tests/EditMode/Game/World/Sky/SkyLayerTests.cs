@@ -241,6 +241,29 @@ namespace Valkur.Tests.EditMode.Game.World.Sky
         }
 
         [Test]
+        public void TheShadowsCullingBounds_ReachAsFarAsTheShearCan()
+        {
+            // The shear happens in the vertex shader; Unity culls by the sprite's unsheared
+            // rect. Without widened bounds a tree a screen off to the side has its shadow
+            // lying across the view and Unity refuses to draw it until the trunk scrolls in —
+            // reported from play as shadows appearing a second late at the screen's edge.
+            var body = Spawn("body").AddComponent<SpriteRenderer>();
+            body.sprite = MakeSprite(16, 32, new Vector2(0.5f, 0f));   // 1 x 2 units, feet at 0
+            SunShadowState.Tick(SkyStyle.Active, 0.5f, 0f, false);
+            var caster = SunShadowCaster.Attach(body, withBlob: false);
+            caster.Sync();
+
+            var lb = caster.Shadow.localBounds;
+            float reach = 2f * SkyStyle.Active.skewMax;
+            Assert.That(lb.min.x, Is.LessThanOrEqualTo(-0.5f - reach + 1e-3f), "Widened west by the full shear.");
+            Assert.That(lb.max.x, Is.GreaterThanOrEqualTo(0.5f + reach - 1e-3f), "And east: the sun moves.");
+            Assert.That(lb.min.y, Is.LessThanOrEqualTo(0f), "The foot line is inside.");
+
+            var pure = SunShadowCaster.CullingBoundsFor(new Bounds(new Vector3(0f, 1f, 0f), new Vector3(1f, 2f, 0f)), 0f, 1.15f);
+            Assert.That(pure.size.x, Is.EqualTo(1f + 2f * 2f * 1.15f).Within(1e-4f));
+        }
+
+        [Test]
         public void ACaster_HidesItsShadow_WhenTheSunIsGone()
         {
             var body = Spawn("body").AddComponent<SpriteRenderer>();

@@ -222,6 +222,31 @@ namespace Valkur.Gameplay.World.Sky
             _mpb.SetFloat(FootYId, footY);
             _shadow.SetPropertyBlock(_mpb);
             _footY = footY;
+
+            // CULLING BOUNDS. The shear happens in the vertex shader, and Unity culls the
+            // renderer by the sprite's UNSHEARED bounds — so a tree whose trunk is a screen
+            // width off to the side has its shadow lying across the view and Unity does not
+            // draw it until the trunk itself scrolls in. Reported from play as "the shadows
+            // appear about a second late at the edge of the screen". The local bounds are
+            // widened to the shear's full reach at the horizon on both sides (the sun moves)
+            // and the foot line kept, so the box covers every shadow the sun can cast.
+            _shadow.localBounds = CullingBoundsFor(sprite.bounds, footY, SkyStyle.Active.skewMax);
+        }
+
+        /// <summary>
+        /// The box that contains a sprite's sheared shadow at ANY hour: the sprite's own
+        /// rect widened on both sides by the horizon shear of its full height above the foot
+        /// line. Pure, so the fixture can pin that it is wider than the sprite.
+        /// </summary>
+        public static Bounds CullingBoundsFor(Bounds sprite, float footY, float skewMax)
+        {
+            float height = Mathf.Max(0f, sprite.max.y - footY);
+            float reach  = height * Mathf.Abs(skewMax);
+            var min = new Vector3(sprite.min.x - reach, Mathf.Min(sprite.min.y, footY), sprite.min.z - 0.1f);
+            var max = new Vector3(sprite.max.x + reach, sprite.max.y, sprite.max.z + 0.1f);
+            var b = new Bounds();
+            b.SetMinMax(min, max);
+            return b;
         }
 
         private float _footY;
