@@ -156,7 +156,11 @@ namespace Valkur.Gameplay.Spells
         private void BeginSweep()
         {
             _sweepStarted = true;
-            ServiceLocator.Get<IAudioService>()?.PlaySfxById("spell_slash_swing");
+            // Gated on HasSfx. AudioCatalog ships no spell_* id at all, so an ungated call here is
+            // one console warning per id on the first swing of every session -- and a spell without
+            // a sound is missing content, not a data bug. See IAudioService.HasSfx.
+            var audioSvc = ServiceLocator.Get<IAudioService>();
+            if (audioSvc != null && audioSvc.HasSfx("spell_slash_swing")) audioSvc.PlaySfxById("spell_slash_swing");
             SpawnSwingPreset();
         }
 

@@ -454,12 +454,15 @@ namespace Valkur.Gameplay.Spells
                         Vector2 capsuleCenter = origin + dir * (damageLength * 0.5f);
                         float angle = Vector2.SignedAngle(Vector2.right, dir);
 
-                        var hits = Physics2D.OverlapCapsuleAll(
+                        var hits = Debugging.SpellProbe.OverlapCapsuleAll(
                             capsuleCenter,
                             new Vector2(damageLength, beamHalfWidth * 2f),
                             CapsuleDirection2D.Horizontal,
                             angle,
-                            _ctx.TargetLayers
+                            _ctx.TargetLayers,
+                            Debugging.SpellDebugRole.Damage,
+                            "rayo " + damageLength.ToString("0.##") + " u x " +
+                            (beamHalfWidth * 2f).ToString("0.##") + " u"
                         );
 
                         foreach (var c in hits)

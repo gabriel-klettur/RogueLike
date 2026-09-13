@@ -110,8 +110,13 @@ namespace Valkur.Gameplay.Entities
         /// the two live in different catalogues and the key alone cannot say which.</summary>
         private bool       _selectedIsPlayer;
 
-        private enum EntityCategory { Hostiles, Neutrals, Specials, Players }
-        private EntityCategory _category = EntityCategory.Hostiles;
+        /// <summary>
+        /// The picker's tabs. <c>All</c> exists because without it the whole catalogue could
+        /// never be seen at once, so an entity in an unexpected tab was invisible unless you
+        /// guessed which one — and guessing is exactly what a misfiled entity defeats.
+        /// </summary>
+        private enum EntityCategory { All, Hostiles, Neutrals, Specials, Players }
+        private EntityCategory _category = EntityCategory.All;
 
         private string _searchFilter = "";
         private readonly UndoStack _undo = new UndoStack(64);
@@ -138,21 +143,6 @@ namespace Valkur.Gameplay.Entities
         /// a built game has no `.asset` files to rewrite. In a build the button says so
         /// rather than silently doing nothing.
         /// </summary>
-        private void SaveEditedDefinitions()
-        {
-#if UNITY_EDITOR
-            if (!_pendingAssetWrites)
-            {
-                SetStatus("Nothing to save — no property has been edited.");
-                return;
-            }
-            UnityEditor.AssetDatabase.SaveAssets();
-            _pendingAssetWrites = false;
-            SetStatus("Saved monster definitions to disk.");
-#else
-            SetStatus("Save is Editor-only — a built game has no .asset files to write.");
-#endif
-        }
 
         // Middle-mouse camera pan — shared controller used by every runtime editor.
         private readonly EditorCameraPanController _cameraPan = new EditorCameraPanController();
@@ -197,42 +187,16 @@ namespace Valkur.Gameplay.Entities
             _root.SetActive(false);
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Register(this);
 
-            // Independent of whether F5 is ever opened — this singleton already exists
-            // regardless, so it is the natural single owner of both halves of the F5
-            // placement round trip. See EntitiesRuntimeEditor.Persistence.cs.
-            //
-            // Deferred to the first Update() rather than called here: Unity guarantees every
-            // object's Awake() runs before any object's Start(), but NOT that Start() itself
-            // runs in a useful order across objects — SpawnerInstanceLoader sidesteps the same
-            // hazard by having GameplaySceneSetup call LoadInstances() explicitly instead of
-            // relying on its own Start(). This editor cannot get that treatment (GameplaySceneSetup
-            // is Bootstrap, outside this change's scope), so it waits for every object's Start()
-            // in the scene to have already run — including whatever populates ZoneManager's zone
-            // list — before resolving a single placement. Calling LoadPlacedEntities() here
-            // instead would resolve every record's zone against zero registered zones on the
-            // very first frame, silently reclassifying every placement as unresolved.
-            //
-            // Gated on Play Mode: EditMode tests invoke Start() directly via reflection without
-            // entering Play Mode (EntitiesRuntimeEditorTests.CreateEditorWithUI), and an
-            // unguarded call would touch the real StreamingAssets/Entities file through the
-            // default repository — creating an empty folder as a side effect purely from running
-            // the test suite. Same class of EditMode pollution
-            // SpawnerEditorManager.SaveInstancesToJson guards against. LoadPlacedEntities itself
-            // stays guard-free so a test can still call it directly with an injected repository
-            // regardless of Play Mode.
-            if (Application.isPlaying) _pendingEntityLoad = true;
+            // Placements are NOT loaded here any more. PlacedEntityService does that from the
+            // boot sequence, in every build; this editor is only a client of it.
         }
-
-        /// <summary>Set in <see cref="Start"/> when running in Play Mode; consumed on the very
-        /// first <see cref="Update"/> tick to defer <c>LoadPlacedEntities</c> past every other
-        /// object's own <c>Start()</c> for the frame.</summary>
-        private bool _pendingEntityLoad;
 
         protected override void OnDestroy()
         {
-            // Stopping Play Mode without closing F5 first still has to persist whatever is
-            // pending — this is what makes "place a monster, hit Stop" keep it.
-            FlushEntityPlacementAutosave();
+            // Stopping Play Mode without closing the editor first still has to persist whatever
+            // is pending. The service flushes on its own OnDestroy too; destruction order
+            // between the two is undefined, and a clean table writes nothing twice.
+            FlushPlacedEntities();
             ShutdownAnimationPreview();
             if (_ownsToggleAction) _toggleAction?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
@@ -241,14 +205,6 @@ namespace Valkur.Gameplay.Entities
 
         private void Update()
         {
-            // Consumed exactly once, on the first Update() tick after entering Play Mode — see
-            // the comment on Start() for why this cannot simply run there.
-            if (_pendingEntityLoad)
-            {
-                _pendingEntityLoad = false;
-                LoadPlacedEntities();
-            }
-
             // Bare F5 only. ToggleEntities and QuickSave are both bound to
             // <Keyboard>/f5 with no modifier or interaction on either binding;
             // SaveLoadInputHandler gates its half on Ctrl, so without the same guard
@@ -261,11 +217,10 @@ namespace Valkur.Gameplay.Entities
                 else                               ToggleActive();
             }
 
-            // Ticked unconditionally — a placement must survive the author closing the
-            // editor and walking away, not only a Save click while the panel is visible.
-            TickEntityPlacementAutosave();
-
             if (!_active) return;
+
+            HandleSharedEditorVerbs();
+            HandleEntitiesEditorTools();
 
             // Middle-mouse pan runs unconditionally so dragging the camera works
             // even while a picker drag or entity drag is in progress.
@@ -293,21 +248,61 @@ namespace Valkur.Gameplay.Entities
         {
             _active = true;
             _root.SetActive(true);
-            _mode = EditorMode.Select;
             EnsureSelectionFx();
             OpenDefaultDropdowns();
             RefreshCategoryTabs();
             RefreshPicker();
-            RefreshModeButtons();
-            SetStatus("Entities Editor active. F5 to close.");
-            Debug.Log("[EntitiesEditor] Activated (F5)");
+            // SetMode, not "_mode = Select" plus RefreshModeButtons. The field assignment lit
+            // the right button and left the Add/Remove hint on its build-time default, so the
+            // editor opened in Select mode reading "Select a mode then click on the map" --
+            // measured live. SetMode is the one place that puts the mode, the buttons, the
+            // hint and the status line in agreement, which is exactly why it exists.
+            SetMode(EditorMode.Select);
+            // No key is named here: the F-row toggles were retired on 2026-09-05 and this
+            // editor is reached from Escape. Naming a dead key in the FIRST sentence an author
+            // reads is the loading-screen-tips defect with a shorter blast radius.
+            SetStatus("Entities Editor active — Escape to close.");
+        }
+
+        /// <summary>
+        /// Undo, Redo and Save from the keyboard.
+        ///
+        /// <para><b>This editor was the fourteenth of fourteen, and the only one without
+        /// it.</b> Thirteen runtime editors read <c>EditorInput.UndoPressed/RedoPressed</c>
+        /// and there is no generic dispatcher — each one asks for itself — so Ctrl+Z, Ctrl+Y
+        /// and Ctrl+S simply did nothing here. Meanwhile the editor's own overlay, titled
+        /// ENTITIES HOTKEYS, listed <c>Ctrl+Z Undo</c> and <c>Ctrl+Y Redo</c>: the tutorial
+        /// taught two keys nothing read. It is the same defect as the seven overlays teaching
+        /// retired F-keys, wearing the other costume — that guard looks for keys that were
+        /// RETIRED, and cannot see a key that was never wired.</para>
+        ///
+        /// <para>It hurt double because the undo stack was widened the day before to cover
+        /// every definition edit, from one gesture out of fifteen. The coverage was there and
+        /// the keyboard could not reach it.</para>
+        ///
+        /// <para>Reads the SHARED map, never a literal KeyCode: a binding built in C# is
+        /// invisible to the Controls editor and to the conflict scanner, and moving Undo there
+        /// has to move it here too.</para>
+        /// </summary>
+        private void HandleSharedEditorVerbs()
+        {
+            // No InputBlocker guard, and no modifier test here: all three of these verbs
+            // declare RequiresCtrl in the catalogue, and EditorInput.Live matches the held
+            // state against that descriptor -- which is the same field the conflict scanner
+            // reads, so a bare keystroke in a text field cannot reach them. Adding a second,
+            // local answer to "is this press mine" is how one editor comes to disagree with
+            // the other thirteen.
+            if (EditorInput.UndoPressed())      { _undo.Undo(); SetStatus("Undo (Ctrl+Z)."); }
+            else if (EditorInput.RedoPressed()) { _undo.Redo(); SetStatus("Redo (Ctrl+Y)."); }
+
+            if (EditorInput.SavePressed()) SaveEditedDefinitions();
         }
 
         public void Deactivate()
         {
-            // Closing F5 always flushes a pending placement/deletion rather than leaving it
+            // Closing the editor always flushes a pending placement/deletion rather than leaving
             // to the debounce — the author's next action might be Stop, not another edit.
-            FlushEntityPlacementAutosave();
+            FlushPlacedEntities();
 
             _active = false;
             _root.SetActive(false);
@@ -325,7 +320,6 @@ namespace Valkur.Gameplay.Entities
             _cameraPan.Reset();
             Valkur.Gameplay.CameraSetup.Instance?.ReattachFollow();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.NotifyDeactivated(this);
-            Debug.Log("[EntitiesEditor] Deactivated (F5)");
         }
 
         private void ToggleActive() { if (_active) Deactivate(); else Activate(); }
@@ -347,7 +341,8 @@ namespace Valkur.Gameplay.Entities
                 onUndo:           () => { _undo.Undo();  SetStatus("Undo"); },
                 onRedo:           () => { _undo.Redo();  SetStatus("Redo"); },
                 onSave:           SaveEditedDefinitions,
-                onReload:         () => { RefreshPicker(); SetStatus("Reload: catalog refreshed"); },
+                onReload:         ReloadDefinitionsFromDisk,
+                onCatAll:         () => SelectCategory(EntityCategory.All),
                 onCatHostiles:    () => SelectCategory(EntityCategory.Hostiles),
                 onCatNeutrals:    () => SelectCategory(EntityCategory.Neutrals),
                 onCatSpecials:    () => SelectCategory(EntityCategory.Specials),
@@ -357,10 +352,11 @@ namespace Valkur.Gameplay.Entities
                 onRemove:         () => SetMode(EditorMode.Delete),
                 onAddOnSystem:    () => SetMode(EditorMode.AddOnSystem),
                 onConfirm:        OnConfirmAddOnSystem,
-                onNewKeyChanged:  v => _pendingKeyInput = v ?? "",
+                onNewKeyChanged:  v => { _pendingKeyInput = v ?? ""; DisarmRename(); },
                 onDuplicate:      () => DuplicateSelectedDefinition(),
-                onRename:         () => RenameSelectedDefinition(_pendingKeyInput),
-                onToggleTutorial: ToggleTutorial);
+                onRename:         OnRenameRequested,
+                onToggleTutorial: ToggleTutorial,
+                onSectionFold:    OnSectionFoldToggled);
 
             // Built outside BuildAll: it needs six callbacks no other panel shares, and
             // BuildAll already carries eighteen.
@@ -381,7 +377,14 @@ namespace Valkur.Gameplay.Entities
                 onStateSpeed:     OnAnimationStateSpeedCommitted,
                 onVariantSpeed:   OnAnimationVariantSpeedCommitted,
                 onHoldLastFrame:  OnAnimationHoldToggled,
-                onLayoutChanged:  OnAnimationLayoutChanged);
+                onLayoutChanged:  OnAnimationLayoutChanged,
+                onToggleMuzzle:   OnToggleMuzzlePlacement,
+                onMuzzleScope:    OnMuzzleScopeChanged,
+                onMuzzleSpell:    OnMuzzleSpellChanged,
+                onMuzzleClear:    OnMuzzleClear);
+
+            if (_ui.PropsFilterInput != null)
+                _ui.PropsFilterInput.onValueChanged.AddListener(OnPropsFilterChanged);
 
             EntitiesEditorUIBuilder.BuildTimelinePanel(
                 _root.transform, ref _ui,
@@ -398,21 +401,33 @@ namespace Valkur.Gameplay.Entities
             // Tutorial overlay (F5-aware hotkey list)
             _tutorial = TutorialOverlay.Build(_root.transform, "ENTITIES HOTKEYS", new[]
             {
-                ("F5",     "Toggle Entities Editor"),
+                // The F-row toggles were retired 2026-09-05: every runtime editor is opened
+                // from the General Editor on Escape, and the thirteen toggle actions ship
+                // UNBOUND. A tutorial that teaches a dead key is the loading-screen tips
+                // defect wearing an overlay -- it costs an author the only lesson the panel
+                // exists to give, and nothing throws when a key never fires.
+                ("Esc",    "Open the General Editor, then Entities"),
                 ("LMB",    "Select NPC (yellow outline; same-key peers turn orange)"),
                 ("RMB",    "Drag-and-drop selected NPC on the map"),
                 ("Click",  "Spawn / Delete on map (mode-aware)"),
-                ("Drag",   "Drag picker slot → map to spawn"),
+                ("Drag",   "Drag picker slot -> map to spawn"),
                 ("Type",   "Filter picker by name"),
                 ("Enter",  "Commit a stat field (applies to live NPCs immediately)"),
-                ("New Key + Add on System → Confirm", "Create a new MonsterDefinition"),
+                ("New Key + Add on System -> Confirm", "Create a new MonsterDefinition"),
                 ("New Key + Duplicate",  "Clone the selected monster under a new key"),
                 ("New Key + Rename",     "Re-key / rename the selected monster"),
-                ("Save",   "Write edited definitions to disk"),
-                ("Ctrl+Z", "Undo"),
+                ("Arrows", "Nudge the selected NPC one tile (Shift = a tenth)"),
+                ("G",      "Grid snap on / off"),
+                // Ctrl+S / Ctrl+Z / Ctrl+Y are listed because this editor now READS them.
+                // It did not: it was the only one of the fourteen that never asked
+                // EditorInput for the shared verbs, so these three rows taught keys that
+                // did nothing -- the retired-F-key defect in the other direction, and one
+                // the guard for that cannot see, because these keys were never retired.
+                ("Ctrl+S", "Write the definitions THIS editor edited to disk"),
+                ("Ctrl+Z", "Undo (covers stats, placements and deletions)"),
                 ("Ctrl+Y", "Redo"),
                 ("MMB",    "Pan camera (drag)"),
-                ("Esc",    "Close all editors"),
+                ("Esc",    "Close this editor"),
             });
             _tutorial.SetActive(false);
         }
@@ -454,6 +469,18 @@ namespace Valkur.Gameplay.Entities
             if (name == "animation") SetAnimationPanelOpen(open);
             if (name == "timeline")  SetTimelinePanelOpen(open);
         }
+
+        /// <summary>
+        /// Every panel the menu bar owns. A LIST rather than a repeated literal because three
+        /// places walk it — the highlight refresh, the workspace reconcile and the lookup
+        /// below — and a name added to two of the three is a panel the menu bar half knows
+        /// about.
+        /// </summary>
+        [Valkur.Core.SelfHealingStatic("Constant panel-name table; written once at class init, never mutated.")]
+        private static readonly string[] DropdownNames =
+        {
+            "tools", "categories", "picker", "addremove", "props", "animation", "timeline"
+        };
 
         private GameObject GetDropdown(string name) => name switch
         {

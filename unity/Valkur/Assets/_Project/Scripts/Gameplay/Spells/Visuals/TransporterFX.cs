@@ -233,7 +233,10 @@ namespace Valkur.Gameplay.Spells
             if (_mode == Mode.Materialize && !_arriveSfxPlayed && t >= ARRIVE_SFX_AT)
             {
                 _arriveSfxPlayed = true;
-                ServiceLocator.Get<IAudioService>()?.PlaySfxById("spell_teleport_arrive");
+                // Gated on HasSfx, like the departure half in TeleportExecutor.
+                var audioSvc = ServiceLocator.Get<IAudioService>();
+                if (audioSvc != null && audioSvc.HasSfx("spell_teleport_arrive"))
+                    audioSvc.PlaySfxById("spell_teleport_arrive");
             }
 
             if (_age >= DURATION) Destroy(gameObject);

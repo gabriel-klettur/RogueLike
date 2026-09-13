@@ -127,7 +127,7 @@ namespace Valkur.Gameplay.Spawners
             OpenDefaultDropdowns();
             RefreshPicker();
             RefreshPropertiesPanel();
-            SetStatus("Spawner Editor active. F3 to close.");
+            SetStatus("Spawner Editor active. Escape to close.");
         }
 
         public void Deactivate()
@@ -252,12 +252,13 @@ namespace Valkur.Gameplay.Spawners
 
             _tutorial = TutorialOverlay.Build(_root.transform, "SPAWNER HOTKEYS", new[]
             {
-                ("F3",     "Toggle Spawner Editor"),
+                // Retired 2026-09-05: editors open from the General Editor on Escape.
+                ("Esc",    "Open the General Editor, then Spawners"),
                 ("LMB",    "Select (or place when a template is picked)"),
                 ("Drag",   "Drag a template from the picker onto the map to place"),
                 ("Alt",    "Toggle on-map spawner outlines (click centre to inspect)"),
                 ("RMB",    "Drag any spawner on the map (any mode)"),
-                ("Del",    "Properties → Delete spawner (after selection)"),
+                ("Del",    "Properties -> Delete spawner (after selection)"),
                 ("Type",   "Filter picker by template id"),
                 ("Esc",    "Cancel current mode (or close)"),
                 ("Ctrl+Z", "Undo"),

@@ -250,7 +250,7 @@ namespace Valkur.Gameplay.VFX
                 GetOrCreateStore().Save(json);
 
                 _hasUnsavedInstanceChanges = false;
-                SetStatus($"Saved {instances.Count} particles → {INSTANCES_REL_PATH}");
+                SetStatus($"Saved {instances.Count} particles -> {INSTANCES_REL_PATH}");
                 Debug.Log($"[ParticlesEditor] Saved {instances.Count} particles to {INSTANCES_REL_PATH}");
             }
             catch (Exception ex)

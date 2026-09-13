@@ -432,7 +432,9 @@ namespace Valkur.Gameplay.Spells
         {
             if (_caster == null) { Expire(caught: false); return; }
 
-            int count = Physics2D.OverlapCircleNonAlloc(pos, _hitRadius, _overlapBuffer, _targetLayers);
+            int count = Debugging.SpellProbe.OverlapCircleNonAlloc(pos, _hitRadius, _overlapBuffer,
+                _targetLayers, Debugging.SpellDebugRole.Damage,
+                "golpe " + _hitRadius.ToString("0.##") + " u");
             bool hitSomething = false;
 
             for (int i = 0; i < count; i++)

@@ -34,7 +34,7 @@ namespace Valkur.Gameplay.Entities
     /// for.</item>
     /// </list>
     /// </summary>
-    public sealed class EntityAnimationPreviewService
+    public sealed partial class EntityAnimationPreviewService
     {
         // ── Constants ────────────────────────────────────────────────────────────
 
@@ -489,6 +489,10 @@ namespace Valkur.Gameplay.Entities
             if (!_initialized || !_open) return;
             UpdateFraming();
             UpdateGuides();
+            // Re-placed per tick because the FRAME moves under it: watching the mark stay on
+            // the mouth, or drift off it, as the animation plays is the whole reason the
+            // muzzle is authored here rather than in the Inspector.
+            UpdateMuzzleMarker();
         }
 
         // ── Rig construction ─────────────────────────────────────────────────────

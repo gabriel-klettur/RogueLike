@@ -65,7 +65,6 @@ namespace Valkur.UI.HUD
         private readonly HudTheme _theme;
         private readonly SkillsHudStyle _style;
 
-        private Sprite _bakedIcon;
         private Texture2D _bakedTexture;
         private int _pixelScale = 1;
         private int _rank;
@@ -283,7 +282,6 @@ namespace Valkur.UI.HUD
             if (Application.isPlaying) Object.Destroy(_bakedTexture);
             else Object.DestroyImmediate(_bakedTexture);
             _bakedTexture = null;
-            _bakedIcon = null;
         }
 
         // ── Sigil ─────────────────────────────────────────────────────────────

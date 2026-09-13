@@ -63,6 +63,11 @@ namespace Valkur.Gameplay.Spells
 
         // Explosion AOE on impact (radius = 0 means no AOE).
         private float _explosionRadius;
+
+        /// <summary>How far the shot must travel before the overlay records another sample.</summary>
+        private const float DEBUG_SAMPLE_SPACING = 0.33f;
+        private Vector2 _lastDebugSample;
+        private bool _debugSampled;
         private float _explosionDamage;
         // Dedicated visuals (Ice Lance) already own their complete impact composition.
         // True keeps the historical generic fallback for every ordinary projectile.
@@ -264,6 +269,7 @@ namespace Valkur.Gameplay.Spells
             int sweepMask = targetLayers | ObstacleLayers;
             bool prevHitTriggers = Physics2D.queriesHitTriggers;
             Physics2D.queriesHitTriggers = true;
+            RecordDebugSweep(step);
             int hitCount = Physics2D.CircleCastNonAlloc(
                 (Vector2)transform.position,
                 _radius,
@@ -509,6 +515,35 @@ namespace Valkur.Gameplay.Spells
             ResolveHit(other);
         }
 
+        /// <summary>
+        /// A sampled record of the corridor this shot can actually touch, for the spell debug
+        /// overlay.
+        ///
+        /// <para>SAMPLED rather than per step, and that is not a cosmetic choice: a shot sweeps
+        /// fifty times a second, so recording every step fills the record's whole budget inside
+        /// a couple of seconds and the impact splash -- the shape an author is usually looking
+        /// for -- is then the one that gets dropped. A sample every third of a unit draws the
+        /// same corridor and leaves room for what happens at the end of it.</para>
+        ///
+        /// <para>What it draws is the COLLIDER radius swept along the step, which is what the
+        /// physics uses. It is deliberately not the sprite and not the trail: a particle trail's
+        /// extent has never had any relationship to what a shot can hit, and believing it does
+        /// is most of why impact areas read as wrong.</para>
+        /// </summary>
+        private void RecordDebugSweep(float step)
+        {
+            if (!Debugging.SpellDebugAreas.Enabled) return;
+
+            Vector2 here = transform.position;
+            if (_debugSampled && (here - _lastDebugSample).sqrMagnitude < DEBUG_SAMPLE_SPACING * DEBUG_SAMPLE_SPACING)
+                return;
+
+            _lastDebugSample = here;
+            _debugSampled = true;
+            Debugging.SpellDebugAreas.Segment(here, here + _direction.normalized * step, _radius,
+                Debugging.SpellDebugRole.Path, "radio " + _radius.ToString("0.###") + " u");
+        }
+
         private void Expire()
         {
             _expired = true;
@@ -521,7 +556,9 @@ namespace Valkur.Gameplay.Spells
             // AOE explosion: damage all targets within explosion radius.
             if (_explosionRadius > 0f)
             {
-                int count = Physics2D.OverlapCircleNonAlloc((Vector2)vfxPos, _explosionRadius, _explosionHits, targetLayers);
+                int count = Debugging.SpellProbe.OverlapCircleNonAlloc((Vector2)vfxPos, _explosionRadius,
+                    _explosionHits, targetLayers, Debugging.SpellDebugRole.Splash,
+                    "salpicadura " + _explosionRadius.ToString("0.##") + " u");
                 for (int i = 0; i < count; i++)
                 {
                     var col = _explosionHits[i];
@@ -554,7 +591,14 @@ namespace Valkur.Gameplay.Spells
             if (VFXManager.Instance != null)
             {
                 if (_spawnGenericImpact)
-                    VFXManager.Instance.SpawnImpact(vfxPos, _vfxColor, 0.25f, 0.8f);
+                {
+                    // SpawnImpact takes a world RADIUS, so a shot that splashes draws its
+                    // splash. The literal 0.25 that used to be here was a quarter of a unit
+                    // whatever the spell's explosionRadius said -- for a fireball authored at
+                    // 2 units that is an eighth of the area that actually hurt.
+                    float blob = _explosionRadius > 0f ? _explosionRadius : 0.25f;
+                    VFXManager.Instance.SpawnImpact(vfxPos, _vfxColor, blob, 0.8f);
+                }
 
                 // Play the spell's impact particle preset (e.g. explosion_small) scaled up.
                 for (int i = 0; i < _impactPresets.Count; i++)
@@ -591,6 +635,10 @@ namespace Valkur.Gameplay.Spells
             _expired = false;
             _impactVfxPos = null;
             _acceleration = 0f;
+            // Pool reuse: a shot that inherited the last one's sample point would skip the
+            // first third of a unit of its own corridor, and only sometimes.
+            _debugSampled = false;
+            _lastDebugSample = Vector2.zero;
             _explosionRadius = 0f;
             _explosionDamage = 0f;
             _spawnGenericImpact = true;

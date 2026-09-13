@@ -214,6 +214,11 @@ namespace Valkur.Gameplay.Entities
         {
             if (string.IsNullOrEmpty(key)) return;
 
+            // The single point every placement passes through -- the click path and the
+            // drag path both land here -- so it is the one place the grid snap can be
+            // applied without the two gestures being able to disagree about it.
+            worldPos = ApplyGridSnap(worldPos);
+
             if (isPlayer) SpawnPlayerAt(key, worldPos);
             else          SpawnMonsterAt(key, worldPos);
         }
@@ -263,63 +268,41 @@ namespace Valkur.Gameplay.Entities
         }
 
         /// <summary>
-        /// Spawns a monster and tags it as an F5 placement so it survives a Stop
-        /// (<see cref="PersistedEntityInstance"/>, saved by
-        /// <c>EntitiesRuntimeEditor.Persistence.cs</c>).
+        /// Puts a monster on the map as a PLACEMENT — authored world content, saved to the map's
+        /// file by <see cref="PlacedEntityService"/>, which also owns what happens when it dies.
         /// </summary>
-        /// <param name="existingPlacementId">Non-null when this call is re-materialising a
-        /// placement loaded from disk — keeps the same stable id instead of minting a new one,
-        /// so a re-save of an untouched placement is not read as a delete-and-recreate.</param>
-        /// <param name="markDirty">False during boot-time load: spawning what the file already
-        /// says should not itself schedule another save.</param>
+        /// <param name="existingPlacementId">Non-null when undo/redo restores a placement it took
+        /// away: keeps the same stable id, so a by_eid FSM override and the saved record both read
+        /// it as the same placement rather than a delete-and-create.</param>
+        /// <param name="respawnSeconds">The restored placement's own respawn time.</param>
         private void SpawnMonsterAt(string monsterKey, Vector3 worldPos,
-            string existingPlacementId = null, bool markDirty = true)
+            string existingPlacementId = null, float respawnSeconds = 0f)
         {
             if (_monsterCatalog == null)
             {
                 SetStatus("Spawn failed: monster catalog not assigned.");
                 return;
             }
-            var def = _monsterCatalog.GetByKey(monsterKey);
-            if (def == null)
+            if (_monsterCatalog.GetByKey(monsterKey) == null)
             {
                 SetStatus($"Spawn failed: monster '{monsterKey}' not in catalog.");
                 return;
             }
 
-            // Prefer MonsterSpawner so the entity is tracked alongside other spawned monsters.
-            var spawner = FindObjectOfType<Valkur.Gameplay.MonsterSpawner>();
-            GameObject go;
-            if (spawner != null)
+            var marker = PlacedEntities.Place(monsterKey, worldPos, existingPlacementId, respawnSeconds);
+            if (marker == null)
             {
-                go = spawner.SpawnEntity(def, worldPos);
-            }
-            else
-            {
-                var setup  = FindObjectOfType<GameplaySceneSetup>();
-                var prefab = setup != null ? setup.MonsterPrefab : null;
-                if (prefab == null)
-                {
-                    SetStatus("Spawn failed: no monsterPrefab on GameplaySceneSetup.");
-                    Debug.LogWarning("[EntitiesEditor] Cannot spawn monster — monsterPrefab missing.");
-                    return;
-                }
-                go = Instantiate(prefab, worldPos, Quaternion.identity);
-                var entitiesContainer = GameObject.Find("[Entities]")?.transform;
-                if (entitiesContainer != null) go.transform.SetParent(entitiesContainer, true);
-                EntitySetup.ConfigureMonster(go, def);
+                SetStatus($"Spawn failed: '{monsterKey}' could not be instantiated (see console).");
+                return;
             }
 
-            if (go != null)
-            {
-                var marker = go.GetComponent<PersistedEntityInstance>()
-                             ?? go.AddComponent<PersistedEntityInstance>();
-                marker.Initialize(existingPlacementId, monsterKey);
-                if (markDirty) MarkEntityPlacementsDirty();
+            // Undoable only when this is a NEW placement. Undo's own redo path passes the
+            // existing id, and recording it would record the restore as a fresh edit -- a step
+            // on the stack that undoes the thing the author just asked to bring back.
+            if (string.IsNullOrEmpty(existingPlacementId)) RecordPlacementCreated(marker);
 
-                SetStatus($"Spawned '{monsterKey}' at ({worldPos.x:F1}, {worldPos.y:F1}).");
-                Debug.Log($"[EntitiesEditor] Spawned monster {monsterKey} at {worldPos}");
-            }
+            SetStatus($"Placed '{monsterKey}' at ({worldPos.x:F1}, {worldPos.y:F1}).");
+            Debug.Log($"[EntitiesEditor] Placed monster {monsterKey} at {worldPos}");
         }
     }
 }

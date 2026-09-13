@@ -247,7 +247,7 @@ namespace Valkur.Gameplay.MapEditor
             string id = AddPortal(_pendingPortalSourceWorld, destinationZoneName,
                                    useZoneCenter, destinationWorld, activationRadius);
             CancelPlacePortalFlow();
-            _ui?.SetStatus($"Portal placed (id {id}) → '{destinationZoneName}'.");
+            _ui?.SetStatus($"Portal placed (id {id}) -> '{destinationZoneName}'.");
         }
 
         // ── Helpers ─────────────────────────────────────────────────────────────

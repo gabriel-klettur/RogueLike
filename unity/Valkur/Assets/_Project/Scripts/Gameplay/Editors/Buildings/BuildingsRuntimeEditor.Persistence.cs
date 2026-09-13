@@ -292,7 +292,7 @@ namespace Valkur.Gameplay.Buildings
                 string slotLabel = Valkur.Core.MapEditorActiveSlot.IsDefault(activeSlot)
                     ? INSTANCES_REL_PATH
                     : $"slot '{activeSlot}' ({path})";
-                if (_statusTmp != null) _statusTmp.text = $"Saved {all.Count} buildings → {slotLabel}";
+                if (_statusTmp != null) _statusTmp.text = $"Saved {all.Count} buildings -> {slotLabel}";
                 Debug.Log($"[BuildingsEditor] Saved {all.Count} buildings to {path} (slot={activeSlot})");
                 _hasUnsavedInstanceChanges = false;
                 RefreshCollidersPanel();

@@ -162,7 +162,12 @@ namespace Valkur.Gameplay.Entities
         {
             if (_selectedIsPlayer || string.IsNullOrEmpty(_selectedKey)) return null;
             ResolveMonsterCatalogFallback();
-            return _monsterCatalog != null ? _monsterCatalog.GetByKey(_selectedKey) : null;
+            var def = _monsterCatalog != null ? _monsterCatalog.GetByKey(_selectedKey) : null;
+            // Seeded HERE and not at commit time: by commit time the edit has already happened,
+            // so a lazy seed would make the FIRST change to each definition the one change that
+            // cannot be undone -- silently, and on the edit an author is most likely trying out.
+            SeedDefinitionSnapshot(def);
+            return def;
         }
 
         private void OnAnimationEntitySpeedCommitted(string raw)

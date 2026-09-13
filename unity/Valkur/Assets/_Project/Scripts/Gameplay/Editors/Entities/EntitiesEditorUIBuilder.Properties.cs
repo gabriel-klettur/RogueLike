@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,7 +18,8 @@ namespace Valkur.Gameplay.Entities
         // Sections are scrollable; each section is filled by the runtime editor
         // when an entity is selected.
 
-        private static void BuildPropertiesPanel(Transform canvasT, ref UIRefs refs)
+        private static void BuildPropertiesPanel(Transform canvasT, ref UIRefs refs,
+                                                 Action<Transform> onSectionFold)
         {
             refs.PropsDropdown = MakeDrop("EntitiesPropsPanel", canvasT,
                 PanelDock.TopRight, PANEL_GAP, PANEL_TOP_OFFSET,
@@ -35,6 +37,12 @@ namespace Valkur.Gameplay.Entities
             refs.PropsHintText.alignment          = TextAlignmentOptions.Center;
             refs.PropsHintText.enableWordWrapping = true;
 
+            // Filter. The form is eight sections and about fifty rows now; scrolling for one
+            // field is what a search box is for, and hiding non-matching ROWS rather than
+            // rebuilding them keeps a keystroke free -- the lesson the Items table's 3.5 s and
+            // the Controls editor's 213 ms both taught.
+            refs.PropsFilterInput = UIInputField.MakeWithPlaceholder(t, "Filter fields…", 20f);
+
             // Scrollable form
             var (scroll, content) = MakePropsScroll(t);
             var le = scroll.gameObject.AddComponent<LayoutElement>();
@@ -43,12 +51,17 @@ namespace Valkur.Gameplay.Entities
             EditorUIHelpers.AddVerticalScrollbar(scroll);
 
             refs.PropsFormRoot       = content;
-            refs.PropsIdentitySection = MakeFormSection(content, "Identity");
-            refs.PropsStatsSection    = MakeFormSection(content, "Stats");
-            refs.PropsAISection       = MakeFormSection(content, "AI");
-            refs.PropsSpawnSection    = MakeFormSection(content, "Spawn");
-            refs.PropsAutoCastSection = MakeFormSection(content, "Auto-Cast");
-            refs.PropsAssetsSection   = MakeFormSection(content, "Assets");
+            refs.PropsIdentitySection = MakeFormSection(content, "Identity", onSectionFold);
+            refs.PropsStatsSection    = MakeFormSection(content, "Stats", onSectionFold);
+            refs.PropsAISection       = MakeFormSection(content, "AI", onSectionFold);
+            refs.PropsSpawnSection    = MakeFormSection(content, "Spawn", onSectionFold);
+            refs.PropsAutoCastSection = MakeFormSection(content, "Auto-Cast", onSectionFold);
+            // AI Tuning and Rewards were the two blocks with no UI at all: nineteen fields of
+            // behaviour (the dodge, the standoff, the field of view, the leash) and the coin
+            // faucet of the whole economy, both authorable only from the Inspector.
+            refs.PropsAITuningSection = MakeFormSection(content, "AI Tuning", onSectionFold);
+            refs.PropsRewardSection   = MakeFormSection(content, "Rewards", onSectionFold);
+            refs.PropsAssetsSection   = MakeFormSection(content, "Assets", onSectionFold);
 
             // Boss Editor handoff button — hidden until the selected entity is a boss.
             var bossBtn = CreateUI("BossHandoffBtn", t);
@@ -57,7 +70,7 @@ namespace Valkur.Gameplay.Entities
             bossBtnImg.color = new Color(0.20f, 0.30f, 0.55f, 1f);
             var bossBtnComponent = bossBtn.AddComponent<Button>();
             bossBtnComponent.targetGraphic = bossBtnImg;
-            AddCenteredText(bossBtn.transform, "Open Boss Editor →", 11f, FontStyles.Bold, TEXT_PRIMARY);
+            AddCenteredText(bossBtn.transform, "Open Boss Editor >", 11f, FontStyles.Bold, TEXT_PRIMARY);
             refs.BossHandoffBtnGo = bossBtn;
             bossBtn.SetActive(false);
 
@@ -103,7 +116,8 @@ namespace Valkur.Gameplay.Entities
             return (sr, cr);
         }
 
-        private static RectTransform MakeFormSection(Transform parent, string title)
+        private static RectTransform MakeFormSection(Transform parent, string title,
+                                                     Action<Transform> onFold)
         {
             var go = CreateUI($"Section_{title}", parent);
             var vlg = go.AddComponent<VerticalLayoutGroup>();
@@ -115,15 +129,54 @@ namespace Valkur.Gameplay.Entities
             vlg.childControlHeight     = true;
             go.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            // Section header
+            // Section header — a BUTTON that folds its body.
+            //
+            // Measured with dark_dwarf selected: the form is 1446 px tall in a 503 px viewport,
+            // so an author sees 34.8 % of it and scrolls three screens. Every trip to an AI
+            // dial goes past Identity, Stats, AI and Spawn. The filter helps only once you know
+            // what the field is CALLED, which is exactly what somebody exploring does not.
+            //
+            // The caret is drawn (CaretGraphic) rather than typed: the shipped font carries no
+            // triangle at all, so a text arrow here would be the fourteen-tofu-box defect this
+            // same pass removed from the dropdowns.
             var hdrGo = CreateUI("Header", go.transform);
             hdrGo.AddComponent<LayoutElement>().preferredHeight = 18f;
             var hdrImg          = hdrGo.AddComponent<Image>();
             hdrImg.color        = MENUBAR_BG;
             var hdrTmp          = AddCenteredText(hdrGo.transform, title.ToUpper(), 10f, FontStyles.Bold, ACCENT);
             hdrTmp.alignment    = TextAlignmentOptions.MidlineLeft;
-            hdrTmp.margin       = new Vector4(8f, 0f, 0f, 0f);
+            hdrTmp.margin       = new Vector4(20f, 0f, 0f, 0f);
             hdrTmp.characterSpacing = 1.5f;
+            hdrTmp.raycastTarget = false;
+
+            var caretGo = CreateUI("Caret", hdrGo.transform);
+            var caretRt = caretGo.GetComponent<RectTransform>();
+            caretRt.anchorMin        = new Vector2(0f, 0.5f);
+            caretRt.anchorMax        = new Vector2(0f, 0.5f);
+            caretRt.pivot            = new Vector2(0f, 0.5f);
+            caretRt.sizeDelta        = new Vector2(10f, 10f);
+            caretRt.anchoredPosition = new Vector2(6f, 0f);
+            var caret           = caretGo.AddComponent<CaretGraphic>();
+            caret.Direction     = CaretDirection.Down;
+            caret.color         = ACCENT;
+            caret.raycastTarget = false;
+
+            // The block holds BRIGHTNESS MULTIPLIERS, not colours: a Selectable on ColorTint
+            // drives its target graphic's CanvasRenderer to colors.<state>, and that value
+            // MULTIPLIES with Graphic.color -- so white is "leave the header as painted" and
+            // the other two lift and dim it. Built by scaling white and then fixing the alpha,
+            // because `new Color(...)` would be a hard-coded colour in a file the raw-colour
+            // ratchet watches, and would ALSO scale the alpha to 1.35 and clamp to opaque by
+            // accident rather than on purpose.
+            Color Brightness(float k) { var c = Color.white * k; c.a = 1f; return c; }
+
+            var hdrBtn           = hdrGo.AddComponent<Button>();
+            hdrBtn.targetGraphic = hdrImg;
+            var hc               = hdrBtn.colors;
+            hc.normalColor       = Color.white;
+            hc.highlightedColor  = Brightness(1.35f);
+            hc.pressedColor      = Brightness(0.85f);
+            hdrBtn.colors        = hc;
 
             // Body container — runtime editor fills this with rows
             var bodyGo = CreateUI("Body", go.transform);
@@ -137,7 +190,57 @@ namespace Valkur.Gameplay.Entities
             bvlg.childControlHeight     = true;
             bodyGo.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
+            // Routed through the editor's handler, not straight to ToggleSectionFold: the
+            // editor is what REMEMBERS the fold, and it has to, because it destroys and
+            // rebuilds every one of these bodies on each selection change. A header wired
+            // to the bare toggle would fold correctly and forget on the next click in the
+            // Picker.
+            var self = go.transform;
+            hdrBtn.onClick.AddListener(() =>
+            {
+                if (onFold != null) onFold(self);
+                else                ToggleSectionFold(self);
+            });
+
             return body;
+        }
+
+        /// <summary>
+        /// Fold or unfold one Properties section, and turn its caret to match.
+        ///
+        /// <para>The BODY is what is hidden, never the section: hiding the whole thing would
+        /// take the header with it and leave no way to unfold. That is the same distinction the
+        /// filter draws — it hides a section entirely only when nothing in it matched, because
+        /// there the header would be a heading over nothing.</para>
+        ///
+        /// <para>It is a static on the builder rather than a method on the editor so a section
+        /// carries its own behaviour: the editor rebuilds these bodies constantly and a fold
+        /// handler that lived on the editor would have to be re-attached on every rebuild.</para>
+        /// </summary>
+        internal static void ToggleSectionFold(Transform section)
+        {
+            var body = section != null ? section.Find("Body") : null;
+            if (body == null) return;
+
+            bool open = !body.gameObject.activeSelf;
+            body.gameObject.SetActive(open);
+
+            var caret = section.Find("Header/Caret")?.GetComponent<CaretGraphic>();
+            if (caret != null) caret.Direction = open ? CaretDirection.Down : CaretDirection.Right;
+        }
+
+        /// <summary>Is this section's body showing? Read by the workspace snapshot.</summary>
+        internal static bool IsSectionOpen(Transform section)
+        {
+            var body = section != null ? section.Find("Body") : null;
+            return body == null || body.gameObject.activeSelf;
+        }
+
+        /// <summary>Force a section open or closed, caret included.</summary>
+        internal static void SetSectionOpen(Transform section, bool open)
+        {
+            if (section == null) return;
+            if (IsSectionOpen(section) != open) ToggleSectionFold(section);
         }
 
         // ── Public helper used by the runtime editor to fill rows ────────────────
@@ -371,8 +474,8 @@ namespace Valkur.Gameplay.Entities
             for (int i = sectionBody.childCount - 1; i >= 0; i--)
             {
                 var child = sectionBody.GetChild(i);
-                if (Application.isPlaying) Object.Destroy(child.gameObject);
-                else                       Object.DestroyImmediate(child.gameObject);
+                if (Application.isPlaying) UnityEngine.Object.Destroy(child.gameObject);
+                else                       UnityEngine.Object.DestroyImmediate(child.gameObject);
             }
         }
     }

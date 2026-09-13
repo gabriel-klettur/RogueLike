@@ -271,11 +271,19 @@ namespace Valkur.Gameplay.Entities
                 return;
             }
 
-            // Capture a label that survives the brain being destroyed before undo.
-            string label = $"Move {brain.gameObject.name} ({to.x:F1},{to.y:F1})";
-            _undo.Record(new UndoStack.LambdaCommand(label,
-                doAction:   () => { if (brain != null) brain.transform.position = to;   },
-                undoAction: () => { if (brain != null) brain.transform.position = from; }));
+            // Snapped on RELEASE, not during the drag: correcting the position every frame
+            // fights the mouse and makes freehand placement impossible while snap is on.
+            if (_gridSnap)
+            {
+                to = SnapToGrid(to);
+                brain.transform.position = to;
+            }
+
+            // Through RecordEntityMove, which records the undo step AND marks the placements
+            // dirty. This path used to do only the first, so a dragged monster's new position
+            // reached the undo stack and never reached the file -- it survived a Stop only if
+            // some later edit happened to schedule a save.
+            RecordEntityMove(brain, from, to, $"Move {brain.gameObject.name}");
 
             SetStatus($"Moved '{brain.gameObject.name}' â†’ ({to.x:F1}, {to.y:F1}).");
         }

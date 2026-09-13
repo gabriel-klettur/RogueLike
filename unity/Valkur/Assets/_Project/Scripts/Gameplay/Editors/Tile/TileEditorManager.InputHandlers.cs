@@ -29,7 +29,7 @@ namespace Valkur.Gameplay.TileEditor
                 _ui.RefreshTilePicker();
                 _ui.RefreshColliderToggles();
                 _ui.RefreshLayerJumpsToggles();
-                _ui.SetStatus("Tile Editor active. F8 to close. Player movement enabled.");
+                _ui.SetStatus("Tile Editor active. Escape to close. Player movement enabled.");
                 if (_borderOverlayGo != null) _borderOverlayGo.SetActive(true);
                 if (_gridCursor != null) _gridCursor.gameObject.SetActive(true);
                 if (_gridOverlayGo != null) _gridOverlayGo.SetActive(true);
@@ -51,7 +51,7 @@ namespace Valkur.Gameplay.TileEditor
                 QualitySettings.vSyncCount = 0;
                 Debug.Log($"[TileEditor] FPS cap override: target=120 vSync=0 (was {_savedTargetFrameRate}/{_savedVSyncCount})");
 
-                Debug.Log("[TileEditor] Activated (F8)");
+                Debug.Log("[TileEditor] Activated");
             }
             else
             {
@@ -88,7 +88,7 @@ namespace Valkur.Gameplay.TileEditor
                 QualitySettings.vSyncCount = _savedVSyncCount;
                 Debug.Log($"[TileEditor] FPS cap restored: target={_savedTargetFrameRate} vSync={_savedVSyncCount}");
 
-                Debug.Log("[TileEditor] Deactivated (F8)");
+                Debug.Log("[TileEditor] Deactivated");
             }
         }
 

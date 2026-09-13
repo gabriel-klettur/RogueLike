@@ -61,6 +61,10 @@ namespace Valkur.Gameplay.Save
             CollectMarketState(data);
             DeathStateSave.Collect(data, deathController);
 
+            // Which hand-placed monsters this run has killed. World state in the metadata bag,
+            // like the market: the placement FILE is authored data and must never learn about it.
+            Entities.PlacedEntityService.Instance?.CollectInto(data);
+
             return data;
         }
 

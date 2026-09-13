@@ -245,6 +245,10 @@ namespace Valkur.Gameplay
                                             DirectionalAnimator animator, SpriteRenderer renderer)
         {
             var existing = go.GetComponent<CastMuzzle>();
+            // HasCastMuzzle already answers for the scoped points, so a creature whose ONLY
+            // muzzle is "the cast animation fires from the mouth" -- with no creature-wide
+            // pair at all -- still gets the component. That is the normal shape now: the pair
+            // is the fallback, the point is what an author places.
             bool wanted = assetConfig != null &&
                           (assetConfig.HasCastMuzzle ||
                            (assetConfig.castMuzzleFrames != null && assetConfig.castMuzzleFrames.Count > 0));
@@ -260,7 +264,7 @@ namespace Valkur.Gameplay
 
             if (existing == null) existing = go.AddComponent<CastMuzzle>();
             existing.Configure(assetConfig.castMuzzle, assetConfig.castMuzzleFrames,
-                               renderer, animator);
+                               assetConfig.castMuzzlePoints, renderer, animator);
         }
 
         private static void ApplyStatePacing(DirectionalAnimator animator, EntityAssetConfig assetConfig)

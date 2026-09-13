@@ -134,9 +134,9 @@ namespace Valkur.Gameplay.TileEditor
                 RegenerateCompositeCollider(collision);
 
             if (collidersErased > 0)
-                _ui?.SetStatus($"Moved {moved} cell(s) → {destLayer} (+{collidersErased} collider{(collidersErased == 1 ? "" : "s")} cleared)");
+                _ui?.SetStatus($"Moved {moved} cell(s) -> {destLayer} (+{collidersErased} collider{(collidersErased == 1 ? "" : "s")} cleared)");
             else
-                _ui?.SetStatus($"Moved {moved} cell(s) → {destLayer}");
+                _ui?.SetStatus($"Moved {moved} cell(s) -> {destLayer}");
             _ui?.RefreshClipboardButtons();
         }
     }

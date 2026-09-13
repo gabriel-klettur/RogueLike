@@ -86,7 +86,7 @@ namespace Valkur.Gameplay.Editors.Boss
             var flex = EditorUIHelpers.CreateUI("Flex", r1.transform);
             flex.AddComponent<LayoutElement>().flexibleWidth = 1f;
 
-            EditorUIHelpers.AddActionBtn(r1.transform, "⊕", 22f, () => DuplicateCue(capturedCi), out _, 9f);
+            EditorUIHelpers.AddActionBtn(r1.transform, "+", 22f, () => DuplicateCue(capturedCi), out _, 9f);
             EditorUIHelpers.AddDangerBtn(r1.transform, "×", 22f, () => RequestDeleteCue(capturedCi), out _);
         }
 

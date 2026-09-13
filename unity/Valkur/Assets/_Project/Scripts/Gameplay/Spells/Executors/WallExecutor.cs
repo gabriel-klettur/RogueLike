@@ -63,6 +63,22 @@ namespace Valkur.Gameplay.Spells
 
             var collider = BuildCollider(wallGo.transform, axis, length, height, ctx.Spell);
 
+            // The BLOCKING footprint, drawn from the collider that was just built rather than
+            // from the authored fields: the footprint is deliberately a fraction of the drawn
+            // height (a wall occupies less floor than it covers on screen), so the two numbers
+            // are not the same and the one that stops a body is this one.
+            if (Debugging.SpellDebugAreas.Enabled && collider != null)
+            {
+                Debugging.SpellDebugAreas.Rect((Vector2)collider.transform.position + collider.offset,
+                    collider.size, collider.transform.eulerAngles.z,
+                    Debugging.SpellDebugRole.Damage,
+                    "barrera " + collider.size.x.ToString("0.##") + " x " + collider.size.y.ToString("0.##") + " u");
+                Debugging.SpellDebugAreas.Rect(spawnPos, new Vector2(length, height),
+                    Vector2.SignedAngle(Vector2.right, axis),
+                    Debugging.SpellDebugRole.Visual,
+                    "dibujada " + length.ToString("0.##") + " x " + height.ToString("0.##") + " u");
+            }
+
             var health = wallGo.AddComponent<Health>();
             health.Initialize(Mathf.RoundToInt(hp));
 

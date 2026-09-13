@@ -179,7 +179,7 @@ namespace Valkur.Gameplay.TileEditor
         {
             if (_titleText == null) return;
             string p = _ruleset.TerrainPrimary ?? "?";
-            string s = _ruleset.IsTransition ? $"↔{_ruleset.TerrainSecondary}" : "";
+            string s = _ruleset.IsTransition ? $"<->{_ruleset.TerrainSecondary}" : "";
             _titleText.text = $"Configure: {_folderName}  ({p}{s})";
         }
 

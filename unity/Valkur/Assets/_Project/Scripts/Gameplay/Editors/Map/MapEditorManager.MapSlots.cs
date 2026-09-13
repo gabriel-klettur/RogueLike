@@ -86,7 +86,7 @@ namespace Valkur.Gameplay.MapEditor
             if (json == null)
             {
                 Debug.LogWarning($"[MapEditor] Active slot '{active}' has no on-disk file " +
-                                 $"— falling back to default zones. Use F11 → Maps to repick a slot.");
+                                 $"— falling back to default zones. Use F11 -> Maps to repick a slot.");
                 return;
             }
 
@@ -478,9 +478,10 @@ namespace Valkur.Gameplay.MapEditor
             // Entities placed through F5 are the fifth kind of world content, and until the
             // Entities editor grew a repository they were the only one with nothing to
             // clear — so a monster placed on map A survived the swap and floated over map B.
-            // ClearPlacedEntities flushes the pending autosave first, against the OUTGOING
-            // slot, because the active-slot pointer has not flipped yet at this point.
-            Valkur.Gameplay.Entities.EntitiesRuntimeEditor.Instance?.ClearPlacedEntities();
+            // ClearSpawned flushes the pending autosave first, against the OUTGOING slot,
+            // because the active-slot pointer has not flipped yet at this point. It lives on
+            // the runtime service, not the editor: the editor is absent from a release build.
+            Valkur.Gameplay.Entities.PlacedEntityService.Instance?.ClearSpawned();
         }
 
         public void ReloadAllWorldContent()
@@ -494,7 +495,7 @@ namespace Valkur.Gameplay.MapEditor
             FindObjectOfType<WorldLightLoader>()?.Reload();
             FindObjectOfType<Valkur.Gameplay.VFX.ParticleInstancesLoader>()?.Reload();
             ServiceLocator.Get<Valkur.Gameplay.WorldDrops.ItemDropService>()?.ReloadForActiveSlot();
-            Valkur.Gameplay.Entities.EntitiesRuntimeEditor.Instance?.ReloadPlacedEntities();
+            Valkur.Gameplay.Entities.PlacedEntityService.Instance?.Reload();
         }
 
         // Persists the live light set to the OUTGOING slot's file before the

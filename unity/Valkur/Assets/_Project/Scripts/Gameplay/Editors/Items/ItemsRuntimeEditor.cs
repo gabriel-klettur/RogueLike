@@ -218,8 +218,8 @@ namespace Valkur.Gameplay.Items
             _mainCamera = Camera.main;
             Valkur.Gameplay.CameraSetup.Instance?.DetachFollow();
 
-            SetStatus("Items Editor active. F7 to close.");
-            Debug.Log("[ItemsEditor] Activated (F7)");
+            SetStatus("Items Editor active. Escape to close.");
+            Debug.Log("[ItemsEditor] Activated");
         }
 
         public void Deactivate()
@@ -239,7 +239,7 @@ namespace Valkur.Gameplay.Items
             Valkur.Gameplay.CameraSetup.Instance?.ReattachFollow();
             if (GameEditorManager.HasInstance)
                 GameEditorManager.Instance.NotifyDeactivated(this);
-            Debug.Log("[ItemsEditor] Deactivated (F7)");
+            Debug.Log("[ItemsEditor] Deactivated");
         }
 
         private void ToggleActive()
@@ -320,7 +320,8 @@ namespace Valkur.Gameplay.Items
         {
             _tutorial = TutorialOverlay.Build(_root.transform, "ITEMS HOTKEYS", new[]
             {
-                ("F7",      "Toggle Items Editor"),
+                // Retired 2026-09-05: editors open from the General Editor on Escape.
+                ("Esc",     "Open the General Editor, then Items"),
                 ("LMB click", "Select / spawn / delete (per mode)"),
                 ("LMB drag",  "Move a world drop"),
                 ("MMB drag",  "Pan the camera"),

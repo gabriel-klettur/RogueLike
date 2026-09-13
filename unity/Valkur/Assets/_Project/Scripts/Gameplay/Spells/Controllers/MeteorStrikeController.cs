@@ -65,13 +65,17 @@ namespace Valkur.Gameplay.Spells
             Vector2 impactPos = (Vector2)transform.position + offset;
 
             // Falling missile resolves damage + extra preset on landing
-            MeteorMissileFX.Spawn(impactPos, OnMeteorLanded);
+            // The burst is drawn at the radius the landing will actually sweep. Passing it here
+            // rather than letting the FX pick a size is the whole difference between an
+            // explosion that reports the danger and one that merely happens near it.
+            MeteorMissileFX.Spawn(impactPos, OnMeteorLanded, _impactRadius);
 
         }
 
         private void OnMeteorLanded(Vector3 worldImpact)
         {
-            var hits = Physics2D.OverlapCircleAll(worldImpact, _impactRadius, _targetLayers);
+            var hits = Debugging.SpellProbe.OverlapCircleAll(worldImpact, _impactRadius, _targetLayers,
+                Debugging.SpellDebugRole.Damage, "impacto " + _impactRadius.ToString("0.##") + " u");
             foreach (var hit in hits)
             {
                 var health = hit.GetComponentInParent<Health>();

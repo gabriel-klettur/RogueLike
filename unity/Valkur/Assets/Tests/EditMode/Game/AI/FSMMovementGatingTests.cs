@@ -91,6 +91,21 @@ namespace Valkur.Tests.EditMode.Game.AI
         }
 
         [Test]
+        public void StopMovement_OnACorpse_WritesNothing_AndLogsNothing()
+        {
+            // UnconsciousState makes the body Static; DeathState.Enter then stops it. Unity
+            // refuses a velocity write on a Static body with a warning, so every monster
+            // death in the game logged one until the seam learned to skip it.
+            LogAssert.ignoreFailingMessages = false;
+            Rb.bodyType = RigidbodyType2D.Static;
+
+            Components().StopMovement();
+
+            LogAssert.NoUnexpectedReceived();
+            Assert.AreEqual(RigidbodyType2D.Static, Rb.bodyType);
+        }
+
+        [Test]
         public void SetVelocity_WithNoRigidbody_DoesNotThrow()
         {
             var bare = new GameObject("no-rb");

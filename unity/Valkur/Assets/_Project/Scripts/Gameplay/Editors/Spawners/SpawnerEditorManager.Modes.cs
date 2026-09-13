@@ -259,7 +259,7 @@ namespace Valkur.Gameplay.Spawners
                 doAction:   () => { if (instance != null) instance.transform.position = to;   },
                 undoAction: () => { if (instance != null) instance.transform.position = from; }));
 
-            SetStatus($"Moved '{id}' → ({to.x:F1}, {to.y:F1}).");
+            SetStatus($"Moved '{id}' -> ({to.x:F1}, {to.y:F1}).");
             RefreshPropertiesPanel();
         }
 

@@ -62,19 +62,19 @@ namespace Valkur.Gameplay.Items
             if (!string.IsNullOrEmpty(def.description))
             {
                 sb.AppendLine();
-                sb.AppendLine("<b>── Description ──</b>");
+                sb.AppendLine("<b>-- Description --</b>");
                 sb.AppendLine(def.description);
             }
 
             sb.AppendLine();
-            sb.AppendLine("<b>── Stacking ──</b>");
+            sb.AppendLine("<b>-- Stacking --</b>");
             sb.AppendLine($"Stackable: {def.stackable}");
             sb.AppendLine($"Max stack: {def.maxStack}");
 
             if (def.equipSlot != EquipSlot.None || def.damage != 0 || def.attackSpeed != 0 || def.range != 0)
             {
                 sb.AppendLine();
-                sb.AppendLine("<b>── Equipment ──</b>");
+                sb.AppendLine("<b>-- Equipment --</b>");
                 sb.AppendLine($"Slot: {def.equipSlot}");
                 sb.AppendLine($"Damage: {def.damage}");
                 sb.AppendLine($"Attack speed: {def.attackSpeed}");
@@ -85,7 +85,7 @@ namespace Valkur.Gameplay.Items
             }
 
             sb.AppendLine();
-            sb.AppendLine("<b>── Economy ──</b>");
+            sb.AppendLine("<b>-- Economy --</b>");
             sb.AppendLine($"Value: {def.value}");
             sb.AppendLine($"Buy: {def.buyPrice}    Sell: {def.sellPrice}");
             sb.AppendLine($"Rarity: {def.rarity}");
@@ -95,7 +95,7 @@ namespace Valkur.Gameplay.Items
             if (def.threshold != 0 || def.experience != 0)
             {
                 sb.AppendLine();
-                sb.AppendLine("<b>── Experience ──</b>");
+                sb.AppendLine("<b>-- Experience --</b>");
                 sb.AppendLine($"Threshold: {def.threshold}");
                 sb.AppendLine($"XP: {def.experience}");
             }
@@ -104,7 +104,7 @@ namespace Valkur.Gameplay.Items
                 !string.IsNullOrEmpty(def.buffStat) || def.duration != 0)
             {
                 sb.AppendLine();
-                sb.AppendLine("<b>── Effect ──</b>");
+                sb.AppendLine("<b>-- Effect --</b>");
                 if (!string.IsNullOrEmpty(def.effect)) sb.AppendLine($"Effect id: {def.effect}");
                 if (def.healing != 0) sb.AppendLine($"Healing: {def.healing}");
                 if (def.mana    != 0) sb.AppendLine($"Mana: {def.mana}");
@@ -117,7 +117,7 @@ namespace Valkur.Gameplay.Items
             }
 
             sb.AppendLine();
-            sb.AppendLine("<b>── Visual ──</b>");
+            sb.AppendLine("<b>-- Visual --</b>");
             sb.AppendLine($"Scale (editor / map / inv): {def.scaleEditor:F2} / {def.scaleMap:F2} / {def.scaleInventory:F2}");
             sb.AppendLine($"Z-layer: {def.zLayer}");
             if (def.despawnTime > 0) sb.AppendLine($"Despawn after: {def.despawnTime:F1}s");
@@ -169,7 +169,7 @@ namespace Valkur.Gameplay.Items
             // ── Instance metadata block (multi-line, wraps cleanly) ──────────
             var pos = _selectedInstance.transform.position;
             var sb  = new StringBuilder(256);
-            sb.Append("<b>── Instance ──</b>\n");
+            sb.Append("<b>-- Instance --</b>\n");
             sb.Append($"Position: ({pos.x:F2}, {pos.y:F2})\n");
             if (_selectedInstance.IsPersistent && !string.IsNullOrEmpty(_selectedInstance.DropId))
             {
@@ -214,7 +214,7 @@ namespace Valkur.Gameplay.Items
 
             AddInlineLabel(qtyRow.transform, "Qty:", 32f);
             AttachFixedSize(
-                EditorUIHelpers.MakeButton(qtyRow.transform, "−",
+                EditorUIHelpers.MakeButton(qtyRow.transform, "-",
                     () => AdjustSelectedQuantity(-1), height: ROW_HEIGHT, fontSize: 12f).gameObject,
                 QTY_BTN_W, ROW_HEIGHT);
             var qtyLbl = AddInlineLabel(qtyRow.transform, _selectedInstance.Quantity.ToString(), 40f);
@@ -306,7 +306,7 @@ namespace Valkur.Gameplay.Items
             string persistDropId = pickup.IsPersistent ? pickup.DropId : null;
 
             _undo.Record(new UndoStack.LambdaCommand(
-                $"Qty {pickup.Item?.itemId} {oldQty}→{newQty}",
+                $"Qty {pickup.Item?.itemId} {oldQty}->{newQty}",
                 doAction: () =>
                 {
                     if (pickup != null) f.SetValue(pickup, newQty);
@@ -324,7 +324,7 @@ namespace Valkur.Gameplay.Items
                 service.UpdateQuantity(persistDropId, newQty);
             RefreshProperties();
             RebuildInstancesList();
-            SetStatus($"Quantity {oldQty} → {newQty}.");
+            SetStatus($"Quantity {oldQty} -> {newQty}.");
         }
 
         private void DeleteSelectedInstance()

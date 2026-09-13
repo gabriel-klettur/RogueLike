@@ -55,8 +55,8 @@ MonoBehaviour:
   castForwardOffset: 0
   meteorCount: 8
   meteorInterval: 0.25
-  meteorAreaRadius: 32.5
-  meteorImpactRadius: 10
+  meteorAreaRadius: 3.5
+  meteorImpactRadius: 1.1
   armingTime: 0
   triggerRadius: 0
   explosionRadius: 0

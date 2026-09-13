@@ -232,7 +232,7 @@ namespace Valkur.Gameplay.Buildings
                     created = bObj;
                     InvalidateBuildingCache();
                     SetActiveBuilding(bObj);
-                    if (_statusTmp != null) _statusTmp.text = $"Placed #{template.templateId} at ({worldPos.x:F1}, {worldPos.y:F1}) → ID {newId}";
+                    if (_statusTmp != null) _statusTmp.text = $"Placed #{template.templateId} at ({worldPos.x:F1}, {worldPos.y:F1}) -> ID {newId}";
                 },
                 () =>
                 {

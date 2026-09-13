@@ -184,6 +184,23 @@ namespace Valkur.Gameplay
             if (container != null) vizGo.transform.SetParent(container.transform, false);
         }
 
+        /// <summary>
+        /// The overlay that draws a cast's impact, origin and reach areas. Built unconditionally
+        /// and idle by default: it renders nothing at all until
+        /// <c>SpellDebugAreas.Enabled</c> is set, and the recorder returns on its first line
+        /// while it is off, so the cost of having it in the scene is one disabled component.
+        /// Creating it lazily from the switch instead would mean the switch had to know how to
+        /// build a GameObject, which is how a toggle comes to depend on scene state.
+        /// </summary>
+        private static void EnsureSpellDebugRenderer()
+        {
+            if (Valkur.Gameplay.Spells.Debugging.SpellDebugRenderer.Instance != null) return;
+            var go = new GameObject("SpellDebugRenderer");
+            go.AddComponent<Valkur.Gameplay.Spells.Debugging.SpellDebugRenderer>();
+            var container = GameObject.Find("[Debug]");
+            if (container != null) go.transform.SetParent(container.transform, false);
+        }
+
         // ── Minimap dot helper (reflection to avoid Gameplay→UI circular dep) ──
 
         /// <summary>Bad dot-type names already reported, so a per-spawn miss is one line, not a flood.</summary>

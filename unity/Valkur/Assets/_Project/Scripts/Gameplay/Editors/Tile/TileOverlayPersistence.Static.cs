@@ -184,7 +184,7 @@ namespace Valkur.Gameplay.TileEditor
             if (File.Exists(newPath))
             {
                 Debug.LogWarning(
-                    $"[TileOverlayPersistence] Cannot rename override '{oldZoneName}' → '{newZoneName}': " +
+                    $"[TileOverlayPersistence] Cannot rename override '{oldZoneName}' -> '{newZoneName}': " +
                     $"a file already exists at the destination. Old file preserved.");
                 return false;
             }
@@ -196,7 +196,7 @@ namespace Valkur.Gameplay.TileEditor
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[TileOverlayPersistence] Failed to rename override '{oldZoneName}' → '{newZoneName}': {ex.Message}");
+                Debug.LogError($"[TileOverlayPersistence] Failed to rename override '{oldZoneName}' -> '{newZoneName}': {ex.Message}");
                 return false;
             }
         }

@@ -43,6 +43,49 @@ namespace Valkur.Gameplay.Enemies.FSM
                    _archetypeToSetId.ContainsKey(archetypeKey);
         }
 
+        /// <summary>
+        /// Whether the set this monster would resolve to declares <paramref name="stateClassName"/>
+        /// in its allowed-state list, and whether that could be answered at all.
+        ///
+        /// <para><b>A set's node list is a WHITELIST, and a refused <c>ChangeState</c> is silent
+        /// from the author's side.</b> So a dial like <c>aiTuning.dodgeChance</c> can be turned up
+        /// on a monster whose set has no <c>DodgeState</c> and do nothing at all, forever, with
+        /// the number sitting there looking authored. This exists so the Entities editor can say
+        /// that BESIDE the dial instead of leaving the author to discover it by watching.</para>
+        ///
+        /// <para>Resolution deliberately mirrors <see cref="TryBuildForEntity"/>'s own order —
+        /// <c>by_archetype</c>, then the asset's <c>fsmSet</c> — rather than re-deriving it, so
+        /// the warning cannot disagree with the machine that gets built. <paramref name="known"/>
+        /// is false when nothing resolves, which is a different answer from "resolved, and it
+        /// does not allow that state": a caller must not report a confident absence for a monster
+        /// whose set it never found.</para>
+        /// </summary>
+        public static bool AllowsState(string archetypeKey, string fsmSetHint,
+                                       string stateClassName, out bool known)
+        {
+            known = false;
+            EnsureLoaded();
+            if (_loadFailed || string.IsNullOrEmpty(stateClassName)) return false;
+
+            string setId = null;
+            if (!string.IsNullOrEmpty(archetypeKey))
+                _archetypeToSetId.TryGetValue(archetypeKey, out setId);
+            if (string.IsNullOrEmpty(setId) || !_setsById.ContainsKey(setId))
+                setId = !string.IsNullOrEmpty(fsmSetHint) && _setsById.ContainsKey(fsmSetHint)
+                    ? fsmSetHint
+                    : null;
+
+            if (string.IsNullOrEmpty(setId) || !_setsById.TryGetValue(setId, out var set)) return false;
+            if (set == null || set.AllowedStateNames == null) return false;
+
+            known = true;
+            for (int i = 0; i < set.AllowedStateNames.Count; i++)
+                if (string.Equals(set.AllowedStateNames[i], stateClassName,
+                                  System.StringComparison.OrdinalIgnoreCase))
+                    return true;
+            return false;
+        }
+
         public static bool TryBuildForArchetype(
             string archetypeKey, GameObject owner, out StateMachine fsm)
             => TryBuildForEntity(null, archetypeKey, owner, out fsm);

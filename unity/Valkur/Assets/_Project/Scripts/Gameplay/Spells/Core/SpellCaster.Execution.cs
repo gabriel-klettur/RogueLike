@@ -136,6 +136,13 @@ namespace Valkur.Gameplay.Spells
                 ChargeFraction = _pendingChargeFraction,
             };
 
+            // The geometric record of this cast. Cleared HERE because ExecuteSpell is the one
+            // seam every cast passes through, and because a cast refused for mana, cooldown or
+            // stance never arrives -- clearing the picture for a cast that did not happen is how
+            // an author comes to believe an area moved when nothing moved. Free when off.
+            Debugging.SpellDebugAreas.BeginCast(spell, transform);
+            if (Debugging.SpellDebugAreas.Enabled) RecordCastGeometry(spell, ctx);
+
             if (Executors.TryGetValue(spell.type, out var executor))
             {
                 Debug.Log($"[SpellCaster] Executing '{spell.spellKey}' (type={spell.type}) on {name} → {executor.GetType().Name}, dir={_castDirection}, dmg={spell.damage}, cd={spell.cooldownDuration:F2}s");

@@ -72,6 +72,11 @@ namespace Valkur.Gameplay
         {
             if (victim == null || victim.CompareTag("Player")) return;
 
+            // A hand-placed entity comes back on its own authored terms, through
+            // PlacedEntityService. Queuing it here too would put a SECOND, unmarked copy on the
+            // map 30 s later — one nothing saves and nothing can delete as a placement.
+            if (victim.GetComponent<Entities.PersistedEntityInstance>() != null) return;
+
             var brain = victim.GetComponent<FSMMonsterBrain>();
             if (brain == null || brain.Definition == null) return;
 

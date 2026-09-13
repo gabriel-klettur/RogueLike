@@ -108,9 +108,9 @@
 2	Spells/SpellPreviewService.cs
 1	Spells/SpellsEditorUIBuilder.Helpers.cs
 1	Spells/SpellsEditorUIBuilder.SpellsPanel.cs
-3	Spells/SpellsEditorUIBuilder.ViewPanel.cs
+2	Spells/SpellsEditorUIBuilder.ViewPanel.cs
 31	Spells/SpellsRuntimeEditor.Picker.cs
-2	Spells/SpellsRuntimeEditor.Preview.cs
+0	Spells/SpellsRuntimeEditor.Preview.cs
 1	Spells/SpellsRuntimeEditor.Properties.cs
 5	Spells/SpellsRuntimeEditor.Table.cs
 5	Spells/SpellsRuntimeEditor.TableColumns.cs

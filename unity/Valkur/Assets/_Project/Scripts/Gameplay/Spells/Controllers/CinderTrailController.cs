@@ -190,7 +190,8 @@ namespace Valkur.Gameplay.Spells
                 var patch = _patches[i];
                 if (!patch.IsBurning) continue;
 
-                var hits = Physics2D.OverlapCircleAll(patch.Position, patch.Radius, _targetLayers);
+                var hits = Debugging.SpellProbe.OverlapCircleAll(patch.Position, patch.Radius, _targetLayers,
+                    Debugging.SpellDebugRole.Damage, "brasa " + patch.Radius.ToString("0.##") + " u");
                 for (int h = 0; h < hits.Length; h++)
                 {
                     var health = hits[h] != null ? hits[h].GetComponentInParent<Health>() : null;

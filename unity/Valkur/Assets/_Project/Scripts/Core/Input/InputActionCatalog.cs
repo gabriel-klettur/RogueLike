@@ -216,6 +216,7 @@ namespace Valkur.Core.Input
         /// descriptors below carry as their owner — comparing the two would prove nothing.</summary>
         public const string MapSelectionEditor = "Editor.Selection";
         public const string MapMapEditor       = "Editor.Map";
+        public const string MapEntitiesEditor  = "Editor.Entities";
         public const string MapBossEditor      = "Editor.Boss";
 
         /// <summary>Escape closes the open editor AND opens the launcher, by design. See
@@ -494,6 +495,17 @@ namespace Valkur.Core.Input
             list.Add(Tool(MapMapEditor, "EditSlot",  "Editar ranura",    "Map Editor"));
 
             list.Add(Tool(MapBossEditor, "TapCue", "Marcar pulso", "Boss Editor"));
+
+            // The Entities editor had NO tools at all -- the only one of the fourteen -- so
+            // placing a monster exactly, or aligning two of them, was a matter of dragging by
+            // hand. Owner is the EditorName verbatim ("Entities Editor"): InputContexts.Current
+            // puts that string in the context id and InputContextPolicy.IsLive compares the
+            // two, so a mismatch here kills every tool of the editor in silence.
+            list.Add(Tool(MapEntitiesEditor, "NudgeUp",    "Mover arriba",    "Entities Editor"));
+            list.Add(Tool(MapEntitiesEditor, "NudgeDown",  "Mover abajo",     "Entities Editor"));
+            list.Add(Tool(MapEntitiesEditor, "NudgeLeft",  "Mover izquierda", "Entities Editor"));
+            list.Add(Tool(MapEntitiesEditor, "NudgeRight", "Mover derecha",   "Entities Editor"));
+            list.Add(Tool(MapEntitiesEditor, "ToggleSnap", "Ajustar a rejilla", "Entities Editor"));
 
             return list.ToArray();
         }

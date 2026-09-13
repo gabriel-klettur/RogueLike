@@ -210,6 +210,12 @@ namespace Valkur.Gameplay
 
             s.Add(BootStep.Coroutine("Levantando los edificios", EnsureBuildingLoaderProgressively, 150f, subStages: 3));
             s.Add(BootStep.Of("Cargando los generadores colocados", EnsureSpawnerInstanceLoader, 5f));
+            // After the MonsterSpawner (so placements are tracked like any monster) and the
+            // zones, and OUTSIDE the editor block: this used to be loaded by the Entities
+            // editor, which a release build does not create, so no hand-placed monster ever
+            // stood in a shipped game. Before RestoreSessionState, which takes down the ones
+            // the loaded save says are already dead.
+            s.Add(BootStep.Of("Colocando las entidades del mapa", EnsurePlacedEntityService, 5f));
 
             // ── Audio ────────────────────────────────────────────────────────
             s.Add(BootStep.Of("Inicializando el audio", EnsureAudioManager, 20f));

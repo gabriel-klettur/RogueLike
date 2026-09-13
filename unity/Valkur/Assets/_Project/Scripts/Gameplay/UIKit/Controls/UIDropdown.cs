@@ -115,11 +115,13 @@ namespace Valkur.UIKit
             rt.sizeDelta        = new Vector2(ARROW_WIDTH, ARROW_WIDTH);
             rt.anchoredPosition = new Vector2(-4f, 0f);
 
-            var caret = go.AddComponent<TextMeshProUGUI>();
-            caret.text          = "▾";                 // ▾
-            caret.fontSize      = 10f;
+            // DRAWN, not typed. This was TMP text reading "▾" and the shipped font does
+            // not carry that character -- nor any other triangle, asked directly -- so every
+            // dropdown in the project rendered an empty box and logged a substitution warning.
+            // See CaretGraphic for the measurement.
+            var caret = go.AddComponent<CaretGraphic>();
+            caret.Direction     = CaretDirection.Down;
             caret.color         = UITheme.TEXT_SECONDARY;
-            caret.alignment     = TextAlignmentOptions.Midline;
             caret.raycastTarget = false;
         }
 

@@ -52,6 +52,7 @@ namespace Valkur.Gameplay.Entities
             public Image UndoBtnImg, RedoBtnImg, SaveBtnImg, ReloadBtnImg;
 
             // Categories panel (4 tabs)
+            public Image            AllTabImg;           public TextMeshProUGUI AllTabTmp;
             public Image            HostilesTabImg;      public TextMeshProUGUI HostilesTabTmp;
             public Image            NeutralsTabImg;      public TextMeshProUGUI NeutralsTabTmp;
             public Image            SpecialsTabImg;      public TextMeshProUGUI SpecialsTabTmp;
@@ -80,7 +81,10 @@ namespace Valkur.Gameplay.Entities
             public RectTransform    PropsAISection;
             public RectTransform    PropsSpawnSection;
             public RectTransform    PropsAutoCastSection;
+            public RectTransform    PropsAITuningSection;
+            public RectTransform    PropsRewardSection;
             public RectTransform    PropsAssetsSection;
+            public TMP_InputField   PropsFilterInput;
 
             // Boss Editor handoff button (shown only when selected entity is a boss).
             public GameObject       BossHandoffBtnGo;
@@ -117,6 +121,13 @@ namespace Valkur.Gameplay.Entities
             public TMP_InputField   AnimVariantSpeedInput;
             public Toggle           AnimHoldToggle;
             public TMP_Dropdown     AnimLayoutDd;
+
+            // Muzzle picker (where a spell is born on THIS creature's art).
+            public Image            AnimMuzzleBtnImg;    public TextMeshProUGUI AnimMuzzleBtnTmp;
+            public TMP_Dropdown     AnimMuzzleScopeDd;
+            public TMP_Dropdown     AnimMuzzleSpellDd;
+            public TextMeshProUGUI  AnimMuzzleReadout;
+            public Image            AnimMuzzleClearImg;  public TextMeshProUGUI AnimMuzzleClearTmp;
 
             // Cast timeline — the spell's phases and the animation's steps on one axis.
             public Image            TimelineMenuBtnImg;  public TextMeshProUGUI TimelineMenuBtnTmp;
@@ -174,6 +185,7 @@ namespace Valkur.Gameplay.Entities
             Action<string> onDropdownToggle,
             Action         onUndo,        Action onRedo,
             Action         onSave,        Action onReload,
+            Action         onCatAll,
             Action         onCatHostiles, Action onCatNeutrals,
             Action         onCatSpecials, Action onCatPlayers,
             Action<string> onSearchChanged,
@@ -181,7 +193,8 @@ namespace Valkur.Gameplay.Entities
             Action         onAddOnSystem, Action onConfirm,
             Action<string> onNewKeyChanged,
             Action         onDuplicate,   Action onRename,
-            Action         onToggleTutorial)
+            Action         onToggleTutorial,
+            Action<Transform> onSectionFold = null)
         {
             // Reserve space below the menu bar so draggable panels cannot occlude it.
             DraggablePanel.TopReservedPx = MENUBAR_HEIGHT;
@@ -191,12 +204,12 @@ namespace Valkur.Gameplay.Entities
             BuildMenuBar(canvasT, ref refs, onDropdownToggle, onToggleTutorial);
             BuildToolsPanel(canvasT, ref refs, onUndo, onRedo, onSave, onReload);
             BuildCategoriesPanel(canvasT, ref refs,
-                onCatHostiles, onCatNeutrals, onCatSpecials, onCatPlayers);
+                onCatAll, onCatHostiles, onCatNeutrals, onCatSpecials, onCatPlayers);
             BuildPickerPanel(canvasT, ref refs, onSearchChanged);
             BuildAddRemovePanel(canvasT, ref refs,
                 onAdd, onRemove, onAddOnSystem, onConfirm,
                 onNewKeyChanged, onDuplicate, onRename);
-            BuildPropertiesPanel(canvasT, ref refs);
+            BuildPropertiesPanel(canvasT, ref refs, onSectionFold);
 
             return refs;
         }

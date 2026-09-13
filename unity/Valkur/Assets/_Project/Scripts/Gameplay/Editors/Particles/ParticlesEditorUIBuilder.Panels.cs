@@ -48,7 +48,7 @@ namespace Valkur.Gameplay.VFX
             ah.childForceExpandWidth = true;  ah.childForceExpandHeight = true;
             ah.childControlWidth = true;      ah.childControlHeight = true;
             refs.AddSystemBtnImg    = AddActionBtn(arRow.transform, "+ Add",   32f, onAddSystem,    out _);
-            refs.RemoveSystemBtnImg = AddDangerBtn(arRow.transform, "− Remove", 32f, onRemoveSystem, out _);
+            refs.RemoveSystemBtnImg = AddDangerBtn(arRow.transform, "- Remove", 32f, onRemoveSystem, out _);
 
             // Save / Reload row
             BuildSeparator(t);
@@ -92,7 +92,7 @@ namespace Valkur.Gameplay.VFX
 
             // Collapsible header (▼/▶ click to expand/collapse content)
             var headerBtn = EditorUIHelpers.MakeButton(t,
-                "▼ SPELLS USING THIS PRESET",
+                "v SPELLS USING THIS PRESET",
                 () => onToggleSpells?.Invoke(),
                 24f, 11f);
             refs.SpellsHeaderTmp = headerBtn.GetComponentInChildren<TextMeshProUGUI>();

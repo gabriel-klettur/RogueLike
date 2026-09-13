@@ -214,8 +214,8 @@ namespace Valkur.Gameplay.Buildings
                     SetActiveBuilding(created.Count > 0 ? created[created.Count - 1] : null);
 
                     Toast(created.Count == 1
-                        ? $"Pasted #{entries[0].Template.templateId} at ({anchorPos.x:F1}, {anchorPos.y:F1}) → ID {firstId}"
-                        : $"Pasted {created.Count} buildings at ({anchorPos.x:F1}, {anchorPos.y:F1}) → IDs {firstId}..{firstId + created.Count - 1}");
+                        ? $"Pasted #{entries[0].Template.templateId} at ({anchorPos.x:F1}, {anchorPos.y:F1}) -> ID {firstId}"
+                        : $"Pasted {created.Count} buildings at ({anchorPos.x:F1}, {anchorPos.y:F1}) -> IDs {firstId}..{firstId + created.Count - 1}");
                 },
                 () =>
                 {

@@ -133,8 +133,9 @@ namespace Valkur.Gameplay.Spells
             if (dist < 0.01f) return;
             Vector2 heading = travel / dist;
 
-            var hits = Physics2D.CircleCastAll(startPos, SWEEP_RADIUS, heading, dist,
-                                               ctx.TargetLayers);
+            var hits = Debugging.SpellProbe.CircleCastAll(startPos, SWEEP_RADIUS, heading, dist,
+                                               ctx.TargetLayers, Debugging.SpellDebugRole.Damage,
+                                               "embestida r " + SWEEP_RADIUS.ToString("0.##") + " u");
             if (hits.Length == 0) return;
 
             int damage = Mathf.RoundToInt(ctx.Spell.collisionDamage);

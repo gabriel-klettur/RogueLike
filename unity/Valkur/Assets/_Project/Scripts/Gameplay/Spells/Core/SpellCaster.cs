@@ -314,11 +314,38 @@ namespace Valkur.Gameplay.Spells
             return Mathf.Max(0f, _cooldownTimers[slotIndex]);
         }
 
+        /// <summary>
+        /// Put a spell in a slot, GROWING the slot array to reach it.
+        ///
+        /// <para>It used to drop any index past the serialized four, silently. Four is a
+        /// reasonable number of buttons for a player and was never a statement about how many
+        /// abilities a creature may have: <c>dark_mague</c> and <c>dark_vampire</c> ship
+        /// exactly four, so a fifth would have been registered in the spell book, listed by
+        /// every tool, and never cast by <c>NPCAutoCast</c> — with nothing logged. The array
+        /// is the caster's own working set, not a budget.</para>
+        ///
+        /// <para>The player's HUD is unaffected: <c>PlayerHUD</c> draws three mouse slots from
+        /// its own constant and reads the spell BOOK, not this array.</para>
+        /// </summary>
         public void SetSpell(int slotIndex, SpellDefinition spell)
         {
+            if (slotIndex < 0) return;
+            GrowSlots(slotIndex + 1);
             EnsureCooldownTimers();
-            if (slotIndex >= 0 && slotIndex < spellSlots.Length)
-                spellSlots[slotIndex] = spell;
+            spellSlots[slotIndex] = spell;
+        }
+
+        /// <summary>
+        /// Widen the slot array to at least <paramref name="count"/>, keeping what is in it.
+        /// </summary>
+        private void GrowSlots(int count)
+        {
+            if (spellSlots == null) { spellSlots = new SpellDefinition[count]; return; }
+            if (spellSlots.Length >= count) return;
+
+            var grown = new SpellDefinition[count];
+            System.Array.Copy(spellSlots, grown, spellSlots.Length);
+            spellSlots = grown;
         }
 
         public void SetTargetLayers(LayerMask layers)
@@ -336,8 +363,16 @@ namespace Valkur.Gameplay.Spells
             if (spellSlots == null)
                 return;
 
-            if (_cooldownTimers == null || _cooldownTimers.Length != spellSlots.Length)
-                _cooldownTimers = new float[spellSlots.Length];
+            if (_cooldownTimers != null && _cooldownTimers.Length == spellSlots.Length) return;
+
+            // Copied rather than replaced: the array is resized whenever a slot is added, and
+            // a caster mid-fight would otherwise have every cooldown it was serving reset to
+            // ready by the act of learning one more spell.
+            var grown = new float[spellSlots.Length];
+            if (_cooldownTimers != null)
+                System.Array.Copy(_cooldownTimers, grown,
+                                  Mathf.Min(_cooldownTimers.Length, grown.Length));
+            _cooldownTimers = grown;
         }
 
     }

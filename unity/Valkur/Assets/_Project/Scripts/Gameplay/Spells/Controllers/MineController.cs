@@ -17,7 +17,6 @@ namespace Valkur.Gameplay.Spells
         private const float ArmedRingSpinSpeed = 90f;
         private const float CoreScale = 0.35f;
         private const float GlowScale = 0.85f;
-        private const float RingScale = 1.20f;
         private const float HaloScale = 1.55f;
 
         // â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -63,7 +62,11 @@ namespace Valkur.Gameplay.Spells
             BuildVisual();
 
             var audio = ServiceLocator.Get<IAudioService>();
-            if (audio != null) audio.PlaySfxById("spell_mine_arm");
+            // Gated on HasSfx: PlaySfxById warns once per unresolved id BY DESIGN, because an
+            // explicit id that fails to resolve is a data bug. None of the three mine sounds has
+            // ever existed in the catalogue, so casting one mine dirtied a console this project
+            // requires to be clean. A spell without a sound is missing content, not a defect.
+            if (audio != null && audio.HasSfx("spell_mine_arm")) audio.PlaySfxById("spell_mine_arm");
         }
 
         private void Update()
@@ -85,7 +88,7 @@ namespace Valkur.Gameplay.Spells
                     _armed = true;
                     SwitchToArmedColors();
                     var audio = ServiceLocator.Get<IAudioService>();
-                    if (audio != null) audio.PlaySfxById("spell_mine_armed");
+                    if (audio != null && audio.HasSfx("spell_mine_armed")) audio.PlaySfxById("spell_mine_armed");
                 }
                 return;
             }
@@ -93,7 +96,8 @@ namespace Valkur.Gameplay.Spells
             AnimateArmed();
 
             // Proximity check
-            var hits = Physics2D.OverlapCircleAll(transform.position, _triggerRadius, _targetLayers);
+            var hits = Debugging.SpellProbe.OverlapCircleAll(transform.position, _triggerRadius, _targetLayers,
+                Debugging.SpellDebugRole.Trigger, "disparo " + _triggerRadius.ToString("0.##") + " u");
             foreach (var hit in hits)
             {
                 var health = hit.GetComponentInParent<Health>();
@@ -113,7 +117,15 @@ namespace Valkur.Gameplay.Spells
 
             _halo = MakeChild("Halo", ElementalSprites.Halo, ArmedHalo, HaloScale,
                               SortingConfig.LAYER_FLOOR_DECALS, 50);
-            _ring = MakeChild("Ring", ElementalSprites.Ring, ArmingColor, RingScale,
+            // The ring is PINNED to the trigger radius, not drawn at a constant.
+            //
+            // It used to be a flat RingScale under a root the executor had already scaled by
+            // the spell's own `scale` field, so the only mark on the ground said 0.6 units
+            // whatever the trap's real reach was -- the mine's single promise to the player
+            // ("step inside this and it goes off") was decoration. ElementalSprites.Ring peaks
+            // at normalized radius 0.78, which is why the world diameter is radius / 0.39, and
+            // the root's own scale is divided back out because a child inherits it.
+            _ring = MakeChild("Ring", ElementalSprites.Ring, ArmingColor, RingWorldScale(),
                               SortingConfig.LAYER_FLOOR_DECALS, 51);
             _glow = MakeChild("Glow", ElementalSprites.Glow, ArmingColor, GlowScale,
                               SortingConfig.LAYER_FLOOR_DECALS, 52);
@@ -124,6 +136,19 @@ namespace Valkur.Gameplay.Spells
 
             var sr = GetComponent<SpriteRenderer>();
             if (sr != null) sr.enabled = false;
+        }
+
+        /// <summary>
+        /// Local scale that puts <c>ElementalSprites.Ring</c>'s bright band exactly on the
+        /// trigger radius, after the root's own scale is divided back out.
+        /// </summary>
+        private float RingWorldScale()
+        {
+            const float RING_BAND_RADIUS = 0.39f;   // half of the sprite's 0.78 peak
+            float root = Mathf.Abs(transform.lossyScale.x);
+            if (root < 0.0001f) root = 1f;
+            float wanted = Mathf.Max(_triggerRadius, 0.05f) / RING_BAND_RADIUS;
+            return wanted / root;
         }
 
         private SpriteRenderer MakeChild(string name, Sprite sprite, Color color, float scale, string layer, int order)
@@ -226,7 +251,8 @@ namespace Valkur.Gameplay.Spells
         private void Detonate()
         {
 
-            var hits = Physics2D.OverlapCircleAll(transform.position, _explosionRadius, _targetLayers);
+            var hits = Debugging.SpellProbe.OverlapCircleAll(transform.position, _explosionRadius, _targetLayers,
+                Debugging.SpellDebugRole.Splash, "explosion " + _explosionRadius.ToString("0.##") + " u");
             foreach (var hit in hits)
             {
                 var health = hit.GetComponentInParent<Health>();
@@ -239,14 +265,16 @@ namespace Valkur.Gameplay.Spells
                 }
             }
 
-            // Epic explosion FX
-            ElementalImpactFX.Spawn(transform.position, SpellElement.Fire);
+            // Sized to the circle that was just swept, not to the rig's own constant: a blast
+            // drawn at a fixed 1.40 u over a 2.75 u detonation tells the player the wrong thing
+            // about the one moment the trap exists for.
+            ElementalImpactFX.Spawn(transform.position, SpellElement.Fire, _explosionRadius);
 
             // Big secondary shockwave scaled to explosion radius
             Feel.CameraFeel.Cue(Data.Feel.CameraFeelCue.ImpactMassive, Vector2.zero);
 
             var audio = ServiceLocator.Get<IAudioService>();
-            if (audio != null) audio.PlaySfxById("spell_mine_explode");
+            if (audio != null && audio.HasSfx("spell_mine_explode")) audio.PlaySfxById("spell_mine_explode");
 
             if (VFXManager.Instance != null)
             {

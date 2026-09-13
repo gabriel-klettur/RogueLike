@@ -378,7 +378,7 @@ namespace Valkur.Gameplay.Editors.Controls
         {
             if (_ui?.SaveLabel == null) return;
             bool dirty = InputBindingStore.IsDirty;
-            _ui.SaveLabel.text = dirty ? "GUARDAR ●" : "GUARDAR";
+            _ui.SaveLabel.text = dirty ? "GUARDAR *" : "GUARDAR";
             _ui.SaveLabel.color = dirty ? UITheme.WARNING : UITheme.TEXT_PRIMARY;
         }
 

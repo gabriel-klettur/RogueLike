@@ -85,6 +85,11 @@ namespace Valkur.Gameplay.Spells
             if (_uiRefs.ViewCharacterToggleBtn != null)
                 _uiRefs.ViewCharacterToggleBtn.onClick.AddListener(OnToggleCharacter);
 
+            if (_uiRefs.ViewAreasToggleBtn != null)
+                _uiRefs.ViewAreasToggleBtn.onClick.AddListener(OnToggleSpellAreas);
+            BuildAreasLegend();
+            RefreshAreasToggleVisual();
+
             // Hover probe lets Update detect wheel-zoom only when the cursor is
             // actually over the preview surface.
             if (_uiRefs.ViewPreviewArea != null && _previewHoverProbe == null)
@@ -242,6 +247,75 @@ namespace Valkur.Gameplay.Spells
         /// the toggle button's label and background colour accordingly.
         /// Amber (SPEED_BTN_ACTIVE) when ON, dark grey (SPEED_BTN_NORMAL) when OFF.
         /// </summary>
+        /// <summary>
+        /// Turn the impact-area overlay on or off.
+        ///
+        /// <para>It writes the SHARED switch rather than a copy of its own, so the state the
+        /// button shows is the state the game is in - the same overlay can equally be driven
+        /// from the <c>areas</c> console command, and two switches for one thing is how a
+        /// button comes to report something that is not true.</para>
+        /// </summary>
+        private void OnToggleSpellAreas()
+        {
+            Valkur.Gameplay.Spells.Debugging.SpellDebugAreas.Enabled =
+                !Valkur.Gameplay.Spells.Debugging.SpellDebugAreas.Enabled;
+            RefreshAreasToggleVisual();
+        }
+
+        private void RefreshAreasToggleVisual()
+        {
+            bool on = Valkur.Gameplay.Spells.Debugging.SpellDebugAreas.Enabled;
+
+            if (_uiRefs.ViewAreasToggleBtnImg != null)
+                _uiRefs.ViewAreasToggleBtnImg.color = on ? SPEED_BTN_ACTIVE : SPEED_BTN_NORMAL;
+
+            if (_uiRefs.ViewAreasToggleLabel != null)
+            {
+                _uiRefs.ViewAreasToggleLabel.text  = on ? "Areas: ON" : "Areas: OFF";
+                _uiRefs.ViewAreasToggleLabel.color = on
+                    ? UITheme.TEXT_ON_ACTIVE
+                    : UITheme.TEXT_ON_IDLE;
+            }
+
+            if (_uiRefs.ViewAreasLegend != null)
+                _uiRefs.ViewAreasLegend.alpha = on ? 1f : 0.35f;
+        }
+
+        /// <summary>
+        /// The colour code, built from <c>SpellDebugRenderer</c>'s own table so the legend
+        /// cannot disagree with what is drawn. Rich-text swatches rather than a static string:
+        /// a hard-coded legend is the shape that goes stale the first time a colour moves.
+        /// </summary>
+        private void BuildAreasLegend()
+        {
+            if (_uiRefs.ViewAreasLegend == null) return;
+
+            var names = new (Valkur.Gameplay.Spells.Debugging.SpellDebugRole role, string label)[]
+            {
+                (Valkur.Gameplay.Spells.Debugging.SpellDebugRole.Origin,    "origen"),
+                (Valkur.Gameplay.Spells.Debugging.SpellDebugRole.Aim,       "apuntado"),
+                (Valkur.Gameplay.Spells.Debugging.SpellDebugRole.Reach,     "alcance"),
+                (Valkur.Gameplay.Spells.Debugging.SpellDebugRole.Placement, "destino"),
+                (Valkur.Gameplay.Spells.Debugging.SpellDebugRole.Damage,    "IMPACTO"),
+                (Valkur.Gameplay.Spells.Debugging.SpellDebugRole.Trigger,   "disparador"),
+                (Valkur.Gameplay.Spells.Debugging.SpellDebugRole.Splash,    "salpicadura"),
+                (Valkur.Gameplay.Spells.Debugging.SpellDebugRole.Path,      "trayecto"),
+                (Valkur.Gameplay.Spells.Debugging.SpellDebugRole.Visual,    "dibujado"),
+                (Valkur.Gameplay.Spells.Debugging.SpellDebugRole.Muzzle,    "boca"),
+            };
+
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < names.Length; i++)
+            {
+                Color c = Valkur.Gameplay.Spells.Debugging.SpellDebugRenderer.ColorFor(names[i].role);
+                sb.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(c)).Append('>')
+                  .Append(names[i].label).Append("</color>");
+                if (i < names.Length - 1) sb.Append("   ");
+            }
+            _uiRefs.ViewAreasLegend.richText = true;
+            _uiRefs.ViewAreasLegend.text = sb.ToString();
+        }
+
         private void RefreshCharacterToggleVisual()
         {
             if (_previewService == null) return;
@@ -254,8 +328,8 @@ namespace Valkur.Gameplay.Spells
             {
                 _uiRefs.ViewCharacterToggleLabel.text  = on ? "Character: ON" : "Character: OFF";
                 _uiRefs.ViewCharacterToggleLabel.color = on
-                    ? new Color(0.10f, 0.08f, 0.04f, 1f)   // dark text on amber
-                    : new Color(0.60f, 0.60f, 0.68f, 1f);  // muted on dark
+                    ? UITheme.TEXT_ON_ACTIVE   // dark text on amber
+                    : UITheme.TEXT_ON_IDLE;  // muted on dark
             }
         }
 

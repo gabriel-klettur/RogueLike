@@ -135,7 +135,7 @@ namespace Valkur.Gameplay.MapEditor
             string newSnap = newName;
 
             _undoSystem.Push(
-                label: $"Rename '{oldSnap}' → '{newSnap}'",
+                label: $"Rename '{oldSnap}' -> '{newSnap}'",
                 @do: () =>
                 {
                     if (zoneManager == null) return;

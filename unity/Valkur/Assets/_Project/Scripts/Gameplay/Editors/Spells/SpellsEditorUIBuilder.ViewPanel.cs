@@ -96,6 +96,8 @@ namespace Valkur.Gameplay.Spells
             MakeCharacterToggleButton(charRow.transform, out refs.ViewCharacterToggleBtn,
                 out refs.ViewCharacterToggleBtnImg, out refs.ViewCharacterToggleLabel);
 
+            BuildAreasRow(t, ref refs);
+
             // Zoom row — [-]  [+]  + label between them.
             var zoomRow = CreateUI("ZoomRow", t);
             zoomRow.AddComponent<LayoutElement>().preferredHeight = 30f;
@@ -226,6 +228,65 @@ namespace Valkur.Gameplay.Spells
         /// Creates a full-width character toggle button styled like the speed buttons
         /// (dark background when OFF, amber when ON).
         /// </summary>
+        /// <summary>
+        /// The impact-area overlay's switch, and the legend that says what each colour means.
+        ///
+        /// <para>It lives in the View panel because this is the panel an author is looking at
+        /// while they cast, and the overlay is the answer to the question that panel raises.
+        /// The legend is not decoration: eight roles in eight colours is a code, and a code
+        /// nobody can read is a screen full of rings. It is drawn from the renderer's own
+        /// table, so a colour changed there cannot leave the legend behind.</para>
+        ///
+        /// <para>Note the areas are drawn in the WORLD, not inside the preview stage: the
+        /// preview is a synthetic caster on its own layer with no targets on it, so the very
+        /// thing being measured - what a cast reaches relative to the monsters and the scenery
+        /// around it - only exists in the real scene. The redirected left click the editor
+        /// already owns casts for real there, which is what makes this readable at all.</para>
+        /// </summary>
+        private static void BuildAreasRow(Transform parent, ref UIRefs refs)
+        {
+            var row = CreateUI("AreasRow", parent);
+            row.AddComponent<LayoutElement>().preferredHeight = 28f;
+            var hlg = row.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing                = 6f;
+            hlg.childForceExpandWidth  = true;
+            hlg.childForceExpandHeight = true;
+            hlg.childControlWidth      = true;
+            hlg.childControlHeight     = true;
+
+            var go = CreateUI("AreasToggleBtn", row.transform);
+            go.AddComponent<LayoutElement>().preferredHeight = 26f;
+
+            var img   = go.AddComponent<Image>();
+            img.color = UITheme.BTN_HOVER;
+
+            var btn = go.AddComponent<Button>();
+            var c   = btn.colors;
+            c.normalColor      = UITheme.BTN_HOVER;
+            c.highlightedColor = UITheme.BTN_HIGHLIGHT;
+            c.pressedColor     = UITheme.ACCENT;
+            c.selectedColor    = UITheme.BTN_HOVER;
+            c.fadeDuration     = 0.08f;
+            btn.colors         = c;
+            btn.targetGraphic  = img;
+
+            var lbl       = AddCenteredText(go.transform, "Areas: OFF", 10f, FontStyles.Bold, TEXT_MUTED);
+            lbl.alignment = TextAlignmentOptions.Center;
+
+            refs.ViewAreasToggleBtn    = btn;
+            refs.ViewAreasToggleBtnImg = img;
+            refs.ViewAreasToggleLabel  = lbl;
+
+            var legendGo = CreateUI("AreasLegend", parent);
+            legendGo.AddComponent<LayoutElement>().preferredHeight = 30f;
+            var legend       = legendGo.AddComponent<TextMeshProUGUI>();
+            legend.fontSize  = 9f;
+            legend.alignment = TextAlignmentOptions.Center;
+            legend.color     = TEXT_MUTED;
+            legend.text      = string.Empty;
+            refs.ViewAreasLegend = legend;
+        }
+
         private static void MakeCharacterToggleButton(Transform parent,
             out Button btnOut, out Image imgOut, out TMPro.TextMeshProUGUI labelOut)
         {
@@ -238,7 +299,7 @@ namespace Valkur.Gameplay.Spells
             var btn = go.AddComponent<Button>();
             var c   = btn.colors;
             c.normalColor      = UITheme.BTN_HOVER;
-            c.highlightedColor = new Color(0.32f, 0.32f, 0.40f, 1f);
+            c.highlightedColor = UITheme.BTN_HIGHLIGHT;
             c.pressedColor     = UITheme.ACCENT;
             c.selectedColor    = UITheme.BTN_HOVER;
             c.fadeDuration     = 0.08f;

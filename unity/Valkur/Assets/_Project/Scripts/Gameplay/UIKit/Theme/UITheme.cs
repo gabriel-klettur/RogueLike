@@ -31,6 +31,14 @@ namespace Valkur.UIKit
         public static readonly Color BTN_NORMAL    = new Color(0.16f, 0.16f, 0.21f, 1f);
         public static readonly Color BTN_HOVER     = new Color(0.22f, 0.22f, 0.28f, 1f);
         public static readonly Color BTN_ACTIVE    = new Color(0.90f, 0.76f, 0.38f, 0.55f);
+        /// <summary>Pointer-over tint of a toggle button. Copied by hand into several editors
+        /// before it had a name.</summary>
+        public static readonly Color BTN_HIGHLIGHT = new Color(0.32f, 0.32f, 0.40f, 1f);
+        /// <summary>Label on a button whose background is the amber active colour: the only
+        /// legible choice there is dark ink, not the muted grey a dark button wants.</summary>
+        public static readonly Color TEXT_ON_ACTIVE = new Color(0.10f, 0.08f, 0.04f, 1f);
+        /// <summary>Label on a button at rest.</summary>
+        public static readonly Color TEXT_ON_IDLE   = new Color(0.60f, 0.60f, 0.68f, 1f);
 
         // ── Slot grids ──
         public static readonly Color SLOT_BG       = new Color(0.13f, 0.13f, 0.17f, 1f);

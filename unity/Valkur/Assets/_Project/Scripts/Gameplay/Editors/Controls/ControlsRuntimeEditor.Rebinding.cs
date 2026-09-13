@@ -575,7 +575,7 @@ namespace Valkur.Gameplay.Editors.Controls
                 return;
             }
 
-            ApplyOverride(d, action, index, path, $"{d.DisplayName} → {InputControlPaths.LabelForPath(path)}");
+            ApplyOverride(d, action, index, path, $"{d.DisplayName} -> {InputControlPaths.LabelForPath(path)}");
             CancelCapture();
             RebuildActionList();
             RepaintAll();
@@ -584,8 +584,8 @@ namespace Valkur.Gameplay.Editors.Controls
             var live = LiveOn(path);
             var severity = InputConflictScanner.Classify(live);
             SetStatus(severity >= InputClashSeverity.Modifier
-                ? $"{d.DisplayName} → {label}. OJO: {SubtitleFor(live)} responden a esa tecla aqui."
-                : $"{d.DisplayName} → {label}. Ctrl+S para guardar.");
+                ? $"{d.DisplayName} -> {label}. OJO: {SubtitleFor(live)} responden a esa tecla aqui."
+                : $"{d.DisplayName} -> {label}. Ctrl+S para guardar.");
         }
 
         /// <summary>

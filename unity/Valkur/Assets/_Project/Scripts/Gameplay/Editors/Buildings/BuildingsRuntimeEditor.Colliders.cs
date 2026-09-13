@@ -89,7 +89,7 @@ namespace Valkur.Gameplay.Buildings
             int worldLayer = LayerMask.NameToLayer("World");
             var all = FindObjectsOfType<BuildingObject>();
             var sb = new System.Text.StringBuilder();
-            sb.AppendLine($"[BuildingsEditor] Show Colliders → diagnostics for {all.Length} buildings " +
+            sb.AppendLine($"[BuildingsEditor] Show Colliders -> diagnostics for {all.Length} buildings " +
                           $"(expected layer 'World' = {worldLayer}):");
             for (int i = 0; i < all.Length; i++)
             {
@@ -111,7 +111,7 @@ namespace Valkur.Gameplay.Buildings
                 string firstInfo = first != null
                     ? $" first={first.name} center={first.bounds.center} size={first.bounds.size} layer={LayerMask.LayerToName(first.gameObject.layer)} trigger={first.isTrigger}"
                     : " (no enabled colliders)";
-                sb.AppendLine($"  • {b.name} (id={b.InstanceId}) → {tiles} active colliders, " +
+                sb.AppendLine($"  • {b.name} (id={b.InstanceId}) -> {tiles} active colliders, " +
                               $"{mismatched} on wrong layer, {triggers} triggers." + firstInfo);
             }
             Debug.Log(sb.ToString(), this);

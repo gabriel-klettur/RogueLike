@@ -337,7 +337,7 @@ namespace Valkur.Gameplay.Spells
         /// the middle of the character rather than its hands.
         /// </summary>
         public static Vector3 ResolveCastOrigin(Transform caster)
-            => ResolveCastOrigin(caster, SpellCastAnchor.Hands);
+            => ResolveCastOrigin(caster, SpellCastAnchor.Hands, null);
 
         /// <summary>
         /// Where a spell leaves the caster, for a chosen body anchor. The anchor is
@@ -346,11 +346,38 @@ namespace Valkur.Gameplay.Spells
         /// pixel offsets that only suit one character.
         /// </summary>
         public static Vector3 ResolveCastOrigin(Transform caster, SpellCastAnchor anchor)
+            => ResolveCastOrigin(caster, anchor, null);
+
+        /// <summary>
+        /// Where a spell leaves the caster, for a chosen anchor and a NAMED spell.
+        ///
+        /// <para>The key is optional and every overload above passes null, which is the honest
+        /// answer for a caller that has no spell in hand. A creature's muzzle can be scoped to
+        /// one animation, one variant or one spell; a null key simply cannot match the third of
+        /// those, so it resolves the creature's general answer — never a wrong one.</para>
+        /// </summary>
+        public static Vector3 ResolveCastOrigin(Transform caster, SpellCastAnchor anchor,
+                                                string spellKey)
         {
             if (caster == null) return Vector3.zero;
 
-            if (WantsMuzzle(anchor) && TryResolveMuzzle(caster, out Vector3 muzzle))
+            if (WantsMuzzle(anchor) && TryResolveMuzzle(caster, spellKey, out Vector3 muzzle))
                 return muzzle;
+
+            return ResolveAnchorOrigin(caster, anchor);
+        }
+
+        /// <summary>
+        /// The shared anchor's OWN answer, with any authored muzzle deliberately ignored.
+        ///
+        /// <para>Not a gameplay path: nothing casts from here. It exists so a debug overlay can
+        /// draw the anchor and the muzzle as TWO points. Drawing only the winner is what the
+        /// first live capture did, and it put both labels on one pixel — true, and useless,
+        /// because the question a muzzle exists to answer is HOW FAR the fallback was off.</para>
+        /// </summary>
+        public static Vector3 ResolveAnchorOrigin(Transform caster, SpellCastAnchor anchor)
+        {
+            if (caster == null) return Vector3.zero;
 
             Vector3 center = ResolveCasterCenter(caster);
             return center + new Vector3(0f, ResolveCasterHalfHeight(caster) * AnchorFraction(anchor), 0f);
@@ -378,11 +405,11 @@ namespace Valkur.Gameplay.Spells
         /// through here with nothing but a Transform, and threading a new argument through
         /// all of them is how half of them end up passing null.
         /// </summary>
-        private static bool TryResolveMuzzle(Transform caster, out Vector3 world)
+        private static bool TryResolveMuzzle(Transform caster, string spellKey, out Vector3 world)
         {
             world = default;
             var muzzle = caster.GetComponent<CastMuzzle>();
-            return muzzle != null && muzzle.TryResolve(out world);
+            return muzzle != null && muzzle.TryResolve(spellKey, out world);
         }
 
         /// <summary>
@@ -427,14 +454,20 @@ namespace Valkur.Gameplay.Spells
         public static Vector3 ResolveCastStart(Transform caster, Vector2 direction, SpellDefinition spell)
             => ResolveCastStart(caster, direction,
                                 spell != null ? spell.castAnchor : SpellCastAnchor.Hands,
-                                ResolveCastForwardOffset(spell));
+                                ResolveCastForwardOffset(spell),
+                                spell != null ? spell.spellKey : null);
 
         public static Vector3 ResolveCastStart(Transform caster, Vector2 direction,
                                                SpellCastAnchor anchor, float forwardOffset)
+            => ResolveCastStart(caster, direction, anchor, forwardOffset, null);
+
+        public static Vector3 ResolveCastStart(Transform caster, Vector2 direction,
+                                               SpellCastAnchor anchor, float forwardOffset,
+                                               string spellKey)
         {
             if (caster == null) return Vector3.zero;
 
-            return ResolveCastOrigin(caster, anchor)
+            return ResolveCastOrigin(caster, anchor, spellKey)
                 + (Vector3)(direction.normalized * forwardOffset);
         }
 

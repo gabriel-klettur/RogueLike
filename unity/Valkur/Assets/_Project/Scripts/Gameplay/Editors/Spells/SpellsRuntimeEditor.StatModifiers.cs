@@ -39,7 +39,7 @@ namespace Valkur.Gameplay.Spells
             if (!SpellFieldRelevance.Applies(spell, "statModifiers")) return;
 
             var list = spell.statModifiers ?? Array.Empty<StatModifier>();
-            AddSectionHeader(form, "── Stat Modifiers ──");
+            AddSectionHeader(form, "-- Stat Modifiers --");
             form.AddInt(STATMOD_PREFIX + "count", "Count", list.Length);
 
             string[] stats = Enum.GetNames(typeof(StatKind));
@@ -80,7 +80,7 @@ namespace Valkur.Gameplay.Spells
                 // Copy rather than reallocate blindly: shrinking then growing again must not
                 // silently blank the entries that survived the round trip.
                 Array.Copy(before, resized, Mathf.Min(before.Length, wanted));
-                CommitStatMods(spell, before, resized, $"Stat modifier count → {wanted}", rebuild: true);
+                CommitStatMods(spell, before, resized, $"Stat modifier count -> {wanted}", rebuild: true);
                 return;
             }
 

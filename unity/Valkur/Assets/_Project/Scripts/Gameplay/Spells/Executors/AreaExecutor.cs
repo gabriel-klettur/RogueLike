@@ -23,7 +23,8 @@ namespace Valkur.Gameplay.Spells
             // other four would allocate on every cast to hand it to something that ignores it.
             var caught = profile.Silhouette == AreaSilhouette.Snare ? new List<GameObject>() : null;
 
-            var hits = Physics2D.OverlapCircleAll(center, radius, ctx.TargetLayers);
+            var hits = Debugging.SpellProbe.OverlapCircleAll(center, radius, ctx.TargetLayers,
+                Debugging.SpellDebugRole.Damage, "area " + radius.ToString("0.##") + " u");
             foreach (var hit in hits)
             {
                 if (hit.gameObject == ctx.Caster.gameObject) continue;

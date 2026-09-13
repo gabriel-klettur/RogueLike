@@ -177,7 +177,7 @@ namespace Valkur.Gameplay.Enemies.FSM
         private void OnBuiltInEdgeClicked(FSMBuiltInEdge edge)
         {
             SetStatus(
-                $"BUILT-IN {edge.From} → {edge.To}: {edge.Label}. Not editable here — " +
+                $"BUILT-IN {edge.From} -> {edge.To}: {edge.Label}. Not editable here — " +
                 $"owned by {edge.SourceFile}.");
         }
 

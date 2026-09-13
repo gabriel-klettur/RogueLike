@@ -162,7 +162,8 @@ namespace Valkur.Gameplay.Spells
             if (ctx.Spell.damage <= 0f && !hasStatus) return;
 
             var element = ProjectileExecutor.ResolveElement(ctx.Spell);
-            var hits = Physics2D.OverlapCircleAll(center, ctx.Spell.radius, ctx.TargetLayers);
+            var hits = Debugging.SpellProbe.OverlapCircleAll(center, ctx.Spell.radius, ctx.TargetLayers,
+                Debugging.SpellDebugRole.Damage, "llegada " + ctx.Spell.radius.ToString("0.##") + " u");
 
             for (int i = 0; i < hits.Length; i++)
             {

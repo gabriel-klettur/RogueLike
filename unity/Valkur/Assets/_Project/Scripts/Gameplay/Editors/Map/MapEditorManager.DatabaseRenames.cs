@@ -66,7 +66,7 @@ namespace Valkur.Gameplay.MapEditor
                 if (!zoneManager.TryGetZone(entry.originalName, out _))
                 {
                     Debug.LogWarning($"[MapEditor] Database rename overlay dropped stale entry " +
-                                     $"'{entry.originalName}' → '{entry.currentName}' " +
+                                     $"'{entry.originalName}' -> '{entry.currentName}' " +
                                      $"(original zone no longer exists in catalog).");
                     continue;
                 }
@@ -83,7 +83,7 @@ namespace Valkur.Gameplay.MapEditor
                 else
                 {
                     Debug.LogWarning($"[MapEditor] Database rename overlay failed to apply " +
-                                     $"'{entry.originalName}' → '{entry.currentName}' " +
+                                     $"'{entry.originalName}' -> '{entry.currentName}' " +
                                      $"(target name may already exist) — entry dropped.");
                 }
             }

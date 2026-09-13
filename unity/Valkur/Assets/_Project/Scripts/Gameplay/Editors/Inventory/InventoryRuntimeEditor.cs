@@ -183,8 +183,8 @@ namespace Valkur.Gameplay.Inventory
             _catalog  = CatalogTab.Default;
             OpenAllPanels();
             RefreshAll();
-            Toast("Inventory Editor active. F6 to close.");
-            Debug.Log("[InventoryEditor] Activated (F6)");
+            Toast("Inventory Editor active. Esc to close.");
+            Debug.Log("[InventoryEditor] Activated");
         }
 
         public void Deactivate()
@@ -198,7 +198,7 @@ namespace Valkur.Gameplay.Inventory
             Valkur.Gameplay.CameraSetup.Instance?.ReattachFollow();
             if (GameEditorManager.HasInstance)
                 GameEditorManager.Instance.NotifyDeactivated(this);
-            Debug.Log("[InventoryEditor] Deactivated (F6)");
+            Debug.Log("[InventoryEditor] Deactivated");
         }
 
         private void ToggleActive()
@@ -335,7 +335,8 @@ namespace Valkur.Gameplay.Inventory
         {
             _tutorial = TutorialOverlay.Build(_root.transform, "INVENTORY HOTKEYS", new[]
             {
-                ("F6",     "Toggle Inventory Editor"),
+                // Retired 2026-09-05: editors open from the General Editor on Escape.
+                ("Esc",    "Open the General Editor, then Inventory"),
                 ("Tabs",   "Switch Player / Monsters / Map"),
                 ("D / A",  "Show Default / Show Active"),
                 ("Click",  "Select entity / slot / item"),

@@ -132,10 +132,11 @@ namespace Valkur.UI.HUD
         private void OnLanguageChanged(string _)
         {
             if (!_built) return;
-            if (IsOpen) Rebuild(); else _languageDirty = true;
+            // Nothing to defer: Open() rebuilds unconditionally, so a panel that is shut
+            // when the language changes is already correct the moment it is opened. The flag
+            // that used to be set here was written in three places and read in none.
+            if (IsOpen) Rebuild();
         }
-
-        private bool _languageDirty;
 
         // ── Open / close ──────────────────────────────────────────────────────
 
@@ -151,7 +152,6 @@ namespace Valkur.UI.HUD
             IsOpen = true;
             if (_root != null) _root.SetActive(true);
             EscapeOwnership.Claim(this);
-            _languageDirty = false;
             Rebuild();
             _fadeTarget = 1f;
         }

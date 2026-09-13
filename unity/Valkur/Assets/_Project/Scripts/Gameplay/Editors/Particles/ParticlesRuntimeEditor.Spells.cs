@@ -17,7 +17,7 @@ namespace Valkur.Gameplay.VFX
             if (_ui.SpellsHeaderTmp != null)
             {
                 const string baseLbl = "SPELLS USING THIS PRESET";
-                _ui.SpellsHeaderTmp.text = _spellsExpanded ? "▼ " + baseLbl : "▶ " + baseLbl;
+                _ui.SpellsHeaderTmp.text = _spellsExpanded ? "v " + baseLbl : "> " + baseLbl;
             }
             if (_ui.SpellsContent != null)
                 _ui.SpellsContent.gameObject.SetActive(_spellsExpanded);

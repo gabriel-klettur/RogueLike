@@ -198,7 +198,7 @@ namespace Valkur.Gameplay.World
             Action<float> onScrubTime, Action onPause,
             Action onJumpDawn, Action onJumpNoon, Action onJumpDusk, Action onJumpMidnight)
         {
-            AddSectionLabel(t, "TIME OF DAY (00:00 → 23:59)");
+            AddSectionLabel(t, "TIME OF DAY (00:00 -> 23:59)");
             refs.TimeScrubSlider = AddSlider(t, 0f, 1f, 0.5f, v => onScrubTime?.Invoke(v), 18f);
 
             var jumpRow = CreateUI("JumpRow", t);
@@ -274,7 +274,7 @@ namespace Valkur.Gameplay.World
             var rangeGo                       = CreateUI("WindowRange", t);
             rangeGo.AddComponent<LayoutElement>().preferredHeight = 14f;
             var rangeTmp                      = rangeGo.AddComponent<TextMeshProUGUI>();
-            rangeTmp.text                     = "08:45 → 20:45";
+            rangeTmp.text                     = "08:45 -> 20:45";
             rangeTmp.fontSize                 = 10f;
             rangeTmp.alignment                = TextAlignmentOptions.Center;
             rangeTmp.color                    = TEXT_SECONDARY;

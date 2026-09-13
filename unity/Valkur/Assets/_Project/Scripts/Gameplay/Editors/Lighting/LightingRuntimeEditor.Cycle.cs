@@ -71,7 +71,7 @@ namespace Valkur.Gameplay.World
             if (_ui.LightsWindowRangeTmp != null)
             {
                 _ui.LightsWindowRangeTmp.text =
-                    $"{NormalizedToHHMM(cycle.LightsDisableStartNormalized)} → {NormalizedToHHMM(cycle.LightsDisableEndNormalized)}";
+                    $"{NormalizedToHHMM(cycle.LightsDisableStartNormalized)} -> {NormalizedToHHMM(cycle.LightsDisableEndNormalized)}";
             }
         }
 

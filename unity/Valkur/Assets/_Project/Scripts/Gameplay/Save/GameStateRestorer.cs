@@ -26,6 +26,10 @@ namespace Valkur.Gameplay.Save
             // silently reseeding it, which would move every price in the world.
             RestoreMarket(data);
 
+            // Also before the player guard, and for the same reason: kills are world state, and a
+            // malformed player block must not stand every monster the run already killed back up.
+            if (data != null) Entities.PlacedEntityService.Instance?.RestoreFrom(data);
+
             if (data.player == null) return;
 
             if (!string.IsNullOrWhiteSpace(data.player.playerClass))

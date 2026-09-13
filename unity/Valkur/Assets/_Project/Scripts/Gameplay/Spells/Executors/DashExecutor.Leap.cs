@@ -99,7 +99,8 @@ namespace Valkur.Gameplay.Spells
 
             float radius = ctx.Spell.radius;
             var element = ProjectileExecutor.ResolveElement(ctx.Spell);
-            var hits = Physics2D.OverlapCircleAll(landing, radius, ctx.TargetLayers);
+            var hits = Debugging.SpellProbe.OverlapCircleAll(landing, radius, ctx.TargetLayers,
+                Debugging.SpellDebugRole.Damage, "aterrizaje " + radius.ToString("0.##") + " u");
             var struck = new HashSet<Health>();
 
             for (int i = 0; i < hits.Length; i++)

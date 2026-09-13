@@ -200,8 +200,8 @@ namespace Valkur.Gameplay.VFX
             RefreshSpellsPanel();
             RefreshUndoRedoLabels();
             UpdateParticleColumnsBtnLabel();
-            SetStatus("Particles Editor active. F1 to close.");
-            Debug.Log("[ParticlesEditor] Activated (F1)");
+            SetStatus("Particles Editor active. Escape to close.");
+            Debug.Log("[ParticlesEditor] Activated");
         }
 
         public void Deactivate()
@@ -222,7 +222,7 @@ namespace Valkur.Gameplay.VFX
             _cameraPan.Reset();
             Valkur.Gameplay.CameraSetup.Instance?.ReattachFollow();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.NotifyDeactivated(this);
-            Debug.Log("[ParticlesEditor] Deactivated (F1)");
+            Debug.Log("[ParticlesEditor] Deactivated");
         }
 
         private void ToggleActive() { if (_active) Deactivate(); else Activate(); }

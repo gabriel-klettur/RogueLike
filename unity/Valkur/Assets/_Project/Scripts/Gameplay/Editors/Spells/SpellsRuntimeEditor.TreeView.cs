@@ -65,7 +65,7 @@ namespace Valkur.Gameplay.Spells
 
             bool foldable = _treeSchoolFilter == TREE_SCHOOL_ALL;
             bool collapsed = SectionCollapsed(row.SectionKey);
-            string chevron = !foldable ? "" : collapsed ? "▶  " : "▼  ";
+            string chevron = !foldable ? "" : collapsed ? ">  " : "v  ";
             AddStretchedLabel(go.transform, chevron + row.Label, left: 6f, size: 11.5f,
                 style: FontStyles.Bold,
                 color: row.IsOrphanSection ? UITheme.ACCENT : UITheme.TEXT_PRIMARY);

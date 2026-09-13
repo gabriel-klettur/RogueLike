@@ -225,7 +225,7 @@ namespace Valkur.Gameplay.MapEditor
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[MapEditor.Slots] Failed to rename '{oldName}' → '{newName}': {ex.Message}");
+                Debug.LogError($"[MapEditor.Slots] Failed to rename '{oldName}' -> '{newName}': {ex.Message}");
                 return false;
             }
         }

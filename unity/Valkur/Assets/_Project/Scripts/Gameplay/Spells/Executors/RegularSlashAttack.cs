@@ -93,7 +93,11 @@ namespace Valkur.Gameplay.Spells
 
             // A miss deliberately gets only the airy swing. Contact adds the sharper
             // hit transient later, making successful and unsuccessful attacks readable.
-            ServiceLocator.Get<IAudioService>()?.PlaySfxById("spell_slash_swing");
+            // Gated on HasSfx. AudioCatalog ships no spell_* id at all, so an ungated call here is
+            // one console warning per id on the first swing of every session -- and a spell without
+            // a sound is missing content, not a data bug. See IAudioService.HasSfx.
+            var audioSvc = ServiceLocator.Get<IAudioService>();
+            if (audioSvc != null && audioSvc.HasSfx("spell_slash_swing")) audioSvc.PlaySfxById("spell_slash_swing");
         }
 
         private void BuildVisuals()
@@ -280,8 +284,13 @@ namespace Valkur.Gameplay.Spells
             if (_context.Caster == null || _context.Spell == null) return;
             if (_context.TargetLayers.value == 0) return;
 
-            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, _radius,
-                                                           _context.TargetLayers);
+            // Sector first, because that is the shape IsInsideSector actually enforces below.
+            Debugging.SpellDebugAreas.Sector(transform.position, _direction, _radius, _arc,
+                Debugging.SpellDebugRole.Damage,
+                "tajo " + _radius.ToString("0.##") + " u / " + _arc.ToString("0") + " grados");
+            Collider2D[] hits = Debugging.SpellProbe.OverlapCircleAll(transform.position, _radius,
+                                                           _context.TargetLayers,
+                                                           Debugging.SpellDebugRole.Reach, "fase amplia");
             for (int i = 0; i < hits.Length; i++)
             {
                 Collider2D hit = hits[i];
@@ -336,7 +345,11 @@ namespace Valkur.Gameplay.Spells
                     // The camera and the hit-stop are now driven from the director's own
                     // OnHitDealt handler, which applies the audience filter this call site
                     // never had: an NPC swinging slash_regular used to freeze the session.
-                    ServiceLocator.Get<IAudioService>()?.PlaySfxById("spell_slash_hit");
+                    // Gated on HasSfx. AudioCatalog ships no spell_* id at all, so an ungated call here is
+                    // one console warning per id on the first swing of every session -- and a spell without
+                    // a sound is missing content, not a data bug. See IAudioService.HasSfx.
+                    var audioSvc = ServiceLocator.Get<IAudioService>();
+                    if (audioSvc != null && audioSvc.HasSfx("spell_slash_hit")) audioSvc.PlaySfxById("spell_slash_hit");
                 }
             }
         }

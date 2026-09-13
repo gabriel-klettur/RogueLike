@@ -69,8 +69,8 @@ namespace Valkur.Gameplay.Editors.Boss
         private static readonly (string title, string body)[] TUTORIAL_STEPS =
         {
             ("1. Open editor",     "Click 'Boss' in the General Editor (ESC) to open this editor, " +
-                                   "or select a boss monster in the Entities Editor (F5) and click " +
-                                   "'Open Boss Editor →'."),
+                                   "or select a boss monster in the Entities Editor and click " +
+                                   "'Open Boss Editor >'."),
             ("2. Pick a boss",     "The Bosses panel lists every BossDefinition asset in the project. " +
                                    "Click a row to select it."),
             ("3. Pick / add chart","In the Phases & Charts panel, expand a phase row to see its charts. " +

@@ -218,8 +218,8 @@ namespace Valkur.Gameplay.Enemies.FSM
             // follow while authoring so the camera holds still behind the overlay;
             // reattached in Deactivate.
             CameraSetup.Instance?.DetachFollow();
-            SetStatus("FSM Editor active. F12 to close.");
-            Debug.Log("[FSMEditor] Activated (F12)");
+            SetStatus("FSM Editor active. Esc to close.");
+            Debug.Log("[FSMEditor] Activated");
         }
 
         public void Deactivate()
@@ -234,7 +234,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             CameraSetup.Instance?.ReattachFollow();
             if (GameEditorManager.HasInstance)
                 GameEditorManager.Instance.NotifyDeactivated(this);
-            Debug.Log("[FSMEditor] Deactivated (F12)");
+            Debug.Log("[FSMEditor] Deactivated");
         }
 
         private void ToggleActive()

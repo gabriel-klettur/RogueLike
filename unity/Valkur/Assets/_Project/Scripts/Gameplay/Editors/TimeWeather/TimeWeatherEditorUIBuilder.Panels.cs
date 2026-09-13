@@ -60,7 +60,7 @@ namespace Valkur.Gameplay.TimeWeather
 
         public static readonly WeatherRow[] WEATHER_ROWS = new[]
         {
-            new WeatherRow { Label = "Wind", Icon = "≈", Accent = WEATHER_WIND_TINT },
+            new WeatherRow { Label = "Wind", Icon = "~", Accent = WEATHER_WIND_TINT },
             new WeatherRow { Label = "Rain", Icon = "/", Accent = WEATHER_RAIN_TINT },
             new WeatherRow { Label = "Snow", Icon = "*", Accent = WEATHER_SNOW_TINT },
         };

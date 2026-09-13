@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
@@ -147,6 +148,25 @@ namespace Valkur.Tests.EditMode.Editors.Shared
             return map;
         }
 
+        /// <summary>
+        /// The file's CODE, with comment lines dropped.
+        ///
+        /// <para><b>It used to read the raw text, and that counted its own explanation.</b>
+        /// A comment saying "do not write <c>new Color(...)</c> here, use a token" scored as a
+        /// hard-coded colour — so documenting the rule beside the code it governs made the
+        /// guard fail, and the only way to pass was to delete the sentence that stops the next
+        /// person reintroducing the defect. Measured: writing that note pushed one file from
+        /// 2 to 3 with no colour added anywhere.</para>
+        ///
+        /// <para>The same reasoning is already written down for the <c>SaveAssets()</c> guard
+        /// in <c>EntitiesUndoCoverageTests</c>, which strips comments for exactly this reason.
+        /// Stripping cannot hide a real literal: a colour inside a comment reaches no
+        /// pixel.</para>
+        /// </summary>
+        private static string CodeOnly(string path) =>
+            string.Join("\n", File.ReadAllLines(path)
+                .Where(line => !line.TrimStart().StartsWith("//", StringComparison.Ordinal)));
+
         private static Dictionary<string, int> CountLiveColours(string editorsDir)
         {
             var map = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -157,7 +177,7 @@ namespace Valkur.Tests.EditMode.Editors.Shared
                                  .Replace('\\', '/');
                 if (rel == THEME_FILE) continue;
 
-                int n = RawColor.Matches(File.ReadAllText(path)).Count;
+                int n = RawColor.Matches(CodeOnly(path)).Count;
                 if (n > 0) map[rel] = n;
             }
             return map;

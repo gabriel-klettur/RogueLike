@@ -185,8 +185,9 @@ namespace Valkur.Gameplay.Spells
         private int DamageTick()
         {
             _tickVictims.Clear();
-            int count = Physics2D.OverlapCircleNonAlloc(
-                transform.position, _radius, _overlapBuffer, _targetLayers);
+            int count = Debugging.SpellProbe.OverlapCircleNonAlloc(
+                transform.position, _radius, _overlapBuffer, _targetLayers,
+                Debugging.SpellDebugRole.Damage, "llama arcana " + _radius.ToString("0.##") + " u");
 
             for (int i = 0; i < count; i++)
             {

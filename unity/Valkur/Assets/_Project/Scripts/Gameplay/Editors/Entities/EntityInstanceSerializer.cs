@@ -28,11 +28,14 @@ namespace Valkur.Gameplay.Entities
     /// This is what keeps the coordinate round trip provable without a scene, the same
     /// consideration that keeps <see cref="SpawnerTileMapping"/> itself pure and static.
     ///
-    /// Schema v1: <c>{"version":1,"instances":[{"id","monster_key","zone","tile":[col,row]}]}</c>.
+    /// Schema v2: <c>{"version":2,"instances":[{"id","monster_key","zone","tile":[col,row],
+    /// "respawn_seconds"?}]}</c>. <c>respawn_seconds</c> is written only when positive, so a
+    /// placement that stays dead for the run looks exactly like a v1 record — and a v1 file
+    /// reads as "every placement stays dead once killed", which is the default.
     /// </summary>
     public static class EntityInstanceSerializer
     {
-        private const int CURRENT_VERSION = 1;
+        private const int CURRENT_VERSION = 2;
 
         /// <summary>
         /// Writes every record verbatim — no scene, no coordinate maths. Used for both the
@@ -60,6 +63,9 @@ namespace Valkur.Gameplay.Entities
                 sb.Append("\"monster_key\":\"").Append(EscapeJson(r.MonsterKey)).Append("\",");
                 sb.Append("\"zone\":\"").Append(EscapeJson(r.Zone)).Append("\",");
                 sb.Append("\"tile\":[").Append(r.TileCol).Append(',').Append(r.TileRow).Append(']');
+                if (r.RespawnSeconds > 0f)
+                    sb.Append(",\"respawn_seconds\":")
+                      .Append(r.RespawnSeconds.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture));
                 sb.Append('}');
             }
 
@@ -115,13 +121,28 @@ namespace Valkur.Gameplay.Entities
                         row = Convert.ToInt32(tileList[1]);
                     }
 
+                    float respawn = 0f;
+                    if (d.TryGetValue("respawn_seconds", out var respawnObj) && respawnObj != null)
+                    {
+                        try
+                        {
+                            respawn = Convert.ToSingle(respawnObj, System.Globalization.CultureInfo.InvariantCulture);
+                        }
+                        catch (Exception)
+                        {
+                            respawn = 0f;
+                        }
+                        if (float.IsNaN(respawn) || float.IsInfinity(respawn) || respawn < 0f) respawn = 0f;
+                    }
+
                     var record = new EntityInstanceRecord
                     {
-                        Id         = id,
-                        MonsterKey = monsterKey,
-                        Zone       = zone,
-                        TileCol    = col,
-                        TileRow    = row,
+                        Id             = id,
+                        MonsterKey     = monsterKey,
+                        Zone           = zone,
+                        TileCol        = col,
+                        TileRow        = row,
+                        RespawnSeconds = respawn,
                     };
 
                     if (zoneOffsets != null && zoneOffsets.TryGetValue(zone ?? "", out var offset))
@@ -205,6 +226,13 @@ namespace Valkur.Gameplay.Entities
 
         /// <summary>Zone-relative tile row.</summary>
         public int TileRow;
+
+        /// <summary>
+        /// Seconds after being killed before this placement comes back. 0 keeps it dead for the
+        /// rest of the run. Authored data; the kill itself lives in the save
+        /// (<see cref="PlacedEntityRunState"/>), never in this record.
+        /// </summary>
+        public float RespawnSeconds;
 
         /// <summary>Resolved absolute world position. Only meaningful when
         /// <see cref="ZoneResolved"/> is true.</summary>

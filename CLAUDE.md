@@ -4796,6 +4796,40 @@ of it, beyond the hostile layer the earlier audit built:
   `SetState`, which reuses an index that on a monster is -1 forever), so the 25 cast animations
   the Dark roster inherited from the player classes were unreachable.
 
+## Hand-placed entities: authored file, standing instances, run kills
+
+Fixed 2026-09-13. Killing a monster placed with the Entities editor did not reach
+`entities_instances.json`, so it stood again on the next Play — unless some later edit
+triggered a save, which then deleted the placement forever, because the save enumerated the
+LIVE `PersistedEntityInstance`s.
+
+```text
+PlacedEntityService (+.Persistence, .Run)  Gameplay/Entities/   the single owner, created by the boot in every build
+PlacedEntityRunState                       Gameplay/Entities/   kills + respawn deadlines, pure, save metadata key entities.defeated
+EntityInstanceSerializer                   Editors/Entities/    schema v2: optional respawn_seconds (0 = stays dead this run)
+placed [revive <id>|revive all]            DevConsole           the probe
+```
+
+- **Three records, three owners.** The TABLE (authored, written to the file, changed only by
+  place/move/delete/respawn-time), the LIVE instances (derived, never saved), the RUN state (kills,
+  in the save's metadata bag like the market). Nothing a player does touches the file.
+- **The save writes the table, never the scene.** Scanning the scene read every absence (a kill, a
+  torn-down world, a monster still inside Destroy's deferral) as a deletion, and saved a monster
+  that had WALKED at wherever it wandered to. Undo restores from the authored record too.
+- **The loader used to live in the Entities editor, which a release build does not create**, so
+  no placement ever stood in a shipped game. The boot step "Colocando las entidades del mapa" runs
+  after the MonsterSpawner and before `RestoreSessionState`, which takes down what the loaded save
+  says is dead. Pinned outside the `if (editors)` block by `PlacedEntityServiceTests`.
+- **Deadlines are Unix UTC, the clock trees regrow on**, so a respawn keeps counting while the game
+  is closed; one that passed while the world was unloaded is simply over.
+- **A corpse is not the placement.** `PersistedEntityInstance.IsDefeated` is set on death: the editor
+  cannot select it, the rename guard does not count it, and `NPCRespawnSystem` skips anything
+  carrying the marker (it used to queue an unmarked copy of a placed neutral 30 s later).
+- **The anti-wipe guard counts explicit removals as edits** (`_removalsSinceSync`), so deleting the
+  last placement on a map saves; an empty table nobody emptied is still refused.
+- **Outside Play Mode the default store is in-memory**, so a fixture that forgets to inject one
+  never spawns the shipped world into a test scene.
+
 ## Spawners: a preset is a starting point, a placement owns its behaviour
 
 Audited 2026-09-07 at **4.1/10** and rebuilt the same day to **7.6** — findings, the measured
@@ -5651,6 +5685,333 @@ debughud [0-3|informe|copiar|reiniciar]   DevConsole, category "hud"
   recompiled halfway through this rebuild (an interface had gained members its only implementer
   did not have yet) and blocked two other sessions' test runs. Make each save compile on its own,
   or write the dependents first.
+
+## Las areas de impacto de un hechizo, y como verlas
+
+Auditadas 2026-09-12 en **5.4/10** y subidas a **7.9** el mismo dia. Hallazgos, medidas y lo que
+queda abierto: `.github/SPELL_IMPACT_AREAS_AUDIT_2026-09-12.md`.
+
+```text
+SpellDebugAreas      Spells/Debug/     el registro de UN lanzamiento. Off por defecto, gratis apagado
+SpellProbe           Spells/Debug/     las consultas de Physics2D, con el dibujo dentro de la llamada
+SpellDebugRenderer   Spells/Debug/     lo pinta y lo conserva hasta el siguiente lanzamiento
+SpellCaster.Debug.cs Spells/Core/      origen, apuntado, alcance y destino
+areas [on|off|lista] DevConsole        el interruptor y el volcado en texto
+ESC -> Hechizos -> View -> "Areas"     el interruptor y la leyenda de colores
+```
+
+- **UNA FORMA LA EMPUJA EL CODIGO QUE CONSULTA, NUNCA SE DEDUCE DEL ASSET.** Un overlay que
+  releyera `SpellDefinition.radius` dibujaria lo que el autor escribio mientras el ejecutor barre
+  otra cosa: pintaria justo encima del fallo que existe para destapar. Por eso las consultas pasan
+  por `SpellProbe` — el dibujo y la consulta son una sola llamada y no pueden separarse. Cada
+  desajuste que este repositorio ha arreglado (`wallWidth` en pixeles, el vortice a 367 unidades,
+  el aura de 0.039 u) era internamente coherente y solo discrepaba con la pantalla.
+- **Se limpia en `SpellCaster.ExecuteSpell`**, la unica costura por la que pasa cada lanzamiento
+  (monstruos incluidos), y no en la capa de input: un lanzamiento rechazado por mana, enfriamiento
+  o postura nunca llega a un ejecutor, y borrar el dibujo de algo que no ocurrio es como se llega a
+  creer que un area se ha movido cuando no se ha movido nada.
+- **El circulo de `Physics2D` es la FASE AMPLIA, no el area.** Tajos y cono pasan despues por
+  `IsInsideSector` / `InsideCone`. Dibujar solo el circulo daria hasta seis veces el area real de
+  una estocada, asi que se dibujan las dos y solo la estrecha lleva el rol `Damage`.
+- **El proyectil MUESTREA su corredor cada 0.33 u**, no en cada paso de fisica. A 50 barridos por
+  segundo llenaria el presupuesto del registro en dos segundos y lo primero en caerse seria la
+  salpicadura del final, que es justo lo que se suele estar mirando.
+- **El registro sobrevive al efecto, asi que arrastra efectos vivos.** Una mina puesta hace dos
+  lanzamientos sigue consultando su disparador y sigue empujando formas al registro ACTUAL. Es lo
+  correcto — un area viva es un area real — pero por eso la cabecera dice "y efectos vivos" en vez
+  de llamar a toda la lista "el ultimo lanzamiento".
+- **Medir un anillo por `renderer.bounds` es medir otra cosa.** El anillo de la mina gira, y el AABB
+  de un cuadrado girado crece hasta un 41 %: la primera medida dio 2.031 u para un radio de 1.5.
+  Lee `localScale` y compara contra `radius / 0.39`, que es la formula con la que se fijo.
+- **La septima y la octava aparicion de la escala de pixeles de Python** vivian en `MeteorExecutor`
+  (3 campos) y `MineExecutor` (2). La senal es siempre la misma: el valor por defecto para un campo
+  sin autorar era dieciseis veces cualquier cosa que el asset pudiera producir. Medido antes del
+  arreglo: el meteorito danaba **0.625 u** y la mina **0.547 u**. Ambos ejecutores leen ya unidades
+  de mundo y los dos `.asset` estan reescritos.
+- **`spell.explosionRadius` significaba dos cosas**: unidades de mundo en `ProjectileExecutor` y
+  pixeles en `MineExecutor`. Un campo, un inspector, dos unidades.
+- **Un adorno con tamano constante no dice nada.** El anillo de la mina era `RingScale = 1.20` bajo
+  una raiz ya escalada por `spell.scale`, o sea 0.6 u fijos dijera lo que dijera el radio de
+  disparo — la unica promesa de la trampa al jugador era decoracion. Va a `triggerRadius / 0.39`,
+  dividiendo ademas la escala de la raiz.
+- **`ElementalImpactFX` acepta ahora un radio** (`SizeTo`), porque su onda expansiva terminaba en
+  scale 3.6 y `ElementalSprites.Ring` pica en 0.78, es decir **1.40 u constantes** pasara lo que
+  pasara. Cero conserva el tamano historico, asi que ningun llamante antiguo cambia. Meteorito y
+  mina le pasan su radio real; `Projectile` pasa `explosionRadius` a `SpawnImpact`, que toma un
+  RADIO de mundo y recibia un literal `0.25f`.
+- **Tercera aparicion de `Z_SKY` usado como `sortingOrder`** (tras `LightningBoltFX` y
+  `FacingIndicator`), esta vez en `ElementalImpactFX`: orden 612 en la capa `Entities`, donde toda
+  entidad del mundo enviado ordena en los miles, asi que el fogonazo se dibujaba DEBAJO de aquello
+  a lo que golpeaba. Va a `LAYER_VFX` con un orden pequeno, que es lo que su material sin luz pide.
+- **47 de los 83 hechizos declaran `range: 0`**, asi que su alcance lo decide una constante dentro
+  de un ejecutor, invisible desde el inspector. Y `MeteorExecutor` tiene su propia resolucion de
+  cursor en vez de pasar por `SpellTargeting`, que se declara a si mismo dueno unico.
+
+## De donde nace un hechizo en CADA criatura
+
+```text
+CastMuzzlePoint          Data/Player/EntityAssetConfig.cs   un origen y el AMBITO al que responde
+EntityAssetConfig.ResolveMuzzlePoint                        mas especifico primero
+CastMuzzle               Gameplay/Player/                   lo resuelve contra el frame dibujado
+ProjectileExecutor.ResolveCastOrigin(caster, anchor, spellKey)
+ProjectileExecutor.ResolveAnchorOrigin                      el ancla SOLA, para el overlay
+EntityAnimationPreviewService.Muzzle.cs                     la cruz y la des-proyeccion
+EntitiesRuntimeEditor.Muzzle.cs                             el selector
+ESC -> Entidades -> Animation -> ORIGEN DEL HECHIZO         la forma de colocarlo
+```
+
+- **LA UNIDAD QUE SE AUTORA ES LA ANIMACION, no el frame.** «El dragon escupe por la boca» es una
+  frase sobre su animacion de casteo; colocar treinta fracciones a mano no lo iba a hacer nadie, y
+  eso es lo unico que la tabla por frame pedia. Las filas por frame siguen existiendo como
+  REFINAMIENTO de esa frase, para una parte del cuerpo que barre — la boca del dragon viaja de
+  (2.82, 1.31) a (4.09, 3.98) al encabritarse — y el bakeador conserva lo que puso un humano.
+- **Tres discriminadores OPCIONALES, resueltos de mas especifico a menos**: `state`, `variantKey`,
+  `spellKeys`. Vacio significa «cualquiera», asi que una entrada con los tres vacios es la
+  respuesta de la criatura entera y no necesita un caso aparte. Los pesos son 1 / 2 / 4 para que
+  el orden sea una propiedad de los numeros y no de la comparacion: un hechizo gana a cualquier
+  combinacion de los otros dos. Mismo patron que `EconomyGroupDefinition` (por item, por tipo,
+  por defecto) y que el FSM (`by_eid`, `by_archetype`, `fsmSet`).
+- **`state` es un STRING y no `AnimState`** por lo mismo que `LoadoutStateSheets.state`: ese enum
+  vive en `Valkur.Gameplay` y `Valkur.Data` no puede referenciarlo.
+- **Lo por-hechizo existe para el unico caso que una animacion no separa**: dos hechizos lanzados
+  desde la MISMA pose, uno de la mano y otro de la punta del baston. Todo lo demas ya queda
+  separado por `variantKey`, porque las filas por frame se indexan por nombre de sprite y los
+  frames de una variante son suyos.
+- **La clave del hechizo se hilo hasta el resolvedor, y las sobrecargas sin hechizo pasan null.**
+  `ResolveCastStart(caster, dir, spell)` ya tenia el `SpellDefinition`, asi que el camino
+  principal lo pasa gratis. Un null no puede emparejar `spellKeys`, asi que resuelve la respuesta
+  general de la criatura — nunca una equivocada. Es el aviso que el propio `TryResolveMuzzle` deja
+  escrito: enhebrar un argumento por ~70 sitios es como la mitad acaba pasando lo que no es.
+- **Se coloca sobre el escenario, no como superposicion de UI.** El valor es una fraccion de los
+  bounds del sprite DIBUJADO, asi que sobre el escenario se mueve con el frame, el zoom y la
+  direccion gratis; una mota en espacio de pantalla necesitaria re-derivar las tres.
+- **La regla de que mitad esta dibujada tiene UN dueno**, `CastMuzzle.FacingSignFor`. El selector
+  des-proyecta el clic con ella. Una segunda copia alli seria correcta para el pipeline en que su
+  autor probase y estaria silenciosamente espejada para el otro — medido, el pipeline de jugador
+  pone S, SE, E, NE y N en la mitad este y el de monstruos wave13 solo SE, E y NE.
+  Comprobado en vivo sobre `red_dragon_cast_w2`: clic a la izquierda del centro da **+0.50** y a la
+  derecha **-0.50**, porque X es HACIA DELANTE segun la mitad dibujada.
+- **El lector muestra unidades de mundo ademas de la fraccion.** 0.80 no significa nada hasta que
+  sabes que el frame mide 4.98 de ancho; medido, el par del dragon son **3.29 / 0.18 u** desde el
+  centro del cuerpo, que es la boca.
+- **`Borrar` esta limitado al ambito actual.** Un boton unico que vaciara todo quitaria el par de
+  la criatura porque el autor queria deshacer una excepcion por hechizo, y nada en pantalla se lo
+  habria advertido.
+- **El clic ACTUALIZA en vez de anadir.** El sondeo dispara en cada fotograma del arrastre, asi que
+  anadir dejaria un punto por fotograma, todos muertos menos el ultimo.
+- **El sondeo del puntero solo esta armado mientras se coloca.** El escenario es un `RawImage` en
+  medio de un panel arrastrable: dejarlo siempre raycastable es un agujero en la superficie de
+  arrastre de ese mismo panel.
+- **El overlay dibuja el ancla y la boca como DOS puntos.** Preguntarle al resolvedor normal pone
+  las dos etiquetas en el mismo pixel siempre que gana la boca — cierto e inutil, porque la
+  pregunta que una boca existe para responder es CUANTO se desviaba el respaldo.
+  `ProjectileExecutor.ResolveAnchorOrigin` existe solo para eso y no lo llama ningun casteo.
+- **UN PUNTO POR ANIMACION NO PUEDE APLASTAR EL BARRIDO POR FRAME, y la primera version lo
+  hacia.** El dragon trae 60 filas medidas precisamente porque su boca viaja 1.3 u adelante y 2.7
+  arriba al encabritarse; un punto que ganara sin mas dejaba la animacion entera en un valor plano
+  y empeoraba a la UNICA criatura para la que se construyo esto, en silencio, en cuanto un autor
+  usaba el selector. Asi que **el punto dice DONDE y las filas horneadas dicen COMO SE MUEVE**: un
+  punto sin fila propia se desplaza el mismo delta que el horneado midio para ese frame. Un nuevo
+  horneado mejora entonces todos los puntos gratis, que es justo la razon de que sea una
+  composicion y no una copia — las copias se quedan rancias y nada lo dice. La fila PROPIA de un
+  punto sigue ganando del todo: eso es un humano diciendo «ahi no, y tampoco derivado de ahi»,
+  que es lo que `handTuned` ha significado siempre.
+- **Lo que el selector GUARDA es el INVERSO de la composicion**, para que la cruz caiga bajo el
+  cursor en el frame que se esta mirando mientras el barrido sigue dando forma a los demas.
+  Guardar el clic crudo separa la marca del clic en cuanto la criatura tiene filas horneadas.
+  Comprobado con un clic real por la UI: clicado (0.4534, 0.8222), guardado (0.368, 0.5242),
+  leido (0.4534, 0.8222) — identidad exacta sobre `red_dragon_cast_w3`.
+- **`EntityAssetConfig.ComposeMuzzleOffset` es el UNICO compositor**, y lo llaman el componente de
+  runtime y el panel de autoria. Dos implementaciones serian un panel que describe una boca que el
+  casteo no usa, que es exactamente el fallo que el overlay de areas existe para cazar.
+- **EL WORKSPACE ABRE Y CIERRA PANELES A ESPALDAS DEL EDITOR.**
+  `EditorWorkspaceService.ApplyNow` restaura cada `DraggablePanel` — geometria Y estado
+  abierto/cerrado — escribiendo el GameObject directamente, y lo hace ANTES de llamar a
+  `RestoreWorkspace`. Nada de ese camino pasa por el `SetDropdownOpen` del editor. Medido en vivo
+  en Entities: `_animPanelOpen` true, la camara de vista previa y su RenderTexture funcionando, el
+  boton del menu iluminado — y el GameObject del panel INACTIVO. El autor no ve panel, el menu dice
+  que hay uno abierto, y su siguiente clic lo CIERRA: dos clics para recuperar un panel que nunca
+  se vio. `EntitiesRuntimeEditor.SyncDropdownStateFromPanels` reconcilia desde los GameObjects,
+  porque de los dos registros que discrepan el que esta en pantalla es el verdadero. **Los otros
+  editores con paneles conmutables por menu tienen la misma forma y no estan revisados.**
+- **Un boton que invita a un clic tiene que estar ENCIMA.** Medido a 1600x800: el escenario ocupaba
+  x=[246..562] y el panel Picker x=[244..628] por delante, asi que un `RaycastAll` en mitad del
+  escenario devolvia cuatro impactos y los cuatro eran el Picker. Era INTERMITENTE —
+  `DraggablePanel.OnPointerDown` llama a `SetAsLastSibling`, asi que a quien hubiera arrastrado el
+  panel una vez SI le funcionaba — que es la misma forma con la que se envio el scrim de captura
+  del editor de Controles. Armar la colocacion sube el panel. Trampa al medirlo: `RaycastAll`
+  ordena por una profundidad que el canvas calcula al reconstruir, asi que hay que llamar a
+  `Canvas.ForceUpdateCanvases()` antes de la sonda o mide el orden anterior.
+- **El techo de 4 slots ya no existe.** `SpellCaster.SetSpell` hace crecer el array (copiando, no
+  reemplazando: reemplazar pondria a cero cada enfriamiento que estuviera corriendo), y
+  `EntitySetup.ConfigureMonsterAutoCast` y `BossConfigurator` dejaron de recortar por `SlotCount`.
+  Cuatro era un numero sobre los botones del jugador, nunca sobre cuantas habilidades puede tener
+  una criatura: `dark_mague` y `dark_vampire` traen exactamente cuatro, asi que una quinta clave
+  quedaba registrada en el libro, listada por todas las herramientas, y no la lanzaba nadie.
+  `PlayerHUD` no se entera — dibuja tres ranuras de raton desde su propia constante y lee el LIBRO.
+- **Trampa medida aqui:** editar codigo mientras Unity esta en Play Mode difiere la compilacion y
+  **una sola assembly roja congela el dominio entero**. Sintoma exacto: `Valkur.Data` con fecha
+  nueva en disco, `Valkur.Gameplay` con la vieja, `isCompiling` en true durante minutos, la consola
+  MCP vacia y `System.Type.GetType` respondiendo null para tipos que si estan compilados. Lo que lo
+  resuelve es comparar la fecha de CADA DLL contra el `.cs` mas nuevo de su carpeta y leer
+  `error CS` del `Editor.log`; la consola no los estaba dando.
+
+## El Entities Editor, despues de la auditoria
+
+Auditado 2026-09-12 en **5.7/10** y subido a **8.8** el mismo dia. Hallazgos, medidas y lo que
+queda abierto: `.github/ENTITIES_EDITOR_AUDIT_2026-09-12.md`.
+
+- **DESHACER CUBRIA 1 DE 15 OPERACIONES.** `_undo.Record` se llamaba desde un solo sitio —
+  arrastrar una entidad colocada — asi que un autor que retocaba seis stats y pulsaba Ctrl+Z
+  recuperaba su ultimo MOVIMIENTO y conservaba los seis. El arreglo es **una instantanea JSON de
+  la definicion en `CommitDefinitionEdit`**, el seam por el que ya pasaba toda mutacion, y no
+  quince comandos por campo: `JsonUtility` captura lo que un comando escrito a mano olvida — un
+  `assetConfig` anidado, una lista redimensionada, un campo de struct que nadie enumero.
+- **DONDE SE SIEMBRA LA INSTANTANEA ES EL 90 % DEL ARREGLO, y la primera version lo puso mal.**
+  Sembrar en `CurrentEditableMonster` parece el seam natural y las filas de stats **nunca la
+  llaman** (capturan `def` directamente), asi que el PRIMER cambio de cada definicion no grababa
+  nada. Medido: 3 ediciones, **2 pasos de undo**, y el HP no volvia. Va en
+  `ShowMonsterProperties`, el ultimo momento antes de que una edicion sea posible.
+- **`JsonUtility.ToJson` NO SERIALIZA REFERENCIAS A OBJETOS, y eso convierte una instantanea de
+  undo en un destructor silencioso.** Escribe cada `UnityEngine.Object` como un `instanceID`
+  vacio, asi que restaurar REEMPLAZA todos los sprites de la definicion. Medido: tras una sola ida
+  y vuelta, los frames de `dark_dwarf` seguian llamandose `dwarf_idle_e0` y **ya no eran los
+  mismos objetos** que la clase que viste. `EditorJsonUtility` si los conserva. Lo cazo
+  `DarkRosterDataTests`; la comprobacion de «restaurado exacto» escrita para la propia funcion NO,
+  porque comparaba numeros — una identidad de objeto no se ve comparando valores.
+- **Un tinte demasiado oscuro hace ilegible una ranura del Picker, y ESO no es fidelidad.** Siete
+  entidades enviadas autoran un tinte por debajo de la superficie del panel (0.13): los seis
+  gemelos Dark en (0,0,0) exactos y `barbol_oscuro` en 0.12. Dibujadas fielmente son siete
+  cuadrados negros bajo etiquetas truncadas — una ranura de Picker IDENTIFICA, no previsualiza.
+  Se levanta en HSV conservando tono y saturacion.
+- **Levantar a un VALOR fijo es la version que parece correcta y no lo es.** Valor y luminancia
+  son cantidades distintas: un rojo oscuro a V=0.62 sigue en luminancia 0.13, justo sobre la
+  superficie que tenia que despejar. Como `HSVToRGB` escala linealmente con V, la luminancia a
+  V=1 dice exactamente cuanto hay que subir — se resuelve, no se tantea.
+- **`AssetDatabase.SaveAssets()` dentro de un editor escribe TODO el proyecto.** Es la llamada que
+  con un ScriptableObject corrupto en memoria habria volcado la corrupcion sobre ficheros buenos
+  (incidente `SkillTree`). Un boton «Save» dentro de un panel significa el trabajo de ese panel:
+  `SaveAssetIfDirty` sobre los assets que ESTE editor ensucio.
+- **«Reload» no recargaba nada**: era `RefreshPicker()`, que vuelve a listar los mismos objetos en
+  memoria — y un domain reload tampoco recarga assets, asi que reimportar es lo unico que relee el
+  fichero. Y pide confirmacion: el mismo gesto que rescata de una mala edicion no puede ser el que
+  tira una sesion buena.
+- **Las pestañas clasificaban por el TEXTO de `monsterKey`.** `stats.faction` dejo de ser inerte
+  con la auditoria de IA — `EntityFaction.SideOf` lo lee para decidir quien pelea con quien — asi
+  que ordenar por el nombre mientras el juego ordena por el campo son dos respuestas a una
+  pregunta. Medido antes: 1 discrepancia de 28 (`barbol_brother_felipondor`, `faction: NEUTRAL`,
+  bajo Hostiles). Ahora clasifica por `faction` y por `bossDefinition` (una referencia a objeto,
+  no una subcadena): **All 28, Hostiles 20, Neutrals 7, Specials 1, 0 discrepancias**. La pestaña
+  **All** existe y es la de arranque, porque sin ella una entidad mal clasificada es invisible
+  salvo que adivines en que pestaña cayo — y adivinar es justo lo que una entidad mal clasificada
+  derrota.
+- **NUEVE DE DIECINUEVE CAMPOS DE `MonsterDefinition` NO TENIAN UI**, incluido `aiTuning` entero
+  (19 diales de comportamiento que otra auditoria acababa de crear para autorarse) y `coinReward`
+  (el grifo de monedas de toda la economia, creado porque no habia ninguno). Un editor cuyo
+  trabajo es autorar entidades y cuya respuesta a veinte de sus mandos es «abre el Inspector» no
+  las autora. Ahora son 8 secciones y **60 filas**, con filtro.
+- **Un aviso que solo se puede dar en el panel**: si el set FSM del monstruo no declara
+  `DodgeState`, los diales de esquiva no hacen nada — una lista de nodos es una LISTA BLANCA y un
+  `ChangeState` rechazado es silencioso. Se pregunta a `FSMRuntimeFactory.AllowsState`, no se
+  adivina por el nombre del set, que seria la misma heuristica que se acaba de quitar de las
+  pestañas.
+- **El filtro asumia que la cabecera era el hijo 0 del contenedor de filas.** `MakeFormSection`
+  devuelve el **Body** y la cabecera es su HERMANA, asi que conmutaba el Body como si fuese una
+  fila y no tocaba ninguna. Se ve contando filas en un editor vivo (60 / 8 secciones, `dodge` da
+  5 / 1); no se ve leyendo el codigo, que es a lo que se parece en pantalla.
+- **`monsterKey` es una clave de union, no una etiqueta.** Apuntan a ella por STRING el
+  `assignments.json` del FSM (`by_archetype`), las oleadas de cada spawner y cada entidad colocada
+  — y ninguna la sigue. Su modo de fallo es el mas silencioso del proyecto: el monstruo sigue
+  funcionando pero arranca un `IdleState` pelado sin transiciones, y el campamento que lo generaba
+  no genera nada. Renombrar informa y exige segunda pulsacion; medido sobre `barbol`: «an FSM
+  assignment, 13 spawner wave entries and 1 placement on the map».
+- **SIETE overlays enseñaban toggles de la fila F retirados** el 2026-09-05 (Entities F5, FSM F12,
+  Inventory F6, Tile F8, Items F7, Spawners F3, Time & Weather F2) — la misma clase de defecto que
+  los consejos de la pantalla de carga. El guard que lo caza exige la COMA de la tupla: el primer
+  patron marcaba tres `ToString("F2")` como tutoriales, y un guard con falsos positivos es un
+  guard que se acaba desactivando.
+
+## La fuente enviada no tiene ni una flecha, y un editor sin teclado
+
+Auditado el Entities Editor por USABILIDAD el 2026-09-12 (una pregunta distinta de la auditoria
+de paneles del mismo dia: no «existe el campo» sino «puede el autor terminar la tarea»):
+funcionalidad 8.2, usabilidad 4.3. Arreglado el 2026-09-13 a 8.7. Hallazgos y medidas:
+`.github/ENTITIES_EDITOR_USABILITY_AUDIT_2026-09-12.md`.
+
+- **`LiberationSans SDF` NO TIENE NINGUN TRIANGULO, NI FLECHA, NI CARACTER DE DIBUJO DE CAJA**,
+  y elegir otro glifo no arregla nada. Preguntada directamente, le faltan las dieciocho:
+  `▾ ▼ ▽ ▴ ↓ ‸ ˅ ˇ ∨ ▪ ● ▶ → ─ − ≤ ≥ ≈ ⚙ ♪ ↔`. TMP sustituye cada una por `U+25A1` — un cuadro
+  vacio — y suelta un aviso por instancia. `UIDropdown` ponia `▾` como texto, asi que **cada
+  desplegable del proyecto** anunciaba que era un desplegable con un `□`: catorce en el Entities
+  Editor solos, con sus catorce avisos, en un proyecto cuya primera regla cardinal es que la
+  consola este limpia. El barrido completo encontro **87 sustituciones en 40 ficheros de trece
+  editores** — los separadores `─` de Items y Spells, sesenta flechas `→` en mensajes de estado.
+  El cursor se DIBUJA ahora (`Valkur.UIKit.CaretGraphic`), el resto es ASCII, y
+  `EditorFontGlyphCoverageTests` le pregunta a la fuente en vez de llevar una lista.
+  **Deliberadamente NO es `TriangleHandleGraphic` con un quinto valor de enum**: esa clase
+  comparte `ResizeGripCorner` con `PanelResizeHandle` justamente para que el glifo y el
+  arrastre que anuncia no puedan nombrar esquinas distintas.
+  Lo que SI tiene: `— … ’ • € »`, o sea acentos, guion largo y puntuacion. Los tooltips de
+  Inspector estan exentos — los pinta la IMGUI de Unity, no TMP.
+- **Recortar una etiqueta a un numero fijo de caracteres es una COLISION, no un acortamiento.**
+  El Picker cortaba a 9, y a 7 cuando la ranura llevaba ademas su contador de colocadas. Medido
+  sobre el catalogo enviado: 20 de 28 nombres pasan de 9, y a 7 los once barbols colapsan en
+  `Barbol…` — **cuatro pares identicos pixel a pixel en pantalla a la vez** (Baby/Boss,
+  Gigante/Gris, Morado/Musgo, Cyan/Coloso). Y el sitio ya estaba: el rect de la etiqueta mide
+  **66 px** y TMP reporta `Barbol Gigante` en **60**. `TextOverflowModes.Ellipsis` gasta el
+  ancho que el widget tiene de verdad, asi que ensanchar el panel por fin revela mas nombre en
+  vez de no cambiar nada. Corolario: **un dato secundario no comparte cadena con el primario** —
+  el contador paso a insignia de esquina, porque la marca de «esto esta en el mapa» era
+  exactamente la que impedia saber CUAL.
+- **Un editor que no lee `EditorInput` no tiene teclado, y no hay despachador generico.** Cada
+  editor pregunta por su cuenta; trece leen `UndoPressed/RedoPressed/SavePressed` y Entities era
+  el catorceavo. Ctrl+Z, Ctrl+Y y Ctrl+S no hacian nada alli — mientras su propia superposicion,
+  titulada ENTITIES HOTKEYS, listaba `Ctrl+Z Undo` y `Ctrl+Y Redo`. **Es el defecto de las
+  teclas F retiradas por el otro lado, y el guard de aquellas no puede verlo**: busca teclas que
+  fueron RETIRADAS, no teclas que nunca se cablearon. El guard nuevo exige que toda tecla que un
+  tutorial ensena sea una que el editor lea.
+- **Un guard con falsos positivos es un guard que alguien apaga, y el patron correcto es la
+  FRASE.** Buscar la tecla suelta con una expresion regular marca `{valor:F2}` y `ToString("F2")` — y ademas condenaria
+  «Shift+F8 to toggle», que es CORRECTO: las sondas de rendimiento de Tile y Buildings si son
+  duenas de F2-F8 y el asset las vincula. Lo retirado fue el TOGGLE de editor, asi que lo que se
+  busca es `F<n> to close`, `(F<n>)`, `Use F<n>`. Encontro 26 en once editores — la primera
+  frase que leia el autor al abrir casi cualquiera de ellos.
+- **EL RATCHET DE COLORES CONTABA SU PROPIA EXPLICACION.** Un comentario diciendo «no escribas
+  `new Color(...)` aqui, usa un token» puntuaba como color a pelo: documentar la regla junto al
+  codigo que gobierna hacia fallar el guard, y la unica forma de pasar era borrar la frase que
+  impide que el siguiente reintroduzca el defecto. Medido: +1 sin haber anadido ningun color.
+  `EditorRawColorRatchetTests` quita comentarios ahora, como ya hacia el guard de `SaveAssets()`
+  en `EntitiesUndoCoverageTests` por exactamente lo mismo. **Cualquier guard que lea fuente y
+  cuya regla merezca explicarse tiene este fallo latente.**
+- **`Activate()` que asigna el campo del modo en vez de llamar a `SetMode` deja la ayuda en su
+  valor de construccion.** Pinta el boton correcto, y el texto dice otra cosa: medido, el editor
+  abria en modo Select mostrando «Select a mode then click on the map».
+- **Colocar y borrar en el mapa no eran deshacibles y arrastrar si**, que es la inconsistencia
+  que nadie puede predecir — el arrastre era el unico gesto que la pila original cubria. Una
+  colocacion se restaura **por su id**, nunca por su objeto: tras un borrado el objeto no
+  existe, y reaparecer con el mismo `PlacementId` es lo que evita que un override `by_eid` del
+  FSM lo lea como borrar-y-crear. **No es un modal de confirmacion a proposito**: un modal por
+  clic es un clic de mas en los noventa y nueve borrados que si querias, para proteger el uno
+  que no; deshacer protege los cien. Y `Object.Destroy` es diferido, asi que deshacer-y-rehacer
+  en el mismo fotograma dejaba dos objetos con un id — se desactiva antes de destruir, el mismo
+  truco que `PersistentEventSystem` usa con su duplicado, y el buscador salta los inactivos.
+- **`MarkEntityPlacementsDirty` decia en su propio comentario que «lo llama toda mutacion
+  (colocar, borrar)» y MOVER no era una de ellas.** Arrastrar un monstruo cambiaba el mundo,
+  empujaba un paso de deshacer y no programaba ninguna escritura: la posicion nueva sobrevivia a
+  un Stop solo si alguna edicion posterior ensuciaba el fichero por su cuenta. Encontrado al
+  cablear la flecha del teclado, preguntando que hacia el camino del arrastre que el nuevo
+  tendria que copiar.
+- **Un formulario largo necesita plegarse, y el pliegue se recuerda POR NOMBRE.** 60 filas,
+  1446 px en un viewport de 503 — 34.8 % visible, tres pantallas de scroll. Plegado: 640 px,
+  **78.6 %**. Por nombre y no por Transform porque el editor destruye y reconstruye cada cuerpo
+  al cambiar de seleccion. Y **mientras hay filtro el pliegue se suspende**: una seccion plegada
+  que no contestara al filtro es teclear el nombre de un campo y que te digan que no hay
+  coincidencias, con la coincidencia a una cabecera de distancia.
+- **Trampa al medir: `Object.Destroy` es diferido, asi que una sonda que hace tres cosas en una
+  sola llamada `execute_code` las mide todas en un fotograma.** Las filas del formulario salian
+  x3 y las colocaciones descuadradas — no era un fallo del codigo, era la sonda colapsando tres
+  fotogramas en uno. Separa las acciones en llamadas distintas cuando lo que mides sobrevive a
+  un `Destroy`.
 
 ## La sombra de un edificio empieza donde empieza el DIBUJO, no donde empieza el PNG
 

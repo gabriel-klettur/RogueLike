@@ -276,7 +276,7 @@ namespace Valkur.Gameplay.Editors.Boss
                 var phaseLblGo = EditorUIHelpers.CreateUI("PhaseLabel", phaseRow.transform);
                 phaseLblGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
                 var phaseTmp = phaseLblGo.AddComponent<TextMeshProUGUI>();
-                phaseTmp.text      = $"{phaseLabel}  HP≥{phase.hpThreshold:P0}";
+                phaseTmp.text      = $"{phaseLabel}  HP>={phase.hpThreshold:P0}";
                 phaseTmp.fontSize  = 11f;
                 phaseTmp.color     = isSel ? EditorUIHelpers.ACCENT : EditorUIHelpers.TEXT_PRIMARY;
                 phaseTmp.alignment = TextAlignmentOptions.MidlineLeft;
@@ -324,7 +324,7 @@ namespace Valkur.Gameplay.Editors.Boss
                         var trackGo = EditorUIHelpers.CreateUI("Track", chartRow.transform);
                         trackGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
                         var trackTmp = trackGo.AddComponent<TextMeshProUGUI>();
-                        trackTmp.text      = $"♪ {chart.musicTrackId}  ({chart.cues?.Count ?? 0} cues)";
+                        trackTmp.text      = $"Track: {chart.musicTrackId}  ({chart.cues?.Count ?? 0} cues)";
                         trackTmp.fontSize  = 10f;
                         trackTmp.color     = chartSel ? EditorUIHelpers.ACCENT : EditorUIHelpers.TEXT_SECONDARY;
                         trackTmp.alignment = TextAlignmentOptions.MidlineLeft;

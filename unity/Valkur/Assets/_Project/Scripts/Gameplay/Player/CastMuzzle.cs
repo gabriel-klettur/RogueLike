@@ -50,16 +50,26 @@ namespace Valkur.Gameplay
         // declares the single fallback pair, so the common case allocates nothing.
         private Dictionary<string, Vector2> _perFrame;
 
+        // Muzzles scoped to one animation, one variant or one spell. Held as the authored
+        // list rather than flattened into a dictionary: the key is a triple with wildcards,
+        // so a lookup table would need every combination enumerated, and the runtime editor
+        // edits these live.
+        private IReadOnlyList<CastMuzzlePoint> _points;
+
         /// <summary>
         /// True when this entity has a muzzle worth consulting. (0,0) is the "nobody
         /// authored one" sentinel — see <c>EntityAssetConfig.HasCastMuzzle</c>.
         /// </summary>
         public bool IsAuthored =>
             !Mathf.Approximately(_normalized.x, 0f) || !Mathf.Approximately(_normalized.y, 0f) ||
-            (_perFrame != null && _perFrame.Count > 0);
+            (_perFrame != null && _perFrame.Count > 0) ||
+            (_points != null && _points.Count > 0);
 
-        /// <summary>The authored pair, for tests and debug overlays.</summary>
+        /// <summary>The creature-wide pair, for tests and debug overlays.</summary>
         public Vector2 Normalized => _normalized;
+
+        /// <summary>The scoped points, for the authoring panel and for tests.</summary>
+        public IReadOnlyList<CastMuzzlePoint> Points => _points;
 
         /// <summary>
         /// Installed by <c>EntityAnimationBinder</c> from <c>EntityAssetConfig.castMuzzle</c>,
@@ -68,10 +78,25 @@ namespace Valkur.Gameplay
         /// </summary>
         public void Configure(Vector2 normalized, IReadOnlyList<CastMuzzleFrame> perFrame,
                               SpriteRenderer renderer, DirectionalAnimator animator)
+            => Configure(normalized, perFrame, null, renderer, animator);
+
+        /// <summary>
+        /// Install the creature-wide pair, its per-frame refinement, and any muzzles scoped to
+        /// one animation, variant or spell.
+        ///
+        /// <para>The scoped list is held by REFERENCE, not copied, so the Entities editor can
+        /// drag a point and see it move on the live entity without a rebind. That is safe here
+        /// and nowhere near general: this is authored data on a ScriptableObject that only the
+        /// editor writes, and the alternative is a rebind per drag frame.</para>
+        /// </summary>
+        public void Configure(Vector2 normalized, IReadOnlyList<CastMuzzleFrame> perFrame,
+                              IReadOnlyList<CastMuzzlePoint> points,
+                              SpriteRenderer renderer, DirectionalAnimator animator)
         {
             _normalized = normalized;
             _renderer = renderer;
             _animator = animator;
+            _points = points != null && points.Count > 0 ? points : null;
 
             _perFrame = null;
             if (perFrame == null || perFrame.Count == 0) return;
@@ -93,13 +118,65 @@ namespace Valkur.Gameplay
         /// possible at all: <c>AssetDatabase.GetAssetPath</c> returns EMPTY for one, so the
         /// path is not available to identify a frame by, and the name is.</para>
         /// </summary>
-        private Vector2 OffsetFor(Sprite sprite)
+        private Vector2 OffsetFor(Sprite sprite, string spellKey)
         {
-            if (_perFrame != null && sprite != null &&
-                _perFrame.TryGetValue(sprite.name, out Vector2 measured))
-                return measured;
+            string frame = sprite != null ? sprite.name : null;
 
-            return _normalized;
+            bool hasRow = false;
+            Vector2 row = _normalized;
+            if (_perFrame != null && frame != null)
+                hasRow = _perFrame.TryGetValue(frame, out row);
+
+            bool hasPair = !Mathf.Approximately(_normalized.x, 0f) ||
+                           !Mathf.Approximately(_normalized.y, 0f);
+
+            // ONE composer, shared with the authoring panel. A second implementation here is a
+            // panel that describes a muzzle the cast does not use, which is the exact failure
+            // the whole overlay exists to catch.
+            return EntityAssetConfig.ComposeMuzzleOffset(
+                ResolvePoint(spellKey), frame, _normalized, hasPair, row, hasRow);
+        }
+
+        /// <summary>
+        /// The most specific authored point for the animation currently on screen, or null.
+        ///
+        /// <para>State and variant are read off the ANIMATOR rather than passed in, for the
+        /// reason <see cref="TryResolveMuzzle"/> looks the component up on the caster: every
+        /// cast in the project resolves its origin with nothing but a Transform, and threading
+        /// two more arguments through ~70 call sites is how half of them end up passing the
+        /// wrong thing. The animator already knows what it is drawing.</para>
+        /// </summary>
+        /// <summary>
+        /// Which scoped point answered, for an overlay that wants to NAME it. Same resolution
+        /// the cast itself used, so the label cannot describe a different point from the one
+        /// the marker is drawn at.
+        /// </summary>
+        public CastMuzzlePoint ResolvePointForDebug(string spellKey) => ResolvePoint(spellKey);
+
+        internal CastMuzzlePoint ResolvePoint(string spellKey)
+        {
+            if (_points == null) return null;
+
+            string stateName = null;
+            string variantKey = null;
+            if (_animator != null)
+            {
+                stateName = _animator.CurrentState.ToString();
+                variantKey = _animator.VariantLabel(_animator.CurrentState, _animator.ActiveVariant);
+            }
+
+            CastMuzzlePoint best = null;
+            int bestScore = -1;
+            for (int i = 0; i < _points.Count; i++)
+            {
+                var point = _points[i];
+                if (point == null) continue;
+                int score = point.SpecificityFor(stateName, variantKey, spellKey);
+                if (score <= bestScore) continue;
+                bestScore = score;
+                best = point;
+            }
+            return best;
         }
 
         /// <summary>
@@ -107,7 +184,13 @@ namespace Valkur.Gameplay
         /// currently rendering anything, which is what an off-screen culled entity looks
         /// like). Callers fall back to the shared anchor path on false.
         /// </summary>
-        public bool TryResolve(out Vector3 world)
+        public bool TryResolve(out Vector3 world) => TryResolve(null, out world);
+
+        /// <summary>
+        /// The muzzle for a NAMED spell. Falls back to the creature's own answer for a null
+        /// key, which is what every caller that has no spell in hand passes.
+        /// </summary>
+        public bool TryResolve(string spellKey, out Vector3 world)
         {
             world = transform.position;
             if (!IsAuthored) return false;
@@ -118,7 +201,7 @@ namespace Valkur.Gameplay
             Bounds b = sr.bounds;
             if (b.extents.x <= 0.01f || b.extents.y <= 0.01f) return false;
 
-            Vector2 n = OffsetFor(sr.sprite);
+            Vector2 n = OffsetFor(sr.sprite, spellKey);
             world = new Vector3(
                 b.center.x + DrawnFacingSign() * b.extents.x * n.x,
                 b.center.y + b.extents.y * n.y,
@@ -158,11 +241,26 @@ namespace Valkur.Gameplay
         private float DrawnFacingSign()
         {
             var sr = ResolveRenderer();
-            if (sr != null && sr.sprite != null && TryReadSuffix(sr.sprite.name, out float sign))
-                return sign;
+            return FacingSignFor(sr != null ? sr.sprite : null,
+                                 _animator != null ? _animator.CurrentDirection
+                                                   : DirectionalAnimator.Direction.East);
+        }
 
-            if (_animator == null) return 1f;
-            switch (_animator.CurrentDirection)
+        /// <summary>
+        /// Which half is DRAWN, +1 east / -1 west, for a sprite and the direction the animator
+        /// believes it is facing.
+        ///
+        /// <para>Public and static so the Entities editor's muzzle picker can un-project a
+        /// click through exactly this rule. A second copy of it there would be right for the
+        /// pipeline whose naming the author happened to test on and silently mirrored for the
+        /// other, which is the same two-lists-that-drift failure the sprite name exists to
+        /// avoid in the first place.</para>
+        /// </summary>
+        public static float FacingSignFor(Sprite sprite, DirectionalAnimator.Direction direction)
+        {
+            if (sprite != null && TryReadSuffix(sprite.name, out float sign)) return sign;
+
+            switch (direction)
             {
                 case DirectionalAnimator.Direction.NorthWest:
                 case DirectionalAnimator.Direction.West:

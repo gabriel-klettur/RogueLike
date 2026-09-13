@@ -518,6 +518,126 @@ namespace Valkur.Data
     }
 
     /// <summary>
+    /// ONE authored muzzle, and the scope it answers for.
+    ///
+    /// <para><b>The unit an author places is the ANIMATION, not the frame.</b> "The dragon
+    /// breathes from its mouth" is a statement about its cast animation; placing thirty
+    /// fractions by hand is not something anybody was ever going to do, and the per-frame
+    /// table exists to REFINE that statement rather than to replace it.</para>
+    ///
+    /// <para>Three optional discriminators, resolved MOST SPECIFIC FIRST — the same shape
+    /// <c>EconomyGroupDefinition</c> uses for its margins (per item, then per type, then the
+    /// group default) and the FSM uses for its sets (<c>by_eid</c>, then <c>by_archetype</c>,
+    /// then <c>fsmSet</c>). An empty field means "any", so one entry with all three empty is
+    /// the creature-wide answer and needs no special case.</para>
+    ///
+    /// <para><c>state</c> is a STRING and not <c>AnimState</c> for the reason
+    /// <see cref="LoadoutStateSheets.state"/> is: that enum lives in <c>Valkur.Gameplay</c>
+    /// and this assembly may not reference it.</para>
+    /// </summary>
+    [Serializable]
+    public class CastMuzzlePoint
+    {
+        [Tooltip("Author's label for this point, e.g. 'boca' or 'punta del baston'. Shown in " +
+                 "the Entities editor; never matched against anything.")]
+        public string key;
+
+        [Tooltip("Animation state this answers for (idle, walk, chase, attack, cast, damage, " +
+                 "death, recover). EMPTY means every state.")]
+        public string state;
+
+        [Tooltip("Variant key inside that state, e.g. 'bite'. EMPTY means every variant.")]
+        public string variantKey;
+
+        [Tooltip("Spells this point answers for. EMPTY means every spell. A creature that " +
+                 "breathes from its mouth and stabs from a staff tip in the SAME pose needs " +
+                 "this; anything whose two spells have their own animations is already " +
+                 "separated by variantKey.")]
+        public List<string> spellKeys = new List<string>();
+
+        [Tooltip("X is FORWARD along the drawn facing (1 = the leading edge of the sprite), " +
+                 "Y is height above the sprite's vertical centre. Both are fractions of the " +
+                 "CURRENT frame's own bounds, never world distances.")]
+        public Vector2 offset;
+
+        [Tooltip("Optional per-frame refinement INSIDE this point's scope, for a body part " +
+                 "that moves across the animation. A frame this list does not name uses the " +
+                 "point's own offset.")]
+        public List<CastMuzzleFrame> frames = new List<CastMuzzleFrame>();
+
+        /// <summary>
+        /// How specific this point is for a given cast, or -1 when it does not apply at all.
+        ///
+        /// <para>The weights are powers of two so the ordering is a property of the numbers
+        /// rather than of the comparison: a spell match outranks any combination of the other
+        /// two, and a variant match outranks a state match. Ties fall to list order, which is
+        /// the author's own.</para>
+        /// </summary>
+        public int SpecificityFor(string stateName, string variant, string spellKey)
+        {
+            int score = 0;
+
+            if (!string.IsNullOrEmpty(state))
+            {
+                if (!string.Equals(state, stateName, StringComparison.OrdinalIgnoreCase)) return -1;
+                score += 1;
+            }
+
+            if (!string.IsNullOrEmpty(variantKey))
+            {
+                if (!string.Equals(variantKey, variant, StringComparison.OrdinalIgnoreCase)) return -1;
+                score += 2;
+            }
+
+            if (spellKeys != null && spellKeys.Count > 0)
+            {
+                bool claimed = false;
+                for (int i = 0; i < spellKeys.Count; i++)
+                {
+                    if (string.IsNullOrEmpty(spellKeys[i])) continue;
+                    if (!string.Equals(spellKeys[i], spellKey, StringComparison.OrdinalIgnoreCase)) continue;
+                    claimed = true;
+                    break;
+                }
+                if (!claimed) return -1;
+                score += 4;
+            }
+
+            return score;
+        }
+
+        /// <summary>The measurement for one drawn frame inside this point, or its own offset.</summary>
+        public Vector2 OffsetForFrame(string spriteName)
+            => TryFrameOffset(spriteName, out Vector2 row) ? row : offset;
+
+        /// <summary>
+        /// This point's OWN measurement for one frame, and whether it has one at all.
+        ///
+        /// <para>The distinction matters: a point with no row for the frame on screen is not
+        /// the same as a point whose row happens to equal its offset, because the first one
+        /// still wants the creature's baked sweep folded in and the second does not.</para>
+        /// </summary>
+        public bool TryFrameOffset(string spriteName, out Vector2 frameOffset)
+        {
+            frameOffset = offset;
+            if (frames == null || string.IsNullOrEmpty(spriteName)) return false;
+
+            for (int i = 0; i < frames.Count; i++)
+            {
+                var row = frames[i];
+                if (row == null || string.IsNullOrEmpty(row.frame)) continue;
+                // Ordinal: an atlas-packed sprite is identified by the name Unity stored, and
+                // AssetDatabase.GetAssetPath returns EMPTY for one, so the name is the only
+                // identity a frame has.
+                if (!string.Equals(row.frame, spriteName, StringComparison.Ordinal)) continue;
+                frameOffset = row.offset;
+                return true;
+            }
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Complete asset configuration for an entity.
     /// Maps to Python's "assets" block in new_hostiles/new_players.
     /// </summary>
@@ -691,6 +811,11 @@ namespace Valkur.Data
                  "stays as the answer for a frame the bake did not cover.")]
         public List<CastMuzzleFrame> castMuzzleFrames = new List<CastMuzzleFrame>();
 
+        [Tooltip("Muzzles scoped to one animation, one variant or one spell. Resolved " +
+                 "most-specific-first; anything they do not answer falls to castMuzzle. " +
+                 "Authored from the Entities editor's Animation panel.")]
+        public List<CastMuzzlePoint> castMuzzlePoints = new List<CastMuzzlePoint>();
+
         /// <summary>
         /// True when this entity declares its own muzzle. (0,0) is the "nobody authored one"
         /// sentinel, the same shape as <c>scaleConfig.tint</c>'s alpha-zero and
@@ -699,7 +824,105 @@ namespace Valkur.Data
         /// authors <c>SpellCastAnchor.Center</c>, which is what that enum is for.
         /// </summary>
         public bool HasCastMuzzle =>
+            !Mathf.Approximately(castMuzzle.x, 0f) || !Mathf.Approximately(castMuzzle.y, 0f) ||
+            (castMuzzlePoints != null && castMuzzlePoints.Count > 0);
+
+        /// <summary>
+        /// The final muzzle for one cast, composing everything that has something to say about
+        /// it: the scoped point, the creature-wide pair, and the baked per-frame sweep.
+        ///
+        /// <para><b>A point placed on an ANIMATION must not throw away the creature's baked
+        /// per-frame rows, and the first cut did.</b> The red dragon ships 60 measured rows
+        /// precisely because its mouth travels 1.3 units forward and 2.7 up as it rears — a
+        /// single pair lands on the mouth in four of its eight cast frames — so a point that
+        /// simply won outright made the ONE creature this feature was built for worse, the
+        /// moment an author used it, with nothing on screen saying so.</para>
+        ///
+        /// <para>So <b>the point says WHERE and the baked rows say HOW IT MOVES</b>: a point
+        /// with no row of its own is displaced by the same delta the bake measured for that
+        /// frame. A re-bake then improves every point for free, which is the whole reason this
+        /// is a composition and not a copy — copied rows go stale and nothing says so.</para>
+        ///
+        /// <para>A point's OWN row still wins outright. That is a human saying "not there, and
+        /// not derived from there either", which is what <c>handTuned</c> has always meant.</para>
+        ///
+        /// <para>Static, and taking everything it needs, so the runtime component and the
+        /// authoring panel can both call it. Two implementations of this would be a panel that
+        /// describes a muzzle the cast does not use, which is the exact failure the overlay
+        /// exists to catch.</para>
+        /// </summary>
+        public static Vector2 ComposeMuzzleOffset(CastMuzzlePoint point, string frameName,
+                                                  Vector2 creaturePair, bool creatureHasPair,
+                                                  Vector2 creatureFrameRow, bool creatureHasFrameRow)
+        {
+            if (point == null)
+                return creatureHasFrameRow ? creatureFrameRow : creaturePair;
+
+            if (point.TryFrameOffset(frameName, out Vector2 own)) return own;
+
+            if (creatureHasFrameRow && creatureHasPair)
+                return point.offset + (creatureFrameRow - creaturePair);
+
+            return point.offset;
+        }
+
+        /// <summary>
+        /// This creature's baked row for one frame, if the bake covered it.
+        /// </summary>
+        public bool TryCreatureFrameOffset(string frameName, out Vector2 frameOffset)
+        {
+            frameOffset = castMuzzle;
+            if (castMuzzleFrames == null || string.IsNullOrEmpty(frameName)) return false;
+
+            for (int i = 0; i < castMuzzleFrames.Count; i++)
+            {
+                var row = castMuzzleFrames[i];
+                if (row == null || string.IsNullOrEmpty(row.frame)) continue;
+                if (!string.Equals(row.frame, frameName, StringComparison.Ordinal)) continue;
+                frameOffset = row.offset;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// The creature-wide PAIR alone, ignoring any scoped point.
+        ///
+        /// <para>Separate from <see cref="HasCastMuzzle"/>, which also answers true for a
+        /// creature whose only muzzle is a scoped point. The composition needs this narrower
+        /// question: the baked sweep is expressed as a displacement FROM the pair, so with no
+        /// pair there is nothing to displace from and the delta would be the raw measurement.</para>
+        /// </summary>
+        public bool HasCastMuzzlePair =>
             !Mathf.Approximately(castMuzzle.x, 0f) || !Mathf.Approximately(castMuzzle.y, 0f);
+
+        /// <summary>
+        /// The most specific authored point for one cast, or null when only the creature-wide
+        /// pair applies.
+        ///
+        /// <para>Ties fall to the FIRST match in list order, which is the author's own ordering
+        /// and the only tie-break that does not depend on something they cannot see. Scanning
+        /// a handful of entries beats a dictionary here: the shipped worst case is one entity
+        /// with a couple of points, and a dictionary would need a composite key that has to be
+        /// rebuilt every time a field is edited in the runtime editor.</para>
+        /// </summary>
+        public CastMuzzlePoint ResolveMuzzlePoint(string stateName, string variantKey, string spellKey)
+        {
+            if (castMuzzlePoints == null) return null;
+
+            CastMuzzlePoint best = null;
+            int bestScore = -1;
+            for (int i = 0; i < castMuzzlePoints.Count; i++)
+            {
+                var point = castMuzzlePoints[i];
+                if (point == null) continue;
+                int score = point.SpecificityFor(stateName, variantKey, spellKey);
+                if (score <= bestScore) continue;
+                bestScore = score;
+                best = point;
+            }
+            return best;
+        }
 
         [Header("Scale & Tint")]
         public AnimationScaleConfig scaleConfig;

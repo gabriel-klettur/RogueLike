@@ -185,7 +185,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             _propsTmp.gameObject.SetActive(false);
             var t = _selectedTransition;
 
-            BuildSubHeader(content, $"{t.from} → {t.to}");
+            BuildSubHeader(content, $"{t.from} -> {t.to}");
             BuildPropRow(content, "condition", t.condition ?? "",
                 v => { t.condition = v; if (t.raw != null) t.raw["guard"] = v; PersistSets(); RefreshGraph(); ReportGuardDiagnostics(t, v); });
 
@@ -304,7 +304,7 @@ namespace Valkur.Gameplay.Enemies.FSM
         private void ReportGuardDiagnostics(FSMTransitionData t, string text)
         {
             if (_statusTmp == null || t == null) return;
-            string edge = $"'{t.from}' → '{t.to}'";
+            string edge = $"'{t.from}' -> '{t.to}'";
 
             var parsed = Valkur.Gameplay.FSM.FSMCondition.Parse(text, out string error);
             if (error != null)

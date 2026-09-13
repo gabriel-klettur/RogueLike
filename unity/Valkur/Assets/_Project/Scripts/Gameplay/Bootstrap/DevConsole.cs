@@ -532,6 +532,7 @@ namespace Valkur.Gameplay
             // Re-read authored data into the live scene — see DevConsole.Commands.Reload.cs.
             RegisterReloadCommands();
             RegisterSpawnerCommands();
+            RegisterPlacedEntityCommands();
             RegisterAICommands();
             RegisterEditorCommands();
 
@@ -576,6 +577,7 @@ namespace Valkur.Gameplay
             // The debug HUD (F1) — see DevConsole.Commands.DebugHud.cs. Its own category,
             // registered last, for the same one-header rule as the two blocks above.
             RegisterDebugHudCommands();
+            RegisterSpellAreaCommands();
         }
 
         // ------------------------------------------------------------------

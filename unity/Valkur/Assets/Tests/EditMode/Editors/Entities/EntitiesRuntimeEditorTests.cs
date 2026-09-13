@@ -570,15 +570,30 @@ namespace Valkur.Tests.EditMode.Editors.Entities
                 "Default mode must be Select (Python parity).");
         }
 
+        /// <summary>
+        /// The picker opens on ALL, not on Hostiles.
+        ///
+        /// <para>It used to be Hostiles for Python parity, and that parity stopped being worth
+        /// anything the moment the tabs became a CLASSIFICATION rather than a list: an entity
+        /// whose tab an author does not expect is invisible unless they guess which one it fell
+        /// into, and guessing is precisely what a misfiled entity defeats. Measured before the
+        /// classification was moved onto <c>stats.faction</c>, one of the 28 shipped monsters
+        /// was in that position — <c>barbol_brother_felipondor</c>, a NEUTRAL sitting under
+        /// Hostiles because his key contains none of the words the old heuristic searched
+        /// for.</para>
+        ///
+        /// <para>Opening on All costs nothing at this scale and removes the whole class of
+        /// "it is not in the editor" that is really "it is in another tab".</para>
+        /// </summary>
         [Test]
-        public void DefaultCategory_Is_Hostiles()
+        public void DefaultCategory_Is_All()
         {
             LogAssert.ignoreFailingMessages = true;
             var ed = CreateEditor();
 
             var cat = GetFieldValue(ed, "_category");
-            Assert.AreEqual("Hostiles", cat.ToString(),
-                "Default category must be Hostiles (Python parity).");
+            Assert.AreEqual("All", cat.ToString(),
+                "The picker must open on every entity, not on one tab.");
         }
 
         // ════════════════════════════════════════════════════════════════════════
@@ -639,17 +654,37 @@ namespace Valkur.Tests.EditMode.Editors.Entities
             Assert.AreEqual(Color.white, defaultTint,
                 "Uninitialized tint must be promoted to white (Python parity for tint=null).");
 
-            var purple = (Color) m.Invoke(null, new object[] { new Color(0.5f, 0f, 0.5f, 1f) });
-            Assert.AreEqual(0.5f, purple.r, 1e-4f, "Red channel must pass through.");
-            Assert.AreEqual(0f,   purple.g, 1e-4f, "Green channel must pass through.");
-            Assert.AreEqual(0.5f, purple.b, 1e-4f, "Blue channel must pass through.");
-            Assert.AreEqual(1f,   purple.a, 1e-4f, "Alpha must always be forced to 1.");
+            // A tint bright enough to read passes through untouched.
+            var bright = (Color) m.Invoke(null, new object[] { new Color(0.8f, 0.8f, 0.2f, 1f) });
+            Assert.AreEqual(0.8f, bright.r, 1e-4f, "Red channel must pass through.");
+            Assert.AreEqual(0.8f, bright.g, 1e-4f, "Green channel must pass through.");
+            Assert.AreEqual(0.2f, bright.b, 1e-4f, "Blue channel must pass through.");
+            Assert.AreEqual(1f,   bright.a, 1e-4f, "Alpha must always be forced to 1.");
 
-            // Pure-black non-zero-alpha tint must NOT be promoted to white — Python's
-            // BLEND_RGB_MULT with [0,0,0] does collapse the sprite to black.
+            // A tint too dark to READ is lifted, and its HUE survives. A picker slot identifies;
+            // it does not preview. Seven shipped entities author a tint below the panel's own
+            // 0.13 surface -- the six Dark twins at exactly (0,0,0) and barbol_oscuro at 0.12 --
+            // so drawing them faithfully gives seven black squares under truncated labels, which
+            // is the one thing a picker may not be.
+            var darkPurple = (Color) m.Invoke(null, new object[] { new Color(0.5f, 0f, 0.5f, 1f) });
+            float purpleLum = 0.2126f * darkPurple.r + 0.7152f * darkPurple.g + 0.0722f * darkPurple.b;
+            Assert.That(purpleLum, Is.GreaterThanOrEqualTo(0.24f),
+                "A dark tint must be lifted until it is READABLE. Lifting to a fixed HSV value " +
+                "is the version that looks right and is not: value and luminance are different " +
+                "quantities, so a saturated hue comes back still invisible.");
+            Assert.That(darkPurple.r, Is.EqualTo(darkPurple.b).Within(1e-3f),
+                "Hue must survive the lift: a purple entity still reads purple.");
+            Assert.That(darkPurple.g, Is.LessThan(darkPurple.r),
+                "Saturation must survive too, or every dark entity lifts to the same grey.");
+
+            // Pure black is achromatic, so it has no hue to keep and becomes grey -- the honest
+            // answer for art whose whole identity is "no colour".
             var black = (Color) m.Invoke(null, new object[] { new Color(0f, 0f, 0f, 1f) });
-            Assert.AreEqual(Color.black, new Color(black.r, black.g, black.b, 1f),
-                "Explicit black tint with alpha=1 must remain black (Pygame BLEND_RGB_MULT parity).");
+            Assert.That(black.r, Is.EqualTo(black.g).Within(1e-3f));
+            Assert.That(black.g, Is.EqualTo(black.b).Within(1e-3f));
+            Assert.That(black.r, Is.GreaterThan(0.2f),
+                "The Dark roster must be identifiable in the picker even though it is black " +
+                "in the world.");
         }
 
         [Test]

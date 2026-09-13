@@ -90,7 +90,8 @@ namespace Valkur.Gameplay.Spells
             if (ctx.TargetLayers.value == 0) return fallback;
 
             float corridor = Mathf.Max(MIN_CORRIDOR_HALF_WIDTH, splash);
-            var candidates = Physics2D.OverlapCircleAll(castPos, range, ctx.TargetLayers);
+            var candidates = Debugging.SpellProbe.OverlapCircleAll(castPos, range, ctx.TargetLayers,
+                Debugging.SpellDebugRole.Reach, "busqueda " + range.ToString("0.##") + " u");
 
             Vector2 best = fallback;
             float bestForward = float.MaxValue;
@@ -122,7 +123,8 @@ namespace Valkur.Gameplay.Spells
             int damage = SpellPower.ScaleToInt(ctx.Spell.damage, ctx.Caster);
             if (damage <= 0) return;
 
-            var struck = Physics2D.OverlapCircleAll(impact, splash, ctx.TargetLayers);
+            var struck = Debugging.SpellProbe.OverlapCircleAll(impact, splash, ctx.TargetLayers,
+                Debugging.SpellDebugRole.Damage, "descarga " + splash.ToString("0.##") + " u");
             for (int i = 0; i < struck.Length; i++)
             {
                 if (!IsLiveTarget(ctx, struck[i])) continue;
@@ -140,7 +142,8 @@ namespace Valkur.Gameplay.Spells
             var remaining = new List<Collider2D>();
             if (ctx.TargetLayers.value != 0)
             {
-                var candidates = Physics2D.OverlapCircleAll(castPos, range, ctx.TargetLayers);
+                var candidates = Debugging.SpellProbe.OverlapCircleAll(castPos, range, ctx.TargetLayers,
+                    Debugging.SpellDebugRole.Reach, "cadena " + range.ToString("0.##") + " u");
                 for (int i = 0; i < candidates.Length; i++)
                     if (IsLiveTarget(ctx, candidates[i])) remaining.Add(candidates[i]);
             }

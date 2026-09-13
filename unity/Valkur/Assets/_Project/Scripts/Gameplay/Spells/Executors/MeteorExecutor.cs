@@ -16,14 +16,23 @@ namespace Valkur.Gameplay.Spells
         {
             int count = ctx.Spell.meteorCount > 0 ? ctx.Spell.meteorCount : 8;
             float interval = ctx.Spell.meteorInterval > 0 ? ctx.Spell.meteorInterval : 0.25f;
-            float areaRadius = ctx.Spell.meteorAreaRadius > 0 ? ctx.Spell.meteorAreaRadius / 16f : 32.5f;
-            float impactRadius = ctx.Spell.meteorImpactRadius > 0 ? ctx.Spell.meteorImpactRadius / 16f : 10f;
+            // WORLD UNITS. All three of these used to be divided by 16 -- the Python pixel
+            // scale, and the SEVENTH sighting of it in this project after wallWidth, the
+            // totem's radius, the vortex's radius, coneLength, arcane_flame's radius and
+            // AuraExecutor's discarded divide. The tell is the same every time: the fallback
+            // for an unauthored field (32.5 WORLD units, two thirds of a 33-unit-wide screen)
+            // was sixteen times anything the asset could produce, so the two numbers could
+            // never have meant the same thing. Shipped meteor_shower authored 32.5 / 10, which
+            // resolved to an area of 2.03 u and an impact of 0.625 u -- a meteor that damaged
+            // a circle a third of a tile wide under an explosion drawn many times that.
+            float areaRadius = ctx.Spell.meteorAreaRadius > 0 ? ctx.Spell.meteorAreaRadius : 2f;
+            float impactRadius = ctx.Spell.meteorImpactRadius > 0 ? ctx.Spell.meteorImpactRadius : 1.1f;
             float damage = SpellPower.Scale(ctx.Spell.damage, ctx.Caster);
 
             // Maximum distance from the caster that the meteor centre may sit at.
             // Player casts use the cursor (clamped to this); NPCs / no-mouse fall
             // back to a fixed direction × distance offset (legacy behaviour).
-            float spawnDist = ctx.Spell.range > 0 ? ctx.Spell.range / 16f : 6f;
+            float spawnDist = ctx.Spell.range > 0 ? ctx.Spell.range : 6f;
             Vector2 center = ResolveMeteorCenter(ctx, spawnDist);
 
             var controllerGo = new GameObject("MeteorShower");

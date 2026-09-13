@@ -109,6 +109,10 @@ namespace Valkur.Gameplay.Spells
             public Button                        ViewCharacterToggleBtn;
             public Image                         ViewCharacterToggleBtnImg;
             public TMPro.TextMeshProUGUI         ViewCharacterToggleLabel;
+            public Button                        ViewAreasToggleBtn;
+            public Image                         ViewAreasToggleBtnImg;
+            public TMPro.TextMeshProUGUI         ViewAreasToggleLabel;
+            public TMPro.TextMeshProUGUI         ViewAreasLegend;
 
             // View panel — transport row (play/pause, speed, frame scrubber)
             public Button           ViewPlayPauseBtn;

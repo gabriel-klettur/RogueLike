@@ -43,7 +43,8 @@ namespace Valkur.Gameplay.TileEditor
             {
                 // ── Tools ──
                 ("TOOLS",     ""),
-                ("F8",        "Toggle Tile Editor"),
+                // Retired 2026-09-05: editors open from the General Editor on Escape.
+                ("Esc",       "Open the General Editor, then Tile"),
                 ("B",         "Brush tool"),
                 ("E",         "Eraser tool"),
                 ("F",         "Fill tool"),

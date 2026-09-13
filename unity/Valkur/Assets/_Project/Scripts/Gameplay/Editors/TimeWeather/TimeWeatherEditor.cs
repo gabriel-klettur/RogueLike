@@ -132,8 +132,8 @@ namespace Valkur.Gameplay.TimeWeather
             SyncCycleHighlightFromLive();
             SyncWeatherHighlightsFromLive();
             SyncSettingsFromLive();
-            SetStatus("Time & Weather editor active. F2 to close.");
-            Debug.Log("[TimeWeatherEditor] Activated (F2)");
+            SetStatus("Time & Weather editor active. Escape to close.");
+            Debug.Log("[TimeWeatherEditor] Activated");
         }
 
         public void Deactivate()
@@ -141,7 +141,7 @@ namespace Valkur.Gameplay.TimeWeather
             _active = false;
             if (_root != null) _root.SetActive(false);
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.NotifyDeactivated(this);
-            Debug.Log("[TimeWeatherEditor] Deactivated (F2)");
+            Debug.Log("[TimeWeatherEditor] Deactivated");
         }
 
         private void ToggleActive()
@@ -200,7 +200,8 @@ namespace Valkur.Gameplay.TimeWeather
         {
             _tutorial = TutorialOverlay.Build(_root.transform, "TIME & WEATHER — SHORTCUTS", new[]
             {
-                ("F2",       "Open/close editor"),
+                // Retired 2026-09-05: editors open from the General Editor on Escape.
+                ("Esc",      "Open the General Editor, then Time & Weather"),
                 ("Alt+F2",   "Combat range visualizer"),
                 ("Esc",      "Close editor"),
                 ("Slider",   "Day/night cycle speed"),

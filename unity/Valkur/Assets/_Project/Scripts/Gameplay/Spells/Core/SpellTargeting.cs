@@ -86,7 +86,8 @@ namespace Valkur.Gameplay.Spells
             if (!TryResolveCursorWorld(caster, out cursor)) return fallback;
 
             Vector2 origin = ProjectileExecutor.ResolveCastOrigin(
-                caster, spell != null ? spell.castAnchor : SpellCastAnchor.Hands);
+                caster, spell != null ? spell.castAnchor : SpellCastAnchor.Hands,
+                spell != null ? spell.spellKey : null);
 
             Vector2 aim = cursor - origin;
 

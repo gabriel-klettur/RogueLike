@@ -36,7 +36,7 @@ namespace Valkur.Gameplay.Spells
             if (!SpellFieldRelevance.Applies(spell, "statusApplications")) return;
 
             var list = spell.statusApplications ?? Array.Empty<StatusApplication>();
-            AddSectionHeader(form, "── Status Effects ──");
+            AddSectionHeader(form, "-- Status Effects --");
             form.AddInt(STATUS_PREFIX + "count", "Count", list.Length);
 
             string[] kinds = Enum.GetNames(typeof(StatusEffectKind));
@@ -72,7 +72,7 @@ namespace Valkur.Gameplay.Spells
                 // Copy rather than reallocate blindly: shrinking then growing again must not
                 // silently blank the entries that survived the round trip.
                 Array.Copy(before, resized, Mathf.Min(before.Length, wanted));
-                CommitStatus(spell, before, resized, $"Status count → {wanted}", rebuild: true);
+                CommitStatus(spell, before, resized, $"Status count -> {wanted}", rebuild: true);
                 return;
             }
 

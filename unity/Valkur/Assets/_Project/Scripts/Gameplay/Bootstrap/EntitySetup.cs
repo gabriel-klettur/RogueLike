@@ -143,6 +143,7 @@ namespace Valkur.Gameplay
             EnsureHUDIconBar();
             EnsureCraftingPanelUI();
             EnsureCombatRangeVisualizer();
+            EnsureSpellDebugRenderer();
         }
 
         public static void ConfigureMonster(GameObject go, MonsterDefinition def)
@@ -479,8 +480,13 @@ namespace Valkur.Gameplay
             if (auto == null) auto = go.AddComponent<NPCAutoCast>();
             auto.Clear();
 
+            // NO CAP. SpellCaster.SetSpell grows its own array now, so every authored key gets
+            // a slot and an auto-cast entry. The old `registered < caster.SlotCount` cut the
+            // list at the four slots the component happens to serialize -- a number about the
+            // player's buttons, not about how many abilities a creature may have. Two shipped
+            // monsters sit exactly on it, so a fifth key would have been listed everywhere and
+            // cast by nobody.
             int registered = 0;
-            int slotCount  = caster.SlotCount;
             for (int i = 0; i < def.autoCastList.Length; i++)
             {
                 string key = def.autoCastList[i];
@@ -493,16 +499,10 @@ namespace Valkur.Gameplay
                     continue;
                 }
 
-                // Always register in the spell book so TryCastByKey works even when
-                // the spell falls outside the slot count.
                 caster.RegisterSpell(spell.spellKey, spell);
-
-                if (registered < slotCount)
-                {
-                    caster.SetSpell(registered, spell);
-                    auto.AddEntry(BuildAutoCastEntry(registered, spell));
-                    registered++;
-                }
+                caster.SetSpell(registered, spell);
+                auto.AddEntry(BuildAutoCastEntry(registered, spell));
+                registered++;
             }
 
             Valkur.Core.VerboseLog.Log(Valkur.Core.VerboseLog.Category.Bootstrap,

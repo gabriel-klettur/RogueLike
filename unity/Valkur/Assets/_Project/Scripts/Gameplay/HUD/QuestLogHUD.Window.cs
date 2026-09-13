@@ -257,7 +257,9 @@ namespace Valkur.Gameplay.HUD
                 -(CHROME_BTN + PADDING * 2f), new Color(0.22f, 0.24f, 0.20f, 1f), ToggleMinimized,
                 out _minimizeGlyph);
 
-            MakeChromeButton(bar.transform, "Close", "✕",
+            // ASCII, not U+2715: LiberationSans SDF has no multiplication-X glyph, and TMP draws
+            // the missing one as an empty box with a console warning on every build of the panel.
+            MakeChromeButton(bar.transform, "Close", "X",
                 -PADDING, new Color(0.34f, 0.18f, 0.16f, 1f), () => SetClosed(true), out _);
         }
 

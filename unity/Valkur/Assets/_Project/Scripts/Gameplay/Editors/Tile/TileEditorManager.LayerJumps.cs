@@ -121,7 +121,7 @@ namespace Valkur.Gameplay.TileEditor
             if (!LayerJumpMap.IsValidTarget(targetLayer)) targetLayer = "0";
             _state.ActiveJumpTargetLayer = targetLayer;
             _ui?.RefreshLayerJumpsPicker();
-            _ui?.SetStatus($"Layer-jump target → {targetLayer}");
+            _ui?.SetStatus($"Layer-jump target -> {targetLayer}");
         }
 
         // ── Overlay binding ─────────────────────────────────────────────────

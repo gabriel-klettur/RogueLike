@@ -208,7 +208,8 @@ namespace Valkur.Gameplay.Spells
 
         private void DamageTick(bool refreshStatus)
         {
-            var hits = Physics2D.OverlapCircleAll(transform.position, _radius, _targetLayers);
+            var hits = Debugging.SpellProbe.OverlapCircleAll(transform.position, _radius, _targetLayers,
+                Debugging.SpellDebugRole.Damage, "charco " + _radius.ToString("0.##") + " u");
             foreach (var hit in hits)
             {
                 var health = hit.GetComponentInParent<Health>();

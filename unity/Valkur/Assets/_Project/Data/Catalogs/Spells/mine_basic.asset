@@ -53,8 +53,8 @@ MonoBehaviour:
   meteorAreaRadius: 0
   meteorImpactRadius: 0
   armingTime: 0.5
-  triggerRadius: 3.75
-  explosionRadius: 8.75
+  triggerRadius: 1.5
+  explosionRadius: 2.75
   explosionDamage: 28
   ttl: 14
   wallWidth: 0

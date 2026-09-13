@@ -24,8 +24,21 @@ namespace Valkur.Gameplay.Spells
         private Component _light;
 
         private System.Action<Vector3> _onImpact;
+        private float _damageRadius;
 
         public static void Spawn(Vector3 worldImpact, System.Action<Vector3> onImpact)
+            => Spawn(worldImpact, onImpact, 0f);
+
+        /// <summary>
+        /// A falling meteor that resolves <paramref name="onImpact"/> when it lands.
+        ///
+        /// <para><paramref name="damageRadius"/> is the circle the landing is about to sweep,
+        /// and the burst is drawn at exactly that size. It used to take no radius at all: the
+        /// explosion was a constant 1.40 world units while the damage came from data, so the
+        /// picture and the hit agreed only by coincidence and disagreed by 2.25x on the shipped
+        /// asset. Zero keeps the old constant size for any caller that has no radius to give.</para>
+        /// </summary>
+        public static void Spawn(Vector3 worldImpact, System.Action<Vector3> onImpact, float damageRadius)
         {
             var go = new GameObject("MeteorMissile");
             go.transform.position = worldImpact + Vector3.up * FallHeight;
@@ -34,10 +47,13 @@ namespace Valkur.Gameplay.Spells
             fx._start  = worldImpact + new Vector3(Random.Range(-2f, 2f), FallHeight, 0f);
             fx.transform.position = fx._start;
             fx._onImpact = onImpact;
+            fx._damageRadius = damageRadius;
             fx.Build();
 
             var audio = ServiceLocator.Get<IAudioService>();
-            if (audio != null) audio.PlaySfxById("spell_meteor_fall");
+            // Gated on HasSfx: AudioCatalog ships no spell_* id, and an ungated call warns once
+            // per id. A meteor without a sound is missing content, not a data bug.
+            if (audio != null && audio.HasSfx("spell_meteor_fall")) audio.PlaySfxById("spell_meteor_fall");
         }
 
         private void Build()
@@ -130,11 +146,11 @@ namespace Valkur.Gameplay.Spells
         private void Impact()
         {
             transform.position = _target;
-            ElementalImpactFX.Spawn(_target, SpellElement.Fire);
+            ElementalImpactFX.Spawn(_target, SpellElement.Fire, _damageRadius);
             _onImpact?.Invoke(_target);
 
             var audio = ServiceLocator.Get<IAudioService>();
-            if (audio != null) audio.PlaySfxById("spell_meteor_impact");
+            if (audio != null && audio.HasSfx("spell_meteor_impact")) audio.PlaySfxById("spell_meteor_impact");
 
             Feel.CameraFeel.Cue(Data.Feel.CameraFeelCue.ImpactMassive, Vector2.down);
             if (_lightGo != null) Destroy(_lightGo);

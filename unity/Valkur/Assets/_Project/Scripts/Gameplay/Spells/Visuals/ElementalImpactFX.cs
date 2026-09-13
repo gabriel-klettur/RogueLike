@@ -26,9 +26,40 @@ namespace Valkur.Gameplay.Spells
         private Component _light2DComponent;
         private float _t;
         private ElementPalette _palette;
+        /// <summary>1 keeps the historical constant size; see <see cref="SizeTo"/>.</summary>
+        private float _sizeMultiplier = 1f;
 
         public static ElementalImpactFX Spawn(Vector3 pos, SpellElement element)
             => Spawn(pos, ElementPalette.For(element));
+
+        /// <summary>
+        /// The same burst, sized so its shockwave lands on <paramref name="damageRadius"/>.
+        ///
+        /// <para>An impact drawn at a constant while the circle underneath it comes from data is
+        /// how "the particles do not match the area" happens: the shockwave ends at scale 3.6
+        /// and <c>ElementalSprites.Ring</c> peaks at normalized radius 0.78, so the drawn edge
+        /// has always been at 1.40 world units whatever the spell said. A radius of 0 keeps that
+        /// historical size, so every existing caller is untouched.</para>
+        /// </summary>
+        public static ElementalImpactFX Spawn(Vector3 pos, SpellElement element, float damageRadius)
+        {
+            var fx = Spawn(pos, ElementPalette.For(element));
+            if (fx != null) fx.SizeTo(damageRadius);
+            return fx;
+        }
+
+        /// <summary>
+        /// Scale the whole burst so the shockwave's bright band stops exactly on a radius.
+        /// Clamped, because a very small field would otherwise produce a burst nobody can see
+        /// and a very large one would fill the screen with a single flash.
+        /// </summary>
+        public void SizeTo(float damageRadius)
+        {
+            if (damageRadius <= 0f) return;
+            const float RING_BAND_RADIUS = 0.39f;   // half of the sprite's 0.78 peak
+            float wanted = damageRadius / (ShockwaveEnd * RING_BAND_RADIUS);
+            _sizeMultiplier = Mathf.Clamp(wanted, 0.35f, 3f);
+        }
 
         internal static ElementalImpactFX Spawn(Vector3 pos, ElementPalette palette)
         {
@@ -51,9 +82,14 @@ namespace Valkur.Gameplay.Spells
             _flashSr = flash.AddComponent<SpriteRenderer>();
             _flashSr.sprite = _palette.hotCoreSprite;
             _flashSr.color = _palette.hotCore;
-            _flashSr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_ENTITIES);
-            _flashSr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
-            _flashSr.sortingOrder = SortingConfig.Z_SKY + 12;
+            // LAYER_VFX with a small order, never Z_SKY as a sortingOrder on Entities. Z_SKY is
+            // a Z DEPTH (600); used as an order on the Entities layer it puts the flash at 612
+            // while every entity in the shipped world Y-sorts into the thousands, so the one
+            // frame an impact exists for drew UNDER the character it hit. Third sighting of the
+            // same mistake in this repository after LightningBoltFX and FacingIndicator.
+            _flashSr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_VFX);
+            _flashSr.sortingLayerName = SortingConfig.LAYER_VFX;
+            _flashSr.sortingOrder = 12;
             _flashSr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
 
             // Shockwave ring
@@ -63,9 +99,9 @@ namespace Valkur.Gameplay.Spells
             _ringSr = ring.AddComponent<SpriteRenderer>();
             _ringSr.sprite = _palette.ringSprite;
             _ringSr.color = _palette.glow;
-            _ringSr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_ENTITIES);
-            _ringSr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
-            _ringSr.sortingOrder = SortingConfig.Z_SKY + 11;
+            _ringSr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_VFX);
+            _ringSr.sortingLayerName = SortingConfig.LAYER_VFX;
+            _ringSr.sortingOrder = 11;
             _ringSr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
 
             // Light2D pulse
@@ -102,9 +138,9 @@ namespace Valkur.Gameplay.Spells
                 go.transform.position = transform.position;
                 var sr = go.AddComponent<SpriteRenderer>();
                 sr.sprite = _palette.emberSprite;
-                sr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_ENTITIES);
-                sr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
-                sr.sortingOrder = SortingConfig.Z_SKY + 7;
+                sr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_VFX);
+                sr.sortingLayerName = SortingConfig.LAYER_VFX;
+                sr.sortingOrder = 7;
                 sr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
                 sr.color = Color.Lerp(_palette.core, _palette.glow, Random.value);
 
@@ -121,14 +157,14 @@ namespace Valkur.Gameplay.Spells
 
             if (_ringSr != null)
             {
-                float scale = Mathf.Lerp(ShockwaveStart, ShockwaveEnd, EaseOutCubic(u));
+                float scale = Mathf.Lerp(ShockwaveStart, ShockwaveEnd, EaseOutCubic(u)) * _sizeMultiplier;
                 _ringSr.transform.localScale = Vector3.one * scale;
                 var c = _palette.glow;
                 _ringSr.color = new Color(c.r, c.g, c.b, c.a * (1f - u));
             }
             if (_flashSr != null)
             {
-                float scale = Mathf.Lerp(FlashScaleStart, FlashScaleEnd, u);
+                float scale = Mathf.Lerp(FlashScaleStart, FlashScaleEnd, u) * _sizeMultiplier;
                 _flashSr.transform.localScale = Vector3.one * scale;
                 var c = _palette.hotCore;
                 _flashSr.color = new Color(c.r, c.g, c.b, c.a * (1f - u * u));

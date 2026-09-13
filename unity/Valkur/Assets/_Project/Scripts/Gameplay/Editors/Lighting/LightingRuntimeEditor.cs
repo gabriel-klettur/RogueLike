@@ -187,7 +187,7 @@ namespace Valkur.Gameplay.World
             if (WorldLightLoader.Instance != null)
                 _undoWorldGeneration = WorldLightLoader.Instance.WorldGeneration;
 
-            SetStatus("Lighting Editor active. Ctrl+F3 to close.");
+            SetStatus("Lighting Editor active. Escape to close.");
             Debug.Log("[LightingEditor] Activated (Ctrl+F3)");
         }
 

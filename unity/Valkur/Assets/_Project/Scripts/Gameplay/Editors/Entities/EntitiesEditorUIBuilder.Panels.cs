@@ -35,7 +35,7 @@ namespace Valkur.Gameplay.Entities
         // Hostiles / Neutrals / Specials / Players.
 
         private static void BuildCategoriesPanel(Transform canvasT, ref UIRefs refs,
-            Action onHostiles, Action onNeutrals, Action onSpecials, Action onPlayers)
+            Action onAll, Action onHostiles, Action onNeutrals, Action onSpecials, Action onPlayers)
         {
             float x = PANEL_GAP + TOOLS_W + PANEL_GAP;
             refs.CategoriesDropdown = MakeDrop("EntitiesCategoriesPanel", canvasT,
@@ -43,6 +43,7 @@ namespace Valkur.Gameplay.Entities
                 CATEGORIES_W, CATEGORIES_H, "Categories",
                 out var t, out refs.CategoriesPanelDrag);
 
+            refs.AllTabImg      = AddTabBtn(t, "All",      36f, onAll,      out refs.AllTabTmp);
             refs.HostilesTabImg = AddTabBtn(t, "Hostiles", 36f, onHostiles, out refs.HostilesTabTmp);
             refs.NeutralsTabImg = AddTabBtn(t, "Neutrals", 36f, onNeutrals, out refs.NeutralsTabTmp);
             refs.SpecialsTabImg = AddTabBtn(t, "Specials", 36f, onSpecials, out refs.SpecialsTabTmp);
@@ -66,16 +67,69 @@ namespace Valkur.Gameplay.Entities
             refs.SearchBox = SearchBox.Create(t, "Search entities\u2026",
                 v => onSearchChanged?.Invoke(v ?? ""));
 
-            var (scroll, content) = EditorUIHelpers.MakeGridPicker(t, "EntityGrid", 3, 72f, 4f);
+            // RESPONSIVE, not three fixed columns. The panel is resizable now, and a fixed
+            // column count turns every extra pixel of width into dead space on the right --
+            // which is exactly what it looked like at the shipped size. GridAutoSize derives
+            // the count from the width it is given and stretches the cells to fill the
+            // remainder, so there is no leftover gutter at any size.
+            var (scroll, content, _) = EditorUIHelpers.MakeResponsiveGridPicker(
+                t, "EntityGrid", minCellSize: 64f, maxCellSize: 96f, spacing: 4f);
             var le = scroll.gameObject.AddComponent<LayoutElement>();
             le.flexibleHeight = 1f;
-            le.minHeight      = 240f;
+            le.minHeight      = 160f;
             EditorUIHelpers.AddVerticalScrollbar(scroll);
             refs.PickerContent = content;
 
             refs.StatusText = EditorUIHelpers.MakeStatusText(t);
 
+            BuildPickerResizeHandle(refs.PickerDropdown);
+
             refs.PickerDropdown.SetActive(false);
+        }
+
+        /// <summary>Side of the square drag grip, in canvas pixels.</summary>
+        private const float PICKER_RESIZE_HANDLE_PX = 16f;
+
+        /// <summary>
+        /// The Picker's bottom-right drag grip.
+        ///
+        /// <para><b>BottomRight because the panel is TOP-LEFT pivoted.</b> A rect grows away from
+        /// its pivot and never towards it, so this is the one corner whose drag can change both
+        /// width and height: a bottom-LEFT grip could only move the panel and a top-right one
+        /// only its width.</para>
+        ///
+        /// <para>The minimum is about two cells plus the scrollbar. Narrower and the grid
+        /// collapses to one column while the search box wraps -- a shape nobody wants and one
+        /// the grip can otherwise be dragged into by accident. The size is remembered for free:
+        /// EditorWorkspaceService already captures and restores every DraggablePanel's
+        /// geometry.</para>
+        /// </summary>
+        private static void BuildPickerResizeHandle(GameObject panelRoot)
+        {
+            if (panelRoot == null) return;
+            var panelRt = panelRoot.GetComponent<RectTransform>();
+            if (panelRt == null) return;
+
+            var go = CreateUI("ResizeHandle", panelRoot.transform);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin        = new Vector2(1f, 0f);
+            rt.anchorMax        = new Vector2(1f, 0f);
+            rt.pivot            = new Vector2(1f, 0f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta        = new Vector2(PICKER_RESIZE_HANDLE_PX, PICKER_RESIZE_HANDLE_PX);
+
+            // The glyph mirrors its own MESH rather than being rotated or negatively scaled:
+            // both of those turn the rect about its corner pivot and swing the grip outside
+            // the very panel it resizes.
+            var tri = go.AddComponent<TriangleHandleGraphic>();
+            tri.color = UITheme.BORDER;
+            tri.raycastTarget = true;
+
+            var handle     = go.AddComponent<PanelResizeHandle>();
+            handle.Target  = panelRt;
+            handle.Corner  = ResizeGripCorner.BottomRight;
+            handle.MinSize = new Vector2(200f, 220f);
+            handle.MaxSize = new Vector2(900f, 1200f);
         }
 
         // ── Add/Remove Panel ──────────────────────────────────────────────────────

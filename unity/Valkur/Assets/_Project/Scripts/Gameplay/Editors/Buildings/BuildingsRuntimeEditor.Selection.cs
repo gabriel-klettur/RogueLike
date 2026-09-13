@@ -517,8 +517,8 @@ namespace Valkur.Gameplay.Buildings
             if (delta.sqrMagnitude <= 0.0001f) return true;
 
             ExecutePersistedEdit($"Move {members.Count} buildings",
-                () => PlaceGroup(members, finals, $"Move saved → {members.Count} buildings by ({delta.x:F2}, {delta.y:F2})"),
-                () => PlaceGroup(members, starts, $"Move reverted → {members.Count} buildings"));
+                () => PlaceGroup(members, finals, $"Move saved -> {members.Count} buildings by ({delta.x:F2}, {delta.y:F2})"),
+                () => PlaceGroup(members, starts, $"Move reverted -> {members.Count} buildings"));
             return true;
         }
 

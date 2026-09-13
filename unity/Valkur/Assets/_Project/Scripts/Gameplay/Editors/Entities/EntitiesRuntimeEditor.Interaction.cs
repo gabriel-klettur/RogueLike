@@ -37,6 +37,7 @@ namespace Valkur.Gameplay.Entities
                 if (img != null) img.color = on ? EditorUIHelpers.SLOT_SELECTED : EditorUIHelpers.BTN_NORMAL;
                 if (tmp != null) tmp.color = on ? ACCENT                       : TEXT_PRIMARY;
             }
+            Apply(_ui.AllTabImg,      _ui.AllTabTmp,      _category == EntityCategory.All);
             Apply(_ui.HostilesTabImg, _ui.HostilesTabTmp, _category == EntityCategory.Hostiles);
             Apply(_ui.NeutralsTabImg, _ui.NeutralsTabTmp, _category == EntityCategory.Neutrals);
             Apply(_ui.SpecialsTabImg, _ui.SpecialsTabTmp, _category == EntityCategory.Specials);
@@ -46,14 +47,31 @@ namespace Valkur.Gameplay.Entities
         private void SetMode(EditorMode mode)
         {
             _mode = mode;
+            // An arming that describes the previous gesture is worse than no warning at all.
+            DisarmRename();
             RefreshModeButtons();
+            // The hint under the mode buttons tracks the mode. It used to be one static line
+            // ("Select a mode then click on the map") that was true of every mode and useful
+            // for none.
+            if (_ui.AddRemoveHintText != null)
+                _ui.AddRemoveHintText.text = _mode switch
+                {
+                    EditorMode.Select      => "Click an NPC on the map to select it. Right-drag to move it.",
+                    EditorMode.Spawn       => string.IsNullOrEmpty(_selectedKey)
+                        ? "Pick an entity first, then click the map to place it."
+                        : $"Click the map to place '{_selectedKey}'. Or drag it from the Picker.",
+                    EditorMode.Delete      => "Click an NPC on the map to remove it. Ctrl+Z brings it back.",
+                    EditorMode.AddOnSystem => "Type a key above, then press Confirm to create a new definition.",
+                    _                      => "Select a mode then click on the map.",
+                };
+
             SetStatus(_mode switch
             {
                 EditorMode.Select      => "Select mode. Click an entity on the map.",
                 EditorMode.Spawn       => string.IsNullOrEmpty(_selectedKey)
                     ? "Spawn mode: select an entity in the Picker first."
                     : $"Spawn mode: click on map to place '{_selectedKey}'.",
-                EditorMode.Delete      => "Delete mode: click entity to remove.",
+                EditorMode.Delete      => "Delete mode: click entity to remove. Undoable.",
                 EditorMode.AddOnSystem => "Add-On-System: define new entity (use Confirm to persist).",
                 _                      => ""
             });
@@ -100,7 +118,10 @@ namespace Valkur.Gameplay.Entities
             string filter = _searchFilter?.Trim().ToLowerInvariant() ?? "";
             int shown = 0;
 
-            if (_category == EntityCategory.Players)
+            bool listPlayers = _category == EntityCategory.Players || _category == EntityCategory.All;
+            bool listMonsters = _category != EntityCategory.Players;
+
+            if (listPlayers)
             {
                 foreach (var preset in PlayerClassCatalog.AllPresets)
                 {
@@ -112,7 +133,7 @@ namespace Valkur.Gameplay.Entities
                     AddPickerSlot(name, key, isPlayer: true, sprite: playerIcon, tint: Color.white);
                 }
             }
-            else if (_monsterCatalog != null)
+            if (listMonsters && _monsterCatalog != null)
             {
                 foreach (var def in _monsterCatalog.Definitions)
                 {
@@ -133,6 +154,7 @@ namespace Valkur.Gameplay.Entities
 
             string label = _category switch
             {
+                EntityCategory.All      => "entities",
                 EntityCategory.Hostiles => "hostiles",
                 EntityCategory.Neutrals => "neutrals",
                 EntityCategory.Specials => "specials",
@@ -151,21 +173,55 @@ namespace Valkur.Gameplay.Entities
                 || (key  ?? "").ToLowerInvariant().Contains(filter);
         }
 
+        /// <summary>
+        /// Which tab an entity belongs to, from its AUTHORED DATA.
+        ///
+        /// <para><b>It used to be a string search over <c>monsterKey</c></b> — for "boss",
+        /// "vendor", "guard", "civilian" — with a comment calling itself provisional. Measured
+        /// over the 28 shipped definitions it misfiled one:
+        /// <c>barbol_brother_felipondor</c> authors <c>faction: NEUTRAL</c> and landed in
+        /// Hostiles because his key contains none of the words. The tab said he was something
+        /// the game does not think he is.</para>
+        ///
+        /// <para><c>stats.faction</c> is no longer inert: since the AI audit, <c>EntityFaction</c>
+        /// reads it to decide who fights whom, who drops loot and who is untouchable. A tab that
+        /// sorts by the NAME while the game sorts by the FIELD is two answers to one question,
+        /// and the one the player experiences is the field.</para>
+        ///
+        /// <para><c>bossDefinition</c> — an object reference, not a substring — is what makes
+        /// something Special, and it outranks the faction: a boss is a boss whichever side it is
+        /// on, and that is the tab an author goes looking for it in.</para>
+        /// </summary>
         private static bool MatchesCategory(MonsterDefinition def, EntityCategory cat)
         {
-            // Heuristic until Python neutrals/specials JSONs are imported.
-            string k = (def.monsterKey ?? "").ToLowerInvariant();
-            bool isSpecial  = k.Contains("boss") || k.Contains("special");
-            bool isNeutral  = k.Contains("neutral")
-                           || k.Contains("merchant") || k.Contains("vendor")
-                           || k.Contains("guard")    || k.Contains("civilian");
+            if (def == null) return false;
+            if (cat == EntityCategory.All) return true;
+
+            bool isSpecial = def.bossDefinition != null;
+            bool isNeutral = !isSpecial && IsNeutralFaction(def.stats.faction);
+
             return cat switch
             {
                 EntityCategory.Specials => isSpecial,
-                EntityCategory.Neutrals => isNeutral && !isSpecial,
+                EntityCategory.Neutrals => isNeutral,
                 EntityCategory.Hostiles => !isSpecial && !isNeutral,
                 _                       => false
             };
+        }
+
+        /// <summary>
+        /// Whether an authored faction string means "does not fight".
+        ///
+        /// <para>Compared case-insensitively and against the two spellings the shipped data uses,
+        /// because the field is free text that was imported from Python: an unrecognised value
+        /// reads as hostile, which is the failure that is VISIBLE (a vendor in the wrong tab)
+        /// rather than the one that hides a monster from every tab.</para>
+        /// </summary>
+        private static bool IsNeutralFaction(string faction)
+        {
+            if (string.IsNullOrWhiteSpace(faction)) return false;
+            string f = faction.Trim().ToLowerInvariant();
+            return f == "neutral" || f == "friendly" || f == "ally" || f == "allied";
         }
 
         private void AddPickerSlot(string name, string key, bool isPlayer, Sprite sprite, Color tint)
@@ -176,10 +232,57 @@ namespace Valkur.Gameplay.Entities
 
             if (sprite != null) { icon.sprite = sprite; icon.enabled = true; }
             icon.color = tint;
-            label.text = TruncateName(name, 9);
 
+            // THE WIDGET DECIDES HOW MUCH FITS, not a character count written here.
+            //
+            // This used to be TruncateName(name, 9), dropping to 7 when the slot also carried
+            // its placed count -- and measured against the shipped catalogue that is not a
+            // shortening, it is a COLLISION: 20 of the 28 names are longer than 9, and at 7 the
+            // eleven barbols all render as 'Barbol...'. Four pairs were pixel-identical on
+            // screen at once (Baby/Boss, Gigante/Gris, Morado/Musgo, Cyan/Coloso).
+            //
+            // And the room was already there: the label rect measures 66 px and TMP reports
+            // 'Barbol Gigante' at 60. Ellipsis-on-overflow spends exactly the width available,
+            // so widening the panel -- which its resize grip now allows -- reveals more of the
+            // name instead of changing nothing.
+            label.text               = name;
+            label.enableWordWrapping = false;
+            label.overflowMode       = TextOverflowModes.Ellipsis;
+            label.enableAutoSizing   = true;
+            label.fontSizeMin        = 7f;
+            label.fontSizeMax        = 9f;
+
+            // How many of this one are ALREADY on the map. The panel that chooses what to put
+            // down said nothing about what is down -- so an author placing a second boss, or
+            // hunting the one they placed an hour ago, had the map and only the map to go on.
+            int placed = isPlayer ? 0 : CountPlacedInstances(key);
+            if (placed > 0)
+                EntitiesEditorUIBuilder.MakeSlotCountBadge(btn.transform).text = "x" + placed;
+
+            // Through SetSlotTint, never btn.GetComponent<Image>().color. A slot is a
+            // Selectable on ColorTint: its CanvasRenderer colour MULTIPLIES with the Graphic's,
+            // and Unity rewrites it from colors.normalColor on every transition -- a pointer
+            // entering or leaving, an enable, any CanvasGroup change up the panel. Written
+            // directly, the selection rendered as written x normalColor (darker than either)
+            // and reverted to flat SLOT_BG seconds later. UIButton.SetTint documents the
+            // measured arithmetic; this call site was the last one in the editor still
+            // bypassing it.
             if (key == _selectedKey)
-                btn.GetComponent<Image>().color = EditorUIHelpers.SLOT_SELECTED;
+                EditorUIHelpers.SetSlotTint(btn, EditorUIHelpers.SLOT_SELECTED);
+            else if (placed > 0)
+                // Dimmer than the selection and brighter than a resting slot: "this exists in
+                // the world" is a weaker statement than "this is what you are editing", and a
+                // marker as loud as the selection makes the selection unreadable.
+                EditorUIHelpers.SetSlotTint(btn, UITheme.SLOT_HOVER);
+
+            // The full name, the key, and what is placed -- in the status line, restored on
+            // exit. An ellipsised label needs SOMEWHERE to say the rest, and this editor had no
+            // tooltip of any kind; UIHoverText already handles the case that makes a naive one
+            // wrong here, which is a row destroyed while hovered (the picker rebuilds its slots
+            // on every keystroke of the search box, so that is the normal case, not an edge).
+            UIHoverText.Attach(btn.gameObject, _ui.StatusText,
+                placed > 0 ? $"{name}  ({key})  —  {placed} on the map"
+                           : $"{name}  ({key})");
 
             // Drag-from-picker (Buildings parity): LMB-pressing the slot starts a
             // drag; releasing over the map spawns the entity at that point.
@@ -202,12 +305,64 @@ namespace Valkur.Gameplay.Entities
         /// configured" and is promoted to white so the icon renders normally. Alpha
         /// is always forced to 1 because the icon must remain fully opaque.
         /// </summary>
+        /// <summary>
+        /// The tint a picker icon is drawn with — which is NOT the tint the entity wears.
+        ///
+        /// <para><b>A picker slot identifies, it does not preview.</b> Seven shipped entities
+        /// author a tint dark enough to be invisible on this panel: the six Dark twins at
+        /// exactly (0,0,0) and <c>barbol_oscuro</c> at 0.12, against a surface of 0.13. Drawn
+        /// faithfully they are seven black squares with a truncated label under them, which is
+        /// the one thing a picker may not be — and it is not a rendering bug, it is the roster
+        /// being a silhouette roster and the panel repeating it.</para>
+        ///
+        /// <para>So a too-dark tint is lifted in HSV, keeping hue and saturation: a red-tinted
+        /// monster still reads red, and a pure black one becomes grey — the honest answer for
+        /// art whose whole identity is "no colour". Value is raised rather than the channels
+        /// multiplied up, because multiplying a near-black colour keeps it near-black and
+        /// scaling the channels independently drifts the hue.</para>
+        ///
+        /// <para>Lifting to a fixed VALUE is the version that looks right and is not: value and
+        /// luminance are not the same thing, so a saturated dark hue comes back still unreadable
+        /// while a grey clears easily. It solves for the value that reaches the luminance.</para>
+        /// </summary>
         private static Color NormalizeTint(Color c)
         {
+            // (0,0,0,0) is the "nobody authored one" sentinel, the same shape scaleConfig.tint
+            // carries everywhere else. An alpha-zero black is an UNTINTED entity, not a black one.
             if (c.a <= 0f && c.r == 0f && c.g == 0f && c.b == 0f)
                 return Color.white;
-            return new Color(c.r, c.g, c.b, 1f);
+
+            var opaque = new Color(c.r, c.g, c.b, 1f);
+
+            // Rec. 709, the same weighting the world bars' contrast check uses, so "too dark"
+            // means the same thing in both places.
+            float luminance = 0.2126f * opaque.r + 0.7152f * opaque.g + 0.0722f * opaque.b;
+            if (luminance >= PICKER_ICON_MIN_LUMINANCE) return opaque;
+
+            Color.RGBToHSV(opaque, out float h, out float sat, out float _);
+
+            // Lifted until the LUMINANCE reaches the floor, not until VALUE reaches a constant.
+            // HSVToRGB scales linearly with V, so the luminance at full value says exactly how
+            // far it has to go -- and a fixed V is wrong for a saturated hue: a dark red at
+            // V = 0.62 is still luminance 0.13, right back on the surface it had to clear.
+            Color full = Color.HSVToRGB(h, sat, 1f);
+            float fullLuminance = 0.2126f * full.r + 0.7152f * full.g + 0.0722f * full.b;
+            float value = fullLuminance > 0.0001f
+                ? Mathf.Clamp01(PICKER_ICON_MIN_LUMINANCE / fullLuminance)
+                : 1f;
+
+            var lifted = Color.HSVToRGB(h, sat, value);
+            lifted.a = 1f;
+            return lifted;
         }
+
+        /// <summary>
+        /// Below this an icon stops being readable on the panel's own surface (0.13).
+        ///
+        /// <para>Rec. 709, the same weighting the world bars' contrast check uses, so "too dark"
+        /// means the same thing in both places.</para>
+        /// </summary>
+        private const float PICKER_ICON_MIN_LUMINANCE = 0.25f;
 
         /// <summary>
         /// Total frames across every "Sprite Sheet Mode" list on a config. All EIGHT lists
@@ -341,6 +496,7 @@ namespace Valkur.Gameplay.Entities
         {
             _selectedKey      = key;
             _selectedIsPlayer = false;
+            DisarmRename();
             RefreshPicker();
             ShowMonsterProperties(key);
             NotifyAnimationSelectionChanged();
@@ -495,14 +651,18 @@ namespace Valkur.Gameplay.Entities
         {
             if (def == null) return;
 
-#if UNITY_EDITOR
-            // SetDirty alone, never Undo.RecordObject: a bulk editor that records to
-            // the GLOBAL undo stack is what silently reverted 193 building templates
-            // in memory the first time anything popped it.
-            UnityEditor.EditorUtility.SetDirty(def);
-#endif
+            // SetDirty alone, never Undo.RecordObject: a bulk editor that records to the GLOBAL
+            // undo stack is what silently reverted 193 building templates in memory the first
+            // time anything popped it. MarkDirty also remembers WHICH assets this editor
+            // touched, so Save writes those and not the whole project.
+            MarkDirty(def);
+
+            // One seam, so every mutation in this editor is undoable: stats, the auto-cast
+            // list, the timeline, the spell muzzle, the rename. Before this, Record was called
+            // from exactly one place and Ctrl+Z gave back the last entity DRAG.
+            RecordDefinitionUndo(def, label);
+
             int live = ReapplyToLiveMonsters(def);
-            _pendingAssetWrites = true;
             SetStatus(live > 0
                 ? $"{label} updated — {live} live {def.monsterKey} reconfigured. Save to write the asset."
                 : $"{label} updated. Save to write the asset.");
@@ -536,12 +696,21 @@ namespace Valkur.Gameplay.Entities
             var def = _monsterCatalog.GetByKey(key);
             if (def == null) { ShowPropsHint($"Entity '{key}' not found."); return; }
 
+            // Seeded HERE, where a definition is resolved for DISPLAY, because that is the last
+            // moment before an edit becomes possible. Seeding in CurrentEditableMonster was not
+            // enough and it failed exactly as this file's own comment warned: the stat rows
+            // capture `def` directly and never call it, so the FIRST change to each definition
+            // recorded nothing. Measured -- three edits, two undo steps, and the HP never came
+            // back.
+            SeedDefinitionSnapshot(def);
+
             ResolveSpellCatalogFallback();
             HidePropsHint();
             var s = def.stats;
 
             EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsIdentitySection, "Key",  def.monsterKey);
             EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsIdentitySection, "Name", def.displayName);
+            FillPlacementSection();
 
             // The stats a designer actually tunes are editable and write straight back
             // to the .asset; the rest stay labels. `power` is deliberately NOT editable —
@@ -621,9 +790,16 @@ namespace Valkur.Gameplay.Entities
             EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAssetsSection, "Idle Sprite",
                 idleSprite != null ? idleSprite.name : "\u2014");
 
+            // The three blocks the panel used not to have. Filled last so they sit under the
+            // ones an author reaches for most, and so the existing order does not move.
+            FillExtraStats(def);
+            FillAITuningSection(def);
+            FillRewardSection(def);
+
             // Show "Open Boss Editor →" button when the monster has a BossDefinition.
             UpdateBossHandoffButton(key);
 
+            ApplyPropsFilter();
             SetStatus($"Selected: {def.displayName ?? key}");
         }
 
@@ -689,6 +865,8 @@ namespace Valkur.Gameplay.Entities
             }
 
             if (_ui.BossHandoffBtnGo != null) _ui.BossHandoffBtnGo.SetActive(false);
+
+            ApplyPropsFilter();
             SetStatus($"Selected: {p.DisplayName ?? key}");
         }
 
@@ -699,6 +877,8 @@ namespace Valkur.Gameplay.Entities
             EntitiesEditorUIBuilder.ClearSection(_ui.PropsAISection);
             EntitiesEditorUIBuilder.ClearSection(_ui.PropsSpawnSection);
             EntitiesEditorUIBuilder.ClearSection(_ui.PropsAutoCastSection);
+            EntitiesEditorUIBuilder.ClearSection(_ui.PropsAITuningSection);
+            EntitiesEditorUIBuilder.ClearSection(_ui.PropsRewardSection);
             EntitiesEditorUIBuilder.ClearSection(_ui.PropsAssetsSection);
         }
 
@@ -763,13 +943,21 @@ namespace Valkur.Gameplay.Entities
             var hit = Physics2D.OverlapCircle(worldPos, 0.5f, LayerMask.GetMask("NPC"));
             if (hit != null)
             {
-                SetStatus($"Deleted {hit.gameObject.name}");
-                Debug.Log($"[EntitiesEditor] Deleted {hit.gameObject.name}");
-                // Deleting a placement has to reach the saved file too, or it comes back on
-                // the next Stop/Play the same way it would if it had never been removed.
-                bool wasPlacedEntity = hit.GetComponent<PersistedEntityInstance>() != null;
-                Destroy(hit.gameObject);
-                if (wasPlacedEntity) MarkEntityPlacementsDirty();
+                // Recorded BEFORE the destroy: afterwards there is no object left to read the
+                // key and the position off, and those two are the whole of what a restore needs.
+                var placement = hit.GetComponent<PersistedEntityInstance>();
+                if (placement != null && placement.IsDefeated) placement = null;   // a corpse
+                if (placement != null) RecordPlacementDeleted(placement);
+
+                SetStatus(placement != null
+                    ? $"Deleted {hit.gameObject.name} — Ctrl+Z to bring it back."
+                    : $"Deleted {hit.gameObject.name}");
+
+                // A placement goes through the service, which takes it out of the saved file
+                // too; otherwise it would come back on the next Play. Anything else (a spawner's
+                // monster, a corpse) is just a GameObject.
+                if (placement != null) { PlacedEntities.Remove(placement.PlacementId); RefreshPicker(); }
+                else                   Destroy(hit.gameObject);
             }
             else
             {
@@ -793,10 +981,9 @@ namespace Valkur.Gameplay.Entities
             }
         }
 
-        private static string TruncateName(string name, int max)
-        {
-            if (string.IsNullOrEmpty(name)) return "";
-            return name.Length <= max ? name : name.Substring(0, max - 1) + "\u2026";
-        }
+        // TruncateName is deliberately GONE rather than left unused: a helper that cuts a
+        // label to a hand-written character count is the defect itself, and leaving it here is
+        // leaving the next slot builder something convenient and wrong to reach for. TMP's
+        // TextOverflowModes.Ellipsis spends the width the widget actually has.
     }
 }

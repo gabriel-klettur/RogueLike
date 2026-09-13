@@ -2572,6 +2572,109 @@
                     "isPartOfComposite": false
                 }
             ]
+        },
+        {
+            "name": "Editor.Entities",
+            "id": "8f9d348c-2111-4826-98f8-b8d7970bf2b4",
+            "actions": [
+                {
+                    "name": "NudgeUp",
+                    "type": "Button",
+                    "id": "d53091d2-f4b7-40a0-af5c-85573f81e4b6",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "NudgeDown",
+                    "type": "Button",
+                    "id": "ba8202e8-4f7c-467b-b3b7-452a93254351",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "NudgeLeft",
+                    "type": "Button",
+                    "id": "07d1276a-f22f-4d90-9d90-c2f8b70a4742",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "NudgeRight",
+                    "type": "Button",
+                    "id": "41963723-ff8c-475a-96cb-72bc7e8d4175",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "ToggleSnap",
+                    "type": "Button",
+                    "id": "e71b88fa-3a16-4c47-90b0-0a6ed403ff66",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "02f3aa53-4ac8-426c-91ca-c429e9200459",
+                    "path": "<Keyboard>/upArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "NudgeUp",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "23a3bad3-8003-47e5-82af-4de9808cae5f",
+                    "path": "<Keyboard>/downArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "NudgeDown",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "6d4cacf1-7922-4de9-9ecb-1a232e269d91",
+                    "path": "<Keyboard>/leftArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "NudgeLeft",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f39bfc35-4400-4208-a9ac-462cd822ca38",
+                    "path": "<Keyboard>/rightArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "NudgeRight",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "affad58c-6384-4adb-9684-323250bddedb",
+                    "path": "<Keyboard>/g",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleSnap",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
         }
     ],
     "controlSchemes": [

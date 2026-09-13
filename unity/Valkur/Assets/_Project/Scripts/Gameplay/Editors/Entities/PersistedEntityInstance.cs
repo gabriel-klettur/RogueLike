@@ -32,6 +32,16 @@ namespace Valkur.Gameplay.Entities
         public string PlacementId => _placementId;
         public string MonsterKey  => _monsterKey;
 
+        /// <summary>
+        /// True once this instance has been killed. Its corpse lingers for the FSM's despawn window
+        /// still carrying this component, and from the moment of death it is a body rather than the
+        /// placement: the editor cannot select it as one, and the NPC respawn system must not queue
+        /// an unmarked copy of it — <see cref="PlacedEntityService"/> owns when it comes back.
+        /// </summary>
+        public bool IsDefeated { get; private set; }
+
+        internal void MarkDefeated() => IsDefeated = true;
+
         /// <summary>Sets the identity fields. <paramref name="placementId"/> empty/null mints a
         /// fresh id — the path a brand-new placement takes; a non-empty id is what a boot-time
         /// reload passes to keep the same record instead of minting a new one every session.</summary>

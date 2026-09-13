@@ -242,5 +242,43 @@ namespace Valkur.Gameplay.Entities
             }
             return img;
         }
+
+        /// <summary>
+        /// The "N of these are on the map" badge, in a picker slot's top-right corner.
+        ///
+        /// <para><b>It is a corner badge and not part of the label because the label has no
+        /// characters to spare.</b> The count used to be appended to the name, which forced the
+        /// name's budget down from 9 characters to 7 — and measured on the shipped catalogue
+        /// that turned eleven distinct barbols into eleven slots reading <c>Barbol…</c>. A
+        /// count and a name are two facts; sharing one string makes the cheaper one evict the
+        /// one the author is actually reading.</para>
+        /// </summary>
+        internal static TextMeshProUGUI MakeSlotCountBadge(Transform slot)
+        {
+            var go = CreateUI("CountBadge", slot);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin        = new Vector2(1f, 1f);
+            rt.anchorMax        = new Vector2(1f, 1f);
+            rt.pivot            = new Vector2(1f, 1f);
+            rt.sizeDelta        = new Vector2(18f, 12f);
+            rt.anchoredPosition = new Vector2(-1f, -1f);
+
+            var bg          = go.AddComponent<Image>();
+            bg.color        = UITheme.BG_SURFACE;
+            bg.raycastTarget = false;
+
+            var tmp             = CreateUI("Count", go.transform).AddComponent<TextMeshProUGUI>();
+            var trt             = tmp.GetComponent<RectTransform>();
+            trt.anchorMin       = Vector2.zero;
+            trt.anchorMax       = Vector2.one;
+            trt.sizeDelta       = Vector2.zero;
+            tmp.fontSize        = 8f;
+            tmp.fontStyle       = FontStyles.Bold;
+            tmp.color           = UITheme.ACCENT;
+            tmp.alignment       = TextAlignmentOptions.Center;
+            tmp.raycastTarget   = false;
+            tmp.enableWordWrapping = false;
+            return tmp;
+        }
     }
 }

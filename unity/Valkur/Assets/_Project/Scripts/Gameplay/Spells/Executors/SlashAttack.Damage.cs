@@ -68,8 +68,16 @@ namespace Valkur.Gameplay.Spells
         private void AdvanceAngularDamage(float eased)
         {
             float headAngle = Mathf.Lerp(-_profile.HalfArc, _profile.HalfArc, eased);
-            var hits = Physics2D.OverlapCircleAll(transform.position, _profile.Radius,
-                                                  _context.TargetLayers);
+            // The SECTOR is what this swing can reach; the circle is only the broad phase that
+            // IsInsideSector then narrows. Recording the circle alone would draw an area up to
+            // six times the swing on a thrust, which is the legacy slash defect this path was
+            // written to remove.
+            Debugging.SpellDebugAreas.Sector(transform.position, _direction, _profile.Radius,
+                _profile.ArcDegrees, Debugging.SpellDebugRole.Damage,
+                "tajo " + _profile.Radius.ToString("0.##") + " u / " + _profile.ArcDegrees.ToString("0") + " grados");
+            var hits = Debugging.SpellProbe.OverlapCircleAll(transform.position, _profile.Radius,
+                                                  _context.TargetLayers,
+                                                  Debugging.SpellDebugRole.Reach, "fase amplia");
 
             for (int i = 0; i < hits.Length; i++)
             {
@@ -95,7 +103,11 @@ namespace Valkur.Gameplay.Spells
         private void AdvanceRadialDamage(float eased)
         {
             float reach = Mathf.Lerp(SlashLanceMesh.RADIAL_START, 1f, eased) * _profile.Radius;
-            var hits = Physics2D.OverlapCircleAll(transform.position, reach, _context.TargetLayers);
+            Debugging.SpellDebugAreas.Sector(transform.position, _direction, reach,
+                _profile.ArcDegrees, Debugging.SpellDebugRole.Damage,
+                "punta " + reach.ToString("0.##") + " u");
+            var hits = Debugging.SpellProbe.OverlapCircleAll(transform.position, reach, _context.TargetLayers,
+                Debugging.SpellDebugRole.Reach, null);
 
             for (int i = 0; i < hits.Length; i++)
             {
@@ -200,7 +212,11 @@ namespace Valkur.Gameplay.Spells
             _hitCount++;
             if (_hitCount > 1) return;
 
-            ServiceLocator.Get<IAudioService>()?.PlaySfxById("spell_slash_hit");
+            // Gated on HasSfx. AudioCatalog ships no spell_* id at all, so an ungated call here is
+            // one console warning per id on the first swing of every session -- and a spell without
+            // a sound is missing content, not a data bug. See IAudioService.HasSfx.
+            var audioSvc = ServiceLocator.Get<IAudioService>();
+            if (audioSvc != null && audioSvc.HasSfx("spell_slash_hit")) audioSvc.PlaySfxById("spell_slash_hit");
 
             // Camera and hit-stop are the director's now: it owns the audience filter, the
             // rate limiting and the trauma budget in one place, so no call site can forget

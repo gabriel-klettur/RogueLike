@@ -113,8 +113,8 @@ namespace Valkur.Gameplay.Spells
                 bool on = CastFlourishPieces.IsOn(resolved, piece);
                 bool gatePinned = !piece.IsLocked && overrides.Has(piece.GateKnob);
 
-                AddSectionHeader(form, "── " + piece.Section.ToUpperInvariant() +
-                                       (piece.IsLocked ? " (locked)" : "") + " ──");
+                AddSectionHeader(form, "-- " + piece.Section.ToUpperInvariant() +
+                                       (piece.IsLocked ? " (locked)" : "") + " --");
 
                 if (!piece.IsLocked)
                     form.AddBool(GATHER_SECTION_PREFIX + piece.Section,

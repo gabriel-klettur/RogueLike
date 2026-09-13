@@ -113,7 +113,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             // every call (`_setsRoot["sets"] = rawSets` with a freshly built list), so a
             // captured reference would silently go stale the moment any OTHER save happens
             // between this Do() and a later Undo()/Redo() of it.
-            _undo.Do($"Clone set → '{newId}'",
+            _undo.Do($"Clone set -> '{newId}'",
                 doAction: () =>
                 {
                     RawSets().Add(copyRaw);
@@ -137,7 +137,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                     RefreshGraph();
                     RefreshProperties();
                 });
-            SetStatus($"Cloned → {newId}");
+            SetStatus($"Cloned -> {newId}");
         }
 
         // ── Delete (with confirmation modal) ─────────────────────────────────────

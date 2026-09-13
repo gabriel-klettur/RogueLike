@@ -214,7 +214,14 @@ namespace Valkur.Gameplay.Spells
 
             // NonAlloc: this runs five times a second for as long as the breath lasts, and
             // OverlapCircleAll hands back a fresh array every one of them.
-            int count = Physics2D.OverlapCircleNonAlloc(origin, _length, _hitBuffer, _targetLayers);
+            // The circle is only the BROAD PHASE -- InsideCone does the real test, so the
+            // circle alone would draw an area four times what this spell can touch. Both are
+            // recorded, and the wedge is the one marked as damage.
+            Debugging.SpellDebugAreas.Sector(origin, _direction, _length, _arc,
+                Debugging.SpellDebugRole.Damage,
+                "cono " + _length.ToString("0.##") + " u / " + _arc.ToString("0") + " grados");
+            int count = Debugging.SpellProbe.OverlapCircleNonAlloc(origin, _length, _hitBuffer, _targetLayers,
+                Debugging.SpellDebugRole.Reach, "fase amplia");
             for (int i = 0; i < count; i++)
             {
                 var hit = _hitBuffer[i];

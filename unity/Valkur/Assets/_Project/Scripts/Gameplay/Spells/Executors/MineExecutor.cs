@@ -15,8 +15,14 @@ namespace Valkur.Gameplay.Spells
         {
             Vector2 pos = ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell);
             float armingTime = ctx.Spell.armingTime > 0 ? ctx.Spell.armingTime : 0.5f;
-            float triggerRadius = ctx.Spell.triggerRadius > 0 ? ctx.Spell.triggerRadius / 16f : 3.75f;
-            float explosionRadius = ctx.Spell.explosionRadius > 0 ? ctx.Spell.explosionRadius / 16f : 8.75f;
+            // WORLD UNITS, for the reason MeteorExecutor now states at length: the divide by 16
+            // is the Python pixel scale and the fallbacks (3.75 and 8.75 WORLD units) were
+            // sixteen times what any authored value could reach. Shipped mine_basic authored
+            // 3.75 / 8.75, which resolved to a trigger of 0.23 u and a blast of 0.55 u -- a
+            // trap the player had to stand almost exactly on top of, under a ring drawn at a
+            // constant 0.6 u that said nothing about either.
+            float triggerRadius = ctx.Spell.triggerRadius > 0 ? ctx.Spell.triggerRadius : 1.5f;
+            float explosionRadius = ctx.Spell.explosionRadius > 0 ? ctx.Spell.explosionRadius : 2.75f;
             float explosionDamage = SpellPower.Scale(
                 ctx.Spell.explosionDamage > 0 ? ctx.Spell.explosionDamage : ctx.Spell.damage,
                 ctx.Caster);

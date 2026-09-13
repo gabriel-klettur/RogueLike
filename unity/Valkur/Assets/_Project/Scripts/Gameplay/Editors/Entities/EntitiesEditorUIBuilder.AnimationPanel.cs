@@ -55,7 +55,9 @@ namespace Valkur.Gameplay.Entities
             Action onToggleReverse, Action<int> onStripCell,
             Action<string> onEntitySpeed, Action<string> onStateSpeed,
             Action<string> onVariantSpeed, Action<bool> onHoldLastFrame,
-            Action<int> onLayoutChanged)
+            Action<int> onLayoutChanged,
+            Action onToggleMuzzle, Action<int> onMuzzleScope, Action<int> onMuzzleSpell,
+            Action onMuzzleClear)
         {
             // Docked to the right of the picker column rather than to a screen corner: both
             // corners are taken (Tools/Categories/Picker on the left, Properties and
@@ -125,6 +127,9 @@ namespace Valkur.Gameplay.Entities
             BuildPacingEditors(t, ref refs, onEntitySpeed, onStateSpeed, onVariantSpeed,
                                onHoldLastFrame, onLayoutChanged);
 
+            BuildMuzzleEditor(t, ref refs, onToggleMuzzle, onMuzzleScope, onMuzzleSpell,
+                              onMuzzleClear);
+
             // Info line — what the preview cannot show by moving: the resolved art, the
             // fallback it landed on, the pacing. Filled from Phase 3 onwards.
             var infoGo = CreateUI("AnimInfo", t);
@@ -148,6 +153,60 @@ namespace Valkur.Gameplay.Entities
         /// them. The entity-wide dial is repeated here for the same reason — the three
         /// multiply, and a designer moving one needs to see the other two.</para>
         /// </summary>
+        /// <summary>
+        /// The muzzle picker: where a spell is BORN on this creature's art.
+        ///
+        /// <para>It lives in this panel and not in Properties because the answer depends on the
+        /// FRAME on screen. A muzzle is a fraction of the drawn sprite's own bounds, and every
+        /// sheet is trimmed to its own alpha -- so "0.8 forward" is a different place on the
+        /// idle and on the cast, and the only screen that can show which is the one already
+        /// drawing the frame, paused, with a ground line under it.</para>
+        ///
+        /// <para>The SCOPE is the whole design. An author says "the dragon breathes from its
+        /// mouth" about an ANIMATION, not about thirty frames, so the default scope is the
+        /// state and variant currently selected. Per-spell exists for the one case an animation
+        /// cannot separate: two spells cast from the same pose, one from the hand and one from
+        /// the staff tip.</para>
+        /// </summary>
+        private static void BuildMuzzleEditor(Transform parent, ref UIRefs refs,
+            Action onToggle, Action<int> onScope, Action<int> onSpell, Action onClear)
+        {
+            var header = CreateUI("AnimMuzzleHeader", parent);
+            header.AddComponent<LayoutElement>().preferredHeight = 16f;
+            var headerTmp       = header.AddComponent<TextMeshProUGUI>();
+            headerTmp.text      = "ORIGEN DEL HECHIZO";
+            headerTmp.fontSize  = 10f;
+            headerTmp.fontStyle = FontStyles.Bold;
+            headerTmp.color     = ACCENT;
+            headerTmp.alignment = TextAlignmentOptions.MidlineLeft;
+
+            var row = CreateUI("AnimMuzzleRow", parent);
+            row.AddComponent<LayoutElement>().preferredHeight = 20f;
+            var hlg = row.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing                = 6f;
+            hlg.childForceExpandWidth  = true;
+            hlg.childForceExpandHeight = true;
+            hlg.childControlWidth      = true;
+            hlg.childControlHeight     = true;
+
+            refs.AnimMuzzleBtnImg = AddActionBtn(row.transform, "Colocar", 20f, onToggle,
+                                                 out refs.AnimMuzzleBtnTmp);
+            refs.AnimMuzzleClearImg = AddActionBtn(row.transform, "Borrar", 20f, onClear,
+                                                   out refs.AnimMuzzleClearTmp);
+
+            refs.AnimMuzzleScopeDd = AddLabeledDropdown(parent, "Ambito", onScope);
+            refs.AnimMuzzleSpellDd = AddLabeledDropdown(parent, "Hechizo", onSpell);
+
+            var readoutGo = CreateUI("AnimMuzzleReadout", parent);
+            readoutGo.AddComponent<LayoutElement>().preferredHeight = 26f;
+            refs.AnimMuzzleReadout                    = readoutGo.AddComponent<TextMeshProUGUI>();
+            refs.AnimMuzzleReadout.text               = "";
+            refs.AnimMuzzleReadout.fontSize           = 9f;
+            refs.AnimMuzzleReadout.color              = TEXT_SECONDARY;
+            refs.AnimMuzzleReadout.alignment          = TextAlignmentOptions.TopLeft;
+            refs.AnimMuzzleReadout.enableWordWrapping = true;
+        }
+
         private static void BuildPacingEditors(Transform parent, ref UIRefs refs,
             Action<string> onEntitySpeed, Action<string> onStateSpeed,
             Action<string> onVariantSpeed, Action<bool> onHoldLastFrame,

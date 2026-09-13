@@ -207,7 +207,8 @@ namespace Valkur.Gameplay.Spells
         {
             if (strength <= 0f) return;
 
-            var hits = Physics2D.OverlapCircleAll(transform.position, _radius, _targetLayers);
+            var hits = Debugging.SpellProbe.OverlapCircleAll(transform.position, _radius, _targetLayers,
+                Debugging.SpellDebugRole.Damage, "vortice " + _radius.ToString("0.##") + " u");
             Vector2 centre = transform.position;
             float maxSpeed = _isPull ? MAX_DRAGGED_SPEED : MAX_SHOVED_SPEED;
 

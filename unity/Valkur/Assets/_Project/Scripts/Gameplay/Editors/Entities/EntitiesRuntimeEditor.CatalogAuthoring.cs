@@ -178,7 +178,7 @@ namespace Valkur.Gameplay.Entities
 
             _pendingKeyInput = "";
             SelectEntity(newKey);
-            SetStatus($"Duplicated '{source.monsterKey}' → '{newKey}'. Retune it in Properties.");
+            SetStatus($"Duplicated '{source.monsterKey}' -> '{newKey}'. Retune it in Properties.");
             return clone;
 #else
             SetStatus("Duplicate is Editor-only — a built game cannot create .asset files.");
@@ -259,7 +259,7 @@ namespace Valkur.Gameplay.Entities
             _selectedKey = newKey;
             RefreshPicker();
             ShowMonsterProperties(newKey);
-            SetStatus($"Renamed '{oldKey}' → '{newKey}'.");
+            SetStatus($"Renamed '{oldKey}' -> '{newKey}'.");
             return true;
 #else
             SetStatus("Rename is Editor-only — a built game cannot rewrite .asset files.");

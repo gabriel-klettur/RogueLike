@@ -154,7 +154,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             };
             var set = _selectedSet;
 
-            _undo.Do($"Clone node → '{newId}'",
+            _undo.Do($"Clone node -> '{newId}'",
                 doAction: () =>
                 {
                     set.states.Add(node);
@@ -171,7 +171,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                     RefreshGraph();
                     RefreshProperties();
                 });
-            SetStatus($"Cloned → '{newId}'");
+            SetStatus($"Cloned -> '{newId}'");
         }
 
         private void DeleteNode(FSMStateNode node)
@@ -220,7 +220,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             int idx = set.transitions.IndexOf(tr);
             bool wasSelected = ReferenceEquals(_selectedTransition, tr);
 
-            _undo.Do($"Delete edge {tr.from}→{tr.to}",
+            _undo.Do($"Delete edge {tr.from}->{tr.to}",
                 doAction: () =>
                 {
                     set.transitions.Remove(tr);
@@ -238,7 +238,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                     RefreshGraph();
                     RefreshProperties();
                 });
-            SetStatus($"Deleted edge {tr.from}→{tr.to}");
+            SetStatus($"Deleted edge {tr.from}->{tr.to}");
         }
 
         /// <summary>
@@ -271,7 +271,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                 // "applicable" already requires being IN that exact state, so the edge is
                 // dead by construction, not merely low-value. The Any State node is the
                 // supported way to wire a transition that fires from every OTHER state.
-                SetStatus($"Cancelled — a self-transition ('{from}' → '{from}') can never fire " +
+                SetStatus($"Cancelled — a self-transition ('{from}' -> '{from}') can never fire " +
                                        "(StateMachine.TryTakeAuthoredTransition skips To == current state). " +
                                        "Use the Any State (*) node instead.");
                 return;
@@ -296,7 +296,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                     whenEvent = "", label = "",
                 };
 
-                _undo.Do($"Connect {from}→{to}",
+                _undo.Do($"Connect {from}->{to}",
                     doAction: () =>
                     {
                         set.transitions.Add(tr);
@@ -319,7 +319,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                 // fires on its first eligible frame with no hint that it did. Creation is
                 // deliberately NOT blocked — an unconditional edge is legitimate — only the
                 // surprise is removed.
-                SetStatus($"Connected {from}→{to} — UNCONDITIONAL until a condition is " +
+                SetStatus($"Connected {from}->{to} — UNCONDITIONAL until a condition is " +
                                        "typed: an edge with no guard fires on its first eligible " +
                                        $"frame in '{from}'. Add one in the Transition tab, or leave " +
                                        "it empty on purpose.");
@@ -328,7 +328,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             {
                 var removed = set.transitions.Where(t => t.from == from && t.to == to).ToList();
 
-                _undo.Do($"Disconnect {from}→{to}",
+                _undo.Do($"Disconnect {from}->{to}",
                     doAction: () =>
                     {
                         foreach (var t in removed) set.transitions.Remove(t);
@@ -346,7 +346,7 @@ namespace Valkur.Gameplay.Enemies.FSM
                         RefreshGraph();
                         RefreshProperties();
                     });
-                SetStatus($"Disconnected {from}→{to} ({removed.Count} edges)");
+                SetStatus($"Disconnected {from}->{to} ({removed.Count} edges)");
             }
         }
 

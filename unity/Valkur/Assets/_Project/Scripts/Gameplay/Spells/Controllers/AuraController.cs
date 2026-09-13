@@ -263,8 +263,9 @@ namespace Valkur.Gameplay.Spells
 
             bool prevHitTriggers = Physics2D.queriesHitTriggers;
             Physics2D.queriesHitTriggers = true;
-            int count = Physics2D.OverlapCircleNonAlloc(
-                transform.position, _gameRadius, Valkur.Gameplay.Combat.PhysicsScratch.AuraTargets, _targetLayers);
+            int count = Debugging.SpellProbe.OverlapCircleNonAlloc(
+                transform.position, _gameRadius, Valkur.Gameplay.Combat.PhysicsScratch.AuraTargets, _targetLayers,
+                Debugging.SpellDebugRole.Damage, "aura " + _gameRadius.ToString("0.##") + " u");
             Physics2D.queriesHitTriggers = prevHitTriggers;
 
             for (int i = 0; i < count; i++)

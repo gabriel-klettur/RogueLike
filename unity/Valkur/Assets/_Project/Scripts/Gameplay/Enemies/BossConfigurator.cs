@@ -173,8 +173,10 @@ namespace Valkur.Gameplay
             _autoCast.Clear();
             if (phase.autoCastList == null || phase.autoCastList.Length == 0) return;
 
+            // No cap, for the reason EntitySetup.ConfigureMonsterAutoCast states: SetSpell grows
+            // the slot array, and a boss phase's rotation is exactly the place a fifth ability
+            // is normal.
             int registered = 0;
-            int slotCount  = _caster.SlotCount;
             for (int i = 0; i < phase.autoCastList.Length; i++)
             {
                 string key = phase.autoCastList[i];
@@ -188,13 +190,10 @@ namespace Valkur.Gameplay
                 }
 
                 _caster.RegisterSpell(spell.spellKey, spell);
-                if (registered < slotCount)
-                {
-                    _caster.SetSpell(registered, spell);
-                    float period = phase.autoCastPeriod > 0 ? phase.autoCastPeriod : 3f;
-                    _autoCast.AddEntry(registered, periodSeconds: period, jitter: 0.5f);
-                    registered++;
-                }
+                _caster.SetSpell(registered, spell);
+                float period = phase.autoCastPeriod > 0 ? phase.autoCastPeriod : 3f;
+                _autoCast.AddEntry(registered, periodSeconds: period, jitter: 0.5f);
+                registered++;
             }
         }
 

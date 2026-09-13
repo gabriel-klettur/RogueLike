@@ -200,8 +200,8 @@ namespace Valkur.Gameplay.Spells
             // stops an NPC killing you mid-tuning. Borrow invincibility while it is open.
             ApplyEditorInvulnerability();
             ApplyAuthoringSpellUnlock(true);
-            SetStatus("Spells Editor active. F4 to close.");
-            Debug.Log("[SpellsEditor] Activated (F4)");
+            SetStatus("Spells Editor active. Escape to close.");
+            Debug.Log("[SpellsEditor] Activated");
         }
 
         public void Deactivate()
@@ -223,7 +223,7 @@ namespace Valkur.Gameplay.Spells
             Valkur.Gameplay.CameraSetup.Instance?.ReattachFollow();
             if (GameEditorManager.HasInstance)
                 GameEditorManager.Instance.NotifyDeactivated(this);
-            Debug.Log("[SpellsEditor] Deactivated (F4)");
+            Debug.Log("[SpellsEditor] Deactivated");
         }
 
         /// <summary>

@@ -24,7 +24,7 @@ namespace Valkur.Gameplay.TileEditor
                 _state.IsDragging = true;
 
                 if (edits.Count == 0 && !CanEditCell(cellPos))
-                    _ui.SetStatus("Blocked: zone is not editable. Use F11 Map Editor.");
+                    _ui.SetStatus("Blocked: zone is not editable. Use the Map Editor.");
             }
             else if (MouseInputManager.IsLeftMouseButtonPressed() && _state.IsDragging)
             {
@@ -74,7 +74,7 @@ namespace Valkur.Gameplay.TileEditor
                 _gridOverlay?.InvalidateFillPreview();
 
                 if (edits.Count == 0 && !CanEditCell(cellPos))
-                    _ui.SetStatus("Blocked: zone is not editable. Use F11 Map Editor.");
+                    _ui.SetStatus("Blocked: zone is not editable. Use the Map Editor.");
             }
         }
 

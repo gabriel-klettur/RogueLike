@@ -275,8 +275,8 @@ namespace Valkur.Gameplay.MapEditor
             if (_state.Active)
             {
                 if (_ui != null)
-                    _ui.SetStatus("Map Editor active. F11 to close.");
-                Debug.Log("[MapEditor] Activated (F11).");
+                    _ui.SetStatus("Map Editor active. Escape to close.");
+                Debug.Log("[MapEditor] Activated.");
             }
             else
             {
@@ -286,7 +286,7 @@ namespace Valkur.Gameplay.MapEditor
                 CancelAddZoneFlow();
                 if (_ui != null)
                     _ui.SetStatus("Map Editor inactive.");
-                Debug.Log("[MapEditor] Deactivated (F11).");
+                Debug.Log("[MapEditor] Deactivated.");
             }
         }
 
@@ -496,7 +496,7 @@ namespace Valkur.Gameplay.MapEditor
                 return;
             }
             bool ok = RenameMapSlot(oldName, newName);
-            _ui?.SetStatus(ok ? $"Renamed '{oldName}' → '{newName}'." : $"Rename failed.");
+            _ui?.SetStatus(ok ? $"Renamed '{oldName}' -> '{newName}'." : $"Rename failed.");
         }
 
         private static bool IsDefaultSlot(string name)

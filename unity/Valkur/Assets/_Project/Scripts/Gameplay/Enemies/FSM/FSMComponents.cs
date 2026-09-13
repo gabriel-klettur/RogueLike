@@ -98,6 +98,11 @@ namespace Valkur.Gameplay.FSM
         {
             if (Rb == null) return;
             if (KnockbackActive) return;
+            // A corpse: UnconsciousState makes the body Static so nothing can shove it, and a
+            // Static body has no velocity to set — Unity refuses the write with a warning. Every
+            // monster death went Unconscious -> Death, and DeathState.Enter stops the body, so
+            // every kill in the game logged "Cannot use 'velocity' on a static body".
+            if (Rb.bodyType == RigidbodyType2D.Static) return;
             // Root joins stun here and nowhere else: it refuses the feet, so the FSM may
             // go on chasing and swinging while the body does not move. AttackState and
             // NPCAutoCast read IsStunned only, on purpose.

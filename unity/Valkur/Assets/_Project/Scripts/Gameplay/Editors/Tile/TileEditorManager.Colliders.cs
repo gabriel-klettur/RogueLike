@@ -263,8 +263,8 @@ namespace Valkur.Gameplay.TileEditor
 
             _ui?.RefreshCollisionTagPicker();
             _ui?.SetStatus(string.IsNullOrEmpty(_state.ActiveCollisionTag)
-                ? "Collider tag → (none — pick at least one layer to draw)"
-                : $"Collider tag → {_state.ActiveCollisionTag}");
+                ? "Collider tag -> (none — pick at least one layer to draw)"
+                : $"Collider tag -> {_state.ActiveCollisionTag}");
         }
 
         /// <summary>

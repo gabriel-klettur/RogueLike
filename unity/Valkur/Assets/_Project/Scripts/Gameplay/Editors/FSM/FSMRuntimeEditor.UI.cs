@@ -77,7 +77,8 @@ namespace Valkur.Gameplay.Enemies.FSM
             // Tutorial overlay (mirrors Python fsm_tutorial_panel content).
             _tutorial = TutorialOverlay.Build(_root.transform, "FSM HOTKEYS", new[]
             {
-                ("F12",      "Toggle FSM Editor"),
+                // Retired 2026-09-05: editors open from the General Editor on Escape.
+                ("Esc",      "Open the General Editor, then FSM"),
                 ("Click",    "Select set / state / transition"),
                 ("Drag",     "Move state node"),
                 ("MMB",      "Pan graph (over the canvas)"),

@@ -133,7 +133,7 @@ namespace Valkur.Gameplay.Editors.DungeonNodeGraph
             {
                 parent.ChildIds.Add(child.Id);
                 child.ParentIds.Add(parent.Id);
-                ShowToast($"Connected {parent.RoomNodeName} → {child.RoomNodeName}.");
+                ShowToast($"Connected {parent.RoomNodeName} -> {child.RoomNodeName}.");
             }
             else
             {

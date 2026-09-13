@@ -37,7 +37,7 @@ namespace Valkur.UIKit
         private float spacing = 4f;
 
         [SerializeField, Tooltip("Optional explicit cell height. " +
-            "When ≤ 0 the cell stays square (height = computed width, the historical default). " +
+            "When <= 0 the cell stays square (height = computed width, the historical default). " +
             "Set > 0 for rectangular cells — e.g. the Tile Editor's category buttons use a " +
             "responsive width but a fixed 22 px row height.")]
         private float cellHeightOverride = 0f;

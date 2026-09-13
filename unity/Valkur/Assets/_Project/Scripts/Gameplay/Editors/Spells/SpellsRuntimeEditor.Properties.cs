@@ -54,7 +54,7 @@ namespace Valkur.Gameplay.Spells
             if (!_catalog.TryGet(_selectedKey, out var s) || s == null) return;
 
             // ── Identity ──
-            AddSectionHeader(form, "── Identity ──");
+            AddSectionHeader(form, "-- Identity --");
             form.AddText("spellKey",     "Spell Key",    s.spellKey ?? "");
             form.AddText("displayName",  "Display Name", s.displayName ?? "");
             form.AddDropdown("type",     "Type",
@@ -73,7 +73,7 @@ namespace Valkur.Gameplay.Spells
             }, (int)s.audience);
 
             // ── Casting ──
-            AddSectionHeader(form, "── Casting ──");
+            AddSectionHeader(form, "-- Casting --");
             form.AddInt   ("manaCost",      "Mana Cost",      Mathf.RoundToInt(s.manaCost));
             form.AddInt   ("maxInstances",  "Max Instances",  s.maxInstances);
             form.AddBool  ("allowOverlap",  "Allow Overlap",  s.allowOverlap);
@@ -85,7 +85,7 @@ namespace Valkur.Gameplay.Spells
 
             // ── Telegraph ──
             // Drawn by the caster rather than by any executor, so it applies to every spell.
-            AddSectionHeader(form, "── Telegraph ──");
+            AddSectionHeader(form, "-- Telegraph --");
             form.AddColor("telegraphColor", "Telegraph Color", s.telegraphColor);
             form.AddFloat("telegraphAlpha", "Telegraph Alpha", s.telegraphAlpha);
 
@@ -93,14 +93,14 @@ namespace Valkur.Gameplay.Spells
             // Where the effect is born on the caster's body, and how far in front.
             // The anchor is a fraction of the caster's height, so one setting reads
             // the same on a rat and on a boss.
-            AddSectionHeader(form, "── Cast Origin ──");
+            AddSectionHeader(form, "-- Cast Origin --");
             form.AddDropdown("castAnchor", "Anchor",
                 Enum.GetNames(typeof(SpellCastAnchor)),
                 (int)s.castAnchor);
             form.AddFloat("castForwardOffset", "Forward Offset", s.castForwardOffset);
 
             // ── Timings ──
-            AddSection(form, s, "── Timings ──",
+            AddSection(form, s, "-- Timings --",
                 ("prepareDuration",  () => form.AddFloat("prepareDuration",  "Prepare (s)",  s.prepareDuration)),
                 ("channelDuration",  () => form.AddFloat("channelDuration",  "Channel (s)",  s.channelDuration)),
                 ("cooldownDuration", () => form.AddFloat("cooldownDuration", "Cooldown (s)", s.cooldownDuration)));
@@ -109,7 +109,7 @@ namespace Valkur.Gameplay.Spells
             // radius and hitRadius are two different authored shapes and most spells read
             // only one of them, so the filter is what keeps a designer from tuning the
             // dead one and concluding the spell ignores its own numbers.
-            AddSection(form, s, "── Combat ──",
+            AddSection(form, s, "-- Combat --",
                 ("damage",           () => form.AddFloat("damage",           "Damage",           s.damage)),
                 ("speed",            () => form.AddFloat("speed",            "Speed",            s.speed)),
                 ("range",            () => form.AddFloat("range",            "Range",            s.range)),
@@ -122,43 +122,43 @@ namespace Valkur.Gameplay.Spells
                 ("distance",         () => form.AddFloat("distance",         "Distance",         s.distance)));
 
             // ── Type-specific ──
-            AddSection(form, s, "── Meteor ──",
+            AddSection(form, s, "-- Meteor --",
                 ("meteorCount",        () => form.AddInt  ("meteorCount",        "Meteor Count",  s.meteorCount)),
                 ("meteorInterval",     () => form.AddFloat("meteorInterval",     "Interval",      s.meteorInterval)),
                 ("meteorAreaRadius",   () => form.AddFloat("meteorAreaRadius",   "Area Radius",   s.meteorAreaRadius)),
                 ("meteorImpactRadius", () => form.AddFloat("meteorImpactRadius", "Impact Radius", s.meteorImpactRadius)));
 
-            AddSection(form, s, "── Mine ──",
+            AddSection(form, s, "-- Mine --",
                 ("armingTime",      () => form.AddFloat("armingTime",      "Arming Time",      s.armingTime)),
                 ("triggerRadius",   () => form.AddFloat("triggerRadius",   "Trigger Radius",   s.triggerRadius)),
                 ("explosionRadius", () => form.AddFloat("explosionRadius", "Explosion Radius", s.explosionRadius)),
                 ("explosionDamage", () => form.AddFloat("explosionDamage", "Explosion Damage", s.explosionDamage)),
                 ("ttl",             () => form.AddFloat("ttl",             "TTL (s)",          s.ttl)));
 
-            AddSection(form, s, "── Wall ──",
+            AddSection(form, s, "-- Wall --",
                 ("wallWidth",        () => form.AddFloat("wallWidth",        "Wall Width",        s.wallWidth)),
                 ("wallHeight",       () => form.AddFloat("wallHeight",       "Wall Height",       s.wallHeight)),
                 ("wallHP",           () => form.AddFloat("wallHP",           "Wall HP",           s.wallHP)),
                 ("blockProjectiles", () => form.AddBool ("blockProjectiles", "Block Projectiles", s.blockProjectiles)),
                 ("blockUnits",       () => form.AddBool ("blockUnits",       "Block Units",       s.blockUnits)));
 
-            AddSection(form, s, "── Summon ──",
+            AddSection(form, s, "-- Summon --",
                 ("summonTemplate", () => form.AddText ("summonTemplate", "Summon Template", s.summonTemplate ?? "")),
                 ("summonCount",    () => form.AddInt  ("summonCount",    "Summon Count",    s.summonCount)),
                 ("summonDuration", () => form.AddFloat("summonDuration", "Duration (s)",    s.summonDuration)));
 
-            AddSection(form, s, "── Cone ──",
+            AddSection(form, s, "-- Cone --",
                 ("coneArc",    () => form.AddFloat("coneArc",    "Cone Arc (deg)", s.coneArc)),
                 ("coneLength", () => form.AddFloat("coneLength", "Cone Length",    s.coneLength)));
 
-            AddSection(form, s, "── Force ──",
+            AddSection(form, s, "-- Force --",
                 ("force",        () => form.AddFloat("force",        "Force",         s.force)),
                 ("forceMode",    () => form.AddText ("forceMode",    "Force Mode",    s.forceMode ?? "")),
                 ("followCaster", () => form.AddBool ("followCaster", "Follow Caster", s.followCaster)),
                 ("totemKind",    () => form.AddText ("totemKind",    "Totem Kind",    s.totemKind ?? "")));
 
             // ── DoT / Aura ──
-            AddSection(form, s, "── DoT / Aura ──",
+            AddSection(form, s, "-- DoT / Aura --",
                 ("duration",      () => form.AddFloat("duration",      "Duration (s)",  s.duration)),
                 ("infinite",      () => form.AddBool ("infinite",      "Never Expires", s.infinite)),
                 ("damagePerTick", () => form.AddFloat("damagePerTick", "Damage / Tick", s.damagePerTick)),
@@ -170,7 +170,7 @@ namespace Valkur.Gameplay.Spells
             // Which animation the caster plays, and which loadout the spell swaps to. All
             // three are narrow — one spell type each — so AddSection hides them everywhere
             // else rather than showing three inert rows on every spell in the game.
-            AddSection(form, s, "── Animation ──",
+            AddSection(form, s, "-- Animation --",
                 ("animState",      () => form.AddText("animState",      "Anim State",      s.animState ?? "")),
                 ("loadoutKey",     () => form.AddText("loadoutKey",     "Loadout Key",     s.loadoutKey ?? "")),
                 ("loadoutAnimKey", () => form.AddText("loadoutAnimKey", "Loadout Anim",    s.loadoutAnimKey ?? "")));
@@ -181,7 +181,7 @@ namespace Valkur.Gameplay.Spells
             // it decides what colour the CAST looks, not just the trail. It was relevant for
             // 24 of the 28 types and had no row at all — the half of that fix that widened
             // SpellFieldRelevance landed, the half that shows a control did not.
-            AddSection(form, s, "── VFX ──",
+            AddSection(form, s, "-- VFX --",
                 ("spawnAtMouse",  () => form.AddBool ("spawnAtMouse",  "Spawn At Mouse", s.spawnAtMouse)),
                 ("particleColor", () => form.AddColor("particleColor", "Particle Color", s.particleColor)),
                 ("scale",         () => form.AddFloat("scale",         "Sprite Scale",   s.scale)),
@@ -192,7 +192,7 @@ namespace Valkur.Gameplay.Spells
             // Three independent behaviours on the same executor rather than three new spell
             // types, which is what lets any of the twelve existing projectiles be given one
             // later without new code. AddSection hides the whole block from every other type.
-            AddSection(form, s, "── Projectile Mechanics ──",
+            AddSection(form, s, "-- Projectile Mechanics --",
                 ("pierceCount",         () => form.AddInt  ("pierceCount",         "Pierce Count",      s.pierceCount)),
                 ("pierceDamageFalloff", () => form.AddFloat("pierceDamageFalloff", "Pierce Falloff",    s.pierceDamageFalloff)),
                 ("homingStrength",      () => form.AddFloat("homingStrength",      "Homing (deg/s)",    s.homingStrength)),
@@ -203,7 +203,7 @@ namespace Valkur.Gameplay.Spells
             // ── Charge ──
             // chargeMaxSeconds is the discriminator: 0 means the spell is not chargeable and
             // fires the instant it is cast, which is how every other spell behaves.
-            AddSection(form, s, "── Charge ──",
+            AddSection(form, s, "-- Charge --",
                 ("chargeMaxSeconds",       () => form.AddFloat("chargeMaxSeconds",       "Full Charge (s)",  s.chargeMaxSeconds)),
                 ("chargeMinFraction",      () => form.AddFloat("chargeMinFraction",      "Snap Fraction",    s.chargeMinFraction)),
                 ("chargeDamageMultiplier", () => form.AddFloat("chargeDamageMultiplier", "Damage x at Full", s.chargeDamageMultiplier)),
@@ -211,7 +211,7 @@ namespace Valkur.Gameplay.Spells
 
             // ── Buff ──
             // The array itself is a block of its own below; this is the refresh key beside it.
-            AddSection(form, s, "── Buff ──",
+            AddSection(form, s, "-- Buff --",
                 ("buffKey", () => form.AddText("buffKey", "Buff Key (refresh)", s.buffKey ?? "")));
 
             AddStatModifierRows(form, s);
@@ -572,7 +572,7 @@ namespace Valkur.Gameplay.Spells
             // letter-spacing + a thin rule above (matches BuildSeparator in TileEditorUIHelpers).
             string clean = text;
             if (!string.IsNullOrEmpty(clean))
-                clean = clean.Replace("─", "").Trim();
+                clean = clean.Replace("-", "").Trim();
 
             // Top spacer
             var spacer = EditorUIHelpers.CreateUI("SecGap_" + clean, form.transform);

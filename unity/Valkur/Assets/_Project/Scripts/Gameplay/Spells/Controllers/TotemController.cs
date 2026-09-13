@@ -115,8 +115,9 @@ namespace Valkur.Gameplay.Spells
         {
             bool prevHitTriggers = Physics2D.queriesHitTriggers;
             Physics2D.queriesHitTriggers = true;
-            int count = Physics2D.OverlapCircleNonAlloc(
-                transform.position, _radius, PhysicsScratch.TotemHeal, FriendlyLayers);
+            int count = Debugging.SpellProbe.OverlapCircleNonAlloc(
+                transform.position, _radius, PhysicsScratch.TotemHeal, FriendlyLayers,
+                Debugging.SpellDebugRole.Damage, "cura " + _radius.ToString("0.##") + " u");
             Physics2D.queriesHitTriggers = prevHitTriggers;
 
             int healed = 0;

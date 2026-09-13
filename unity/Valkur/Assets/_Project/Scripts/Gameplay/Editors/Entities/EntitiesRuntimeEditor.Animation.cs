@@ -69,6 +69,10 @@ namespace Valkur.Gameplay.Entities
             _animPanelOpen = open;
             if (!open)
             {
+                // Closing the panel must also drop the raycast target the placement mode put
+                // on the stage: the stage is hidden but still live, and its RawImage sits
+                // over the world the other panels click into.
+                DisarmMuzzlePlacement();
                 _animPreview.Close();
                 return;
             }
@@ -104,6 +108,11 @@ namespace Valkur.Gameplay.Entities
         /// </summary>
         private void NotifyAnimationSelectionChanged()
         {
+            // Placement is disarmed on every selection change. Left armed, the author picks
+            // another creature, clicks the stage to look at it, and writes a muzzle onto the
+            // new one without meaning to -- and the only sign would be a crosshair they
+            // assumed was already there.
+            DisarmMuzzlePlacement();
             _animSubjectDirty = true;
             if (_animPanelOpen) StageSelectedEntityForAnimation();
         }
@@ -234,6 +243,10 @@ namespace Valkur.Gameplay.Entities
             RefreshAnimationStrip();
             RefreshAnimationTransport();
             RefreshAnimationPacingEditors();
+            // The muzzle readout describes the FRAME on screen, so it belongs in the one
+            // refresh the panel has -- a separate call site is how a panel comes to show a
+            // measurement about a pose it stopped drawing.
+            RefreshMuzzleEditor();
         }
 
         private void RefreshAnimationInfo()
@@ -315,7 +328,7 @@ namespace Valkur.Gameplay.Entities
                 ? $" ({attemptsPerHit - 1} attempt(s) refused by the cooldown)"
                 : "";
             return $"hit: windup {windup:0.00}s · swing {swing:0.00}s · cooldown {cooldown:0.00}s " +
-                   $"→ one blow every {realised:0.00}s{refused}";
+                   $"-> one blow every {realised:0.00}s{refused}";
         }
 
         // ── Frame strip ──────────────────────────────────────────────────────────

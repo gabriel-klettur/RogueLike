@@ -80,7 +80,11 @@ namespace Valkur.Gameplay.Spells
             if (shake)
                 Feel.CameraFeel.Cue(Data.Feel.CameraFeelCue.ImpactLight,
                                     (to - from).normalized);
-            ServiceLocator.Get<IAudioService>()?.PlaySfxById("spell_lightning_arc");
+            // Gated on HasSfx: AudioCatalog ships no spell_* id, so an ungated call is one
+            // console warning per session for a sound that was never authored.
+            var audioSvc = ServiceLocator.Get<IAudioService>();
+            if (audioSvc != null && audioSvc.HasSfx("spell_lightning_arc"))
+                audioSvc.PlaySfxById("spell_lightning_arc");
             return fx;
         }
 

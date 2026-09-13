@@ -113,11 +113,11 @@ namespace Valkur.Gameplay.VFX
             // restored deliberately, one placement or all of them, instead of as the side
             // effect it used to be.
             BuildSeparator(t);
-            refs.ReapplyInstanceBtnGo = AddActionBtn(t, "Reapply Preset → This", 26f,
+            refs.ReapplyInstanceBtnGo = AddActionBtn(t, "Reapply Preset -> This", 26f,
                 onReapplyInstance, out _).gameObject;
             refs.ReapplyInstanceBtnGo.SetActive(false);   // nothing to reapply to without one
 
-            refs.ReapplyAllBtnGo = AddActionBtn(t, "Reapply Preset → All Placements", 26f,
+            refs.ReapplyAllBtnGo = AddActionBtn(t, "Reapply Preset -> All Placements", 26f,
                 onReapplyAll, out _).gameObject;
 
             // DELETE INSTANCE button — shown only when an instance is selected.
