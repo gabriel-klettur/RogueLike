@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Active: 1
   shader: {fileID: 4800000, guid: bffb11fda43cb7543a069441b1ca6453, type: 3}
+  bloomShader: {fileID: 4800000, guid: 43a084dd6ae847279218d23ca487af9a, type: 3}
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0

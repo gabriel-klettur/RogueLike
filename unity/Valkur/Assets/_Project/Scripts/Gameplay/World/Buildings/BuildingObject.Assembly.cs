@@ -241,6 +241,7 @@ namespace Valkur.Gameplay.World
             // Light fixtures carry their own Light2D. Done last so the renderers and the final
             // localScale exist — the light is positioned from the rendered bounds.
             RefreshLightFromTemplate();
+            RefreshShadowCasters();
         }
 
         /// <summary>

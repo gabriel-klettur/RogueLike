@@ -529,6 +529,14 @@ namespace Valkur.Gameplay.World
                 targetVignetteAlpha  = 0f;
             }
 
+            // The bloom threshold follows the ambient — the BASE ambient of the phase, captured
+            // here BEFORE the strike and the sky flash are folded in below. Those two raise the
+            // live light for a few frames precisely so the world lights up; a threshold derived
+            // from the live value would jump to 1.0 on the same frames and switch the bloom OFF
+            // in the one frame of a storm where anyone expects something to blossom.
+            Color baseAmbientColor     = targetColor;
+            float baseAmbientIntensity = targetIntensity;
+
             // Storm lightning. Folded into the GLOBAL LIGHT, not only into the screen grade,
             // because a strike has to light the world — buildings, entities, the tilemap —
             // and a grade-only flash brightens every pixel by the same amount, which reads as
@@ -553,7 +561,7 @@ namespace Valkur.Gameplay.World
                 targetIntensity = Mathf.Min(2f, targetIntensity + sky * SkyFlash.MaxLightBoost);
             }
 
-            PublishScreenGrade(targetVignetteAlpha);
+            PublishScreenGrade(targetVignetteAlpha, baseAmbientColor, baseAmbientIntensity);
 
             // Publish the live values so the vignette / ambient particles can
             // read them without recomputing the same blend.
@@ -690,8 +698,19 @@ namespace Valkur.Gameplay.World
         /// Writes to a static in Valkur.Core because the renderer feature must live there —
         /// Gameplay may reference Core, never the other way round.
         /// </summary>
-        private void PublishScreenGrade(float vignetteAlpha)
+        private void PublishScreenGrade(float vignetteAlpha, Color ambient, float ambientIntensity)
         {
+            // The bloom is published BEFORE every early return below, and independently of the
+            // tint switch: it is not part of the day/night TINT, it is what lets the HDR energy
+            // of every additive VFX reach the screen, and a torch should blossom whether or not
+            // the author has silenced the phases to look at raw colours. It is enabled only from
+            // here — the main menu has no cycle and its title plate is contrast-measured against
+            // the raw frame — and its tint leans with the hour so a halo belongs to the light it
+            // burns in: warm at noon, cool at midnight, never saturated (0.4 of the ambient).
+            Valkur.Core.Rendering.ScreenGradeSettings.BloomEnabled   = true;
+            Valkur.Core.Rendering.ScreenGradeSettings.BloomTint      = BloomTintFor(ambient);
+            Valkur.Core.Rendering.ScreenGradeSettings.BloomThreshold = BloomThresholdFor(ambient, ambientIntensity);
+
             // Lift / gamma / gain are written here and nowhere else, and the day/night look
             // does not use them — it is expressed as saturation, contrast and vignette. The
             // weather owns them outright (overcast lift, the cool cast of rain, the lightning
@@ -733,6 +752,44 @@ namespace Valkur.Gameplay.World
             Valkur.Core.Rendering.ScreenGradeSettings.VignetteSmoothness = VignetteSmoothness;
             Valkur.Core.Rendering.ScreenGradeSettings.VignetteColor      = look.VignetteTint;
         }
+
+        /// <summary>
+        /// The bloom's tint for an ambient colour: the ambient's HUE at a fraction of its
+        /// saturation, at full value. Pure so a test can pin that noon is neutral and that a
+        /// deep-blue night never turns a red fireball's halo grey.
+        /// </summary>
+        public static Color BloomTintFor(Color ambient)
+        {
+            Color.RGBToHSV(ambient, out float h, out float s, out _);
+            var lean = Color.HSVToRGB(h, Mathf.Clamp01(s) * BloomTintLean, 1f);
+            lean.a = 1f;
+            return lean;
+        }
+
+        /// <summary>
+        /// Where the bloom threshold sits for an ambient light: just above the brightest a lit
+        /// surface can be under it. By day that is 1.0 — no texel of pixel art crosses white —
+        /// and the only things that bloom are the additive layers the HDR buffer keeps above it.
+        /// At midnight the ambient is a fraction of that, and a torch flame drawn at 0.6 IS the
+        /// brightest thing in the world; a threshold still parked at 1.0 measured a delta of 20
+        /// on a 255 scale around a burning torch, i.e. a bloom nobody could see. Following the
+        /// ambient is what makes "brighter than the light" the definition of emissive at every
+        /// hour. Floored so a pitch-black cave does not bloom its own dither.
+        /// </summary>
+        public static float BloomThresholdFor(Color ambient, float ambientIntensity)
+        {
+            float luminance = ambientIntensity * (0.2126f * ambient.r + 0.7152f * ambient.g + 0.0722f * ambient.b);
+            return Mathf.Clamp(luminance * BloomThresholdOverAmbient, BloomThresholdFloor, 1f);
+        }
+
+        /// <summary>How far above the ambient's luminance the bloom threshold sits. See <see cref="BloomThresholdFor"/>.</summary>
+        private const float BloomThresholdOverAmbient = 1.15f;
+
+        /// <summary>The lowest the threshold may go, whatever the ambient. See <see cref="BloomThresholdFor"/>.</summary>
+        private const float BloomThresholdFloor = 0.30f;
+
+        /// <summary>How much of the ambient's saturation the bloom tint takes. See <see cref="BloomTintFor"/>.</summary>
+        private const float BloomTintLean = 0.4f;
 
         /// <summary>
         /// Maps the authored 0..1 vignette alpha onto the shader's falloff term. The overlay it

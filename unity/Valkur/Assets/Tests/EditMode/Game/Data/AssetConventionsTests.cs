@@ -46,6 +46,8 @@ namespace Valkur.Tests.EditMode.Game.Data
             "CameraFeelProfile.asset",
             "DayNightProfile.asset",    // day/night ramp; the cycle is AddComponent-ed at
                                         // runtime, so it has no inspector slot to be wired from
+            "SkyStyle.asset",           // cloud and sun shadows; CloudShadowLayer and every
+                                        // SunShadowCaster are AddComponent-ed, same reason
             "TileCatalog.asset",
             "TerrainCatalog.asset", // autotile pipeline (rulesets + Blob16 lookup)
             "DestructionResistanceTable.asset", // building durability matrix; loaded by

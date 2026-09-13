@@ -3,7 +3,7 @@
 namespace Valkur.Core.Rendering
 {
     /// <summary>
-    /// The live values <see cref="ScreenGradeFeature"/> pushes into its material each frame.
+    /// The live values <see cref="ScreenGradeFeature"/> pushes into its materials each frame.
     ///
     /// A static hand-off rather than a direct reference because of the assembly wall: the renderer
     /// feature has to live in <c>Valkur.Core</c> (it is referenced by a renderer asset, and Core is
@@ -11,8 +11,10 @@ namespace Valkur.Core.Rendering
     /// what the grade should be — the day/night cycle — lives in <c>Valkur.Gameplay</c>. Gameplay
     /// may reference Core; Core may not reference Gameplay. So Gameplay writes and Core reads.
     ///
-    /// Inert by default: with <see cref="Enabled"/> false the feature skips its pass entirely, so a
-    /// scene with no day/night cycle pays nothing.
+    /// Inert by default: with <see cref="Enabled"/> false the grade pass is not enqueued, and with
+    /// <see cref="BloomEnabled"/> false neither is the bloom, so a scene with no day/night cycle —
+    /// the main menu, whose title plate is contrast-measured against the raw frame — pays nothing
+    /// and is graded by nothing.
     /// </summary>
     public static class ScreenGradeSettings
     {
@@ -32,9 +34,15 @@ namespace Valkur.Core.Rendering
             Lift             = Vector3.zero;
             InverseGamma     = Vector3.one;
             Gain             = Vector3.one;
+
+            BloomEnabled   = false;
+            BloomIntensity = DefaultBloomIntensity;
+            BloomThreshold = DefaultBloomThreshold;
+            BloomSoftKnee  = DefaultBloomSoftKnee;
+            BloomTint      = Color.white;
         }
 
-        /// <summary>When false the pass is not enqueued at all.</summary>
+        /// <summary>When false the grade pass is not enqueued at all.</summary>
         public static bool Enabled { get; set; }
 
         /// <summary>
@@ -84,5 +92,46 @@ namespace Valkur.Core.Rendering
              Lift  != Vector3.zero ||
              Gain  != Vector3.one  ||
              InverseGamma != Vector3.one);
+
+        // ── Bloom ─────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// The intensity the game ships at. Measured on the shipped art: at 0.5 a torch's halo
+        /// reads two tiles wide and a fireball's core turns the wall behind it orange; at 0.2
+        /// nothing on screen says the layer exists. 0.35 is where an additive VFX blossoms and
+        /// a lit stone wall stays a stone wall.
+        /// </summary>
+        public const float DefaultBloomIntensity = 0.35f;
+
+        /// <summary>
+        /// Linear luminance above which a pixel feeds the bloom. Exactly 1.0 on purpose: no texel
+        /// of pixel art can reach it under a 1.0 ambient, so only additive light — which the HDR
+        /// buffer keeps above white — ever blooms. Lowering it makes pale ground glow.
+        /// </summary>
+        public const float DefaultBloomThreshold = 1.0f;
+
+        /// <summary>Softness of the threshold, in linear units. URP's own curve.</summary>
+        public const float DefaultBloomSoftKnee = 0.5f;
+
+        /// <summary>When false the bloom pass is not enqueued at all.</summary>
+        public static bool BloomEnabled { get; set; }
+
+        /// <summary>Multiplier on the finished pyramid. 0 disables the pass.</summary>
+        public static float BloomIntensity { get; set; } = DefaultBloomIntensity;
+
+        /// <summary>See <see cref="DefaultBloomThreshold"/>.</summary>
+        public static float BloomThreshold { get; set; } = DefaultBloomThreshold;
+
+        /// <summary>See <see cref="DefaultBloomSoftKnee"/>.</summary>
+        public static float BloomSoftKnee { get; set; } = DefaultBloomSoftKnee;
+
+        /// <summary>
+        /// Multiplied into the bloom at composite time. The cycle leans it warm by day and cool
+        /// by night so a torch's halo belongs to the hour it burns in.
+        /// </summary>
+        public static Color BloomTint { get; set; } = Color.white;
+
+        /// <summary>True when the bloom would visibly change the frame.</summary>
+        public static bool BloomWouldChangeTheFrame => BloomEnabled && BloomIntensity > 0.001f;
     }
 }

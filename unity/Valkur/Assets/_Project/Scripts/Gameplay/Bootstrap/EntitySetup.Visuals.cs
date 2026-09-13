@@ -113,6 +113,12 @@ namespace Valkur.Gameplay
             if (go.GetComponent<FacingIndicator>() == null)
                 go.AddComponent<FacingIndicator>();
 
+            // A shadow on the ground under every creature: a projected silhouette that follows
+            // the sun, and a contact blob that anchors the body to the floor at every hour.
+            // Attached to the body renderer so it inherits scale and flip; the caster tolerates
+            // a sprite that arrives later and syncs from whatever the animator draws.
+            World.Sky.SunShadowCaster.Attach(SpriteTintStack.ResolveBodyRenderer(go), withBlob: true);
+
             // The ring at the mouse pointer, fired by the same acts as the aim marker.
             // Player-only: it decorates the POINTER, and no NPC has one.
             if (go.CompareTag("Player") && go.GetComponent<CursorImpactFX>() == null)

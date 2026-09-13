@@ -540,6 +540,7 @@ namespace Valkur.Gameplay
 
             // Weather levels, wind field and lightning — see DevConsole.Commands.Weather.cs.
             RegisterWeatherCommands();
+            RegisterLookCommands();
 
             // The seven energy-charge auras — see DevConsole.Commands.Charge.cs.
             RegisterChargeCommands();

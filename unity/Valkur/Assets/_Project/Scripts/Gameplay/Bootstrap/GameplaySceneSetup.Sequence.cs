@@ -150,6 +150,9 @@ namespace Valkur.Gameplay
             // ── Atmosphere and weather ───────────────────────────────────────
             s.Add(BootStep.Of("Inicializando la atmosfera", EnsureDayNightAtmosphere, 2f, barrier: false));
             s.Add(BootStep.Of("Inicializando el clima", EnsureWeatherManager, 3f));
+            // The sky reads the weather it was created after, and every building and entity
+            // spawned later reads the sun the sky evaluates — so it sits exactly here.
+            s.Add(BootStep.Of("Levantando el cielo", EnsureSkyLayer, 1f, barrier: false));
 
             if (editors)
             {

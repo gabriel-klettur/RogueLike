@@ -207,6 +207,36 @@ namespace Valkur.Tests.EditMode.Game.World.Lighting
             Assert.IsTrue(shader.isSupported, "Hidden/Valkur/ScreenGrade does not compile on this platform.");
         }
 
+        [Test]
+        public void TheScreenGradeFeature_CarriesTheBloomShader()
+        {
+            // The bloom is what lets the HDR energy of every additive VFX reach the screen.
+            // Without the shader reference the feature skips the pass silently and every torch,
+            // spell core and firefly renders exactly as it did before the layer existed.
+            var data = LoadRendererData();
+            ScreenGradeFeature grade = null;
+            foreach (var f in data.rendererFeatures)
+                if (f is ScreenGradeFeature sg) grade = sg;
+            Assert.IsNotNull(grade, "Renderer2D.asset no longer carries ScreenGradeFeature.");
+
+            var so = new SerializedObject(grade);
+            var bloom = so.FindProperty("bloomShader");
+            Assert.IsNotNull(bloom, "ScreenGradeFeature has no serialized 'bloomShader' field.");
+            Assert.IsNotNull(bloom.objectReferenceValue,
+                "ScreenGradeFeature has no bloom shader assigned. Assign Hidden/Valkur/ScreenBloom.");
+            Assert.AreEqual("Hidden/Valkur/ScreenBloom", ((Shader)bloom.objectReferenceValue).name);
+        }
+
+        [Test]
+        public void TheScreenBloomShader_ExistsAndCompiles()
+        {
+            var shader = Shader.Find("Hidden/Valkur/ScreenBloom");
+            Assert.IsNotNull(shader, "Hidden/Valkur/ScreenBloom is missing.");
+            Assert.IsTrue(shader.isSupported, "Hidden/Valkur/ScreenBloom does not compile on this platform.");
+            Assert.AreEqual(4, shader.passCount,
+                "The bloom pyramid needs its four passes (prefilter, down, up, composite) in that order.");
+        }
+
         // ── 5. The light presets placed lights depend on ──────────────────────────
 
         [Test]
