@@ -16,15 +16,15 @@ MonoBehaviour:
   assetPath: Buildings/forest_decoration/natural/champinones_agrupados_marrones
   previewSprite: {fileID: 21300000, guid: 6927aa680fe38b34fa06c6cea8ce7899, type: 3}
   solid: 1
-  splitRatio: 0.5
+  splitRatio: 0.4922
   colliderScope: CG
   interactable: 0
-  originalScale: {x: 88, y: 88}
+  originalScale: {x: 62, y: 72}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
   windSway: 0
-  inkBottomNormalized: 0.2734375
+  inkBottomNormalized: 0.22929172
   projectedShadow: 0
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}

@@ -16,19 +16,19 @@ MonoBehaviour:
   assetPath: Buildings/houses/curse_house_topdown
   previewSprite: {fileID: 21300000, guid: 1f79e3fe9d96c644aaf0733a0a4452f7, type: 3}
   solid: 1
-  splitRatio: 0.509
+  splitRatio: 0.5475
   colliderScope: CG
   interactable: 0
-  originalScale: {x: 256, y: 256}
+  originalScale: {x: 256, y: 238}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
   windSway: 0
-  inkBottomNormalized: 0.07128906
+  inkBottomNormalized: 0
   projectedShadow: 0
   hasDoor: 1
-  doorOffsetNormalized: {x: 0.5, y: 0.06}
-  doorSizeNormalized: {x: 0.18, y: 0.12}
+  doorOffsetNormalized: {x: 0.5, y: -0.01109}
+  doorSizeNormalized: {x: 0.18, y: 0.12908}
   sourceImagePath: assets/buildings/houses/curse_house_topdown.png
   isResurrectionAltar: 0
   resurrectionAnchor: 0

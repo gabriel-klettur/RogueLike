@@ -16,15 +16,15 @@ MonoBehaviour:
   assetPath: Buildings/vegetation/tree_5
   previewSprite: {fileID: 21300000, guid: 9136c8cde59be5941b52e9e03211163c, type: 3}
   solid: 1
-  splitRatio: 0.5
+  splitRatio: 0.5565
   colliderScope: CG
   interactable: 0
-  originalScale: {x: 256, y: 256}
+  originalScale: {x: 256, y: 230}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
   windSway: 0
-  inkBottomNormalized: 0.1015625
+  inkBottomNormalized: 0
   projectedShadow: 0
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}

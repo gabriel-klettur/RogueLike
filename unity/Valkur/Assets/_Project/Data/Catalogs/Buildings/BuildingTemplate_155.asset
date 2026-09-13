@@ -16,7 +16,7 @@ MonoBehaviour:
   assetPath: Buildings/totems/totem_cargando_energia
   previewSprite: {fileID: 21300000, guid: e665564e9beb4884099af5bf0fba85be, type: 3}
   solid: 1
-  splitRatio: 0.5
+  splitRatio: 0.5003
   colliderScope: CG
   interactable: 0
   originalScale: {x: 256, y: 384}
@@ -24,7 +24,7 @@ MonoBehaviour:
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
   windSway: 0
-  inkBottomNormalized: 0.039713543
+  inkBottomNormalized: 0.039087947
   projectedShadow: 0
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}

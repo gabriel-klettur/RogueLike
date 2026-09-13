@@ -16,15 +16,15 @@ MonoBehaviour:
   assetPath: Buildings/forest_decoration/corrupto/raiz_retorcida
   previewSprite: {fileID: 21300000, guid: 1d6a223fac1864b49822a6ea57f42fc8, type: 3}
   solid: 1
-  splitRatio: 0.5
+  splitRatio: 0.4345
   colliderScope: CG
   interactable: 0
-  originalScale: {x: 1024, y: 1024}
+  originalScale: {x: 647, y: 748}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
   windSway: 0
-  inkBottomNormalized: 0.15332031
+  inkBottomNormalized: 0.09090909
   projectedShadow: 0
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}

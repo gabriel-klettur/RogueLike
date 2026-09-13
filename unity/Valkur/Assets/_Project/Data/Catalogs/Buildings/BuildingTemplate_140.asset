@@ -16,15 +16,15 @@ MonoBehaviour:
   assetPath: Buildings/totems/totem_sufriendo
   previewSprite: {fileID: 21300000, guid: 6cbfe2863a37ac34690c20195a9e16d8, type: 3}
   solid: 1
-  splitRatio: 0.5
+  splitRatio: 0.5003
   colliderScope: CG
   interactable: 0
-  originalScale: {x: 1024, y: 1536}
+  originalScale: {x: 1024, y: 1535}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
   windSway: 0
-  inkBottomNormalized: 0.05859375
+  inkBottomNormalized: 0.057980455
   projectedShadow: 0
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}

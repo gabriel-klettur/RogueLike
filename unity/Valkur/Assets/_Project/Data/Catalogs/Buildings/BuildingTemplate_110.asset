@@ -16,15 +16,15 @@ MonoBehaviour:
   assetPath: Buildings/forest_decoration/natural/nido_huevos
   previewSprite: {fileID: 21300000, guid: 8d40d13270956ec428d22c96bf0d38ae, type: 3}
   solid: 1
-  splitRatio: 0.5
+  splitRatio: 0.5447
   colliderScope: CG
   interactable: 0
-  originalScale: {x: 1024, y: 1024}
+  originalScale: {x: 821, y: 929}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
   windSway: 0
-  inkBottomNormalized: 0.28027344
+  inkBottomNormalized: 0.2131324
   projectedShadow: 0
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}

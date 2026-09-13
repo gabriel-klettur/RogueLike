@@ -16,15 +16,15 @@ MonoBehaviour:
   assetPath: Buildings/houses/curse_house_iso
   previewSprite: {fileID: 21300000, guid: 30467ab1f852a0243bf202bc2e81ebb1, type: 3}
   solid: 1
-  splitRatio: 0.474
+  splitRatio: 0.5025
   colliderScope: CG
   interactable: 0
-  originalScale: {x: 256, y: 256}
+  originalScale: {x: 256, y: 242}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
   windSway: 0
-  inkBottomNormalized: 0.07128906
+  inkBottomNormalized: 0.015527951
   projectedShadow: 0
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}

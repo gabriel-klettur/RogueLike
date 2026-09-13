@@ -5719,15 +5719,74 @@ Valkur > Buildings > Bake Sprite Ink Bounds  (y su variante Report Only)
   tinta dibujada a dos umbrales. Salieron cinco veredictos — 29 `recortar abajo`, 20
   `recortar los 4 lados` (props pequenos centrados en lienzos de 1024², donde recortar solo abajo
   los descoloca), 25 `no merece la pena` (por debajo del 3 %), 21 `no proyectar` y 3
-  `recortar a tinta solida` — y son los que estan en `.github/building_trim_verdicts.csv`. El
-  recorte sigue valiendo la pena por otra razon: un recorte completo de los 1256 PNG ahorra
-  **25.7 % del atlas (115.6 -> 85.9 Mpx, ~113 MB de VRAM sin comprimir)**. Es un trabajo aparte y
-  NO es gratis — `BuildingObject.Apply` hace `localScale = effH / baseH` con el ancla en el borde
-  inferior-centro del PNG COMPLETO, asi que recortar `b` filas de un alto `h` hace el edificio
-  `h / (h - b)` veces mas alto y lo baja hasta apoyarlo; ademas
-  `BuildingCollisionLoader.ResampleGrid` remuestrea la rejilla sobre ese mismo rect completo, con
-  lo que un recorte mueve tambien la colision. La compensacion exacta esta en
-  `.github/BUILDING_SPRITE_PADDING_2026-09-13.md`.
+  `recortar a tinta solida` — y son los que estan en `.github/building_trim_verdicts.csv`.
+
+### El recorte, ejecutado (50 PNG)
+
+- **SE RECORTA A ALFA>0, NO A TINTA SOLIDA, y esa es la diferencia entre las dos mitades del
+  problema.** El veredicto `recortar a tinta solida` existia para borrar la sombra pintada bajo
+  tres edificios; con la linea de tinta horneada eso ya no hace falta, y borrar pixeles que un
+  artista dibujo para ahorrar atlas es un mal cambio. El recorte es la caja de alfa>0: **cero
+  pixeles dibujados perdidos**, comprobado comparando cada PNG nuevo contra el recorte del
+  snapshot.
+- **Y el resultado lo demuestra: de las 128 plantillas recortadas, 76 SIGUEN con
+  `inkBottomNormalized > 0`**, hasta un 34.7 % — `ukranian_super_2` conserva 364 px de cola
+  pintada sobre 1532, es decir que el recorte le quito 4 px y el horneado sigue cargando con el
+  99 % de su error de 4.09 u. Los dos mecanismos no se solapan: el recorte gana atlas, el
+  horneado arregla la sombra.
+- **Lo que vale: 115.6 -> 105.0 Mpx, 9.2 % del atlas de edificios, ~42 MB de VRAM sin
+  comprimir.** El 25.7 % que citaba la auditoria es el recorte de los **1256** PNG; estos son 50.
+- **UN RECORTE MUEVE CINCO COSAS Y NINGUNA AVISA.** `effW`/`effH` (el TAMANO, porque
+  `localScale = effH / baseH`), `rel_x`/`rel_y` (la POSICION — `rel_x` es el borde izquierdo en
+  pixeles a 32 PPU y `rel_y` se mide hacia ABAJO desde el techo de la zona, asi que un recorte
+  por abajo no mueve ninguno de los dos y uno por arriba o por la izquierda mueve uno),
+  `splitRatio` (la LINEA de corte tiene que quedarse en la misma fila de arte, cosa que una
+  fraccion de un alto distinto no hace sola), el ancla de la puerta (`doorOffsetNormalized` se
+  mide desde la esquina inferior-izquierda) y la rejilla de colision.
+- **La prueba es el rect de TINTA en el mundo, antes y despues.** No la posicion del sprite, que
+  cambia a proposito. Medido sobre las **324** colocaciones: **maximo 0.0151 unidades, 1.21 px de
+  pantalla**, mediana 0.0001 — y ese maximo es el suelo de cuantizacion, porque `rel_x`/`rel_y` y
+  un override de `scale` son ENTEROS y medio pixel de sprite a 32 PPU son 0.0156 u. Comprobado
+  tambien contra el JUEGO EN MARCHA (`SpriteRenderer.bounds` de los 324 edificios cargados), que
+  es lo que cierra la cadena entera: plantilla, colocacion, rect del atlas, `Sprite.Create` y
+  `localScale`.
+- **Trampa al verificar contra el mundo: no uses tu propia formula de zona.** La primera
+  comparacion dio 82 colocaciones desviadas **exactamente 100 unidades** — el paso de zona —
+  porque el termino `(ZH-1)` solo acierta para `offset_y = 50`. Un error que es EXACTAMENTE una
+  constante del sistema es un fallo del medidor, no del dato. Deducir el offset de cada zona de
+  sus propias colocaciones lo cancela y deja los 324 en 1.21 px.
+- **LA REJILLA DE COLISION TIENE UNA CELDA DE UNA UNIDAD DE MUNDO, asi que ningun remapeo es
+  gratis.** `ResampleGrid` re-corta la matriz guardada a `ceil(effW/32) x ceil(effH/32)` antes de
+  crear un solo collider, y un recorte cambia esa cuenta (medido: 11 filas -> 10). Medido en
+  mundo sobre los 136 edificios con rejilla: **un solo edificio abre 0.171 u** (`curse_house_iso`)
+  y el que mas crece son 0.390 u (`blacksmith`). Se dejo asi tras comprobar que la alternativa
+  conservadora — marcar solida toda celda que toque arte que lo era — cuesta una CELDA ENTERA,
+  0.79 u en ese mismo edificio: peor. Comparar celdas por INDICE no prueba nada despues de un
+  remapeo, porque la celda (r,c) cubre arte distinto; la pregunta hay que hacerla en espacio de
+  mundo, muestreando.
+- **Cinco `splitRatio` topan contra el borde, y en los cinco la mitad que se pierde era lienzo
+  vacio** (comprobado: en tres la linea de corte caia fuera de la tinta, y en los otros dos a
+  0.2 px y 4 px de su borde). Un `splitRatio` de 0.95 sobre un sprite cuyo 5 % inferior era
+  padding significaba que el edificio entero se dibujaba como canopy, por encima del jugador;
+  ahora ese 5 % es arte de verdad.
+- **REIMPORTAR EL PNG NO ACTUALIZA EL SPRITE: hay que REEMPACAR EL ATLAS.** Medido justo despues
+  del refresh: `tex=1024x1532` y `spriteRect=1024x1536` sobre el mismo asset. `BuildingObject`
+  lee `sourceSprite.textureRect` para su `baseW/baseH`, asi que hasta el repack el runtime
+  escala contra el tamano VIEJO — y nada falla. `SpriteAtlasUtility.PackAllAtlases` y luego
+  comprobar el rect leyendolo. Tercera forma distinta de quedarse rancio en este fichero, tras
+  el domain reload y el `scope="scripts"`.
+- **Una sonda de depuracion que desactiva una guarda EJECUTA lo que la guarda protegia.** Para
+  sacar el detalle por colocacion de una simulacion, este trabajo hizo `exec` del script con
+  `sys.exit(0)` sustituido por `pass` — y el bloque de escritura que venia despues, que ya no
+  estaba guardado por nada, recorto los 50 PNG y reescribio 128 plantillas y 27 colocaciones.
+  Se recupero solo porque el camino de escritura toma el snapshot antes de tocar nada. Misma
+  familia que la sonda que dejo `Debug.unityLogger.logEnabled` en false: **una sonda no cambia
+  el flujo de control del codigo que esta midiendo** — se importa la funcion y se la llama, o se
+  le pasa un parametro; no se parchea su salida.
+- El recorte NO es gratis por una razon mas, y es la que obliga a compensar: `BuildingObject.Apply`
+  hace `localScale = effH / baseH` con el ancla en el borde inferior-centro del PNG COMPLETO, asi
+  que recortar `b` filas de un alto `h` hace el edificio `h / (h - b)` veces mas alto y lo baja
+  hasta apoyarlo. La compensacion exacta esta en `.github/BUILDING_SPRITE_PADDING_2026-09-13.md`.
 
 ## Incident reports
 

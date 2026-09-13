@@ -16,15 +16,15 @@ MonoBehaviour:
   assetPath: Buildings/forest_decoration/corrupto/pozo_savia_corrupta
   previewSprite: {fileID: 21300000, guid: eff680ea10b218b45a2f8b40289944bf, type: 3}
   solid: 1
-  splitRatio: 0.5
+  splitRatio: 0.4879
   colliderScope: CG
   interactable: 0
-  originalScale: {x: 1024, y: 1024}
+  originalScale: {x: 704, y: 453}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
   windSway: 0
-  inkBottomNormalized: 0.27929688
+  inkBottomNormalized: 0.013245033
   projectedShadow: 0
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}

@@ -16,15 +16,15 @@ MonoBehaviour:
   assetPath: Buildings/forest_decoration/corrupto/semilla_reventada
   previewSprite: {fileID: 21300000, guid: b0baf4d3945de784296f58f9bab9a79f, type: 3}
   solid: 1
-  splitRatio: 0.5
+  splitRatio: 0.449
   colliderScope: CG
   interactable: 0
-  originalScale: {x: 1024, y: 1024}
+  originalScale: {x: 623, y: 824}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
   windSway: 0
-  inkBottomNormalized: 0.25390625
+  inkBottomNormalized: 0.24514563
   projectedShadow: 0
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}

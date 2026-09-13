@@ -16,15 +16,15 @@ MonoBehaviour:
   assetPath: Buildings/forest_decoration/natural/petalos_rosados_1
   previewSprite: {fileID: 21300000, guid: 49175e2a89d33dd498cda554cbc323d7, type: 3}
   solid: 1
-  splitRatio: 0.5
+  splitRatio: 0.3687
   colliderScope: CG
   interactable: 0
-  originalScale: {x: 1024, y: 1024}
+  originalScale: {x: 477, y: 670}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
   windSway: 0
-  inkBottomNormalized: 0.27148438
+  inkBottomNormalized: 0.28208956
   projectedShadow: 0
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}

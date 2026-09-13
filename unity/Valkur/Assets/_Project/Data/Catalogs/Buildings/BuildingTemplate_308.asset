@@ -16,15 +16,15 @@ MonoBehaviour:
   assetPath: Buildings/temples/catholic
   previewSprite: {fileID: 21300000, guid: 7c4d7d88215ccad48b5c739aa8fbb1ed, type: 3}
   solid: 1
-  splitRatio: 0.794
+  splitRatio: 0.7987
   colliderScope: CG
   interactable: 0
-  originalScale: {x: 256, y: 384}
+  originalScale: {x: 256, y: 382}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
   windSway: 0
-  inkBottomNormalized: 0.041015625
+  inkBottomNormalized: 0.035363458
   projectedShadow: 0
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}

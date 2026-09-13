@@ -19,12 +19,12 @@ MonoBehaviour:
   splitRatio: 0.95
   colliderScope: CG
   interactable: 0
-  originalScale: {x: 58, y: 58}
+  originalScale: {x: 41, y: 47}
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
   windSway: 0
-  inkBottomNormalized: 0.2734375
+  inkBottomNormalized: 0.22929172
   projectedShadow: 0
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}
