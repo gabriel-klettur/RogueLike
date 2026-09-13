@@ -45,6 +45,33 @@ distingue una captura "correcta" de una captura que alguien pone de fondo de pan
 Ninguno de los cinco es un bug. Son capas que no se han construido, y las cinco ideas del
 final son esas capas, en el orden en que más cambian la pantalla por milisegundo gastado.
 
+## Estado: Fases 0 a 7 implementadas (2026-09-13)
+
+Cuatro commits el mismo día, cada uno con consola limpia, suite del área en verde y
+captura real de verificación. Lo que hay ahora en `main`:
+
+| Fase | Commit | Qué se envió | Medido |
+|---|---|---|---|
+| 1 Bloom | `2efcda70e` | `Hidden/Valkur/ScreenBloom` dentro de `ScreenGradeFeature`, pirámide dual-Kawase a media resolución, compuesto antes del grade | Umbral fijo 1.0: delta 20/255 sobre una antorcha de noche. Umbral que sigue a la ambiente BASE (1.0 de día, ~0.48 de noche, suelo 0.45 + 0.22 de margen para charcos de luz) |
+| 2 Sombras | `2efcda70e` | `SunModel` (puro), `SunShadowCaster` (el propio sprite cizallado desde los pies + blob de contacto), `CloudShadowLayer` (quad multiply bajo `Projectiles`), `SkyStyle.asset` | 649 casters vivos en el Lobby; a las 08:00 skew -0.76 al oeste. Trampa cazada: `SetPropertyBlock` sin `GetPropertyBlock` pisó `_MainTex` y la sombra fue el RECT entero |
+| 4 Mundo | `b884ebc90` | `_VALKUR_SWAY` en ambos shaders HDR (`ValkurWind.hlsl`), `WindSway` publicado desde el tick del clima, `BuildingWindSway` por categoría, `FootstepEmitter` + `FootstepDust`, sombras y polvo en monstruos | 184 de 324 copas se mecen; 78 % de píxeles de copa cambian entre dos fotogramas contra 16 % del tronco |
+| 3 Noche | `1d4909d95` | `PlayerLantern` (Point aditiva, contra-escalada, a los pies), `FireflyField` | A 0.62 y al pecho el cuerpo se iba a blanco; a 0.24 y a los pies el personaje se lee y el suelo también |
+| 6 Zona | `1d4909d95` | `ScreenFade` (Core/UI) en el swap de interiores, `ZoneBannerHUD` + `ZoneBannerRules` | La regla de 200 téxeles cruzaba tres cuartos de pantalla; ahora mide la palabra |
+| 7 Momentos | `21784f382` | Crítico en `Health` y en las cuatro rutas de acción, números con sombra y color por elemento en `UI_World` sobre el span de las barras, `StatusEffectVisuals`, `_Dissolve` en los shaders HDR, `WorldPickup.Launch`, `BossPhaseController.Burst`, antorcha 0.55/160 px | 1529/1529 en Combat+Enemies+WorldDrops+Spells+Player+AI+Lighting |
+
+Todo lleva interruptor de sesión en `look` (`look bloom|clouds|sunshadows|sway|lantern|fireflies|footsteps on|off`) y su afinación en `Resources/SkyStyle.asset`.
+
+### Lo que sigue abierto tras esta pasada
+
+- **Agua viva y suelo mojado (Idea 3)**: no tocado. El modelo a copiar es `SnowSplatMap`.
+- **Ventanas emisivas y sombras URP de luna (Idea 4, mitad)**: no tocado; necesita una máscara por template y el caster desde la rejilla de colisión.
+- **Fauna**: no hay arte de pájaros ni mariposas; las luciérnagas son el único ser vivo nuevo.
+- **Sonido de pasos por superficie**: el catálogo no tiene ids; `FootstepEmitter` deja la costura (`GroundKind`) y no llama a nada.
+- **Grade y calima por zona, cine de jefe con letterbox**: no tocado.
+- **Orden del crítico contra la mitigación**: `CritResolver` multiplica ANTES de la defensa, como hacía ya en el melee enviado. Multiplicar después (como hace la vulnerabilidad) es más coherente y es una decisión de balance pendiente, no un fallo.
+- **`light_instances.json` con `lobby`/`Lobby`**: es un fichero escrito por el editor de Lighting; se corrige desde él, no a mano.
+- **Sombra de nube sobre `Overhead` y niveles 9-15**: el quad va bajo `Projectiles` para no atenuar lo emisivo; los tiles pintados por encima quedan sin sombra de nube.
+
 ## Lo que ya está bien (y no hay que tocar)
 
 | Pieza | Por qué cuenta |
