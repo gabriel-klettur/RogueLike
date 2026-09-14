@@ -245,7 +245,7 @@ namespace Valkur.Tests.EditMode.Editors.General
             "Tile", "Buildings", "Items", "Spells", "Entities", "Boss", "FSM",
             "Map", "Inventory", "Particles", "Spawners", "Lighting",
             "Time & Weather", "Camera", "Controls", "Dungeon NodeGraph", "Skills",
-            "Economy", "Muerte", "Misiones",
+            "Economy", "Muerte", "Misiones", "Seed World",
         };
 
         // The TOOLS tab: things that act on the world without owning a content type. The

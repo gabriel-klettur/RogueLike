@@ -67,6 +67,7 @@ namespace Valkur.Gameplay.Editors.General
             list.Add(MakeEditor("Economy",       () => Valkur.Gameplay.Editors.Economy.EconomyRuntimeEditor.Instance));
             list.Add(MakeEditor("Muerte",        () => Valkur.Gameplay.Editors.Death.DeathRuntimeEditor.Instance));
             list.Add(MakeEditor("Misiones",      () => Valkur.Gameplay.Editors.Quests.QuestsRuntimeEditor.Instance));
+            list.Add(MakeEditor("Seed World",    () => Valkur.Gameplay.Editors.SeedWorld.SeedWorldRuntimeEditor.Instance));
 
             // ── Tools ───────────────────────────────────────────────────────
             //

@@ -216,6 +216,21 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>
+        /// The Seed World editor: configure a procedural world (seed, size, continents, climate,
+        /// biomes) and preview it. No hotkey, like the Quests and Death editors. It generates
+        /// nothing into the loaded world and writes nothing to disk — phase 1 of
+        /// .github/SEED_WORLD_ROADMAP.md.
+        /// </summary>
+        private void EnsureSeedWorldEditor()
+        {
+            if (Valkur.Gameplay.Editors.SeedWorld.SeedWorldRuntimeEditor.Instance != null) return;
+            var go = new GameObject("SeedWorldEditor");
+            go.AddComponent<Valkur.Gameplay.Editors.SeedWorld.SeedWorldRuntimeEditor>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
+            Debug.Log("[GameplaySceneSetup] SeedWorldEditor created. Open it from the General Editor (ESC).");
+        }
+
+        /// <summary>
         /// The pause key. <c>Gameplay/Pause</c> has been bound to <c>p</c> for the life of the
         /// asset with no reader at all — see <see cref="PauseHotkeyReader"/>.
         /// </summary>

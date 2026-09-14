@@ -165,6 +165,7 @@ namespace Valkur.Gameplay
                     EnsureEconomyEditor();
                     EnsureDeathEditor();
                     EnsureQuestsEditor();
+                    EnsureSeedWorldEditor();
                     EnsureSelectionEditor();
                 }, 5f, barrier: false));
             }
