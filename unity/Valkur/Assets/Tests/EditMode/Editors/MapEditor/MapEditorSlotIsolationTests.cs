@@ -49,6 +49,9 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         private string _slotBPath;
         private bool   _hadExistingSlotA;
         private bool   _hadExistingSlotB;
+        // The default-active persist below mirrors into the REAL Maps/default.zones.json.
+        private string _defaultMirrorPath;
+        private byte[] _defaultMirrorBytes;
 
         [SetUp]
         public void SetUp()
@@ -58,6 +61,8 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
 
             string mapsDir = Path.Combine(Application.persistentDataPath, "Maps");
             Directory.CreateDirectory(mapsDir);
+            _defaultMirrorPath = Path.Combine(mapsDir, "default.zones.json");
+            _defaultMirrorBytes = File.Exists(_defaultMirrorPath) ? File.ReadAllBytes(_defaultMirrorPath) : null;
             _activeSlotPath = Path.Combine(mapsDir, "_active.txt");
             _slotAPath      = Path.Combine(mapsDir, SLOT_A + ".zones.json");
             _slotBPath      = Path.Combine(mapsDir, SLOT_B + ".zones.json");
@@ -82,6 +87,12 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         {
             try { if (!_hadExistingSlotA && File.Exists(_slotAPath)) File.Delete(_slotAPath); } catch { }
             try { if (!_hadExistingSlotB && File.Exists(_slotBPath)) File.Delete(_slotBPath); } catch { }
+            try
+            {
+                if (_defaultMirrorBytes != null) File.WriteAllBytes(_defaultMirrorPath, _defaultMirrorBytes);
+                else if (File.Exists(_defaultMirrorPath)) File.Delete(_defaultMirrorPath);
+            }
+            catch { }
             try
             {
                 if (_hadExistingActiveSlot && _activeSlotParkedContent != null)

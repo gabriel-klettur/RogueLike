@@ -116,6 +116,8 @@ namespace Valkur.Gameplay.MapEditor
 
             // Slot file is authoritative — replace, don't merge with DB.
             ApplySlotToZoneManager(data);
+            // From here the live zones ARE the slot's, so a persist writes the slot file.
+            _liveZonesOwnerPin = null;
             // Adopt (don't re-apply) the overlay: the renamed names are
             // already baked into data.zones, but the (originalName →
             // currentName) pairs must travel with subsequent persists so
@@ -163,16 +165,28 @@ namespace Valkur.Gameplay.MapEditor
             if (string.IsNullOrEmpty(clean)) return false;
 
             var store = ResolveSlotStore();
-            string json = store.ReadSlot(clean);
 
-            // The "default" slot is the implicit blank baseline; if no file
-            // exists for it yet, treat the load as "revert to factory blank"
-            // rather than failing — that way the synthetic entry surfaced in
-            // ListSlots() is actually selectable.
-            bool isDefault = string.Equals(clean,
-                MapEditorMapSlots.DEFAULT_SLOT, StringComparison.OrdinalIgnoreCase);
-            bool isDefaultBlankLoad = json == null && isDefault;
-            if (json == null && !isDefaultBlankLoad) return false;
+            // PEPITORIA IS NOT A SLOT FILE. The base world is the zone database plus the base working
+            // copy, merged the way boot merges them; Maps/default.zones.json is only a mirror of it,
+            // and loading that mirror instead replaced the whole base world with whatever the file
+            // held — a fixture's single "Alpha" zone, measured on this machine the day it mattered.
+            // Every other map needs its own file, and it is parsed BEFORE anything is written, so an
+            // unreadable slot refuses the switch instead of abandoning a half-saved world.
+            bool isDefault = IsBaseSlot(clean);
+            ZonePersistenceFile data = null;
+            if (!isDefault)
+            {
+                string json = store.ReadSlot(clean);
+                if (json == null) return false;
+                try { data = JsonUtility.FromJson<ZonePersistenceFile>(json); }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[MapEditor] Slot '{clean}' parse failed: {ex.Message}");
+                    return false;
+                }
+                if (data == null) return false;
+                MapZonesMigrations.Migrate(data);
+            }
 
             // Snapshot the OUTGOING slot's player state to disk before
             // anything mutates the world. Without this, switching maps would
@@ -183,14 +197,12 @@ namespace Valkur.Gameplay.MapEditor
             // state into the slot we're about to abandon.
             if (!_isBootSyncInProgress) FlushPlayerStateBeforeSlotChange("LoadMapSlot");
 
-            // Snapshot the current state into its existing slot first so the
-            // user doesn't silently lose unsaved edits — except when reloading
-            // 'default' onto itself, which would otherwise freeze the very
-            // edits we're about to discard into a brand-new default.zones.json.
-            bool skipBackup = isDefaultBlankLoad
-                && string.Equals(store.ActiveSlot,
-                    MapEditorMapSlots.DEFAULT_SLOT, StringComparison.OrdinalIgnoreCase);
-            if (!skipBackup) BackupCurrentToActiveSlot();
+            // Persist the OUTGOING map into its own file first so the user doesn't silently lose
+            // unsaved edits — except when reloading Pepitoria onto itself, which is a request to
+            // read it back from disk. The persist records where the player stood, which is how a
+            // return to a map lands them where they left it.
+            bool reloadingBaseOntoItself = isDefault && IsBaseSlot(LiveZonesOwner);
+            if (!reloadingBaseOntoItself) PersistZonesToDisk();
             // Flush tile-overlay edits AND persist Buildings-Editor edits to
             // the OUTGOING slot before any wipe / flip. Without these the
             // pending edits would either be discarded (overlays) or silently
@@ -200,38 +212,17 @@ namespace Valkur.Gameplay.MapEditor
             FlushLightEditsForOutgoingSlot();
             FlushItemDropsForOutgoingSlot();
 
-            // Position to teleport the player to once the new slot is active.
-            // Defaults to world origin; replaced by the slot file's last-known
-            // position when the file exists and was previously visited.
-            Vector2 spawnPos = Vector2.zero;
-
-            if (isDefaultBlankLoad)
+            Vector2 spawnPos;
+            if (isDefault)
             {
-                zoneManager?.ReplaceZones(Array.Empty<ZoneManager.ZoneDefinition>());
-                if (_state != null)
-                {
-                    _state.RestrictTileEditingToEditableZones = false;
-                    _state.NextZoneIndex = 1;
-                }
-                // No portals on the synthetic blank-default load — drop any
-                // runtime portal objects from the outgoing slot.
-                HydratePortalsFromPersistence(null);
-                // Same idea for biome-buildings: blank-default = empty.
-                HydrateBiomeBuildingsFromPersistence(null);
-                // No DB zones either → no database-rename overlay applies.
-                ClearDatabaseRenames();
+                // The pointer flips FIRST here: the rebuild reads the base world's files and the
+                // repaint below resolves the base overrides through the active slot.
+                store.SetActive(MapEditorMapSlots.DEFAULT_SLOT);
+                _liveZonesOwnerPin = null;
+                spawnPos = RebuildBaseWorldZones();
             }
             else
             {
-                ZonePersistenceFile data;
-                try { data = JsonUtility.FromJson<ZonePersistenceFile>(json); }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"[MapEditor] Slot '{clean}' parse failed: {ex.Message}");
-                    return false;
-                }
-                if (data == null) return false;
-                MapZonesMigrations.Migrate(data);
                 ApplySlotToZoneManager(data);
                 // Adopt the slot's database-rename overlay. ApplySlotToZoneManager
                 // already replayed the renamed names into ZoneManager, so this
@@ -243,12 +234,13 @@ namespace Valkur.Gameplay.MapEditor
                 // biome reproduces instead of disappearing on slot switch.
                 HydrateBiomeBuildingsFromPersistence(data);
                 spawnPos = GetSavedPlayerPosition(data);
+                // Flip the active-slot pointer so the visual repaint below
+                // resolves the new slot's WorldId. Tile-overlay routing keys off
+                // the live store value via RebindTileEditorToActiveWorld().
+                store.SetActive(clean);
+                _liveZonesOwnerPin = null;
             }
 
-            // Flip the active-slot pointer FIRST so the visual repaint below
-            // resolves the new slot's WorldId. Tile-overlay routing keys off
-            // the live store value via RebindTileEditorToActiveWorld().
-            store.SetActive(clean);
             // Clear undo history so a Ctrl+Z after a slot switch can't
             // resurrect a zone from the previous slot — the captured Do/Undo
             // closures reference the outgoing ZoneManager state.
@@ -259,8 +251,8 @@ namespace Valkur.Gameplay.MapEditor
             RebindTileEditorToActiveWorld();
 
             // Visual swap: drop any tiles painted for the previous slot, then
-            // repaint the overrides whose zones live in this slot. Without this
-            // the new ZoneManager state is correct but the user still sees the
+            // repaint the ones that belong to this slot. Without this the new
+            // ZoneManager state is correct but the user still sees the
             // previous map's tiles.
             RefreshTilemapForActiveSlot();
 
@@ -281,20 +273,70 @@ namespace Valkur.Gameplay.MapEditor
             return true;
         }
 
-        // Clears the live tilemap and reapplies the override files that belong
-        // to the currently-active slot's <see cref="WorldId"/>. Each slot now
-        // owns its own directory under <c>persistentDataPath/MapOverrides/</c>
-        // (the implicit "default" slot keeps the legacy flat root for byte-
-        // compat), so the visual swap between maps is fully isolated — no
-        // interference even when two slots share a zone name.
+        // Clears the live tilemap and repaints the active slot's ground. Each slot
+        // owns its own override directory under <c>persistentDataPath/MapOverrides/</c>
+        // (the implicit "default" slot keeps the legacy flat root for byte-compat),
+        // so the visual swap between maps is fully isolated — no interference even
+        // when two slots share a zone name.
+        //
+        // Pepitoria's ground is NOT only its overrides: it is the shipped overlays and
+        // collision grids plus the author's overrides on top, which is the WorldLoader
+        // recipe boot and a return from an interior both use. Repainting just the
+        // overrides left every zone nobody had edited on this machine without a tile.
         private void RefreshTilemapForActiveSlot()
         {
             if (worldGridBuilder == null) return;
+            WorldId worldId = ResolveSlotStore().ActiveWorldId;
+            var world = worldId.IsBase ? FindObjectOfType<WorldLoader>() : null;
+            if (world != null)
+            {
+                TerrainCatalogLoader.InvalidateCache();
+                worldGridBuilder.ClearWorld();
+                world.LoadFullWorld();
+                if (Valkur.Gameplay.World.Layering.WorldCollisionBaker.HasInstance)
+                    Valkur.Gameplay.World.Layering.WorldCollisionBaker.Instance.RebuildAll();
+                return;
+            }
             worldGridBuilder.ClearWorld();
             if (zoneManager == null) return;
-            WorldId worldId = ResolveSlotStore().ActiveWorldId;
             Valkur.Gameplay.TileEditor.TileOverlayPersistence
                 .ApplyAllOverrides(worldGridBuilder, zoneManager, worldId);
+        }
+
+        /// <summary>The base world's hub (Pepitoria) — where a return lands when nothing recorded a position.</summary>
+        internal const string BASE_WORLD_HUB_ZONE = "Lobby";
+
+        /// <summary>
+        /// Pepitoria's zones, rebuilt exactly the way boot builds them: the zone database first, then
+        /// the base working copy merged on top (renames, user zones, shelving, portals, biome
+        /// buildings). Returns where to put the player: the position the working copy recorded the
+        /// last time the player stood in Pepitoria — i.e. the spot they left it from — or the hub's
+        /// centre when it never recorded one.
+        /// </summary>
+        private Vector2 RebuildBaseWorldZones()
+        {
+            // Nothing the outgoing map spawned or renamed belongs to Pepitoria.
+            HydratePortalsFromPersistence(null);
+            HydrateBiomeBuildingsFromPersistence(null);
+            ClearDatabaseRenames();
+
+            var database = FindObjectOfType<ZoneDatabaseLoader>();
+            if (database != null) database.LoadDatabase();
+            else zoneManager?.ReplaceZones(Array.Empty<ZoneManager.ZoneDefinition>());
+
+            MergePersistedZonesIntoLive(reapplyOverrides: false);
+
+            if (TryReadPersistenceFile(out var working) != null && working.hasLastPlayerPosition)
+                return new Vector2(working.lastPlayerWorldX, working.lastPlayerWorldY);
+            return BaseWorldHubCentre();
+        }
+
+        private Vector2 BaseWorldHubCentre()
+        {
+            if (zoneManager == null || !zoneManager.TryGetZone(BASE_WORLD_HUB_ZONE, out var hub))
+                return Vector2.zero;
+            return new Vector2(hub.gridOffset.x + zoneManager.ZoneWidthTiles * 0.5f,
+                               hub.gridOffset.y + zoneManager.ZoneHeightTiles * 0.5f);
         }
 
         // Flushes any in-flight tile-overlay edits to the OUTGOING slot's
@@ -348,7 +390,13 @@ namespace Valkur.Gameplay.MapEditor
         public bool BeginNewMap(string slotName)
         {
             string clean = MapEditorMapSlots.Sanitize(slotName);
-            if (string.IsNullOrEmpty(clean)) clean = MapEditorMapSlots.DEFAULT_SLOT;
+            // A blank map is a NEW map. Blanking the base world would end in a persist of zero zones
+            // over Pepitoria's working copy, so the implicit default is refused rather than emptied.
+            if (IsBaseSlot(clean))
+            {
+                Debug.LogWarning("[MapEditor] BeginNewMap refused: the base world cannot be blanked. Give the new map a name.");
+                return false;
+            }
 
             // Persist the player's current run state before BeginNewMap wipes
             // the live grid. Same rationale as the LoadMapSlot guard.
@@ -390,6 +438,7 @@ namespace Valkur.Gameplay.MapEditor
             // irrelevant here.
             ClearDatabaseRenames();
             ResolveSlotStore().SetActive(clean);
+            _liveZonesOwnerPin = null;
             ClearUndoHistory();
             // Re-bind the tile editor's overlay persistence to the new slot's
             // world so any first edits land in the new directory.
@@ -674,30 +723,10 @@ namespace Valkur.Gameplay.MapEditor
             }
         }
 
-        private void BackupCurrentToActiveSlot()
-        {
-            var store = ResolveSlotStore();
-            string active = store.ActiveSlot;
-            if (string.IsNullOrEmpty(active)) return;
-            PersistZonesToDisk();
-            string json = ReadWorkingCopyJson();
-            if (json != null)
-                store.WriteSlot(active, json);
-        }
-
-        private string ReadWorkingCopyJson()
-        {
-            try
-            {
-                string raw = ResolveZonesRepository().ReadWithSidecarFallback(_persistenceWorldId, out _);
-                return raw;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"[MapEditor.Slots] Read working copy failed: {ex.Message}");
-                return null;
-            }
-        }
+        // Persists the live zones into the file of the map they belong to. It used to also copy
+        // the base working copy into the ACTIVE slot's file — correct only while those were the
+        // same map, and the copy that stamped Pepitoria's catalog zones into generated worlds.
+        private void BackupCurrentToActiveSlot() => PersistZonesToDisk();
 
         private void ApplySlotToZoneManager(ZonePersistenceFile data)
         {

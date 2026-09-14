@@ -30,9 +30,19 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         private bool   _hadUserZones;
         private bool   _hadUserSidecar;
 
+        // Every persist with the base world active also mirrors into Maps/default.zones.json — the
+        // real file. Ops tests left their seed zones there ("Alpha", "Beta") for as long as this base
+        // existed, and loading "default" used to apply that file as the whole base world.
+        private string _defaultMirrorPath;
+        private byte[] _defaultMirrorBytes;
+
         [SetUp]
         public void SetUp()
         {
+            _defaultMirrorPath = System.IO.Path.Combine(Application.persistentDataPath, "Maps", "default.zones.json");
+            _defaultMirrorBytes = System.IO.File.Exists(_defaultMirrorPath)
+                ? System.IO.File.ReadAllBytes(_defaultMirrorPath) : null;
+
             _userZonesPrimary = System.IO.Path.Combine(Application.persistentDataPath, "map_editor_zones.json");
             _userZonesBackup  = _userZonesPrimary + ".test_backup_" + System.Guid.NewGuid().ToString("N").Substring(0, 8);
             _userZonesSidecar       = _userZonesPrimary + ".bak";
@@ -98,6 +108,12 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             catch { }
             try { if (System.IO.File.Exists(_userZonesBackup)) System.IO.File.Delete(_userZonesBackup); } catch { }
             try { if (System.IO.File.Exists(_userZonesSidecarBackup)) System.IO.File.Delete(_userZonesSidecarBackup); } catch { }
+            try
+            {
+                if (_defaultMirrorBytes != null) System.IO.File.WriteAllBytes(_defaultMirrorPath, _defaultMirrorBytes);
+                else if (System.IO.File.Exists(_defaultMirrorPath)) System.IO.File.Delete(_defaultMirrorPath);
+            }
+            catch { }
 
             foreach (var go in _sceneObjects)
                 if (go != null) UnityEngine.Object.DestroyImmediate(go);

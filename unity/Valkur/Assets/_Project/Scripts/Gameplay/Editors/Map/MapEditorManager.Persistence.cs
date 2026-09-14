@@ -35,6 +35,31 @@ namespace Valkur.Gameplay.MapEditor
         public void SetPersistenceWorld(WorldId worldId)
             => _persistenceWorldId = worldId;
 
+        // ── Which map the LIVE zones belong to ──────────────────────────────────
+        //
+        // The ZoneManager holds ONE map's zones at a time, and those zones have exactly one file
+        // that may receive them: the base world's working copy (map_editor_zones.json, mirrored
+        // to Maps/default.zones.json) while Pepitoria is loaded, or Maps/<slot>.zones.json while
+        // another map is. The working copy used to receive EVERY map's zones, because a persist
+        // wrote it unconditionally and only the mirror looked at the active slot. On 2026-09-14
+        // that turned a generated world's 102 zones into base-world zones (45 -> 126, eight real
+        // zones lost with the buildings standing in them), and the next boot of the base world
+        // read them back.
+        //
+        // Null means "the active slot owns the live zones", which is true at every moment except
+        // boot: the database + working copy go live before the slot sync replaces them, whatever
+        // _active.txt says. Start pins the base world and the slot sync unpins only once it has
+        // replaced the zones — so a slot whose file turned out to be missing leaves the base world
+        // pinned, which is what is actually live.
+        private string _liveZonesOwnerPin;
+
+        /// <summary>The slot whose zones the live ZoneManager holds — the one file a persist may write.</summary>
+        internal string LiveZonesOwner => _liveZonesOwnerPin ?? ResolveSlotStore().ActiveSlot;
+
+        internal static bool IsBaseSlot(string slot)
+            => string.IsNullOrEmpty(slot)
+               || string.Equals(slot, MapEditorMapSlots.DEFAULT_SLOT, StringComparison.OrdinalIgnoreCase);
+
         private IMapEditorZonesRepository ResolveZonesRepository()
         {
             if (_zonesRepository != null) return _zonesRepository;
@@ -103,7 +128,8 @@ namespace Valkur.Gameplay.MapEditor
             // restore them. Without this merge, every PersistZonesToDisk call
             // would silently delete shelved zones the moment the user makes
             // any unrelated edit.
-            int shelvedPreserved = MergeShelvedZonesFromDisk(data, liveNames, liveOffsets);
+            string owner = LiveZonesOwner;
+            int shelvedPreserved = MergeShelvedZonesFromDisk(owner, data, liveNames, liveOffsets);
 
             // Mirror the in-memory portals list (managed by Portals partial)
             // into the document so it travels with the slot file.
@@ -121,17 +147,28 @@ namespace Valkur.Gameplay.MapEditor
             try
             {
                 string json = JsonUtility.ToJson(data, prettyPrint: true);
-                ResolveZonesRepository().WriteAtomic(_persistenceWorldId, json);
-                // Auto-save mirror: the slot file for the currently-active map
-                // tracks the working copy on every persist, so zone Add /
-                // Delete / Rename / ToggleEditable / Biome generation are all
-                // saved instantly with no explicit "Save As" step required.
-                MirrorWorkingCopyToActiveSlot(json);
+                if (IsBaseSlot(owner))
+                {
+                    ResolveZonesRepository().WriteAtomic(_persistenceWorldId, json);
+                    // Auto-save mirror: default.zones.json tracks the working copy on every persist,
+                    // so zone Add / Delete / Rename / ToggleEditable / Biome generation are all saved
+                    // instantly with no explicit "Save As" step. Only while the POINTER agrees: in the
+                    // middle of a slot switch it can already name the incoming map, and the mirror
+                    // would then write Pepitoria's zones into that map's file.
+                    if (IsBaseSlot(ResolveSlotStore().ActiveSlot))
+                        MirrorWorkingCopyToActiveSlot(json);
+                }
+                else if (!_isBootSyncInProgress)
+                {
+                    // Another map's zones go to that map's file and nowhere else — never the base
+                    // world's working copy.
+                    ResolveSlotStore().WriteSlot(owner, json);
+                }
                 if (shelvedPreserved > 0)
                     Debug.Log($"[MapEditor] Persisted {data.zones.Count} zone(s) " +
-                              $"({shelvedPreserved} shelved preserved) via repository.");
+                              $"({shelvedPreserved} shelved preserved) for '{owner}'.");
                 else
-                    Debug.Log($"[MapEditor] Persisted {data.zones.Count} zone(s) via repository.");
+                    Debug.Log($"[MapEditor] Persisted {data.zones.Count} zone(s) for '{owner}'.");
             }
             catch (Exception ex)
             {
@@ -157,17 +194,23 @@ namespace Valkur.Gameplay.MapEditor
             store.WriteSlot(active, json);
         }
 
-        // Reads the current persistence file (if any) and appends to `data`
+        // Reads the OWNER's persistence file (if any) and appends to `data`
         // every entry that meets ALL of:
         //   1. Has a non-empty zone name not already in `liveNames`.
         //   2. Has a grid offset that collides with a live zone (so it was
         //      almost certainly shelved, not explicitly deleted).
         // Returns the count of shelved entries that survived this round.
-        private int MergeShelvedZonesFromDisk(ZonePersistenceFile data,
+        //
+        // The owner matters as much here as in the write: merging the base working copy into a
+        // persist of another map is how that map's file collected Pepitoria's catalog zones.
+        private int MergeShelvedZonesFromDisk(string owner, ZonePersistenceFile data,
                                               HashSet<string> liveNames,
                                               HashSet<Vector2Int> liveOffsets)
         {
-            string source = TryReadPersistenceFile(out var existing);
+            ZonePersistenceFile existing;
+            string source = IsBaseSlot(owner)
+                ? TryReadPersistenceFile(out existing)
+                : TryReadSlotPersistence(owner, out existing);
             if (source == null || existing == null || existing.zones == null) return 0;
 
             int preserved = 0;
@@ -215,7 +258,32 @@ namespace Valkur.Gameplay.MapEditor
             }
         }
 
-        private void LoadZonesFromDisk()
+        /// <summary>Parse another map's <c>Maps/&lt;slot&gt;.zones.json</c>; null when it is missing or unreadable.</summary>
+        private string TryReadSlotPersistence(string slot, out ZonePersistenceFile data)
+        {
+            data = null;
+            string json = ResolveSlotStore().ReadSlot(slot);
+            if (string.IsNullOrEmpty(json)) return null;
+            try
+            {
+                data = JsonUtility.FromJson<ZonePersistenceFile>(json);
+                if (data == null) return null;
+                MapZonesMigrations.Migrate(data);
+                return "slot";
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[MapEditor] Failed to deserialize slot '{slot}': {ex.Message}");
+                data = null;
+                return null;
+            }
+        }
+
+        // One name per method on purpose: fixtures reach this through reflection by name, and an
+        // overload would make every one of those lookups ambiguous.
+        private void LoadZonesFromDisk() => MergePersistedZonesIntoLive(reapplyOverrides: true);
+
+        private void MergePersistedZonesIntoLive(bool reapplyOverrides)
         {
             if (zoneManager == null) { Debug.LogWarning("[MapEditor] LoadZonesFromDisk skipped — zoneManager is null."); return; }
 
@@ -370,6 +438,10 @@ namespace Valkur.Gameplay.MapEditor
                 // (e.g. a base zone that was missing from the DB at the time
                 // WorldLoader iterated, but is present now). Robustness > the
                 // negligible cost of one extra directory scan at boot.
+                //
+                // Skipped when the caller repaints the whole world right afterwards (a return to
+                // Pepitoria): anything painted here would only be wiped by that repaint.
+                if (!reapplyOverrides) return;
                 if (worldGridBuilder != null)
                 {
                     int reapplied = Valkur.Gameplay.TileEditor.TileOverlayPersistence

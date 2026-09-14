@@ -154,6 +154,9 @@ namespace Valkur.Gameplay.MapEditor
             // slot's file — that mirror was the canonical regression that
             // ate slot data on every launch with a custom slot active.
             _isBootSyncInProgress = true;
+            // The database + base working copy are what goes live first, whatever _active.txt says;
+            // the slot sync below hands ownership to the active slot only once it has replaced them.
+            _liveZonesOwnerPin = MapEditorMapSlots.DEFAULT_SLOT;
             try
             {
                 LoadZonesFromDisk();
@@ -510,6 +513,11 @@ namespace Valkur.Gameplay.MapEditor
         {
             string clean = string.IsNullOrWhiteSpace(slotName)
                 ? MapEditorMapSlots.DEFAULT_SLOT : slotName;
+            if (IsBaseSlot(MapEditorMapSlots.Sanitize(clean)))
+            {
+                _ui?.SetStatus("The base world (Pepitoria) cannot be blanked - give the new map a name.");
+                return;
+            }
             bool ok = BeginNewMap(clean);
             _ui?.SetStatus(ok ? $"New blank map '{clean}'." : "New map failed.");
         }
