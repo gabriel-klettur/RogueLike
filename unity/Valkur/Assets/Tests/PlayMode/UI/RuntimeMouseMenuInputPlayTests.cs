@@ -28,6 +28,13 @@ namespace Valkur.Tests.PlayMode.UI
             _previousRunInBackground = Application.runInBackground;
             _previousBackgroundBehavior = InputSystem.settings.backgroundBehavior;
             _previousUpdateMode = InputSystem.settings.updateMode;
+
+            // InputTestFixture swaps in a fresh InputManager, but InputService is static and
+            // survives it (Domain Reload is OFF): its UI map still reports enabled=true from the
+            // real manager, so Initialize's EnsureAlwaysOnMapsEnabled skips it and the map is
+            // never enabled inside the fixture — the leftClick action then reads nothing. Drop
+            // the service first so the fixture's manager builds and enables its own.
+            InputService.ResetForTests();
             _inputFixture.Setup();
             Application.runInBackground = true;
             InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
@@ -62,6 +69,9 @@ namespace Valkur.Tests.PlayMode.UI
             Application.runInBackground = _previousRunInBackground;
             InputSystem.settings.backgroundBehavior = _previousBackgroundBehavior;
             InputSystem.settings.updateMode = _previousUpdateMode;
+            // The service built inside the fixture belongs to the fixture's manager; drop it so
+            // the next consumer re-initialises against the restored one.
+            InputService.ResetForTests();
             _inputFixture.TearDown();
             yield return null;
         }
