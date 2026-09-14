@@ -2327,6 +2327,18 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
   recovery was writing the value back and verifying BOTH the loaded object and the file's own
   text, because a domain reload does not reload assets. Prefer a probe that reads; if it must
   write, restore in the SAME call, and verify on disk rather than in memory.
+- **A TEST FIXTURE that writes a shipped asset is the same defect with a longer fuse, and one
+  shipped.** `TitleLookTests` set `MenuStyle.Active.titleLook = "ascua"` to assert the preserved
+  look was still there and never put it back — so from the first suite run of a session onward
+  the Editor held `ascua` while the disk said `volcan`, and the MENU drew a title the asset did
+  not contain. Measured: `memoria=ascua disco=volcan`. It is invisible from inside the suite (the
+  assertion is about a value the test itself just wrote) and visible only on screen, which is why
+  it survived a full green run. Two rules follow, and the second is the one that is easy to get
+  wrong: never touch `MenuStyle.Active` or any other shipped singleton — look the value up by
+  name, or build a scratch `ScriptableObject.CreateInstance<T>()` — and note that restoring in a
+  `finally` is NOT enough, because it leaves the shipped object dirty and therefore one
+  `AssetDatabase.SaveAssets` away from writing a fixture's value over the shipped data. That is
+  the 216-deleted-building-templates shape.
 
 - **A `LayoutElement` that sets only `preferredHeight` does NOT stop its row expanding.**
   uGUI resolves each layout property INDEPENDENTLY, taking it from the highest-priority
@@ -3762,6 +3774,131 @@ Health · Mana · MeleeCombat · PlayerController · Experience
   menu item behind a confirmation. Neither uses `Undo.RecordObject`, for the reason the
   building-template note in the gotchas records.
 
+## Woodcutting: a 0-100 % skill, paid by work
+
+Audited 2026-09-13 at **5.2/10** and rebuilt the same day. Findings, measurements and what is
+open: `.github/TREE_CHOPPING_AUDIT_2026-09-13.md`.
+
+```text
+GatheringSkillDefinition  Data/World/Gathering/   the curve: gain chance, efficiency, bonus — pure, in TENTHS
+GatheringYieldTable       Data/World/Gathering/   wood tiers: min skill, ramp, fade-out, tag gate
+GatheringSkillCatalog     Resources/Gathering/    the index (AddComponent-ed readers have no slot)
+TreeFamilyClassifier      Data/World/Gathering/   asset path -> family, one rule for seeder and tests
+PlayerGatheringSkills     Gameplay/World/Gathering/ per-player tenths; get-or-add on the PLAYER only
+GatheringSkillFeedback    Gameplay/World/Gathering/ coalesced "+0.3% Tala", milestone and unlock toasts
+HarvestFx / HarvestFxRig  Gameplay/World/Gathering/ ONE shared rig: chips, leaves, dust, flash pool
+TreeFellFX / BuildingHitShake / BuildingRegrowFX   the fall, the shudder, the regrowth
+HarvestNode.Yield.cs      Gameplay/World/Harvesting/ what work pays and teaches, from ANY route
+GatheringSkillsHUD        UI/HUD/Sheet/           character sheet tab OFICIOS
+WoodcuttingContentSeeder  Editor/Gathering/       Valkur > Gathering > Seed Woodcutting Content
+skill / talar / regrow / fell                     DevConsole, category "gathering"
+```
+
+- **PAID BY WORK, NEVER BY BLOW.** The session used to roll a yield on every blow whatever it
+  dealt, so bare hands (40 one-point blows) paid 10x an axe (4 blows) for the same tree — and
+  since yield per SECOND was identical, the axe bought nothing. A Destroy node now banks the
+  durability each blow removed and pays one yield per `workPerYield`; the wood is a property of
+  the tree, the tool only decides how fast. `BareHands_TakeMoreBlows_ButNeverPayMoreWoodThanAnAxe`
+  fells real trees end to end, because every half of the old defect had its own green test.
+- **ONE EVENT FOR EVERY ROUTE.** `BuildingDurability.Worked(HarvestWork)` carries the attacker
+  and fires for the interact key, a sword, a slash spell and a projectile alike. Before it a tree
+  chopped with the attack button showed no chips, no bar and paid only its end drop.
+- **Only a PLAYER's PHYSICAL work pays or teaches.** A fireball fells a tree and leaves ash; a
+  monster's slash fells it and scatters nothing. `PlayerGatheringSkills.For` refuses anything not
+  tagged `Player`, so no creature grows a skill.
+- **Skill is 0.0-100.0 % stored as INT TENTHS.** A float climbing by 0.1 drifts. The gain
+  chance falls as `(1 - s/110)^2`, is full on a node within +15 of the skill, fades to a 0.25
+  FLOOR past that (a world with no hard trees nearby slows the climb, never ends it), and is
+  x0.6 on a node 40+ above. Simulated by `WoodcuttingDataTests`: ~0.4 h to 50 %, **~4.8 h of
+  chopping to 100 %** on suitable trees, ~17 h if only common trees are chopped. Tune the
+  definition, not the test.
+- **Skill does three things**: efficiency (x0.5 hopelessly below the tree to x1.6 far above,
+  folded into `HarvestBlowResolver.Resolve` so the prompt and the blow agree), better wood (the
+  yield table), and a fell bonus (+1 per 34 points).
+- **The 64 wood items are 15 TIERS.** Ramas secas and Leña from 0 %, then común, abedul,
+  roble, duramen … up to arcana/vacío at 85 %. A tier RAMPS in over `rampSkill` points (never a
+  switch at 34.9/35.0), low tiers FADE once outgrown, and tiers compete (one yield = one item).
+  Tag-gated tiers are the node's half: bambú only from tropical trees, ascua only from volcanic.
+  Prices 1 to 80.
+- **Ten tree families, one profile each** (`DP_tree_<family>`), wired to all 553 tree templates
+  by `TreeFamilyClassifier`. Difficulty 0 (joven) to 80 (encantado), durability 25 to 140, all
+  REGROW on a wall clock (8-40 min), charred/snowy families tint their stump. The classifier
+  checks the STRONGER word first (`tree_ancient_swamp_guardian` is ancient).
+- **The world only places common, tropical and one ancient tree** (88 total) — which is why
+  the trivial floor exists. Placing groves of the harder families is world authoring and was
+  not done here (`buildings_instances.json` was being edited by another session).
+- **A tool counts from the BAG.** Axe/Pick are working tools and count when carried; a Blade or
+  Blunt counts only when equipped. The typed equipment has ONE weapon slot, and requiring the
+  axe in it made every tree a trip to the inventory.
+- **The fall copies the CANOPY half** (never `Sprite.Create`, the 20 ms atlas trap), hinges it
+  at the split line, angles it as t² (gravity, not a lerp), bounces once, throws dust and leaves.
+  It is spawned BEFORE the remains swap hides the canopy. `DestructionKind.Fell` and
+  `noiseRadius` had zero readers before this; both are live (`NoiseEvents.Emit`).
+- **Particles need a TEXTURE.** `Texture2D.whiteTexture` on a particle renderer draws hard
+  squares — the first live capture showed the fall's dust as beige tiles. `HarvestFxTextures`
+  generates a puff, a leaf and a splinter.
+- **The shared rig replaced a per-node leak**: the old feedback built a ParticleSystem per tree
+  worked and never freed it. `HarvestFx` builds nothing in Edit Mode.
+- **Yields go STRAIGHT INTO THE BAG** (`HarvestNode.TryPutInBag`); only a full bag drops the
+  log at the worker's feet, said once as "Mochila llena". The extraction is shown by
+  `HarvestYieldFlight`: the item's icon leaps from the trunk and lands on the worker (rare woods
+  glow in their rarity colour), staggered 0.09 s apart when several come out at once, and only on
+  landing is the ONE coalesced line "+N <best wood> [y más]" shown. The felling itself says
+  nothing in words — the falling crown is the announcement. In Edit Mode a flight lands instantly.
+- **The work bar FILLS and is a `WorldBarLine`** (the health-bar primitive, gold), 30 texels
+  wide, with a NOTCH at every log (`IWorkSegments.GetSegmentMarks` = multiples of
+  `workPerYield / maxDurability`) that lights and stands proud the frame the fill crosses it, a
+  1-texel CADENCE sweep under the plate that snaps back on each strike, a seconds COUNTDOWN
+  resolved through the same blow resolver (it shortens when an axe is equipped), and a flash +
+  pop when it completes. It used to DRAIN, which reads as losing while succeeding. Scale
+  compensation is recomputed every frame (a felled tree drops to the stump's scale). `Step(dt)`
+  is public so a fixture can drive it.
+- **While chopping, the aim chevron steps aside and `HarvestWorkMark` marks the TRUNK**: an X
+  of two blades of light (stroke + white edge) centred on the trunk at chest height, leaning
+  toward the worker, that OPENS right after a blow and CLOSES into a cross as the session clock
+  approaches the next one (a metronome read off the tree), flashes/punches/throws a shock ring and
+  sparks on the strike, with four sparks orbiting in time and a gold ring at the foot of the tree.
+  It is its own object because `FacingIndicator` has ONE job (its source guard); the chevron is
+  only PUSHED `SetSteppedAside(bool)`, like `Pulse`, and never learns why. Two layering facts
+  measured live: the cross draws on the CANOPY's layer (on a big tree nearly all the visible trunk
+  is canopy half, and on the footprint layer the cross was hidden behind the bark it marked), and
+  the foot ring is sized to a trunk, not the footprint (several units wide with roots). The rig is
+  not built in Edit Mode (no OnDestroy there to free it).
+- **Two gears: automatic, or TAPPING on the beat** (`HarvestNode.Rhythm.cs`,
+  `IRhythmInteractable`). Pressing interact during a rhythm-capable session is a TAP, not "stop";
+  stopping is HOLDING interact 0.55 s (`PlayerInteractionController.TickHoldToStop`, counted only
+  from a press made during the session) or walking away. Sessions without a beat (mines,
+  stations) keep press-to-stop. All numbers are data on `GatheringSkillDefinition`: top tempo
+  1.35x (0 %) to 2x (100 %) the automatic rate, hit window ±55 ms to ±150 ms capped at 38 % of
+  the beat, perfect within 35 % of the window.
+  - **A miss is NO blow plus a stagger** (70 % of a beat); 3 misses or 3 untouched beats hand back
+    to the automatic swing, so stopping tapping never stops the work.
+  - **The beat is a grid**: a hit advances from the beat, not the tap; a miss re-anchors on the tap.
+  - **Mashing must never beat waiting, and the first cut let it.** A striking first tap let
+    enter-miss-exit-reenter chop every re-entry faster than auto. Three guards, all needed: the
+    entering tap only STARTS the metronome; exiting through misses LOCKS re-entry until the next
+    automatic blow; and exiting never pulls the automatic blow EARLIER than it was already due
+    (`Mathf.Max`). `WoodcuttingRhythmTests.Mashing_IsNeverFasterThanLettingTheAxeFall` races them
+    on a synthetic clock (`HarvestNode.ClockForTests`, `StepSessionForTests`) at 0/50/100 %,
+    beside the master ~2x and beginner "only a little faster" races.
+  - Visuals: the trunk cross turns cyan-white while the window is open, gold and bigger on a
+    PERFECT, red with a jolt on a miss; the bar draws the window as a target zone at the end of
+    the cadence sweep (`IWorkSegments.HitWindow01`). The badge reads "Pulsa al ritmo · hasta x1.6 ·
+    mantén para parar" / "Al ritmo x1.6 · racha N".
+  - Tapping doubles skill gain per minute too (gains are per productive blow) — deliberate: the
+    reward for keeping time is throughput of everything.
+- **Hit-stop resets `Time.timeScale`.** To photograph the fall, disable `TreeFellFX` and set the
+  hinge angle by hand; a slow-motion set in the call that fells the tree is undone at once.
+- **Professions were never saved.** `PlayerProfessions.WriteTo/ReadFrom` had no caller; they ride
+  `PlayerProgression` now, beside the gathering skills (`gatheringSkillKeys` / `gatheringSkillTenths`).
+- **Quests:** `ObjectiveKind.FellTrees` (event, optional family filter, located on the minimap
+  at the nearest STANDING tree) and `ReachSkill` (polled). `q_lena_invierno` (Pavel) uses both
+  plus a Collect of birch, which only drops past 18 %.
+- **Still open:** harvest sounds (deferred by request), chop art for the five non-dwarf
+  classes, groves of the high families placed in the world, a wood consumer in crafting, and
+  mining/fishing moved onto the same skill layer (the definition is generic; only woodcutting
+  is seeded).
+
 ## Crafting and professions
 
 Five trades — cooking, blacksmith, mining, lumberjack and a generic `crafting` bucket — share
@@ -4550,6 +4687,95 @@ boot / boot all / boot fallos / boot weights / boot recalibrar   DevConsole, cat
   editor), in English, in a game whose UI is in Spanish. `LoadingTipsTests` refuses any tip
   naming an F-key and any non-ASCII character, because this is the one file in the project with
   a demonstrated mojibake history.
+
+## El fuego del dragón de la pantalla de carga
+
+Brasas, fogonazo, humo y luz sobre el caballero, dibujados ENCIMA del penacho pintado de
+`background_ini` y anclados a él. Auditoría del logo, medidas y lo abierto:
+`.github/TITLE_LOGO_AUDIT_2026-09-12.md` (cuarta pasada).
+
+```text
+LoadingArtAnchors    UI/Loading/   dónde está el chorro, en el espacio de la PINTURA
+LoadingFireFX        UI/Loading/   las cuatro piezas y su reloj
+MenuFxLayer          UI/MainMenu/  el pool de cuadriláteros que las dos capas reutilizan
+```
+
+- **No sustituye la pintura, y eso es el diseño.** El penacho es mejor arte del que se puede
+  generar; lo único que se añade es lo que una pintura no puede hacer, que es moverse.
+- **Las anclas son fracciones de la IMAGEN, nunca píxeles de lienzo.** El fondo va con
+  `AspectRatioFitter.EnvelopeParent`, así que una ventana 2:1 recorta arriba y abajo de una
+  pintura 3:2 y una más alta le recorta los lados: un punto en píxeles es correcto a exactamente
+  un tamaño de ventana. Medidas sobre el PNG enviado umbralizando el fuego saturado
+  (`r>245, g>170, b<90, r-b>190`) bajo el horizonte: boca (0,535, 0,541), caída (0,370, 0,390).
+- **Todo cuelga del `RectTransform` de la pintura**, lo que compra tres cosas de una vez: el ancla
+  normalizada es una multiplicación, el recorte del fitter se hereda gratis, y uGUI dibuja en
+  orden de jerarquía en profundidad — así que las piezas caen después del cuadro y antes de la
+  barra y la línea de estado, que es justo donde van. Ninguna decisión de sorting.
+- **UN ANCLA NORMALIZADA NO BASTA: LA COLOCACIÓN TIENE QUE SER POR `anchorMin`/`anchorMax`.** La
+  primera versión convertía el ancla a unidades y escribía `anchoredPosition` + `sizeDelta` UNA
+  vez, así que ambos quedaban fijados contra el rect que hubiera en ese momento. Medido sobre el
+  ancla enviada: un fogonazo exactamente sobre la boca del dragón a 1600x1066 se iba a
+  **(0,515 · 0,517) a 3840x2560** y a **(0,555 · 0,564) a 1024x683**, con su diámetro pasando del
+  3,3 % del ancho al 1,4 % y luego al 5,1 %; el lavado se movía **un cuarto de la pintura**.
+  Anclas que son fracciones puras con los dos offsets a cero no pueden desfasarse porque no queda
+  ningún píxel que pueda estar mal. Medido tras el arreglo: idéntico a cuatro tamaños.
+- **El círculo sigue siendo un círculo porque el ASPECTO de la pintura es constante.**
+  `EnvelopeParent` conserva la proporción del arte a cualquier forma de ventana — solo cambia el
+  TAMAÑO — así que una fracción del ancho y esa misma fracción dividida por el aspecto describen
+  el mismo cuadrado por grande que se haga el cuadro. Esa es la propiedad sobre la que descansa
+  todo el enfoque; sin ella las fracciones de ancla convertirían cada mancha en una elipse en
+  cuanto la ventana cambiara de forma. La media vertical se deriva del aspecto VIVO, no del
+  enviado, así que un segundo arte con otra proporción sigue dando círculos.
+- **`Attach` corre ANTES de la primera pasada de layout**, porque se llama desde la construcción
+  del propio fondo — así que el primer tamaño que ve no es el de la pintura, es el que traía el
+  `RectTransform` recién creado. `Tick` compara el rect con el que usó para colocar y vuelve a
+  colocar si cambió: una comparación de `Vector2` por fotograma contra una decoración que si no
+  se quedaría fuera de la boca del dragón durante toda la vida de la pantalla. El mismo guardia
+  cubre un cambio de resolución a mitad de carga.
+- **NO HAY HILO QUE VALGA: EL FUEGO NO ES CARO, LO QUE FALTAN SON FOTOGRAMAS.** Todo lo visible es
+  uGUI en el hilo principal (malla, batch del canvas, dibujo) y el calculo cuesta 0,0033 ms. Medido
+  en un arranque real: **4201 ms en 49 fotogramas, 11,7 fps**, con fotogramas de **145 ms**, y el
+  **63 %** del arranque cae FUERA de los pasos (trabajo diferido tras activar la escena).
+- **UN TOPE DE PASO SOLO ES MEDIA RESPUESTA, Y LA OTRA MEDIA ERA EL TARTAMUDEO.** La primera version
+  capaba el paso a 1/20 s para que una brasa no cruzara la pantalla; como la deuda de emision es
+  `rate x dt`, el tope capaba tambien CUANTAS brasas nacian: el **56 %** de las previstas en ese
+  arranque, y el recorte seguia la duracion del fotograma — fotogramas cortos a tasa completa,
+  largos a un tercio — asi que el chorro adelgazaba y se rellenaba al ritmo del propio arranque.
+  Ahora hay **sub-pasos**: el fotograma se paga entero en trozos de 50 ms, hasta seis (300 ms), y
+  lo que sobra se TIRA — un parón es un parón, y simular un segundo perdido de golpe dibuja un
+  chorro que nadie vio viajar. Fijado por `ALongFrame_IsSimulatedInFull_NotClampedToOneStep` y
+  `AStall_IsPaidOnlyUpToTheCatchUpBudget`, que leen `SimulatedSeconds`.
+- **A 12 fps se RALENTIZA el chorro sin cambiar su dibujo.** Con fotogramas largos (tiempo de
+  fotograma suavizado sobre 1/30 s, tope x2) la velocidad se divide, la vida se multiplica y la
+  TASA se divide por lo mismo: alcance y densidad iguales, cada salto por fotograma mas corto. La
+  tasa es la mitad facil de olvidar — sin ella las vidas largas duplican la cuenta y el chorro es
+  una mancha. Y gravedad y rozamiento son por-TIEMPO: la gravedad va entre `pace²` (v·t + a·t²/2)
+  y el rozamiento entre `pace`, o la trayectoria cambia de forma.
+- **Luz aditiva sobre pintura que YA es fuego no tiene nada que añadir: recorta a blanco.** La
+  primera captura en vivo lo dijo — el fogonazo era una floración sobre el hocico del dragón y el
+  lavado blanqueaba toda la izquierda del cuadro, costándole al arte justo el contraste que el
+  efecto venía a servir. El fogonazo bajó de `span * 0,42` a `span * 0,17` y el lavado se centra
+  en `Axis(1,2)`, PASADO el punto de caída: la punta es la pintura más brillante del lienzo, e
+  iluminarla es iluminar lo único que no lo necesita. Un acento sobre pintura clara tiene que ser
+  pequeño y tenue o borra lo que acentúa.
+- **El humo es la única pieza NO aditiva, y no puede serlo**: un píxel oscuro sumado a lo que hay
+  detrás no cambia nada, la regla que `KiAuraFX` y `VortexFunnelFX` ya registran para sus escombros.
+  Es lo único que QUITA luz del cuadro, que es también lo que lo hace leer como algo que el fuego
+  está HACIENDO en vez de como más fuego. Nace pasado el punto de caída por el mismo motivo que el
+  lavado.
+- **Sin alfa propia.** Todo cuelga del `CanvasGroup` de la pantalla y un `CanvasGroup` ya multiplica
+  su alfa por cada `CanvasRenderer` de debajo, así que el fundido de salida funde el fuego gratis.
+  Una segunda alfa sería un dial que coincide con ese hasta el día que alguien mueva uno.
+- **`MenuFxLayer.UseSoftMotes`** hace que una capa dibuje de la página BILINEAL del título en vez
+  del atlas del menú, que está filtrado a PUNTO a propósito: un punto de 2x2 ampliado a unas
+  unidades es un cuadrado duro, y unas decenas de cuadrados duros son grava, no brasas. Es una
+  propiedad de la CAPA y no de una mota porque un `Graphic` ata exactamente una textura.
+- **Un arte sin medir no dibuja nada** (`FireFor` devuelve un ancla inválida y `Attach` devuelve
+  null), y el fondo negro de reserva deja `_bgRect` nulo: un chorro de brasas cruzando una pantalla
+  negra es un fallo que parece una función.
+- **Verificarlo en vivo necesita dos llamadas.** `LoadingScreenController.Show` construye la UI en
+  el fotograma siguiente, así que pedir la pantalla y leer su `_fire` en la MISMA llamada de
+  `execute_code` contesta null por una razón que no tiene nada que ver con el efecto.
 
 ## The FSM is two machines, and only one of them is authored
 
@@ -6187,6 +6413,13 @@ related symptom reappears.
 
 ## Open work
 
+- **Seed World (generacion procedural del mundo)** — fase 1 hecha el 2026-09-13: el editor
+  **ESC -> Seed World** configura semilla, tamano, continentes, clima y biomas y previsualiza el
+  mundo; todavia no construye nada. El generador es puro y vive en `Data/WorldGen/`
+  (`WorldClimate` es la UNICA respuesta a "que hay en este punto": la vista previa y la futura
+  construccion la llaman igual, no se re-deriva). Alto clampado por el Y-sort
+  (`WorldGenSettings.MaxHeightTiles`). Fases 2-5 (hornear a un mundo nuevo, ciudades jigsaw,
+  poblacion, chunks en vivo) y el arte que falta: `.github/SEED_WORLD_ROADMAP.md`.
 - **Editor UI/UX unification & persistence** — audited 2026-09-02, layer shipped 2026-09-03.
   The seventeen editors are 319 files / ~77.6k LOC and drifted: three (Camera, DungeonNodeGraph,
   General) carry NO chrome at all, `PanelChrome` is missing from six, the tutorial overlay from
