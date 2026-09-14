@@ -35,14 +35,67 @@ namespace Valkur.UI.HUD
         private float _flipT;
         private Stance _flipTarget;
 
+        /// <summary>True while the War face shows the keyboard's Shift layer.</summary>
+        private bool _shiftPage;
+        private bool _flipPage;
+        /// <summary>True when the running turn is a PAGE turn (Shift pressed or released) rather
+        /// than a posture change: shorter, and silent apart from the gem.</summary>
+        private bool _flipIsPage;
+
+        /// <summary>Spells of the War page on screen that did not fit the earned bar.</summary>
+        private int _overflow;
+
         // -- Which face, which slots -----------------------------------------------------
 
-        private List<SpellBarEntry> EntriesFor(Stance face)
+        private List<SpellBarEntry> EntriesFor(Stance face) => EntriesFor(face, _shiftPage);
+
+        /// <summary>
+        /// The War face is two PAGES of one keyboard: the bare keys, and the Shift layer while
+        /// Shift is held. Showing both at once put up to seventy slots in seven rows over the
+        /// world, and a spell's key cap alone could not say which layer it sat on; a page per
+        /// layer keeps the bar the size of what the player's fingers can reach right now, and
+        /// turning it on Shift is what TEACHES the second layer exists.
+        /// </summary>
+        private List<SpellBarEntry> EntriesFor(Stance face, bool shiftPage)
         {
+            _overflow = 0;
             if (face == Stance.Peace) return SpellBarModel.Peace(VerbExists);
-            return SpellBarModel.War(InputActionCatalog.Spells(),
-                                     key => _caster != null && _caster.KnowsSpell(key),
-                                     _style.warGroupSize);
+            var page = SpellBarModel.War(InputActionCatalog.Spells(),
+                                         key => _caster != null && _caster.KnowsSpell(key),
+                                         _style.warGroupSize,
+                                         onPage: d => IsShiftSlot(d) == shiftPage);
+
+            // The bar is as big as the character has EARNED in the "Barra de Guerra" branch:
+            // columns x rows sockets, filled with the page's spells and then with empty sockets,
+            // so buying a size is something the player SEES. A rig with no stat store (a bare
+            // test) keeps the unbounded bar.
+            if (_stats == null) return page;
+            return SpellBarModel.Fit(page, _stats.WarBarColumns * _stats.WarBarRows,
+                                     _style.warGroupSize, out _overflow);
+        }
+
+        /// <summary>Sockets per row: the earned columns on the War face, the style's limit otherwise.</summary>
+        private int SlotsPerRow()
+        {
+            int limit = Mathf.Max(1, _style.maxSlotsPerRow);
+            if (_face != Stance.War || _stats == null) return limit;
+            return Mathf.Clamp(_stats.WarBarColumns, 1, limit);
+        }
+
+        /// <summary>True when the spell action's live binding is a Shift chord.</summary>
+        private static bool IsShiftSlot(InputActionDescriptor d)
+        {
+            var action = ResolveAction(d != null ? d.Id : null);
+            return action != null && InputBindingResolver.Primary(action).IsChord;
+        }
+
+        /// <summary>Is the chord layer's modifier held? Read off the chords in the asset, so the
+        /// page follows the layer wherever it is bound.</summary>
+        private static bool ShiftLayerHeld()
+        {
+            var gameplay = InputService.Instance != null ? InputService.Instance.Gameplay : null;
+            return gameplay != null && gameplay.Map != null
+                && InputBindingResolver.IsAnyChordModifierHeld(gameplay.Map);
         }
 
         /// <summary>
@@ -54,15 +107,24 @@ namespace Valkur.UI.HUD
         private void PollFace(float dt)
         {
             var stance = PlayerStance.Current;
+            bool shift = stance == Stance.War && ShiftLayerHeld();
             if (_flip != FlipPhase.None)
             {
-                // Toggled again mid-turn: the turn simply lands on whatever is current.
+                // Toggled again mid-turn: the turn simply lands on whatever is current. A posture
+                // change arriving during a page turn upgrades it, so the posture still announces.
+                if (stance != _flipTarget && _flipIsPage) _flipIsPage = false;
                 _flipTarget = stance;
+                _flipPage = shift;
                 return;
             }
             if (stance != _face)
             {
-                BeginFlip(stance);
+                BeginFlip(stance, shift, page: false);
+                return;
+            }
+            if (shift != _shiftPage)
+            {
+                BeginFlip(stance, shift, page: true);
                 return;
             }
 
@@ -72,7 +134,11 @@ namespace Valkur.UI.HUD
             var entries = EntriesFor(_face);
             if (SpellBarModel.Signature(_face, entries) != _signature)
                 Rebuild(entries, celebrate: _everPopulated);
+            else if (_overflow != _shownOverflow)
+                RefreshOverflow();   // a spell learned past the earned size changes no socket
         }
+
+        private int _shownOverflow = -1;
 
         /// <summary>Rebuilds the slots of the current face. <paramref name="celebrate"/> lights up
         /// spells that were not on the bar before — a spell just learned.</summary>
@@ -84,12 +150,17 @@ namespace Valkur.UI.HUD
                 before = new HashSet<string>();
                 for (int i = 0; i < _cells.Count; i++) before.Add(_cells[i].Entry.Key);
             }
+            Stance faceBefore = _laidOutFace;
+            int socketsBefore = SocketCount();
 
             Layout(entries);
             _signature = SpellBarModel.Signature(_face, entries);
             _everPopulated = true;
+            _laidOutFace = _face;
+            RefreshOverflow();
 
             if (before == null || _face != Stance.War) return;
+
             for (int i = 0; i < _cells.Count; i++)
             {
                 var c = _cells[i];
@@ -97,6 +168,46 @@ namespace Valkur.UI.HUD
                 c.Slot.Flash(_hud);
                 BurstLearn(c);
             }
+
+            // The bar GREW on the same face: a size bought in the "Barra de Guerra" branch. The
+            // new sockets are the reward, so they are the ones that light up — the talent's effect
+            // happens where the player is already looking.
+            int sockets = SocketCount();
+            if (faceBefore == Stance.War && socketsBefore > 0 && sockets > socketsBefore)
+                for (int i = 0, seen = 0; i < _cells.Count; i++)
+                {
+                    if (_cells[i].Entry.Kind == SpellBarEntryKind.Stance) continue;
+                    if (seen++ < socketsBefore) continue;
+                    _cells[i].Slot.Flash(_hud);
+                    BurstLearn(_cells[i]);
+                }
+        }
+
+        private Stance _laidOutFace = Stance.Peace;
+
+        /// <summary>Every slot but the posture switch: the sockets the earned size pays for.</summary>
+        private int SocketCount()
+        {
+            int n = 0;
+            for (int i = 0; i < _cells.Count; i++)
+                if (_cells[i].Entry.Kind != SpellBarEntryKind.Stance) n++;
+            return n;
+        }
+
+        /// <summary>
+        /// "+3" over the bar's right shoulder when the page holds more known spells than the
+        /// earned bar has sockets for. Dim, not gold: it is a fact worth noticing, not an alarm —
+        /// the spells still cast from their keys — and it is the nudge towards the talents branch.
+        /// </summary>
+        private void RefreshOverflow()
+        {
+            if (_overflowLabel == null) return;
+            _shownOverflow = _overflow;
+            bool show = _face == Stance.War && _overflow > 0;
+            _overflowLabel.gameObject.SetActive(show);
+            if (!show) return;
+            _overflowLabel.SetText("+" + _overflow);
+            HudRect.Place(_overflowLabel.rectTransform, _widthTexels - 22, _heightTexels - 8, 18, 7);
         }
 
         // -- Layout --------------------------------------------------------------------------
@@ -128,7 +239,7 @@ namespace Valkur.UI.HUD
             // six texels down), and the padding clears the panel stone's corner rivets, which sit
             // four and five texels in — with less, a gold rivet peeks out from under a slot.
             int top = Mathf.Max(pad + 1, GemClearance);
-            int perRow = Mathf.Max(1, _style.maxSlotsPerRow);
+            int perRow = SlotsPerRow();
 
             var body = new List<SpellBarEntry>();
             SpellBarEntry? stance = null;
@@ -136,6 +247,16 @@ namespace Valkur.UI.HUD
             {
                 if (entries[i].Kind == SpellBarEntryKind.Stance) stance = entries[i];
                 else body.Add(entries[i]);
+            }
+
+            // The EARNED War bar is a GRID, and a grid has to line up. Laid out like the Peace
+            // face — each row centred on its own, groups counted by list index — a bar of three
+            // rows had its columns wander half a slot between rows and its grooves fall in a
+            // different place on every row, which reads as three bars stacked, not one.
+            if (_face == Stance.War && _stats != null)
+            {
+                LayoutGrid(body, stance, size, gap, groupGap, pad, top, perRow);
+                return;
             }
 
             int rowCount = Mathf.Max(1, Mathf.CeilToInt(body.Count / (float)perRow));
@@ -190,6 +311,49 @@ namespace Valkur.UI.HUD
             Refit(force: true);
         }
 
+        /// <summary>
+        /// The War face as the grid the "Barra de Guerra" talents bought: every row shares the
+        /// same column positions, a group opens every <c>warGroupSize</c> COLUMNS (so the grooves
+        /// stack into one line down the whole bar), the first row is at the bottom — the number
+        /// row, nearest the player's panel — and the posture switch stands one group gap to the
+        /// right of that bottom row, outside the grid, because it is not one of the sockets the
+        /// talents paid for.
+        /// </summary>
+        private void LayoutGrid(List<SpellBarEntry> body, SpellBarEntry? stance, int size, int gap,
+                                int groupGap, int pad, int top, int perRow)
+        {
+            int groupSize = Mathf.Max(1, _style.warGroupSize);
+            int rowCount = Mathf.Max(1, Mathf.CeilToInt(body.Count / (float)perRow));
+
+            int ColumnX(int col) => pad + col * (size + gap) + (col / groupSize) * groupGap;
+
+            int gridRight = ColumnX(perRow - 1) + size;
+            int stanceX = gridRight + gap + groupGap;
+            int right = stance.HasValue ? stanceX + size : gridRight;
+
+            _widthTexels = right + pad;
+            _heightTexels = pad + rowCount * size + (rowCount - 1) * gap + top;
+
+            if (rowCount == 1)
+                for (int col = groupSize; col < perRow; col += groupSize)
+                    _grooves.Add(ColumnX(col) - (gap + groupGap) / 2 - 1);
+            if (stance.HasValue) _grooves.Add(stanceX - (gap + groupGap) / 2 - 1);
+            if (rowCount > 1) _grooves.Clear();   // a groove is a line across ONE row of the stone
+
+            int index = 0;
+            for (int i = 0; i < body.Count; i++)
+            {
+                int row = i / perRow, col = i % perRow;
+                int y = pad + row * (size + gap);
+                _cells.Add(MakeCell(body[i], index++, ColumnX(col), y, size));
+            }
+            if (stance.HasValue)
+                _cells.Add(MakeCell(stance.Value, index, stanceX, pad, size));
+
+            ResizeFrame();
+            Refit(force: true);
+        }
+
         private Cell MakeCell(SpellBarEntry entry, int index, int x, int y, int size)
         {
             var box = HudRect.Make("Cell_" + index, _slotsRoot, x, y, size, size);
@@ -204,7 +368,8 @@ namespace Valkur.UI.HUD
                                           () => key, () => ResolveAction(actionId), _additive);
             var cell = new Cell { Entry = entry, Box = box, Slot = slot, Centre = new Vector2(x + size * 0.5f, y + size * 0.5f) };
 
-            if (entry.Kind != SpellBarEntryKind.Spell) slot.SetVerb(MakeVerb(entry));
+            if (entry.Kind == SpellBarEntryKind.Verb || entry.Kind == SpellBarEntryKind.Stance)
+                slot.SetVerb(MakeVerb(entry));
             slot.BecameReady += OnSlotReady;
 
             var hover = slot.Root.gameObject.AddComponent<HudSlotHover>();
@@ -240,9 +405,11 @@ namespace Valkur.UI.HUD
 
         // -- The flip ------------------------------------------------------------------------
 
-        private void BeginFlip(Stance target)
+        private void BeginFlip(Stance target, bool shiftPage, bool page)
         {
             _flipTarget = target;
+            _flipPage = shiftPage;
+            _flipIsPage = page;
             _flip = FlipPhase.Out;
             _flipT = 0f;
             HideTooltip();
@@ -257,8 +424,8 @@ namespace Valkur.UI.HUD
         {
             if (_flip == FlipPhase.None) return;
             _flipT += dt;
-            float half = Mathf.Max(0.01f, _style.flipHalfSeconds);
-            float stagger = _style.flipStaggerSeconds;
+            float half = Mathf.Max(0.01f, _flipIsPage ? _style.pageHalfSeconds : _style.flipHalfSeconds);
+            float stagger = _flipIsPage ? _style.pageStaggerSeconds : _style.flipStaggerSeconds;
             float end = half + stagger * Mathf.Max(0, _cells.Count - 1);
 
             if (_flip == FlipPhase.Out)
@@ -268,11 +435,13 @@ namespace Valkur.UI.HUD
                 if (_flipT < end) return;
 
                 _face = _flipTarget;
+                _shiftPage = _face == Stance.War && _flipPage;
                 Rebuild(EntriesFor(_face), celebrate: false);
                 for (int i = 0; i < _cells.Count; i++) SetTurn(_cells[i], 0f);
                 _flip = FlipPhase.In;
                 _flipT = 0f;
-                OnFaceArrived();
+                if (_flipIsPage) OnPageArrived();
+                else OnFaceArrived();
                 return;
             }
 
@@ -301,6 +470,15 @@ namespace Valkur.UI.HUD
             var slot = cell.Slot;
             string title, body;
             Color accent = slot.AccentColour(_hud);
+            if (cell.Entry.Kind == SpellBarEntryKind.Empty)
+            {
+                // An empty socket explains itself: room earned and not yet used, and on which layer.
+                _tooltip.ShowText(_shiftPage ? "Hueco libre (Shift)" : "Hueco libre",
+                                  _shiftPage ? "Aprende un hechizo de Shift+tecla y aparecerá aquí."
+                                             : "Aprende un hechizo con tecla y aparecerá aquí.",
+                                  accent, cell.Centre.x, _heightTexels, _widthTexels);
+                return;
+            }
             if (cell.Entry.Kind == SpellBarEntryKind.Spell)
             {
                 var spell = slot.Spell;
@@ -331,6 +509,7 @@ namespace Valkur.UI.HUD
         private void OnCellClicked(Cell cell)
         {
             if (cell == null || _flip != FlipPhase.None || !_visible) return;
+            if (cell.Entry.Kind == SpellBarEntryKind.Empty) return;
             if (cell.Entry.Kind == SpellBarEntryKind.Spell)
             {
                 // Through the controller's own gates; the motes come from the cast event, so a

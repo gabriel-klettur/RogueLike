@@ -16,7 +16,7 @@ MonoBehaviour:
   titleBarTexels: 14
   footerTexels: 12
   widthTexels: 454
-  heightTexels: 272
+  heightTexels: 276
   identityWidthTexels: 130
   statRowTexels: 14
   breakdownBarTexels: 3

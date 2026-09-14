@@ -15,6 +15,12 @@ namespace Valkur.UI.HUD
         Verb = 1,
         /// <summary>The posture switch, last on both faces.</summary>
         Stance = 2,
+        /// <summary>
+        /// A socket the bar has room for and nothing to put in. Drawn on purpose: the War bar's
+        /// SIZE is earned in the "Barra de Guerra" talent branch, and a talent whose reward is
+        /// room nobody can see is a talent that reads as having done nothing.
+        /// </summary>
+        Empty = 3,
     }
 
     /// <summary>One slot of a face, before anything is drawn.</summary>
@@ -108,9 +114,12 @@ namespace Valkur.UI.HUD
         /// key is live in War, in catalog order (1..0 first, then the letters), grouped in
         /// <paramref name="groupSize"/>s, then the posture switch.
         /// </summary>
+        /// <param name="onPage">Which keyboard layer this face is showing: the bare page or the
+        /// Shift page. Null shows both, which is what a caller with no notion of layers wants.</param>
         public static List<SpellBarEntry> War(IEnumerable<InputActionDescriptor> spellActions,
                                               Func<string, bool> knows, int groupSize,
-                                              Func<InputActionDescriptor, bool> liveInWar = null)
+                                              Func<InputActionDescriptor, bool> liveInWar = null,
+                                              Func<InputActionDescriptor, bool> onPage = null)
         {
             var list = new List<SpellBarEntry>();
             if (groupSize < 1) groupSize = 1;
@@ -120,6 +129,7 @@ namespace Valkur.UI.HUD
                 foreach (var d in spellActions)
                 {
                     if (d == null || !d.IsSpell) continue;
+                    if (onPage != null && !onPage(d)) continue;
                     if (!seen.Add(d.PayloadKey)) continue;
                     if (knows == null || !knows(d.PayloadKey)) continue;
                     bool live = liveInWar != null ? liveInWar(d) : InputContextPolicy.IsLive(d, Stance.War);
@@ -157,6 +167,40 @@ namespace Valkur.UI.HUD
             }
             list.Add(new SpellBarEntry(SpellBarEntryKind.Stance, StanceKey, StanceActionId, StanceGroup));
             return list;
+        }
+
+        /// <summary>
+        /// Fits a War page into the bar the character has EARNED: <paramref name="capacity"/>
+        /// sockets. Spells past it are left off (still castable by their key — the bar is a
+        /// readout, not a gate) and counted in <paramref name="overflow"/>; sockets past the
+        /// spells are filled with <see cref="SpellBarEntryKind.Empty"/>. The posture switch is
+        /// kept last and never counts against the capacity: it must stay in reach.
+        /// </summary>
+        public static List<SpellBarEntry> Fit(List<SpellBarEntry> entries, int capacity, int groupSize,
+                                              out int overflow)
+        {
+            overflow = 0;
+            var fitted = new List<SpellBarEntry>();
+            if (entries == null) return fitted;
+            capacity = Math.Max(0, capacity);
+            if (groupSize < 1) groupSize = 1;
+
+            SpellBarEntry? stance = null;
+            int placed = 0;
+            for (int i = 0; i < entries.Count; i++)
+            {
+                var e = entries[i];
+                if (e.Kind == SpellBarEntryKind.Stance) { stance = e; continue; }
+                if (placed >= capacity) { overflow++; continue; }
+                fitted.Add(e);
+                placed++;
+            }
+            // Empty sockets continue the grouping the spells use, so the groove between groups
+            // falls in the same place whether a socket is filled yet or not.
+            for (; placed < capacity; placed++)
+                fitted.Add(new SpellBarEntry(SpellBarEntryKind.Empty, "", "", placed / groupSize));
+            if (stance.HasValue) fitted.Add(stance.Value);
+            return fitted;
         }
 
         /// <summary>The verb spec for an id, when there is one.</summary>

@@ -37,7 +37,17 @@ namespace Valkur.Gameplay
         private readonly Dictionary<string, int> _ranks =
             new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>
+        /// Branches every class shares beside its own tree — today the "Barra de Guerra" branch.
+        /// One pool of points and one rank table serve all of them: a branch is more of the
+        /// same currency's question ("a wider bar, or more hit points?"), not a second economy.
+        /// </summary>
+        private readonly List<SkillTree> _branches = new List<SkillTree>(2);
+
         public SkillTree Tree => tree;
+
+        /// <summary>The shared branches, in the order the talents board shows them.</summary>
+        public IReadOnlyList<SkillTree> Branches => _branches;
         public int AvailablePoints => availablePoints;
         public int SpentPoints => spentPoints;
         public IReadOnlyDictionary<string, int> Ranks => _ranks;
@@ -57,6 +67,35 @@ namespace Valkur.Gameplay
             tree = newTree;
             OnLoadoutChanged?.Invoke();
         }
+
+        /// <summary>Installs the branches every class shares. Null entries are skipped.</summary>
+        public void SetBranches(IEnumerable<SkillTree> branches)
+        {
+            _branches.Clear();
+            if (branches != null)
+                foreach (var b in branches)
+                    if (b != null && b != tree && !_branches.Contains(b)) _branches.Add(b);
+            OnLoadoutChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// The node with this id in the class tree or any shared branch. The ONE lookup every
+        /// rank-to-node resolution goes through — the modifier collection, the save load, the
+        /// console — so a branch talent is never a rank the character holds and nothing reads.
+        /// </summary>
+        public bool TryFindNode(string skillId, out SkillNode node)
+        {
+            node = null;
+            if (string.IsNullOrEmpty(skillId)) return false;
+            if (tree != null && tree.TryGet(skillId, out node) && node != null) return true;
+            for (int i = 0; i < _branches.Count; i++)
+                if (_branches[i].TryGet(skillId, out node) && node != null) return true;
+            node = null;
+            return false;
+        }
+
+        /// <summary>True when there is anything at all to look ids up in.</summary>
+        private bool HasAnyTree => tree != null || _branches.Count > 0;
 
         /// <summary>
         /// Grants skill points — from a level, from a quest, from the console.
@@ -207,10 +246,10 @@ namespace Valkur.Gameplay
         /// <c>PlayerStats.SetLayer(StatLayer.Skill, …)</c> wholesale.</summary>
         public void CollectModifiers(List<StatModifier> into)
         {
-            if (into == null || tree == null) return;
+            if (into == null || !HasAnyTree) return;
             foreach (var pair in _ranks)
             {
-                if (!tree.TryGet(pair.Key, out var node) || node == null) continue;
+                if (!TryFindNode(pair.Key, out var node)) continue;
                 into.AddRange(node.ModifiersAtRank(pair.Value));
             }
         }
@@ -262,9 +301,9 @@ namespace Valkur.Gameplay
                         ? Mathf.Max(1, data.skillRanks[i])
                         : 1;
 
-                    if (tree != null)
+                    if (HasAnyTree)
                     {
-                        if (!tree.TryGet(id, out var node) || node == null)
+                        if (!TryFindNode(id, out var node))
                         {
                             Debug.LogWarning($"[LearnedSkills] Save references unknown skill " +
                                              $"id '{id}' — skipping. Tree may have been pruned.");

@@ -30,6 +30,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e11d3e553d37bb54caee8f119ddb707b, type: 2}
   - {fileID: 11400000, guid: 5eb2927448707ca4ea27a17739fce7b5, type: 2}
   - {fileID: 11400000, guid: 38be182905160a44699c598e81aabca5, type: 2}
+  sharedSkillTrees:
+  - {fileID: 11400000, guid: 007cdcbdb48afeb40a9b36fd982ed898, type: 2}
   skillPointsPerLevel: 1
   arcanePointsPerGrant: 1
   arcanePointLevelInterval: 2
@@ -42,3 +44,4 @@ MonoBehaviour:
   - slash
   - laser_beam
   - weapon_toggle_greatsword
+  - dash

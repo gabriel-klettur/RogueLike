@@ -22,6 +22,19 @@ namespace Valkur.Data
     /// </summary>
     public static class StatCatalog
     {
+        /// <summary>The War bar's starting width, in slots.</summary>
+        public const int WarBarBaseColumns = 5;
+
+        /// <summary>The War bar's starting height, in rows.</summary>
+        public const int WarBarBaseRows = 1;
+
+        /// <summary>The widest the War bar can grow: the bar's own row limit.</summary>
+        public const int WarBarMaxColumns = 10;
+
+        /// <summary>The tallest the War bar can grow. Ten by six is sixty sockets per page —
+        /// more than either layer of the War keyboard carries (38 bare keys, 31 Shift chords).</summary>
+        public const int WarBarMaxRows = 6;
+
         /// <summary>Every value of <see cref="StatKind"/>, hoisted so callers iterating
         /// the vocabulary do not allocate an array per frame.</summary>
         [Valkur.Core.SelfHealingStatic("Immutable array of enum values, built once from " +
@@ -46,6 +59,17 @@ namespace Valkur.Data
                     return 1f;
                 case StatKind.CritMultiplier:
                     return 1.5f;
+                // The War bar a character starts with, before any talent of the "Barra de
+                // Guerra" branch: one row of five. Small on purpose — the branch exists to
+                // grow it, and a bar that started full would leave those talents with nothing to do.
+                case StatKind.WarBarColumns:
+                    return WarBarBaseColumns;
+                case StatKind.WarBarRows:
+                    return WarBarBaseRows;
+                // What a character with no class asset runs on: a hundred, the pool every class
+                // with an average maxDexterity lands on through LocomotionTuning.
+                case StatKind.MaxEnergy:
+                    return 100f;
                 default:
                     return 0f;
             }
@@ -73,6 +97,10 @@ namespace Valkur.Data
                 case StatKind.SpellCooldownReduction:return 0f;
                 case StatKind.ManaCostReduction:     return 0f;
                 case StatKind.XpGain:                return 0f;
+                case StatKind.WarBarColumns:         return 1f;
+                case StatKind.WarBarRows:            return 1f;
+                // A pool of zero would make every stride a winded one: running would simply not exist.
+                case StatKind.MaxEnergy:             return 10f;
                 default:                             return 0f;
             }
         }
@@ -88,6 +116,8 @@ namespace Valkur.Data
                 case StatKind.SpellCooldownReduction: return 0.75f;
                 case StatKind.ManaCostReduction:      return 0.8f;
                 case StatKind.MoveSpeed:              return 30f;
+                case StatKind.WarBarColumns:          return WarBarMaxColumns;
+                case StatKind.WarBarRows:             return WarBarMaxRows;
                 default:                              return float.MaxValue;
             }
         }
@@ -110,6 +140,9 @@ namespace Valkur.Data
                 case StatKind.MaxMana:
                 case StatKind.MeleeDamage:
                 case StatKind.Defense:
+                case StatKind.WarBarColumns:
+                case StatKind.WarBarRows:
+                case StatKind.MaxEnergy:
                     return true;
                 default:
                     return false;
@@ -196,6 +229,13 @@ namespace Valkur.Data
                 case "manacostreduction": stat = StatKind.ManaCostReduction; return true;
                 case "xpgain":            stat = StatKind.XpGain; return true;
 
+                case "maxenergy":
+                case "energy":
+                case "stamina":
+                case "maxstamina":
+                case "dexterity":
+                case "maxdexterity":    stat = StatKind.MaxEnergy; return true;
+
                 default: return false;
             }
         }
@@ -218,6 +258,11 @@ namespace Valkur.Data
                 case StatKind.SpellCooldownReduction: return "Reducción de recarga";
                 case StatKind.ManaCostReduction:      return "Reducción de coste de maná";
                 case StatKind.XpGain:                 return "Ganancia de experiencia";
+                // Short on purpose: the talents card prints "+1 <name>" in a 148-texel column, and
+                // "Columnas de la barra de guerra" ran past its edge (measured on the live board).
+                case StatKind.WarBarColumns:          return "Columnas de barra";
+                case StatKind.WarBarRows:             return "Filas de barra";
+                case StatKind.MaxEnergy:              return "Resistencia";
                 default:                              return stat.ToString();
             }
         }
@@ -241,6 +286,9 @@ namespace Valkur.Data
                 case StatKind.SpellCooldownReduction: return "Fracción que se descuenta de cada recarga.";
                 case StatKind.ManaCostReduction:      return "Fracción que se descuenta del coste de maná.";
                 case StatKind.XpGain:                 return "Multiplicador de la experiencia ganada.";
+                case StatKind.WarBarColumns:          return "Huecos por fila de la barra de hechizos en Guerra.";
+                case StatKind.WarBarRows:             return "Filas de la barra de hechizos en Guerra.";
+                case StatKind.MaxEnergy:              return "Energía que gastas al correr antes de quedarte sin aliento.";
                 default:                              return string.Empty;
             }
         }

@@ -20,6 +20,7 @@ namespace Valkur.Gameplay
         private MeleeCombat _melee;
         private PlayerController _controller;
         private Experience _experience;
+        private Valkur.Gameplay.Player.Energy _energy;
 
         private void Awake() => ResolveComponents();
 
@@ -30,6 +31,7 @@ namespace Valkur.Gameplay
             if (_melee == null)      _melee      = GetComponent<MeleeCombat>();
             if (_controller == null) _controller = GetComponent<PlayerController>();
             if (_experience == null) _experience = GetComponent<Experience>();
+            if (_energy == null)     _energy     = GetComponent<Valkur.Gameplay.Player.Energy>();
         }
 
         // ── Derived multipliers read directly by the spell layer ────────────────
@@ -52,6 +54,20 @@ namespace Valkur.Gameplay
 
         public float CritChance => Get(StatKind.CritChance);
         public float CritMultiplier => Get(StatKind.CritMultiplier);
+
+        // ── Read by the HUD ─────────────────────────────────────────────────────
+        //
+        // The War bar's size is a stat and not a setting because it is EARNED: the "Barra de
+        // Guerra" talent branch grows it, respec takes it back, and the same layered store that
+        // makes every other talent's removal exact makes this one's exact too. SpellBarHUD
+        // (Valkur.UI) reads these; Gameplay may not reference that assembly, so nothing is
+        // pushed — the bar asks, the same way SpellCaster asks for the spell multipliers.
+
+        /// <summary>Slots per row of the War action bar.</summary>
+        public int WarBarColumns => GetInt(StatKind.WarBarColumns);
+
+        /// <summary>Rows of the War action bar.</summary>
+        public int WarBarRows => GetInt(StatKind.WarBarRows);
 
         // ── The push ────────────────────────────────────────────────────────────
 
@@ -110,6 +126,9 @@ namespace Valkur.Gameplay
 
             if (_experience != null)
                 _experience.SetXpMultiplier(Get(StatKind.XpGain));
+
+            if (_energy != null)
+                _energy.SetMax(GetInt(StatKind.MaxEnergy));
         }
 
         /// <summary>

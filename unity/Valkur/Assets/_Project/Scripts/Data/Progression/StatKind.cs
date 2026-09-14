@@ -65,5 +65,17 @@ namespace Valkur.Data
 
         /// <summary>Multiplier on XP awarded. Consumer: <c>Experience.AddXp</c>.</summary>
         XpGain = 13,
+
+        /// <summary>Slots per row of the War action bar. Consumer: <c>SpellBarHUD</c>, through
+        /// <c>PlayerStats.WarBarColumns</c>. Grown by the "Barra de Guerra" talent branch.</summary>
+        WarBarColumns = 14,
+
+        /// <summary>Rows of the War action bar. Consumer: <c>SpellBarHUD</c>, through
+        /// <c>PlayerStats.WarBarRows</c>. Grown by the "Barra de Guerra" talent branch.</summary>
+        WarBarRows = 15,
+
+        /// <summary>Size of the energy pool running spends. Consumer: <c>Energy.SetMax</c>.
+        /// Seeded from the class's <c>maxDexterity</c> through <c>LocomotionTuning</c>.</summary>
+        MaxEnergy = 16,
     }
 }

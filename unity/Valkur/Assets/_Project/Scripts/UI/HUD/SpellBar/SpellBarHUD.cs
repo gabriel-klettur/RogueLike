@@ -59,6 +59,7 @@ namespace Valkur.UI.HUD
         private HudMoteLayer _motes;
         private HudTooltip _tooltip;
         private HudFloatText _floats;
+        private HudPixelText _overflowLabel;
         private RectTransform _leftObstacle;
 
         private int _widthTexels;
@@ -74,6 +75,7 @@ namespace Valkur.UI.HUD
 
         private GameObject _player;
         private SpellCaster _caster;
+        private PlayerStats _stats;
         private Mana _mana;
         private PlayerController _controller;
         private PlayerInteractionController _interaction;
@@ -99,6 +101,15 @@ namespace Valkur.UI.HUD
         public HudMoteLayer Motes => _motes;
         public HudTooltip Tooltip => _tooltip;
         public int SlotCount => _cells.Count;
+
+        /// <summary>Known spells of the page on screen that the earned bar has no room for.</summary>
+        public int Overflow => _overflow;
+
+        /// <summary>The War bar's earned size, in sockets per row and rows. Zero when the bar has
+        /// no stat store to ask (a bare test rig), in which case it is unbounded.</summary>
+        public Vector2Int EarnedSize => _stats != null
+            ? new Vector2Int(_stats.WarBarColumns, _stats.WarBarRows)
+            : Vector2Int.zero;
         public HudAbilitySlot Slot(int i) => i >= 0 && i < _cells.Count ? _cells[i].Slot : null;
         public SpellBarEntry Entry(int i) => i >= 0 && i < _cells.Count ? _cells[i].Entry : default;
 
@@ -166,6 +177,10 @@ namespace Valkur.UI.HUD
 
             _slotsRoot = HudRect.Make("Slots", _content, 0, 0, 1, 1);
             _floats = new HudFloatText(_content, _art, 2);
+            _overflowLabel = HudPixelText.Create(_content, "Overflow", _art, HudFontFace.Small,
+                                                 HudTextAlign.Right, 0, 0, 18, 7);
+            _overflowLabel.color = HudTheme.Active.textDim;
+            _overflowLabel.gameObject.SetActive(false);
             _motes = HudMoteLayer.Create(_pixels, _art, style.moteCapacity, _additive);
             _tooltip = new HudTooltip(_pixels, _art, 0);
         }
@@ -180,6 +195,7 @@ namespace Valkur.UI.HUD
             if (_player != null)
             {
                 _caster = _player.GetComponent<SpellCaster>();
+                _stats = _player.GetComponent<PlayerStats>();
                 _mana = _player.GetComponent<Mana>();
                 _controller = _player.GetComponent<PlayerController>();
                 _interaction = _player.GetComponent<PlayerInteractionController>();
@@ -193,6 +209,7 @@ namespace Valkur.UI.HUD
 
             // The first face is drawn at once and silently: arriving is not an event.
             _face = PlayerStance.Current;
+            _shiftPage = false;
             _flip = FlipPhase.None;
             Rebuild(EntriesFor(_face), celebrate: false);
             Refit(force: true);
@@ -208,6 +225,7 @@ namespace Valkur.UI.HUD
             }
             _player = null;
             _caster = null;
+            _stats = null;
             _mana = null;
             _controller = null;
             _interaction = null;

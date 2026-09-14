@@ -38,7 +38,8 @@ namespace Valkur.UI.HUD
         {
             if (!_built) return;
 
-            var tree = skills != null ? skills.Tree : null;
+            // The branch on the board: the class path, or a shared branch picked by its tab.
+            var tree = CurrentTree();
 
             // `!_boardBuilt` is not redundant with the tree comparison: on the very first open with
             // no player resolved, both sides are null, the board is never built, and Repaint then
@@ -76,6 +77,7 @@ namespace Valkur.UI.HUD
             HudRect.Place(_cardRoot, _widthTexels - pad - _style.cardWidthTexels, FooterTop(),
                           _style.cardWidthTexels, _boardHeight);
             LayoutHeaderAndFooter();
+            RebuildTabs();
             LayoutCard();
 
             // LAST, not first: every Place above wipes localScale, so the counter-scale has to be
@@ -166,6 +168,7 @@ namespace Valkur.UI.HUD
             _flavourLabel.SetText(_boundTree.flavour ?? string.Empty);
             _pointsLabel.SetText(skills.AvailablePoints.ToString());
             _footerLabel.SetText(SkillText.Spent(skills.SpentPoints, _boundTree.TotalPointCost()));
+            PaintTabs();
 
             _openParents.Clear();
             for (int i = 0; i < _views.Count; i++)

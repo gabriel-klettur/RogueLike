@@ -136,6 +136,8 @@ namespace Valkur.Gameplay
                                  $"'{_classKey}'. The talent panel will be empty for this class.");
             }
             _skills.SetTree(tree);
+            // The branches every class shares ("Barra de Guerra"), beside the class's own tree.
+            _skills.SetBranches(catalog != null ? catalog.sharedSkillTrees : null);
 
             if (catalog != null && catalog.startingSkillPoints > 0)
                 _skills.AddPoints(catalog.startingSkillPoints);
@@ -256,12 +258,12 @@ namespace Valkur.Gameplay
 
         private void ApplyPendingAuras()
         {
-            if (_skills == null || _skills.Tree == null) return;
+            if (_skills == null) return;
 
             foreach (var pair in _skills.Ranks)
             {
                 if (pair.Value <= 0) continue;
-                if (!_skills.Tree.TryGet(pair.Key, out var node) || node == null) continue;
+                if (!_skills.TryFindNode(pair.Key, out var node)) continue;
                 if (node.passiveAuras == null) continue;
 
                 foreach (var auraId in node.passiveAuras)

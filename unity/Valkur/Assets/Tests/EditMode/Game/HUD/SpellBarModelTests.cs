@@ -28,10 +28,10 @@ namespace Valkur.Tests.EditMode.Game.HUD
         [Test]
         public void War_ShowsOnlyKnownSpells_InCatalogOrder_ThenTheSwitch()
         {
-            var known = new HashSet<string> { "slash", "iceball", "darkball" };
+            var known = new HashSet<string> { "teleport", "iceball", "darkball" };
             var war = SpellBarModel.War(InputActionCatalog.Spells(), known.Contains, 5);
 
-            Assert.AreEqual(new[] { "darkball", "iceball", "slash", SpellBarModel.StanceKey }, Keys(war).ToArray(),
+            Assert.AreEqual(new[] { "darkball", "iceball", "teleport", SpellBarModel.StanceKey }, Keys(war).ToArray(),
                 "Catalog order is the keyboard's order: the number row first, then the letters.");
             Assert.AreEqual(SpellBarEntryKind.Stance, war[war.Count - 1].Kind);
         }
@@ -47,6 +47,23 @@ namespace Valkur.Tests.EditMode.Game.HUD
                 Assert.AreEqual(e.Key, d.PayloadKey,
                     "The key cap must be the key that casts THIS spell. The old bar labelled slot 1 with a key that cast another.");
             }
+        }
+
+        [Test]
+        public void War_OnePagePerKeyboardLayer_AndNoSpellOnBoth()
+        {
+            // The bar's two War pages: bare keys, and the Shift layer while Shift is held. A
+            // spell belongs to exactly one — iceball on 2 and ice_lance on Shift+2 are the pair.
+            var shifted = new HashSet<string> { "ice_lance" };
+            var known = new HashSet<string> { "iceball", "ice_lance" };
+            System.Func<InputActionDescriptor, bool> isShift = d => shifted.Contains(d.PayloadKey);
+
+            var bare = SpellBarModel.War(InputActionCatalog.Spells(), known.Contains, 5, onPage: d => !isShift(d));
+            var shift = SpellBarModel.War(InputActionCatalog.Spells(), known.Contains, 5, onPage: isShift);
+
+            Assert.AreEqual(new[] { "iceball", SpellBarModel.StanceKey }, Keys(bare).ToArray());
+            Assert.AreEqual(new[] { "ice_lance", SpellBarModel.StanceKey }, Keys(shift).ToArray(),
+                "Both pages end in the posture switch: it must stay in reach whichever layer is up.");
         }
 
         [Test]
@@ -120,8 +137,8 @@ namespace Valkur.Tests.EditMode.Game.HUD
         [Test]
         public void Signature_ChangesWithTheFace_AndWithTheContent()
         {
-            var a = SpellBarModel.War(InputActionCatalog.Spells(), k => k == "slash", 5);
-            var b = SpellBarModel.War(InputActionCatalog.Spells(), k => k == "slash" || k == "iceball", 5);
+            var a = SpellBarModel.War(InputActionCatalog.Spells(), k => k == "teleport", 5);
+            var b = SpellBarModel.War(InputActionCatalog.Spells(), k => k == "teleport" || k == "iceball", 5);
             Assert.AreNotEqual(SpellBarModel.Signature(Stance.War, a), SpellBarModel.Signature(Stance.War, b));
             Assert.AreNotEqual(SpellBarModel.Signature(Stance.War, a), SpellBarModel.Signature(Stance.Peace, a));
             Assert.AreEqual(SpellBarModel.Signature(Stance.War, a), SpellBarModel.Signature(Stance.War, a));

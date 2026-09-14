@@ -43,6 +43,11 @@ namespace Valkur.Data
         [Tooltip("Schools of the grimoire, shared by every class.")]
         public SpellTree[] spellTrees = System.Array.Empty<SpellTree>();
 
+        [Tooltip("Talent BRANCHES every class shares, beside its own tree — the 'Barra de " +
+                 "Guerra' branch that grows the War action bar. Bought with the same skill " +
+                 "points, shown as their own tab on the talents board. Their classKey is ignored.")]
+        public SkillTree[] sharedSkillTrees = System.Array.Empty<SkillTree>();
+
         [Header("Currency")]
         [Tooltip("Skill points granted per level-up.")]
         [Min(0)] public int skillPointsPerLevel = 1;

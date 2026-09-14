@@ -145,6 +145,19 @@ namespace Valkur.UI.HUD
             }
         }
 
+        /// <summary>
+        /// The Shift page arrived, or left. Deliberately QUIET: Shift is held and released many
+        /// times a fight, and the posture flip's motes and floating word are the bar's one loud
+        /// event — spent on every Shift they would stop meaning anything. The gem answers
+        /// instead: it flares pale while the second layer is up and in the posture's own colour
+        /// when the bare keys return, so the page is readable out of the corner of the eye.
+        /// </summary>
+        private void OnPageArrived()
+        {
+            var accent = _style.AccentFor(_face);
+            PulseGem(_shiftPage ? Color.Lerp(accent, Color.white, 0.6f) : accent);
+        }
+
         // -- The gem ---------------------------------------------------------------------------
 
         private void PulseGem(Color colour)

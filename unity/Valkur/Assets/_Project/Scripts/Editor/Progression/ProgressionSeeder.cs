@@ -84,6 +84,8 @@ namespace Valkur.EditorTools.Progression
             // whole layer was built to end.
             catalog.skillTrees = skillTrees.ToArray();
             catalog.spellTrees = spellTrees.ToArray();
+            // The branches every class shares beside its own path ("Barra de Guerra").
+            catalog.sharedSkillTrees = SharedBranchSeeds.BuildAll(out _).ToArray();
 
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();

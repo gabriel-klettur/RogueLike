@@ -29,7 +29,7 @@ namespace Valkur.Data
         [Tooltip("Total window size. Both tabs are the same rect as the talents board so the " +
                  "strip above them never appears to move when the player switches.")]
         [Range(320, 560)] public int widthTexels = 454;
-        [Range(180, 340)] public int heightTexels = 272;
+        [Range(180, 340)] public int heightTexels = 276;
 
         [Header("CHARACTER")]
         [Tooltip("The left column: portrait, level, experience and the two currencies.")]

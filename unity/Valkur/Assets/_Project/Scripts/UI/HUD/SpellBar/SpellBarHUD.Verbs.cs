@@ -91,9 +91,9 @@ namespace Valkur.UI.HUD
                     };
                     break;
                 case "talents":
-                    verb.IsActive = () => SheetShowing(CharacterSheetController.TabSkills);
-                    verb.Detail = () => "Gasta los puntos de habilidad";
-                    verb.Invoke = () => ToggleSheet(CharacterSheetController.TabSkills);
+                    verb.IsActive = () => SheetShowing(CharacterSheetController.TabTalents);
+                    verb.Detail = () => "Gasta los puntos de talento";
+                    verb.Invoke = () => ToggleSheet(CharacterSheetController.TabTalents);
                     // Levelling up granted a point and the game said so nowhere: the number lived
                     // inside the panel this slot opens, so the only way to learn you had one was
                     // to go and look. The badge is the notice.

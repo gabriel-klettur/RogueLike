@@ -158,7 +158,7 @@ namespace Valkur.Gameplay
             int level = ResolvePlayerLevel();
 
             var skills = progression.Skills;
-            if (skills != null && skills.Tree != null && skills.Tree.TryGet(id, out var talent))
+            if (skills != null && skills.TryFindNode(id, out var talent))
             {
                 if (skills.TryLearn(talent, level, out string reason))
                     Log($"Learned '{talent.displayName}' rank {skills.RankOf(id)}.");

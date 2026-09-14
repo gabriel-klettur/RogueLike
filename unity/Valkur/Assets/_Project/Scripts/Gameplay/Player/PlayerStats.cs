@@ -136,6 +136,9 @@ namespace Valkur.Gameplay
                 SetBase(StatKind.Defense, def.basicArmor);
                 SetBase(StatKind.CritChance, def.baseCritChance);
                 SetBase(StatKind.CritMultiplier, def.baseCritMultiplier);
+                // maxDexterity was authored on every class and shown in the class selector as
+                // 'Resistencia' while nothing read it. It is the energy running spends now.
+                SetBase(StatKind.MaxEnergy, LocomotionTuning.Active.MaxEnergyFor(def.maxDexterity));
             }
 
             _dirty = true;

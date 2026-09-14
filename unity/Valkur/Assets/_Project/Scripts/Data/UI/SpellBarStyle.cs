@@ -62,6 +62,14 @@ namespace Valkur.Data
         [Range(0.04f, 0.6f)] public float flipHalfSeconds = 0.13f;
         [Tooltip("Delay between one slot flipping and the next, left to right.")]
         [Range(0f, 0.1f)] public float flipStaggerSeconds = 0.022f;
+
+        [Tooltip("Half of the quick turn to the Shift page and back, in seconds. Much shorter than " +
+                 "the posture flip: it answers a key held under the player's fingers, and a page " +
+                 "that lagged behind Shift would read as the bar being slow.")]
+        [Range(0.02f, 0.3f)] public float pageHalfSeconds = 0.055f;
+
+        [Tooltip("Delay between neighbouring slots in the page turn.")]
+        [Range(0f, 0.05f)] public float pageStaggerSeconds = 0.006f;
         [Tooltip("How long the frame's gem glows after a spell leaves the hands.")]
         [Range(0f, 1f)] public float gemPulseSeconds = 0.35f;
         [Range(0f, 1f)] public float showFadeSeconds = 0.12f;

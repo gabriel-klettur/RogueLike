@@ -50,24 +50,54 @@ SpriteAtlas:
     isAtlasV2: 0
     cachedData: {fileID: 0}
     packedSpriteRenderDataKeys:
+    - 40455b420556a2a4badd5056441f6133: 21300000
     - 2b15ccf283befdb4db5323376ee33ea4: 21300000
+    - 8d7a5d13ba350e747a92f96c77a6cd81: 21300000
+    - 63aaa334378b4fc46bd45482ba5a817d: 21300000
     - 4aa953b41cc31af4aa421cf794c578d8: 21300000
     - 7860cfa567c714a48898d521493f4d19: 21300000
     - 2843056922f421448bb0ecdae3c5a10d: 21300000
     - da637ca9c3ff85142859287891d47125: 21300000
+    - 19f9d65ab8c0d9540be3c81d90787d8a: 21300000
+    - cdf61c5b6a8b4864eb29df968416a304: 21300000
+    - c5bb0a5d341747445b3a9cc2a1aa5f37: 21300000
+    - 92aafa4e5c2947745b9ddd57b94ffbad: 21300000
+    - 24ed1a6f1a98fb044a207d17e215d81e: 21300000
+    - 7dedc7cf72cb73f48bfba1c8ac9583d2: 21300000
+    - f1c72fef90efafb4fa003d42bf1fc2d9: 21300000
   m_MasterAtlas: {fileID: 0}
   m_PackedSprites:
+  - {fileID: 21300000, guid: 40455b420556a2a4badd5056441f6133, type: 3}
   - {fileID: 21300000, guid: 2b15ccf283befdb4db5323376ee33ea4, type: 3}
+  - {fileID: 21300000, guid: 8d7a5d13ba350e747a92f96c77a6cd81, type: 3}
+  - {fileID: 21300000, guid: 63aaa334378b4fc46bd45482ba5a817d, type: 3}
   - {fileID: 21300000, guid: 4aa953b41cc31af4aa421cf794c578d8, type: 3}
   - {fileID: 21300000, guid: 7860cfa567c714a48898d521493f4d19, type: 3}
   - {fileID: 21300000, guid: 2843056922f421448bb0ecdae3c5a10d, type: 3}
   - {fileID: 21300000, guid: da637ca9c3ff85142859287891d47125, type: 3}
+  - {fileID: 21300000, guid: 19f9d65ab8c0d9540be3c81d90787d8a, type: 3}
+  - {fileID: 21300000, guid: cdf61c5b6a8b4864eb29df968416a304, type: 3}
+  - {fileID: 21300000, guid: c5bb0a5d341747445b3a9cc2a1aa5f37, type: 3}
+  - {fileID: 21300000, guid: 92aafa4e5c2947745b9ddd57b94ffbad, type: 3}
+  - {fileID: 21300000, guid: 24ed1a6f1a98fb044a207d17e215d81e, type: 3}
+  - {fileID: 21300000, guid: 7dedc7cf72cb73f48bfba1c8ac9583d2, type: 3}
+  - {fileID: 21300000, guid: f1c72fef90efafb4fa003d42bf1fc2d9, type: 3}
   m_PackedSpriteNamesToIndex:
+  - war_bar_columns_4
   - horizonte_1
+  - war_bar_columns_5
+  - war_bar_rows_2
   - arrow_left
   - folder_win
   - rock
   - Top_Landscape
+  - war_bar_columns_1
+  - war_bar_columns_2
+  - war_bar_rows_4
+  - war_bar_rows_3
+  - war_bar_columns_3
+  - war_bar_rows_1
+  - war_bar_rows_5
   m_RenderDataMap: {}
   m_Tag: misc
   m_IsVariant: 0

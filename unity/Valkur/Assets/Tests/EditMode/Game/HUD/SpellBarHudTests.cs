@@ -46,7 +46,7 @@ namespace Valkur.Tests.EditMode.Game.HUD
             _player.AddComponent<Mana>().Initialize(50, 50, 0f);
             _caster = _player.AddComponent<SpellCaster>();
             _caster.RegisterSpell("darkball", Spell("darkball"));
-            _caster.RegisterSpell("slash", Spell("slash"));
+            _caster.RegisterSpell("glacial_step", Spell("glacial_step"));   // a bare key: T
 
             _bar = SpellBarHUD.Create(canvas, _player);
         }
@@ -100,7 +100,7 @@ namespace Valkur.Tests.EditMode.Game.HUD
             _bar.Tick(1f / 60f);   // a slot derives its state on its first tick
             var e = Entries();
             Assert.AreEqual(Stance.War, _bar.Face);
-            Assert.AreEqual(new[] { "darkball", "slash", SpellBarModel.StanceKey }, e.Select(x => x.Key).ToArray());
+            Assert.AreEqual(new[] { "darkball", "glacial_step", SpellBarModel.StanceKey }, e.Select(x => x.Key).ToArray());
             Assert.AreEqual(HudSlotState.Ready, _bar.Slot(0).State);
             Assert.AreEqual("darkball", _bar.Slot(0).SpellKey);
         }
@@ -166,8 +166,8 @@ namespace Valkur.Tests.EditMode.Game.HUD
         [Test]
         public void MoreSpellsThanARow_WrapIntoASecondRow_OnTheGrid_WithTheSwitchStillOnTheBottomRow()
         {
-            foreach (var key in new[] { "iceball", "lightball", "puddle_lava", "mine_basic", "boomerang",
-                                        "chain_lightning", "vortex_pull", "vortex_push", "flame_breath", "teleport" })
+            foreach (var key in new[] { "iceball", "lightball", "charged_bolt", "lightning", "boomerang",
+                                        "seeking_shard", "scatter_volley", "laser_beam_red", "lightning_beam", "teleport" })
                 _caster.RegisterSpell(key, Spell(key));
             Run(0.4f);
 

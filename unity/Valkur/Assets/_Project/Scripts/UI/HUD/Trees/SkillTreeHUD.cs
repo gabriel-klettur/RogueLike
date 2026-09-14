@@ -64,6 +64,7 @@ namespace Valkur.UI.HUD
         public void BindLearnedSkills(LearnedSkills ls, int level)
         {
             UnbindCurrent();
+            if (skills != ls) _branchIndex = 0;   // a new character opens on its own class path
             skills = ls;
             _playerLevel = Mathf.Max(1, level);
             if (skills != null) skills.OnLoadoutChanged += OnLoadoutChanged;

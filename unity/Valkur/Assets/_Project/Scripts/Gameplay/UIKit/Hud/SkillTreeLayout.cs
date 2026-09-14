@@ -164,9 +164,23 @@ namespace Valkur.UI.HUD
                     if (prereq == null) continue;
                     if (!byNode.TryGetValue(prereq, out var parent)) continue;
 
+                    // Same row: a TRACK. A chain of ranks laid out left to right (the "Barra de
+                    // Guerra" branch's five columns, five rows) reads as one line from socket to
+                    // socket at the sockets' own height — an elbow has no vertical gap to live in.
+                    if (child.Y == parent.Y)
+                    {
+                        int left = Mathf.Min(child.X, parent.X) + NodeSize;
+                        int right = Mathf.Max(child.X, parent.X);
+                        if (right <= left) continue;
+                        var none = new RectInt(child.CentreX, child.CentreY, 0, 0);
+                        var track = new RectInt(left, child.CentreY, right - left, EdgeThickness);
+                        edges.Add(new SkillEdgePlacement(prereq, node, none, track, none));
+                        continue;
+                    }
+
                     int childTop = child.Y + NodeSize;
                     int parentBottom = parent.Y - CellFooterHeight;
-                    if (parentBottom <= childTop) continue;   // same row, or authored upside down
+                    if (parentBottom <= childTop) continue;   // authored upside down
 
                     // The crossbar sits halfway up the gap, so two elbows into the same parent
                     // from different columns share a rail instead of crossing each other.

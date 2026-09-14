@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9daf39b310f62e64eafddc1b747855a0, type: 3}
+  m_Name: war_bar_rows_5
+  m_EditorClassIdentifier: 
+  skillId: war_bar_rows_5
+  displayName: Fila de guerra V
+  description: Seis hileras. El grimorio entero cabe bajo tus dedos.
+  icon: {fileID: 21300000, guid: f1c72fef90efafb4fa003d42bf1fc2d9, type: 3}
+  pointCost: 3
+  maxRank: 1
+  levelRequirement: 24
+  levelPerRank: 0
+  prerequisites:
+  - {fileID: 11400000, guid: 1237bbfd57c0d6c4b9c149c290801a31, type: 2}
+  modifiersPerRank:
+  - stat: 15
+    op: 0
+    value: 1
+  passiveAuras: []
+  row: 1
+  column: 4

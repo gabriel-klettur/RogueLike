@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9daf39b310f62e64eafddc1b747855a0, type: 3}
+  m_Name: war_bar_columns_5
+  m_EditorClassIdentifier: 
+  skillId: war_bar_columns_5
+  displayName: Columna de guerra V
+  description: 'Diez huecos por fila: todo el ancho de una mano entrenada.'
+  icon: {fileID: 21300000, guid: 8d7a5d13ba350e747a92f96c77a6cd81, type: 3}
+  pointCost: 3
+  maxRank: 1
+  levelRequirement: 20
+  levelPerRank: 0
+  prerequisites:
+  - {fileID: 11400000, guid: 33c9982f15094e546aeb78223845f18d, type: 2}
+  modifiersPerRank:
+  - stat: 14
+    op: 0
+    value: 1
+  passiveAuras: []
+  row: 0
+  column: 4
