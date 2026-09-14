@@ -130,6 +130,57 @@ namespace Valkur.Tests.EditMode.Game.WorldGen
             CollectionAssert.AreEqual(before, after, "a revisited zone must be regenerated identically");
         }
 
+        /// <summary>
+        /// A generated zone that was never saved has no overlay file, so the Tile editor's auto-brush
+        /// had no corner terrain there at all and drew hard edges against the generated ground. The
+        /// streamer hands it the vertex terrain of every zone it paints.
+        /// </summary>
+        [Test]
+        public void APaintedZone_GivesTheAutoBrushItsVertexTerrain()
+        {
+            var map = new TerrainMap();
+            _streamer.UseTerrainMapForTests(map);
+
+            _streamer.SyncAll(CentreOfZone(1, 1));
+
+            var zone = _world.GenerateZone(1, 1);
+            var o = _world.Plan.ZoneOffset(1, 1);
+            int z = zone.Size;
+            int checkedVertices = 0;
+            for (int vy = 0; vy <= z; vy += 7)
+                for (int vx = 0; vx <= z; vx += 7)
+                {
+                    Assert.AreEqual(zone.Terrains[vy * (z + 1) + vx], map.GetTerrain(new Vector2Int(o.x + vx, o.y + vy)),
+                        $"vertex ({vx},{vy}) of zone (1,1)");
+                    checkedVertices++;
+                }
+            Assert.Greater(checkedVertices, 0);
+            Assert.AreEqual(_streamer.LoadedZoneCount, _streamer.ZonesWithTerrains);
+        }
+
+        [Test]
+        public void DroppingAZone_ForgetsItsTerrain_ButKeepsTheEdgeAPaintedNeighbourShares()
+        {
+            var map = new TerrainMap();
+            _streamer.UseTerrainMapForTests(map);
+            _streamer.SyncAll(CentreOfZone(1, 1));
+
+            // Four zones on: 0 and 1 are dropped, 2 stays painted (the unload ring keeps it).
+            _streamer.SyncAll(CentreOfZone(4, 1));
+            Assert.IsFalse(_streamer.IsLoaded(new Vector2Int(1, 1)), "Sanity: zone (1,1) was dropped.");
+            Assert.IsTrue(_streamer.IsLoaded(new Vector2Int(2, 1)), "Sanity: zone (2,1) is still painted.");
+
+            var o1 = _world.Plan.ZoneOffset(1, 1);
+            int z = _world.ZoneSize;
+            Assert.IsNull(map.GetTerrain(new Vector2Int(o1.x + 20, o1.y + 20)),
+                "A dropped zone's interior must leave the auto-brush map, or it answers for the next map painted there.");
+            Assert.IsNull(map.GetTerrain(new Vector2Int(_world.Plan.ZoneOffset(0, 1).x + 20, o1.y + 20)));
+
+            var shared = new Vector2Int(o1.x + z, o1.y + 20);
+            Assert.AreEqual(_world.GenerateZone(2, 1).Terrains[20 * (z + 1)], map.GetTerrain(shared),
+                "The edge a dropped zone shares with a painted one is also that zone's, and its last column of cells reads it.");
+        }
+
         [Test]
         public void AnEditedZone_IsPaintedFromItsFile()
         {

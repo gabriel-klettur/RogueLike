@@ -57,6 +57,12 @@ namespace Valkur.Gameplay.World.Generation
         private readonly List<Vector2Int> _scratch = new List<Vector2Int>();
         private TileBase[] _emptyBlock;
 
+        // Where each painted zone's vertex terrain was written into the auto-brush map, so it can be
+        // taken out again under the plan that put it there (a slot change replaces the plan).
+        private readonly Dictionary<Vector2Int, Vector2Int> _terrainOrigins = new Dictionary<Vector2Int, Vector2Int>();
+        private int _terrainZoneSize;
+        private TerrainMap _terrainsForTests;
+
         private static SeedWorldLiveStreamer s_instance;
 
         // Domain Reload is OFF: a destroyed streamer from the last Play session must not answer.
@@ -102,6 +108,7 @@ namespace Valkur.Gameplay.World.Generation
 
         private void OnDestroy()
         {
+            ForgetAllTerrains();
             if (s_instance == this) s_instance = null;
         }
 
@@ -119,8 +126,21 @@ namespace Valkur.Gameplay.World.Generation
             _slot = world != null ? world.Slot : null;
             _clearGeneration = grid != null ? grid.ClearGeneration : -1;
             _loaded.Clear();
+            _terrainOrigins.Clear();
             _slotDirty = false;
         }
+
+        /// <summary>For fixtures: the auto-brush terrain map to write, instead of the Tile editor's.</summary>
+        internal void UseTerrainMapForTests(TerrainMap map) => _terrainsForTests = map;
+
+        /// <summary>
+        /// The map the Tile editor's auto-brush reads corner terrains from. A generated zone that was
+        /// never saved has no overlay file, so this is the only place its vertex terrain can come
+        /// from; without it every corner of a stroke there reads "unknown" and the brush draws hard
+        /// edges against the generated ground.
+        /// </summary>
+        private TerrainMap AutoBrushTerrains
+            => _terrainsForTests ?? (TileEditorManager.HasInstance ? TileEditorManager.Instance.TerrainMap : null);
 
         /// <summary>
         /// Adopt the active slot NOW rather than next frame: whatever a world wipe cleared is
@@ -133,6 +153,7 @@ namespace Valkur.Gameplay.World.Generation
             if (_grid != null && _grid.ClearGeneration != _clearGeneration)
             {
                 _clearGeneration = _grid.ClearGeneration;
+                ForgetAllTerrains();
                 _loaded.Clear();
             }
             _slotDirty = false;
@@ -150,6 +171,7 @@ namespace Valkur.Gameplay.World.Generation
             // Inside an interior the tilemaps hold the interior; whatever this painted is gone.
             if (WorldTransitionService.IsBaseWorldContentSuspended)
             {
+                ForgetAllTerrains();
                 _loaded.Clear();
                 _suspended = true;
                 return;
@@ -159,6 +181,7 @@ namespace Valkur.Gameplay.World.Generation
             if (_grid.ClearGeneration != _clearGeneration)
             {
                 _clearGeneration = _grid.ClearGeneration;
+                ForgetAllTerrains();
                 _loaded.Clear();
                 _slotDirty = true;
             }
@@ -196,6 +219,7 @@ namespace Valkur.Gameplay.World.Generation
 
             _slot = slot;
             _markerWriteUtc = markerTime;
+            ForgetAllTerrains();
             _world = null;
             _loaded.Clear();
             LastOpenError = null;
@@ -366,6 +390,16 @@ namespace Valkur.Gameplay.World.Generation
                 OverlayLoader.ApplyLayerJumps(root, TileEditorManager.Instance.LayerJumps, offset.x, offset.y);
             }
 
+            // Generated or edited, the zone's vertex terrain goes where the auto-brush reads it. An
+            // edited file saved from here carries the matrix again, because the Tile editor writes a
+            // zone's terrains from this same map.
+            var terrains = AutoBrushTerrains;
+            if (terrains != null && OverlayLoader.ApplyTerrains(root, terrains, offset.x, offset.y) > 0)
+            {
+                _terrainOrigins[zone] = offset;
+                _terrainZoneSize = z;
+            }
+
             _loaded.Add(zone);
             if (fromDisk) ZonesFromDisk++; else ZonesGenerated++;
             LastZoneMs = sw.ElapsedMilliseconds;
@@ -376,8 +410,64 @@ namespace Valkur.Gameplay.World.Generation
         {
             ClearZoneTiles(_world.Plan.ZoneOffset(zone.x, zone.y), _world.ZoneSize);
             _loaded.Remove(zone);
+            ForgetZoneTerrains(zone);
             ZonesUnloaded++;
         }
+
+        /// <summary>
+        /// Take a dropped zone's vertex terrain back out of the auto-brush map — except the vertices on
+        /// its edges that a zone still painted also owns: a boundary vertex belongs to every zone that
+        /// touches it, and the neighbour's last column of cells reads it.
+        /// </summary>
+        private void ForgetZoneTerrains(Vector2Int zone)
+        {
+            if (!_terrainOrigins.TryGetValue(zone, out var origin)) return;
+            _terrainOrigins.Remove(zone);
+            var terrains = AutoBrushTerrains;
+            if (terrains == null) return;
+
+            int z = _terrainZoneSize;
+            for (int vy = 0; vy <= z; vy++)
+                for (int vx = 0; vx <= z; vx++)
+                {
+                    if (SharedWithAPaintedZone(zone, vx, vy, z)) continue;
+                    terrains.SetTerrain(new Vector2Int(origin.x + vx, origin.y + vy), null);
+                }
+        }
+
+        private bool SharedWithAPaintedZone(Vector2Int zone, int vx, int vy, int z)
+        {
+            int dx0 = vx == 0 ? -1 : 0, dx1 = vx == z ? 1 : 0;
+            int dy0 = vy == 0 ? -1 : 0, dy1 = vy == z ? 1 : 0;
+            for (int dy = dy0; dy <= dy1; dy++)
+                for (int dx = dx0; dx <= dx1; dx++)
+                    if ((dx != 0 || dy != 0) && _terrainOrigins.ContainsKey(new Vector2Int(zone.x + dx, zone.y + dy)))
+                        return true;
+            return false;
+        }
+
+        /// <summary>
+        /// A world wipe, a slot change or an interior: every vertex this streamer wrote goes, measured
+        /// against the plan that wrote it. Left behind, a generated world's terrain would answer the
+        /// auto-brush for whatever map is painted at the same coordinates next.
+        /// </summary>
+        private void ForgetAllTerrains()
+        {
+            if (_terrainOrigins.Count == 0) return;
+            var terrains = AutoBrushTerrains;
+            if (terrains != null)
+            {
+                int z = _terrainZoneSize;
+                foreach (var origin in _terrainOrigins.Values)
+                    for (int vy = 0; vy <= z; vy++)
+                        for (int vx = 0; vx <= z; vx++)
+                            terrains.SetTerrain(new Vector2Int(origin.x + vx, origin.y + vy), null);
+            }
+            _terrainOrigins.Clear();
+        }
+
+        /// <summary>Zones whose vertex terrain is in the auto-brush map right now.</summary>
+        public int ZonesWithTerrains => _terrainOrigins.Count;
 
         private void ClearZoneTiles(Vector2Int offset, int z)
         {
