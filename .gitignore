@@ -249,3 +249,6 @@ cline-cli-*.tgz
 # graph.json is ~66 MB and is rewritten wholesale on every build, so it is never committed.
 graphify-out/
 .claude/settings.json.graphify-bak
+
+# Screenshots and debug captures written by probes / MCP (unity/Valkur/Captures/) - local only.
+unity/**/Captures/
