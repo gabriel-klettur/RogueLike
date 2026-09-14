@@ -86,9 +86,13 @@ namespace Valkur.Data
         [Range(-4f, 8f)] public float riseBias = 0f;
 
         [Header("Light")]
-        [Tooltip("Multiplies the whole ramp. On an additive surface this is the intensity dial " +
-                 "and it may exceed 1 — alpha is COVERAGE there, so reaching for alpha widens " +
-                 "the word into fog instead of hardening it.")]
+        [Tooltip("Multiplies the whole ramp. It is NOT a brightness dial above 1: the mesh " +
+                 "carries its colour as a Color32, which CLAMPS, and on any warm tone red is " +
+                 "the largest channel, so it saturates first and every further step only " +
+                 "raises green and blue. Gain above 1 is therefore a DESATURATION dial — " +
+                 "measured on 'volcan' at 1.45, the hot tone rendered (1,1,1) and the middle " +
+                 "of a stroke came out hue 53 at saturation 0.46, i.e. a red look that drew " +
+                 "cream. Author the colour instead; leave this at 1.")]
         [Range(0.2f, 3f)] public float glowGain = 1f;
 
         [Tooltip("The LEAST plate the word ever sits on. It used to be the only value — a " +
@@ -111,6 +115,42 @@ namespace Valkur.Data
         [Tooltip("Colour of the plate. Black is the neutral answer; a deep red under a fire look " +
                  "makes the word sit in its own glow instead of on a hole.")]
         public Color haloTint = Color.black;
+
+        [Header("Matter")]
+        [Tooltip("A second, larger, dimmer quad behind every mote. THE cheapest thing on this " +
+                 "list: fire has an atmosphere that reaches past its body, and without one the " +
+                 "word has a hard edge and nothing around it. 0 is the shipped word, which has " +
+                 "none. It doubles the mesh and stays ONE draw call. " +
+                 "It also SUBSUMES the mote-size dial that was written beside it and then " +
+                 "deleted. On an additive surface a dark colour loses its soft rim — a deep red " +
+                 "mote’s falloff adds so little light that only its core reads, so the " +
+                 "spacing that drew the cream word as matter drew the red one as a " +
+                 "constellation. Widening the motes closes the stroke and fattens the " +
+                 "letterform with it; the halo closes the same gap from BEHIND and leaves the " +
+                 "core its edge. Measured on VALKUR: motes at 1.18x with a 0.22 halo read " +
+                 "blobby, motes at 1.00x with a 0.26 halo read closed AND crisp.")]
+        [Range(0f, 1f)] public float glowStrength = 0f;
+
+        [Tooltip("How much bigger that halo is than the mote it sits behind.")]
+        [Range(1f, 6f)] public float glowScale = 2.6f;
+
+        [Tooltip("Skews the flicker so it brightens FAST and decays SLOW, which is what " +
+                 "combustion does and what a pair of sines cannot say — a symmetric wobble is a " +
+                 "lamp with a loose contact. Implemented as phase distortion (sin(p + a·sin p)), " +
+                 "so the range stays exactly [-1,1] and 0 recovers the shipped waveform " +
+                 "sample for sample.")]
+        [Range(0f, 0.85f)] public float flickerAsymmetry = 0f;
+
+        [Tooltip("How far a rising ember is pushed toward the HOTTEST tone, whatever the mote it " +
+                 "left was wearing. An ember abandoning a fire is the hottest thing in the " +
+                 "picture; inheriting the colour of a deep-red crown makes it invisible, which " +
+                 "is not a property of embers, it is an accident of where it was picked.")]
+        [Range(0f, 1f)] public float emberHeat = 0f;
+
+        [Tooltip("Drips a second off the LOWER edge of a stroke. The one gesture that says " +
+                 "MOLTEN rather than merely lit, so it is off for every look that is not. Kept " +
+                 "under the attention floor: about one every couple of seconds over a whole word.")]
+        [Range(0f, 12f)] public float dripRate = 0f;
 
         [Header("Assembly and accents")]
         [Tooltip("The colour a mote wears while it is still flying in. Cooler than the word so " +
@@ -145,7 +185,16 @@ namespace Valkur.Data
             {
                 // The COLOUR carries the intensity, never the alpha: on an additive surface alpha
                 // is coverage, so a brighter word must be a brighter colour or it becomes a wider,
-                // softer one. HDR values survive to the framebuffer here.
+                // softer one.
+                //
+                // What it CANNOT do is exceed 1. The word is drawn by a uGUI Graphic, and
+                // VertexHelper takes a Color32 — the same clamp this project already records for
+                // particle vertex colours, and the opposite of SpriteRenderer.color, which really
+                // does keep an authored 2.4. So the excess is not extra light, it is the red
+                // channel pinned at 1 while green and blue go on climbing, which walks any warm
+                // ramp toward yellow and then toward white. The plate solve pays for it twice:
+                // it reads the UNCLAMPED luminance, so it believes the word is brighter than it
+                // renders and under-plates it. Kept because the shipped looks were tuned with it.
                 c.r *= glowGain;
                 c.g *= glowGain;
                 c.b *= glowGain;

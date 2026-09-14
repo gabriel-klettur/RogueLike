@@ -323,3 +323,106 @@ plato que uno crema**, y su corona es más oscura que nada que dibuje el crema.
 El 8,5 de la letra es deliberado y es lo único que no se cierra con código: los trazos siguen
 saliendo de un muestreador, correctos y sin una letra DIBUJADA detrás. Un logo de marca de verdad
 quiere eso, y es trabajo de diseño tipográfico, no de renderizado.
+
+---
+
+# Cuarta pasada: el logo era rojo en el disco y crema en la pantalla
+
+Medida el 2026-09-13, a 1600x800, sobre el árbol de trabajo. La pasada anterior cerró en 9,1 con
+`titleLook: volcan` enviado. Lo que se veía al abrir el juego era la palabra CREMA.
+
+## 16. La causa era un fixture, no el diseño
+
+`TitleLookTests.TheShippedAsset_StillCarriesTheOriginalLook_UnderTheNameAscua` escribía
+`MenuStyle.Active.titleLook = "ascua"` sobre el asset ENVIADO y no lo devolvía. Un domain reload
+no recarga assets, así que el Editor se quedaba con ese valor el resto de la sesión y el menú
+dibujaba un aspecto que el disco no contenía. Medido:
+
+```text
+memoria=ascua   disco=volcan
+```
+
+Es la forma que este repositorio ya tiene documentada media docena de veces y que costó 216
+plantillas de edificio una vez. El arreglo es no tocar el objeto compartido: el test busca el
+aspecto POR NOMBRE con el helper que ya existía, y el de "nombre desconocido" pasa a una
+instancia de usar y tirar — devolver el campo en un `finally` es correcto y aun así deja el
+objeto *dirty*, o sea a un `AssetDatabase.SaveAssets` de escribir el valor de un test sobre los
+datos enviados.
+
+## 17. `glowGain` no era un dial de brillo, era un dial de DESATURACIÓN
+
+`volcan` llevaba `glowGain: 1.45`. La malla lleva su color de vértice como `Color32`, que
+**recorta**, y en cualquier tono cálido el rojo es el canal mayor: satura primero y cada paso más
+solo sube verde y azul. Medido sobre el aspecto tal y como se enviaba:
+
+| Punto del trazo | Malla | Tono | Saturación |
+|---|---|---:|---:|
+| pie, núcleo | (255,255,255) | — | **0,00** |
+| medio, núcleo | (255,242,138) | 53° | **0,46** |
+| corona, canto | (255,48,10) | 9° | 0,96 |
+
+El rojo solo vivía en el CANTO del trazo, donde el alfa cae; el espinazo —donde el alfa es 1 y es
+lo que el ojo lee— era blanco. Dos consecuencias más, ambas silenciosas: el plato se resuelve
+leyendo `Luminance(Sample(0.5))` SIN recortar, así que creía la palabra un 45 % más brillante de
+lo que renderiza y la infra-plateaba; y la documentación del campo afirmaba que "HDR values
+survive to the framebuffer here", que es cierto para `SpriteRenderer.color` y falso para el color
+de vértice de uGUI. Corregida con la medida dentro.
+
+## 18. El aspecto `lava`
+
+Gain 1 y el color AUTORADO en vez de multiplicado. Eje vertical dominante (`coolUpward 0,70`
+contra `coolAcross 0,30`), así que el espinazo deja de ser una barra de metal.
+
+| Punto | Malla | Tono | Saturación |
+|---|---|---:|---:|
+| pie, núcleo | (255,168,56) | 33° | 0,78 |
+| medio, núcleo | (255,64,15) | 12° | 0,94 |
+| corona, núcleo | (216,45,12) | 10° | 0,94 |
+| corona, canto | (158,19,8) | 4° | 0,95 |
+
+Saturación 0,78-0,95 en toda la palabra contra 0,00-0,46. Contraste sobre el fotograma más claro
+del carrusel: **4,5 : 1**, con el plato resuelto en su techo de 0,94 — el suelo que fija el
+fixture es 3,0.
+
+## 19. Cuatro diales nuevos, y uno que se escribió y se borró
+
+- **`glowStrength` / `glowScale`** — un segundo cuadrilátero, más grande y más tenue, detrás de
+  cada mota. Es lo más rentable de toda la lista: el fuego tiene una atmósfera que llega más allá
+  de su cuerpo, y sin ella la palabra tiene un canto duro y nada alrededor. Duplica la malla
+  (29 432 vértices sobre los 65 535 que admite uGUI) y sigue siendo UN draw call. El aditivo SUMA,
+  así que los dos cuadriláteros pueden emitirse en cualquier orden.
+- **`flickerAsymmetry`** — el fuego brilla rápido y decae despacio, y un par de senos no puede
+  decir eso. Implementado como distorsión de FASE, `sin(p + a·sin p)`: la pendiente en el cruce
+  por cero ascendente es `1 + a` y en el descendente `1 - a`, así que el pico llega antes y el
+  regreso es largo. Deformar la AMPLITUD en su lugar (elevarla a una potencia) mueve también la
+  MEDIA, o sea que la palabra se enfriaría al subir la asimetría: dos cosas de un dial. A `a = 0`
+  es `Mathf.Sin` muestra por muestra, que es lo que deja a los cuatro aspectos anteriores con la
+  forma de onda con la que se afinaron.
+- **`emberHeat`** — una brasa que ABANDONA un fuego es lo más caliente de la escena. Heredar el
+  color de la mota de la que salió es un accidente de dónde cayó el índice aleatorio, y en un
+  aspecto rojo una brasa de la corona es invisible.
+- **`dripRate`** — el único gesto que dice FUNDIDO en vez de meramente encendido. Reutiliza la
+  tubería de brasas con la gravedad al revés; el punto de salida es el más bajo de ocho
+  candidatos del canto, que es una línea contra un segundo campo por mota y no puede hacer caer
+  una gota por ARRIBA de una letra.
+- **`moteScale` se escribió y se borró.** Existía por una medida real: en aditivo un color oscuro
+  pierde su borde suave, así que solo leen los núcleos y el mismo espaciado que dibujaba la
+  palabra crema como materia dibujaba la roja como constelación. El halo cierra ese mismo hueco
+  desde DETRÁS y además deja el filo del núcleo. Medido sobre VALKUR: motas a 1,18x con halo 0,22
+  se lee gordo, motas a 1,00x con halo 0,26 se lee cerrado Y nítido. Un dial que otro dial
+  subsume es un dial que miente.
+
+## 20. Lo que fijan los tests nuevos
+
+`AGlowingLook_ReachesPastItsOwnBody` (un halo que no es MÁS GRANDE que su mota es un cambio de
+brillo con nombre de atmósfera), `OnlyAMoltenLook_Drips`, `TheShippedLook_UsesTheDialsThatWereAddedForIt`
+(un dial con lector, tooltip y nadie demostrando que hace algo es la forma autorada-e-inerte que
+este proyecto ha enviado una docena de veces) y `ThePreservedLooks_CarryNoneOfTheNewDials`.
+En `MenuParticleTests`: la fuente de goteo sale bajo la línea media en más de dos tercios de 400
+tiradas —una sola tirada pasaría o fallaría a cara o cruz— y `FireWave` es un seno exacto en
+`a = 0` y pica antes de π/2 por encima.
+
+## 21. Lo que sigue abierto
+
+Sin cambios respecto a la tercera pasada: la letra sigue saliendo de un muestreador y no de una
+tipografía DIBUJADA, que es lo único de esta lista que no se cierra con código.

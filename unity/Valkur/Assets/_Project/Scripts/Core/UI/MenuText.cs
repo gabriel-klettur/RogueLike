@@ -36,9 +36,6 @@ namespace Valkur.Core.UI
         /// <summary>The game's name, drawn as particles rather than as a texture.</summary>
         public const string GameTitle = "VALKUR";
 
-        public static string TitleTagline => P("A roguelike forged in the north",
-                                               "Un roguelike forjado en el norte");
-
         public static string PressToStart => P("Press any key", "Pulsa cualquier tecla");
 
         // ── Main menu ────────────────────────────────────────────────────────

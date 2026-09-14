@@ -1,4 +1,3 @@
-using TMPro;
 using UnityEngine;
 using Valkur.Core.UI;
 using Valkur.Data;
@@ -6,19 +5,20 @@ using Valkur.Data;
 namespace Valkur.UI.MainMenu.Title
 {
     /// <summary>
-    /// The game's name at the top of every pre-game screen: the particle field, the tagline
-    /// under it, and the beats that join them.
+    /// The game's name at the top of every pre-game screen: the particle field and the beats
+    /// that bring it in.
     ///
     /// <para>It owns three things and nothing else — WHERE the title sits, WHEN it gathers, and
     /// the embers that come off it once it has. The letterforms belong to
     /// <see cref="TitleGlyphStrokes"/> and the drawing to <see cref="TitleParticleField"/>, which
     /// is what lets the whole thing be tested without a scene.</para>
     ///
-    /// <para><b>The tagline arrives after the word does</b>, and that order is the design. Two
-    /// pieces of type appearing together read as one block of text; a name that assembles out of
-    /// embers and only THEN is named reads as an introduction. It is ordinary TMP, because a
-    /// sentence in two languages is what a font is for — the particles are for the six letters
-    /// that are the game's mark.</para>
+    /// <para><b>There is no tagline, and the machinery for one went with it.</b> A line of prose
+    /// under the mark ("Un roguelike forjado en el norte") was drawn here, faded in behind the
+    /// word and laid out under it. Leaving the label in place with an empty string would have
+    /// left a TMP component, a fade that runs every frame and a layout line that all describe
+    /// something nobody can see — the authored-and-inert shape this project has shipped a dozen
+    /// times. The mark stands on its own.</para>
     /// </summary>
     public sealed class MenuTitle : MonoBehaviour
     {
@@ -27,11 +27,10 @@ namespace Valkur.UI.MainMenu.Title
         private MenuFxLayer _fx;
         private TitleParticleField _field;
         private UnityEngine.UI.Image _halo;
-        private TextMeshProUGUI _tagline;
         private RectTransform _root;
 
         private float _emberDebt;
-        private float _taglineAlpha;
+        private float _dripDebt;
         private bool _reduceMotion;
         private float _alpha = 1f;
 
@@ -50,18 +49,12 @@ namespace Valkur.UI.MainMenu.Title
                 _alpha = Mathf.Clamp01(value);
                 if (_field != null) _field.Alpha = _alpha;
                 ApplyHaloColour();
-                if (_tagline != null)
-                {
-                    var c = _tagline.color;
-                    c.a = _taglineAlpha * _alpha;
-                    _tagline.color = c;
-                }
             }
         }
 
         public static MenuTitle Create(Transform canvas, MenuArt art, MenuStyle style,
                                        Material additive, MenuFxLayer fx, string text,
-                                       string tagline, bool reduceMotion)
+                                       bool reduceMotion)
         {
             var go = new GameObject("MenuTitle", typeof(RectTransform));
             go.transform.SetParent(canvas, false);
@@ -93,34 +86,14 @@ namespace Valkur.UI.MainMenu.Title
             t._field = TitleParticleField.Create(go.transform, art, style, additive);
             t._field.SetText(text, reduceMotion);
 
-            var tagGo = new GameObject("Tagline", typeof(RectTransform));
-            tagGo.transform.SetParent(go.transform, false);
-            var tagRt = (RectTransform)tagGo.transform;
-            tagRt.anchorMin = tagRt.anchorMax = new Vector2(0.5f, 1f);
-            tagRt.pivot = new Vector2(0.5f, 1f);
-            tagRt.sizeDelta = new Vector2(720f, 30f);
-            t._tagline = MenuTypography.Label(tagGo, style, tagline, style.hintFontSize + 1f,
-                                              style.TextDim, TextAlignmentOptions.Center);
-            t._tagline.characterSpacing = 14f;                 // a tagline is set wide, not tight
-            var tc = t._tagline.color;
-            tc.a = 0f;
-            t._tagline.color = tc;
-
             t.Layout();
-            if (reduceMotion)
-            {
-                t._taglineAlpha = 1f;
-                var c = t._tagline.color; c.a = 1f; t._tagline.color = c;
-            }
             return t;
         }
 
         /// <summary>Re-lays the word out — a language change, or a new title.</summary>
-        public void SetText(string text, string tagline)
+        public void SetText(string text)
         {
             if (_field != null) _field.SetText(text, _reduceMotion);
-            if (_tagline != null) _tagline.text = tagline;
-            _taglineAlpha = _reduceMotion ? 1f : 0f;
             Layout();
         }
 
@@ -128,7 +101,6 @@ namespace Valkur.UI.MainMenu.Title
         {
             _reduceMotion = reduce;
             if (_field != null) _field.SetReduceMotion(reduce);
-            if (reduce) _taglineAlpha = 1f;
         }
 
         /// <summary>Gathers the word again. The title screen does it when it is returned to.</summary>
@@ -136,7 +108,6 @@ namespace Valkur.UI.MainMenu.Title
         {
             if (_field == null) return;
             _field.Replay();
-            _taglineAlpha = _reduceMotion ? 1f : 0f;
         }
 
         /// <summary>
@@ -146,13 +117,6 @@ namespace Valkur.UI.MainMenu.Title
         public void SnapSettled()
         {
             _field?.SnapToSettled();
-            _taglineAlpha = 1f;
-            if (_tagline != null)
-            {
-                var c = _tagline.color;
-                c.a = _alpha;
-                _tagline.color = c;
-            }
         }
 
         /// <summary>A sweep of light across the word. The confirm beat of the main menu.</summary>
@@ -187,12 +151,6 @@ namespace Valkur.UI.MainMenu.Title
                 hrt.anchoredPosition = new Vector2(0f, -_style.titleTopOffset + padY);
                 ApplyHaloColour();
             }
-
-            if (_tagline != null)
-            {
-                var trt = (RectTransform)_tagline.transform;
-                trt.anchoredPosition = new Vector2(0f, -_style.titleTopOffset - size.y - 18f);
-            }
         }
 
         /// <summary>
@@ -204,22 +162,8 @@ namespace Valkur.UI.MainMenu.Title
             if (dt <= 0f || _field == null) return;
             _field.Tick(dt);
 
-            // The tagline follows the word rather than running its own clock: a fade on a timer
-            // can land before the letters do on a slow machine, and then the sentence introduces
-            // a name that is not there yet.
-            float want = _field.Assembly >= 1f ? 1f : 0f;
-            if (!Mathf.Approximately(_taglineAlpha, want))
-            {
-                _taglineAlpha = Mathf.MoveTowards(_taglineAlpha, want, dt / 0.9f);
-                if (_tagline != null)
-                {
-                    var c = _tagline.color;
-                    c.a = _taglineAlpha * _alpha;
-                    _tagline.color = c;
-                }
-            }
-
             EmitEmbers(dt);
+            EmitDrips(dt);
         }
 
         /// <summary>
@@ -244,22 +188,59 @@ namespace Valkur.UI.MainMenu.Title
                 _emberDebt -= 1f;
                 if (!_field.TryPickEmberSource(out var local, out var colour)) return;
 
-                // The field's rect and the mote layer's rect are different spaces, so the point
-                // has to go through the world. Doing this by adding the anchored positions works
-                // until the first time somebody moves one of the two, and then it is wrong in a
-                // way nothing logs.
-                var fieldRt = (RectTransform)_field.transform;
-                var world = fieldRt.TransformPoint(new Vector3(local.x + fieldRt.rect.xMin,
-                                                              local.y + fieldRt.rect.yMin, 0f));
-                var fxRt = (RectTransform)_fx.transform;
-                var localInFx = (Vector2)fxRt.InverseTransformPoint(world) - fxRt.rect.min;
-
-                _fx.Emit(localInFx,
+                _fx.Emit(ToFxSpace(local),
                          new Vector2(Random.Range(-6f, 6f), Random.Range(14f, 34f)),
                          colour, Random.Range(0.9f, 1.9f),
                          Random.value < 0.25f ? MenuMoteShape.Spark : MenuMoteShape.Dot,
                          gravity: -4f, drag: 0.5f, size: Random.Range(0.7f, 1.15f), twinkle: true);
             }
+        }
+
+        /// <summary>
+        /// Drips falling off the lower edge of the word. The one gesture that says MOLTEN rather
+        /// than merely lit, which is why it belongs to the look and is zero on every look that is
+        /// not: a cream word shedding drops is a word melting for no reason.
+        ///
+        /// <para>It borrows the ember pipeline rather than growing a second one — a drip is a
+        /// mote with the gravity pointing the other way. Positive gravity, a small initial push
+        /// DOWN so it separates from the letter before it accelerates, no twinkle (a drop of
+        /// molten rock is not a spark), and a short life so it falls only a little way below the
+        /// letter it left.</para>
+        /// </summary>
+        private void EmitDrips(float dt)
+        {
+            if (_fx == null || _field == null || _reduceMotion || _alpha <= 0.05f) return;
+            if (_field.Assembly < 1f) return;
+            float rate = _style != null ? _style.ResolveTitleLook().dripRate : 0f;
+            if (rate <= 0f) return;
+
+            _dripDebt += rate * dt;
+            while (_dripDebt >= 1f)
+            {
+                _dripDebt -= 1f;
+                if (!_field.TryPickDripSource(out var local, out var colour)) return;
+
+                _fx.Emit(ToFxSpace(local),
+                         new Vector2(Random.Range(-3f, 3f), Random.Range(-9f, -3f)),
+                         colour, Random.Range(0.55f, 0.95f), MenuMoteShape.Dot,
+                         gravity: 46f, drag: 0f, size: Random.Range(0.75f, 1.2f), twinkle: false);
+            }
+        }
+
+        /// <summary>
+        /// A point in the field's rect, in the mote layer's rect.
+        ///
+        /// <para>Through the WORLD, never by adding the two anchored positions: that shortcut
+        /// works until the first time somebody moves one of the two rects, and then it is wrong
+        /// in a way nothing logs.</para>
+        /// </summary>
+        private Vector2 ToFxSpace(Vector2 local)
+        {
+            var fieldRt = (RectTransform)_field.transform;
+            var world = fieldRt.TransformPoint(new Vector3(local.x + fieldRt.rect.xMin,
+                                                          local.y + fieldRt.rect.yMin, 0f));
+            var fxRt = (RectTransform)_fx.transform;
+            return (Vector2)fxRt.InverseTransformPoint(world) - fxRt.rect.min;
         }
     
         // ── The plate, solved rather than tuned ──────────────────────────────

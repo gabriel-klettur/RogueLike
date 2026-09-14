@@ -63,10 +63,14 @@ namespace Valkur.Tests.EditMode.Game.UI
         [Test]
         public void TheShippedAsset_StillCarriesTheOriginalLook_UnderTheNameAscua()
         {
+            // Looked up BY NAME rather than by pointing the shipped asset at it. Writing
+            // MenuStyle.Active.titleLook here left "ascua" in the Editor's in-memory copy for
+            // the rest of the session — a domain reload does not reload assets — so every menu
+            // opened after a test run drew the cream word whatever the asset on disk said. The
+            // defect was invisible from inside the suite and visible only on screen.
             var style = MenuStyle.Active;
             var legacy = style.LegacyTitleLook();
-            style.titleLook = "ascua";
-            var look = style.ResolveTitleLook();
+            var look = LookNamed("ascua");
 
             Assert.AreEqual("ascua", look.name);
             AssertSameColour(legacy.hot, look.hot, "hot");
@@ -83,16 +87,20 @@ namespace Valkur.Tests.EditMode.Game.UI
         [Test]
         public void AnUnknownName_FallsBackRatherThanDrawingNothing()
         {
-            var style = MenuStyle.Active;
-            string previous = style.titleLook;
+            // A SCRATCH instance, never MenuStyle.Active. Restoring the field in a finally is
+            // correct and still leaves the shipped object dirty, which is one AssetDatabase.
+            // SaveAssets away from writing a fixture's value over the shipped data — the shape
+            // that cost this project 216 building templates.
+            var style = ScriptableObject.CreateInstance<MenuStyle>();
             try
             {
+                style.titleLooks = MenuStyle.Active.titleLooks;
                 style.titleLook = "no-such-look";
                 var look = style.ResolveTitleLook();
                 Assert.IsNotNull(look, "a title that cannot resolve its look must still draw");
                 AssertSameColour(style.titleCore, look.hot, "hot");
             }
-            finally { style.titleLook = previous; }
+            finally { Object.DestroyImmediate(style); }
         }
 
         // ── The temperature model ────────────────────────────────────────────
@@ -109,7 +117,7 @@ namespace Valkur.Tests.EditMode.Game.UI
         [Test]
         public void AFireLook_IsHotterAtItsFootThanAtItsCrown()
         {
-            foreach (var name in new[] { "volcan", "colada", "forja" })
+            foreach (var name in new[] { "volcan", "lava", "colada", "forja" })
             {
                 var look = LookNamed(name);
                 float foot = look.TemperatureOf(0.2f, 0f, 0f);
@@ -193,7 +201,7 @@ namespace Valkur.Tests.EditMode.Game.UI
         public void AFireLook_AsksForMoreContrast_ThanTheCreamOne()
         {
             var ascua = LookNamed("ascua");
-            foreach (var name in new[] { "volcan", "colada" })
+            foreach (var name in new[] { "volcan", "lava", "colada" })
             {
                 var fire = LookNamed(name);
                 Assert.GreaterOrEqual(fire.contrastTarget, ascua.contrastTarget,
@@ -222,7 +230,7 @@ namespace Valkur.Tests.EditMode.Game.UI
             var creamCold = LookNamed("ascua").Sample(0f);
             float creamGreen = creamCold.g / Mathf.Max(0.0001f, creamCold.r);
 
-            foreach (var name in new[] { "volcan", "colada" })
+            foreach (var name in new[] { "volcan", "lava", "colada" })
             {
                 var cold = LookNamed(name).Sample(0f);
                 float green = cold.g / Mathf.Max(0.0001f, cold.r);
@@ -242,6 +250,79 @@ namespace Valkur.Tests.EditMode.Game.UI
             Assert.Greater(LookNamed("volcan").riseBias, 0f, "fire rises");
             Assert.Greater(LookNamed("volcan").driftAspect, 1f,
                 "a flame's drift leans VERTICAL; below 1 it reads as a shiver, not a flame");
+        }
+
+        // ── The dials added for the lava word ────────────────────────────────
+
+        /// <summary>
+        /// A halo that is not BIGGER than the mote it sits behind is a brightness change wearing
+        /// the name of an atmosphere — it adds light exactly where there already was some and
+        /// reaches nowhere.
+        /// </summary>
+        [Test]
+        public void AGlowingLook_ReachesPastItsOwnBody()
+        {
+            foreach (var look in MenuStyle.Active.titleLooks)
+            {
+                if (look.glowStrength <= 0f) continue;
+                Assert.Greater(look.glowScale, 1.5f,
+                    look.name + "'s halo is barely wider than its mote, so it cannot read as " +
+                    "anything reaching past the letter");
+                Assert.Less(look.glowStrength, 0.6f,
+                    look.name + "'s halo is strong enough to compete with the body it is " +
+                    "supposed to sit behind; on an additive surface that dissolves the stroke");
+            }
+        }
+
+        /// <summary>
+        /// Dripping is a statement that the word is MOLTEN, so only a red look may make it.
+        /// A cream word shedding drops is a word melting for no reason the player can see.
+        /// </summary>
+        [Test]
+        public void OnlyAMoltenLook_Drips()
+        {
+            foreach (var look in MenuStyle.Active.titleLooks)
+            {
+                if (look.dripRate <= 0f) continue;
+                var cold = look.Sample(0f);
+                Assert.Less(cold.g / Mathf.Max(0.0001f, cold.r), 0.45f,
+                    look.name + " drips without being a red look");
+                Assert.LessOrEqual(look.dripRate, 4f,
+                    look.name + " drips often enough to be an animation rather than an accent");
+            }
+        }
+
+        /// <summary>
+        /// The look the game actually SHIPS has to use every dial it was given, or the dial is
+        /// the authored-and-inert shape this project has shipped a dozen times: a control with a
+        /// reader, a tooltip and nobody proving it does anything.
+        /// </summary>
+        [Test]
+        public void TheShippedLook_UsesTheDialsThatWereAddedForIt()
+        {
+            var look = MenuStyle.Active.ResolveTitleLook();
+            Assert.Greater(look.glowStrength, 0f, look.name + " draws no halo");
+            Assert.Greater(look.flickerAsymmetry, 0f, look.name + " flickers like a lamp");
+            Assert.Greater(look.emberHeat, 0f, look.name + " throws embers colder than its fire");
+            Assert.Greater(look.dripRate, 0f, look.name + " never drips");
+        }
+
+        /// <summary>
+        /// And the four looks that were here first carry NONE of them. Each is a preserved
+        /// alternative, and an alternative that silently grew a halo the day somebody added one
+        /// is not preserved — it is a different look under the same name.
+        /// </summary>
+        [Test]
+        public void ThePreservedLooks_CarryNoneOfTheNewDials()
+        {
+            foreach (var name in new[] { "ascua", "volcan", "colada", "forja" })
+            {
+                var look = LookNamed(name);
+                Assert.AreEqual(0f, look.glowStrength, 0.0001f, name + " grew a halo");
+                Assert.AreEqual(0f, look.flickerAsymmetry, 0.0001f, name + " grew an asymmetry");
+                Assert.AreEqual(0f, look.emberHeat, 0.0001f, name + " grew a hot ember");
+                Assert.AreEqual(0f, look.dripRate, 0.0001f, name + " grew a drip");
+            }
         }
 
         // ── Helpers ──────────────────────────────────────────────────────────

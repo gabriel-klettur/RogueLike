@@ -190,6 +190,58 @@ namespace Valkur.Tests.EditMode.Game.UI
             Assert.Greater(field.TitleSize.x, 0f);
         }
 
+        [Test]
+        public void ADripSource_IsOfferedOnlyOnceSettled_AndComesOffTheLowerEdge()
+        {
+            var field = BuildTitle();
+            Assert.IsFalse(field.TryPickDripSource(out _, out _),
+                "a word still flying in has no edge for a drip to leave from");
+
+            field.SnapToSettled();
+
+            // The pick is random, so the claim is statistical and stated as one: over many
+            // draws a drip must come from BELOW the middle of the word far more often than
+            // above it. Asserting a single draw would pass or fail on a coin toss.
+            int below = 0, total = 0;
+            float mid = field.TitleSize.y * 0.5f;
+            for (int i = 0; i < 400; i++)
+            {
+                if (!field.TryPickDripSource(out var where, out var colour)) continue;
+                total++;
+                if (where.y < mid) below++;
+                Assert.Greater(colour.a, 0f);
+            }
+            Assert.Greater(total, 200, "the drip source refused far too often to be usable");
+            Assert.Greater(below / (float)total, 0.66f,
+                "drips are leaving the TOP of the letters: a lowest-of-eight rim sample should " +
+                "land under the midline about four times out of five");
+        }
+
+        /// <summary>
+        /// The flicker waveform: identical to a sine when nothing asks for asymmetry, and fast
+        /// to rise / slow to fall when something does.
+        /// </summary>
+        [Test]
+        public void TheFireWave_IsASineAtZero_AndPeaksEarlyAboveIt()
+        {
+            for (float p = -7f; p < 7f; p += 0.13f)
+                Assert.AreEqual(Mathf.Sin(p), TitleParticleField.FireWave(p, 0f), 1e-6f,
+                    "at zero asymmetry every shipped look must keep the waveform it was tuned with");
+
+            // Where the peak lands, sampled densely over one cycle.
+            float peakAt = 0f, peak = float.MinValue;
+            for (float p = 0f; p < Mathf.PI * 2f; p += 0.001f)
+            {
+                float v = TitleParticleField.FireWave(p, 0.6f);
+                if (v > peak) { peak = v; peakAt = p; }
+                Assert.LessOrEqual(v, 1.0001f, "the wave left the top of the ramp");
+                Assert.GreaterOrEqual(v, -1.0001f, "the wave left the bottom of the ramp");
+            }
+            Assert.Less(peakAt, Mathf.PI * 0.5f - 0.15f,
+                "the peak arrives no earlier than a sine's, so this is not a fast attack");
+            Assert.Greater(peakAt, 0f);
+        }
+
         // ── The rule, read off the source ────────────────────────────────────
 
         /// <summary>

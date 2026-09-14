@@ -61,7 +61,7 @@ namespace Valkur.UI.MainMenu
             _fx = MenuFxLayer.Create(canvas, _art, Style.moteCapacity, _additive);
 
             _title = MenuTitle.Create(canvas, _art, _style, _additive, _fx,
-                                      MenuText.GameTitle, MenuText.TitleTagline, ReduceMotion);
+                                      MenuText.GameTitle, ReduceMotion);
             // The brand plane already gathered the word a couple of seconds ago. Doing it again
             // here would read as a loop; inheriting it makes the two one introduction.
             if (Title.BrandSplash.Consumed) _title.SnapSettled();

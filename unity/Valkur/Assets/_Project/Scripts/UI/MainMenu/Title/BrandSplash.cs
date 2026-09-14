@@ -123,7 +123,7 @@ namespace Valkur.UI.MainMenu.Title
             // the whole composition, and repeating the menu's layout here would read as the menu
             // with everything else missing.
             _title = MenuTitle.Create(canvasGo.transform, art, style, material, _fx,
-                                      MenuText.GameTitle, MenuText.TitleTagline, reduceMotion);
+                                      MenuText.GameTitle, reduceMotion);
             var titleRt = (RectTransform)_title.transform;
             titleRt.anchorMin = titleRt.anchorMax = new Vector2(0.5f, 0.5f);
             titleRt.pivot = new Vector2(0.5f, 0.5f);

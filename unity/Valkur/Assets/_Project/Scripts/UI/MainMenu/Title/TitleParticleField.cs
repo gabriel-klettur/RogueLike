@@ -297,9 +297,10 @@ namespace Valkur.UI.MainMenu.Title
                 // and a pulse on a title is a lamp with a flicker rather than a fire. The SHARED
                 // term is what makes the whole word surge together the way a fire does when it
                 // draws air; the per-mote term is what stops it being one object breathing.
-                float own = Mathf.Sin(m.Phase + _time * look.flickerSpeed * 6.2831853f)
-                          * Mathf.Sin(m.Phase * 1.7f + _time * look.flickerSpeed * 2.3f);
-                float together = Mathf.Sin(_time * look.flickerSpeed * 1.9f);
+                float asym = look.flickerAsymmetry;
+                float own = FireWave(m.Phase + _time * look.flickerSpeed * 6.2831853f, asym)
+                          * FireWave(m.Phase * 1.7f + _time * look.flickerSpeed * 2.3f, asym);
+                float together = FireWave(_time * look.flickerSpeed * 1.9f, asym);
                 flicker = Mathf.Lerp(own, together, look.flickerTogether) * look.flickerAmount;
             }
             var lit = look.Sample(look.TemperatureOf(m.Depth, m.Height01, flicker));
@@ -321,6 +322,24 @@ namespace Valkur.UI.MainMenu.Title
             }
             return c;
         }
+
+        /// <summary>
+        /// A sine that brightens fast and decays slow, which is what combustion does.
+        ///
+        /// <para>Phase distortion rather than amplitude shaping: <c>sin(p + a·sin p)</c> has a
+        /// slope of <c>1 + a</c> at its rising zero crossing and <c>1 - a</c> at its falling one,
+        /// so the peak arrives early and the return is long. Shaping the amplitude instead
+        /// (raising it to a power, say) changes the MEAN as well, so the word would also get
+        /// colder as the asymmetry went up — two things moving from one dial. This keeps the
+        /// range exactly [-1,1] and its average at zero, and at <c>a = 0</c> it is
+        /// <c>Mathf.Sin</c> sample for sample, which is what lets every shipped look keep the
+        /// waveform it was tuned with.</para>
+        ///
+        /// <para>Public so a fixture can assert the shape directly: the property that matters is
+        /// WHEN the peak arrives, and nothing observable from outside the cloud reports that.</para>
+        /// </summary>
+        public static float FireWave(float p, float asymmetry)
+            => asymmetry <= 0f ? Mathf.Sin(p) : Mathf.Sin(p + asymmetry * Mathf.Sin(p));
 
         // ── Tick ─────────────────────────────────────────────────────────────
 
@@ -436,8 +455,51 @@ namespace Valkur.UI.MainMenu.Title
             localPosition = _motes[i].Position;
             // The ember leaves with the colour that mote HAS at this instant, flicker included,
             // so a spark thrown off a burning word is the same temperature as the letter it came
-            // from rather than an average of the whole title.
-            colour = ColourOf(_motes[i], Look);
+            // from rather than an average of the whole title — then pushed toward the hottest
+            // tone by however much the look asks for. An ember ABANDONING a fire is the hottest
+            // thing in the picture, and on a red look the crown it was picked from is dark
+            // enough that an unbiased spark is invisible: that is an accident of where the
+            // random index landed, not a property of embers.
+            var look = Look;
+            colour = ColourOf(_motes[i], look);
+            if (look.emberHeat > 0f) colour = Color.Lerp(colour, look.Sample(1f), look.emberHeat);
+            return true;
+        }
+
+        /// <summary>
+        /// Where a DRIP should be born: a point on the lower edge of some stroke, with the
+        /// colour it is wearing. False while the word is not settled, or while the look does not
+        /// drip.
+        ///
+        /// <para><b>The lower edge is sampled, not computed.</b> A mote knows how far it sits
+        /// across its own stroke (<see cref="Mote.Depth"/>) and how high it sits up the word, and
+        /// nothing in the cloud records which SIDE of a stroke it is on — the stroke normal is
+        /// consumed by the sampler and never stored. Taking a handful of rim candidates and
+        /// keeping the lowest is one line against a second per-mote field, and it is exact often
+        /// enough for a thing that happens twice a second: what a drip must never do is fall out
+        /// of the TOP of a letter, and a lowest-of-eight rim sample cannot.</para>
+        ///
+        /// <para>It is deliberately not the same pick as an ember. An ember leaves from anywhere
+        /// and rises; a drip leaves from underneath and falls, and picking both from one place
+        /// would make the word shed sparks downward out of its own middle.</para>
+        /// </summary>
+        public bool TryPickDripSource(out Vector2 localPosition, out Color colour)
+        {
+            localPosition = default;
+            colour = Color.white;
+            if (_count == 0 || _assembly < 1f) return false;
+
+            int best = -1;
+            for (int k = 0; k < 8; k++)
+            {
+                int i = Random.Range(0, _count);
+                if (_motes[i].Depth < 0.7f) continue;             // not on a rim
+                if (best < 0 || _motes[i].Position.y < _motes[best].Position.y) best = i;
+            }
+            if (best < 0) return false;
+
+            localPosition = _motes[best].Position;
+            colour = ColourOf(_motes[best], Look);
             return true;
         }
 
@@ -471,6 +533,17 @@ namespace Valkur.UI.MainMenu.Title
             var sizeStyle = _style != null ? _style : MenuStyle.Active;
             float moteSize = Mathf.Max(0.5f, sizeStyle.titleMoteSize);
             float sparkScale = Mathf.Max(1f, sizeStyle.titleSparkScale);
+
+            // A second, larger, dimmer quad behind every mote. Additive blending SUMS, so the
+            // two can be emitted in any order — there is no back-to-front to respect — and the
+            // halo always draws from the DOT, never from the glint: a spark's rays scaled two
+            // and a half times read as a star, which is a shape the word is not made of.
+            // Budget: two quads per mote is eight vertices, so the shipped 5000-point ceiling
+            // is 40000 against uGUI's 65535 per mesh.
+            float glowAlpha = look.glowStrength;
+            float glowScale = Mathf.Max(1f, look.glowScale);
+            var dr = dot.textureRect;
+            var glowUv = new Rect(dr.x / tex.width, dr.y / tex.height, dr.width / tex.width, dr.height / tex.height);
 
             for (int i = 0; i < _count; i++)
             {
@@ -522,14 +595,30 @@ namespace Valkur.UI.MainMenu.Title
                 float y = rect.yMin + m.Position.y - h * 0.5f;
                 var uv = new Rect(r.x / tex.width, r.y / tex.height, r.width / tex.width, r.height / tex.height);
 
-                int start = vh.currentVertCount;
-                vh.AddVert(new Vector3(x, y), c32, new Vector2(uv.xMin, uv.yMin));
-                vh.AddVert(new Vector3(x, y + h), c32, new Vector2(uv.xMin, uv.yMax));
-                vh.AddVert(new Vector3(x + w, y + h), c32, new Vector2(uv.xMax, uv.yMax));
-                vh.AddVert(new Vector3(x + w, y), c32, new Vector2(uv.xMax, uv.yMin));
-                vh.AddTriangle(start, start + 1, start + 2);
-                vh.AddTriangle(start + 2, start + 3, start);
+                if (glowAlpha > 0f)
+                {
+                    var gc = c;
+                    gc.a *= glowAlpha;
+                    float gs = size * glowScale;
+                    AddQuad(vh, rect.xMin + m.Position.x - gs * 0.5f,
+                                rect.yMin + m.Position.y - gs * 0.5f, gs, gs, gc, glowUv);
+                }
+
+                AddQuad(vh, x, y, w, h, c32, uv);
             }
+        }
+
+        /// <summary>One mote's quad. Shared by the body and by the halo behind it.</summary>
+        private static void AddQuad(VertexHelper vh, float x, float y, float w, float h,
+                                    Color32 c, Rect uv)
+        {
+            int start = vh.currentVertCount;
+            vh.AddVert(new Vector3(x, y), c, new Vector2(uv.xMin, uv.yMin));
+            vh.AddVert(new Vector3(x, y + h), c, new Vector2(uv.xMin, uv.yMax));
+            vh.AddVert(new Vector3(x + w, y + h), c, new Vector2(uv.xMax, uv.yMax));
+            vh.AddVert(new Vector3(x + w, y), c, new Vector2(uv.xMax, uv.yMin));
+            vh.AddTriangle(start, start + 1, start + 2);
+            vh.AddTriangle(start + 2, start + 3, start);
         }
 
         /// <summary>xorshift32, local so nothing else in the game can move the sequence.</summary>

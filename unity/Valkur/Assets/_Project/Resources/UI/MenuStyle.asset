@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3f00c0e5b3bde4e40abb2b0ad9829f24, type: 3}
-  m_Name: 
+  m_Name: MenuStyle
   m_EditorClassIdentifier: 
   hudFxShader: {fileID: 4800000, guid: 26a514c443ab6964192d7486350c6664, type: 3}
   referenceResolution: {x: 1600, y: 800}
@@ -66,7 +66,7 @@ MonoBehaviour:
   titleEmberRate: 7
   titleHaloStrength: 0.74
   titleHaloPadding: 0.42
-  titleLook: volcan
+  titleLook: lava
   titleLooks:
   - name: ascua
     hot: {r: 1, g: 0.96, b: 0.86, a: 1}
@@ -116,6 +116,35 @@ MonoBehaviour:
     haloCeiling: 0.94
     ignitionSeconds: 1.15
     emberRate: 22
+  - name: lava
+    hot: {r: 1, g: 0.66, b: 0.22, a: 1}
+    warm: {r: 1, g: 0.25, b: 0.06, a: 1}
+    cool: {r: 0.62, g: 0.075, b: 0.03, a: 1}
+    coolAcross: 0.3
+    coolUpward: 0.7
+    flickerAmount: 0.26
+    flickerSpeed: 3.4
+    flickerTogether: 0.45
+    shimmerAmplitude: 2
+    shimmerSpeed: 0.7
+    driftAspect: 1.6
+    riseBias: 1.8
+    glowGain: 1
+    haloStrength: 0.9
+    haloPadding: 0.55
+    haloTint: {r: 0.11, g: 0.016, b: 0.005, a: 1}
+    ember: {r: 0.24, g: 0.09, b: 0.07, a: 1}
+    sweepInterval: 0
+    sweepSeconds: 1.1
+    contrastTarget: 6
+    haloCeiling: 0.94
+    ignitionSeconds: 1.3
+    emberRate: 18
+    glowStrength: 0.26
+    glowScale: 3.1
+    flickerAsymmetry: 0.6
+    emberHeat: 0.7
+    dripRate: 1.6
   - name: colada
     hot: {r: 1, g: 0.72, b: 0.24, a: 1}
     warm: {r: 0.85, g: 0.2, b: 0.04, a: 1}
