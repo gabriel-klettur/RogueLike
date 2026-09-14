@@ -68,6 +68,20 @@ namespace Valkur.Gameplay.World.Generation
 
         public static SeedWorldLiveStreamer Instance => s_instance;
 
+        /// <summary>
+        /// The streamer, created the first time a generated world is entered. The boot no longer
+        /// installs it: while Seed World is a lab (<see cref="SeedWorldLab"/>) nothing in a normal
+        /// session may depend on it, and a session never starts inside a generated world, so the
+        /// only moment one is needed is the moment the lab walks the player into one.
+        /// </summary>
+        public static SeedWorldLiveStreamer EnsureInstance()
+        {
+            if (s_instance != null) return s_instance;
+            var existing = FindObjectOfType<SeedWorldLiveStreamer>();
+            if (existing != null) return existing;
+            return new GameObject("[SeedWorldLiveStreamer]").AddComponent<SeedWorldLiveStreamer>();
+        }
+
         public SeedWorldLiveWorld World => _world;
         public string ActiveSlot => _slot;
         public int LoadedZoneCount => _loaded.Count;

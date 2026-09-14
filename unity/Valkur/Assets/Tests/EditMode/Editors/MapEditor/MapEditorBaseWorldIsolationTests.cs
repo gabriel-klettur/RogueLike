@@ -40,6 +40,9 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         private readonly ParkedFile _defaultMirror = new ParkedFile();
         private readonly ParkedFile _otherSlot = new ParkedFile();
 
+        private GameObject _player;
+        private GameObject _previousPlayer;
+
         private string OtherSlotPath => Path.Combine(_mapsDir, OTHER + ".zones.json");
         private string DefaultMirrorPath => Path.Combine(_mapsDir, "default.zones.json");
 
@@ -58,11 +61,20 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             _otherSlot.Park(OtherSlotPath);
 
             Valkur.Core.MapEditorActiveSlot.SetOverrideForTests("default");
+            WorldExcursion.ResetForTests();
+            _previousPlayer = Valkur.Core.EntityRegistry.Player;
         }
 
         [TearDown]
         public void TearDown()
         {
+            WorldExcursion.ResetForTests();
+            if (_player != null)
+            {
+                Valkur.Core.EntityRegistry.UnregisterPlayer(_player);
+                Object.DestroyImmediate(_player);
+            }
+            if (_previousPlayer != null) Valkur.Core.EntityRegistry.RegisterPlayer(_previousPlayer);
             _otherSlot.Restore();
             _defaultMirror.Restore();
             _activeMarker.Restore();
@@ -151,6 +163,31 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             Assert.That(File.ReadAllText(OtherSlotPath), Does.Not.Contain("pepitoria_"),
                 "And the other map's file free of the base world's.");
             Assert.AreEqual("default", _mgr.ActiveMapSlot, "The pointer must name the base world again.");
+        }
+
+        [Test]
+        public void ATripOutOfPepitoria_ComesBackToTheExactSpotItLeftFrom()
+        {
+            File.WriteAllText(OtherSlotPath, ZonesJson(("generated_ocean", new Vector2Int(-200, -200))));
+            CreateManager(activeSlot: "default",
+                          workingCopy: ZonesJson(("pepitoria_lobby", new Vector2Int(150, 50))));
+            _zones.AddZone("pepitoria_lobby", new Vector2Int(150, 50), editableInTileEditor: true);
+
+            var leftFrom = new Vector3(171.5f, 62.25f, 0f);
+            _player = new GameObject("TripPlayer");
+            _player.transform.position = leftFrom;
+            Valkur.Core.EntityRegistry.RegisterPlayer(_player);
+
+            Assert.IsTrue(_mgr.LoadMapSlot(OTHER), "Sanity: the trip out succeeds.");
+            Assert.IsTrue(WorldExcursion.IsAway, "Leaving Pepitoria for another map must write the return ticket.");
+            Assert.AreEqual(OTHER, WorldExcursion.Destination);
+
+            _player.transform.position = new Vector3(-180f, -170f, 0f); // wandered around the other map
+
+            Assert.IsTrue(_mgr.LoadMapSlot("default"), "Sanity: the trip back succeeds.");
+            Assert.AreEqual((Vector2)leftFrom, (Vector2)_player.transform.position,
+                "Coming home must put the player EXACTLY where they left Pepitoria from, whichever load brought them.");
+            Assert.IsFalse(WorldExcursion.IsAway, "Arriving home spends the ticket.");
         }
 
         [Test]

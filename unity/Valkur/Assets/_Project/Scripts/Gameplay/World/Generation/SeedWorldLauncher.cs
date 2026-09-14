@@ -14,9 +14,14 @@ namespace Valkur.Gameplay.World.Generation
     /// so a world started from the console is the same world the editor would have built.
     ///
     /// <para><b>Rebuilding the slot that is loaded right now leaves it first.</b>
-    /// <c>LoadMapSlot</c> begins by mirroring the live zone list INTO the outgoing slot's file;
+    /// <c>LoadMapSlot</c> begins by persisting the live zone list INTO the outgoing slot's file;
     /// building the active slot and then loading it would copy the old zones straight over the
     /// file the build just wrote.</para>
+    ///
+    /// <para><b>A generated world is a trip from Pepitoria, and only the lab takes it.</b> The load
+    /// goes through <c>LoadMapSlot</c>, which writes the return ticket (<see cref="WorldExcursion"/>);
+    /// <see cref="ReturnHome"/> is the same load pointed back at the base world. With
+    /// <see cref="SeedWorldLab"/> off nothing is built or entered — a return is always allowed.</para>
     /// </summary>
     public static class SeedWorldLauncher
     {
@@ -33,6 +38,7 @@ namespace Valkur.Gameplay.World.Generation
         public static Outcome BuildAndLoad(WorldGenSettings settings, string slot, bool live)
         {
             var outcome = new Outcome();
+            if (!SeedWorldLab.Enabled) { outcome.Error = SeedWorldLab.OffMessage; return outcome; }
             if (!Application.isPlaying) { outcome.Error = "Solo en Play Mode."; return outcome; }
 
             var mgr = MapEditorManager.Instance;
@@ -73,9 +79,9 @@ namespace Valkur.Gameplay.World.Generation
             // A live world has no ground until the streamer paints it. Doing the zones around the
             // spawn now, inside the load, means the first frame the player sees is a world and not
             // a void they cannot walk out of.
-            var streamer = SeedWorldLiveStreamer.Instance;
-            if (live && outcome.Loaded && streamer != null)
+            if (live && outcome.Loaded)
             {
+                var streamer = SeedWorldLiveStreamer.EnsureInstance();
                 streamer.RequestResync();
                 streamer.OpenNow();
                 streamer.SyncAll(outcome.Result.SpawnWorld);
@@ -83,6 +89,22 @@ namespace Valkur.Gameplay.World.Generation
             watch.Stop();
             outcome.LoadMs = watch.ElapsedMilliseconds;
             return outcome;
+        }
+
+        /// <summary>
+        /// Back to Pepitoria, to the exact spot the trip started from. Allowed with the lab off: a
+        /// player must never be stranded on a map because the switch that took them there moved.
+        /// </summary>
+        public static string ReturnHome()
+        {
+            if (!Application.isPlaying) return "Solo en Play Mode.";
+            var mgr = MapEditorManager.Instance;
+            if (mgr == null) return "No hay MapEditorManager en esta escena.";
+            if (!WorldExcursion.IsAway && MapEditorManager.IsBaseSlot(mgr.ActiveMapSlot))
+                return "Ya estas en Pepitoria.";
+            WorldExcursion.TryGetHome(out var home, out var zone);
+            if (!mgr.LoadMapSlot(MapEditorMapSlots.DEFAULT_SLOT)) return "No se pudo volver a Pepitoria.";
+            return $"De vuelta en Pepitoria ({(string.IsNullOrEmpty(zone) ? "?" : zone)}, {home.x:0.#}, {home.y:0.#}).";
         }
 
         public static string Describe(Outcome o)

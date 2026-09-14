@@ -81,7 +81,6 @@ namespace Valkur.Gameplay
             // Installed unconditionally: even on the legacy single-overlay branch (no
             // GenerateDungeon call) the Map editor's slot loads still drive the regen.
             s.Add(BootStep.Of("Instalando el vigilante de mazmorras", EnsureDungeonSlotBootstrap, 1f, barrier: false));
-            s.Add(BootStep.Of("Preparando los mundos en vivo", EnsureSeedWorldLiveStreamer, 1f, barrier: false));
             s.Add(BootStep.Of("Horneando las colisiones del terreno", RebakeTilemapColliders, 60f));
 
             // ── Light, weather, effects ──────────────────────────────────────

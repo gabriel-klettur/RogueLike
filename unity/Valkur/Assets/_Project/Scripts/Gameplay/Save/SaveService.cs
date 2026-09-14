@@ -313,7 +313,8 @@ namespace Valkur.Gameplay
 
                 // Only while the base world is standing. Sampling through a transition is what
                 // put an interior's room-local coordinate into the checkpoint in the first place.
-                if (!Valkur.Gameplay.World.WorldTransitionService.IsBaseWorldContentSuspended)
+                if (!Valkur.Gameplay.World.WorldTransitionService.IsBaseWorldContentSuspended
+                    && !Valkur.Gameplay.World.WorldExcursion.IsAway)
                 {
                     _lastBaseWorldPlayerPos  = _lastKnownPlayerPos;
                     _lastBaseWorldPlayerZone = _lastKnownPlayerZone;
@@ -754,6 +755,12 @@ namespace Valkur.Gameplay
         public PlayerPositionPersistence.Record ResolvePersistablePlayerPosition(
             Vector2 livePosition, string liveZone)
         {
+            // Away from Pepitoria on another map, nothing measured here is a Pepitoria position:
+            // the save keeps everything the player gained and records the spot the trip started
+            // from, so a session that ends away resumes at home. See WorldExcursion.
+            if (Valkur.Gameplay.World.WorldExcursion.TryGetHome(out var home, out var homeZone))
+                return PlayerPositionPersistence.AwayFromHome(home, homeZone);
+
             bool suspended = Valkur.Gameplay.World.WorldTransitionService.IsBaseWorldContentSuspended;
             bool hasReturn = Valkur.Gameplay.World.WorldTransitionService.TryPeekReturnPoint(out var back);
 

@@ -255,6 +255,32 @@ namespace Valkur.Gameplay.MapEditor
             }
         }
 
+        /// <summary>
+        /// Point <c>_active.txt</c> at <paramref name="slot"/> before any manager exists (boot). The
+        /// default slot is written as NO file — the same state <see cref="ResetActiveSlotToDefaultOnDisk"/>
+        /// leaves — so a pointer that was never moved and one that was moved back read identically.
+        /// </summary>
+        public static void WriteActiveSlotOnDisk(string slot)
+        {
+            string clean = Sanitize(slot);
+            if (string.IsNullOrEmpty(clean) ||
+                string.Equals(clean, DEFAULT_SLOT, StringComparison.OrdinalIgnoreCase))
+            {
+                ResetActiveSlotToDefaultOnDisk();
+                return;
+            }
+            try
+            {
+                string dir = Path.Combine(Application.persistentDataPath, DIR_NAME);
+                System.IO.Directory.CreateDirectory(dir);
+                File.WriteAllText(Path.Combine(dir, ACTIVE_FILE), clean);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[MapEditor.Slots] Failed to write the active slot: {ex.Message}");
+            }
+        }
+
         public void SetActive(string slot)
         {
             string clean = Sanitize(slot);

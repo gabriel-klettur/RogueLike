@@ -295,7 +295,7 @@ namespace Valkur.UI.HUD
         private void TickWeather(float dt)
         {
             var w = WeatherManager.Instance;
-            if (w == null || w.IsIndoors || (_worldKey != null && _worldKey != MinimapFogMap.WorldKey)) return;
+            if (w == null || w.IsIndoors || IsInterior) return;
             _fx.Weather(w.DensityOf(WeatherType.Rain), w.DensityOf(WeatherType.Snow), w.DensityOf(WeatherType.Wind),
                         _view.Radius, dt);
         }
@@ -369,10 +369,13 @@ namespace Valkur.UI.HUD
         }
 
         /// <summary>
-        /// Which world the player is in: the outdoor world, or one interior. Each keeps its own
-        /// fog, and a change rebakes the terrain.
+        /// Which world the player is in: the outdoor world, one interior, or another map visited on
+        /// a trip from Pepitoria. Each keeps its own fog, and a change rebakes the terrain.
         /// </summary>
-        private bool IsInterior => _worldKey != null && _worldKey != MinimapFogMap.WorldKey;
+        private const string InteriorKeyPrefix = "interior:";
+        private const string MapKeyPrefix = "map:";
+
+        private bool IsInterior => _worldKey != null && _worldKey.StartsWith(InteriorKeyPrefix);
 
         private Vector4 _revealedInteriorRect;
 
@@ -399,9 +402,15 @@ namespace Valkur.UI.HUD
         {
             bool interior = WorldTransitionService.IsBaseWorldContentSuspended
                             || (_zoneManager != null && _zoneManager.IsDetectionSuspended);
-            if (!interior) return MinimapFogMap.WorldKey;
-            string zone = _zoneManager != null ? _zoneManager.CurrentZone : null;
-            return "interior:" + (string.IsNullOrEmpty(zone) ? "room" : zone);
+            if (interior)
+            {
+                string zone = _zoneManager != null ? _zoneManager.CurrentZone : null;
+                return InteriorKeyPrefix + (string.IsNullOrEmpty(zone) ? "room" : zone);
+            }
+            // Another map lies over the same coordinates as Pepitoria. Under the town's key, walking
+            // a generated world explored the town's fog wherever the two overlapped.
+            string away = WorldExcursion.Destination;
+            return string.IsNullOrEmpty(away) ? MinimapFogMap.WorldKey : MapKeyPrefix + away;
         }
 
         private static Color ResolveDayTint()
@@ -500,7 +509,7 @@ namespace Valkur.UI.HUD
         {
             if (_scene.PlayerIsSpirit) return "<color=#9fd4ff>Forma espiritual · busca un altar</color>";
 
-            bool interior = _worldKey != null && _worldKey.StartsWith("interior:");
+            bool interior = IsInterior;
             string place;
             if (interior) place = "Interior";
             else if (_zoneManager != null && !string.IsNullOrEmpty(zone) && _manager.FogOfWarEnabled)

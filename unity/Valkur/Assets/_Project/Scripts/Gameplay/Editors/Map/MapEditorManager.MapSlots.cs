@@ -220,6 +220,9 @@ namespace Valkur.Gameplay.MapEditor
                 store.SetActive(MapEditorMapSlots.DEFAULT_SLOT);
                 _liveZonesOwnerPin = null;
                 spawnPos = RebuildBaseWorldZones();
+                // Coming back from a trip lands the player on the ticket — the exact spot the trip
+                // started from — whichever button or command brought them home.
+                if (WorldExcursion.TryArriveHome(out var home, out _)) spawnPos = home;
             }
             else
             {
@@ -234,6 +237,7 @@ namespace Valkur.Gameplay.MapEditor
                 // biome reproduces instead of disappearing on slot switch.
                 HydrateBiomeBuildingsFromPersistence(data);
                 spawnPos = GetSavedPlayerPosition(data);
+                NoteDepartureFromHome(clean);
                 // Flip the active-slot pointer so the visual repaint below
                 // resolves the new slot's WorldId. Tile-overlay routing keys off
                 // the live store value via RebindTileEditorToActiveWorld().
@@ -437,6 +441,7 @@ namespace Valkur.Gameplay.MapEditor
             // catalog zones to rename, so the outgoing slot's pairs are
             // irrelevant here.
             ClearDatabaseRenames();
+            NoteDepartureFromHome(clean);
             ResolveSlotStore().SetActive(clean);
             _liveZonesOwnerPin = null;
             ClearUndoHistory();
@@ -600,6 +605,22 @@ namespace Valkur.Gameplay.MapEditor
 
         private void TeleportPlayerToBlankMapOrigin()
             => TeleportPlayerToWorldPosition(Vector2.zero);
+
+        /// <summary>
+        /// Stepping out of Pepitoria writes the return ticket (<see cref="WorldExcursion"/>), taken
+        /// where the player stands at the moment the pointer moves. A hop between two other maps
+        /// keeps the ticket's home and only moves its destination; a session that is somewhere else
+        /// with no ticket (booted into an authored slot) has no Pepitoria spot to remember.
+        /// </summary>
+        private void NoteDepartureFromHome(string destination)
+        {
+            if (_isBootSyncInProgress) return;
+            if (!IsBaseSlot(LiveZonesOwner) && !WorldExcursion.IsAway) return;
+            var playerT = Valkur.Core.EntityRegistry.PlayerTransform;
+            Vector2 at = playerT != null ? (Vector2)playerT.position : Vector2.zero;
+            string zone = zoneManager != null ? zoneManager.CurrentZone ?? "" : "";
+            WorldExcursion.Leave(at, zone, destination);
+        }
 
         /// <summary>
         /// Tell the Buildings runtime editor (F10) that the active map slot is

@@ -43,7 +43,18 @@ namespace Valkur.Gameplay.Save
             LastBaseWorld,
             /// <summary>Inside an interior with nothing better known. NOT a spawn point.</summary>
             Interior,
+            /// <summary>On a trip to another map: the spot in Pepitoria the trip started from.</summary>
+            ExcursionHome,
         }
+
+        /// <summary>
+        /// The record for a player who is away from Pepitoria on another map. It outranks every rule
+        /// in <see cref="Resolve"/>: a generated world is not an interior of the base world, so neither
+        /// its live position nor anything sampled in it is somewhere the base world can put the player
+        /// — only the ticket's home is.
+        /// </summary>
+        public static Record AwayFromHome(Vector2 homePosition, string homeZone)
+            => new Record(homePosition, homeZone, true, Source.ExcursionHome);
 
         /// <summary>
         /// A position and whether it is fit to be persisted as somewhere the player can be put

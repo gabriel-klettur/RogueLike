@@ -51,6 +51,24 @@ namespace Valkur.Gameplay.Editors.SeedWorld
         {
             EditorUIHelpers.BuildSectionHeader(body, "Construir");
 
+            // The lab switch sits ABOVE everything that builds: with it off the game neither builds
+            // nor enters a generated world, and the preview above keeps working because it writes
+            // nothing. Turning it off never strands anyone — the return button stays live.
+            var labRow = MakeRow(body, "LabRow", ROW_H + 4f);
+            AddCaption(labRow.transform, "Laboratorio");
+            bool lab = SeedWorldLab.Enabled;
+            var labButton = EditorUIHelpers.MakeButton(labRow.transform, lab ? "ENCENDIDO" : "APAGADO", () =>
+            {
+                SeedWorldLab.SetEnabled(!SeedWorldLab.Enabled);
+                _armedOverwriteSlot = null;
+                RebuildBody();
+            }, ROW_H, 11f);
+            labButton.gameObject.name = "LabButton";
+            if (!lab) UIButton.SetTint(labButton, EditorUIHelpers.DANGER_IDLE);
+            AddHint(body, lab
+                ? "Encendido en esta maquina: Construir lleva al jugador a un mundo generado y la vuelta le deja donde estaba en Pepitoria."
+                : "Apagado: Seed World queda separado del juego (solo vista previa). Enciendelo para construir y entrar.");
+
             var nameRow = MakeRow(body, "BakeNameRow", ROW_H + 4f);
             AddCaption(nameRow.transform, "Mapa");
             var field = EditorUIHelpers.AddInputField(nameRow.transform, _bakeSlotName, text =>
@@ -78,8 +96,10 @@ namespace Valkur.Gameplay.Editors.SeedWorld
                 BuildWorld, 30f, 12f);
             build.gameObject.name = "BakeButton";
             if (armed) UIButton.SetTint(build, EditorUIHelpers.DANGER);
+            build.interactable = lab;
 
-            EditorUIHelpers.MakeButton(row.transform, "Volver al mundo base", ReturnToBaseWorld, 30f, 11f);
+            var back = EditorUIHelpers.MakeButton(row.transform, "Volver a Pepitoria", ReturnToBaseWorld, 30f, 11f);
+            back.gameObject.name = "ReturnHomeButton";
 
             _bakeReport = EditorUIHelpers.AddLabel(body, string.Empty, 10f);
             _bakeReport.color = EditorUIHelpers.TEXT_SECONDARY;
@@ -112,6 +132,7 @@ namespace Valkur.Gameplay.Editors.SeedWorld
 
         internal void BuildWorld()
         {
+            if (!SeedWorldLab.Enabled) { SetStatus(SeedWorldLab.OffMessage); return; }
             if (!Application.isPlaying) { SetStatus("Construir solo funciona en Play Mode."); return; }
 
             var mgr = MapEditorManager.Instance;
@@ -146,10 +167,7 @@ namespace Valkur.Gameplay.Editors.SeedWorld
 
         internal void ReturnToBaseWorld()
         {
-            var mgr = MapEditorManager.Instance;
-            if (!Application.isPlaying || mgr == null) { SetStatus("Solo en Play Mode con el Map editor presente."); return; }
-            mgr.LoadMapSlot(MapEditorMapSlots.DEFAULT_SLOT);
-            SetStatus("Mundo base cargado.");
+            SetStatus(SeedWorldLauncher.ReturnHome());
             RebuildBody();
         }
     }

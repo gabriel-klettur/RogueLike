@@ -37,6 +37,10 @@ namespace Valkur.Gameplay.Combat.Death
         public static bool ShouldPersist(DeathSequenceController controller)
         {
             if (!DeathTuning.Active.persistDeathState) return false;
+            // Away from Pepitoria the body lies on another map. A save taken there records the
+            // player at home (WorldExcursion), and a spirit restored at home would walk to a corpse
+            // position that means nothing in the base world.
+            if (Valkur.Gameplay.World.WorldExcursion.IsAway) return false;
             return controller != null && controller.IsDeathFlowActive;
         }
 
