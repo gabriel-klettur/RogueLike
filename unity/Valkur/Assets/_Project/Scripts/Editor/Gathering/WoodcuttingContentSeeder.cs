@@ -29,7 +29,8 @@ namespace Valkur.Editor.Gathering
         private const string CatalogDir = "Assets/_Project/Data/Catalogs/Gathering";
         private const string DestructionDir = "Assets/_Project/Data/Catalogs/Destruction";
         private const string ItemsDir = "Assets/_Project/Data/Catalogs/Items/Material";
-        private const string ResourcesDir = "Assets/_Project/Resources/Gathering";
+        private const string ResourcesDir = "Assets/_Project/Resources/Skills";
+        private const string SkillsDir = "Assets/_Project/Data/Catalogs/Skills";
         private const string CommonProfilePath = DestructionDir + "/DP_tree_common.asset";
 
         // ── The wood table ───────────────────────────────────────────────────────
@@ -141,6 +142,7 @@ namespace Valkur.Editor.Gathering
 
             EnsureFolder(CatalogDir);
             EnsureFolder(ResourcesDir);
+            EnsureFolder(SkillsDir);
 
             var common = AssetDatabase.LoadAssetAtPath<DestructionProfile>(CommonProfilePath);
             if (common == null) return report.Append("ABORT: no ").Append(CommonProfilePath).ToString();
@@ -152,13 +154,13 @@ namespace Valkur.Editor.Gathering
             WriteTable(table, items);
             Save(table);
 
-            var skill = LoadOrCreate<GatheringSkillDefinition>(CatalogDir + "/GS_woodcutting.asset");
+            var skill = LoadOrCreate<SkillDefinition>(SkillsDir + "/GS_woodcutting.asset");
             skill.skillKey = "woodcutting";
             skill.displayName = "Tala";
             skill.yieldTable = table;
             Save(skill);
 
-            var catalog = LoadOrCreate<GatheringSkillCatalog>(ResourcesDir + "/GatheringSkillCatalog.asset");
+            var catalog = LoadOrCreate<SkillCatalog>(ResourcesDir + "/SkillCatalog.asset");
             if (!catalog.skills.Contains(skill)) catalog.skills.Add(skill);
             catalog.skills.RemoveAll(s => s == null);
             Save(catalog);
@@ -248,7 +250,7 @@ namespace Valkur.Editor.Gathering
         }
 
         private static void WriteProfile(DestructionProfile p, DestructionProfile common, FamilySpec spec,
-            GatheringSkillDefinition skill)
+            SkillDefinition skill)
         {
             p.material = MaterialClass.Wood;
             p.durability = spec.Durability;

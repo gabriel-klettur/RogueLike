@@ -89,13 +89,14 @@ namespace Valkur.Data
         [Tooltip("Whether a station for this profession must be in range.")]
         public bool requiresStation;
 
-        [Tooltip("Profession level the player must have reached. 1 means available from the " +
-                 "start, which is what every recipe uses until a trade is levelled.")]
-        public int requiredLevel = 1;
+        [Tooltip("Skill, in whole percent (0-100), the player needs in this profession's skill. " +
+                 "0 means available from the start. It is also the recipe's DIFFICULTY for the " +
+                 "gain roll: cooking something far below your skill teaches only the floor.")]
+        [Range(0, 100)] public int requiredSkill;
 
-        [Tooltip("Experience this trade gains per successful craft. Scaled off the recipe's " +
-                 "own cost by the generator, so a hallaca teaches more than a skyr.")]
-        public int xpReward = 1;
+        [Tooltip("Gain rolls one successful craft makes on the profession's skill. Scaled off the " +
+                 "recipe's own cost by the generator, so a hallaca teaches more than a skyr.")]
+        [Min(0)] public int skillGainRolls = 1;
 
         [Tooltip("Seconds one craft takes.")]
         public float craftSeconds = 1f;
@@ -115,7 +116,7 @@ namespace Valkur.Data
 
         /// <summary>
         /// Whether this recipe could ever be crafted. False for one missing its output, its
-        /// profession, or carrying a broken ingredient line — a DATA defect rather than a
+        /// profession (or its skill), or carrying a broken ingredient line — a DATA defect rather than a
         /// player-facing state, which is why the panel hides such a row instead of greying it
         /// out and sending the player to look for something that does not exist.
         /// </summary>
@@ -124,7 +125,7 @@ namespace Valkur.Data
             get
             {
                 if (output == null || outputQuantity <= 0) return false;
-                if (profession == null) return false;
+                if (profession == null || profession.skill == null) return false;
                 if (ingredients == null || ingredients.Length == 0) return false;
                 for (int i = 0; i < ingredients.Length; i++)
                     if (!ingredients[i].IsValid) return false;

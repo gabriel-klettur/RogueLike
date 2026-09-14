@@ -3,8 +3,10 @@ using UnityEngine;
 namespace Valkur.Data
 {
     /// <summary>
-    /// One trade the player can practise: cooking, blacksmithing, mining, woodcutting, or the
-    /// generic crafting bucket everything else falls into.
+    /// One trade the player can practise at a station or from the bag: cooking, blacksmithing,
+    /// mining, or the generic crafting bucket everything else falls into. What the player has
+    /// LEARNED of it is not stored here — that is the <see cref="skill"/> it points at, on the
+    /// same 0-100 % model as woodcutting.
     ///
     /// <para>WHY A ScriptableObject AND NOT AN ENUM. New professions are expected — that was
     /// stated as a requirement, not guessed at — and an enum makes each one a code change in
@@ -46,41 +48,16 @@ namespace Valkur.Data
         public int sortOrder;
 
         [Header("Progression")]
-        [Tooltip("Highest level this trade can reach.")]
-        public int maxLevel = 20;
-
-        [Tooltip("Experience needed to go from level 1 to level 2. Later levels scale by " +
-                 "xpGrowth — see XpForNextLevel.")]
-        public int baseXpPerLevel = 100;
-
-        [Tooltip("Multiplier applied per level. 1.0 is a flat curve (every level costs the " +
-                 "same); the shipped trades use a gentle ramp so late levels are a goal " +
-                 "rather than a wall.")]
-        public float xpGrowth = 1.25f;
+        [Tooltip("The 0-100 % skill this trade trains and is gated by. A profession no longer " +
+                 "carries levels of its own: crafting a recipe rolls a gain on this skill, and a " +
+                 "recipe's requiredSkill is compared against it. Required — a trade with no skill " +
+                 "cannot be learned and its recipes are refused as malformed.")]
+        public SkillDefinition skill;
 
         [Header("Stations")]
         [Tooltip("What a station for this trade is called in the badge and the panel — " +
                  "'cocina', 'fragua', 'banco de trabajo'. A recipe's requiresStation is what " +
                  "decides whether one is needed; this only names it.")]
         public string stationName = "";
-
-        /// <summary>
-        /// Experience needed to advance FROM <paramref name="level"/> to the next one.
-        ///
-        /// <para>Geometric rather than a hand-authored table, for the same reason the dish
-        /// prices are derived: a table of twenty numbers per trade is twenty numbers that drift
-        /// apart between trades, and nobody can say what the intended shape was. Two authored
-        /// values give a curve whose shape is legible and whose retune is one edit.</para>
-        ///
-        /// <para>Returns 0 at or above <see cref="maxLevel"/>, which is what callers test to
-        /// detect a capped trade — never a large number they would have to compare against.</para>
-        /// </summary>
-        public int XpForNextLevel(int level)
-        {
-            if (level >= maxLevel) return 0;
-            if (level < 1) level = 1;
-            float growth = Mathf.Max(1f, xpGrowth);
-            return Mathf.Max(1, Mathf.RoundToInt(baseXpPerLevel * Mathf.Pow(growth, level - 1)));
-        }
     }
 }

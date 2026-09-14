@@ -42,6 +42,7 @@ namespace Valkur.Editor.Crafting
         private const string CATALOG_DIR = "Assets/_Project/Resources/Crafting";
         private const string CATALOG_PATH = CATALOG_DIR + "/RecipeCatalog.asset";
         private const string ITEM_CATALOG_PATH = "Assets/_Project/Data/Catalogs/Items/ItemCatalog.asset";
+        private const string SKILL_CATALOG_PATH = "Assets/_Project/Resources/Skills/SkillCatalog.asset";
 
         /// <summary>
         /// The domain tag cooking items carry. Tagging both the ingredients and the dishes
@@ -126,6 +127,18 @@ namespace Valkur.Editor.Crafting
                 return;
             }
 
+            // A trade's progression is a SKILL, and the skills are seeded by
+            // Valkur > Skills > Seed Skill Content, not here — this importer resolves them by key
+            // and refuses to guess. A profession left without one would import cleanly and make
+            // every one of its recipes malformed.
+            var skillCatalog = AssetDatabase.LoadAssetAtPath<SkillCatalog>(SKILL_CATALOG_PATH);
+            if (skillCatalog == null)
+            {
+                Debug.LogError($"[CraftingContentImporter] No SkillCatalog at '{SKILL_CATALOG_PATH}'. " +
+                               "Run Valkur > Skills > Seed Skill Content first.");
+                return;
+            }
+
             int created = 0;
             var catalog = LoadOrCreate<RecipeCatalog>(CATALOG_PATH, ref created);
 
@@ -142,12 +155,17 @@ namespace Valkur.Editor.Crafting
 
                 var profession = LoadOrCreate<ProfessionDefinition>(
                     $"{PROFESSION_DIR}/{key}.asset", ref created);
-                ApplyProfession(profession, row, key, overwriteAuthored);
+                ApplyProfession(profession, row, key, overwriteAuthored, skillCatalog);
                 EditorUtility.SetDirty(profession);
 
                 professions[key] = profession;
                 catalog.UpsertProfession(profession);
             }
+
+            // A trade the manifest no longer declares is retired from the catalog. The lumberjack
+            // trade went this way when felling trees became the woodcutting skill: left in, it
+            // would draw a crafting tab for a trade with no recipes and no skill.
+            int retiredProfessions = catalog.RetireProfessionsNotIn(professions.Keys);
 
             int missingArt = 0;
             var byId = new Dictionary<string, ItemDefinition>(System.StringComparer.OrdinalIgnoreCase);
@@ -200,13 +218,14 @@ namespace Valkur.Editor.Crafting
 
             Debug.Log($"[CraftingContentImporter] {catalog.Professions.Count} professions, " +
                       $"{itemCatalog.Count} items, {catalog.Count} recipes " +
-                      $"({created} assets created), {retired} legacy dish(es) retired.");
+                      $"({created} assets created), {retired} legacy dish(es) and " +
+                      $"{retiredProfessions} profession(s) retired.");
         }
 
         // ── Professions ─────────────────────────────────────────────────────
 
         private static void ApplyProfession(ProfessionDefinition profession,
-            Dictionary<string, object> row, string key, bool overwriteAuthored)
+            Dictionary<string, object> row, string key, bool overwriteAuthored, SkillCatalog skills)
         {
             profession.professionKey = key;
 
@@ -218,9 +237,12 @@ namespace Valkur.Editor.Crafting
                 profession.stationName = Str(row, "stationName");
 
             profession.sortOrder = (int)Flt(row, "sortOrder");
-            profession.maxLevel = Mathf.Max(1, (int)Flt(row, "maxLevel"));
-            profession.baseXpPerLevel = Mathf.Max(1, (int)Flt(row, "baseXpPerLevel"));
-            profession.xpGrowth = Mathf.Max(1f, Flt(row, "xpGrowth"));
+
+            string skillKey = Str(row, "skillKey");
+            profession.skill = skills.Find(skillKey);
+            if (profession.skill == null)
+                Debug.LogError($"[CraftingContentImporter] Profession '{key}' trains skill " +
+                               $"'{skillKey}', which the SkillCatalog does not carry.");
 
             var rgb = AsDict(row, "accentColor");
             if (rgb != null)
@@ -299,8 +321,8 @@ namespace Valkur.Editor.Crafting
                 recipe.displayName = Str(row, "displayName");
 
             recipe.requiresStation = Bl(row, "requiresStation", false);
-            recipe.requiredLevel = Mathf.Max(1, (int)Flt(row, "requiredLevel"));
-            recipe.xpReward = Mathf.Max(0, (int)Flt(row, "xpReward"));
+            recipe.requiredSkill = Mathf.Clamp((int)Flt(row, "requiredSkill"), 0, 100);
+            recipe.skillGainRolls = Mathf.Max(0, (int)Flt(row, "skillGainRolls"));
             recipe.craftSeconds = Flt(row, "craftSeconds");
             recipe.outputQuantity = Mathf.Max(1, (int)Flt(row, "outputQuantity"));
 

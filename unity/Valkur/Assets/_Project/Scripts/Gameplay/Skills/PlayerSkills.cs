@@ -4,14 +4,15 @@ using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
 
-namespace Valkur.Gameplay.World
+namespace Valkur.Gameplay.Skills
 {
     /// <summary>
-    /// The player's gathering skills — woodcutting and whatever follows — as 0.0 % .. 100.0 %.
+    /// The player's skills — woodcutting, mining and fishing, cooking, blacksmithing and crafting —
+    /// as 0.0 % .. 100.0 %. One component for gathering and crafting alike; the trades used to
+    /// keep their own levels on a separate component, and that second model is gone.
     ///
-    /// <para><b>ONE COMPONENT, EVERY SKILL, KEYED BY STRING.</b> The same contract
-    /// <c>PlayerProfessions</c> uses and for the same reason: a save names a skill by a stable
-    /// key, never by an asset reference an importer can regenerate.</para>
+    /// <para><b>ONE COMPONENT, EVERY SKILL, KEYED BY STRING.</b> A save names a skill by a
+    /// stable key, never by an asset reference an importer can regenerate.</para>
     ///
     /// <para><b>GET-OR-ADD, ON THE PLAYER ONLY.</b> <see cref="For"/> attaches the component the
     /// first time a player works a node, so no bootstrap step has to remember it, and it refuses
@@ -20,7 +21,7 @@ namespace Valkur.Gameplay.World
     /// leak nobody reads.</para>
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerGatheringSkills : MonoBehaviour
+    public sealed class PlayerSkills : MonoBehaviour
     {
         [Serializable]
         private struct Entry
@@ -45,25 +46,25 @@ namespace Valkur.Gameplay.World
         /// The skills component of the player this object belongs to, created on first use.
         /// Null for anything that is not the player.
         /// </summary>
-        public static PlayerGatheringSkills For(GameObject worker)
+        public static PlayerSkills For(GameObject worker)
         {
             if (worker == null) return null;
 
-            var existing = worker.GetComponentInParent<PlayerGatheringSkills>();
+            var existing = worker.GetComponentInParent<PlayerSkills>();
             if (existing != null) return existing;
 
             var root = worker.transform.root.gameObject;
             if (!root.CompareTag("Player") && !worker.CompareTag("Player")) return null;
 
             var host = worker.CompareTag("Player") ? worker : root;
-            var skills = host.AddComponent<PlayerGatheringSkills>();
-            host.AddComponent<GatheringSkillFeedback>();
+            var skills = host.AddComponent<PlayerSkills>();
+            host.AddComponent<SkillFeedback>();
             return skills;
         }
 
         /// <summary>Read without creating. Null when this worker has never gathered.</summary>
-        public static PlayerGatheringSkills Peek(GameObject worker) =>
-            worker != null ? worker.GetComponentInParent<PlayerGatheringSkills>() : null;
+        public static PlayerSkills Peek(GameObject worker) =>
+            worker != null ? worker.GetComponentInParent<PlayerSkills>() : null;
 
         private int IndexOf(string key)
         {
@@ -77,16 +78,16 @@ namespace Valkur.Gameplay.World
         {
             if (string.IsNullOrEmpty(key)) return 0;
             int i = IndexOf(key);
-            return i < 0 ? 0 : Mathf.Clamp(_entries[i].tenths, 0, GatheringSkillDefinition.MaxTenths);
+            return i < 0 ? 0 : Mathf.Clamp(_entries[i].tenths, 0, SkillDefinition.MaxTenths);
         }
 
-        public float GetPercent(string key) => GatheringSkillDefinition.ToPercent(GetTenths(key));
+        public float GetPercent(string key) => SkillDefinition.ToPercent(GetTenths(key));
 
         /// <summary>Set a skill outright. The console and the save layer; clamped.</summary>
         public void SetTenths(string key, int tenths)
         {
             if (string.IsNullOrEmpty(key)) return;
-            tenths = Mathf.Clamp(tenths, 0, GatheringSkillDefinition.MaxTenths);
+            tenths = Mathf.Clamp(tenths, 0, SkillDefinition.MaxTenths);
 
             int i = IndexOf(key);
             int old = i < 0 ? 0 : _entries[i].tenths;
@@ -102,7 +103,7 @@ namespace Valkur.Gameplay.World
         /// <para>The roll is the skill definition's pure chance against THIS node's difficulty,
         /// which is what sends a player to harder trees to keep climbing.</para>
         /// </summary>
-        public bool TryGain(GatheringSkillDefinition skill, int difficulty, bool wrongTool)
+        public bool TryGain(SkillDefinition skill, int difficulty, bool wrongTool)
         {
             if (skill == null || string.IsNullOrEmpty(skill.skillKey)) return false;
 
@@ -114,10 +115,23 @@ namespace Valkur.Gameplay.World
             return true;
         }
 
+        /// <summary>
+        /// Set a skill without raising <see cref="SkillChanged"/> — for restoring progress the
+        /// player already had (a save migration), where a toast per skill would announce nothing.
+        /// </summary>
+        public void SetTenthsSilently(string key, int tenths)
+        {
+            if (string.IsNullOrEmpty(key)) return;
+            tenths = Mathf.Clamp(tenths, 0, SkillDefinition.MaxTenths);
+            int i = IndexOf(key);
+            if (i < 0) _entries.Add(new Entry { key = key, tenths = tenths });
+            else _entries[i] = new Entry { key = _entries[i].key, tenths = tenths };
+        }
+
         private void Raise(string key, int oldTenths, int newTenths)
         {
             SkillChanged?.Invoke(key, oldTenths, newTenths);
-            GameEvents.FireGatheringSkillChanged(gameObject, key, newTenths);
+            GameEvents.FireSkillChanged(gameObject, key, newTenths);
         }
 
         // ── Persistence ──────────────────────────────────────────────────────────
@@ -136,7 +150,8 @@ namespace Valkur.Gameplay.World
 
         /// <summary>
         /// Restore silently — no SkillChanged, so loading a 60 % woodcutter does not toast six
-        /// milestones. Reads only as far as the shorter list, the PlayerProfessions rule.
+        /// milestones. Reads only as far as the shorter list: a hand-edited or truncated save must
+        /// not throw inside the load path.
         /// </summary>
         public void ReadFrom(ProgressionSaveData data)
         {
@@ -150,7 +165,7 @@ namespace Valkur.Gameplay.World
                 _entries.Add(new Entry
                 {
                     key = data.gatheringSkillKeys[i],
-                    tenths = Mathf.Clamp(data.gatheringSkillTenths[i], 0, GatheringSkillDefinition.MaxTenths),
+                    tenths = Mathf.Clamp(data.gatheringSkillTenths[i], 0, SkillDefinition.MaxTenths),
                 });
             }
         }

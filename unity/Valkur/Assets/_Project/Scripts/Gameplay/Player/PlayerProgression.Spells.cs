@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay.Spells;
+using Valkur.Gameplay.Skills;
 
 namespace Valkur.Gameplay
 {
@@ -137,36 +138,29 @@ namespace Valkur.Gameplay
             if (_skills != null) _skills.WriteTo(data);
             if (_spells != null) _spells.WriteTo(data);
 
-            var professions = GetComponent<Valkur.Gameplay.Crafting.PlayerProfessions>();
-            if (professions != null) professions.WriteTo(data);
-
-            var gathering = GetComponent<Valkur.Gameplay.World.PlayerGatheringSkills>();
-            if (gathering != null) gathering.WriteTo(data);
+            var trades = GetComponent<PlayerSkills>();
+            if (trades != null) trades.WriteTo(data);
         }
 
         /// <summary>
-        /// Crafting professions and gathering skills ride the same progression document. Neither
-        /// was ever read or written before — <c>PlayerProfessions.WriteTo</c> had no caller — so a
-        /// trade levelled for an hour came back at level 1 on the next load. Restored silently,
-        /// through the components' own clamping readers; a character with no entries simply has
-        /// no component until they first gather or craft.
+        /// Every skill — gathering and crafting — rides the progression document. Restored
+        /// silently, through the component's own clamping reader, THEN a save from before trades
+        /// became skills has its levels carried across (<see cref="LegacyProfessionMigration"/>).
+        /// Order matters: the reader clears the component, so migrating first would be undone.
+        /// A character with no entries simply has no component until they first gather or craft.
         /// </summary>
         private void RestoreTrades(ProgressionSaveData data)
         {
             if (data == null) return;
 
-            if (data.professionKeys != null && data.professionKeys.Count > 0)
-            {
-                var professions = GetComponent<Valkur.Gameplay.Crafting.PlayerProfessions>();
-                if (professions == null) professions = gameObject.AddComponent<Valkur.Gameplay.Crafting.PlayerProfessions>();
-                professions.ReadFrom(data);
-            }
+            bool hasSkills = data.gatheringSkillKeys != null && data.gatheringSkillKeys.Count > 0;
+            bool hasLegacy = data.professionKeys != null && data.professionKeys.Count > 0;
+            if (!hasSkills && !hasLegacy) return;
 
-            if (data.gatheringSkillKeys != null && data.gatheringSkillKeys.Count > 0)
-            {
-                var gathering = Valkur.Gameplay.World.PlayerGatheringSkills.For(gameObject);
-                if (gathering != null) gathering.ReadFrom(data);
-            }
+            var skills = PlayerSkills.For(gameObject);
+            if (skills == null) return;
+            if (hasSkills) skills.ReadFrom(data);
+            if (hasLegacy) LegacyProfessionMigration.Apply(data, skills);
         }
     }
 }

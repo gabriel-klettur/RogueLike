@@ -10,7 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 93fd982796df44844b534f976b97fa24, type: 3}
-  m_Name: GatheringSkillCatalog
+  m_Name: SkillCatalog
   m_EditorClassIdentifier: 
   skills:
   - {fileID: 11400000, guid: a021c6044e081554b978f2c59d4d607c, type: 2}
+  - {fileID: 11400000, guid: d7ade3b450c128b478b80bf32899bdd0, type: 2}
+  - {fileID: 11400000, guid: 70874959119f2ca448d48a424ab627f1, type: 2}
+  - {fileID: 11400000, guid: 68b6f7a6f77a6bd43a1ac19aca4a59e0, type: 2}
+  - {fileID: 11400000, guid: bf72a02b0406e1c45a0a05363b8b09b5, type: 2}
+  - {fileID: 11400000, guid: d12af370d9af87e4b8a92b4f36be3060, type: 2}
+  - {fileID: 11400000, guid: faf7206254873e44484b9b7052722ed2, type: 2}

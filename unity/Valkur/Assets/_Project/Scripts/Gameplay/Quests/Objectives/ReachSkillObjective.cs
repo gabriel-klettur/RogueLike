@@ -1,5 +1,6 @@
 using Valkur.Core;
 using Valkur.Gameplay.World;
+using Valkur.Gameplay.Skills;
 
 namespace Valkur.Gameplay.Quests
 {
@@ -27,7 +28,7 @@ namespace Valkur.Gameplay.Quests
         {
             var player = EntityRegistry.PlayerTransform;
             if (player == null) return;
-            var skills = PlayerGatheringSkills.Peek(player.gameObject);
+            var skills = PlayerSkills.Peek(player.gameObject);
             SetCurrent(skills != null ? skills.GetTenths(SkillKey) / 10 : 0);
         }
     }

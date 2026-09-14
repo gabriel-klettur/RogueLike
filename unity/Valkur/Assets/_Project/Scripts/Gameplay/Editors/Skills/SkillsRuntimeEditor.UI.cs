@@ -389,7 +389,7 @@ namespace Valkur.Gameplay.Editors.Skills
         private static string RowLabel(RecipeDefinition recipe)
         {
             string suffix = recipe.requiresStation ? "  ·estacion" : "";
-            if (recipe.requiredLevel > 1) suffix += $"  ·nv{recipe.requiredLevel}";
+            if (recipe.requiredSkill > 0) suffix += $"  ·{recipe.requiredSkill}%";
             if (!recipe.IsWellFormed) suffix += "  ·ROTA";
             return recipe.displayName + suffix;
         }
@@ -477,17 +477,11 @@ namespace Valkur.Gameplay.Editors.Skills
             if (profession == null) return;
 
             Header("Oficio: " + profession.displayName);
-            IntField("Nivel maximo", () => profession.maxLevel,
-                v => SetProfessionMaxLevel(profession, v));
-            IntField("XP del nivel 1", () => profession.baseXpPerLevel,
-                v => SetProfessionBaseXp(profession, v));
-            FloatField("Crecimiento XP", () => profession.xpGrowth,
-                v => SetProfessionGrowth(profession, v));
             TextField("Nombre de la estacion", () => profession.stationName,
                 v => SetProfessionStationName(profession, v));
 
-            // The resolved curve, not just its two inputs. "growth 1.25" is not a number
-            // anybody can picture; "nivel 10 cuesta 596" is the thing being decided.
+            // The trade's progression is its SKILL now, not a level curve on the profession:
+            // say which one, and that its curve is tuned on the skill asset.
             _curveLabel = Note(CurveText(profession));
 
             EditorUIHelpers.BuildSeparator(_detailBody);
@@ -501,10 +495,10 @@ namespace Valkur.Gameplay.Editors.Skills
             }
 
             Header("Receta: " + recipe.displayName);
-            IntField("Nivel requerido", () => recipe.requiredLevel,
-                v => SetRecipeRequiredLevel(recipe, v));
-            IntField("XP por fabricacion", () => recipe.xpReward,
-                v => SetRecipeXpReward(recipe, v));
+            IntField("Skill requerida (%)", () => recipe.requiredSkill,
+                v => SetRecipeRequiredSkill(recipe, v));
+            IntField("Tiradas de mejora", () => recipe.skillGainRolls,
+                v => SetRecipeGainRolls(recipe, v));
             FloatField("Segundos", () => recipe.craftSeconds,
                 v => SetRecipeCraftSeconds(recipe, v));
 
@@ -523,7 +517,7 @@ namespace Valkur.Gameplay.Editors.Skills
             // Says out loud which of the fields above a re-import will take back. Without it an
             // author retunes a level, runs the importer for an unrelated reason and silently
             // loses the edit — the derived/prose split is real and invisible from in here.
-            var warn = Note("Aviso: reimportar desde el manifiesto reescribe nivel, XP, " +
+            var warn = Note("Aviso: reimportar desde el manifiesto reescribe skill, tiradas, " +
                             "segundos y estacion. Lo editado aqui son excepciones, no balance.");
             warn.color = UITheme.WARNING;
 
@@ -557,8 +551,11 @@ namespace Valkur.Gameplay.Editors.Skills
                 r.requiresStation ? UITheme.BTN_ACTIVE : UITheme.BTN_NORMAL);
 
         private static string CurveText(ProfessionDefinition p) =>
-            $"Curva: nv2 {p.XpForNextLevel(1)} · nv5 {p.XpForNextLevel(4)} · " +
-            $"nv10 {p.XpForNextLevel(9)} · nv{p.maxLevel} {p.XpForNextLevel(p.maxLevel - 1)}";
+            p.skill == null
+                ? "Sin skill asignada: sus recetas no se pueden fabricar."
+                : $"Entrena la skill {p.skill.displayName} (0-100 %). Su curva se ajusta en " +
+                  $"el asset de la skill: +{p.skill.gainTenths / 10f:0.0}% por acierto, " +
+                  $"probabilidad base {p.skill.gainBaseChance:0.00}.";
 
         private static string DescribeOutput(RecipeDefinition recipe) =>
             recipe.output != null

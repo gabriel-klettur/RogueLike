@@ -34,6 +34,6 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: b1ce5cf92a8399f43ba8d4107a3e18e1, type: 2}
     quantity: 1
   requiresStation: 1
-  requiredLevel: 1
-  xpReward: 24
+  requiredSkill: 45
+  skillGainRolls: 2
   craftSeconds: 1.76

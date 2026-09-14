@@ -18,7 +18,5 @@ MonoBehaviour:
   icon: {fileID: 0}
   accentColor: {r: 0.72, g: 0.45, b: 0.3, a: 1}
   sortOrder: 1
-  maxLevel: 20
-  baseXpPerLevel: 120
-  xpGrowth: 1.28
+  skill: {fileID: 11400000, guid: bf72a02b0406e1c45a0a05363b8b09b5, type: 2}
   stationName: una fragua

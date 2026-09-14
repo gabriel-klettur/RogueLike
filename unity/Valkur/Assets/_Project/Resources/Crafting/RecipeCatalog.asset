@@ -16,7 +16,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: dc13ea869bb3ff346b818aba68a60db4, type: 2}
   - {fileID: 11400000, guid: a8d41057dac70364a9f4b26baf24c1fb, type: 2}
   - {fileID: 11400000, guid: dff3c26721bc8c04f884bdb7e2d371d9, type: 2}
-  - {fileID: 11400000, guid: dd302029c81ee7744a24233c3e9b301d, type: 2}
   - {fileID: 11400000, guid: 8ce074a42c9f4c34f9a82dbf910b813e, type: 2}
   _recipes:
   - {fileID: 11400000, guid: d8dde192ca9a4044b85e02a60b0b1ef6, type: 2}

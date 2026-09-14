@@ -18,7 +18,5 @@ MonoBehaviour:
   icon: {fileID: 0}
   accentColor: {r: 0.93, g: 0.62, b: 0.28, a: 1}
   sortOrder: 0
-  maxLevel: 20
-  baseXpPerLevel: 100
-  xpGrowth: 1.25
+  skill: {fileID: 11400000, guid: 68b6f7a6f77a6bd43a1ac19aca4a59e0, type: 2}
   stationName: una cocina

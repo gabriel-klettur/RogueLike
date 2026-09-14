@@ -18,7 +18,5 @@ MonoBehaviour:
   icon: {fileID: 0}
   accentColor: {r: 0.55, g: 0.6, b: 0.7, a: 1}
   sortOrder: 2
-  maxLevel: 20
-  baseXpPerLevel: 110
-  xpGrowth: 1.26
+  skill: {fileID: 11400000, guid: d7ade3b450c128b478b80bf32899bdd0, type: 2}
   stationName: una mina

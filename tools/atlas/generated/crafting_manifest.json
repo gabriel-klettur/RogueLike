@@ -15,9 +15,7 @@
       },
       "sortOrder": 0,
       "stationName": "una cocina",
-      "maxLevel": 20,
-      "baseXpPerLevel": 100,
-      "xpGrowth": 1.25
+      "skillKey": "cooking"
     },
     {
       "professionKey": "blacksmith",
@@ -31,9 +29,7 @@
       },
       "sortOrder": 1,
       "stationName": "una fragua",
-      "maxLevel": 20,
-      "baseXpPerLevel": 120,
-      "xpGrowth": 1.28
+      "skillKey": "blacksmith"
     },
     {
       "professionKey": "mining",
@@ -47,25 +43,7 @@
       },
       "sortOrder": 2,
       "stationName": "una mina",
-      "maxLevel": 20,
-      "baseXpPerLevel": 110,
-      "xpGrowth": 1.26
-    },
-    {
-      "professionKey": "lumberjack",
-      "displayName": "Talado",
-      "description": "Oficio de talado.",
-      "accentColor": {
-        "r": 0.45,
-        "g": 0.66,
-        "b": 0.38,
-        "a": 1.0
-      },
-      "sortOrder": 3,
-      "stationName": "un aserradero",
-      "maxLevel": 20,
-      "baseXpPerLevel": 110,
-      "xpGrowth": 1.26
+      "skillKey": "mining"
     },
     {
       "professionKey": "crafting",
@@ -79,9 +57,7 @@
       },
       "sortOrder": 4,
       "stationName": "un banco de trabajo",
-      "maxLevel": 20,
-      "baseXpPerLevel": 100,
-      "xpGrowth": 1.25
+      "skillKey": "crafting"
     }
   ],
   "items": [
@@ -1168,8 +1144,7 @@
       "outputItemId": "alfajores",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 9,
+      "skillGainRolls": 1,
       "craftSeconds": 1.28,
       "ingredients": [
         {
@@ -1184,7 +1159,8 @@
           "itemId": "flour",
           "quantity": 2
         }
-      ]
+      ],
+      "requiredSkill": 0
     },
     {
       "recipeId": "arepa",
@@ -1194,8 +1170,7 @@
       "outputItemId": "arepa",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 14,
+      "skillGainRolls": 1,
       "craftSeconds": 1.28,
       "ingredients": [
         {
@@ -1210,7 +1185,8 @@
           "itemId": "cornmeal",
           "quantity": 2
         }
-      ]
+      ],
+      "requiredSkill": 15
     },
     {
       "recipeId": "asado_argentino",
@@ -1220,8 +1196,7 @@
       "outputItemId": "asado_argentino",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 29,
+      "skillGainRolls": 3,
       "craftSeconds": 1.52,
       "ingredients": [
         {
@@ -1240,7 +1215,8 @@
           "itemId": "sausage",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 50
     },
     {
       "recipeId": "asado_negro",
@@ -1250,8 +1226,7 @@
       "outputItemId": "asado_negro",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 28,
+      "skillGainRolls": 3,
       "craftSeconds": 1.64,
       "ingredients": [
         {
@@ -1274,7 +1249,8 @@
           "itemId": "tomato",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 45
     },
     {
       "recipeId": "borscht",
@@ -1284,8 +1260,7 @@
       "outputItemId": "borscht",
       "outputQuantity": 1,
       "requiresStation": true,
-      "requiredLevel": 1,
-      "xpReward": 21,
+      "skillGainRolls": 2,
       "craftSeconds": 1.88,
       "ingredients": [
         {
@@ -1320,7 +1295,8 @@
           "itemId": "sour_cream",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 35
     },
     {
       "recipeId": "cachapa",
@@ -1330,8 +1306,7 @@
       "outputItemId": "cachapa",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 20,
+      "skillGainRolls": 2,
       "craftSeconds": 1.64,
       "ingredients": [
         {
@@ -1350,7 +1325,8 @@
           "itemId": "cornmeal",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 30
     },
     {
       "recipeId": "cazuela_chilena",
@@ -1360,8 +1336,7 @@
       "outputItemId": "cazuela_chilena",
       "outputQuantity": 1,
       "requiresStation": true,
-      "requiredLevel": 1,
-      "xpReward": 18,
+      "skillGainRolls": 2,
       "craftSeconds": 1.64,
       "ingredients": [
         {
@@ -1388,7 +1363,8 @@
           "itemId": "potato",
           "quantity": 2
         }
-      ]
+      ],
+      "requiredSkill": 20
     },
     {
       "recipeId": "chicken_kyiv",
@@ -1398,8 +1374,7 @@
       "outputItemId": "chicken_kyiv",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 19,
+      "skillGainRolls": 2,
       "craftSeconds": 1.52,
       "ingredients": [
         {
@@ -1422,7 +1397,8 @@
           "itemId": "herbs",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 30
     },
     {
       "recipeId": "choripan",
@@ -1432,8 +1408,7 @@
       "outputItemId": "choripan",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 16,
+      "skillGainRolls": 2,
       "craftSeconds": 1.4,
       "ingredients": [
         {
@@ -1452,7 +1427,8 @@
           "itemId": "sausage",
           "quantity": 2
         }
-      ]
+      ],
+      "requiredSkill": 20
     },
     {
       "recipeId": "churros_con_chocolate",
@@ -1462,8 +1438,7 @@
       "outputItemId": "churros_con_chocolate",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 9,
+      "skillGainRolls": 1,
       "craftSeconds": 1.28,
       "ingredients": [
         {
@@ -1478,7 +1453,8 @@
           "itemId": "flour",
           "quantity": 2
         }
-      ]
+      ],
+      "requiredSkill": 0
     },
     {
       "recipeId": "completo_chileno",
@@ -1488,8 +1464,7 @@
       "outputItemId": "completo_chileno",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 13,
+      "skillGainRolls": 1,
       "craftSeconds": 1.28,
       "ingredients": [
         {
@@ -1508,7 +1483,8 @@
           "itemId": "tomato",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 5
     },
     {
       "recipeId": "croquetas",
@@ -1518,8 +1494,7 @@
       "outputItemId": "croquetas",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 18,
+      "skillGainRolls": 2,
       "craftSeconds": 1.52,
       "ingredients": [
         {
@@ -1542,7 +1517,8 @@
           "itemId": "flour",
           "quantity": 2
         }
-      ]
+      ],
+      "requiredSkill": 25
     },
     {
       "recipeId": "deruny",
@@ -1552,8 +1528,7 @@
       "outputItemId": "deruny",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 13,
+      "skillGainRolls": 1,
       "craftSeconds": 1.64,
       "ingredients": [
         {
@@ -1576,7 +1551,8 @@
           "itemId": "sour_cream",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 10
     },
     {
       "recipeId": "empanada_de_pino",
@@ -1586,8 +1562,7 @@
       "outputItemId": "empanada_de_pino",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 23,
+      "skillGainRolls": 2,
       "craftSeconds": 1.64,
       "ingredients": [
         {
@@ -1610,7 +1585,8 @@
           "itemId": "paprika",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 35
     },
     {
       "recipeId": "empanadas_argentinas",
@@ -1620,8 +1596,7 @@
       "outputItemId": "empanadas_argentinas",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 23,
+      "skillGainRolls": 2,
       "craftSeconds": 1.64,
       "ingredients": [
         {
@@ -1644,7 +1619,8 @@
           "itemId": "paprika",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 40
     },
     {
       "recipeId": "gazpacho",
@@ -1654,8 +1630,7 @@
       "outputItemId": "gazpacho",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 15,
+      "skillGainRolls": 2,
       "craftSeconds": 1.64,
       "ingredients": [
         {
@@ -1678,7 +1653,8 @@
           "itemId": "tomato",
           "quantity": 3
         }
-      ]
+      ],
+      "requiredSkill": 15
     },
     {
       "recipeId": "hakarl",
@@ -1688,15 +1664,15 @@
       "outputItemId": "hakarl",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 15,
+      "skillGainRolls": 2,
       "craftSeconds": 1.16,
       "ingredients": [
         {
           "itemId": "fish",
           "quantity": 3
         }
-      ]
+      ],
+      "requiredSkill": 15
     },
     {
       "recipeId": "hallaca",
@@ -1706,8 +1682,7 @@
       "outputItemId": "hallaca",
       "outputQuantity": 1,
       "requiresStation": true,
-      "requiredLevel": 1,
-      "xpReward": 24,
+      "skillGainRolls": 2,
       "craftSeconds": 1.76,
       "ingredients": [
         {
@@ -1738,7 +1713,8 @@
           "itemId": "paprika",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 45
     },
     {
       "recipeId": "holubtsi",
@@ -1748,8 +1724,7 @@
       "outputItemId": "holubtsi",
       "outputQuantity": 1,
       "requiresStation": true,
-      "requiredLevel": 1,
-      "xpReward": 18,
+      "skillGainRolls": 2,
       "craftSeconds": 1.64,
       "ingredients": [
         {
@@ -1776,7 +1751,8 @@
           "itemId": "tomato",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 25
     },
     {
       "recipeId": "humitas_chilenas",
@@ -1786,8 +1762,7 @@
       "outputItemId": "humitas_chilenas",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 14,
+      "skillGainRolls": 1,
       "craftSeconds": 1.52,
       "ingredients": [
         {
@@ -1806,7 +1781,8 @@
           "itemId": "onion",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 10
     },
     {
       "recipeId": "icelandic_pylsa",
@@ -1816,8 +1792,7 @@
       "outputItemId": "icelandic_pylsa",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 13,
+      "skillGainRolls": 1,
       "craftSeconds": 1.4,
       "ingredients": [
         {
@@ -1836,7 +1811,8 @@
           "itemId": "tomato",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 10
     },
     {
       "recipeId": "jamon_iberico",
@@ -1846,8 +1822,7 @@
       "outputItemId": "jamon_iberico",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 18,
+      "skillGainRolls": 2,
       "craftSeconds": 1.28,
       "ingredients": [
         {
@@ -1862,7 +1837,8 @@
           "itemId": "paprika",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 25
     },
     {
       "recipeId": "kjotsupa",
@@ -1872,8 +1848,7 @@
       "outputItemId": "kjotsupa",
       "outputQuantity": 1,
       "requiresStation": true,
-      "requiredLevel": 1,
-      "xpReward": 24,
+      "skillGainRolls": 2,
       "craftSeconds": 1.76,
       "ingredients": [
         {
@@ -1900,7 +1875,8 @@
           "itemId": "potato",
           "quantity": 2
         }
-      ]
+      ],
+      "requiredSkill": 40
     },
     {
       "recipeId": "kleinur",
@@ -1910,8 +1886,7 @@
       "outputItemId": "kleinur",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 9,
+      "skillGainRolls": 1,
       "craftSeconds": 1.28,
       "ingredients": [
         {
@@ -1926,7 +1901,8 @@
           "itemId": "flour",
           "quantity": 2
         }
-      ]
+      ],
+      "requiredSkill": 5
     },
     {
       "recipeId": "locro",
@@ -1936,8 +1912,7 @@
       "outputItemId": "locro",
       "outputQuantity": 1,
       "requiresStation": true,
-      "requiredLevel": 1,
-      "xpReward": 23,
+      "skillGainRolls": 2,
       "craftSeconds": 1.64,
       "ingredients": [
         {
@@ -1964,7 +1939,8 @@
           "itemId": "sausage",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 40
     },
     {
       "recipeId": "milanesa_napolitana",
@@ -1974,8 +1950,7 @@
       "outputItemId": "milanesa_napolitana",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 28,
+      "skillGainRolls": 3,
       "craftSeconds": 1.64,
       "ingredients": [
         {
@@ -1998,7 +1973,8 @@
           "itemId": "tomato",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 45
     },
     {
       "recipeId": "pabellon_criollo",
@@ -2008,8 +1984,7 @@
       "outputItemId": "pabellon_criollo",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 26,
+      "skillGainRolls": 3,
       "craftSeconds": 1.76,
       "ingredients": [
         {
@@ -2032,7 +2007,8 @@
           "itemId": "rice",
           "quantity": 2
         }
-      ]
+      ],
+      "requiredSkill": 45
     },
     {
       "recipeId": "paella",
@@ -2042,8 +2018,7 @@
       "outputItemId": "paella",
       "outputQuantity": 1,
       "requiresStation": true,
-      "requiredLevel": 1,
-      "xpReward": 29,
+      "skillGainRolls": 3,
       "craftSeconds": 1.88,
       "ingredients": [
         {
@@ -2074,7 +2049,8 @@
           "itemId": "tomato",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 50
     },
     {
       "recipeId": "pastel_de_choclo",
@@ -2084,8 +2060,7 @@
       "outputItemId": "pastel_de_choclo",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 22,
+      "skillGainRolls": 2,
       "craftSeconds": 1.64,
       "ingredients": [
         {
@@ -2108,7 +2083,8 @@
           "itemId": "onion",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 35
     },
     {
       "recipeId": "plokkfiskur",
@@ -2118,8 +2094,7 @@
       "outputItemId": "plokkfiskur",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 21,
+      "skillGainRolls": 2,
       "craftSeconds": 1.64,
       "ingredients": [
         {
@@ -2142,7 +2117,8 @@
           "itemId": "sour_cream",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 35
     },
     {
       "recipeId": "skyr",
@@ -2152,8 +2128,7 @@
       "outputItemId": "skyr",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 10,
+      "skillGainRolls": 1,
       "craftSeconds": 1.16,
       "ingredients": [
         {
@@ -2164,7 +2139,8 @@
           "itemId": "sour_cream",
           "quantity": 2
         }
-      ]
+      ],
+      "requiredSkill": 5
     },
     {
       "recipeId": "sopaipillas_chilenas",
@@ -2174,8 +2150,7 @@
       "outputItemId": "sopaipillas_chilenas",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 10,
+      "skillGainRolls": 1,
       "craftSeconds": 1.4,
       "ingredients": [
         {
@@ -2194,7 +2169,8 @@
           "itemId": "flour",
           "quantity": 2
         }
-      ]
+      ],
+      "requiredSkill": 5
     },
     {
       "recipeId": "syrnyky",
@@ -2204,8 +2180,7 @@
       "outputItemId": "syrnyky",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 19,
+      "skillGainRolls": 2,
       "craftSeconds": 1.52,
       "ingredients": [
         {
@@ -2228,7 +2203,8 @@
           "itemId": "sour_cream",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 30
     },
     {
       "recipeId": "tequenos",
@@ -2238,8 +2214,7 @@
       "outputItemId": "tequenos",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 18,
+      "skillGainRolls": 2,
       "craftSeconds": 1.52,
       "ingredients": [
         {
@@ -2258,7 +2233,8 @@
           "itemId": "flour",
           "quantity": 2
         }
-      ]
+      ],
+      "requiredSkill": 25
     },
     {
       "recipeId": "tortilla_espanola",
@@ -2268,8 +2244,7 @@
       "outputItemId": "tortilla_espanola",
       "outputQuantity": 1,
       "requiresStation": false,
-      "requiredLevel": 1,
-      "xpReward": 14,
+      "skillGainRolls": 1,
       "craftSeconds": 1.64,
       "ingredients": [
         {
@@ -2288,7 +2263,8 @@
           "itemId": "potato",
           "quantity": 3
         }
-      ]
+      ],
+      "requiredSkill": 15
     },
     {
       "recipeId": "varenyky",
@@ -2298,8 +2274,7 @@
       "outputItemId": "varenyky",
       "outputQuantity": 1,
       "requiresStation": true,
-      "requiredLevel": 1,
-      "xpReward": 16,
+      "skillGainRolls": 2,
       "craftSeconds": 1.76,
       "ingredients": [
         {
@@ -2326,7 +2301,8 @@
           "itemId": "sour_cream",
           "quantity": 1
         }
-      ]
+      ],
+      "requiredSkill": 20
     }
   ]
 }

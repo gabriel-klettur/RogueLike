@@ -68,34 +68,52 @@ namespace Valkur.Tests.EditMode.Game.Crafting
         }
 
         [Test]
-        public void EveryProfession_HasAUsableXpCurve()
+        public void EveryProfession_TrainsACatalogedCraftingSkill()
         {
+            // A trade's progression is its skill. One pointing at nothing makes every recipe of it
+            // malformed; one pointing at a skill the catalog does not carry is a trade the SKILLS
+            // tab never shows.
+            var skills = SkillCatalog.Shared;
+            Assert.IsNotNull(skills, "no SkillCatalog under Resources/Skills");
+
             foreach (var p in _catalog.Professions)
             {
                 Assert.IsNotNull(p);
                 Assert.IsFalse(string.IsNullOrEmpty(p.professionKey), "a profession with no key "
-                    + "cannot be joined to a recipe or to a save file");
-                Assert.Greater(p.maxLevel, 1, $"{p.professionKey} can never level");
-                Assert.Greater(p.XpForNextLevel(1), 0, $"{p.professionKey} level 2 costs nothing");
-                Assert.AreEqual(0, p.XpForNextLevel(p.maxLevel),
-                    $"{p.professionKey} must report 0 at its cap so callers can detect it");
-                Assert.GreaterOrEqual(p.xpGrowth, 1f,
-                    $"{p.professionKey} growth below 1 INVERTS the curve — level 10 would cost "
-                    + "less than level 2");
+                    + "cannot be joined to a recipe");
+                Assert.IsNotNull(p.skill, $"{p.professionKey} trains no skill");
+                Assert.AreSame(p.skill, skills.Find(p.skill.skillKey),
+                    $"{p.professionKey}'s skill '{p.skill.skillKey}' is not the one the catalog carries");
             }
         }
 
         [Test]
-        public void NoRecipe_RequiresALevelItsTradeCannotReach()
+        public void TheLumberjackTrade_IsGone()
         {
-            // Unreachable content that looks perfectly valid in the Inspector — the
-            // authored-and-inert shape this project has shipped a dozen times.
+            // Felling trees IS the woodcutting skill. A lumberjack trade beside it is the
+            // duplicate the skills table would show twice.
+            Assert.IsNull(_catalog.GetProfession("lumberjack"));
+        }
+
+        [Test]
+        public void RecipeRequirements_AreInRange_AndSomethingIsLearnableFromZero()
+        {
+            // A requirement past 100 % is unreachable content that looks valid in the Inspector;
+            // a trade whose every recipe needs training can never be started.
+            var byTrade = new Dictionary<ProfessionDefinition, int>();
             foreach (var recipe in _catalog.Recipes)
             {
                 if (recipe?.profession == null) continue;
-                Assert.LessOrEqual(recipe.requiredLevel, recipe.profession.maxLevel,
-                    $"{recipe.recipeId} needs level {recipe.requiredLevel} of " +
-                    $"{recipe.profession.professionKey}, which caps at {recipe.profession.maxLevel}");
+                Assert.That(recipe.requiredSkill, Is.InRange(0, 100), recipe.recipeId);
+                Assert.GreaterOrEqual(recipe.skillGainRolls, 1, $"{recipe.recipeId} teaches nothing");
+                if (recipe.requiredSkill == 0)
+                    byTrade[recipe.profession] = byTrade.TryGetValue(recipe.profession, out int n) ? n + 1 : 1;
+            }
+
+            foreach (var p in _catalog.Professions)
+            {
+                if (_catalog.RecipesFor(p).Count == 0) continue;
+                Assert.IsTrue(byTrade.ContainsKey(p), $"{p.professionKey} has no recipe a beginner can make");
             }
         }
 

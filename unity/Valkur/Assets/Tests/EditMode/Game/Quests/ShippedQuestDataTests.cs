@@ -202,8 +202,8 @@ namespace Valkur.Tests.EditMode.Game.Quests
                             break;
 
                         case ObjectiveKind.ReachSkill:
-                            if (Valkur.Data.GatheringSkillCatalog.Shared == null ||
-                                Valkur.Data.GatheringSkillCatalog.Shared.Find(o.targetId) == null)
+                            if (Valkur.Data.SkillCatalog.Shared == null ||
+                                Valkur.Data.SkillCatalog.Shared.Find(o.targetId) == null)
                                 problems.Add($"{where}: no gathering skill with key '{o.targetId}'");
                             if (o.count < 1 || o.count > 100)
                                 problems.Add($"{where}: a skill percent of {o.count} can never be reached");

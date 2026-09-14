@@ -157,20 +157,19 @@ namespace Valkur.Data
         public int arcanePoints;
         public int arcanePointsSpent;
 
-        // Profession progress, in the same parallel-list shape as the skills above and for the
-        // same reason recorded at the top of this file: a Dictionary does not survive every
-        // serializer this project has used, and three aligned lists do.
-        //
-        // Absent in a save written before professions existed, where all three deserialize as
-        // empty — which is correctly read as "this character has practised nothing", not as a
-        // missing field to warn about.
+        // LEGACY, READ ONLY. Profession LEVELS from before trades became 0-100 % skills. Nothing
+        // writes these any more; a save that still carries them is migrated on load by
+        // LegacyProfessionMigration, and the next save drops them. Kept as fields because
+        // JsonUtility silently discards what the type does not declare, which would lose the
+        // progress before the migration could read it.
         public List<string> professionKeys = new List<string>();
         public List<int> professionLevels = new List<int>();
         public List<int> professionXp = new List<int>();
 
-        // Gathering skills (woodcutting, ...), in TENTHS of a percent: 345 = 34.5 %. Integers, for
-        // the reason GatheringSkillDefinition records — a float that climbs by 0.1 a gain drifts.
-        // Absent in older saves, where both deserialize empty and read as "never practised".
+        // Every skill (woodcutting, cooking, ...), in TENTHS of a percent: 345 = 34.5 %. Integers,
+        // for the reason SkillDefinition records — a float that climbs by 0.1 a gain drifts. The
+        // "gathering" in the name predates crafting skills and is kept because it is the key
+        // every save already on disk uses. Absent in older saves: "never practised".
         public List<string> gatheringSkillKeys = new List<string>();
         public List<int> gatheringSkillTenths = new List<int>();
 

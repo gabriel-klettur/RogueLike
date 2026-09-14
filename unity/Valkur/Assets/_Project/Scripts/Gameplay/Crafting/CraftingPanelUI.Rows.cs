@@ -82,16 +82,15 @@ namespace Valkur.Gameplay.Crafting
                 return;
             }
 
-            var progress = _professions != null
-                ? _professions.GetProgress(profession)
-                : new ProfessionProgress(PlayerProfessions.STARTING_LEVEL, 0,
-                    profession.XpForNextLevel(PlayerProfessions.STARTING_LEVEL));
+            var skill = profession.skill;
+            int tenths = skill != null && _skills != null ? _skills.GetTenths(skill.skillKey) : 0;
 
-            _levelText.text = progress.IsMaxed
-                ? $"{profession.displayName} · nivel {progress.Level} (maximo)"
-                : $"{profession.displayName} · nivel {progress.Level} · {progress.Xp}/{progress.XpForNext} XP";
+            _levelText.text = skill == null
+                ? $"{profession.displayName} · sin skill"
+                : $"{profession.displayName} · {skill.displayName} {SkillDefinition.FormatPercent(tenths)}";
 
-            _levelFill.rectTransform.anchorMax = new Vector2(progress.Fraction01, 1f);
+            _levelFill.rectTransform.anchorMax =
+                new Vector2(tenths / (float)SkillDefinition.MaxTenths, 1f);
 
             // The trade's own accent, so the bar says WHICH trade at a glance rather than
             // relying on the label alone. Alpha is kept low: this is a backdrop behind text.
@@ -159,7 +158,7 @@ namespace Valkur.Gameplay.Crafting
         private void BuildRow(RecipeDefinition recipe)
         {
             var availability = CraftingService.Evaluate(
-                _playerInventory, recipe, _professions, _stationInRange);
+                _playerInventory, recipe, _skills, _stationInRange);
 
             var row = MakePanel(_rowsParent, "Row_" + recipe.recipeId,
                 new Vector2(0f, ROW_H), UITheme.BG_ELEVATED);
@@ -249,8 +248,8 @@ namespace Valkur.Gameplay.Crafting
         {
             switch (availability.Reason)
             {
-                case CraftBlockReason.LevelTooLow:
-                    return $"Necesita nivel {availability.RequiredLevel}";
+                case CraftBlockReason.SkillTooLow:
+                    return $"Necesita {availability.RequiredSkill}%";
                 case CraftBlockReason.NeedsStation:
                     return "Necesita " + (recipe.profession != null
                         && !string.IsNullOrWhiteSpace(recipe.profession.stationName)
@@ -269,7 +268,7 @@ namespace Valkur.Gameplay.Crafting
             {
                 case CraftBlockReason.None: return UITheme.TEXT_SECONDARY;
                 case CraftBlockReason.NeedsStation:
-                case CraftBlockReason.LevelTooLow: return UITheme.WARNING;
+                case CraftBlockReason.SkillTooLow: return UITheme.WARNING;
                 default: return UITheme.TEXT_MUTED;
             }
         }

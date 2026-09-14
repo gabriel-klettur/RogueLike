@@ -2,12 +2,13 @@ using NUnit.Framework;
 using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay.Crafting;
+using Valkur.Gameplay.Skills;
 
 namespace Valkur.Tests.EditMode.Game.Crafting
 {
     /// <summary>
     /// The crafting rules, and specifically the ones that would destroy a player's materials
-    /// if they were wrong.
+    /// if they were wrong — plus the trade's 0-100 % skill that gates them and that they train.
     ///
     /// <para>Built entirely from synthetic assets rather than the shipped catalog. A rule test
     /// that reads real data fails when a designer retunes a recipe, which trains everyone to
@@ -19,7 +20,8 @@ namespace Valkur.Tests.EditMode.Game.Crafting
     {
         private GameObject _go;
         private Valkur.Gameplay.Inventory.Inventory _bag;
-        private PlayerProfessions _professions;
+        private PlayerSkills _skills;
+        private SkillDefinition _skill;
         private ProfessionDefinition _trade;
         private ItemDefinition _plank;
         private ItemDefinition _nail;
@@ -32,14 +34,21 @@ namespace Valkur.Tests.EditMode.Game.Crafting
             _go = new GameObject("CraftFixture");
             _bag = _go.AddComponent<Valkur.Gameplay.Inventory.Inventory>();
             _bag.Initialize(10);
-            _professions = _go.AddComponent<PlayerProfessions>();
+            _skills = _go.AddComponent<PlayerSkills>();
+
+            // A certain gain at 0 %: base chance 1 and no decay yet, so a craft that rolls is a
+            // craft that moves the skill — these tests pin WHETHER a roll happens, not its odds.
+            _skill = ScriptableObject.CreateInstance<SkillDefinition>();
+            _skill.skillKey = "testing";
+            _skill.displayName = "Testing";
+            _skill.category = SkillCategory.Crafting;
+            _skill.gainBaseChance = 1f;
+            _skill.gainTenths = 5;
 
             _trade = ScriptableObject.CreateInstance<ProfessionDefinition>();
             _trade.professionKey = "testing";
             _trade.displayName = "Testing";
-            _trade.maxLevel = 5;
-            _trade.baseXpPerLevel = 10;
-            _trade.xpGrowth = 1f;
+            _trade.skill = _skill;
 
             _plank = MakeItem("plank", 20);
             _nail = MakeItem("nail", 20);
@@ -51,7 +60,7 @@ namespace Valkur.Tests.EditMode.Game.Crafting
             _recipe.profession = _trade;
             _recipe.output = _chair;
             _recipe.outputQuantity = 1;
-            _recipe.xpReward = 5;
+            _recipe.skillGainRolls = 1;
             _recipe.ingredients = new[]
             {
                 new RecipeIngredient(_plank, 2),
@@ -64,6 +73,7 @@ namespace Valkur.Tests.EditMode.Game.Crafting
         {
             Object.DestroyImmediate(_go);
             Object.DestroyImmediate(_trade);
+            Object.DestroyImmediate(_skill);
             Object.DestroyImmediate(_plank);
             Object.DestroyImmediate(_nail);
             Object.DestroyImmediate(_chair);
@@ -85,7 +95,7 @@ namespace Valkur.Tests.EditMode.Game.Crafting
         [Test]
         public void EmptyBag_ReportsEveryShortfall_NotJustTheFirst()
         {
-            var a = CraftingService.Evaluate(_bag, _recipe, _professions, false);
+            var a = CraftingService.Evaluate(_bag, _recipe, _skills, false);
 
             Assert.AreEqual(CraftBlockReason.MissingIngredients, a.Reason);
             // Both, not one. A panel that names a single missing ingredient makes the player
@@ -99,7 +109,7 @@ namespace Valkur.Tests.EditMode.Game.Crafting
         public void PartialStock_ReportsOnlyWhatIsShort()
         {
             _bag.AddItem(_plank, 2);
-            var a = CraftingService.Evaluate(_bag, _recipe, _professions, false);
+            var a = CraftingService.Evaluate(_bag, _recipe, _skills, false);
 
             Assert.AreEqual(1, a.Shortfalls.Count);
             Assert.AreEqual(_nail, a.Shortfalls[0].Item);
@@ -107,16 +117,31 @@ namespace Valkur.Tests.EditMode.Game.Crafting
         }
 
         [Test]
-        public void LevelIsCheckedBeforeIngredients()
+        public void SkillIsCheckedBeforeIngredients()
         {
-            // Both are wrong at once. Level must win: it is the only refusal the player cannot
+            // Both are wrong at once. Skill must win: it is the only refusal the player cannot
             // fix by walking somewhere or picking something up, so reporting the ingredients
             // first sends them to gather materials they still could not use.
-            _recipe.requiredLevel = 3;
-            var a = CraftingService.Evaluate(_bag, _recipe, _professions, false);
+            _recipe.requiredSkill = 30;
+            var a = CraftingService.Evaluate(_bag, _recipe, _skills, false);
 
-            Assert.AreEqual(CraftBlockReason.LevelTooLow, a.Reason);
-            Assert.AreEqual(3, a.RequiredLevel);
+            Assert.AreEqual(CraftBlockReason.SkillTooLow, a.Reason);
+            Assert.AreEqual(30, a.RequiredSkill);
+        }
+
+        [Test]
+        public void EnoughSkill_Unlocks_ExactlyAtTheRequirement()
+        {
+            _bag.AddItem(_plank, 2);
+            _bag.AddItem(_nail, 3);
+            _recipe.requiredSkill = 30;
+
+            _skills.SetTenths("testing", 299);
+            Assert.AreEqual(CraftBlockReason.SkillTooLow,
+                CraftingService.Evaluate(_bag, _recipe, _skills, false).Reason);
+
+            _skills.SetTenths("testing", 300);
+            Assert.IsTrue(CraftingService.Evaluate(_bag, _recipe, _skills, false).CanCraft);
         }
 
         [Test]
@@ -125,7 +150,7 @@ namespace Valkur.Tests.EditMode.Game.Crafting
             // "You are short two planks" is actionable anywhere; "find a workbench" sends the
             // player to a workbench they still cannot use.
             _recipe.requiresStation = true;
-            var a = CraftingService.Evaluate(_bag, _recipe, _professions, false);
+            var a = CraftingService.Evaluate(_bag, _recipe, _skills, false);
 
             Assert.AreEqual(CraftBlockReason.MissingIngredients, a.Reason);
         }
@@ -138,22 +163,33 @@ namespace Valkur.Tests.EditMode.Game.Crafting
             _bag.AddItem(_nail, 3);
 
             Assert.AreEqual(CraftBlockReason.NeedsStation,
-                CraftingService.Evaluate(_bag, _recipe, _professions, false).Reason);
-            Assert.IsTrue(CraftingService.Evaluate(_bag, _recipe, _professions, true).CanCraft);
+                CraftingService.Evaluate(_bag, _recipe, _skills, false).Reason);
+            Assert.IsTrue(CraftingService.Evaluate(_bag, _recipe, _skills, true).CanCraft);
         }
 
         [Test]
-        public void NullProfessions_ReadsAsStartingLevel_NeverAsARefusal()
+        public void NullSkills_ReadsAsZero_NeverAsARefusal()
         {
-            // A missing component must not silently lock the whole system. Level 1 recipes stay
-            // craftable; only a genuine level requirement refuses.
+            // A missing component must not silently lock the whole system. 0 % recipes stay
+            // craftable; only a genuine skill requirement refuses.
             _bag.AddItem(_plank, 2);
             _bag.AddItem(_nail, 3);
             Assert.IsTrue(CraftingService.Evaluate(_bag, _recipe, null, false).CanCraft);
 
-            _recipe.requiredLevel = 2;
-            Assert.AreEqual(CraftBlockReason.LevelTooLow,
+            _recipe.requiredSkill = 1;
+            Assert.AreEqual(CraftBlockReason.SkillTooLow,
                 CraftingService.Evaluate(_bag, _recipe, null, false).Reason);
+        }
+
+        [Test]
+        public void ATradeWithNoSkill_IsMalformed()
+        {
+            // A profession that trains nothing can neither gate nor teach its recipes; refusing
+            // them as malformed is what makes the missing wiring visible.
+            _trade.skill = null;
+            Assert.IsFalse(_recipe.IsWellFormed);
+            Assert.AreEqual(CraftBlockReason.Malformed,
+                CraftingService.Evaluate(_bag, _recipe, _skills, false).Reason);
         }
 
         [Test]
@@ -164,8 +200,8 @@ namespace Valkur.Tests.EditMode.Game.Crafting
             _bag.AddItem(_nail, 3);
 
             Assert.AreEqual(CraftBlockReason.Malformed,
-                CraftingService.Evaluate(_bag, _recipe, _professions, false).Reason);
-            Assert.IsFalse(CraftingService.TryCraft(_bag, _recipe, _professions, false));
+                CraftingService.Evaluate(_bag, _recipe, _skills, false).Reason);
+            Assert.IsFalse(CraftingService.TryCraft(_bag, _recipe, _skills, false));
             Assert.AreEqual(2, _bag.GetItemCount(_plank), "a refused craft must consume nothing");
         }
 
@@ -177,7 +213,7 @@ namespace Valkur.Tests.EditMode.Game.Crafting
             _bag.AddItem(_plank, 5);
             _bag.AddItem(_nail, 7);
 
-            Assert.IsTrue(CraftingService.TryCraft(_bag, _recipe, _professions, false));
+            Assert.IsTrue(CraftingService.TryCraft(_bag, _recipe, _skills, false));
             Assert.AreEqual(3, _bag.GetItemCount(_plank));
             Assert.AreEqual(4, _bag.GetItemCount(_nail));
             Assert.AreEqual(1, _bag.GetItemCount(_chair));
@@ -187,7 +223,7 @@ namespace Valkur.Tests.EditMode.Game.Crafting
         public void RefusedCraft_ConsumesNothing()
         {
             _bag.AddItem(_plank, 2);
-            Assert.IsFalse(CraftingService.TryCraft(_bag, _recipe, _professions, false));
+            Assert.IsFalse(CraftingService.TryCraft(_bag, _recipe, _skills, false));
             Assert.AreEqual(2, _bag.GetItemCount(_plank),
                 "the ingredients the player did have must survive a refusal");
         }
@@ -208,7 +244,7 @@ namespace Valkur.Tests.EditMode.Game.Crafting
             _bag.AddItem(_nail, 20);
             Assert.IsTrue(_bag.IsFull, "fixture must actually fill the bag");
 
-            Assert.IsFalse(CraftingService.TryCraft(_bag, _recipe, _professions, false));
+            Assert.IsFalse(CraftingService.TryCraft(_bag, _recipe, _skills, false));
 
             Assert.AreEqual(20, _bag.GetItemCount(_plank));
             Assert.AreEqual(20, _bag.GetItemCount(_nail));
@@ -216,28 +252,38 @@ namespace Valkur.Tests.EditMode.Game.Crafting
         }
 
         [Test]
-        public void RolledBackCraft_GrantsNoExperience()
+        public void RolledBackCraft_TrainsNothing()
         {
-            // Otherwise a player with a full bag farms levels off a button that produces
-            // nothing.
+            // Otherwise a player with a full bag farms skill off a button that produces nothing.
             _bag.Initialize(2);
             _bag.AddItem(_plank, 20);
             _bag.AddItem(_nail, 20);
 
-            CraftingService.TryCraft(_bag, _recipe, _professions, false);
+            CraftingService.TryCraft(_bag, _recipe, _skills, false);
 
-            Assert.AreEqual(0, _professions.GetProgress(_trade).Xp);
-            Assert.AreEqual(PlayerProfessions.STARTING_LEVEL, _professions.GetLevel("testing"));
+            Assert.AreEqual(0, _skills.GetTenths("testing"));
         }
 
         [Test]
-        public void SuccessfulCraft_GrantsExperience()
+        public void SuccessfulCraft_RollsItsGains_OnTheTradesSkill()
+        {
+            _bag.AddItem(_plank, 4);
+            _bag.AddItem(_nail, 6);
+            _recipe.skillGainRolls = 2;
+
+            Assert.IsTrue(CraftingService.TryCraft(_bag, _recipe, _skills, false));
+            Assert.AreEqual(10, _skills.GetTenths("testing"), "two certain rolls of 0.5 % each");
+        }
+
+        [Test]
+        public void ZeroRolls_TeachesNothing()
         {
             _bag.AddItem(_plank, 2);
             _bag.AddItem(_nail, 3);
+            _recipe.skillGainRolls = 0;
 
-            Assert.IsTrue(CraftingService.TryCraft(_bag, _recipe, _professions, false));
-            Assert.AreEqual(5, _professions.GetProgress(_trade).Xp);
+            Assert.IsTrue(CraftingService.TryCraft(_bag, _recipe, _skills, false));
+            Assert.AreEqual(0, _skills.GetTenths("testing"));
         }
 
         [Test]
@@ -248,90 +294,78 @@ namespace Valkur.Tests.EditMode.Game.Crafting
             Assert.AreEqual(2, CraftingService.MaxBatches(_bag, _recipe));
         }
 
-        // ── Progression ─────────────────────────────────────────────────────
+        // ── Saves ───────────────────────────────────────────────────────────
 
         [Test]
-        public void UnknownTrade_StartsAtOne_NeverZero()
+        public void CraftingSkill_SurvivesASaveRoundTrip()
         {
-            // Zero would refuse every recipe carrying the default requiredLevel of 1, making
-            // the whole system inert on a fresh character, silently.
-            Assert.AreEqual(1, _professions.GetLevel("a-trade-never-practised"));
-        }
-
-        [Test]
-        public void OneGrant_CanCrossSeveralLevels()
-        {
-            // Flat curve at 10 xp a level: 35 xp is three levels and a remainder.
-            _professions.AddXp(_trade, 35);
-            var p = _professions.GetProgress(_trade);
-
-            Assert.AreEqual(4, p.Level);
-            Assert.AreEqual(5, p.Xp);
-        }
-
-        [Test]
-        public void CappedTrade_BanksNoExperience_AndReportsFull()
-        {
-            _professions.AddXp(_trade, 99999);
-            var p = _professions.GetProgress(_trade);
-
-            Assert.AreEqual(_trade.maxLevel, p.Level);
-            Assert.IsTrue(p.IsMaxed);
-            Assert.AreEqual(0, p.Xp, "experience on a level that can never be spent shows a bar "
-                                     + "creeping up behind a number that cannot move");
-            Assert.AreEqual(1f, p.Fraction01, "a finished trade reads as a full bar, not an empty one");
-        }
-
-        [Test]
-        public void Progress_SurvivesASaveRoundTrip()
-        {
-            _professions.AddXp(_trade, 25);
-            var before = _professions.GetProgress(_trade);
-
+            _skills.SetTenths("testing", 345);
             var save = new ProgressionSaveData();
-            _professions.WriteTo(save);
+            _skills.WriteTo(save);
 
             var other = new GameObject("Reloaded");
             try
             {
-                var reloaded = other.AddComponent<PlayerProfessions>();
+                var reloaded = other.AddComponent<PlayerSkills>();
                 reloaded.ReadFrom(save);
-                var after = reloaded.GetProgress(_trade);
-
-                Assert.AreEqual(before.Level, after.Level);
-                Assert.AreEqual(before.Xp, after.Xp);
+                Assert.AreEqual(345, reloaded.GetTenths("testing"));
             }
             finally { Object.DestroyImmediate(other); }
         }
 
         [Test]
-        public void TruncatedSave_LoadsWhatItCan_RatherThanThrowing()
+        public void LegacyLevels_MapOntoTheSkillScale()
         {
-            // A hand-edited or truncated save must not throw inside the load path: losing one
-            // trade's progress is recoverable, failing to load the character is not.
+            Assert.AreEqual(0, LegacyProfessionMigration.TenthsForLevel(1));
+            Assert.AreEqual(1000, LegacyProfessionMigration.TenthsForLevel(20));
+            Assert.AreEqual(1000, LegacyProfessionMigration.TenthsForLevel(99), "clamped to the old cap");
+            Assert.AreEqual(0, LegacyProfessionMigration.TenthsForLevel(-3));
+        }
+
+        [Test]
+        public void LegacySave_CarriesLevelsAcross_AndLumberjackBecomesWoodcutting()
+        {
             var save = new ProgressionSaveData();
-            save.professionKeys.Add("testing");
-            save.professionKeys.Add("orphan");
-            save.professionLevels.Add(4);
-            save.professionXp.Add(2);
+            save.professionKeys.Add("cooking");
+            save.professionLevels.Add(11);
+            save.professionKeys.Add("lumberjack");
+            save.professionLevels.Add(20);
+            save.professionKeys.Add("an-unknown-trade");
+            save.professionLevels.Add(9);
 
-            var other = new GameObject("Truncated");
-            try
-            {
-                var reloaded = other.AddComponent<PlayerProfessions>();
-                Assert.DoesNotThrow(() => reloaded.ReadFrom(save));
-                Assert.AreEqual(4, reloaded.GetLevel("testing"));
-                Assert.AreEqual(1, reloaded.GetLevel("orphan"));
-            }
-            finally { Object.DestroyImmediate(other); }
+            int moved = LegacyProfessionMigration.Apply(save, _skills);
+
+            Assert.AreEqual(2, moved);
+            Assert.AreEqual(LegacyProfessionMigration.TenthsForLevel(11), _skills.GetTenths("cooking"));
+            Assert.AreEqual(1000, _skills.GetTenths("woodcutting"));
         }
 
         [Test]
-        public void XpCurve_ReturnsZeroAtTheCap_SoCallersCanDetectIt()
+        public void LegacyMigration_NeverLowersASkill()
         {
-            Assert.AreEqual(0, _trade.XpForNextLevel(_trade.maxLevel));
-            Assert.AreEqual(0, _trade.XpForNextLevel(_trade.maxLevel + 5));
-            Assert.Greater(_trade.XpForNextLevel(1), 0);
+            // Loading a save twice is normal; a migration that could lower earned progress could
+            // not be run twice safely.
+            _skills.SetTenths("cooking", 900);
+            var save = new ProgressionSaveData();
+            save.professionKeys.Add("cooking");
+            save.professionLevels.Add(2);
+
+            Assert.AreEqual(0, LegacyProfessionMigration.Apply(save, _skills));
+            Assert.AreEqual(900, _skills.GetTenths("cooking"));
+        }
+
+        [Test]
+        public void TruncatedLegacySave_LoadsWhatItCan_RatherThanThrowing()
+        {
+            // A hand-edited or truncated save must not throw inside the load path.
+            var save = new ProgressionSaveData();
+            save.professionKeys.Add("cooking");
+            save.professionKeys.Add("blacksmith");
+            save.professionLevels.Add(4);
+
+            Assert.DoesNotThrow(() => LegacyProfessionMigration.Apply(save, _skills));
+            Assert.Greater(_skills.GetTenths("cooking"), 0);
+            Assert.AreEqual(0, _skills.GetTenths("blacksmith"));
         }
     }
 }

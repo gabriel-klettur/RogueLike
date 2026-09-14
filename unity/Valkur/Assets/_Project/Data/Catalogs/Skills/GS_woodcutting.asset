@@ -14,6 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   skillKey: woodcutting
   displayName: Tala
+  category: 0
+  description: "Talar \xE1rboles. M\xE1s skill: golpes m\xE1s eficaces, maderas mejores
+    y m\xE1s troncos al derribar."
+  accentColor: {r: 0.45, g: 0.66, b: 0.38, a: 1}
+  sortOrder: 0
   yieldTable: {fileID: 11400000, guid: 7e509c8bb2260014eae125465f60b894, type: 2}
   trainingNodes:
   - {fileID: 11400000, guid: 995b98f63ae72674c94c5b0a131e448f, type: 2}
@@ -40,5 +45,23 @@ MonoBehaviour:
   efficiencyMax: 1.6
   efficiencyLowGap: 40
   efficiencyHighGap: 40
+  rhythmTempoAtZero: 1.35
+  rhythmTempoAtMax: 2
+  hitWindowAtZero: 0.055
+  hitWindowAtMax: 0.15
+  hitWindowMaxOfBeat: 0.25
+  perfectFractionOfWindow: 0.35
+  goodFractionOfWindow: 0.65
+  badWindows: 1.35
+  rhythmTriesAtZero: 1
+  rhythmTriesAtMax: 3
+  nearMissWindows: 1.8
+  tapCooldownSeconds: 0.08
+  rhythmFallbackBeats: 3
+  cutWorthPerfect: 1.2
+  cutWorthGood: 1
+  cutWorthOk: 0.75
+  cutWorthBad: 0.45
+  cutWorthAwful: 0.2
   bonusYieldEverySkill: 34
   milestonePercent: 10

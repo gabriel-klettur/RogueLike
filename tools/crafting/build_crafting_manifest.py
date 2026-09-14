@@ -21,11 +21,15 @@ which is also the file that already had to name every cell to cut it.
 
 PROFESSIONS
 -----------
-Five trades ship: cooking, blacksmith, mining, lumberjack, and a generic crafting bucket
-for anything that belongs to none of the others. Only COOKING has recipes today -- the
-other four are declared so the tab, the level curve and the station vocabulary exist the
-moment their recipes are written, and so that adding a recipe to blacksmithing is a data
-edit rather than a code change.
+Four trades ship: cooking, blacksmith, mining, and a generic crafting bucket for anything
+that belongs to none of the others. Only COOKING has recipes today -- the other three are
+declared so the tab and the station vocabulary exist the moment their recipes are written,
+and so that adding a recipe to blacksmithing is a data edit rather than a code change.
+
+A trade carries NO progression of its own. What the player has learned of it is a 0-100 %
+SKILL (``SkillDefinition``, keyed by ``skillKey``) on the same model as woodcutting; a
+recipe states the skill percent it needs and how many gain rolls one craft makes. There is
+no lumberjack trade any more: felling trees IS the woodcutting skill.
 
 A trade with no recipes draws an empty tab that says so. That is deliberate and is the
 honest state: hiding it would make "blacksmithing exists but has nothing yet"
@@ -34,8 +38,8 @@ indistinguishable from "blacksmithing was never added".
 WHAT IT WRITES
 --------------
 ``tools/atlas/generated/crafting_manifest.json`` -- professions, items (id, names, art
-path, resolved stats) and recipes (profession, output, ingredient list, station and level
-requirements, xp). ``CraftingContentImporter`` reads exactly that and creates the assets.
+path, resolved stats) and recipes (profession, output, ingredient list, station and skill
+requirements, gain rolls). ``CraftingContentImporter`` reads exactly that and creates the assets.
 The importer does no arithmetic, which keeps the balance auditable from outside Unity.
 
 USAGE
@@ -58,13 +62,12 @@ RECIPES_DIR = REPO / "tools/crafting/recipes"
 #: a new profession -- no Unity code changes, because ProfessionDefinition is an asset and
 #: the panel builds its tab strip from the catalog.
 #:
-#: key -> (display name, accent RGB, sort order, station noun, max level, base xp, growth)
+#: key -> (display name, accent RGB, sort order, station noun, skill key it trains)
 PROFESSIONS = {
-    "cooking":    ("Cocina",     (0.93, 0.62, 0.28), 0, "una cocina",       20, 100, 1.25),
-    "blacksmith": ("Herreria",   (0.72, 0.45, 0.30), 1, "una fragua",       20, 120, 1.28),
-    "mining":     ("Mineria",    (0.55, 0.60, 0.70), 2, "una mina",         20, 110, 1.26),
-    "lumberjack": ("Talado",     (0.45, 0.66, 0.38), 3, "un aserradero",    20, 110, 1.26),
-    "crafting":   ("Artesania",  (0.62, 0.55, 0.85), 4, "un banco de trabajo", 20, 100, 1.25),
+    "cooking":    ("Cocina",     (0.93, 0.62, 0.28), 0, "una cocina",          "cooking"),
+    "blacksmith": ("Herreria",   (0.72, 0.45, 0.30), 1, "una fragua",          "blacksmith"),
+    "mining":     ("Mineria",    (0.55, 0.60, 0.70), 2, "una mina",            "mining"),
+    "crafting":   ("Artesania",  (0.62, 0.55, 0.85), 4, "un banco de trabajo", "crafting"),
 }
 
 #: itemKey -> (gold value, weight, hunger it restores raw, tier label)
@@ -149,6 +152,16 @@ STATION_INGREDIENT_THRESHOLD = 6
 XP_PER_RAW_VALUE = 0.55
 XP_FLOOR = 4
 
+#: One craft rolls this many gains per this much of the old xp reward, clamped to 1..3, so a
+#: hallaca still teaches more than a skyr.
+GAIN_ROLLS_PER_XP = 1 / 10
+MAX_GAIN_ROLLS = 3
+
+#: The most expensive dish needs this much skill; the cheapest needs 0. Requirements are
+#: spread by the dish's RANK in raw cost, rounded to 5 %, so the ladder is even whatever the
+#: price table does, and a fresh cook always has something to learn on.
+MAX_REQUIRED_SKILL = 50
+
 #: Rarity ladder, keyed on the product's resolved gold value. Rarity is a READOUT of cost
 #: here, not a second dial: two items of the same worth reading as different rarities is
 #: exactly the drift the derivation exists to prevent.
@@ -202,7 +215,7 @@ def rarity_for(value):
 
 def build_professions():
     records = []
-    for key, (name, rgb, order, station, cap, base_xp, growth) in PROFESSIONS.items():
+    for key, (name, rgb, order, station, skill_key) in PROFESSIONS.items():
         records.append({
             "professionKey": key,
             "displayName": name,
@@ -210,9 +223,7 @@ def build_professions():
             "accentColor": {"r": rgb[0], "g": rgb[1], "b": rgb[2], "a": 1.0},
             "sortOrder": order,
             "stationName": station,
-            "maxLevel": cap,
-            "baseXpPerLevel": base_xp,
-            "xpGrowth": growth,
+            "skillKey": skill_key,
         })
     return records
 
@@ -305,16 +316,29 @@ def build_cooking(items, recipes):
             "outputItemId": key,
             "outputQuantity": 1,
             "requiresStation": len(parts) >= STATION_INGREDIENT_THRESHOLD,
-            "requiredLevel": 1,
-            "xpReward": max(XP_FLOOR, round(raw_value * XP_PER_RAW_VALUE)),
+            "rawValue": raw_value,
+            "skillGainRolls": max(1, min(MAX_GAIN_ROLLS,
+                round(max(XP_FLOOR, round(raw_value * XP_PER_RAW_VALUE)) * GAIN_ROLLS_PER_XP))),
             "craftSeconds": round(CRAFT_SECONDS_BASE + units * CRAFT_SECONDS_PER_UNIT, 2),
             "ingredients": [{"itemId": i, "quantity": parts[i]} for i in sorted(parts)],
         })
 
 
+def assign_required_skill(recipes):
+    """Spread requirements over the dishes by rank in raw cost: cheapest 0 %, dearest MAX."""
+    ordered = sorted(recipes, key=lambda r: (r["rawValue"], r["recipeId"]))
+    last = max(1, len(ordered) - 1)
+    for rank, recipe in enumerate(ordered):
+        pct = MAX_REQUIRED_SKILL * rank / last
+        recipe["requiredSkill"] = int(5 * round(pct / 5))
+    for recipe in recipes:
+        del recipe["rawValue"]
+
+
 def build():
     items, recipes = [], []
     build_cooking(items, recipes)
+    assign_required_skill(recipes)
     return {
         "generator": "tools/crafting/build_crafting_manifest.py",
         "craftValueMultiplier": CRAFT_VALUE_MULTIPLIER,
@@ -352,7 +376,8 @@ def main():
     if products:
         print(f"  product value {min(d['value'] for d in products)}..{max(d['value'] for d in products)}, "
               f"healing {min(d['healing'] for d in products)}..{max(d['healing'] for d in products)}, "
-              f"xp {min(r['xpReward'] for r in doc['recipes'])}..{max(r['xpReward'] for r in doc['recipes'])}")
+              f"skill {min(r['requiredSkill'] for r in doc['recipes'])}..{max(r['requiredSkill'] for r in doc['recipes'])}%, "
+              f"rolls {min(r['skillGainRolls'] for r in doc['recipes'])}..{max(r['skillGainRolls'] for r in doc['recipes'])}")
         by_rarity = {}
         for d in products:
             by_rarity[d["rarity"]] = by_rarity.get(d["rarity"], 0) + 1

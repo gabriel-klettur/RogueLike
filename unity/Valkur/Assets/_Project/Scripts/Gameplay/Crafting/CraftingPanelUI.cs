@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
 using Valkur.Data;
+using Valkur.Gameplay.Skills;
 
 namespace Valkur.Gameplay.Crafting
 {
@@ -69,7 +70,7 @@ namespace Valkur.Gameplay.Crafting
         // ── State ─────────────────────────────────────────────────────────────────
         private RecipeCatalog _catalog;
         private Inventory.Inventory _playerInventory;
-        private PlayerProfessions _professions;
+        private PlayerSkills _skills;
         private GameObject _playerGo;
         private int _activeTab;
         private bool _visible;
@@ -197,26 +198,23 @@ namespace Valkur.Gameplay.Crafting
             UnsubscribePlayer();
             _playerGo = player;
             _playerInventory = player != null ? player.GetComponent<Inventory.Inventory>() : null;
-            _professions = player != null ? player.GetComponent<PlayerProfessions>() : null;
-
-            // Added rather than required. A trade the player has never practised must not be a
-            // reason the panel refuses to work, and PlayerProfessions carries no state a fresh
-            // component does not already imply — every trade starts at level 1.
-            if (_professions == null && player != null)
-                _professions = player.AddComponent<PlayerProfessions>();
+            // Get-or-add through the one door that also refuses anything not tagged Player. A
+            // trade the player has never practised must not be a reason the panel refuses to
+            // work, and a fresh component carries nothing a 0 % skill does not already imply.
+            _skills = PlayerSkills.For(player);
 
             if (_playerInventory != null)
                 _playerInventory.OnInventoryChanged += OnInventoryChanged;
-            if (_professions != null)
-                _professions.OnProfessionLevelUp += OnProfessionLevelUp;
+            if (_skills != null)
+                _skills.SkillChanged += OnSkillChanged;
         }
 
         private void UnsubscribePlayer()
         {
             if (_playerInventory != null)
                 _playerInventory.OnInventoryChanged -= OnInventoryChanged;
-            if (_professions != null)
-                _professions.OnProfessionLevelUp -= OnProfessionLevelUp;
+            if (_skills != null)
+                _skills.SkillChanged -= OnSkillChanged;
         }
 
         protected override void OnDestroy()
@@ -231,18 +229,19 @@ namespace Valkur.Gameplay.Crafting
         }
 
         /// <summary>
-        /// A level-up can UNLOCK rows, so the list has to be rebuilt rather than only the bar
-        /// redrawn — a recipe that became available while the panel was open would otherwise
-        /// stay greyed out until the player closed and reopened it.
+        /// A gain can UNLOCK rows, so the list has to be rebuilt rather than only the bar redrawn
+        /// — a recipe that became available while the panel was open would otherwise stay greyed
+        /// out until the player closed and reopened it. Only the active trade's skill matters; a
+        /// woodcutting gain landing while the panel is open changes nothing on it.
         /// </summary>
-        private void OnProfessionLevelUp(string key, int level)
+        private void OnSkillChanged(string key, int oldTenths, int newTenths)
         {
             if (!_visible) return;
-            RefreshRows();
             var active = ActiveProfession;
-            if (active != null && string.Equals(active.professionKey, key,
-                    System.StringComparison.OrdinalIgnoreCase))
-                SetStatus($"{active.displayName} sube a nivel {level}.", UIKit.UITheme.SUCCESS);
+            if (active == null || active.skill == null ||
+                !string.Equals(active.skill.skillKey, key, System.StringComparison.OrdinalIgnoreCase))
+                return;
+            RefreshRows();
         }
 
         // ─────────────────────────────────────────────────────────────────────────
@@ -265,7 +264,7 @@ namespace Valkur.Gameplay.Crafting
 
             _stationInRange = CraftingStation.IsInRangeOfPlayer(_playerGo, recipe.profession);
             var availability = CraftingService.Evaluate(
-                _playerInventory, recipe, _professions, _stationInRange);
+                _playerInventory, recipe, _skills, _stationInRange);
 
             if (!availability.CanCraft)
             {
@@ -274,7 +273,7 @@ namespace Valkur.Gameplay.Crafting
                 return;
             }
 
-            if (CraftingService.TryCraft(_playerInventory, recipe, _professions, _stationInRange))
+            if (CraftingService.TryCraft(_playerInventory, recipe, _skills, _stationInRange))
                 SetStatus($"Has fabricado {recipe.displayName}.", UIKit.UITheme.SUCCESS);
             else
                 SetStatus("No hay sitio en la mochila.", UIKit.UITheme.WARNING);
@@ -286,9 +285,9 @@ namespace Valkur.Gameplay.Crafting
         {
             switch (a.Reason)
             {
-                case CraftBlockReason.LevelTooLow:
-                    return $"{recipe.displayName} necesita nivel {a.RequiredLevel} de " +
-                           $"{recipe.profession.displayName}.";
+                case CraftBlockReason.SkillTooLow:
+                    return $"{recipe.displayName} necesita {a.RequiredSkill}% de " +
+                           $"{recipe.profession.skill.displayName}.";
                 case CraftBlockReason.NeedsStation:
                     return $"{recipe.displayName} necesita {StationNoun(recipe)} cerca.";
                 case CraftBlockReason.NoRoomForOutput:

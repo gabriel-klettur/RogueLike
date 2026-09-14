@@ -34,9 +34,9 @@ namespace Valkur.Tests.EditMode.Editors.Skills
         // half way through would leave a mutated asset on disk the next AssetDatabase.SaveAssets
         // would write out. That is the shape of the 216-deleted-building-templates incident, at
         // a smaller scale. Restoring in TearDown runs even when an assertion throws.
-        private readonly Dictionary<ProfessionDefinition, (int max, int baseXp, float growth, string station)>
-            _professionSnapshot = new Dictionary<ProfessionDefinition, (int, int, float, string)>();
-        private readonly Dictionary<RecipeDefinition, (int level, int xp, bool station, float seconds)>
+        private readonly Dictionary<ProfessionDefinition, (SkillDefinition skill, string station)>
+            _professionSnapshot = new Dictionary<ProfessionDefinition, (SkillDefinition, string)>();
+        private readonly Dictionary<RecipeDefinition, (int skill, int rolls, bool station, float seconds)>
             _recipeSnapshot = new Dictionary<RecipeDefinition, (int, int, bool, float)>();
 
         [SetUp]
@@ -49,12 +49,12 @@ namespace Valkur.Tests.EditMode.Editors.Skills
             _professionSnapshot.Clear();
             foreach (var p in _catalog.Professions)
                 if (p != null)
-                    _professionSnapshot[p] = (p.maxLevel, p.baseXpPerLevel, p.xpGrowth, p.stationName);
+                    _professionSnapshot[p] = (p.skill, p.stationName);
 
             _recipeSnapshot.Clear();
             foreach (var r in _catalog.Recipes)
                 if (r != null)
-                    _recipeSnapshot[r] = (r.requiredLevel, r.xpReward, r.requiresStation, r.craftSeconds);
+                    _recipeSnapshot[r] = (r.requiredSkill, r.skillGainRolls, r.requiresStation, r.craftSeconds);
 
             _go = new GameObject("SkillsEditorFixture");
             _editor = _go.AddComponent<SkillsRuntimeEditor>();
@@ -78,15 +78,14 @@ namespace Valkur.Tests.EditMode.Editors.Skills
             {
                 var p = kv.Key;
                 if (p == null) continue;
-                (p.maxLevel, p.baseXpPerLevel, p.xpGrowth, p.stationName) =
-                    (kv.Value.max, kv.Value.baseXp, kv.Value.growth, kv.Value.station);
+                (p.skill, p.stationName) = (kv.Value.skill, kv.Value.station);
             }
             foreach (var kv in _recipeSnapshot)
             {
                 var r = kv.Key;
                 if (r == null) continue;
-                (r.requiredLevel, r.xpReward, r.requiresStation, r.craftSeconds) =
-                    (kv.Value.level, kv.Value.xp, kv.Value.station, kv.Value.seconds);
+                (r.requiredSkill, r.skillGainRolls, r.requiresStation, r.craftSeconds) =
+                    (kv.Value.skill, kv.Value.rolls, kv.Value.station, kv.Value.seconds);
             }
         }
 
@@ -100,6 +99,8 @@ namespace Valkur.Tests.EditMode.Editors.Skills
             => typeof(SkillsRuntimeEditor).GetProperty(name, NP).GetValue(_editor);
 
         private ProfessionDefinition Cooking => _catalog.GetProfession("cooking");
+
+        private RecipeDefinition Paella => _catalog.GetById("paella");
 
         // ── It opens at all ─────────────────────────────────────────────────
 
@@ -145,22 +146,23 @@ namespace Valkur.Tests.EditMode.Editors.Skills
         [Test]
         public void Edit_IsUndoable_AndRestoresTheExactPreviousValue()
         {
-            var cooking = Cooking;
-            int before = cooking.maxLevel;
+            var recipe = Paella;
+            int before = recipe.requiredSkill;
+            int next = before >= 90 ? before - 7 : before + 7;
 
-            _editor.SetProfessionMaxLevel(cooking, before + 7);
-            Assert.AreEqual(before + 7, cooking.maxLevel);
+            _editor.SetRecipeRequiredSkill(recipe, next);
+            Assert.AreEqual(next, recipe.requiredSkill);
             Assert.IsTrue((bool)Prop("CanUndo"));
 
             _editor.UndoLast();
-            Assert.AreEqual(before, cooking.maxLevel, "undo must restore the exact prior value");
+            Assert.AreEqual(before, recipe.requiredSkill, "undo must restore the exact prior value");
             Assert.IsTrue((bool)Prop("CanRedo"));
 
             _editor.RedoLast();
-            Assert.AreEqual(before + 7, cooking.maxLevel);
+            Assert.AreEqual(next, recipe.requiredSkill);
 
             _editor.UndoLast();   // leave the shipped asset as we found it
-            Assert.AreEqual(before, cooking.maxLevel);
+            Assert.AreEqual(before, recipe.requiredSkill);
         }
 
         [Test]
@@ -168,35 +170,35 @@ namespace Valkur.Tests.EditMode.Editors.Skills
         {
             // Without the _applyingHistory guard the inverse edit records itself, and the
             // author can never get further back than one step.
-            var cooking = Cooking;
-            int before = cooking.baseXpPerLevel;
+            var recipe = Paella;
+            int before = recipe.skillGainRolls;
 
-            _editor.SetProfessionBaseXp(cooking, before + 10);
-            _editor.SetProfessionBaseXp(cooking, before + 20);
+            _editor.SetRecipeGainRolls(recipe, before + 1);
+            _editor.SetRecipeGainRolls(recipe, before + 2);
 
             _editor.UndoLast();
             _editor.UndoLast();
 
-            Assert.AreEqual(before, cooking.baseXpPerLevel, "two edits must undo to the original");
+            Assert.AreEqual(before, recipe.skillGainRolls, "two edits must undo to the original");
             Assert.IsFalse((bool)Prop("CanUndo"), "the stack should be empty, not refilled by the undos");
         }
 
         [Test]
         public void ANewEdit_DropsTheRedoBranch()
         {
-            var cooking = Cooking;
-            int before = cooking.baseXpPerLevel;
+            var recipe = Paella;
+            int before = recipe.skillGainRolls;
 
-            _editor.SetProfessionBaseXp(cooking, before + 5);
+            _editor.SetRecipeGainRolls(recipe, before + 1);
             _editor.UndoLast();
             Assert.IsTrue((bool)Prop("CanRedo"));
 
-            _editor.SetProfessionBaseXp(cooking, before + 9);
+            _editor.SetRecipeGainRolls(recipe, before + 3);
             Assert.IsFalse((bool)Prop("CanRedo"),
                 "redoing onto a value the current state never passed through is not a history");
 
             _editor.UndoLast();
-            Assert.AreEqual(before, cooking.baseXpPerLevel);
+            Assert.AreEqual(before, recipe.skillGainRolls);
         }
 
         [Test]
@@ -204,42 +206,37 @@ namespace Valkur.Tests.EditMode.Editors.Skills
         {
             // Committing a value equal to the stored one would fill the stack with steps that
             // change nothing, so Ctrl+Z would appear to do nothing several times in a row.
-            var cooking = Cooking;
-            _editor.SetProfessionMaxLevel(cooking, cooking.maxLevel);
+            var recipe = Paella;
+            _editor.SetRecipeRequiredSkill(recipe, recipe.requiredSkill);
             Assert.IsFalse((bool)Prop("CanUndo"));
         }
 
         // ── Clamping ────────────────────────────────────────────────────────
 
         [Test]
-        public void RecipeLevel_IsClampedToItsTradesCap()
+        public void RecipeSkill_IsClampedToTheSkillRange()
         {
-            // A recipe requiring a level the trade can never reach is unreachable content that
-            // looks perfectly valid in the Inspector.
-            var recipe = _catalog.GetById("paella");
-            int before = recipe.requiredLevel;
+            // A recipe requiring more than a skill can hold is unreachable content that looks
+            // perfectly valid in the Inspector.
+            var recipe = Paella;
+            int before = recipe.requiredSkill;
 
-            _editor.SetRecipeRequiredLevel(recipe, 9999);
-            Assert.AreEqual(recipe.profession.maxLevel, recipe.requiredLevel);
+            _editor.SetRecipeRequiredSkill(recipe, 9999);
+            Assert.AreEqual(100, recipe.requiredSkill);
 
-            _editor.SetRecipeRequiredLevel(recipe, -5);
-            Assert.AreEqual(1, recipe.requiredLevel, "level 0 would be below the starting level");
+            _editor.SetRecipeRequiredSkill(recipe, -5);
+            Assert.AreEqual(0, recipe.requiredSkill);
 
-            _editor.SetRecipeRequiredLevel(recipe, before);
+            _editor.SetRecipeRequiredSkill(recipe, before);
         }
 
         [Test]
-        public void ProfessionGrowth_CannotInvertTheCurve()
+        public void EveryTrade_TrainsASkill()
         {
-            // Below 1 the curve inverts: level 10 would cost less than level 2.
-            var cooking = Cooking;
-            float before = cooking.xpGrowth;
-
-            _editor.SetProfessionGrowth(cooking, 0.2f);
-            Assert.GreaterOrEqual(cooking.xpGrowth, 1f);
-            Assert.GreaterOrEqual(cooking.XpForNextLevel(9), cooking.XpForNextLevel(1));
-
-            _editor.SetProfessionGrowth(cooking, before);
+            // The editor's trade readout reads profession.skill; a trade without one would draw
+            // a detail panel describing a curve that does not exist.
+            foreach (var p in _catalog.Professions)
+                Assert.IsNotNull(p?.skill, $"{p?.professionKey} trains no skill");
         }
 
         // ── List behaviour ──────────────────────────────────────────────────

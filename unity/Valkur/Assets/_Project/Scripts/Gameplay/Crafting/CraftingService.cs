@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Gameplay.Skills;
 
 // Valkur.Gameplay.Inventory is a NAMESPACE and Inventory is a class inside it, so the bare name
 // is ambiguous from a sibling namespace. VendorShopUI spells it Inventory.Inventory; an alias
@@ -35,8 +36,8 @@ namespace Valkur.Gameplay.Crafting
         /// </summary>
         NoRoomForOutput = 4,
 
-        /// <summary>The player's level in this trade is below the recipe's requirement.</summary>
-        LevelTooLow = 5,
+        /// <summary>The player's skill in this trade is below the recipe's requirement.</summary>
+        SkillTooLow = 5,
     }
 
     /// <summary>One ingredient the player is short of, and by how much.</summary>
@@ -76,15 +77,15 @@ namespace Valkur.Gameplay.Crafting
         /// </summary>
         public readonly IReadOnlyList<CraftShortfall> Shortfalls;
 
-        /// <summary>The level the recipe wanted, when <see cref="Reason"/> is LevelTooLow.</summary>
-        public readonly int RequiredLevel;
+        /// <summary>The skill percent the recipe wanted, when <see cref="Reason"/> is SkillTooLow.</summary>
+        public readonly int RequiredSkill;
 
         public CraftAvailability(CraftBlockReason reason,
-            IReadOnlyList<CraftShortfall> shortfalls = null, int requiredLevel = 0)
+            IReadOnlyList<CraftShortfall> shortfalls = null, int requiredSkill = 0)
         {
             Reason = reason;
             Shortfalls = shortfalls ?? System.Array.Empty<CraftShortfall>();
-            RequiredLevel = requiredLevel;
+            RequiredSkill = requiredSkill;
         }
 
         public bool CanCraft => Reason == CraftBlockReason.None;
@@ -119,31 +120,28 @@ namespace Valkur.Gameplay.Crafting
         /// Whether <paramref name="recipe"/> can be crafted right now, and what is missing.
         ///
         /// <para>The order the reasons are tested in is a design decision, not an accident.
-        /// LEVEL comes first because it is the only refusal the player cannot fix by walking
+        /// SKILL comes first because it is the only refusal the player cannot fix by walking
         /// somewhere or picking something up, so telling them anything else first is telling
         /// them to do work that will not help. Ingredients come before the station, because
         /// "you are short two beets" is actionable wherever they stand while "find a forge"
         /// sends them to a forge they still cannot use. Room comes last because it is the only
         /// one that can change without the player doing anything about this recipe at all.</para>
         ///
-        /// <para><paramref name="professions"/> may be null — a bare test rig, or the panel
-        /// opened for a frame before the player resolves. A null one is read as every trade at
-        /// its starting level rather than as a refusal, so a missing component cannot silently
-        /// lock the whole system.</para>
+        /// <para><paramref name="skills"/> may be null — a bare test rig, or the panel opened for a
+        /// frame before the player resolves. A null one is read as every skill at 0 %, which
+        /// still crafts every recipe authored at 0 %: a missing component cannot lock the whole
+        /// system, only the recipes that genuinely ask for training.</para>
         /// </summary>
         public static CraftAvailability Evaluate(Bag inventory, RecipeDefinition recipe,
-            PlayerProfessions professions, bool stationInRange)
+            PlayerSkills skills, bool stationInRange)
         {
             if (recipe == null || !recipe.IsWellFormed)
                 return new CraftAvailability(CraftBlockReason.Malformed);
             if (inventory == null)
                 return new CraftAvailability(CraftBlockReason.MissingIngredients);
 
-            int level = professions != null
-                ? professions.GetLevel(recipe.profession.professionKey)
-                : PlayerProfessions.STARTING_LEVEL;
-            if (level < recipe.requiredLevel)
-                return new CraftAvailability(CraftBlockReason.LevelTooLow, null, recipe.requiredLevel);
+            if (SkillTenthsFor(skills, recipe) < RequiredTenths(recipe))
+                return new CraftAvailability(CraftBlockReason.SkillTooLow, null, recipe.requiredSkill);
 
             List<CraftShortfall> missing = null;
             for (int i = 0; i < recipe.ingredients.Length; i++)
@@ -163,8 +161,19 @@ namespace Valkur.Gameplay.Crafting
             return CraftAvailability.Ok;
         }
 
+        /// <summary>The player's skill in the recipe's trade, in tenths. 0 with no component.</summary>
+        public static int SkillTenthsFor(PlayerSkills skills, RecipeDefinition recipe)
+        {
+            var skill = recipe != null && recipe.profession != null ? recipe.profession.skill : null;
+            return skills != null && skill != null ? skills.GetTenths(skill.skillKey) : 0;
+        }
+
+        /// <summary>The recipe's requirement in tenths, clamped to the skill's range.</summary>
+        public static int RequiredTenths(RecipeDefinition recipe) =>
+            recipe == null ? 0 : Mathf.Clamp(recipe.requiredSkill, 0, 100) * 10;
+
         /// <summary>
-        /// Craft one batch and grant the trade's experience. Returns true only if the result
+        /// Craft one batch and roll the trade's skill gains. Returns true only if the result
         /// reached the bag.
         ///
         /// <para>Re-evaluates rather than trusting a caller's earlier answer: the panel
@@ -179,14 +188,14 @@ namespace Valkur.Gameplay.Crafting
         /// guaranteed to fit because the bag is being put back to a state it held one statement
         /// ago, with the same items in the same total quantities.</para>
         ///
-        /// <para>EXPERIENCE IS GRANTED LAST, after the result is known to be in the bag. Paying
-        /// a trade for a craft that rolled back would let a player with a full inventory farm
-        /// levels off a button that produces nothing.</para>
+        /// <para>THE SKILL IS ROLLED LAST, after the result is known to be in the bag. Paying a
+        /// trade for a craft that rolled back would let a player with a full inventory farm
+        /// skill off a button that produces nothing.</para>
         /// </summary>
         public static bool TryCraft(Bag inventory, RecipeDefinition recipe,
-            PlayerProfessions professions, bool stationInRange)
+            PlayerSkills skills, bool stationInRange)
         {
-            var availability = Evaluate(inventory, recipe, professions, stationInRange);
+            var availability = Evaluate(inventory, recipe, skills, stationInRange);
             if (!availability.CanCraft) return false;
 
             // Record what actually left the bag rather than what the recipe asked for, so a
@@ -207,7 +216,11 @@ namespace Valkur.Gameplay.Crafting
                 return false;
             }
 
-            professions?.AddXp(recipe.profession, recipe.xpReward);
+            // The recipe's requirement IS its difficulty: cooking far below your skill teaches
+            // only the definition's floor, which is what sends a cook to harder dishes.
+            if (skills != null)
+                for (int roll = 0; roll < recipe.skillGainRolls; roll++)
+                    skills.TryGain(recipe.profession.skill, recipe.requiredSkill, wrongTool: false);
 
             // Announced only on the path that actually produced something: the rollback
             // above returns before here, so a craft refused for want of room never fires.

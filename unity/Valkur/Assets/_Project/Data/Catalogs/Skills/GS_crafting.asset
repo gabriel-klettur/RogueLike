@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6fd1ecbc9387fa647bd60e87393f738d, type: 3}
+  m_Name: GS_crafting
+  m_EditorClassIdentifier: 
+  skillKey: crafting
+  displayName: "Artesan\xEDa"
+  category: 1
+  description: Fabricar objetos en un banco de trabajo.
+  accentColor: {r: 0.62, g: 0.55, b: 0.85, a: 1}
+  sortOrder: 2
+  yieldTable: {fileID: 0}
+  trainingNodes: []
+  gainBaseChance: 0.55
+  gainDecayDivisor: 110
+  gainDecayExponent: 2
+  gainTenths: 5
+  trivialMargin: 15
+  trivialFade: 25
+  trivialFloor: 0.25
+  hardMargin: 40
+  hardFactor: 0.6
+  wrongToolGainFactor: 0.3
+  efficiencyMin: 0.5
+  efficiencyMax: 1.6
+  efficiencyLowGap: 40
+  efficiencyHighGap: 40
+  rhythmTempoAtZero: 1.35
+  rhythmTempoAtMax: 2
+  hitWindowAtZero: 0.055
+  hitWindowAtMax: 0.15
+  hitWindowMaxOfBeat: 0.25
+  perfectFractionOfWindow: 0.35
+  goodFractionOfWindow: 0.65
+  badWindows: 1.35
+  rhythmTriesAtZero: 1
+  rhythmTriesAtMax: 3
+  nearMissWindows: 1.8
+  tapCooldownSeconds: 0.08
+  rhythmFallbackBeats: 3
+  cutWorthPerfect: 1.2
+  cutWorthGood: 1
+  cutWorthOk: 0.75
+  cutWorthBad: 0.45
+  cutWorthAwful: 0.2
+  bonusYieldEverySkill: 34
+  milestonePercent: 10

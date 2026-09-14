@@ -127,6 +127,19 @@ namespace Valkur.Data
             _professionByKey = null;
         }
 
+        /// <summary>
+        /// Drop every profession whose key is not in <paramref name="keep"/>. Returns how many
+        /// went. The importer's retirement path — the catalog only; deleting the asset is a
+        /// separate decision.
+        /// </summary>
+        public int RetireProfessionsNotIn(IEnumerable<string> keep)
+        {
+            var set = new HashSet<string>(keep, System.StringComparer.OrdinalIgnoreCase);
+            int removed = _professions.RemoveAll(p => p == null || !set.Contains(p.professionKey));
+            if (removed > 0) _professionByKey = null;
+            return removed;
+        }
+
         /// <summary>Remove a recipe by id; true on success.</summary>
         public bool Remove(string recipeId)
         {

@@ -240,7 +240,7 @@ namespace Valkur.Core
         public static event Action<GameObject, string, Vector2> OnNodeFelled;
 
         /// <summary>A gathering skill moved. Args: (owner, skillKey, newTenths).</summary>
-        public static event Action<GameObject, string, int> OnGatheringSkillChanged;
+        public static event Action<GameObject, string, int> OnSkillChanged;
 
         public static void FireResourceGathered(GameObject gatherer, string skillKey, string itemId, int quantity)
         {
@@ -252,9 +252,9 @@ namespace Valkur.Core
             OnNodeFelled?.Invoke(worker, profileName, position);
         }
 
-        public static void FireGatheringSkillChanged(GameObject owner, string skillKey, int tenths)
+        public static void FireSkillChanged(GameObject owner, string skillKey, int tenths)
         {
-            OnGatheringSkillChanged?.Invoke(owner, skillKey, tenths);
+            OnSkillChanged?.Invoke(owner, skillKey, tenths);
         }
 
         /// <summary>
@@ -283,7 +283,7 @@ namespace Valkur.Core
             OnRoomEnemiesDefeated = null;
             OnResourceGathered = null;
             OnNodeFelled = null;
-            OnGatheringSkillChanged = null;
+            OnSkillChanged = null;
         }
 
         // ── Domain Reload OFF reset ─────────────────────────────────────────

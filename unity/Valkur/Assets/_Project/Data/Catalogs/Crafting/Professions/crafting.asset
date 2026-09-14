@@ -18,7 +18,5 @@ MonoBehaviour:
   icon: {fileID: 0}
   accentColor: {r: 0.62, g: 0.55, b: 0.85, a: 1}
   sortOrder: 4
-  maxLevel: 20
-  baseXpPerLevel: 100
-  xpGrowth: 1.25
+  skill: {fileID: 11400000, guid: d12af370d9af87e4b8a92b4f36be3060, type: 2}
   stationName: un banco de trabajo

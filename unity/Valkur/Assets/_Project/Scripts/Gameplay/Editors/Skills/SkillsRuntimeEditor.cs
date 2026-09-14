@@ -255,38 +255,6 @@ namespace Valkur.Gameplay.Editors.Skills
         // rebuild would destroy the very field the author just tabbed INTO. RefreshAfterEdit
         // updates the derived readouts and re-syncs the field texts in place instead.
 
-        internal void SetProfessionMaxLevel(ProfessionDefinition p, int value)
-        {
-            if (p == null) return;
-            int next = Mathf.Max(1, value), prev = p.maxLevel;
-            if (next == prev) return;
-            Commit($"nivel maximo de {p.displayName}",
-                () => { p.maxLevel = prev; MarkDirty(p); },
-                () => { p.maxLevel = next; MarkDirty(p); });
-        }
-
-        internal void SetProfessionBaseXp(ProfessionDefinition p, int value)
-        {
-            if (p == null) return;
-            int next = Mathf.Max(1, value), prev = p.baseXpPerLevel;
-            if (next == prev) return;
-            Commit($"XP base de {p.displayName}",
-                () => { p.baseXpPerLevel = prev; MarkDirty(p); },
-                () => { p.baseXpPerLevel = next; MarkDirty(p); });
-        }
-
-        internal void SetProfessionGrowth(ProfessionDefinition p, float value)
-        {
-            if (p == null) return;
-            // Below 1 the curve INVERTS — level 10 would cost less than level 2 — which is not
-            // a tuning anybody wants and is easy to type by accident.
-            float next = Mathf.Max(1f, value), prev = p.xpGrowth;
-            if (Mathf.Approximately(next, prev)) return;
-            Commit($"crecimiento de {p.displayName}",
-                () => { p.xpGrowth = prev; MarkDirty(p); },
-                () => { p.xpGrowth = next; MarkDirty(p); });
-        }
-
         internal void SetProfessionStationName(ProfessionDefinition p, string value)
         {
             if (p == null) return;
@@ -297,28 +265,27 @@ namespace Valkur.Gameplay.Editors.Skills
                 () => { p.stationName = next; MarkDirty(p); });
         }
 
-        internal void SetRecipeRequiredLevel(RecipeDefinition r, int value)
+        internal void SetRecipeRequiredSkill(RecipeDefinition r, int value)
         {
             if (r == null) return;
-            // Clamped to the trade's own cap, because a recipe requiring a level the profession
-            // can never reach is unreachable content that looks perfectly valid in the
-            // Inspector — the authored-and-inert shape this project has shipped a dozen times.
-            int cap = r.profession != null ? Mathf.Max(1, r.profession.maxLevel) : 1;
-            int next = Mathf.Clamp(value, 1, cap), prev = r.requiredLevel;
+            // Clamped to 0..100 because a recipe requiring more than a skill can hold is
+            // unreachable content that looks perfectly valid in the Inspector — the
+            // authored-and-inert shape this project has shipped a dozen times.
+            int next = Mathf.Clamp(value, 0, 100), prev = r.requiredSkill;
             if (next == prev) return;
-            Commit($"nivel de {r.displayName}",
-                () => { r.requiredLevel = prev; MarkDirty(r); },
-                () => { r.requiredLevel = next; MarkDirty(r); });
+            Commit($"skill de {r.displayName}",
+                () => { r.requiredSkill = prev; MarkDirty(r); },
+                () => { r.requiredSkill = next; MarkDirty(r); });
         }
 
-        internal void SetRecipeXpReward(RecipeDefinition r, int value)
+        internal void SetRecipeGainRolls(RecipeDefinition r, int value)
         {
             if (r == null) return;
-            int next = Mathf.Max(0, value), prev = r.xpReward;
+            int next = Mathf.Max(0, value), prev = r.skillGainRolls;
             if (next == prev) return;
-            Commit($"XP de {r.displayName}",
-                () => { r.xpReward = prev; MarkDirty(r); },
-                () => { r.xpReward = next; MarkDirty(r); });
+            Commit($"tiradas de {r.displayName}",
+                () => { r.skillGainRolls = prev; MarkDirty(r); },
+                () => { r.skillGainRolls = next; MarkDirty(r); });
         }
 
         internal void SetRecipeRequiresStation(RecipeDefinition r, bool value)

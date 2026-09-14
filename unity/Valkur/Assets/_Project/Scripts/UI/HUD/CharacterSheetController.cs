@@ -33,11 +33,14 @@ namespace Valkur.UI.HUD
 
         protected override bool Persist => false;
 
-        /// <summary>Index of the talents tab, for callers that open the sheet on it.</summary>
-        public const int TabSkills = 1;
+        /// <summary>Index of the talents tab (the class tree bought with points).</summary>
+        public const int TabTalents = 1;
 
         /// <summary>Index of the grimoire tab.</summary>
         public const int TabGrimoire = 2;
+
+        /// <summary>Index of the skills tab (0-100 % skills raised by doing: woodcutting, cooking...).</summary>
+        public const int TabSkills = 3;
 
         /// <summary>True while the sheet is on screen.</summary>
         public bool IsOpen { get; private set; }
@@ -127,9 +130,12 @@ namespace Valkur.UI.HUD
                 Hide  = () => EnsurePanel<CharacterSheetHUD>("CharacterSheetHUD").Close(),
             });
 
+            // TALENTOS, not SKILLS: the tree is bought with points earned by levelling. It carried
+            // the name "skills" while the things the player actually LEARNS BY DOING hid behind a
+            // tab called OFICIOS — two meanings for one word, on one strip.
             _tabs.Add(new SheetTab
             {
-                Label = "SKILLS",
+                Label = "TALENTOS",
                 Show  = () => EnsurePanel<SkillTreeHUD>("SkillTreeHUD").Open(),
                 Hide  = () => EnsurePanel<SkillTreeHUD>("SkillTreeHUD").Close(),
             });
@@ -145,14 +151,14 @@ namespace Valkur.UI.HUD
             // deliberately not called "stats" any more: it never described the character,
             // and while it was the only tab with that name nothing on screen said how much
             // damage the player dealt.
-            // Gathering skills: what the player has learned to DO with their hands, 0-100 %,
-            // and where to go to keep learning it. Before RECORDS because it describes the
-            // character in this run; RECORDS describes the profile across all of them.
+            // Skills: what the player has learned to DO — gathering and crafting — each 0-100 %,
+            // in one table. Before RECORDS because it describes the character in this run;
+            // RECORDS describes the profile across all of them.
             _tabs.Add(new SheetTab
             {
-                Label = "OFICIOS",
-                Show  = () => EnsurePanel<GatheringSkillsHUD>("GatheringSkillsHUD").Open(),
-                Hide  = () => EnsurePanel<GatheringSkillsHUD>("GatheringSkillsHUD").Close(),
+                Label = "SKILLS",
+                Show  = () => EnsurePanel<SkillsHUD>("SkillsHUD").Open(),
+                Hide  = () => EnsurePanel<SkillsHUD>("SkillsHUD").Close(),
             });
 
             _tabs.Add(new SheetTab
