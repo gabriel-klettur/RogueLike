@@ -220,6 +220,57 @@ namespace Valkur.Tests.EditMode.Game.WorldGen
             }
         }
 
+        /// <summary>
+        /// A generated world with no resurrection altar leaves the death rescue as the only way back
+        /// (and the altar binder warns about it a minute into every run). The starting town gets
+        /// exactly one, chosen by the altar FLAG, walked through between two solid pillars.
+        /// </summary>
+        [Test]
+        public void TheStartingTown_HasOneAltar_AndNoOtherTownDoes()
+        {
+            var catalog = LoadBuildingCatalog();
+            var options = SeedWorldTownPalette.Options(catalog);
+            var altars = options.Where(o => o.Kind == WorldTownPieceKind.Altar).ToList();
+            Assert.AreEqual(1, altars.Count, "one altar option, the smallest the catalogue flags");
+            Assert.IsTrue(Valkur.Gameplay.Combat.Death.ResurrectionAltarRegistry.IsAltar(catalog.GetById(altars[0].TemplateId)));
+
+            var s = Small();
+            s.widthTiles = 300;
+            s.heightTiles = 300;
+            s.townCount = 3;
+            var map = WorldGenMap.Generate(s, 64);
+            foreach (var town in map.Towns)
+            {
+                int placed = WorldTownLots.Place(town, map.Climate, map.RiverTiles, options)
+                    .Count(p => p.Option.Kind == WorldTownPieceKind.Altar);
+                Assert.AreEqual(town.IsStart ? 1 : 0, placed, $"town {town.Index} (start={town.IsStart})");
+            }
+        }
+
+        [Test]
+        public void TheBakedAltar_IsWalkedThroughBetweenItsPillars()
+        {
+            var request = SeedWorldBakeRequest.ForTest("seed_altar", _root);
+            var s = Small();
+            s.widthTiles = 200;
+            s.heightTiles = 200;
+            s.townCount = 1;
+            var catalog = LoadBuildingCatalog();
+            Assert.IsTrue(SeedWorldBaker.BakeLive(s, request, _palette, catalog, null).Succeeded);
+
+            int altarId = SeedWorldTownPalette.Options(catalog).First(o => o.Kind == WorldTownPieceKind.Altar).TemplateId;
+            var list = (List<object>)MiniJsonRuntime.Deserialize(File.ReadAllText(request.BuildingsFilePath));
+            var altar = list.Cast<Dictionary<string, object>>().FirstOrDefault(b => Convert.ToInt32(b["template_id"]) == altarId);
+            Assert.IsNotNull(altar, "the starting town's altar is missing from the slot's buildings");
+
+            var grid = (Dictionary<string, object>)((Dictionary<string, object>)altar["overrides"])["collision_override"];
+            var rows = (List<object>)grid["collision"];
+            var bottom = (List<object>)rows[rows.Count - 1];
+            Assert.AreEqual("#", bottom[0], "left pillar");
+            Assert.AreEqual("#", bottom[bottom.Count - 1], "right pillar");
+            Assert.AreEqual(".", bottom[bottom.Count / 2], "the opening must stay walkable");
+        }
+
         [Test]
         public void ZoneNames_AreUnique_AndNameTheStartingTown()
         {

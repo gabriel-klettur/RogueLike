@@ -291,6 +291,8 @@ namespace Valkur.UI.HUD
         private void OnTilesChanged(Tilemap map, Tilemap.SyncTile[] tiles)
         {
             if (tiles == null || tiles.Length == 0 || _grid == null || _grid.Grid == null) return;
+            // A zone streaming OUT is not ground being erased: keep what was baked for it.
+            if (Valkur.Core.WorldStreamingSignals.IsUnloadingTiles) return;
             if (map == null || map.transform.parent != _grid.Grid.transform) return;
 
             // A world load paints tens of thousands of cells at once; that is a rebake of

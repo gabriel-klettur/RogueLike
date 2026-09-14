@@ -6413,20 +6413,22 @@ related symptom reappears.
 
 ## Open work
 
-- **Seed World (generacion procedural del mundo)** — fases 1-4 hechas (2026-09-13/14): el
+- **Seed World (generacion procedural del mundo)** — fases 1-5 hechas (2026-09-13/14): el
   editor **ESC -> Seed World** configura semilla, tamano, continentes, clima, biomas, rios,
-  pueblos y poblacion, previsualiza el mundo y lo **construye en un map slot aparte**
-  (`Maps/<slot>.zones.json` + `MapOverrides/<slot>/` + `Maps/<slot>/{Buildings,Spawners}/`, nunca el
+  pueblos y poblacion, previsualiza el mundo y lo **construye en un map slot aparte** (nunca el
   mundo base; un slot sin `_seedworld.json` no se sobrescribe) y lo carga con `LoadMapSlot`. El
   generador es puro en `Data/WorldGen/` (`WorldClimate` es la UNICA respuesta a "que hay en este
   punto"; rios, calles, campamentos y arboles son DATOS del plan que la vista previa y la
-  construccion comparten, sin depender de la resolucion). Suelo por VERTICE con los 7 packs
-  Corner16 y reparacion de pares sin pack (no hay arena/agua). Pueblos centrados en zona con
-  edificios pixel-art curados POR RUTA; vendedores solo en el pueblo inicial; campamentos con
-  dificultad por distancia como spawners v2 con snapshot del preset; arboles talables por bioma.
-  **Cambiar de slot ahora retira los monstruos del mundo anterior** (`MonsterSpawner.DespawnAllForWorldSwap`):
-  antes los vendedores persistentes seguian al jugador. Fase 5 (chunks en vivo) y el arte que falta:
-  `.github/SEED_WORLD_ROADMAP.md`.
+  construccion comparten). Suelo por VERTICE con los 7 packs Corner16 y reparacion de pares sin
+  pack; pueblos con edificios curados POR RUTA; vendedores en el pueblo inicial; campamentos con
+  dificultad por distancia; arboles talables por bioma. **Por defecto el mundo es EN VIVO**: el slot
+  guarda la semilla y no un tile, `SeedWorldLiveStreamer` pinta las zonas cercanas al jugador Y a la
+  camara y suelta las lejanas, y solo una zona EDITADA llega a disco (overlay normal, que gana al
+  generador). Eso exigio que la reparacion de transiciones fuera LOCAL (pasadas Jacobi): una region
+  con margen 7 coincide con el mundo entero vertice a vertice, y un test lo comprueba en todos.
+  `seedworld nueva [semilla]` empieza un mundo nuevo desde la consola. **Cambiar de slot retira los
+  monstruos del mundo anterior** (`MonsterSpawner.DespawnAllForWorldSwap`). Pendiente (menu principal,
+  caminos, arte): `.github/SEED_WORLD_ROADMAP.md`.
 - **Editor UI/UX unification & persistence** — audited 2026-09-02, layer shipped 2026-09-03.
   The seventeen editors are 319 files / ~77.6k LOC and drifted: three (Camera, DungeonNodeGraph,
   General) carry NO chrome at all, `PanelChrome` is missing from six, the tutorial overlay from

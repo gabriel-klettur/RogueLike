@@ -91,7 +91,36 @@ namespace Valkur.Gameplay.World.Generation
             Add(options, byPath, Centerpieces, WorldTownPieceKind.Centerpiece, missing);
             Add(options, byPath, Lamps, WorldTownPieceKind.Lamp, missing);
             Add(options, byPath, Stalls, WorldTownPieceKind.Stall, missing);
+            AddAltar(options, catalog);
             return options;
+        }
+
+        /// <summary>Largest side, in tiles, an altar may have to be placed in a town lot.</summary>
+        public const int MaxAltarTiles = 10;
+
+        /// <summary>
+        /// The altar is chosen by what the catalogue SAYS is an altar
+        /// (<c>ResurrectionAltarRegistry.IsAltar</c>, the one predicate), never by a path: the
+        /// same arch sprite carries two templates and only their flags and sizes tell them apart.
+        /// The smallest one that fits a lot wins, so the pick is the same every build.
+        /// </summary>
+        private static void AddAltar(List<WorldTownBuildingOption> options, BuildingCatalog catalog)
+        {
+            BuildingTemplateData best = null;
+            int bestW = 0, bestH = 0;
+            foreach (var t in catalog.Templates)
+            {
+                if (t == null || t.originalScale.x <= 0 || t.originalScale.y <= 0) continue;
+                if (!Valkur.Gameplay.Combat.Death.ResurrectionAltarRegistry.IsAltar(t)) continue;
+                int w = Mathf.CeilToInt(t.originalScale.x / 32f), h = Mathf.CeilToInt(t.originalScale.y / 32f);
+                if (w > MaxAltarTiles || h > MaxAltarTiles) continue;
+                bool smaller = best == null || w * h < bestW * bestH
+                               || (w * h == bestW * bestH && t.templateId < best.templateId);
+                if (!smaller) continue;
+                best = t; bestW = w; bestH = h;
+            }
+            if (best == null) return;
+            options.Add(new WorldTownBuildingOption(best.templateId, bestW, bestH, WorldTownPieceKind.Altar));
         }
 
         private static void Add(List<WorldTownBuildingOption> options, Dictionary<string, BuildingTemplateData> byPath,

@@ -140,9 +140,17 @@ namespace Valkur.Gameplay.World
         /// Clear all tiles from all tilemap layers without destroying the grid hierarchy.
         /// Used by ZonePortal for same-scene overlay swaps.
         /// </summary>
+        /// <summary>
+        /// Bumped by every <see cref="ClearWorld"/>. A system that painted tiles of its own (the
+        /// live Seed World streamer) compares it to know its tiles are gone without being told by
+        /// each of the several callers that wipe the world — slot loads, interiors, reloadtiles.
+        /// </summary>
+        public int ClearGeneration { get; private set; }
+
         public void ClearWorld()
         {
             if (_grid == null) return;
+            ClearGeneration++;
 
             var tilemaps = _grid.GetComponentsInChildren<Tilemap>();
             foreach (var tm in tilemaps)

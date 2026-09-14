@@ -8,6 +8,9 @@ namespace Valkur.Gameplay.World.Generation
         public string Error;
         public string Slot;
 
+        /// <summary>True for a live world: no ground on disk, zones generated on demand.</summary>
+        public bool Live;
+
         public int ZonesX;
         public int ZonesY;
         public int Tiles;

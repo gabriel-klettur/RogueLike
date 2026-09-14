@@ -1,6 +1,6 @@
 # Seed World — generación procedural del mundo
 
-Fecha: 2026-09-13 / 2026-09-14. Estado: **Fases 1 a 4 hechas** (vista previa, mundo jugable, pueblos, poblacion); fase 5 pendiente.
+Fecha: 2026-09-13 / 2026-09-14. Estado: **Fases 1 a 5 hechas** (vista previa, mundo jugable, pueblos, poblacion, mundo en vivo).
 
 ## Qué es
 
@@ -14,14 +14,14 @@ generación** de Minecraft que sobreviven a perder la dimensión vertical:
 | Idea de Minecraft | Adaptación en Valkur |
 |---|---|
 | La semilla ES el mundo | Semilla por partida; texto o número (el texto se hashea con FNV-1a) |
-| Chunks bajo demanda | `ChunkStreamer` (existe, apagado) con todas las capas — fase 5 |
+| Chunks bajo demanda | La ZONA (50x50) es el chunk: `SeedWorldLiveStreamer` pinta las cercanas y suelta las lejanas — fase 5 |
 | Clima multi-noise + tabla de biomas | 4 ruidos: elevación, temperatura, humedad, rareza. Cada bioma de tierra es un PUNTO en el plano temperatura/humedad y gana el más cercano ponderado por su peso |
 | Altura | Elevación -> océano / costa / tierra / montaña; los acantilados serán capas + layer jumps — fase 2 |
 | Features por bioma | Árboles de 10 familias, rocas, menas, flora — fase 4 |
 | Rejilla de estructuras | Regiones + sal + separación mínima — fase 3 |
 | Aldeas jigsaw | Plaza + calles + parcelas, reutilizando el encaje por puertas de `DungeonBuilder` — fase 3 |
 | Terreno adaptado a estructura | Aplanar y limpiar la huella de la ciudad — fase 3 |
-| Solo guardar cambios | `ChunkDelta` extendido a edificios, entidades, daño — fase 5 |
+| Solo guardar cambios | Un slot en vivo guarda la semilla; solo una zona EDITADA llega a disco, como overlay normal — fase 5 |
 | Datapacks | `WorldGenProfile` (ScriptableObject) + el propio editor |
 
 Lo que deliberadamente NO se copia: mundo infinito (el mundo es acotado por partida),
@@ -66,7 +66,7 @@ juego hace otra cosa — el fallo que el overlay de áreas de hechizos existe pa
 | 2 | Relieve (acantilados como capas), ríos, pintado de terreno autotile por bioma, **hornear a un mundo nuevo** (`Worlds/<slug>/`, nunca el base) | Caminar por un mundo generado | Hecha (sin acantilados, ver abajo) |
 | 3 | Rejilla de estructuras + ciudad jigsaw (plaza, calles, parcelas) con los ~50 edificios pixel-art; colisión automática; validación de solapes y conectividad | Ciudades generadas | Hecha (calles de tierra, sin murallas: no hay arte) |
 | 4 | Caminos entre estructuras, recursos por bioma, población, dificultad por distancia al inicio | Mundo jugable | Hecha (sin caminos entre pueblos) |
-| 5 | Modo en vivo: la partida guarda semilla + perfil y genera chunks bajo demanda con deltas | Mundo nuevo en cada partida | Pendiente |
+| 5 | Modo en vivo: la partida guarda semilla + perfil y genera chunks bajo demanda con deltas | Mundo nuevo en cada partida | Hecha (zona = chunk; menu principal pendiente) |
 
 ## Fase 1 — detalle
 
@@ -273,4 +273,77 @@ Gameplay/World/Generation/
 - Caminos entre pueblos, puentes sobre rios.
 - Misiones procedurales y personas nuevas (los pueblos que no son el inicial no tienen habitantes).
 - Monstruos por bioma (hoy el preset depende de la distancia, no del terreno).
-- Fase 5 (mundo en vivo por chunks) sigue pendiente: hoy un mundo de 2048x600 serian ~60 MB de overlays.
+- ~~Fase 5 (mundo en vivo por chunks)~~: hecha, ver abajo.
+
+## Fase 5 — mundo en vivo (hecha, 2026-09-14)
+
+```text
+Data/WorldGen/
+  WorldTerrainGrid.BuildRegion        el suelo de un RECTANGULO, identico al del mundo entero
+Gameplay/World/Generation/
+  SeedWorldPlan                       lo que se decide una vez: clima, plan, zonas, nombres, spawn
+  SeedWorldZoneBuilder                vertices -> overlay (JSON para hornear, arbol ya parseado en vivo)
+  SeedWorldBaker.BakeLive             slot SIN suelo: zonas, edificios, arboles, spawners y marcador
+  SeedWorldLiveWorld                  abre un slot en vivo y genera una zona a peticion
+  SeedWorldLiveStreamer               pinta las zonas cercanas (jugador + camara) y suelta las lejanas
+  SeedWorldLauncher                   construir + cargar: lo comparten el editor y la consola
+Core/WorldStreamingSignals            "esto es una descarga, no un borrado" (para el minimapa)
+seedworld [nueva [semilla]]           DevConsole: estado del streamer, o partida nueva
+ESC -> Seed World -> Modo EN VIVO / HORNEADO
+```
+
+- **La ZONA es el chunk.** Todo el juego ya habla en zonas de 50x50 (overlays, nombres, la unidad de guardado
+  del Tile editor, edificios y spawners por zona), asi que el streaming por zona hace que cada sistema vea un
+  mapa normal cuyas zonas lejanas estan en blanco. El `ChunkStreamer` antiguo solo conoce UNA capa de tiles y
+  nada de lo demas, y no es el vehiculo.
+- **La semilla ES el guardado.** Un slot en vivo guarda el marcador (`live: true` + ajustes), la lista de zonas,
+  edificios, arboles y spawners — y ni un tile. El suelo de una zona que el jugador no visita no se calcula
+  nunca; el de una que revisita se recalcula identico.
+- **Solo se guardan los cambios, con el mecanismo que ya existia.** Una zona EDITADA la guarda el Tile editor
+  como un overlay normal en `MapOverrides/<slot>/`, y desde entonces el streamer lee ese fichero en vez de
+  generar. Antes de soltar una zona se vuelcan las ediciones pendientes, o limpiar sus tiles se llevaria los
+  trazos sin guardar. Reconstruir el slot borra esos ficheros: una edicion del mundo anterior taparia el
+  suelo del nuevo.
+- **La reparacion de transiciones tuvo que volverse LOCAL, y es lo que hace posible todo lo demas.** El barrido
+  en su sitio (Gauss-Seidel) daba un resultado que dependia de DONDE empezaba el recorrido, que es justo lo que
+  cambia entre una region y el mundo. Ahora cada pasada lee la anterior y escribe una nueva (Jacobi), con
+  "el primero en orden de recorrido gana" para dos reescrituras del mismo vertice — una regla que solo mira a
+  los vecinos. Tras 6 pasadas un vertice depende solo de los que estan a 6 pasos, asi que una region con 7 de
+  margen coincide con el mundo en cada vertice pedido. `SeedWorldLiveTests` lo comprueba en TODOS los vertices
+  de todas las zonas de 4 semillas, y compara cada zona en vivo con el fichero que hornea la misma semilla.
+- **Pinta por `OverlayLoader`, el camino de todos los mapas.** La capa Collision llega a `WorldCollisionBaker`
+  por `tilemapTileChanged` (la ruta incremental de una brocha); lo unico extra es invalidar la cache de
+  caminabilidad del `PathFinder`, que esa ruta no invalida por si sola.
+- **Sigue a la CAMARA ademas del jugador.** Los editores desplazan y alejan la camara; con solo el jugador, un
+  autor recorriendo un mundo en vivo con el Tile editor veia zonas negras con arboles de pie sobre la nada
+  (capturado en vivo). Carga el vecindario del jugador y lo que toca la vista (+8 tiles, tope 4 zonas por lado),
+  la zona del jugador al instante y el resto de mas cerca a mas lejos con 8 ms por fotograma; suelta lo que
+  queda a mas de una zona de todo eso.
+- **El minimapa no olvida lo explorado.** Soltar una zona limpia sus tiles, y `tilemapTileChanged` lo cuenta
+  igual que un borrado: el minimapa la re-hornearia vacia. `WorldStreamingSignals.UnloadingTiles()` lo tapa
+  (medido: el evento es SINCRONO en `SetTile` y `SetTilesBlock`, asi que basta un scope alrededor).
+- **El pueblo inicial tiene altar de resurreccion.** Sin el, un mundo generado dejaba el rescate de la muerte
+  como unica salida y el binder de altares avisaba al minuto de cada partida (visto en vivo). Se elige por la
+  BANDERA (`ResurrectionAltarRegistry.IsAltar`, el unico predicado), el mas pequeno que cabe en una parcela (el
+  arco de piedra 8x8; el mismo sprite tiene otra plantilla de 32x32), junto a una calle principal lo mas cerca
+  posible de la plaza, con colision solo en los pilares: el arco se cruza. Medido: a 13.5 u del spawn.
+- **Construir antes de que carguen los catalogos se rechaza.** Lanzado durante el arranque, el mundo salia con
+  calles y sin una casa, un arbol ni un altar — y era un slot valido, asi que nada lo decia (medido: "4 pueblos
+  con 0 edificios").
+- **Nunca decide que el slot cambio por una sola senal.** `WorldGridBuilder.ClearGeneration` sube en cada
+  borrado del mundo (cargar slot, interior, `reloadtiles`); con eso y con un sondeo de 1 s del slot activo
+  vuelve a leer el marcador, y solo re-planifica si el marcador cambio (fecha de escritura).
+- Medido (400x400, semilla 1337, en vivo): planificar 91-124 ms, escribir 2-9 ms, **286 KB** en disco (el
+  horneado: 9.7 MB y 553 ms), cargar el slot 1.1 s con la ciudad y los 631 arboles. Una zona: generar 14-28 ms
+  (peor 49 ms la primera vez), pintar 1 ms; soltarla ~8 ms, por eso se suelta UNA por fotograma. Arranque del
+  juego directamente en un slot en vivo: 9 zonas pintadas antes de mover al jugador.
+- Probado en vivo: costura entre zonas sin corte; ir a 3 zonas y volver pinta lo mismo; camara desplazada pinta
+  su zona sin las intermedias; una edicion con el Tile editor se guarda al soltar la zona y vuelve del fichero.
+
+### Abierto tras la fase 5
+
+- **Menu principal**: "Nueva partida" con semilla. Hoy es `seedworld nueva [semilla]` o el editor.
+- Edificios, arboles y spawners se cargan todos al entrar (bien a 400x400; un mundo de 2048x600 serian ~5000
+  arboles instanciados de golpe). Streaming por zona de esas capas = siguiente paso si se hacen mundos grandes.
+- El auto-brush del Tile editor no tiene la matriz `terrains` de una zona generada que nunca se guardo.
+- Caminos entre pueblos, puentes, arte de nieve/desierto/pantano, habitantes fuera del pueblo inicial.

@@ -28,6 +28,19 @@ namespace Valkur.Gameplay.Editors.SeedWorld
     {
         private string _bakeSlotName = string.Empty;
         private string _armedOverwriteSlot;
+
+        /// <summary>
+        /// Build a LIVE world (ground generated around the player, nothing on disk until edited)
+        /// or bake every zone to a file. Live is the default since phase 5: kilobytes instead of
+        /// megabytes and no freeze; baked stays for a world meant to be hand-finished zone by zone.
+        /// </summary>
+        private bool _buildLive = true;
+
+        internal bool BuildLive
+        {
+            get => _buildLive;
+            set { _buildLive = value; RebuildBody(); }
+        }
         private TextMeshProUGUI _bakeReport;
 
         /// <summary>The slot a bake targets: the typed name, or <c>seed_&lt;seed&gt;</c> when empty.</summary>
@@ -49,6 +62,15 @@ namespace Valkur.Gameplay.Editors.SeedWorld
             field.gameObject.name = "BakeSlotField";
 
             AddHint(body, "Vacio = seed_<semilla>. Se construye en un mapa aparte: el mundo por defecto no se toca.");
+
+            var modeRow = MakeRow(body, "BakeModeRow", ROW_H + 4f);
+            AddCaption(modeRow.transform, "Modo");
+            var liveButton = EditorUIHelpers.MakeButton(modeRow.transform, _buildLive ? "EN VIVO" : "HORNEADO",
+                () => BuildLive = !_buildLive, ROW_H, 11f);
+            liveButton.gameObject.name = "BakeModeButton";
+            AddHint(body, _buildLive
+                ? "En vivo: el suelo se genera alrededor del jugador y solo se guarda lo que edites."
+                : "Horneado: cada zona se escribe a disco (megas en mundos grandes, se puede retocar todo).");
 
             var row = MakeRow(body, "BakeRow", 30f);
             bool armed = _armedOverwriteSlot != null;
@@ -115,34 +137,10 @@ namespace Valkur.Gameplay.Editors.SeedWorld
 
             _armedOverwriteSlot = null;
 
-            if (string.Equals(mgr.ActiveMapSlot, request.Slot, StringComparison.OrdinalIgnoreCase))
-                mgr.LoadMapSlot(MapEditorMapSlots.DEFAULT_SLOT);
-
-            var palette = new SeedWorldTilePalette(TerrainCatalogLoader.Load());
-            var loader = FindObjectOfType<BuildingLoader>();
-            var catalog = loader != null ? loader.Catalog : null;
-            Valkur.Core.ServiceLocator.TryGet<Valkur.Data.SpawnerTemplateCatalog>(out var spawners);
-            var result = SeedWorldBaker.Bake(_settings, request, palette, catalog, spawners);
-            if (!result.Succeeded)
-            {
-                SetStatus("No se construyo: " + result.Error);
-                RebuildBody();
-                return;
-            }
-
-            var loadWatch = System.Diagnostics.Stopwatch.StartNew();
-            bool loaded = mgr.LoadMapSlot(request.Slot);
-            loadWatch.Stop();
-
-            string summary =
-                $"'{result.Slot}': {result.ZonesX}x{result.ZonesY} zonas, {result.Rivers} rios, " +
-                $"{result.Towns} pueblos con {result.Buildings} edificios, {result.Trees} arboles, " +
-                $"{result.Spawners} spawners, " +
-                $"{result.BlockedTiles} tiles bloqueados, {result.HardCuts} cortes sin transicion. " +
-                $"Generado {result.GenerateMs} ms, escrito {result.WriteMs} ms " +
-                $"({result.Bytes / (1024 * 1024f):0.0} MB), cargado {loadWatch.ElapsedMilliseconds} ms.";
-            SetStatus(loaded ? summary : "Construido pero no se pudo cargar. " + summary);
-            Debug.Log("[SeedWorldEditor] " + summary);
+            var outcome = SeedWorldLauncher.BuildAndLoad(_settings, request.Slot, _buildLive);
+            string summary = SeedWorldLauncher.Describe(outcome);
+            SetStatus(summary);
+            if (outcome.Succeeded) Debug.Log("[SeedWorldEditor] " + summary);
             RebuildBody();
         }
 

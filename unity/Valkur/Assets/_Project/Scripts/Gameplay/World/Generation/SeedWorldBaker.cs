@@ -78,6 +78,22 @@ namespace Valkur.Gameplay.World.Generation
         public static SeedWorldBakeResult Bake(WorldGenSettings settings, SeedWorldBakeRequest request,
                                                SeedWorldTilePalette palette, BuildingCatalog buildings,
                                                SpawnerTemplateCatalog spawners)
+            => BakeInternal(settings, request, palette, buildings, spawners, live: false);
+
+        /// <summary>
+        /// A LIVE world (phase 5): the slot's zone list, towns, trees, spawners and marker, and NO
+        /// ground. Every zone's tiles are generated from the marker's settings when the player comes
+        /// near (<see cref="SeedWorldLiveStreamer"/>), and only a zone somebody edits ever reaches
+        /// disk — the Tile editor saves it as an ordinary overlay, which the streamer then prefers.
+        /// </summary>
+        public static SeedWorldBakeResult BakeLive(WorldGenSettings settings, SeedWorldBakeRequest request,
+                                                   SeedWorldTilePalette palette, BuildingCatalog buildings,
+                                                   SpawnerTemplateCatalog spawners)
+            => BakeInternal(settings, request, palette, buildings, spawners, live: true);
+
+        private static SeedWorldBakeResult BakeInternal(WorldGenSettings settings, SeedWorldBakeRequest request,
+                                                        SeedWorldTilePalette palette, BuildingCatalog buildings,
+                                                        SpawnerTemplateCatalog spawners, bool live)
         {
             if (settings == null) return SeedWorldBakeResult.Fail("Sin parametros.");
             if (request == null) return SeedWorldBakeResult.Fail("Nombre de mapa no valido (vacio o 'default').");
@@ -91,42 +107,36 @@ namespace Valkur.Gameplay.World.Generation
                 return SeedWorldBakeResult.Fail("Escritura rechazada durante un test.");
 
             var sw = Stopwatch.StartNew();
-            var climate = new WorldClimate(settings);
-            var s = climate.Settings;
-            int z = request.ZoneSize;
+            var plan = SeedWorldPlan.Create(settings, request.ZoneSize, palette.Compatible);
+            var s = plan.Settings;
+            var preview = plan.Map;
+            int z = plan.ZoneSize;
 
-            int zonesX = Mathf.CeilToInt((float)s.widthTiles / z);
-            int zonesY = Mathf.CeilToInt((float)s.heightTiles / z);
-            var origin = new Vector2Int(-(zonesX / 2) * z, -(zonesY / 2) * z);
-
-            // Rivers, towns and the spawn come from the SAME plan the Seed World preview draws;
-            // none of them depends on the preview's resolution.
-            var preview = WorldGenMap.Generate(climate, 64);
-            var rivers = preview.Rivers;
-            var grid = WorldTerrainGrid.Build(climate, rivers, preview.Towns, zonesX * z, zonesY * z, palette.Compatible);
+            // The whole ground only when it is going to disk; a live world builds it zone by zone.
+            WorldTerrainGrid grid = live ? null : plan.BuildAll(palette.Compatible);
 
             var placements = new List<WorldTownPlacement>();
             var options = SeedWorldTownPalette.Options(buildings);
             foreach (var town in preview.Towns)
-                placements.AddRange(WorldTownLots.Place(town, climate, preview.RiverTiles, options));
+                placements.AddRange(WorldTownLots.Place(town, plan.Climate, preview.RiverTiles, options));
             int townBuildings = placements.Count;
             placements.AddRange(SeedWorldPopulation.TreePlacements(preview, buildings, new List<WorldTownPlacement>(placements)));
 
             var result = new SeedWorldBakeResult
             {
                 Slot = request.Slot,
-                ZonesX = zonesX,
-                ZonesY = zonesY,
-                Tiles = zonesX * z * zonesY * z,
-                Rivers = rivers.Count,
+                Live = live,
+                ZonesX = plan.ZonesX,
+                ZonesY = plan.ZonesY,
+                Tiles = plan.BuiltTilesW * plan.BuiltTilesH,
+                Rivers = preview.Rivers.Count,
                 Towns = preview.Towns.Count,
                 Buildings = townBuildings,
                 Trees = placements.Count - townBuildings,
-                RepairedVertices = grid.RepairedVertices,
-                Origin = origin,
+                RepairedVertices = grid != null ? grid.RepairedVertices : 0,
+                Origin = plan.Origin,
+                SpawnWorld = plan.SpawnWorld,
             };
-            var spawnTile = FindWalkableTile(grid, s, Vector2Int.FloorToInt(preview.SpawnTile), zonesX * z, zonesY * z);
-            result.SpawnWorld = new Vector2(origin.x + spawnTile.x + 0.5f, origin.y + spawnTile.y + 0.5f);
             result.GenerateMs = sw.ElapsedMilliseconds;
 
             sw.Restart();
@@ -134,35 +144,41 @@ namespace Valkur.Gameplay.World.Generation
             {
                 Directory.CreateDirectory(request.MapsDirectory);
                 Directory.CreateDirectory(request.OverridesDirectory);
+                // Rebuilding replaces the world, so every zone file of the previous one goes: in a
+                // live slot a leftover overlay would win over the new ground as an "edited" zone.
                 foreach (var old in Directory.GetFiles(request.OverridesDirectory, "*.overlay.json"))
                     File.Delete(old);
 
-                var zones = new List<ZonePersistenceEntry>(zonesX * zonesY);
-                var sb = new StringBuilder(1 << 20);
-                var labelCounts = new Dictionary<string, int>();
-                var zoneNames = new string[zonesX, zonesY];
-                for (int zy = 0; zy < zonesY; zy++)
-                    for (int zx = 0; zx < zonesX; zx++)
-                        zoneNames[zx, zy] = ZoneName(climate, preview.Towns, zx * z, zy * z, z, labelCounts);
+                var zones = new List<ZonePersistenceEntry>(plan.ZonesX * plan.ZonesY);
+                var sb = live ? null : new StringBuilder(1 << 20);
+                var stats = new SeedWorldZoneBuilder.Stats();
 
-                for (int zy = 0; zy < zonesY; zy++)
-                    for (int zx = 0; zx < zonesX; zx++)
+                for (int zy = 0; zy < plan.ZonesY; zy++)
+                    for (int zx = 0; zx < plan.ZonesX; zx++)
                     {
-                        string name = zoneNames[zx, zy];
-                        sb.Clear();
-                        WriteZone(sb, grid, palette, s, zx * z, zy * z, z, origin, result);
-                        string path = Path.Combine(request.OverridesDirectory, name + ".overlay.json");
-                        File.WriteAllText(path, sb.ToString());
-                        result.Bytes += sb.Length;
+                        string name = plan.ZoneNames[zx, zy];
+                        if (!live)
+                        {
+                            sb.Clear();
+                            var content = SeedWorldZoneBuilder.Build(grid, palette, s, zx * z, zy * z, z, plan.Origin, stats);
+                            SeedWorldZoneBuilder.AppendJson(sb, content);
+                            string path = Path.Combine(request.OverridesDirectory, name + ".overlay.json");
+                            File.WriteAllText(path, sb.ToString());
+                            result.Bytes += sb.Length;
+                        }
 
+                        var offset = plan.ZoneOffset(zx, zy);
                         zones.Add(new ZonePersistenceEntry
                         {
                             zoneName = name,
-                            gridOffsetX = origin.x + zx * z,
-                            gridOffsetY = origin.y + zy * z,
+                            gridOffsetX = offset.x,
+                            gridOffsetY = offset.y,
                             editableInTileEditor = true,
                         });
                     }
+                result.HardCuts = stats.HardCuts;
+                result.MissingTiles = stats.MissingTiles;
+                result.BlockedTiles = stats.BlockedTiles;
 
                 var slot = new ZonePersistenceFile
                 {
@@ -173,14 +189,16 @@ namespace Valkur.Gameplay.World.Generation
                     lastPlayerWorldX = result.SpawnWorld.x,
                     lastPlayerWorldY = result.SpawnWorld.y,
                 };
-                File.WriteAllText(request.SlotFilePath, JsonUtility.ToJson(slot, true));
+                string slotJson = JsonUtility.ToJson(slot, true);
+                File.WriteAllText(request.SlotFilePath, slotJson);
+                result.Bytes += slotJson.Length;
 
                 Directory.CreateDirectory(request.BuildingsDirectory);
-                string buildingsJson = BuildingsJson(placements, buildings, zoneNames, z);
+                string buildingsJson = BuildingsJson(placements, buildings, plan.ZoneNames, z);
                 File.WriteAllText(request.BuildingsFilePath, buildingsJson);
                 result.Bytes += buildingsJson.Length;
 
-                var records = SeedWorldPopulation.SpawnerRecords(preview, spawners, zoneNames, z);
+                var records = SeedWorldPopulation.SpawnerRecords(preview, spawners, plan.ZoneNames, z);
                 Directory.CreateDirectory(request.SpawnersDirectory);
                 string spawnersJson = Valkur.Gameplay.Spawners.SpawnerInstanceSerializer.Serialize(records);
                 File.WriteAllText(request.SpawnersFilePath, spawnersJson);
@@ -190,6 +208,8 @@ namespace Valkur.Gameplay.World.Generation
                 var marker = new SeedWorldMarker
                 {
                     seed = s.seed,
+                    live = live,
+                    zoneSize = z,
                     bakedAtUtc = DateTime.UtcNow.ToString("o"),
                     settingsJson = s.ToJson(),
                 };
@@ -275,6 +295,9 @@ namespace Valkur.Gameplay.World.Generation
                 // or its canopy — a wood you cannot walk between is a wall.
                 int solidCols = p.Option.Kind == WorldTownPieceKind.Lamp || p.Option.Kind == WorldTownPieceKind.Tree ? 1 : cols;
                 int solidStart = (cols - solidCols) / 2;
+                // An arch blocks at its two pillars and is walked THROUGH: its opening is the altar.
+                bool arch = p.Option.Kind == WorldTownPieceKind.Altar && cols >= 5;
+                int pillar = Mathf.Max(1, cols / 4);
 
                 if (id > 0) sb.Append(',');
                 sb.Append("{\"id\":").Append(++id)
@@ -292,7 +315,9 @@ namespace Valkur.Gameplay.World.Generation
                     for (int c = 0; c < cols; c++)
                     {
                         if (c > 0) sb.Append(',');
-                        bool solid = solidRow && c >= solidStart && c < solidStart + solidCols;
+                        bool solid = arch
+                            ? solidRow && (c < pillar || c >= cols - pillar)
+                            : solidRow && c >= solidStart && c < solidStart + solidCols;
                         sb.Append(solid ? "\"#\"" : "\".\"");
                     }
                     sb.Append(']');
@@ -310,6 +335,7 @@ namespace Valkur.Gameplay.World.Generation
                 case WorldTownPieceKind.Lamp:
                 case WorldTownPieceKind.Stall:
                 case WorldTownPieceKind.Tree:
+                case WorldTownPieceKind.Altar:
                     return 1;
                 case WorldTownPieceKind.Centerpiece:
                     return Mathf.Max(1, rows / 2);
@@ -317,147 +343,5 @@ namespace Valkur.Gameplay.World.Generation
                     return Mathf.Clamp(Mathf.RoundToInt(rows * BuildingSolidFraction), 1, rows);
             }
         }
-
-        private static void WriteZone(StringBuilder sb, WorldTerrainGrid grid, SeedWorldTilePalette palette,
-                                      WorldGenSettings s, int baseX, int baseY, int z, Vector2Int origin,
-                                      SeedWorldBakeResult result)
-        {
-            var ground = new string[z * z];
-            var blocked = new bool[z * z];
-            bool anyBlocked = false;
-
-            for (int ly = 0; ly < z; ly++)
-                for (int lx = 0; lx < z; lx++)
-                {
-                    int x = baseX + lx, y = baseY + ly;
-                    string swT = grid.TerrainAt(x, y);
-                    string seT = grid.TerrainAt(x + 1, y);
-                    string neT = grid.TerrainAt(x + 1, y + 1);
-                    string nwT = grid.TerrainAt(x, y + 1);
-
-                    int worldX = origin.x + x, worldY = origin.y + y;
-                    int hash = unchecked(worldX * 73856093 ^ worldY * 19349663);
-                    var sprite = palette.Resolve(swT, seT, neT, nwT, hash, out bool hardCut);
-                    if (hardCut) result.HardCuts++;
-                    if (sprite == null) result.MissingTiles++;
-
-                    int i = ly * z + lx;
-                    ground[i] = palette.NameOf(sprite);
-
-                    if (IsBlocked(grid, s, x, y, swT, seT, neT, nwT))
-                    {
-                        blocked[i] = true;
-                        anyBlocked = true;
-                        result.BlockedTiles++;
-                    }
-                }
-
-            sb.Append("{\"layers\":{\"Ground\":");
-            AppendRows(sb, ground, null, z);
-            if (anyBlocked)
-            {
-                sb.Append(",\"Collision\":");
-                AppendRows(sb, ground, blocked, z);
-            }
-            sb.Append("},\"terrains\":[");
-            for (int row = 0; row <= z; row++)
-            {
-                if (row > 0) sb.Append(',');
-                sb.Append('[');
-                int vy = baseY + (z - row);
-                for (int col = 0; col <= z; col++)
-                {
-                    if (col > 0) sb.Append(',');
-                    AppendString(sb, grid.TerrainAt(baseX + col, vy));
-                }
-                sb.Append(']');
-            }
-            sb.Append("]}");
-        }
-
-        /// <summary>Rows top-first, the overlay convention (row 0 is the zone's highest Y).</summary>
-        private static void AppendRows(StringBuilder sb, string[] names, bool[] mask, int z)
-        {
-            sb.Append('[');
-            for (int row = 0; row < z; row++)
-            {
-                if (row > 0) sb.Append(',');
-                sb.Append('[');
-                int ly = z - 1 - row;
-                for (int lx = 0; lx < z; lx++)
-                {
-                    if (lx > 0) sb.Append(',');
-                    int i = ly * z + lx;
-                    AppendString(sb, mask == null || mask[i] ? names[i] : string.Empty);
-                }
-                sb.Append(']');
-            }
-            sb.Append(']');
-        }
-
-        private static void AppendString(StringBuilder sb, string value)
-        {
-            sb.Append('"');
-            if (!string.IsNullOrEmpty(value))
-            {
-                for (int i = 0; i < value.Length; i++)
-                {
-                    char c = value[i];
-                    if (c == '"' || c == '\\') sb.Append('\\');
-                    sb.Append(c);
-                }
-            }
-            sb.Append('"');
-        }
-
-        /// <summary>
-        /// The nearest tile to <paramref name="start"/> that is not blocked and whose neighbours are
-        /// not either, searched in growing rings. The preview picks the spawn at its own coarse
-        /// resolution, where one cell can hold a river or a lake shore; landing the player in
-        /// water they cannot leave is the one failure a spawn must never have.
-        /// </summary>
-        private static Vector2Int FindWalkableTile(WorldTerrainGrid grid, WorldGenSettings s, Vector2Int start,
-                                                   int widthTiles, int heightTiles)
-        {
-            const int MaxRadius = 80;
-            for (int r = 0; r <= MaxRadius; r++)
-                for (int dy = -r; dy <= r; dy++)
-                    for (int dx = -r; dx <= r; dx++)
-                    {
-                        if (Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy)) != r) continue;
-                        int x = start.x + dx, y = start.y + dy;
-                        if (x < 1 || y < 1 || x >= widthTiles - 1 || y >= heightTiles - 1) continue;
-                        if (OpenAround(grid, s, x, y)) return new Vector2Int(x, y);
-                    }
-            return start;
-        }
-
-        private static bool OpenAround(WorldTerrainGrid grid, WorldGenSettings s, int x, int y)
-        {
-            for (int dy = -1; dy <= 1; dy++)
-                for (int dx = -1; dx <= 1; dx++)
-                {
-                    int cx = x + dx, cy = y + dy;
-                    if (IsBlocked(grid, s, cx, cy, grid.TerrainAt(cx, cy), grid.TerrainAt(cx + 1, cy),
-                                  grid.TerrainAt(cx + 1, cy + 1), grid.TerrainAt(cx, cy + 1)))
-                        return false;
-                }
-            return true;
-        }
-
-        private static bool IsBlocked(WorldTerrainGrid grid, WorldGenSettings s, int x, int y,
-                                      string sw, string se, string ne, string nw)
-        {
-            int wet = Wet(sw) + Wet(se) + Wet(ne) + Wet(nw);
-            if (wet >= BlockingCorners) return true;
-
-            float mean = (grid.ElevationAt(x, y) + grid.ElevationAt(x + 1, y)
-                          + grid.ElevationAt(x + 1, y + 1) + grid.ElevationAt(x, y + 1)) * 0.25f;
-            return mean >= s.mountainLevel + PeakMargin && (sw == "rock" || sw == WorldTerrainGrid.Stone);
-        }
-
-        private static int Wet(string terrain)
-            => terrain == WorldTerrainGrid.Water || terrain == WorldTerrainGrid.WaterDeep
-               || terrain == WorldTerrainGrid.Lava ? 1 : 0;
     }
 }

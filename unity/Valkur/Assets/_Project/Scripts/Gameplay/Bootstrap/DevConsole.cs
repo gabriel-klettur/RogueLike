@@ -531,6 +531,7 @@ namespace Valkur.Gameplay
 
             // Re-read authored data into the live scene — see DevConsole.Commands.Reload.cs.
             RegisterReloadCommands();
+            RegisterSeedWorldCommands();
             RegisterSpawnerCommands();
             RegisterPlacedEntityCommands();
             RegisterAICommands();

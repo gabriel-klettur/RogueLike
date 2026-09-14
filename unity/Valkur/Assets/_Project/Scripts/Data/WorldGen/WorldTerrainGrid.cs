@@ -21,6 +21,15 @@ namespace Valkur.Data.WorldGen
     /// shortest chain of packs that DOES connect them — so a beach grows a rocky edge where it
     /// meets the water. Which pairs exist is injected (<see cref="Compatible"/>), because the
     /// catalogue is an asset and this class must stay testable without one.</para>
+    ///
+    /// <para><b>A grid may cover only a REGION of the world, and a region answers exactly what
+    /// the whole world would.</b> The live world (phase 5) builds one zone at a time, so the
+    /// repair is LOCAL by construction: every pass reads the previous pass and writes a fresh
+    /// one (never in place), so after <see cref="MaxRepairPasses"/> passes a vertex depends only
+    /// on the vertices within that many steps of it. A region padded by <see cref="RegionMargin"/>
+    /// therefore agrees with the full world on every vertex it was asked for, and two zones built
+    /// separately agree on the seam they share. An in-place sweep would not: its result depends on
+    /// where the scan STARTED, which is exactly what differs between a region and the world.</para>
     /// </summary>
     public sealed class WorldTerrainGrid
     {
@@ -36,6 +45,13 @@ namespace Valkur.Data.WorldGen
         public const int MaxRepairPasses = 6;
 
         /// <summary>
+        /// Padding around a region, in vertices. The repair reaches <see cref="MaxRepairPasses"/>
+        /// vertices, so a margin one wider than that isolates the requested area from the edge of
+        /// the padded one, where the region lacks the neighbours the whole world has.
+        /// </summary>
+        public const int RegionMargin = MaxRepairPasses + 1;
+
+        /// <summary>
         /// When two touching vertices must be reconciled, the one LATER in this list is the one
         /// rewritten. Water first, so coastlines and rivers keep the shape the generator gave them
         /// and it is the shore that grows a bridge, never the sea that retreats.
@@ -44,18 +60,24 @@ namespace Valkur.Data.WorldGen
             "no Unity objects, so it cannot go stale across a Play session.")]
         private static readonly string[] Rank = { WaterDeep, Water, Lava, "rock", Stone, "sand", "grass", "dirt" };
 
-        public readonly int Width;   // in vertices
-        public readonly int Height;  // in vertices
+        public readonly int Width;   // in vertices, of THIS grid
+        public readonly int Height;  // in vertices, of THIS grid
 
-        private readonly string[] _terrain;
+        /// <summary>World vertex coordinates of this grid's (0, 0).</summary>
+        public readonly int OriginX;
+        public readonly int OriginY;
+
+        private string[] _terrain;
         private readonly float[] _elevation;
         private readonly Func<string, string, bool> _compatible;
 
         public int UnresolvedPairs { get; private set; }
         public int RepairedVertices { get; private set; }
 
-        private WorldTerrainGrid(int width, int height, Func<string, string, bool> compatible)
+        private WorldTerrainGrid(int originX, int originY, int width, int height, Func<string, string, bool> compatible)
         {
+            OriginX = originX;
+            OriginY = originY;
             Width = width;
             Height = height;
             _terrain = new string[width * height];
@@ -63,8 +85,9 @@ namespace Valkur.Data.WorldGen
             _compatible = compatible;
         }
 
-        public string TerrainAt(int vx, int vy) => _terrain[vy * Width + vx];
-        public float ElevationAt(int vx, int vy) => _elevation[vy * Width + vx];
+        /// <summary>The terrain at WORLD vertex (vx, vy). Null outside the world.</summary>
+        public string TerrainAt(int vx, int vy) => _terrain[(vy - OriginY) * Width + (vx - OriginX)];
+        public float ElevationAt(int vx, int vy) => _elevation[(vy - OriginY) * Width + (vx - OriginX)];
 
         public bool Compatible(string a, string b) => a == b || _compatible(a, b);
 
@@ -89,15 +112,43 @@ namespace Valkur.Data.WorldGen
                                              Func<string, string, bool> compatible)
         {
             if (climate == null) throw new ArgumentNullException(nameof(climate));
+            var s = climate.Settings;
+            var riverTiles = WorldRiverRaster.Tiles(rivers, s.riverWidth, s.widthTiles, s.heightTiles);
+            return BuildRegion(climate, riverTiles, towns, widthTiles, heightTiles,
+                               0, 0, widthTiles, heightTiles, 0, compatible);
+        }
+
+        /// <summary>
+        /// The vertices of the tiles [<paramref name="x0"/>, x0 + <paramref name="tilesW"/>) x
+        /// [<paramref name="y0"/>, y0 + <paramref name="tilesH"/>) of a world whose built area is
+        /// <paramref name="worldTilesW"/> x <paramref name="worldTilesH"/>, padded by
+        /// <paramref name="margin"/> vertices on every side so the requested vertices come out
+        /// identical to a full <see cref="Build(WorldClimate, IReadOnlyList{WorldRiver}, IReadOnlyList{WorldTown}, int, int, Func{string, string, bool})"/>.
+        /// Pass <see cref="RegionMargin"/> for that guarantee. <paramref name="riverTiles"/> is the
+        /// world's whole river raster, computed once by the caller.
+        /// </summary>
+        public static WorldTerrainGrid BuildRegion(WorldClimate climate, HashSet<Vector2Int> riverTiles,
+                                                   IReadOnlyList<WorldTown> towns,
+                                                   int worldTilesW, int worldTilesH,
+                                                   int x0, int y0, int tilesW, int tilesH, int margin,
+                                                   Func<string, string, bool> compatible)
+        {
+            if (climate == null) throw new ArgumentNullException(nameof(climate));
             if (compatible == null) throw new ArgumentNullException(nameof(compatible));
 
             var s = climate.Settings;
-            var grid = new WorldTerrainGrid(widthTiles + 1, heightTiles + 1, compatible);
+            margin = Mathf.Max(0, margin);
+            var grid = new WorldTerrainGrid(x0 - margin, y0 - margin,
+                                            tilesW + 1 + 2 * margin, tilesH + 1 + 2 * margin, compatible);
+            int worldVertW = worldTilesW + 1, worldVertH = worldTilesH + 1;
 
-            for (int vy = 0; vy < grid.Height; vy++)
-                for (int vx = 0; vx < grid.Width; vx++)
+            for (int gy = 0; gy < grid.Height; gy++)
+                for (int gx = 0; gx < grid.Width; gx++)
                 {
-                    int i = vy * grid.Width + vx;
+                    int vx = grid.OriginX + gx, vy = grid.OriginY + gy;
+                    int i = gy * grid.Width + gx;
+                    if (vx < 0 || vy < 0 || vx >= worldVertW || vy >= worldVertH)
+                        continue; // outside the world: no vertex at all
                     if (vx > s.widthTiles || vy > s.heightTiles)
                     {
                         grid._terrain[i] = WaterDeep;
@@ -112,19 +163,32 @@ namespace Valkur.Data.WorldGen
 
             // A river tile makes all four of its corners water, so a one-tile river is one fully
             // water tile wide with a transition tile on each bank.
-            var riverTiles = WorldRiverRaster.Tiles(rivers, s.riverWidth, s.widthTiles, s.heightTiles);
-            foreach (var t in riverTiles)
-                for (int dy = 0; dy <= 1; dy++)
-                    for (int dx = 0; dx <= 1; dx++)
-                    {
-                        int i = (t.y + dy) * grid.Width + (t.x + dx);
-                        if (grid._terrain[i] != WaterDeep) grid._terrain[i] = Water;
-                    }
+            if (riverTiles != null)
+                foreach (var t in riverTiles)
+                {
+                    if (t.x + 1 < grid.OriginX || t.y + 1 < grid.OriginY ||
+                        t.x >= grid.OriginX + grid.Width || t.y >= grid.OriginY + grid.Height) continue;
+                    for (int dy = 0; dy <= 1; dy++)
+                        for (int dx = 0; dx <= 1; dx++)
+                        {
+                            int i = grid.LocalIndex(t.x + dx, t.y + dy);
+                            if (i < 0 || grid._terrain[i] == null) continue;
+                            if (grid._terrain[i] != WaterDeep) grid._terrain[i] = Water;
+                        }
+                }
 
             if (towns != null) grid.StampTowns(towns);
 
             grid.RepairTransitions();
             return grid;
+        }
+
+        /// <summary>Index into this grid of WORLD vertex (vx, vy), or -1 when it is not covered.</summary>
+        private int LocalIndex(int vx, int vy)
+        {
+            int gx = vx - OriginX, gy = vy - OriginY;
+            if (gx < 0 || gy < 0 || gx >= Width || gy >= Height) return -1;
+            return gy * Width + gx;
         }
 
         public const string TownGround = "grass";
@@ -135,12 +199,15 @@ namespace Valkur.Data.WorldGen
             foreach (var town in towns)
             {
                 int r = town.Radius + 2;
+                if (town.Center.x + r + 1 < OriginX || town.Center.y + r + 1 < OriginY ||
+                    town.Center.x - r >= OriginX + Width || town.Center.y - r >= OriginY + Height) continue;
+
                 for (int vy = town.Center.y - r; vy <= town.Center.y + r + 1; vy++)
                     for (int vx = town.Center.x - r; vx <= town.Center.x + r + 1; vx++)
                     {
-                        if (vx < 0 || vy < 0 || vx >= Width || vy >= Height) continue;
+                        int i = LocalIndex(vx, vy);
+                        if (i < 0 || _terrain[i] == null) continue;
                         if (!town.Contains(new Vector2Int(vx, vy), 2)) continue;
-                        int i = vy * Width + vx;
                         if (_terrain[i] == Water || _terrain[i] == WaterDeep) continue;
                         _terrain[i] = TownGround;
                     }
@@ -150,9 +217,8 @@ namespace Valkur.Data.WorldGen
                     for (int dy = 0; dy <= 1; dy++)
                         for (int dx = 0; dx <= 1; dx++)
                         {
-                            int vx = t.x + dx, vy = t.y + dy;
-                            if (vx >= Width || vy >= Height) continue;
-                            int i = vy * Width + vx;
+                            int i = LocalIndex(t.x + dx, t.y + dy);
+                            if (i < 0 || _terrain[i] == null) continue;
                             if (_terrain[i] == Water || _terrain[i] == WaterDeep) continue;
                             _terrain[i] = StreetGround;
                         }
@@ -166,62 +232,81 @@ namespace Valkur.Data.WorldGen
             return WorldBiomeTable.Get(biome).GroundTerrain;
         }
 
+        /// <summary>
+        /// Jacobi passes: each reads <c>prev</c> and writes <c>next</c>, and when several pairs want
+        /// to rewrite one vertex in the same pass the first in scan order wins. Scan order among the
+        /// pairs touching one vertex does not depend on where the grid starts, so the rule is as
+        /// local as the reads are.
+        /// </summary>
         private void RepairTransitions()
         {
             int repaired = 0;
+            var prev = _terrain;
+            var next = new string[prev.Length];
+            var written = new bool[prev.Length];
+
             for (int pass = 0; pass < MaxRepairPasses; pass++)
             {
+                Array.Copy(prev, next, prev.Length);
+                Array.Clear(written, 0, written.Length);
                 int changed = 0;
-                for (int vy = 0; vy < Height; vy++)
-                    for (int vx = 0; vx < Width; vx++)
+                for (int gy = 0; gy < Height; gy++)
+                    for (int gx = 0; gx < Width; gx++)
                     {
                         // Right, up, up-right and up-left cover every touching pair exactly once:
                         // two vertices touch when they are corners of one tile.
-                        changed += Reconcile(vx, vy, vx + 1, vy);
-                        changed += Reconcile(vx, vy, vx, vy + 1);
-                        changed += Reconcile(vx, vy, vx + 1, vy + 1);
-                        changed += Reconcile(vx, vy, vx - 1, vy + 1);
+                        changed += Reconcile(prev, next, written, gx, gy, gx + 1, gy);
+                        changed += Reconcile(prev, next, written, gx, gy, gx, gy + 1);
+                        changed += Reconcile(prev, next, written, gx, gy, gx + 1, gy + 1);
+                        changed += Reconcile(prev, next, written, gx, gy, gx - 1, gy + 1);
                     }
                 repaired += changed;
+                var swap = prev; prev = next; next = swap;
                 if (changed == 0) break;
             }
+            _terrain = prev;
             RepairedVertices = repaired;
 
             int unresolved = 0;
-            for (int vy = 0; vy < Height; vy++)
-                for (int vx = 0; vx < Width; vx++)
+            for (int gy = 0; gy < Height; gy++)
+                for (int gx = 0; gx < Width; gx++)
                 {
-                    if (!Touching(vx, vy, vx + 1, vy)) unresolved++;
-                    if (!Touching(vx, vy, vx, vy + 1)) unresolved++;
-                    if (!Touching(vx, vy, vx + 1, vy + 1)) unresolved++;
-                    if (!Touching(vx, vy, vx - 1, vy + 1)) unresolved++;
+                    if (!Touching(gx, gy, gx + 1, gy)) unresolved++;
+                    if (!Touching(gx, gy, gx, gy + 1)) unresolved++;
+                    if (!Touching(gx, gy, gx + 1, gy + 1)) unresolved++;
+                    if (!Touching(gx, gy, gx - 1, gy + 1)) unresolved++;
                 }
             UnresolvedPairs = unresolved;
         }
 
-        /// <summary>True when the pair is out of bounds or drawable.</summary>
+        /// <summary>True when the pair is out of bounds, outside the world, or drawable.</summary>
         private bool Touching(int ax, int ay, int bx, int by)
         {
             if (bx < 0 || by < 0 || bx >= Width || by >= Height) return true;
-            return Compatible(_terrain[ay * Width + ax], _terrain[by * Width + bx]);
+            string a = _terrain[ay * Width + ax], b = _terrain[by * Width + bx];
+            if (a == null || b == null) return true;
+            return Compatible(a, b);
         }
 
-        private int Reconcile(int ax, int ay, int bx, int by)
+        private int Reconcile(string[] prev, string[] next, bool[] written, int ax, int ay, int bx, int by)
         {
             if (bx < 0 || by < 0 || bx >= Width || by >= Height) return 0;
             int ia = ay * Width + ax, ib = by * Width + bx;
-            string a = _terrain[ia], b = _terrain[ib];
-            if (Compatible(a, b)) return 0;
+            string a = prev[ia], b = prev[ib];
+            if (a == null || b == null || Compatible(a, b)) return 0;
 
             // Keep the lower-ranked (wetter) terrain; rewrite the other to the next step towards it.
             bool rewriteA = RankOf(a) > RankOf(b);
             string keep = rewriteA ? b : a;
             string change = rewriteA ? a : b;
+            int target = rewriteA ? ia : ib;
+            if (written[target]) return 0;
 
             string step = NextStep(keep, change);
             if (step == null || step == change) return 0;
 
-            _terrain[rewriteA ? ia : ib] = step;
+            next[target] = step;
+            written[target] = true;
             return 1;
         }
 
