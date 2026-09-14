@@ -86,7 +86,13 @@ namespace Valkur.Gameplay.Spawners
             string json = ResolveRepository().ReadRawJson(WorldId.Base);
             if (json == null)
             {
-                Debug.LogWarning($"[SpawnerInstanceLoader] No instances file in repository for {WorldId.Base}.");
+                // A custom map slot with no spawners is a normal state (a fresh map, a generated
+                // world); only the base world is expected to ship this file. Warning on the
+                // steady state trains the reader to scroll past the console.
+                if (Valkur.Core.MapEditorActiveSlot.IsDefault(Valkur.Core.MapEditorActiveSlot.Read()))
+                    Debug.LogWarning($"[SpawnerInstanceLoader] No instances file in repository for {WorldId.Base}.");
+                else
+                    Debug.Log("[SpawnerInstanceLoader] Active map slot has no spawners file (empty map).");
                 return;
             }
 

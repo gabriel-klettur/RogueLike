@@ -20,6 +20,7 @@ namespace Valkur.Gameplay.Editors.SeedWorld
         private const string WS_TAB = "tab";
         private const string WS_LAYER = "layer";
         private const string WS_SETTINGS = "settings";
+        private const string WS_BAKE_SLOT = "bakeSlot";
 
         public Transform WorkspaceRoot => _root != null ? _root.transform : null;
 
@@ -29,6 +30,7 @@ namespace Valkur.Gameplay.Editors.SeedWorld
             ws.SetString(WS_TAB, _tab.ToString());
             ws.SetString(WS_LAYER, _layer.ToString());
             ws.SetString(WS_SETTINGS, _settings.ToJson());
+            ws.SetString(WS_BAKE_SLOT, _bakeSlotName ?? string.Empty);
         }
 
         public void RestoreWorkspace(EditorWorkspace ws)
@@ -36,6 +38,7 @@ namespace Valkur.Gameplay.Editors.SeedWorld
             if (ws == null) return;
             if (Enum.TryParse(ws.GetString(WS_TAB, null), out Tab tab)) _tab = tab;
             if (Enum.TryParse(ws.GetString(WS_LAYER, null), out PreviewLayer layer)) _layer = layer;
+            _bakeSlotName = ws.GetString(WS_BAKE_SLOT, string.Empty) ?? string.Empty;
 
             var restored = WorldGenSettings.FromJson(ws.GetString(WS_SETTINGS, null));
             if (restored == null) return;

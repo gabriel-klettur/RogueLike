@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Valkur.Data.WorldGen
@@ -36,6 +37,9 @@ namespace Valkur.Data.WorldGen
         public readonly int[] BiomeCounts;
 
         public readonly WorldClimate Climate;
+
+        /// <summary>The rivers of this world, traced in TILE space — the same list the build rasterises.</summary>
+        public IReadOnlyList<WorldRiver> Rivers { get; private set; } = new List<WorldRiver>();
 
         /// <summary>Where a new run would start, in world tiles. Always on walkable land when any exists.</summary>
         public Vector2 SpawnTile { get; private set; }
@@ -77,6 +81,7 @@ namespace Valkur.Data.WorldGen
 
             var map = new WorldGenMap(climate, columns, rows, tilesPerCell);
             map.Fill();
+            map.PaintRivers();
             map.FindSpawn();
             return map;
         }
@@ -131,6 +136,33 @@ namespace Valkur.Data.WorldGen
                     Rarity[i] = sample.Rarity;
                     BiomeCounts[(int)biome]++;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Marks every cell a river tile falls in. A cell is river when ANY tile inside it is,
+        /// which overstates a one-tile river at low preview resolution — deliberately: the
+        /// alternative (majority) makes every river under ~3 tiles wide invisible in a preview
+        /// of a large world, and a preview that hides rivers the build will carve is the worse lie.
+        /// Water cells stay water: a river reaching the sea is the sea there.
+        /// </summary>
+        private void PaintRivers()
+        {
+            var s = Climate.Settings;
+            Rivers = WorldRivers.Generate(Climate);
+            var tiles = WorldRiverRaster.Tiles(Rivers, s.riverWidth, s.widthTiles, s.heightTiles);
+
+            foreach (var t in tiles)
+            {
+                int col = Mathf.Min(Columns - 1, Mathf.FloorToInt(t.x / TilesPerCell));
+                int row = Mathf.Min(Rows - 1, Mathf.FloorToInt(t.y / TilesPerCell));
+                int i = Index(col, row);
+                var current = (WorldBiome)Biomes[i];
+                if (current == WorldBiome.River || current == WorldBiome.Ocean || current == WorldBiome.DeepOcean) continue;
+
+                BiomeCounts[(int)current]--;
+                BiomeCounts[(int)WorldBiome.River]++;
+                Biomes[i] = (byte)WorldBiome.River;
             }
         }
 

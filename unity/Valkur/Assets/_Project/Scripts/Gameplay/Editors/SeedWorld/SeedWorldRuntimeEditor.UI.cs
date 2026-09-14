@@ -97,9 +97,17 @@ namespace Valkur.Gameplay.Editors.SeedWorld
             EditorUIHelpers.MakeButton(history.transform, "Rehacer", Redo, 26f, 11f);
             EditorUIHelpers.MakeDangerButton(history.transform, "Por defecto", ResetToDefaults, 26f);
 
-            _status = EditorUIHelpers.AddLabel(_paramsContent, "", 11f);
+            _status = EditorUIHelpers.AddLabel(_paramsContent, "", 10f);
             _status.color = EditorUIHelpers.TEXT_MUTED;
             _status.enableWordWrapping = true;
+            // A fixed three-line box: a build report is long, and unbounded it ran out of the
+            // bottom of the panel over the world behind it (first live capture). The full report
+            // also goes to the console.
+            _status.overflowMode = TextOverflowModes.Ellipsis;
+            var statusLe = _status.gameObject.AddComponent<LayoutElement>();
+            statusLe.preferredHeight = 40f;
+            statusLe.minHeight = 40f;
+            statusLe.flexibleHeight = 0f;
         }
 
         private void AddTabButton(Transform parent, string label, Tab tab)

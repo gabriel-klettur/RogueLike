@@ -70,8 +70,15 @@ namespace Valkur.Gameplay.Editors.SeedWorld
                 () => _settings.edgeFalloff, v => _settings.edgeFalloff = v, 0f, 1f);
 
             EditorUIHelpers.BuildSeparator(body);
-            AddHint(body, "Construir el mundo jugable llega en la fase 2 (.github/SEED_WORLD_ROADMAP.md). " +
-                          "Este editor aun no escribe nada en disco ni toca el mundo cargado.");
+            EditorUIHelpers.BuildSectionHeader(body, "Rios");
+
+            AddIntField(body, "Rios", "Cuantos intenta trazar desde las tierras altas hasta el mar.",
+                () => _settings.riverCount, v => _settings.riverCount = v, 0, WorldGenSettings.MaxRivers);
+            AddIntField(body, "Anchura (tiles)", null,
+                () => _settings.riverWidth, v => _settings.riverWidth = v, 1, WorldGenSettings.MaxRiverWidth);
+
+            EditorUIHelpers.BuildSeparator(body);
+            BuildBakeSection(body);
         }
 
         private void BuildClimateTab(Transform body)
@@ -142,7 +149,7 @@ namespace Valkur.Gameplay.Editors.SeedWorld
             // highland or a rare biome would be a control that moves nothing.
             if (info.Kind != WorldBiomeKind.Land)
             {
-                var kind = EditorUIHelpers.AddLabel(row.transform, KindLabel(info.Kind), 10f);
+                var kind = EditorUIHelpers.AddLabel(row.transform, KindLabel(info), 10f);
                 kind.color = EditorUIHelpers.TEXT_MUTED;
                 var kindLe = kind.gameObject.AddComponent<LayoutElement>();
                 kindLe.preferredWidth = 70f;
@@ -165,11 +172,11 @@ namespace Valkur.Gameplay.Editors.SeedWorld
             _fieldResync.Add(() => field.SetTextWithoutNotify(Fmt(_settings.WeightOf(biome).weight)));
         }
 
-        private static string KindLabel(WorldBiomeKind kind)
+        private static string KindLabel(WorldBiomeInfo info)
         {
-            switch (kind)
+            switch (info.Kind)
             {
-                case WorldBiomeKind.Water:    return "por altura";
+                case WorldBiomeKind.Water:    return info.Biome == WorldBiome.River ? "trazado" : "por altura";
                 case WorldBiomeKind.Shore:    return "por altura";
                 case WorldBiomeKind.Highland: return "por altura";
                 case WorldBiomeKind.Rare:     return "por rareza";

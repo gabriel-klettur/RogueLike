@@ -24,8 +24,18 @@ namespace Valkur.Data.WorldGen
         /// <summary>The swatch in the preview and its legend. Opaque.</summary>
         public readonly Color32 PreviewColor;
 
+        /// <summary>
+        /// The auto-tile TERRAIN name this biome's ground is painted with when the world is
+        /// built — one of the names the shipped <c>TerrainCatalog</c> rulesets declare
+        /// (grass, dirt, sand, rock, stone, lava, water, water_deep). Several biomes share one
+        /// until their own ground art exists: there is no snow, swamp or desert pack, which the
+        /// Seed World roadmap records as an art gap rather than something this table can fix.
+        /// </summary>
+        public readonly string GroundTerrain;
+
         public WorldBiomeInfo(WorldBiome biome, WorldBiomeKind kind, string displayName,
-                              float idealTemperature, float idealHumidity, Color32 previewColor)
+                              float idealTemperature, float idealHumidity, Color32 previewColor,
+                              string groundTerrain)
         {
             Biome = biome;
             Kind = kind;
@@ -33,6 +43,7 @@ namespace Valkur.Data.WorldGen
             IdealTemperature = idealTemperature;
             IdealHumidity = idealHumidity;
             PreviewColor = previewColor;
+            GroundTerrain = groundTerrain;
         }
     }
 }

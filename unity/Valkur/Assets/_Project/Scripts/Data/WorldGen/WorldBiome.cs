@@ -25,5 +25,8 @@ namespace Valkur.Data.WorldGen
         Volcanic = 12,
         Enchanted = 13,
         Corrupted = 14,
+
+        /// <summary>Carved by <see cref="WorldRivers"/>, never chosen by the climate.</summary>
+        River = 15,
     }
 }

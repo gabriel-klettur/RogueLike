@@ -1,6 +1,6 @@
 # Seed World — generación procedural del mundo
 
-Fecha: 2026-09-13. Estado: **Fase 1 hecha** (vista previa); fase 2 pendiente.
+Fecha: 2026-09-13 / 2026-09-14. Estado: **Fases 1 y 2 hechas** (vista previa + construir un mundo jugable); fase 3 pendiente.
 
 ## Qué es
 
@@ -63,7 +63,7 @@ juego hace otra cosa — el fallo que el overlay de áreas de hechizos existe pa
 | Fase | Contenido | Resultado visible | Estado |
 |---|---|---|---|
 | 1 | `WorldGenSettings`, `WorldGenProfile`, `FractalNoise2D`, `WorldClimate` (4 ruidos + tabla de biomas), `WorldGenMap`, editor Seed World con vista previa por capas, estadísticas y punto de inicio | Mapas distintos por semilla, sin construir nada | Hecha |
-| 2 | Relieve (acantilados como capas), ríos, pintado de terreno autotile por bioma, **hornear a un mundo nuevo** (`Worlds/<slug>/`, nunca el base) | Caminar por un mundo generado | Pendiente |
+| 2 | Relieve (acantilados como capas), ríos, pintado de terreno autotile por bioma, **hornear a un mundo nuevo** (`Worlds/<slug>/`, nunca el base) | Caminar por un mundo generado | Hecha (sin acantilados, ver abajo) |
 | 3 | Rejilla de estructuras + ciudad jigsaw (plaza, calles, parcelas) con los ~50 edificios pixel-art; colisión automática; validación de solapes y conectividad | Ciudades generadas | Pendiente (bloqueo de arte: calles y muros) |
 | 4 | Caminos entre estructuras, recursos por bioma, población, dificultad por distancia al inicio | Mundo jugable | Pendiente |
 | 5 | Modo en vivo: la partida guarda semilla + perfil y genera chunks bajo demanda con deltas | Mundo nuevo en cada partida | Pendiente |
@@ -135,3 +135,67 @@ Decisiones:
   revisar al pintar el mundo real en la fase 2, donde el tamano de las islas se vera a escala.
 - La nieve aparece alrededor de las montanas por el enfriamiento por altura. Es deliberado, pero
   hay que confirmarlo contra el arte (no hay pack de suelo de nieve).
+
+## Fase 2 — construir el mundo (hecha, 2026-09-14)
+
+```text
+Data/WorldGen/
+  WorldRivers / WorldRiver / WorldRiverRaster   rios: curvas cuesta abajo, rasterizadas a tiles
+  WorldTerrainGrid                              terreno por VERTICE + reparacion de transiciones
+Gameplay/World/Generation/
+  SeedWorldTilePalette    que pares de terreno tienen pack Corner16; que tile tiene estas 4 esquinas
+  SeedWorldBaker          escribe el map slot: una overlay por zona + zones.json + marcador
+  SeedWorldBakeRequest / SeedWorldBakeResult / SeedWorldMarker
+Gameplay/Editors/SeedWorld/SeedWorldRuntimeEditor.Build.cs   "Construir mundo" / "Volver al mundo base"
+```
+
+**Destino: un map slot, nunca el mundo base.** `Maps/<slot>.zones.json` + `MapOverrides/<slot>/<zona>.overlay.json`,
+exactamente lo que escribe el Map editor, asi que cargarlo es `MapEditorManager.LoadMapSlot` y nada nuevo.
+`default` se rechaza (es el mundo base). Un slot que existe sin `_seedworld.json` lo hizo una persona y se
+rechaza tambien. Reconstruir un slot de Seed World pide segunda pulsacion y borra sus overlays viejas antes.
+
+**Decisiones medidas:**
+
+- **Los rios son DATOS, no una regla por punto.** Si un tile es rio depende de por donde bajo el agua, asi
+  que se trazan una vez en espacio de TILES y la vista previa y la construccion rasterizan la misma lista.
+  El coste es la longitud del rio (~20 ms por 8 rios), no el area.
+- **Un rio se traza como CURVA, no eligiendo entre 4 vecinos.** La primera version elegia el vecino mas
+  bajo y dibujaba reglas: tramos rectos de **52 a 70 tiles**. La segunda sumaba un giro con ruido y aun
+  daba 35-67. Integrar un rumbo continuo (cuesta abajo + giro suave por distancia recorrida) y rasterizarlo
+  bajo el tramo recto mas largo a **8-12 tiles** con 276-535 giros. Los saltos diagonales se rellenan por el
+  tile mas bajo de los dos que comparten borde, o el jugador cruzaria por la esquina.
+- **El terreno es por vertice** porque los 7 packs que existen son Corner16 (dual grid). Solo hay 7 pares
+  dibujables: grass/dirt, grass/rock, rock/water, sand/grass, sand/rock, stone/lava, water/water_deep. **No
+  hay arena/agua ni hierba/agua**, asi que una playa tocando el mar no tiene tile. `WorldTerrainGrid` repara:
+  donde un par no se puede dibujar reescribe el lado de TIERRA con el siguiente terreno de la cadena de packs
+  mas corta (arena -> roca -> agua). Las costas y los rios conservan su forma; es la orilla la que crece un
+  borde rocoso. 400x400: ~3500 vertices reparados, ~390 celdas sin transicion posible (casi todas volcan).
+- **Un pack = una hoja.** Un pack mezcla varias hojas del mismo par y el solver elegia por hash: la primera
+  construccion salio como tablero de ajedrez de verdes distintos. `SeedWorldTilePalette` fija la primera
+  hoja completa (orden ordinal) por pack, leida del NOMBRE del sprite para no necesitar un TileCatalog.
+- **Los nombres de tile son la ruta bajo `Resources/Tiles/`**, no el nombre pelado: sand_rock guarda sus
+  sprites una carpeta mas abajo y un nombre que el sondeo por categorias no encuentra cae en un
+  `Resources.LoadAll` sincrono de todos los tiles. Test: todos los nombres cargan directos.
+- **Colision** en celdas con 3+ esquinas de agua/lava y en cumbres de roca (`mountainLevel + 0.08`), usando el
+  mismo tile del suelo en la capa Collision para no dibujar nada nuevo. Verificado en vivo: agua bloquea
+  (`CollisionPhysics_All`), hierba no.
+- **El mundo se centra en el origen** (Y-sort simetrico). El punto de inicio se busca a nivel de TILE (anillos
+  alrededor del de la vista previa) exigiendo un 3x3 caminable: la vista previa gruesa puede caer en un rio.
+- **Zonas con nombre de su bioma** ("Taiga 1", "Oceano 12"): el nombre es lo que el juego ENSENA en el banner
+  y el minimapa, y "sw_3_3" se leia como texto de depuracion.
+- **Aviso de consola arreglado de paso:** BuildingLoader, SpawnerInstanceLoader y ParticleInstancesLoader
+  avisaban "no hay fichero" en cualquier slot sin contenido. Un slot personalizado vacio es un estado normal;
+  el aviso se queda solo para el mundo base.
+
+**Medido (400x400, semilla 1337):** generar 305-322 ms, escribir 175-608 ms, 9.5 MB en 64 zonas, cargar el
+slot 1.1 s. Consola limpia.
+
+### Abierto tras la fase 2
+
+- **Acantilados/relieve como capas**: no hay arte de acantilado; la montana es roca + colision en cumbres.
+- **Suelos que faltan**: nieve, desierto, pantano y barro se pintan con roca/arena/tierra. Hay dos "roca" de
+  arte distinto (rock_water oscura, grass_rock gris) y se nota la costura entre ellas.
+- **Tamano en disco**: 2048x600 serian ~490 zonas y ~60 MB de JSON; la carga de overrides lo parsea todo.
+  Antes de mundos grandes: streaming por chunks (fase 5) o un formato binario.
+- **Construir congela el juego** (~1-2 s en 400x400) porque es sincrono.
+- Guardar/cargar presets (`WorldGenProfile`) desde el editor sigue pendiente.

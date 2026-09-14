@@ -1,0 +1,330 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Text;
+using UnityEngine;
+using Valkur.Core;
+using Valkur.Data.WorldGen;
+using Valkur.Gameplay.MapEditor;
+using Debug = UnityEngine.Debug;
+
+namespace Valkur.Gameplay.World.Generation
+{
+    /// <summary>
+    /// Builds a generated world into a map slot: one 50x50 overlay per zone plus the slot's zone
+    /// list, in exactly the shape the Map editor writes, so loading it is
+    /// <c>MapEditorManager.LoadMapSlot</c> and nothing new.
+    ///
+    /// <para><b>It never writes the base world.</b> The target is always a named slot, whose
+    /// overlays live in their own <c>MapOverrides/&lt;slot&gt;/</c> folder, and <c>default</c> is
+    /// refused by <see cref="SeedWorldBakeRequest"/>. A slot that exists and carries no
+    /// <see cref="SeedWorldMarker"/> was made by a person and is refused too.</para>
+    ///
+    /// <para><b>The world is centred on the origin</b>, because the Y-sort budget is symmetric
+    /// (<c>SortingConfig.MAX_SAFE_WORLD_Y</c> either side of zero): a 600-tile-tall world fits
+    /// only from -300 to +300.</para>
+    ///
+    /// <para><b>What a zone file carries:</b> <c>Ground</c> (every cell), <c>Collision</c> (only
+    /// when the zone has a blocked cell — water, lava and peaks, with the ground's own tile so it
+    /// draws nothing new), and <c>terrains</c>, the vertex terrain the Tile editor's auto-brush
+    /// continues from.</para>
+    /// </summary>
+    public static class SeedWorldBaker
+    {
+        /// <summary>A cell is blocked when at least this many of its corners are water or lava.</summary>
+        public const int BlockingCorners = 3;
+
+        /// <summary>Rock above the mountain line by this much is a peak nobody walks over.</summary>
+        public const float PeakMargin = 0.08f;
+
+        public enum SlotState
+        {
+            /// <summary>Nothing on disk under that name.</summary>
+            Free,
+            /// <summary>A world Seed World built earlier; safe to overwrite.</summary>
+            SeedWorld,
+            /// <summary>A map somebody made. Never overwritten.</summary>
+            Foreign,
+        }
+
+        public static SlotState Inspect(SeedWorldBakeRequest request)
+        {
+            if (request == null) return SlotState.Foreign;
+            bool slotFile = File.Exists(request.SlotFilePath);
+            bool overlays = Directory.Exists(request.OverridesDirectory)
+                            && Directory.GetFiles(request.OverridesDirectory, "*.overlay.json").Length > 0;
+            if (!slotFile && !overlays) return SlotState.Free;
+            return File.Exists(request.MarkerPath) ? SlotState.SeedWorld : SlotState.Foreign;
+        }
+
+        public static SeedWorldBakeResult Bake(WorldGenSettings settings, SeedWorldBakeRequest request,
+                                               SeedWorldTilePalette palette)
+        {
+            if (settings == null) return SeedWorldBakeResult.Fail("Sin parametros.");
+            if (request == null) return SeedWorldBakeResult.Fail("Nombre de mapa no valido (vacio o 'default').");
+            if (palette == null || !palette.HasCatalog) return SeedWorldBakeResult.Fail("No hay TerrainCatalog con packs Corner16.");
+
+            var state = Inspect(request);
+            if (state == SlotState.Foreign)
+                return SeedWorldBakeResult.Fail($"Ya existe un mapa '{request.Slot}' que no creo Seed World. Elige otro nombre.");
+
+            if (WorldDataWriteGuard.Refuse("SeedWorldBaker", request.OverridesDirectory, request.UsesRealRoots))
+                return SeedWorldBakeResult.Fail("Escritura rechazada durante un test.");
+
+            var sw = Stopwatch.StartNew();
+            var climate = new WorldClimate(settings);
+            var s = climate.Settings;
+            int z = request.ZoneSize;
+
+            int zonesX = Mathf.CeilToInt((float)s.widthTiles / z);
+            int zonesY = Mathf.CeilToInt((float)s.heightTiles / z);
+            var origin = new Vector2Int(-(zonesX / 2) * z, -(zonesY / 2) * z);
+
+            var rivers = WorldRivers.Generate(climate);
+            var grid = WorldTerrainGrid.Build(climate, rivers, zonesX * z, zonesY * z, palette.Compatible);
+            var preview = WorldGenMap.Generate(climate, 64);
+
+            var result = new SeedWorldBakeResult
+            {
+                Slot = request.Slot,
+                ZonesX = zonesX,
+                ZonesY = zonesY,
+                Tiles = zonesX * z * zonesY * z,
+                Rivers = rivers.Count,
+                RepairedVertices = grid.RepairedVertices,
+                Origin = origin,
+            };
+            var spawnTile = FindWalkableTile(grid, s, Vector2Int.FloorToInt(preview.SpawnTile), zonesX * z, zonesY * z);
+            result.SpawnWorld = new Vector2(origin.x + spawnTile.x + 0.5f, origin.y + spawnTile.y + 0.5f);
+            result.GenerateMs = sw.ElapsedMilliseconds;
+
+            sw.Restart();
+            try
+            {
+                Directory.CreateDirectory(request.MapsDirectory);
+                Directory.CreateDirectory(request.OverridesDirectory);
+                foreach (var old in Directory.GetFiles(request.OverridesDirectory, "*.overlay.json"))
+                    File.Delete(old);
+
+                var zones = new List<ZonePersistenceEntry>(zonesX * zonesY);
+                var sb = new StringBuilder(1 << 20);
+                var labelCounts = new Dictionary<string, int>();
+
+                for (int zy = 0; zy < zonesY; zy++)
+                    for (int zx = 0; zx < zonesX; zx++)
+                    {
+                        string name = ZoneName(climate, zx * z, zy * z, z, labelCounts);
+                        sb.Clear();
+                        WriteZone(sb, grid, palette, s, zx * z, zy * z, z, origin, result);
+                        string path = Path.Combine(request.OverridesDirectory, name + ".overlay.json");
+                        File.WriteAllText(path, sb.ToString());
+                        result.Bytes += sb.Length;
+
+                        zones.Add(new ZonePersistenceEntry
+                        {
+                            zoneName = name,
+                            gridOffsetX = origin.x + zx * z,
+                            gridOffsetY = origin.y + zy * z,
+                            editableInTileEditor = true,
+                        });
+                    }
+
+                var slot = new ZonePersistenceFile
+                {
+                    restrictTileEditingToEditableZones = false,
+                    nextZoneIndex = zones.Count + 1,
+                    zones = zones,
+                    hasLastPlayerPosition = preview.HasSpawn,
+                    lastPlayerWorldX = result.SpawnWorld.x,
+                    lastPlayerWorldY = result.SpawnWorld.y,
+                };
+                File.WriteAllText(request.SlotFilePath, JsonUtility.ToJson(slot, true));
+
+                var marker = new SeedWorldMarker
+                {
+                    seed = s.seed,
+                    bakedAtUtc = DateTime.UtcNow.ToString("o"),
+                    settingsJson = s.ToJson(),
+                };
+                File.WriteAllText(request.MarkerPath, JsonUtility.ToJson(marker, true));
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[SeedWorldBaker] Write failed for slot '{request.Slot}': {ex.Message}");
+                return SeedWorldBakeResult.Fail("Fallo al escribir: " + ex.Message);
+            }
+
+            result.WriteMs = sw.ElapsedMilliseconds;
+            return result;
+        }
+
+        /// <summary>
+        /// A zone is named after the biome most of it is — "Bosque 3", "Oceano 12" — because the
+        /// name is what the game SHOWS: the zone banner on entry and the minimap's caption. A
+        /// grid coordinate there reads as debug text. Numbered per biome so names stay unique, and
+        /// water zones get the name too, since a coast zone is still a place the player walks into.
+        /// </summary>
+        public static string ZoneName(WorldClimate climate, int baseX, int baseY, int z,
+                                      Dictionary<string, int> counts)
+        {
+            const int Samples = 5;
+            var votes = new int[WorldBiomeTable.Count];
+            float step = (float)z / Samples;
+            for (int j = 0; j < Samples; j++)
+                for (int i = 0; i < Samples; i++)
+                    votes[(int)climate.BiomeAt(baseX + (i + 0.5f) * step, baseY + (j + 0.5f) * step)]++;
+
+            int best = 0;
+            for (int b = 1; b < votes.Length; b++)
+                if (votes[b] > votes[best]) best = b;
+
+            string label = WorldBiomeTable.GetAt(best).DisplayName;
+            counts.TryGetValue(label, out int n);
+            counts[label] = ++n;
+            return $"{label} {n}";
+        }
+
+        private static void WriteZone(StringBuilder sb, WorldTerrainGrid grid, SeedWorldTilePalette palette,
+                                      WorldGenSettings s, int baseX, int baseY, int z, Vector2Int origin,
+                                      SeedWorldBakeResult result)
+        {
+            var ground = new string[z * z];
+            var blocked = new bool[z * z];
+            bool anyBlocked = false;
+
+            for (int ly = 0; ly < z; ly++)
+                for (int lx = 0; lx < z; lx++)
+                {
+                    int x = baseX + lx, y = baseY + ly;
+                    string swT = grid.TerrainAt(x, y);
+                    string seT = grid.TerrainAt(x + 1, y);
+                    string neT = grid.TerrainAt(x + 1, y + 1);
+                    string nwT = grid.TerrainAt(x, y + 1);
+
+                    int worldX = origin.x + x, worldY = origin.y + y;
+                    int hash = unchecked(worldX * 73856093 ^ worldY * 19349663);
+                    var sprite = palette.Resolve(swT, seT, neT, nwT, hash, out bool hardCut);
+                    if (hardCut) result.HardCuts++;
+                    if (sprite == null) result.MissingTiles++;
+
+                    int i = ly * z + lx;
+                    ground[i] = palette.NameOf(sprite);
+
+                    if (IsBlocked(grid, s, x, y, swT, seT, neT, nwT))
+                    {
+                        blocked[i] = true;
+                        anyBlocked = true;
+                        result.BlockedTiles++;
+                    }
+                }
+
+            sb.Append("{\"layers\":{\"Ground\":");
+            AppendRows(sb, ground, null, z);
+            if (anyBlocked)
+            {
+                sb.Append(",\"Collision\":");
+                AppendRows(sb, ground, blocked, z);
+            }
+            sb.Append("},\"terrains\":[");
+            for (int row = 0; row <= z; row++)
+            {
+                if (row > 0) sb.Append(',');
+                sb.Append('[');
+                int vy = baseY + (z - row);
+                for (int col = 0; col <= z; col++)
+                {
+                    if (col > 0) sb.Append(',');
+                    AppendString(sb, grid.TerrainAt(baseX + col, vy));
+                }
+                sb.Append(']');
+            }
+            sb.Append("]}");
+        }
+
+        /// <summary>Rows top-first, the overlay convention (row 0 is the zone's highest Y).</summary>
+        private static void AppendRows(StringBuilder sb, string[] names, bool[] mask, int z)
+        {
+            sb.Append('[');
+            for (int row = 0; row < z; row++)
+            {
+                if (row > 0) sb.Append(',');
+                sb.Append('[');
+                int ly = z - 1 - row;
+                for (int lx = 0; lx < z; lx++)
+                {
+                    if (lx > 0) sb.Append(',');
+                    int i = ly * z + lx;
+                    AppendString(sb, mask == null || mask[i] ? names[i] : string.Empty);
+                }
+                sb.Append(']');
+            }
+            sb.Append(']');
+        }
+
+        private static void AppendString(StringBuilder sb, string value)
+        {
+            sb.Append('"');
+            if (!string.IsNullOrEmpty(value))
+            {
+                for (int i = 0; i < value.Length; i++)
+                {
+                    char c = value[i];
+                    if (c == '"' || c == '\\') sb.Append('\\');
+                    sb.Append(c);
+                }
+            }
+            sb.Append('"');
+        }
+
+        /// <summary>
+        /// The nearest tile to <paramref name="start"/> that is not blocked and whose neighbours are
+        /// not either, searched in growing rings. The preview picks the spawn at its own coarse
+        /// resolution, where one cell can hold a river or a lake shore; landing the player in
+        /// water they cannot leave is the one failure a spawn must never have.
+        /// </summary>
+        private static Vector2Int FindWalkableTile(WorldTerrainGrid grid, WorldGenSettings s, Vector2Int start,
+                                                   int widthTiles, int heightTiles)
+        {
+            const int MaxRadius = 80;
+            for (int r = 0; r <= MaxRadius; r++)
+                for (int dy = -r; dy <= r; dy++)
+                    for (int dx = -r; dx <= r; dx++)
+                    {
+                        if (Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy)) != r) continue;
+                        int x = start.x + dx, y = start.y + dy;
+                        if (x < 1 || y < 1 || x >= widthTiles - 1 || y >= heightTiles - 1) continue;
+                        if (OpenAround(grid, s, x, y)) return new Vector2Int(x, y);
+                    }
+            return start;
+        }
+
+        private static bool OpenAround(WorldTerrainGrid grid, WorldGenSettings s, int x, int y)
+        {
+            for (int dy = -1; dy <= 1; dy++)
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    int cx = x + dx, cy = y + dy;
+                    if (IsBlocked(grid, s, cx, cy, grid.TerrainAt(cx, cy), grid.TerrainAt(cx + 1, cy),
+                                  grid.TerrainAt(cx + 1, cy + 1), grid.TerrainAt(cx, cy + 1)))
+                        return false;
+                }
+            return true;
+        }
+
+        private static bool IsBlocked(WorldTerrainGrid grid, WorldGenSettings s, int x, int y,
+                                      string sw, string se, string ne, string nw)
+        {
+            int wet = Wet(sw) + Wet(se) + Wet(ne) + Wet(nw);
+            if (wet >= BlockingCorners) return true;
+
+            float mean = (grid.ElevationAt(x, y) + grid.ElevationAt(x + 1, y)
+                          + grid.ElevationAt(x + 1, y + 1) + grid.ElevationAt(x, y + 1)) * 0.25f;
+            return mean >= s.mountainLevel + PeakMargin && (sw == "rock" || sw == WorldTerrainGrid.Stone);
+        }
+
+        private static int Wet(string terrain)
+            => terrain == WorldTerrainGrid.Water || terrain == WorldTerrainGrid.WaterDeep
+               || terrain == WorldTerrainGrid.Lava ? 1 : 0;
+    }
+}

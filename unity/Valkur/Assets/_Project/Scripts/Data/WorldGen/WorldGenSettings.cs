@@ -21,6 +21,8 @@ namespace Valkur.Data.WorldGen
     {
         public const int MinSizeTiles = 64;
         public const int MaxWidthTiles = 2048;
+        public const int MaxRivers = 40;
+        public const int MaxRiverWidth = 3;
 
         /// <summary>
         /// The tallest world the Y-sort can hold without an origin shift. Sorting orders are a
@@ -68,6 +70,12 @@ namespace Valkur.Data.WorldGen
 
         [Tooltip("How much land the rare biomes (enchanted, corrupted) may claim.")]
         public float rarity = 0.3f;
+
+        [Tooltip("How many rivers the generator tries to run from the highlands to the sea.")]
+        public int riverCount = 8;
+
+        [Tooltip("River width in tiles.")]
+        public int riverWidth = 1;
 
         [Tooltip("Which biomes may appear and how much of the climate plane each claims.")]
         public List<WorldBiomeWeight> biomes = new List<WorldBiomeWeight>();
@@ -127,6 +135,8 @@ namespace Valkur.Data.WorldGen
             humidityBias = Mathf.Clamp(humidityBias, -0.5f, 0.5f);
             latitude = Mathf.Clamp01(latitude);
             rarity = Mathf.Clamp01(rarity);
+            riverCount = Mathf.Clamp(riverCount, 0, MaxRivers);
+            riverWidth = Mathf.Clamp(riverWidth, 1, MaxRiverWidth);
 
             EnsureAllBiomes();
             foreach (var row in biomes)

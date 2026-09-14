@@ -113,13 +113,30 @@ namespace Valkur.Tests.EditMode.Game.WorldGen
         {
             var climate = new WorldClimate(Settings(7));
             var map = WorldGenMap.Generate(climate, PreviewSide);
+            var s = climate.Settings;
+            var riverTiles = WorldRiverRaster.Tiles(map.Rivers, s.riverWidth, s.widthTiles, s.heightTiles);
 
             for (int row = 0; row < map.Rows; row += 7)
                 for (int col = 0; col < map.Columns; col += 7)
                 {
+                    // A river cell is the one exception, and it must be backed by a real river tile.
+                    if (map.BiomeOf(col, row) == WorldBiome.River)
+                    {
+                        Assert.IsTrue(CellHoldsRiver(map, col, row, riverTiles), $"cell ({col},{row}) claims a river it does not hold");
+                        continue;
+                    }
                     var p = map.CellCentre(col, row);
                     Assert.AreEqual(climate.BiomeAt(p.x, p.y), map.BiomeOf(col, row), $"cell ({col},{row})");
                 }
+        }
+
+        private static bool CellHoldsRiver(WorldGenMap map, int col, int row,
+                                           System.Collections.Generic.HashSet<Vector2Int> riverTiles)
+        {
+            foreach (var t in riverTiles)
+                if (Mathf.FloorToInt(t.x / map.TilesPerCell) == col && Mathf.FloorToInt(t.y / map.TilesPerCell) == row)
+                    return true;
+            return false;
         }
 
         [Test]

@@ -166,7 +166,13 @@ namespace Valkur.Gameplay.VFX
             string json = _instanceStore.Load();
             if (string.IsNullOrEmpty(json))
             {
-                Debug.LogWarning($"[ParticleInstancesLoader] instances file not found or empty.");
+                // A custom map slot with no particle emitters is a normal state (a fresh map, a generated
+                // world); only the base world is expected to ship this file. Warning on the
+                // steady state trains the reader to scroll past the console.
+                if (Valkur.Core.MapEditorActiveSlot.IsDefault(Valkur.Core.MapEditorActiveSlot.Read()))
+                    Debug.LogWarning($"[ParticleInstancesLoader] instances file not found or empty.");
+                else
+                    Debug.Log("[ParticleInstancesLoader] Active map slot has no particles file (empty map).");
                 return;
             }
 
