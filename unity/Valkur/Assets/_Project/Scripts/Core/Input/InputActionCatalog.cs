@@ -568,12 +568,12 @@ namespace Valkur.Core.Input
             list.Add(Tool(MapEntitiesEditor, "ToggleSnap", "Ajustar a rejilla", "Entities Editor"));
 
             // The Seed World editor's floating camera ("Visualizar mapa"). Read only while the view
-            // is up, so the keys mean nothing in the editor's panels.
+            // is up, so the keys mean nothing in the editor's panels. Flying fast is Shift HELD, read
+            // as a modifier (EditorInput's rule): a bare Shift binding is the one key no map may own.
             list.Add(Tool(MapSeedWorldEditor, "FlyUp",    "Camara: arriba",    "Seed World"));
             list.Add(Tool(MapSeedWorldEditor, "FlyDown",  "Camara: abajo",     "Seed World"));
             list.Add(Tool(MapSeedWorldEditor, "FlyLeft",  "Camara: izquierda", "Seed World"));
             list.Add(Tool(MapSeedWorldEditor, "FlyRight", "Camara: derecha",   "Seed World"));
-            list.Add(Tool(MapSeedWorldEditor, "FlyFast",  "Camara: rapido",    "Seed World"));
 
             return list.ToArray();
         }

@@ -72,7 +72,7 @@ namespace Valkur.Tests.EditMode.Editors.SeedWorld
         public void TheFlightKeys_AreDeclared_AndOwnedByTheEditorsExactName()
         {
             var tools = InputActionCatalog.All.Where(d => d.Map == InputActionCatalog.MapSeedWorldEditor).ToList();
-            foreach (var action in new[] { "FlyUp", "FlyDown", "FlyLeft", "FlyRight", "FlyFast" })
+            foreach (var action in new[] { "FlyUp", "FlyDown", "FlyLeft", "FlyRight" })
             {
                 var d = tools.FirstOrDefault(t => t.Action == action);
                 Assert.IsNotNull(d, $"'{action}' is missing from the catalogue.");
@@ -86,8 +86,9 @@ namespace Valkur.Tests.EditMode.Editors.SeedWorld
         {
             string path = Directory.GetFiles(Application.dataPath, "SeedWorldRuntimeEditor.Viewer.cs", SearchOption.AllDirectories).Single();
             string src = File.ReadAllText(path);
-            foreach (var action in new[] { "FlyUp", "FlyDown", "FlyLeft", "FlyRight", "FlyFast" })
+            foreach (var action in new[] { "FlyUp", "FlyDown", "FlyLeft", "FlyRight" })
                 StringAssert.Contains($"EditorInput.ToolHeld(MapSeedWorld, \"{action}\")", src);
+            StringAssert.Contains("KeyboardInputManager.IsShiftHeld()", src);
             StringAssert.Contains("EscapeOwnership.Claim(this)", src);
             StringAssert.Contains("EscapeOwnership.Release(this)", src);
         }

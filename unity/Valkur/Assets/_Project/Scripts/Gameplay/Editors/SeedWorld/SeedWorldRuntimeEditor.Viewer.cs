@@ -173,7 +173,8 @@ namespace Valkur.Gameplay.Editors.SeedWorld
                 EditorInput.ToolHeld(MapSeedWorld, "FlyDown"),
                 EditorInput.ToolHeld(MapSeedWorld, "FlyLeft"),
                 EditorInput.ToolHeld(MapSeedWorld, "FlyRight"));
-            bool fast = EditorInput.ToolHeld(MapSeedWorld, "FlyFast");
+            // Shift is a held MODIFIER, never a binding: InputChordTests refuses a bare Shift in the asset.
+            bool fast = KeyboardInputManager.IsShiftHeld();
 
             Vector2 p = t.position;
             p = SeedWorldViewerFlight.Step(p, dir, cam.GetCurrentOrthographicSize(), fast, Time.unscaledDeltaTime);

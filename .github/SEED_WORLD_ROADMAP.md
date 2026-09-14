@@ -521,8 +521,8 @@ flotante y **Esc vuelve al juego donde estabamos** (`SeedWorldRuntimeEditor.View
 - **Esc reclamado** (`EscapeOwnership`) desde el clic hasta la vuelta, o el General Editor cerraria
   el editor con el jugador varado en el slot de vista. Carga un fotograma despues del clic para que el
   aviso "Construyendo..." / "Volviendo..." llegue a pintarse.
-- **Teclas como datos**: mapa `Editor.SeedWorld` (FlyUp/Down/Left/Right en WASD y flechas, FlyFast en
-  Shift), dueno `"Seed World"`. Rueda = zoom (tope ortho 40, lo que el streamer pinta), boton central =
+- **Teclas como datos**: mapa `Editor.SeedWorld` (FlyUp/Down/Left/Right en WASD y flechas, Shift sostenido como modificador,
+  nunca como binding: `InputChordTests` prohibe un Shift suelto en el asset), dueno `"Seed World"`. Rueda = zoom (tope ortho 40, lo que el streamer pinta), boton central =
   arrastrar. Velocidad en pantallas por segundo (`SeedWorldViewerFlight`, puro), centro atado al mundo.
 - **Jugador prestado**: queda en el spawn, invencible con el flag guardado y restaurado. Cerrar el
   editor desde fuera durante la vista lleva al jugador de vuelta antes; parar Play no carga nada (el

@@ -4229,14 +4229,6 @@
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": ""
-                },
-                {
-                    "name": "FlyFast",
-                    "type": "Button",
-                    "id": "e9989e17-9895-4ede-b2e3-5acd5ae5cd1f",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": ""
                 }
             ],
             "bindings": [
@@ -4325,28 +4317,6 @@
                     "processors": "",
                     "groups": "",
                     "action": "FlyRight",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "9b6a918e-bc9a-4ca8-8685-fb3d9244bcd9",
-                    "path": "<Keyboard>/leftShift",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "FlyFast",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "0b59e225-416d-41a2-9eac-8fa52c31653f",
-                    "path": "<Keyboard>/rightShift",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "FlyFast",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

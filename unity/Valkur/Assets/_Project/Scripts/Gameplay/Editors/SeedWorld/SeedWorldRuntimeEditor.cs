@@ -27,7 +27,7 @@ namespace Valkur.Gameplay.Editors.SeedWorld
     /// own — never the base world.</para>
     ///
     /// <para><b>NO HOTKEY</b>: it opens from the launcher. Its only tools are the floating camera's
-    /// (<c>Editor.SeedWorld</c>: fly and fly fast), live only while "Visualizar mapa" is up
+    /// (<c>Editor.SeedWorld</c>: fly; Shift held flies fast), live only while "Visualizar mapa" is up
     /// (<c>.Viewer.cs</c>); every other verb is a button, and undo/redo come from <c>EditorShared</c>.</para>
     /// </summary>
     public sealed partial class SeedWorldRuntimeEditor : SingletonMonoBehaviour<SeedWorldRuntimeEditor>,
