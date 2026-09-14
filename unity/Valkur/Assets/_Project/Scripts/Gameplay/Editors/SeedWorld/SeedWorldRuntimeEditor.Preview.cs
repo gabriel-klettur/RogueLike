@@ -15,7 +15,9 @@ namespace Valkur.Gameplay.Editors.SeedWorld
     /// </summary>
     public partial class SeedWorldRuntimeEditor
     {
-        private const float PREVIEW_FRAME_H = 430f;
+        // 400 and not 430: the "Visualizar mapa" row above the layers needs the 30 px, and the
+        // panel's content has no scroll to overflow into.
+        private const float PREVIEW_FRAME_H = 400f;
         private const int SPAWN_MARK_RADIUS = 3;
 
         private RawImage _previewImage;
@@ -33,6 +35,8 @@ namespace Valkur.Gameplay.Editors.SeedWorld
 
         private void BuildPreviewPanel()
         {
+            BuildViewRow(_previewContent);
+
             var layers = MakeRow(_previewContent, "LayerRow", 26f);
             _layerButtons.Clear();
             AddLayerButton(layers.transform, "Biomas", PreviewLayer.Biome);

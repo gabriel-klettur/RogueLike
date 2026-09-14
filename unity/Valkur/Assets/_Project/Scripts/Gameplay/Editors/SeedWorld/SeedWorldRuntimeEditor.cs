@@ -26,8 +26,9 @@ namespace Valkur.Gameplay.Editors.SeedWorld
     /// workspace document). Only "Construir" writes anything, and only into a map slot of its
     /// own — never the base world.</para>
     ///
-    /// <para><b>NO HOTKEY</b> and no input actions of its own, like the Quests and Death editors:
-    /// every verb is a button, and undo/redo come from the shared <c>EditorShared</c> map.</para>
+    /// <para><b>NO HOTKEY</b>: it opens from the launcher. Its only tools are the floating camera's
+    /// (<c>Editor.SeedWorld</c>: fly and fly fast), live only while "Visualizar mapa" is up
+    /// (<c>.Viewer.cs</c>); every other verb is a button, and undo/redo come from <c>EditorShared</c>.</para>
     /// </summary>
     public sealed partial class SeedWorldRuntimeEditor : SingletonMonoBehaviour<SeedWorldRuntimeEditor>,
         GameEditorManager.IGameEditor
@@ -93,6 +94,8 @@ namespace Valkur.Gameplay.Editors.SeedWorld
         protected override void OnDestroy()
         {
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
+            // A session ending mid-view loads nothing: the return ticket brings the next one home.
+            FinishViewing();
             ReleasePreviewTexture();
             base.OnDestroy();
         }
@@ -121,6 +124,7 @@ namespace Valkur.Gameplay.Editors.SeedWorld
 
         public void Deactivate()
         {
+            CloseViewForDeactivate();
             _active = false;
             if (_root != null) _root.SetActive(false);
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.NotifyDeactivated(this);
@@ -129,6 +133,7 @@ namespace Valkur.Gameplay.Editors.SeedWorld
         private void Update()
         {
             if (!_active) return;
+            if (TickViewer()) return;
             if (EditorInput.UndoPressed()) Undo();
             else if (EditorInput.RedoPressed()) Redo();
         }

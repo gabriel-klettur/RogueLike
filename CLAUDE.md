@@ -6852,7 +6852,9 @@ related symptom reappears.
   camara y suelta las lejanas, y solo una zona EDITADA llega a disco (overlay normal, que gana al
   generador). Eso exigio que la reparacion de transiciones fuera LOCAL (pasadas Jacobi): una region
   con margen 7 coincide con el mundo entero vertice a vertice, y un test lo comprueba en todos.
-  `seedworld nueva [semilla]` empieza un mundo nuevo desde la consola. **Cambiar de slot retira los
+  `seedworld nueva [semilla]` empieza un mundo nuevo desde la consola. **Visualizar mapa** (panel de vista previa) entra en el mundo
+  como camara flotante (WASD/flechas, Shift, rueda; mapa de input `Editor.SeedWorld`) en el slot reservado
+  `seedworld-vista`, y Esc vuelve al juego donde estaba el jugador por `SeedWorldLauncher.ReturnTo`. **Cambiar de slot retira los
   monstruos del mundo anterior** (`MonsterSpawner.DespawnAllForWorldSwap`).
   **Separado del juego hasta que se integre (decision 2026-09-14):** `SeedWorldLab` (PlayerPrefs,
   APAGADO por defecto, leido APAGADO en tests) es la primera puerta de `SeedWorldLauncher`, el

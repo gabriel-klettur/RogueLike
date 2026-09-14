@@ -111,6 +111,39 @@ namespace Valkur.Gameplay.World.Generation
                 : "De vuelta en Pepitoria.";
         }
 
+        /// <summary>
+        /// The slot "Visualizar mapa" builds into. One reserved name, rebuilt on every view, so
+        /// looking at a world never adds a map to the author's list beyond this one.
+        /// </summary>
+        public const string ViewerSlot = "seedworld-vista";
+
+        /// <summary>
+        /// Back to <paramref name="slot"/> after a view. Pepitoria goes through <see cref="ReturnHome"/>
+        /// (the ticket puts the player on the exact spot); any other map through its own file, which
+        /// recorded where the player stood when they left it. A live world is painted at once, or the
+        /// first frame back would be a void.
+        /// </summary>
+        public static string ReturnTo(string slot)
+        {
+            if (!Application.isPlaying) return "Solo en Play Mode.";
+            var mgr = MapEditorManager.Instance;
+            if (mgr == null) return "No hay MapEditorManager en esta escena.";
+            if (string.IsNullOrEmpty(slot) || MapEditorManager.IsBaseSlot(slot)
+                || string.Equals(slot, ViewerSlot, StringComparison.OrdinalIgnoreCase))
+                return ReturnHome();
+
+            if (!mgr.LoadMapSlot(slot)) return $"No se pudo volver a '{slot}'.";
+            var streamer = SeedWorldLiveStreamer.Instance;
+            var player = Valkur.Core.EntityRegistry.PlayerTransform;
+            if (streamer != null && player != null)
+            {
+                streamer.RequestResync();
+                streamer.OpenNow();
+                streamer.SyncAll(player.position);
+            }
+            return $"De vuelta en '{slot}'.";
+        }
+
         public static string Describe(Outcome o)
         {
             if (o == null) return string.Empty;

@@ -218,6 +218,7 @@ namespace Valkur.Core.Input
         public const string MapMapEditor       = "Editor.Map";
         public const string MapEntitiesEditor  = "Editor.Entities";
         public const string MapBossEditor      = "Editor.Boss";
+        public const string MapSeedWorldEditor = "Editor.SeedWorld";
 
         /// <summary>Escape closes the open editor AND opens the launcher, by design. See
         /// <see cref="InputActionDescriptor.CoexistGroup"/>.</summary>
@@ -565,6 +566,14 @@ namespace Valkur.Core.Input
             list.Add(Tool(MapEntitiesEditor, "NudgeLeft",  "Mover izquierda", "Entities Editor"));
             list.Add(Tool(MapEntitiesEditor, "NudgeRight", "Mover derecha",   "Entities Editor"));
             list.Add(Tool(MapEntitiesEditor, "ToggleSnap", "Ajustar a rejilla", "Entities Editor"));
+
+            // The Seed World editor's floating camera ("Visualizar mapa"). Read only while the view
+            // is up, so the keys mean nothing in the editor's panels.
+            list.Add(Tool(MapSeedWorldEditor, "FlyUp",    "Camara: arriba",    "Seed World"));
+            list.Add(Tool(MapSeedWorldEditor, "FlyDown",  "Camara: abajo",     "Seed World"));
+            list.Add(Tool(MapSeedWorldEditor, "FlyLeft",  "Camara: izquierda", "Seed World"));
+            list.Add(Tool(MapSeedWorldEditor, "FlyRight", "Camara: derecha",   "Seed World"));
+            list.Add(Tool(MapSeedWorldEditor, "FlyFast",  "Camara: rapido",    "Seed World"));
 
             return list.ToArray();
         }

@@ -506,3 +506,24 @@ guarda, y los tres fixtures que ejercitan el directorio real a proposito lo apar
   el backup versionado devueltos byte a byte al estado previo. La vuelta a Pepitoria al punto exacto se cubre con
   `MapEditorBaseWorldIsolationTests.ATripOutOfPepitoria_ComesBackToTheExactSpotItLeftFrom`: la sesion de Play la
   tomo otra ejecucion de tests antes de probarla en vivo.
+
+## Visualizar mapa (2026-09-14)
+
+Boton **Visualizar mapa** en el panel de vista previa. Entra en el mundo previsualizado como camara
+flotante y **Esc vuelve al juego donde estabamos** (`SeedWorldRuntimeEditor.Viewer.cs`).
+
+- **Es el mundo real, no un dibujo**: construye los ajustes en un slot reservado en vivo
+  (`SeedWorldLauncher.ViewerSlot` = `seedworld-vista`) por el mismo `BuildAndLoad` que "Construir".
+  Por eso obedece al laboratorio (boton apagado con el lab apagado).
+- **Volver es una carga, no un teletransporte** (`SeedWorldLauncher.ReturnTo`): a Pepitoria por el
+  billete, a otro mapa por su propio fichero, que guardo donde estaba el jugador. Al volver se cierra
+  el editor (al juego); los ajustes siguen en el workspace.
+- **Esc reclamado** (`EscapeOwnership`) desde el clic hasta la vuelta, o el General Editor cerraria
+  el editor con el jugador varado en el slot de vista. Carga un fotograma despues del clic para que el
+  aviso "Construyendo..." / "Volviendo..." llegue a pintarse.
+- **Teclas como datos**: mapa `Editor.SeedWorld` (FlyUp/Down/Left/Right en WASD y flechas, FlyFast en
+  Shift), dueno `"Seed World"`. Rueda = zoom (tope ortho 40, lo que el streamer pinta), boton central =
+  arrastrar. Velocidad en pantallas por segundo (`SeedWorldViewerFlight`, puro), centro atado al mundo.
+- **Jugador prestado**: queda en el spawn, invencible con el flag guardado y restaurado. Cerrar el
+  editor desde fuera durante la vista lleva al jugador de vuelta antes; parar Play no carga nada (el
+  billete lleva a casa la siguiente sesion). Otro mapa cargado bajo la vista la termina sin cargar.

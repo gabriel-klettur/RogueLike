@@ -135,6 +135,7 @@ namespace Valkur.Gameplay.Editors.SeedWorld
             if (!_uiBuilt || _bodyScrollContent == null) return;
 
             RefreshTabs();
+            RefreshViewButton();
             _fieldResync.Clear();
             ClearChildren(_bodyScrollContent);
 
