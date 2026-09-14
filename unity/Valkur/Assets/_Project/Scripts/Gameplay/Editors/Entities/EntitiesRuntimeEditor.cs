@@ -229,6 +229,7 @@ namespace Valkur.Gameplay.Entities
 
             TickAnimationPreview();
             TickTimelinePanel();
+            TickDebugOverlayToggles();
 
             UpdatePickerDrag();
             // Suppress click-spawn while a drag is active so releasing over the
@@ -356,7 +357,10 @@ namespace Valkur.Gameplay.Entities
                 onDuplicate:      () => DuplicateSelectedDefinition(),
                 onRename:         OnRenameRequested,
                 onToggleTutorial: ToggleTutorial,
-                onSectionFold:    OnSectionFoldToggled);
+                onSectionFold:    OnSectionFoldToggled,
+                onToggleCollisions: OnToggleEntityCollisions,
+                onToggleAreas:      OnToggleSpellAreas);
+            RefreshDebugOverlayToggles();
 
             // Built outside BuildAll: it needs six callbacks no other panel shares, and
             // BuildAll already carries eighteen.
@@ -383,7 +387,8 @@ namespace Valkur.Gameplay.Entities
                 onMuzzleSpell:    OnMuzzleSpellChanged,
                 onMuzzleClear:    OnMuzzleClear,
                 onRepeatFrom:     OnAnimationRepeatFromCommitted,
-                onRepeatCount:    OnAnimationRepeatCountCommitted);
+                onRepeatCount:    OnAnimationRepeatCountCommitted,
+                collision:        BuildCollisionCallbacks());
 
             if (_ui.PropsFilterInput != null)
                 _ui.PropsFilterInput.onValueChanged.AddListener(OnPropsFilterChanged);

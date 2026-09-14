@@ -23,7 +23,7 @@ namespace Valkur.Gameplay.Entities
         // exception — it only needs the generic onDropdownToggle BuildMenuBar already has.
 
         private const float ANIM_W        = 336f;
-        private const float ANIM_H        = 724f + PANEL_HDR_H;
+        private const float ANIM_H        = 724f + 200f + PANEL_HDR_H;
         private const float ANIM_STAGE_H  = 212f;
         private const float ANIM_DIR_BTN  = 24f;
 
@@ -58,7 +58,8 @@ namespace Valkur.Gameplay.Entities
             Action<int> onLayoutChanged,
             Action onToggleMuzzle, Action<int> onMuzzleScope, Action<int> onMuzzleSpell,
             Action onMuzzleClear,
-            Action<string> onRepeatFrom = null, Action<string> onRepeatCount = null)
+            Action<string> onRepeatFrom = null, Action<string> onRepeatCount = null,
+            CollisionCallbacks collision = null)
         {
             // Docked to the right of the picker column rather than to a screen corner: both
             // corners are taken (Tools/Categories/Picker on the left, Properties and
@@ -130,6 +131,8 @@ namespace Valkur.Gameplay.Entities
 
             BuildMuzzleEditor(t, ref refs, onToggleMuzzle, onMuzzleScope, onMuzzleSpell,
                               onMuzzleClear);
+
+            if (collision != null) BuildCollisionEditor(t, ref refs, collision);
 
             // Info line — what the preview cannot show by moving: the resolved art, the
             // fallback it landed on, the pacing. Filled from Phase 3 onwards.
@@ -206,6 +209,79 @@ namespace Valkur.Gameplay.Entities
             refs.AnimMuzzleReadout.color              = TEXT_SECONDARY;
             refs.AnimMuzzleReadout.alignment          = TextAlignmentOptions.TopLeft;
             refs.AnimMuzzleReadout.enableWordWrapping = true;
+        }
+
+        /// <summary>
+        /// The collision panel's callbacks, grouped: BuildAnimationPanel already takes
+        /// twenty-two, and ten more loose delegates is how one gets wired to the wrong button.
+        /// </summary>
+        public sealed class CollisionCallbacks
+        {
+            public Action OnToggleView, OnToggleEdit, OnAddShape, OnRemoveShape,
+                          OnCopyToAnimation, OnRemeasure, OnResetFrame;
+            public Action<int> OnShapeSelected, OnGestureSelected;
+            public Action<string> OnFootprintWidth, OnFootprintDepth, OnHurtScale;
+        }
+
+        /// <summary>
+        /// The collision layers of the frame on stage: the footprint the creature stands on and
+        /// the capsules a blow can land on. Here and not in Properties for the muzzle's reason —
+        /// the hurtbox is a statement about the FRAME being shown, and only this panel is drawing
+        /// it, paused, with the capsules over it.
+        /// </summary>
+        private static void BuildCollisionEditor(Transform parent, ref UIRefs refs, CollisionCallbacks cb)
+        {
+            var header = CreateUI("AnimCollisionHeader", parent);
+            header.AddComponent<LayoutElement>().preferredHeight = 16f;
+            var headerTmp       = header.AddComponent<TextMeshProUGUI>();
+            headerTmp.text      = "COLISIONES (PISADA Y CUERPO)";
+            headerTmp.fontSize  = 10f;
+            headerTmp.fontStyle = FontStyles.Bold;
+            headerTmp.color     = ACCENT;
+            headerTmp.alignment = TextAlignmentOptions.MidlineLeft;
+
+            var row = MakeButtonRow(parent, "AnimCollisionRow");
+            refs.AnimCollViewImg = AddActionBtn(row, "Ver", 20f, cb.OnToggleView, out refs.AnimCollViewTmp);
+            refs.AnimCollEditImg = AddActionBtn(row, "Editar", 20f, cb.OnToggleEdit, out refs.AnimCollEditTmp);
+            AddActionBtn(row, "+ Capsula", 20f, cb.OnAddShape, out _);
+            AddActionBtn(row, "- Capsula", 20f, cb.OnRemoveShape, out _);
+
+            refs.AnimCollShapeDd   = AddLabeledDropdown(parent, "Capsula", cb.OnShapeSelected);
+            refs.AnimCollGestureDd = AddLabeledDropdown(parent, "Arrastre", cb.OnGestureSelected);
+
+            var row2 = MakeButtonRow(parent, "AnimCollisionRow2");
+            AddActionBtn(row2, "A la animacion", 20f, cb.OnCopyToAnimation, out _);
+            AddActionBtn(row2, "Re-medir", 20f, cb.OnRemeasure, out _);
+            AddActionBtn(row2, "Automatico", 20f, cb.OnResetFrame, out _);
+
+            var footRow = MakeFieldRow(parent, "AnimFootprintRow");
+            refs.AnimCollFootWInput = AddNumberField(footRow, "Pisada w", cb.OnFootprintWidth);
+            refs.AnimCollFootDInput = AddNumberField(footRow, "fondo", cb.OnFootprintDepth);
+
+            var scaleRow = MakeFieldRow(parent, "AnimHurtScaleRow");
+            refs.AnimCollHurtScaleInput = AddNumberField(scaleRow, "Cuerpo x", cb.OnHurtScale);
+
+            var readoutGo = CreateUI("AnimCollisionReadout", parent);
+            readoutGo.AddComponent<LayoutElement>().preferredHeight = 36f;
+            refs.AnimCollReadout                    = readoutGo.AddComponent<TextMeshProUGUI>();
+            refs.AnimCollReadout.text               = "";
+            refs.AnimCollReadout.fontSize           = 9f;
+            refs.AnimCollReadout.color              = TEXT_SECONDARY;
+            refs.AnimCollReadout.alignment          = TextAlignmentOptions.TopLeft;
+            refs.AnimCollReadout.enableWordWrapping = true;
+        }
+
+        private static Transform MakeButtonRow(Transform parent, string name)
+        {
+            var row = CreateUI(name, parent);
+            row.AddComponent<LayoutElement>().preferredHeight = 20f;
+            var hlg = row.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing                = 4f;
+            hlg.childForceExpandWidth  = true;
+            hlg.childForceExpandHeight = true;
+            hlg.childControlWidth      = true;
+            hlg.childControlHeight     = true;
+            return row.transform;
         }
 
         private static void BuildPacingEditors(Transform parent, ref UIRefs refs,

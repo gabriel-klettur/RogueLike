@@ -1716,6 +1716,8 @@ MonoBehaviour:
       - anim_armed_equip
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 0
+      repeatFrameCount: 0
       timeline:
         steps: []
         releaseStep: 0
@@ -1806,6 +1808,8 @@ MonoBehaviour:
       - anim_armed_attack_1
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 0
+      repeatFrameCount: 0
       timeline:
         steps: []
         releaseStep: 0
@@ -1893,6 +1897,8 @@ MonoBehaviour:
       - anim_charging_sprint
       animationSpeedMultiplier: 4
       holdLastFrame: 1
+      repeatFrom: 0
+      repeatFrameCount: 0
       timeline:
         steps: []
         releaseStep: 0
@@ -1902,6 +1908,8 @@ MonoBehaviour:
         recoverMode: 2
     stateVariants: []
     statePacing: []
+    walkReferenceSpeed: 0
+    runReferenceSpeed: 0
     loadouts:
     - key: armed
       states:
@@ -2197,6 +2205,2558 @@ MonoBehaviour:
       castVariants: []
     castMuzzle: {x: 0, y: 0}
     castMuzzleFrames: []
+    castMuzzlePoints: []
+    collision:
+      footprintSize: {x: 0.69062495, y: 0.3107812}
+      footprintOffset: {x: 0, y: 0}
+      footprintHandTuned: 0
+      hurtScale: 1
+      hurtShapes: []
+      hurtShapeFrames:
+      - frame: dwarf_armed_attack_1_e0
+        shapes:
+        - center: {x: -0.0797546, y: -0.51428574}
+          size: {x: 0.35582823, y: 0.4857143}
+        - center: {x: 0.06748466, y: 0.08571429}
+          size: {x: 0.35582823, y: 0.45714286}
+        handTuned: 0
+      - frame: dwarf_armed_attack_1_e1
+        shapes:
+        - center: {x: -0.030674847, y: -0.45714286}
+          size: {x: 0.33128834, y: 0.54285717}
+        - center: {x: 0.15337424, y: 0.2857143}
+          size: {x: 0.34355828, y: 0.54285717}
+        handTuned: 0
+      - frame: dwarf_armed_attack_1_e2
+        shapes:
+        - center: {x: 0.055214725, y: -0.6}
+          size: {x: 0.36809817, y: 0.4}
+        - center: {x: 0.030674847, y: -0.014285714}
+          size: {x: 0.26993865, y: 0.47142857}
+        - center: {x: 0.21472393, y: 0.5714286}
+          size: {x: 0.2576687, y: 0.4}
+        handTuned: 0
+      - frame: dwarf_armed_attack_1_e3
+        shapes:
+        - center: {x: -0.607362, y: -0.4}
+          size: {x: 0.39263803, y: 0.42857143}
+        - center: {x: -0.006134969, y: -0.25714287}
+          size: {x: 0.45398772, y: 0.51428574}
+        - center: {x: 0.601227, y: 0.08571429}
+          size: {x: 0.398773, y: 0.114285715}
+        handTuned: 0
+      - frame: dwarf_armed_attack_1_e4
+        shapes:
+        - center: {x: -0.055214725, y: -0.5714286}
+          size: {x: 0.40490797, y: 0.42857143}
+        - center: {x: 0.21472393, y: 0.014285714}
+          size: {x: 0.2822086, y: 0.44285715}
+        handTuned: 0
+      - frame: dwarf_armed_attack_1_e5
+        shapes:
+        - center: {x: -0.34969324, y: -0.5714286}
+          size: {x: 0.35582823, y: 0.4}
+        - center: {x: -0.2760736, y: -0.042857144}
+          size: {x: 0.2822086, y: 0.41428572}
+        handTuned: 0
+      - frame: dwarf_armed_attack_1_e6
+        shapes:
+        - center: {x: -0.22699386, y: -0.51428574}
+          size: {x: 0.35582823, y: 0.4857143}
+        - center: {x: -0.06748466, y: 0.12857144}
+          size: {x: 0.3190184, y: 0.5}
+        handTuned: 0
+      - frame: dwarf_armed_attack_1_e7
+        shapes:
+        - center: {x: -0.15337424, y: -0.5}
+          size: {x: 0.35582823, y: 0.5}
+        - center: {x: 0.006134969, y: 0.1}
+          size: {x: 0.36809817, y: 0.44285715}
+        handTuned: 0
+      - frame: dwarf_armed_attack_1_w0
+        shapes:
+        - center: {x: -0.06748466, y: -0.5}
+          size: {x: 0.35582823, y: 0.5}
+        - center: {x: 0.0797546, y: 0.1}
+          size: {x: 0.35582823, y: 0.44285715}
+        handTuned: 0
+      - frame: dwarf_armed_attack_1_w1
+        shapes:
+        - center: {x: -0.030674847, y: -0.45714286}
+          size: {x: 0.34355828, y: 0.54285717}
+        - center: {x: 0.15337424, y: 0.2857143}
+          size: {x: 0.35582823, y: 0.54285717}
+        handTuned: 0
+      - frame: dwarf_armed_attack_1_w2
+        shapes:
+        - center: {x: 0.06748466, y: -0.6}
+          size: {x: 0.36809817, y: 0.4}
+        - center: {x: 0.018404908, y: -0.014285714}
+          size: {x: 0.26993865, y: 0.47142857}
+        - center: {x: 0.21472393, y: 0.5714286}
+          size: {x: 0.26993865, y: 0.4}
+        handTuned: 0
+      - frame: dwarf_armed_attack_1_w3
+        shapes:
+        - center: {x: 0.607362, y: 0.1}
+          size: {x: 0.39263803, y: 0.1}
+        - center: {x: 0.006134969, y: -0.27142859}
+          size: {x: 0.45398772, y: 0.5285714}
+        - center: {x: -0.601227, y: -0.3857143}
+          size: {x: 0.398773, y: 0.44285715}
+        handTuned: 0
+      - frame: dwarf_armed_attack_1_w4
+        shapes:
+        - center: {x: -0.042944785, y: -0.5714286}
+          size: {x: 0.40490797, y: 0.42857143}
+        - center: {x: 0.21472393, y: 0.014285714}
+          size: {x: 0.26993865, y: 0.44285715}
+        handTuned: 0
+      - frame: dwarf_armed_attack_1_w5
+        shapes:
+        - center: {x: -0.34969324, y: -0.5714286}
+          size: {x: 0.34355828, y: 0.4}
+        - center: {x: -0.28834355, y: -0.042857144}
+          size: {x: 0.2822086, y: 0.41428572}
+        handTuned: 0
+      - frame: dwarf_armed_attack_1_w6
+        shapes:
+        - center: {x: -0.21472393, y: -0.5}
+          size: {x: 0.35582823, y: 0.5}
+        - center: {x: -0.055214725, y: 0.15714286}
+          size: {x: 0.3190184, y: 0.5}
+        handTuned: 0
+      - frame: dwarf_armed_attack_1_w7
+        shapes:
+        - center: {x: -0.1411043, y: -0.5}
+          size: {x: 0.35582823, y: 0.5}
+        - center: {x: 0.006134969, y: 0.1}
+          size: {x: 0.35582823, y: 0.44285715}
+        handTuned: 0
+      - frame: dwarf_armed_equip_e0
+        shapes:
+        - center: {x: 0, y: -0.4125874}
+          size: {x: 0.5217391, y: 0.5874126}
+        - center: {x: 0.06521739, y: 0.28671327}
+          size: {x: 0.36956522, y: 0.33566433}
+        handTuned: 0
+      - frame: dwarf_armed_equip_e1
+        shapes:
+        - center: {x: -0.04347826, y: -0.6923077}
+          size: {x: 0.6086956, y: 0.30769232}
+        - center: {x: -0.02173913, y: -0.23076923}
+          size: {x: 0.36956522, y: 0.37762237}
+        - center: {x: 0, y: 0.24475524}
+          size: {x: 0.47826087, y: 0.3216783}
+        handTuned: 0
+      - frame: dwarf_armed_equip_e2
+        shapes:
+        - center: {x: 0.04347826, y: -0.6923077}
+          size: {x: 0.5652174, y: 0.30769232}
+        - center: {x: 0.04347826, y: -0.24475524}
+          size: {x: 0.39130434, y: 0.36363637}
+        - center: {x: 0, y: 0.2027972}
+          size: {x: 0.47826087, y: 0.30769232}
+        handTuned: 0
+      - frame: dwarf_armed_equip_e3
+        shapes:
+        - center: {x: 0.06521739, y: -0.6503497}
+          size: {x: 0.54347825, y: 0.34965035}
+        - center: {x: -0.08695652, y: -0.11888112}
+          size: {x: 0.47826087, y: 0.4055944}
+        - center: {x: 0.1521739, y: 0.4125874}
+          size: {x: 0.36956522, y: 0.34965035}
+        handTuned: 0
+      - frame: dwarf_armed_equip_e4
+        shapes:
+        - center: {x: -0.19565217, y: -0.3986014}
+          size: {x: 0.6304348, y: 0.6013986}
+        - center: {x: 0.17391305, y: 0.4055944}
+          size: {x: 0.4347826, y: 0.5944056}
+        handTuned: 0
+      - frame: dwarf_armed_equip_e5
+        shapes:
+        - center: {x: -0.2173913, y: -0.62237763}
+          size: {x: 0.5652174, y: 0.37762237}
+        - center: {x: -0.08695652, y: -0.062937066}
+          size: {x: 0.5652174, y: 0.46153846}
+        - center: {x: 0.04347826, y: 0.4965035}
+          size: {x: 0.47826087, y: 0.37762237}
+        handTuned: 0
+      - frame: dwarf_armed_equip_e6
+        shapes:
+        - center: {x: -0.17391305, y: -0.56643355}
+          size: {x: 0.5652174, y: 0.43356642}
+        - center: {x: 0.10869565, y: 0.034965035}
+          size: {x: 0.54347825, y: 0.44755244}
+        handTuned: 0
+      - frame: dwarf_armed_equip_e7
+        shapes:
+        - center: {x: -0.10869565, y: -0.53846157}
+          size: {x: 0.54347825, y: 0.46153846}
+        - center: {x: 0.1521739, y: 0.062937066}
+          size: {x: 0.5869565, y: 0.4755245}
+        handTuned: 0
+      - frame: dwarf_armed_equip_w0
+        shapes:
+        - center: {x: -0, y: -0.4125874}
+          size: {x: 0.5217391, y: 0.5874126}
+        - center: {x: 0.06521739, y: 0.28671327}
+          size: {x: 0.36956522, y: 0.33566433}
+        handTuned: 0
+      - frame: dwarf_armed_equip_w1
+        shapes:
+        - center: {x: -0.04347826, y: -0.6923077}
+          size: {x: 0.6086956, y: 0.30769232}
+        - center: {x: -0.02173913, y: -0.23076923}
+          size: {x: 0.36956522, y: 0.37762237}
+        - center: {x: -0, y: 0.24475524}
+          size: {x: 0.47826087, y: 0.3216783}
+        handTuned: 0
+      - frame: dwarf_armed_equip_w2
+        shapes:
+        - center: {x: 0.04347826, y: -0.6923077}
+          size: {x: 0.5652174, y: 0.30769232}
+        - center: {x: 0.04347826, y: -0.24475524}
+          size: {x: 0.39130434, y: 0.36363637}
+        - center: {x: -0, y: 0.2027972}
+          size: {x: 0.47826087, y: 0.30769232}
+        handTuned: 0
+      - frame: dwarf_armed_equip_w3
+        shapes:
+        - center: {x: 0.06521739, y: -0.6503497}
+          size: {x: 0.54347825, y: 0.34965035}
+        - center: {x: -0.08695652, y: -0.11888112}
+          size: {x: 0.47826087, y: 0.4055944}
+        - center: {x: 0.1521739, y: 0.4125874}
+          size: {x: 0.36956522, y: 0.34965035}
+        handTuned: 0
+      - frame: dwarf_armed_equip_w4
+        shapes:
+        - center: {x: -0.19565217, y: -0.3986014}
+          size: {x: 0.6304348, y: 0.6013986}
+        - center: {x: 0.17391305, y: 0.4055944}
+          size: {x: 0.4347826, y: 0.5944056}
+        handTuned: 0
+      - frame: dwarf_armed_equip_w5
+        shapes:
+        - center: {x: -0.2173913, y: -0.62237763}
+          size: {x: 0.5652174, y: 0.37762237}
+        - center: {x: -0.08695652, y: -0.062937066}
+          size: {x: 0.5652174, y: 0.46153846}
+        - center: {x: 0.04347826, y: 0.4965035}
+          size: {x: 0.47826087, y: 0.37762237}
+        handTuned: 0
+      - frame: dwarf_armed_equip_w6
+        shapes:
+        - center: {x: -0.17391305, y: -0.56643355}
+          size: {x: 0.5652174, y: 0.43356642}
+        - center: {x: 0.10869565, y: 0.034965035}
+          size: {x: 0.54347825, y: 0.44755244}
+        handTuned: 0
+      - frame: dwarf_armed_equip_w7
+        shapes:
+        - center: {x: -0.10869565, y: -0.53846157}
+          size: {x: 0.54347825, y: 0.46153846}
+        - center: {x: 0.1521739, y: 0.062937066}
+          size: {x: 0.5869565, y: 0.4755245}
+        handTuned: 0
+      - frame: dwarf_armed_idle_e0
+        shapes:
+        - center: {x: -0.1891892, y: -0.4017094}
+          size: {x: 0.5225225, y: 0.5982906}
+        - center: {x: 0.009009009, y: 0.36752138}
+          size: {x: 0.6126126, y: 0.5811966}
+        handTuned: 0
+      - frame: dwarf_armed_idle_e1
+        shapes:
+        - center: {x: -0.117117114, y: -0.4017094}
+          size: {x: 0.5585586, y: 0.5982906}
+        - center: {x: 0.0990991, y: 0.36752138}
+          size: {x: 0.5945946, y: 0.5811966}
+        handTuned: 0
+      - frame: dwarf_armed_idle_e2
+        shapes:
+        - center: {x: -0.22522523, y: -0.41880342}
+          size: {x: 0.5585586, y: 0.5811966}
+        - center: {x: 0.045045044, y: 0.31623933}
+          size: {x: 0.6126126, y: 0.5641026}
+        handTuned: 0
+      - frame: dwarf_armed_idle_e3
+        shapes:
+        - center: {x: -0.26126125, y: -0.4017094}
+          size: {x: 0.5585586, y: 0.5982906}
+        - center: {x: 0.027027028, y: 0.35042736}
+          size: {x: 0.6306306, y: 0.5641026}
+        handTuned: 0
+      - frame: dwarf_armed_idle_e4
+        shapes:
+        - center: {x: -0.26126125, y: -0.41880342}
+          size: {x: 0.5945946, y: 0.5811966}
+        - center: {x: 0.009009009, y: 0.33333334}
+          size: {x: 0.6486486, y: 0.5811966}
+        handTuned: 0
+      - frame: dwarf_armed_idle_e5
+        shapes:
+        - center: {x: -0.3153153, y: -0.41880342}
+          size: {x: 0.5405405, y: 0.5811966}
+        - center: {x: -0.06306306, y: 0.35042736}
+          size: {x: 0.6126126, y: 0.5982906}
+        handTuned: 0
+      - frame: dwarf_armed_idle_w0
+        shapes:
+        - center: {x: -0.1891892, y: -0.41880342}
+          size: {x: 0.5405405, y: 0.5811966}
+        - center: {x: -0.009009009, y: 0.35042736}
+          size: {x: 0.6126126, y: 0.5982906}
+        handTuned: 0
+      - frame: dwarf_armed_idle_w1
+        shapes:
+        - center: {x: -0.0990991, y: -0.4017094}
+          size: {x: 0.5585586, y: 0.5982906}
+        - center: {x: 0.0990991, y: 0.36752138}
+          size: {x: 0.5765766, y: 0.5811966}
+        handTuned: 0
+      - frame: dwarf_armed_idle_w2
+        shapes:
+        - center: {x: -0.24324325, y: -0.41880342}
+          size: {x: 0.5585586, y: 0.5811966}
+        - center: {x: 0.045045044, y: 0.31623933}
+          size: {x: 0.6306306, y: 0.5641026}
+        handTuned: 0
+      - frame: dwarf_armed_idle_w3
+        shapes:
+        - center: {x: -0.24324325, y: -0.4017094}
+          size: {x: 0.5585586, y: 0.5982906}
+        - center: {x: 0.045045044, y: 0.35042736}
+          size: {x: 0.6306306, y: 0.5641026}
+        handTuned: 0
+      - frame: dwarf_armed_idle_w4
+        shapes:
+        - center: {x: -0.26126125, y: -0.41880342}
+          size: {x: 0.5765766, y: 0.5811966}
+        - center: {x: -0.009009009, y: 0.33333334}
+          size: {x: 0.6486486, y: 0.5811966}
+        handTuned: 0
+      - frame: dwarf_armed_idle_w5
+        shapes:
+        - center: {x: -0.3153153, y: -0.41880342}
+          size: {x: 0.5585586, y: 0.5811966}
+        - center: {x: -0.045045044, y: 0.35042736}
+          size: {x: 0.6126126, y: 0.5982906}
+        handTuned: 0
+      - frame: dwarf_armed_running_e0
+        shapes:
+        - center: {x: -0.25581396, y: -0.46969697}
+          size: {x: 0.55813956, y: 0.530303}
+        - center: {x: 0.03875969, y: 0.22727273}
+          size: {x: 0.4496124, y: 0.530303}
+        handTuned: 0
+      - frame: dwarf_armed_running_e1
+        shapes:
+        - center: {x: -0.27131784, y: -0.42424244}
+          size: {x: 0.3875969, y: 0.5151515}
+        - center: {x: 0.054263566, y: 0.24242425}
+          size: {x: 0.43410853, y: 0.5151515}
+        handTuned: 0
+      - frame: dwarf_armed_running_e2
+        shapes:
+        - center: {x: -0.20930232, y: -0.45454547}
+          size: {x: 0.4496124, y: 0.54545456}
+        - center: {x: 0.14728682, y: 0.22727273}
+          size: {x: 0.4651163, y: 0.5}
+        handTuned: 0
+      - frame: dwarf_armed_running_e3
+        shapes:
+        - center: {x: -0.14728682, y: -0.16666667}
+          size: {x: 0.4496124, y: 0.43939394}
+        - center: {x: 0.25581396, y: 0.43939394}
+          size: {x: 0.4496124, y: 0.46969697}
+        handTuned: 0
+      - frame: dwarf_armed_running_e4
+        shapes:
+        - center: {x: -0.023255814, y: -0.46969697}
+          size: {x: 0.5116279, y: 0.5}
+        - center: {x: 0.20930232, y: 0.18181819}
+          size: {x: 0.49612403, y: 0.5151515}
+        handTuned: 0
+      - frame: dwarf_armed_running_e5
+        shapes:
+        - center: {x: -0.1007752, y: -0.4848485}
+          size: {x: 0.49612403, y: 0.5151515}
+        - center: {x: 0.24031007, y: 0.18181819}
+          size: {x: 0.4651163, y: 0.5151515}
+        handTuned: 0
+      - frame: dwarf_armed_running_e6
+        shapes:
+        - center: {x: -0.24031007, y: -0.46969697}
+          size: {x: 0.48062015, y: 0.530303}
+        - center: {x: 0.2248062, y: 0.22727273}
+          size: {x: 0.48062015, y: 0.530303}
+        handTuned: 0
+      - frame: dwarf_armed_running_e7
+        shapes:
+        - center: {x: -0.069767445, y: -0.15151516}
+          size: {x: 0.4651163, y: 0.4848485}
+        - center: {x: 0.37984496, y: 0.43939394}
+          size: {x: 0.4496124, y: 0.46969697}
+        handTuned: 0
+      - frame: dwarf_armed_running_w0
+        shapes:
+        - center: {x: -0.25581396, y: -0.46969697}
+          size: {x: 0.5426357, y: 0.530303}
+        - center: {x: 0.023255814, y: 0.22727273}
+          size: {x: 0.4496124, y: 0.530303}
+        handTuned: 0
+      - frame: dwarf_armed_running_w1
+        shapes:
+        - center: {x: -0.25581396, y: -0.42424244}
+          size: {x: 0.3875969, y: 0.5151515}
+        - center: {x: 0.069767445, y: 0.24242425}
+          size: {x: 0.43410853, y: 0.5151515}
+        handTuned: 0
+      - frame: dwarf_armed_running_w2
+        shapes:
+        - center: {x: -0.20930232, y: -0.45454547}
+          size: {x: 0.4651163, y: 0.54545456}
+        - center: {x: 0.1627907, y: 0.22727273}
+          size: {x: 0.4651163, y: 0.5}
+        handTuned: 0
+      - frame: dwarf_armed_running_w3
+        shapes:
+        - center: {x: -0.1627907, y: -0.18181819}
+          size: {x: 0.4496124, y: 0.45454547}
+        - center: {x: 0.25581396, y: 0.43939394}
+          size: {x: 0.4651163, y: 0.46969697}
+        handTuned: 0
+      - frame: dwarf_armed_running_w4
+        shapes:
+        - center: {x: -0.03875969, y: -0.46969697}
+          size: {x: 0.5116279, y: 0.5}
+        - center: {x: 0.2248062, y: 0.18181819}
+          size: {x: 0.49612403, y: 0.5151515}
+        handTuned: 0
+      - frame: dwarf_armed_running_w5
+        shapes:
+        - center: {x: -0.08527132, y: -0.4848485}
+          size: {x: 0.49612403, y: 0.5151515}
+        - center: {x: 0.2248062, y: 0.18181819}
+          size: {x: 0.4651163, y: 0.5151515}
+        handTuned: 0
+      - frame: dwarf_armed_running_w6
+        shapes:
+        - center: {x: -0.24031007, y: -0.46969697}
+          size: {x: 0.49612403, y: 0.530303}
+        - center: {x: 0.2248062, y: 0.22727273}
+          size: {x: 0.4651163, y: 0.530303}
+        handTuned: 0
+      - frame: dwarf_armed_running_w7
+        shapes:
+        - center: {x: -0.069767445, y: -0.13636364}
+          size: {x: 0.4496124, y: 0.46969697}
+        - center: {x: 0.36434108, y: 0.42424244}
+          size: {x: 0.4496124, y: 0.45454547}
+        handTuned: 0
+      - frame: dwarf_armed_walking_e0
+        shapes:
+        - center: {x: -0.26666668, y: -0.44}
+          size: {x: 0.5, y: 0.56}
+        - center: {x: -0.05, y: 0.312}
+          size: {x: 0.48333332, y: 0.576}
+        handTuned: 0
+      - frame: dwarf_armed_walking_e1
+        shapes:
+        - center: {x: -0.21666667, y: -0.44}
+          size: {x: 0.45, y: 0.56}
+        - center: {x: 0.1, y: 0.264}
+          size: {x: 0.46666667, y: 0.528}
+        handTuned: 0
+      - frame: dwarf_armed_walking_e2
+        shapes:
+        - center: {x: -0.2, y: -0.632}
+          size: {x: 0.5, y: 0.368}
+        - center: {x: -0.016666668, y: -0.088}
+          size: {x: 0.38333333, y: 0.432}
+        - center: {x: 0.2, y: 0.456}
+          size: {x: 0.43333334, y: 0.368}
+        handTuned: 0
+      - frame: dwarf_armed_walking_e3
+        shapes:
+        - center: {x: -0.11666667, y: -0.44}
+          size: {x: 0.45, y: 0.56}
+        - center: {x: 0.2, y: 0.296}
+          size: {x: 0.46666667, y: 0.56}
+        handTuned: 0
+      - frame: dwarf_armed_walking_e4
+        shapes:
+        - center: {x: -0.083333336, y: -0.408}
+          size: {x: 0.51666665, y: 0.592}
+        - center: {x: 0.25, y: 0.344}
+          size: {x: 0.45, y: 0.544}
+        handTuned: 0
+      - frame: dwarf_armed_walking_e5
+        shapes:
+        - center: {x: -0.13333334, y: -0.456}
+          size: {x: 0.46666667, y: 0.544}
+        - center: {x: 0.21666667, y: 0.248}
+          size: {x: 0.45, y: 0.544}
+        handTuned: 0
+      - frame: dwarf_armed_walking_e6
+        shapes:
+        - center: {x: -0.15, y: -0.424}
+          size: {x: 0.45, y: 0.544}
+        - center: {x: 0.23333333, y: 0.28}
+          size: {x: 0.5, y: 0.544}
+        handTuned: 0
+      - frame: dwarf_armed_walking_e7
+        shapes:
+        - center: {x: -0.13333334, y: -0.44}
+          size: {x: 0.46666667, y: 0.56}
+        - center: {x: 0.26666668, y: 0.296}
+          size: {x: 0.46666667, y: 0.56}
+        handTuned: 0
+      - frame: dwarf_armed_walking_w0
+        shapes:
+        - center: {x: -0.26666668, y: -0.44}
+          size: {x: 0.5, y: 0.56}
+        - center: {x: -0.05, y: 0.312}
+          size: {x: 0.48333332, y: 0.576}
+        handTuned: 0
+      - frame: dwarf_armed_walking_w1
+        shapes:
+        - center: {x: -0.21666667, y: -0.44}
+          size: {x: 0.45, y: 0.56}
+        - center: {x: 0.1, y: 0.264}
+          size: {x: 0.46666667, y: 0.528}
+        handTuned: 0
+      - frame: dwarf_armed_walking_w2
+        shapes:
+        - center: {x: -0.2, y: -0.632}
+          size: {x: 0.5, y: 0.368}
+        - center: {x: -0.016666668, y: -0.088}
+          size: {x: 0.38333333, y: 0.432}
+        - center: {x: 0.2, y: 0.456}
+          size: {x: 0.43333334, y: 0.368}
+        handTuned: 0
+      - frame: dwarf_armed_walking_w3
+        shapes:
+        - center: {x: -0.11666667, y: -0.44}
+          size: {x: 0.45, y: 0.56}
+        - center: {x: 0.2, y: 0.296}
+          size: {x: 0.46666667, y: 0.56}
+        handTuned: 0
+      - frame: dwarf_armed_walking_w4
+        shapes:
+        - center: {x: -0.083333336, y: -0.408}
+          size: {x: 0.51666665, y: 0.592}
+        - center: {x: 0.25, y: 0.344}
+          size: {x: 0.45, y: 0.544}
+        handTuned: 0
+      - frame: dwarf_armed_walking_w5
+        shapes:
+        - center: {x: -0.13333334, y: -0.456}
+          size: {x: 0.46666667, y: 0.544}
+        - center: {x: 0.21666667, y: 0.248}
+          size: {x: 0.45, y: 0.544}
+        handTuned: 0
+      - frame: dwarf_armed_walking_w6
+        shapes:
+        - center: {x: -0.15, y: -0.424}
+          size: {x: 0.45, y: 0.544}
+        - center: {x: 0.23333333, y: 0.28}
+          size: {x: 0.5, y: 0.544}
+        handTuned: 0
+      - frame: dwarf_armed_walking_w7
+        shapes:
+        - center: {x: -0.13333334, y: -0.44}
+          size: {x: 0.46666667, y: 0.56}
+        - center: {x: 0.26666668, y: 0.296}
+          size: {x: 0.46666667, y: 0.56}
+        handTuned: 0
+      - frame: dwarf_charging_sprint_e0
+        shapes:
+        - center: {x: 0.101265825, y: -0.4017094}
+          size: {x: 0.4177215, y: 0.5982906}
+        - center: {x: 0.21518987, y: 0.3931624}
+          size: {x: 0.4050633, y: 0.60683763}
+        handTuned: 0
+      - frame: dwarf_charging_sprint_e1
+        shapes:
+        - center: {x: 0.16455697, y: -0.47008547}
+          size: {x: 0.35443038, y: 0.52991456}
+        - center: {x: 0.29113925, y: 0.26495728}
+          size: {x: 0.35443038, y: 0.5470086}
+        handTuned: 0
+      - frame: dwarf_charging_sprint_e2
+        shapes:
+        - center: {x: 0.06329114, y: -0.45299146}
+          size: {x: 0.48101267, y: 0.5470086}
+        - center: {x: 0.35443038, y: 0.2991453}
+          size: {x: 0.36708862, y: 0.5470086}
+        handTuned: 0
+      - frame: dwarf_charging_sprint_e3
+        shapes:
+        - center: {x: -0.5063291, y: -0.24786325}
+          size: {x: 0.36708862, y: 0.41025642}
+        - center: {x: 0.30379745, y: -0.05982906}
+          size: {x: 0.6962025, y: 0.6666667}
+        handTuned: 0
+      - frame: dwarf_charging_sprint_e4
+        shapes:
+        - center: {x: -0.4050633, y: -0.45299146}
+          size: {x: 0.36708862, y: 0.5470086}
+        - center: {x: -0.101265825, y: 0.2991453}
+          size: {x: 0.36708862, y: 0.5470086}
+        handTuned: 0
+      - frame: dwarf_charging_sprint_e5
+        shapes:
+        - center: {x: -0.30379745, y: -0.41880342}
+          size: {x: 0.3164557, y: 0.5811966}
+        - center: {x: -0.15189873, y: 0.35042736}
+          size: {x: 0.39240506, y: 0.5982906}
+        handTuned: 0
+      - frame: dwarf_charging_sprint_e6
+        shapes:
+        - center: {x: -0.16455697, y: -0.4017094}
+          size: {x: 0.37974682, y: 0.5982906}
+        - center: {x: -0.03797468, y: 0.3846154}
+          size: {x: 0.32911393, y: 0.5982906}
+        handTuned: 0
+      - frame: dwarf_charging_sprint_e7
+        shapes:
+        - center: {x: -0.012658228, y: -0.4017094}
+          size: {x: 0.30379745, y: 0.5982906}
+        - center: {x: 0.07594936, y: 0.3931624}
+          size: {x: 0.39240506, y: 0.60683763}
+        handTuned: 0
+      - frame: dwarf_charging_sprint_w0
+        shapes:
+        - center: {x: 0.101265825, y: -0.4017094}
+          size: {x: 0.4177215, y: 0.5982906}
+        - center: {x: 0.21518987, y: 0.3931624}
+          size: {x: 0.4050633, y: 0.60683763}
+        handTuned: 0
+      - frame: dwarf_charging_sprint_w1
+        shapes:
+        - center: {x: 0.16455697, y: -0.47008547}
+          size: {x: 0.35443038, y: 0.52991456}
+        - center: {x: 0.29113925, y: 0.26495728}
+          size: {x: 0.35443038, y: 0.5470086}
+        handTuned: 0
+      - frame: dwarf_charging_sprint_w2
+        shapes:
+        - center: {x: 0.06329114, y: -0.45299146}
+          size: {x: 0.48101267, y: 0.5470086}
+        - center: {x: 0.35443038, y: 0.2991453}
+          size: {x: 0.36708862, y: 0.5470086}
+        handTuned: 0
+      - frame: dwarf_charging_sprint_w3
+        shapes:
+        - center: {x: 0.6329114, y: 0.042735044}
+          size: {x: 0.36708862, y: 0.5641026}
+        - center: {x: 0.07594936, y: -0.094017096}
+          size: {x: 0.443038, y: 0.63247865}
+        - center: {x: -0.49367088, y: -0.23076923}
+          size: {x: 0.37974682, y: 0.42735043}
+        handTuned: 0
+      - frame: dwarf_charging_sprint_w4
+        shapes:
+        - center: {x: -0.4050633, y: -0.45299146}
+          size: {x: 0.36708862, y: 0.5470086}
+        - center: {x: -0.101265825, y: 0.2991453}
+          size: {x: 0.36708862, y: 0.5470086}
+        handTuned: 0
+      - frame: dwarf_charging_sprint_w5
+        shapes:
+        - center: {x: -0.30379745, y: -0.41880342}
+          size: {x: 0.3164557, y: 0.5811966}
+        - center: {x: -0.15189873, y: 0.35042736}
+          size: {x: 0.39240506, y: 0.5982906}
+        handTuned: 0
+      - frame: dwarf_charging_sprint_w6
+        shapes:
+        - center: {x: -0.16455697, y: -0.4017094}
+          size: {x: 0.37974682, y: 0.5982906}
+        - center: {x: -0.03797468, y: 0.3846154}
+          size: {x: 0.32911393, y: 0.5982906}
+        handTuned: 0
+      - frame: dwarf_charging_sprint_w7
+        shapes:
+        - center: {x: -0.012658228, y: -0.4017094}
+          size: {x: 0.30379745, y: 0.5982906}
+        - center: {x: 0.07594936, y: 0.3931624}
+          size: {x: 0.39240506, y: 0.60683763}
+        handTuned: 0
+      - frame: dwarf_chop_e0
+        shapes:
+        - center: {x: -0.5538462, y: -0.5138889}
+          size: {x: 0.32307693, y: 0.31944445}
+        - center: {x: -0.30769232, y: -0.083333336}
+          size: {x: 0.3846154, y: 0.33333334}
+        handTuned: 0
+      - frame: dwarf_chop_e1
+        shapes:
+        - center: {x: -0.33846155, y: -0.5138889}
+          size: {x: 0.2923077, y: 0.31944445}
+        - center: {x: -0.23076923, y: -0.041666668}
+          size: {x: 0.24615385, y: 0.375}
+        - center: {x: -0.35384616, y: 0.44444445}
+          size: {x: 0.18461539, y: 0.33333334}
+        handTuned: 0
+      - frame: dwarf_chop_e2
+        shapes:
+        - center: {x: -0.03076923, y: -0.16666667}
+          size: {x: 0.2923077, y: 0.6666667}
+        - center: {x: -0.015384615, y: 0.6388889}
+          size: {x: 0.15384616, y: 0.3611111}
+        handTuned: 0
+      - frame: dwarf_chop_e3
+        shapes:
+        - center: {x: 0.2923077, y: -0.5}
+          size: {x: 0.30769232, y: 0.33333334}
+        - center: {x: 0.36923078, y: 0.013888889}
+          size: {x: 0.2, y: 0.4027778}
+        - center: {x: 0.10769231, y: 0.5416667}
+          size: {x: 0.43076923, y: 0.3472222}
+        handTuned: 0
+      - frame: dwarf_chop_e4
+        shapes:
+        - center: {x: 0.24615385, y: -0.6527778}
+          size: {x: 0.44615385, y: 0.31944445}
+        - center: {x: 0.15384616, y: -0.22222222}
+          size: {x: 0.23076923, y: 0.33333334}
+        handTuned: 0
+      - frame: dwarf_chop_e5
+        shapes:
+        - center: {x: -0.16923077, y: -0.5972222}
+          size: {x: 0.24615385, y: 0.18055555}
+        - center: {x: 0.18461539, y: -0.3888889}
+          size: {x: 0.2923077, y: 0.25}
+        - center: {x: 0.53846157, y: -0.5694444}
+          size: {x: 0.24615385, y: 0.3472222}
+        handTuned: 0
+      - frame: dwarf_chop_e6
+        shapes:
+        - center: {x: 0.24615385, y: -0.6666667}
+          size: {x: 0.3846154, y: 0.33333334}
+        - center: {x: 0.33846155, y: -0.22222222}
+          size: {x: 0.23076923, y: 0.33333334}
+        handTuned: 0
+      - frame: dwarf_chop_e7
+        shapes:
+        - center: {x: 0.26153848, y: -0.4722222}
+          size: {x: 0.30769232, y: 0.3611111}
+        - center: {x: 0.50769234, y: 0.041666668}
+          size: {x: 0.36923078, y: 0.375}
+        handTuned: 0
+      - frame: dwarf_chop_w0
+        shapes:
+        - center: {x: -0.5538462, y: -0.5138889}
+          size: {x: 0.32307693, y: 0.31944445}
+        - center: {x: -0.30769232, y: -0.083333336}
+          size: {x: 0.3846154, y: 0.33333334}
+        handTuned: 0
+      - frame: dwarf_chop_w1
+        shapes:
+        - center: {x: -0.33846155, y: -0.5138889}
+          size: {x: 0.2923077, y: 0.31944445}
+        - center: {x: -0.23076923, y: -0.041666668}
+          size: {x: 0.24615385, y: 0.375}
+        - center: {x: -0.35384616, y: 0.44444445}
+          size: {x: 0.18461539, y: 0.33333334}
+        handTuned: 0
+      - frame: dwarf_chop_w2
+        shapes:
+        - center: {x: -0.03076923, y: -0.16666667}
+          size: {x: 0.2923077, y: 0.6666667}
+        - center: {x: -0.015384615, y: 0.6388889}
+          size: {x: 0.15384616, y: 0.3611111}
+        handTuned: 0
+      - frame: dwarf_chop_w3
+        shapes:
+        - center: {x: 0.2923077, y: -0.5}
+          size: {x: 0.30769232, y: 0.33333334}
+        - center: {x: 0.36923078, y: 0.013888889}
+          size: {x: 0.2, y: 0.4027778}
+        - center: {x: 0.10769231, y: 0.5416667}
+          size: {x: 0.43076923, y: 0.3472222}
+        handTuned: 0
+      - frame: dwarf_chop_w4
+        shapes:
+        - center: {x: 0.24615385, y: -0.6527778}
+          size: {x: 0.44615385, y: 0.31944445}
+        - center: {x: 0.15384616, y: -0.22222222}
+          size: {x: 0.23076923, y: 0.33333334}
+        handTuned: 0
+      - frame: dwarf_chop_w5
+        shapes:
+        - center: {x: 0.53846157, y: -0.5694444}
+          size: {x: 0.24615385, y: 0.3472222}
+        - center: {x: 0.18461539, y: -0.3888889}
+          size: {x: 0.2923077, y: 0.25}
+        - center: {x: -0.16923077, y: -0.5972222}
+          size: {x: 0.24615385, y: 0.18055555}
+        handTuned: 0
+      - frame: dwarf_chop_w6
+        shapes:
+        - center: {x: 0.24615385, y: -0.6666667}
+          size: {x: 0.3846154, y: 0.33333334}
+        - center: {x: 0.33846155, y: -0.22222222}
+          size: {x: 0.23076923, y: 0.33333334}
+        handTuned: 0
+      - frame: dwarf_chop_w7
+        shapes:
+        - center: {x: 0.26153848, y: -0.4722222}
+          size: {x: 0.30769232, y: 0.3611111}
+        - center: {x: 0.50769234, y: 0.041666668}
+          size: {x: 0.36923078, y: 0.375}
+        handTuned: 0
+      - frame: dwarf_die_e0
+        shapes:
+        - center: {x: -0.25555557, y: -0.60683763}
+          size: {x: 0.3, y: 0.3931624}
+        - center: {x: -0.3, y: -0.008547009}
+          size: {x: 0.2777778, y: 0.47863248}
+        - center: {x: -0.45555556, y: 0.5982906}
+          size: {x: 0.23333333, y: 0.4017094}
+        handTuned: 0
+      - frame: dwarf_die_e1
+        shapes:
+        - center: {x: -0.06666667, y: -0.50427353}
+          size: {x: 0.31111112, y: 0.4957265}
+        - center: {x: -0.18888889, y: 0.14529915}
+          size: {x: 0.32222223, y: 0.4957265}
+        handTuned: 0
+      - frame: dwarf_die_e2
+        shapes:
+        - center: {x: -0.24444444, y: -0.5897436}
+          size: {x: 0.22222222, y: 0.2735043}
+        - center: {x: 0.25555557, y: -0.45299146}
+          size: {x: 0.41111112, y: 0.41025642}
+        handTuned: 0
+      - frame: dwarf_die_e3
+        shapes:
+        - center: {x: -0.022222223, y: -0.6752137}
+          size: {x: 0.2, y: 0.18803419}
+        - center: {x: 0.42222223, y: -0.5726496}
+          size: {x: 0.37777779, y: 0.32478634}
+        handTuned: 0
+      - frame: dwarf_die_e4
+        shapes:
+        - center: {x: -0.25555557, y: -0.7777778}
+          size: {x: 0.16666667, y: 0.11965812}
+        - center: {x: -0.011111111, y: -0.74358976}
+          size: {x: 0.21111111, y: 0.15384616}
+        - center: {x: 0.2777778, y: -0.7094017}
+          size: {x: 0.21111111, y: 0.18803419}
+        - center: {x: 0.56666666, y: -0.7094017}
+          size: {x: 0.21111111, y: 0.22222222}
+        - center: {x: 0.82222223, y: -0.74358976}
+          size: {x: 0.17777778, y: 0.18803419}
+        handTuned: 0
+      - frame: dwarf_die_e5
+        shapes:
+        - center: {x: -0.5777778, y: -0.7606838}
+          size: {x: 0.17777778, y: 0.13675214}
+        - center: {x: -0.31111112, y: -0.74358976}
+          size: {x: 0.22222222, y: 0.18803419}
+        - center: {x: 0.15555556, y: -0.72649574}
+          size: {x: 0.37777779, y: 0.23931624}
+        - center: {x: 0.5888889, y: -0.7948718}
+          size: {x: 0.18888889, y: 0.17094018}
+        handTuned: 0
+      - frame: dwarf_die_e6
+        shapes:
+        - center: {x: -0.82222223, y: -0.72649574}
+          size: {x: 0.17777778, y: 0.13675214}
+        - center: {x: -0.56666666, y: -0.7606838}
+          size: {x: 0.21111111, y: 0.17094018}
+        - center: {x: -0.12222222, y: -0.6752137}
+          size: {x: 0.36666667, y: 0.22222222}
+        - center: {x: 0.3, y: -0.7948718}
+          size: {x: 0.18888889, y: 0.17094018}
+        handTuned: 0
+      - frame: dwarf_die_w0
+        shapes:
+        - center: {x: -0.25555557, y: -0.60683763}
+          size: {x: 0.3, y: 0.3931624}
+        - center: {x: -0.3, y: -0.008547009}
+          size: {x: 0.2777778, y: 0.47863248}
+        - center: {x: -0.45555556, y: 0.5982906}
+          size: {x: 0.23333333, y: 0.4017094}
+        handTuned: 0
+      - frame: dwarf_die_w1
+        shapes:
+        - center: {x: -0.06666667, y: -0.50427353}
+          size: {x: 0.31111112, y: 0.4957265}
+        - center: {x: -0.18888889, y: 0.14529915}
+          size: {x: 0.32222223, y: 0.4957265}
+        handTuned: 0
+      - frame: dwarf_die_w2
+        shapes:
+        - center: {x: 0.46666667, y: -0.4871795}
+          size: {x: 0.22222222, y: 0.41025642}
+        - center: {x: 0.12222222, y: -0.41880342}
+          size: {x: 0.25555557, y: 0.37606838}
+        - center: {x: -0.23333333, y: -0.5726496}
+          size: {x: 0.23333333, y: 0.2905983}
+        handTuned: 0
+      - frame: dwarf_die_w3
+        shapes:
+        - center: {x: 0.43333334, y: -0.5726496}
+          size: {x: 0.36666667, y: 0.32478634}
+        - center: {x: -0.011111111, y: -0.6581197}
+          size: {x: 0.21111111, y: 0.20512821}
+        handTuned: 0
+      - frame: dwarf_die_w4
+        shapes:
+        - center: {x: 0.8333333, y: -0.74358976}
+          size: {x: 0.16666667, y: 0.18803419}
+        - center: {x: 0.44444445, y: -0.7094017}
+          size: {x: 0.35555556, y: 0.22222222}
+        - center: {x: 0.011111111, y: -0.74358976}
+          size: {x: 0.21111111, y: 0.15384616}
+        - center: {x: -0.24444444, y: -0.7777778}
+          size: {x: 0.17777778, y: 0.11965812}
+        handTuned: 0
+      - frame: dwarf_die_w5
+        shapes:
+        - center: {x: 0.6, y: -0.7948718}
+          size: {x: 0.17777778, y: 0.17094018}
+        - center: {x: 0.17777778, y: -0.72649574}
+          size: {x: 0.37777779, y: 0.23931624}
+        - center: {x: -0.2888889, y: -0.74358976}
+          size: {x: 0.22222222, y: 0.18803419}
+        - center: {x: -0.56666666, y: -0.7606838}
+          size: {x: 0.18888889, y: 0.13675214}
+        handTuned: 0
+      - frame: dwarf_die_w6
+        shapes:
+        - center: {x: 0.31111112, y: -0.8119658}
+          size: {x: 0.17777778, y: 0.15384616}
+        - center: {x: 0.055555556, y: -0.7094017}
+          size: {x: 0.21111111, y: 0.22222222}
+        - center: {x: -0.24444444, y: -0.6752137}
+          size: {x: 0.22222222, y: 0.22222222}
+        - center: {x: -0.54444444, y: -0.7606838}
+          size: {x: 0.21111111, y: 0.17094018}
+        - center: {x: -0.8111111, y: -0.72649574}
+          size: {x: 0.18888889, y: 0.13675214}
+        handTuned: 0
+      - frame: dwarf_fish_e0
+        shapes:
+        - center: {x: -0.33333334, y: -0.6042781}
+          size: {x: 0.26455027, y: 0.37433156}
+        - center: {x: -0.14285715, y: -0.20855615}
+          size: {x: 0.32804233, y: 0.27807486}
+        handTuned: 0
+      - frame: dwarf_fish_e1
+        shapes:
+        - center: {x: -0.1005291, y: -0.64705884}
+          size: {x: 0.24338624, y: 0.3315508}
+        - center: {x: 0.005291005, y: -0.15508021}
+          size: {x: 0.24338624, y: 0.37433156}
+        - center: {x: 0.43915343, y: 0.37967914}
+          size: {x: 0.12698413, y: 0.3315508}
+        handTuned: 0
+      - frame: dwarf_fish_e2
+        shapes:
+        - center: {x: 0.13227513, y: -0.6042781}
+          size: {x: 0.22222222, y: 0.3957219}
+        - center: {x: 0.20634921, y: -0.0053475937}
+          size: {x: 0.1904762, y: 0.45989305}
+        - center: {x: 0.64021164, y: 0.5828877}
+          size: {x: 0.2010582, y: 0.38502672}
+        handTuned: 0
+      - frame: dwarf_fish_e3
+        shapes:
+        - center: {x: 0.5873016, y: -0.70053476}
+          size: {x: 0.27513227, y: 0.27807486}
+        - center: {x: 0.6507937, y: -0.27272728}
+          size: {x: 0.16931216, y: 0.32085562}
+        - center: {x: 0.4814815, y: 0.15508021}
+          size: {x: 0.35978836, y: 0.27807486}
+        handTuned: 0
+      - frame: dwarf_fish_e4
+        shapes:
+        - center: {x: -0.20634921, y: -0.5721925}
+          size: {x: 0.32804233, y: 0.4064171}
+        - center: {x: 0.3121693, y: -0.026737968}
+          size: {x: 0.44444445, y: 0.3957219}
+        handTuned: 0
+      - frame: dwarf_fish_e5
+        shapes:
+        - center: {x: -0.5767196, y: -0.6363636}
+          size: {x: 0.2962963, y: 0.36363637}
+        - center: {x: -0.1957672, y: -0.2620321}
+          size: {x: 0.35978836, y: 0.26737967}
+        handTuned: 0
+      - frame: dwarf_fish_e6
+        shapes:
+        - center: {x: -0.47089946, y: -0.79679143}
+          size: {x: 0.27513227, y: 0.20320855}
+        - center: {x: -0.38624337, y: -0.486631}
+          size: {x: 0.21164021, y: 0.23529412}
+        - center: {x: -0.23809524, y: -0.1764706}
+          size: {x: 0.2962963, y: 0.20320855}
+        handTuned: 0
+      - frame: dwarf_fish_e7
+        shapes:
+        - center: {x: -0.4074074, y: -0.70053476}
+          size: {x: 0.25396827, y: 0.29946524}
+        - center: {x: -0.22751322, y: -0.315508}
+          size: {x: 0.3068783, y: 0.29946524}
+        handTuned: 0
+      - frame: dwarf_fish_w0
+        shapes:
+        - center: {x: -0.3227513, y: -0.6042781}
+          size: {x: 0.26455027, y: 0.37433156}
+        - center: {x: -0.15343915, y: -0.20855615}
+          size: {x: 0.32804233, y: 0.27807486}
+        handTuned: 0
+      - frame: dwarf_fish_w1
+        shapes:
+        - center: {x: -0.1005291, y: -0.64705884}
+          size: {x: 0.23280424, y: 0.3315508}
+        - center: {x: -0.005291005, y: -0.1657754}
+          size: {x: 0.24338624, y: 0.36363637}
+        - center: {x: 0.43915343, y: 0.39037433}
+          size: {x: 0.11640212, y: 0.29946524}
+        handTuned: 0
+      - frame: dwarf_fish_w2
+        shapes:
+        - center: {x: 0.13227513, y: -0.6042781}
+          size: {x: 0.23280424, y: 0.3957219}
+        - center: {x: 0.20634921, y: -0.0053475937}
+          size: {x: 0.2010582, y: 0.45989305}
+        - center: {x: 0.6507937, y: 0.5828877}
+          size: {x: 0.2010582, y: 0.38502672}
+        handTuned: 0
+      - frame: dwarf_fish_w3
+        shapes:
+        - center: {x: 0.5978836, y: -0.72192514}
+          size: {x: 0.27513227, y: 0.27807486}
+        - center: {x: 0.6507937, y: -0.29411766}
+          size: {x: 0.15873016, y: 0.32085562}
+        - center: {x: 0.5026455, y: 0.14438502}
+          size: {x: 0.34920636, y: 0.28877005}
+        handTuned: 0
+      - frame: dwarf_fish_w4
+        shapes:
+        - center: {x: -0.20634921, y: -0.5721925}
+          size: {x: 0.31746033, y: 0.4064171}
+        - center: {x: 0.3015873, y: -0.026737968}
+          size: {x: 0.44444445, y: 0.3957219}
+        handTuned: 0
+      - frame: dwarf_fish_w5
+        shapes:
+        - center: {x: -0.5767196, y: -0.6363636}
+          size: {x: 0.2857143, y: 0.36363637}
+        - center: {x: -0.18518518, y: -0.2620321}
+          size: {x: 0.35978836, y: 0.26737967}
+        handTuned: 0
+      - frame: dwarf_fish_w6
+        shapes:
+        - center: {x: -0.4814815, y: -0.79679143}
+          size: {x: 0.27513227, y: 0.20320855}
+        - center: {x: -0.38624337, y: -0.486631}
+          size: {x: 0.22222222, y: 0.23529412}
+        - center: {x: -0.22751322, y: -0.1764706}
+          size: {x: 0.31746033, y: 0.20320855}
+        handTuned: 0
+      - frame: dwarf_fish_w7
+        shapes:
+        - center: {x: -0.3968254, y: -0.70053476}
+          size: {x: 0.25396827, y: 0.29946524}
+        - center: {x: -0.23809524, y: -0.315508}
+          size: {x: 0.3068783, y: 0.29946524}
+        handTuned: 0
+      - frame: dwarf_hit_reaction_e0
+        shapes:
+        - center: {x: -0.028571429, y: -0.6}
+          size: {x: 0.62857145, y: 0.4}
+        - center: {x: 0.04761905, y: 0.26086956}
+          size: {x: 0.47619048, y: 0.73913044}
+        handTuned: 0
+      - frame: dwarf_hit_reaction_e1
+        shapes:
+        - center: {x: 0.08571429, y: -0.39130434}
+          size: {x: 0.5904762, y: 0.6086956}
+        - center: {x: -0.14285715, y: 0.4}
+          size: {x: 0.47619048, y: 0.6}
+        handTuned: 0
+      - frame: dwarf_hit_reaction_e2
+        shapes:
+        - center: {x: 0.123809524, y: -0.40869564}
+          size: {x: 0.47619048, y: 0.59130436}
+        - center: {x: -0.33333334, y: 0.37391305}
+          size: {x: 0.47619048, y: 0.6086956}
+        handTuned: 0
+      - frame: dwarf_hit_reaction_e3
+        shapes:
+        - center: {x: -0.028571429, y: -0.44347826}
+          size: {x: 0.62857145, y: 0.5565217}
+        - center: {x: 0.104761906, y: 0.32173914}
+          size: {x: 0.4952381, y: 0.5565217}
+        handTuned: 0
+      - frame: dwarf_hit_reaction_w0
+        shapes:
+        - center: {x: -0.00952381, y: -0.6}
+          size: {x: 0.62857145, y: 0.4}
+        - center: {x: 0.028571429, y: -0.008695652}
+          size: {x: 0.47619048, y: 0.4695652}
+        - center: {x: 0.06666667, y: 0.59130436}
+          size: {x: 0.4, y: 0.40869564}
+        handTuned: 0
+      - frame: dwarf_hit_reaction_w1
+        shapes:
+        - center: {x: 0.08571429, y: -0.39130434}
+          size: {x: 0.5714286, y: 0.6086956}
+        - center: {x: -0.123809524, y: 0.4}
+          size: {x: 0.47619048, y: 0.6}
+        handTuned: 0
+      - frame: dwarf_hit_reaction_w2
+        shapes:
+        - center: {x: 0.14285715, y: -0.40869564}
+          size: {x: 0.47619048, y: 0.59130436}
+        - center: {x: -0.33333334, y: 0.37391305}
+          size: {x: 0.45714286, y: 0.6086956}
+        handTuned: 0
+      - frame: dwarf_hit_reaction_w3
+        shapes:
+        - center: {x: -0.028571429, y: -0.44347826}
+          size: {x: 0.64761907, y: 0.5565217}
+        - center: {x: 0.08571429, y: 0.32173914}
+          size: {x: 0.4952381, y: 0.5565217}
+        handTuned: 0
+      - frame: dwarf_idle_e0
+        shapes:
+        - center: {x: 0.102564104, y: -0.29411766}
+          size: {x: 0.64102566, y: 0.7058824}
+        - center: {x: 0.15384616, y: 0.5462185}
+          size: {x: 0.43589744, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_idle_e1
+        shapes:
+        - center: {x: -0.102564104, y: -0.27731094}
+          size: {x: 0.64102566, y: 0.7226891}
+        - center: {x: -0.07692308, y: 0.57983196}
+          size: {x: 0.41025642, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_idle_e2
+        shapes:
+        - center: {x: -0.12820514, y: -0.6134454}
+          size: {x: 0.61538464, y: 0.38655463}
+        - center: {x: -0.025641026, y: -0.025210084}
+          size: {x: 0.5641026, y: 0.47058824}
+        - center: {x: -0.025641026, y: 0.57983196}
+          size: {x: 0.41025642, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_idle_e3
+        shapes:
+        - center: {x: -0.07692308, y: -0.26050422}
+          size: {x: 0.61538464, y: 0.7394958}
+        - center: {x: -0.025641026, y: 0.60504204}
+          size: {x: 0.41025642, y: 0.394958}
+        handTuned: 0
+      - frame: dwarf_idle_e4
+        shapes:
+        - center: {x: -0.15384616, y: -0.29411766}
+          size: {x: 0.64102566, y: 0.7058824}
+        - center: {x: -0.15384616, y: 0.5462185}
+          size: {x: 0.43589744, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_idle_e5
+        shapes:
+        - center: {x: -0.051282052, y: -0.27731094}
+          size: {x: 0.64102566, y: 0.7226891}
+        - center: {x: 0, y: 0.57983196}
+          size: {x: 0.43589744, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_idle_w0
+        shapes:
+        - center: {x: 0.102564104, y: -0.29411766}
+          size: {x: 0.64102566, y: 0.7058824}
+        - center: {x: 0.15384616, y: 0.5462185}
+          size: {x: 0.43589744, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_idle_w1
+        shapes:
+        - center: {x: -0.102564104, y: -0.27731094}
+          size: {x: 0.64102566, y: 0.7226891}
+        - center: {x: -0.07692308, y: 0.57983196}
+          size: {x: 0.41025642, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_idle_w2
+        shapes:
+        - center: {x: -0.12820514, y: -0.6134454}
+          size: {x: 0.61538464, y: 0.38655463}
+        - center: {x: -0.025641026, y: -0.025210084}
+          size: {x: 0.5641026, y: 0.47058824}
+        - center: {x: -0.025641026, y: 0.57983196}
+          size: {x: 0.41025642, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_idle_w3
+        shapes:
+        - center: {x: -0.07692308, y: -0.26050422}
+          size: {x: 0.61538464, y: 0.7394958}
+        - center: {x: -0.025641026, y: 0.60504204}
+          size: {x: 0.41025642, y: 0.394958}
+        handTuned: 0
+      - frame: dwarf_idle_w4
+        shapes:
+        - center: {x: -0.15384616, y: -0.29411766}
+          size: {x: 0.64102566, y: 0.7058824}
+        - center: {x: -0.15384616, y: 0.5462185}
+          size: {x: 0.43589744, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_idle_w5
+        shapes:
+        - center: {x: -0.051282052, y: -0.27731094}
+          size: {x: 0.64102566, y: 0.7226891}
+        - center: {x: -0, y: 0.57983196}
+          size: {x: 0.43589744, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_kick_e0
+        shapes:
+        - center: {x: 0.07017544, y: -0.6134454}
+          size: {x: 0.54385966, y: 0.38655463}
+        - center: {x: 0.10526316, y: -0.042016808}
+          size: {x: 0.4385965, y: 0.45378152}
+        - center: {x: 0.0877193, y: 0.5462185}
+          size: {x: 0.3508772, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_kick_e1
+        shapes:
+        - center: {x: -0.01754386, y: -0.6134454}
+          size: {x: 0.28070176, y: 0.38655463}
+        - center: {x: 0.07017544, y: 0.24369748}
+          size: {x: 0.40350878, y: 0.7394958}
+        handTuned: 0
+      - frame: dwarf_kick_e2
+        shapes:
+        - center: {x: 0.21052632, y: -0.5966387}
+          size: {x: 0.2982456, y: 0.40336135}
+        - center: {x: 0.1754386, y: 0.008403362}
+          size: {x: 0.40350878, y: 0.47058824}
+        - center: {x: 0.0877193, y: 0.60504204}
+          size: {x: 0.3859649, y: 0.394958}
+        handTuned: 0
+      - frame: dwarf_kick_e3
+        shapes:
+        - center: {x: 0.05263158, y: -0.6134454}
+          size: {x: 0.1754386, y: 0.38655463}
+        - center: {x: 0.22807017, y: -0.025210084}
+          size: {x: 0.5263158, y: 0.47058824}
+        - center: {x: 0.01754386, y: 0.57983196}
+          size: {x: 0.3508772, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_kick_e4
+        shapes:
+        - center: {x: -0.0877193, y: -0.4117647}
+          size: {x: 0.49122807, y: 0.5882353}
+        - center: {x: -0.10526316, y: 0.37815127}
+          size: {x: 0.61403507, y: 0.60504204}
+        handTuned: 0
+      - frame: dwarf_kick_e5
+        shapes:
+        - center: {x: -0.1754386, y: -0.6134454}
+          size: {x: 0.19298245, y: 0.38655463}
+        - center: {x: -0.10526316, y: 0.22689076}
+          size: {x: 0.36842105, y: 0.7226891}
+        handTuned: 0
+      - frame: dwarf_kick_e6
+        shapes:
+        - center: {x: 0, y: -0.6134454}
+          size: {x: 0.54385966, y: 0.38655463}
+        - center: {x: 0, y: 0.22689076}
+          size: {x: 0.40350878, y: 0.7226891}
+        handTuned: 0
+      - frame: dwarf_kick_e7
+        shapes:
+        - center: {x: 0.05263158, y: -0.6134454}
+          size: {x: 0.5263158, y: 0.38655463}
+        - center: {x: 0.05263158, y: -0.025210084}
+          size: {x: 0.42105263, y: 0.47058824}
+        - center: {x: 0.03508772, y: 0.57983196}
+          size: {x: 0.33333334, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_kick_w0
+        shapes:
+        - center: {x: 0.07017544, y: -0.6134454}
+          size: {x: 0.54385966, y: 0.38655463}
+        - center: {x: 0.10526316, y: -0.042016808}
+          size: {x: 0.4385965, y: 0.45378152}
+        - center: {x: 0.0877193, y: 0.5462185}
+          size: {x: 0.3508772, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_kick_w1
+        shapes:
+        - center: {x: -0.01754386, y: -0.6134454}
+          size: {x: 0.28070176, y: 0.38655463}
+        - center: {x: 0.07017544, y: 0.24369748}
+          size: {x: 0.40350878, y: 0.7394958}
+        handTuned: 0
+      - frame: dwarf_kick_w2
+        shapes:
+        - center: {x: 0.21052632, y: -0.5966387}
+          size: {x: 0.2982456, y: 0.40336135}
+        - center: {x: 0.1754386, y: 0.008403362}
+          size: {x: 0.40350878, y: 0.47058824}
+        - center: {x: 0.0877193, y: 0.60504204}
+          size: {x: 0.3859649, y: 0.394958}
+        handTuned: 0
+      - frame: dwarf_kick_w3
+        shapes:
+        - center: {x: 0.05263158, y: -0.6134454}
+          size: {x: 0.1754386, y: 0.38655463}
+        - center: {x: 0.22807017, y: -0.025210084}
+          size: {x: 0.5263158, y: 0.47058824}
+        - center: {x: 0.01754386, y: 0.57983196}
+          size: {x: 0.3508772, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_kick_w4
+        shapes:
+        - center: {x: -0.0877193, y: -0.4117647}
+          size: {x: 0.49122807, y: 0.5882353}
+        - center: {x: -0.10526316, y: 0.37815127}
+          size: {x: 0.61403507, y: 0.60504204}
+        handTuned: 0
+      - frame: dwarf_kick_w5
+        shapes:
+        - center: {x: -0.1754386, y: -0.6134454}
+          size: {x: 0.19298245, y: 0.38655463}
+        - center: {x: -0.10526316, y: 0.22689076}
+          size: {x: 0.36842105, y: 0.7226891}
+        handTuned: 0
+      - frame: dwarf_kick_w6
+        shapes:
+        - center: {x: -0, y: -0.6134454}
+          size: {x: 0.54385966, y: 0.38655463}
+        - center: {x: -0, y: 0.22689076}
+          size: {x: 0.40350878, y: 0.7226891}
+        handTuned: 0
+      - frame: dwarf_kick_w7
+        shapes:
+        - center: {x: 0.05263158, y: -0.6134454}
+          size: {x: 0.5263158, y: 0.38655463}
+        - center: {x: 0.05263158, y: -0.025210084}
+          size: {x: 0.42105263, y: 0.47058824}
+        - center: {x: 0.03508772, y: 0.57983196}
+          size: {x: 0.33333334, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_knockdown_recovery_e0
+        shapes:
+        - center: {x: 0.20779221, y: -0.52845526}
+          size: {x: 0.37662336, y: 0.37398374}
+        - center: {x: 0.116883114, y: 0.29268292}
+          size: {x: 0.33766234, y: 0.70731705}
+        handTuned: 0
+      - frame: dwarf_knockdown_recovery_e1
+        shapes:
+        - center: {x: -0.24675325, y: 0.08943089}
+          size: {x: 0.3116883, y: 0.34146342}
+        - center: {x: 0.22077923, y: -0.040650405}
+          size: {x: 0.36363637, y: 0.5365854}
+        - center: {x: 0.6883117, y: -0.3495935}
+          size: {x: 0.3116883, y: 0.42276424}
+        handTuned: 0
+      - frame: dwarf_knockdown_recovery_e2
+        shapes:
+        - center: {x: -0.27272728, y: -0.49593496}
+          size: {x: 0.23376623, y: 0.37398374}
+        - center: {x: 0.09090909, y: -0.31707317}
+          size: {x: 0.2857143, y: 0.45528457}
+        - center: {x: 0.46753246, y: -0.4796748}
+          size: {x: 0.24675325, y: 0.42276424}
+        handTuned: 0
+      - frame: dwarf_knockdown_recovery_e3
+        shapes:
+        - center: {x: -0.7012987, y: -0.6422764}
+          size: {x: 0.19480519, y: 0.19512194}
+        - center: {x: -0.41558442, y: -0.5609756}
+          size: {x: 0.24675325, y: 0.21138212}
+        - center: {x: -0.077922076, y: -0.6097561}
+          size: {x: 0.24675325, y: 0.2601626}
+        - center: {x: 0.25974026, y: -0.57723576}
+          size: {x: 0.24675325, y: 0.32520324}
+        - center: {x: 0.5584416, y: -0.6422764}
+          size: {x: 0.20779221, y: 0.2601626}
+        handTuned: 0
+      - frame: dwarf_knockdown_recovery_e4
+        shapes:
+        - center: {x: -0.74025977, y: -0.43089432}
+          size: {x: 0.25974026, y: 0.37398374}
+        - center: {x: -0.33766234, y: -0.2682927}
+          size: {x: 0.2987013, y: 0.37398374}
+        - center: {x: 0.077922076, y: -0.41463414}
+          size: {x: 0.27272728, y: 0.42276424}
+        handTuned: 0
+      - frame: dwarf_knockdown_recovery_e5
+        shapes:
+        - center: {x: -0.20779221, y: -0.52845526}
+          size: {x: 0.35064936, y: 0.40650406}
+        - center: {x: -0.15584415, y: 0.040650405}
+          size: {x: 0.32467532, y: 0.42276424}
+        handTuned: 0
+      - frame: dwarf_knockdown_recovery_e6
+        shapes:
+        - center: {x: -0.14285715, y: -0.43089432}
+          size: {x: 0.33766234, y: 0.50406504}
+        - center: {x: -0.09090909, y: 0.25203252}
+          size: {x: 0.33766234, y: 0.50406504}
+        handTuned: 0
+      - frame: dwarf_knockdown_recovery_e7
+        shapes:
+        - center: {x: 0.064935066, y: -0.54471546}
+          size: {x: 0.38961038, y: 0.3902439}
+        - center: {x: 0.077922076, y: 0.29268292}
+          size: {x: 0.2987013, y: 0.70731705}
+        handTuned: 0
+      - frame: dwarf_knockdown_recovery_w0
+        shapes:
+        - center: {x: 0.20779221, y: -0.52845526}
+          size: {x: 0.37662336, y: 0.37398374}
+        - center: {x: 0.116883114, y: 0.29268292}
+          size: {x: 0.33766234, y: 0.70731705}
+        handTuned: 0
+      - frame: dwarf_knockdown_recovery_w1
+        shapes:
+        - center: {x: 0.6883117, y: -0.3495935}
+          size: {x: 0.3116883, y: 0.42276424}
+        - center: {x: 0.22077923, y: -0.040650405}
+          size: {x: 0.36363637, y: 0.5365854}
+        - center: {x: -0.24675325, y: 0.08943089}
+          size: {x: 0.3116883, y: 0.34146342}
+        handTuned: 0
+      - frame: dwarf_knockdown_recovery_w2
+        shapes:
+        - center: {x: 0.48051947, y: -0.46341464}
+          size: {x: 0.23376623, y: 0.4390244}
+        - center: {x: 0.116883114, y: -0.31707317}
+          size: {x: 0.2857143, y: 0.45528457}
+        - center: {x: -0.25974026, y: -0.49593496}
+          size: {x: 0.24675325, y: 0.37398374}
+        handTuned: 0
+      - frame: dwarf_knockdown_recovery_w3
+        shapes:
+        - center: {x: 0.5714286, y: -0.6422764}
+          size: {x: 0.19480519, y: 0.2601626}
+        - center: {x: 0.2857143, y: -0.57723576}
+          size: {x: 0.24675325, y: 0.32520324}
+        - center: {x: -0.051948052, y: -0.62601626}
+          size: {x: 0.24675325, y: 0.27642277}
+        - center: {x: -0.38961038, y: -0.5609756}
+          size: {x: 0.24675325, y: 0.21138212}
+        - center: {x: -0.6883117, y: -0.6422764}
+          size: {x: 0.20779221, y: 0.19512194}
+        handTuned: 0
+      - frame: dwarf_knockdown_recovery_w4
+        shapes:
+        - center: {x: 0.09090909, y: -0.43089432}
+          size: {x: 0.25974026, y: 0.40650406}
+        - center: {x: -0.3116883, y: -0.28455284}
+          size: {x: 0.2987013, y: 0.3902439}
+        - center: {x: -0.72727275, y: -0.43089432}
+          size: {x: 0.27272728, y: 0.37398374}
+        handTuned: 0
+      - frame: dwarf_knockdown_recovery_w5
+        shapes:
+        - center: {x: -0.20779221, y: -0.52845526}
+          size: {x: 0.35064936, y: 0.40650406}
+        - center: {x: -0.15584415, y: 0.040650405}
+          size: {x: 0.32467532, y: 0.42276424}
+        handTuned: 0
+      - frame: dwarf_knockdown_recovery_w6
+        shapes:
+        - center: {x: -0.14285715, y: -0.43089432}
+          size: {x: 0.33766234, y: 0.50406504}
+        - center: {x: -0.09090909, y: 0.25203252}
+          size: {x: 0.33766234, y: 0.50406504}
+        handTuned: 0
+      - frame: dwarf_knockdown_recovery_w7
+        shapes:
+        - center: {x: 0.064935066, y: -0.54471546}
+          size: {x: 0.38961038, y: 0.3902439}
+        - center: {x: 0.077922076, y: 0.29268292}
+          size: {x: 0.2987013, y: 0.70731705}
+        handTuned: 0
+      - frame: dwarf_mine_e0
+        shapes:
+        - center: {x: -0.112, y: -0.5131579}
+          size: {x: 0.504, y: 0.3026316}
+        - center: {x: 0.2, y: -0.118421055}
+          size: {x: 0.528, y: 0.3026316}
+        handTuned: 0
+      - frame: dwarf_mine_e1
+        shapes:
+        - center: {x: -0.16, y: -0.5263158}
+          size: {x: 0.456, y: 0.28947368}
+        - center: {x: -0.088, y: -0.10526316}
+          size: {x: 0.384, y: 0.34210527}
+        - center: {x: -0.568, y: 0.32894737}
+          size: {x: 0.288, y: 0.27631578}
+        handTuned: 0
+      - frame: dwarf_mine_e2
+        shapes:
+        - center: {x: -0.112, y: -0.5263158}
+          size: {x: 0.456, y: 0.31578946}
+        - center: {x: -0.064, y: -0.05263158}
+          size: {x: 0.36, y: 0.36842105}
+        - center: {x: -0.328, y: 0.43421054}
+          size: {x: 0.48, y: 0.32894737}
+        handTuned: 0
+      - frame: dwarf_mine_e3
+        shapes:
+        - center: {x: -0.112, y: -0.4473684}
+          size: {x: 0.456, y: 0.36842105}
+        - center: {x: -0.016, y: 0.09210526}
+          size: {x: 0.36, y: 0.43421054}
+        - center: {x: -0.256, y: 0.6315789}
+          size: {x: 0.408, y: 0.36842105}
+        handTuned: 0
+      - frame: dwarf_mine_e4
+        shapes:
+        - center: {x: -0.136, y: -0.68421054}
+          size: {x: 0.672, y: 0.31578946}
+        - center: {x: -0.208, y: -0.2631579}
+          size: {x: 0.36, y: 0.31578946}
+        handTuned: 0
+      - frame: dwarf_mine_e5
+        shapes:
+        - center: {x: -0.208, y: -0.75}
+          size: {x: 0.6, y: 0.25}
+        - center: {x: -0.136, y: -0.40789473}
+          size: {x: 0.384, y: 0.25}
+        handTuned: 0
+      - frame: dwarf_mine_e6
+        shapes:
+        - center: {x: -0.136, y: -0.69736844}
+          size: {x: 0.624, y: 0.3026316}
+        - center: {x: -0.112, y: -0.3026316}
+          size: {x: 0.36, y: 0.3026316}
+        handTuned: 0
+      - frame: dwarf_mine_e7
+        shapes:
+        - center: {x: -0.136, y: -0.56578946}
+          size: {x: 0.48, y: 0.25}
+        - center: {x: 0.008, y: -0.17105263}
+          size: {x: 0.384, y: 0.3026316}
+        - center: {x: 0.416, y: 0.23684211}
+          size: {x: 0.456, y: 0.2631579}
+        handTuned: 0
+      - frame: dwarf_mine_w0
+        shapes:
+        - center: {x: -0.104, y: -0.5131579}
+          size: {x: 0.528, y: 0.3026316}
+        - center: {x: 0.184, y: -0.118421055}
+          size: {x: 0.528, y: 0.3026316}
+        handTuned: 0
+      - frame: dwarf_mine_w1
+        shapes:
+        - center: {x: -0.176, y: -0.5263158}
+          size: {x: 0.456, y: 0.28947368}
+        - center: {x: -0.08, y: -0.10526316}
+          size: {x: 0.36, y: 0.34210527}
+        - center: {x: -0.536, y: 0.32894737}
+          size: {x: 0.288, y: 0.27631578}
+        handTuned: 0
+      - frame: dwarf_mine_w2
+        shapes:
+        - center: {x: -0.128, y: -0.5263158}
+          size: {x: 0.456, y: 0.31578946}
+        - center: {x: -0.056, y: -0.05263158}
+          size: {x: 0.336, y: 0.36842105}
+        - center: {x: -0.32, y: 0.43421054}
+          size: {x: 0.504, y: 0.32894737}
+        handTuned: 0
+      - frame: dwarf_mine_w3
+        shapes:
+        - center: {x: -0.128, y: -0.4473684}
+          size: {x: 0.456, y: 0.36842105}
+        - center: {x: -0.008, y: 0.09210526}
+          size: {x: 0.336, y: 0.43421054}
+        - center: {x: -0.224, y: 0.6315789}
+          size: {x: 0.408, y: 0.36842105}
+        handTuned: 0
+      - frame: dwarf_mine_w4
+        shapes:
+        - center: {x: -0.152, y: -0.68421054}
+          size: {x: 0.672, y: 0.31578946}
+        - center: {x: -0.224, y: -0.2631579}
+          size: {x: 0.36, y: 0.31578946}
+        handTuned: 0
+      - frame: dwarf_mine_w5
+        shapes:
+        - center: {x: -0.176, y: -0.75}
+          size: {x: 0.6, y: 0.25}
+        - center: {x: -0.152, y: -0.40789473}
+          size: {x: 0.384, y: 0.25}
+        handTuned: 0
+      - frame: dwarf_mine_w6
+        shapes:
+        - center: {x: -0.152, y: -0.69736844}
+          size: {x: 0.624, y: 0.3026316}
+        - center: {x: -0.128, y: -0.3026316}
+          size: {x: 0.36, y: 0.3026316}
+        handTuned: 0
+      - frame: dwarf_mine_w7
+        shapes:
+        - center: {x: -0.152, y: -0.56578946}
+          size: {x: 0.48, y: 0.25}
+        - center: {x: -0.008, y: -0.17105263}
+          size: {x: 0.384, y: 0.3026316}
+        - center: {x: 0.4, y: 0.23684211}
+          size: {x: 0.456, y: 0.2631579}
+        handTuned: 0
+      - frame: dwarf_punch_e0
+        shapes:
+        - center: {x: 0.022900764, y: -0.6034483}
+          size: {x: 0.5038168, y: 0.39655173}
+        - center: {x: 0.099236645, y: -0.01724138}
+          size: {x: 0.36641222, y: 0.46551725}
+        - center: {x: 0.099236645, y: 0.5862069}
+          size: {x: 0.27480915, y: 0.41379312}
+        handTuned: 0
+      - frame: dwarf_punch_e1
+        shapes:
+        - center: {x: 0.06870229, y: -0.43103448}
+          size: {x: 0.519084, y: 0.5689655}
+        - center: {x: 0.23664123, y: 0.31034482}
+          size: {x: 0.3816794, y: 0.5862069}
+        handTuned: 0
+      - frame: dwarf_punch_e2
+        shapes:
+        - center: {x: -0.08396947, y: -0.39655173}
+          size: {x: 0.48854962, y: 0.6034483}
+        - center: {x: 0.20610687, y: 0.39655173}
+          size: {x: 0.4427481, y: 0.6034483}
+        handTuned: 0
+      - frame: dwarf_punch_e3
+        shapes:
+        - center: {x: -0.34351146, y: -0.39655173}
+          size: {x: 0.47328246, y: 0.6034483}
+        - center: {x: 0.06870229, y: 0.39655173}
+          size: {x: 0.610687, y: 0.6034483}
+        handTuned: 0
+      - frame: dwarf_punch_e4
+        shapes:
+        - center: {x: -0.22137405, y: -0.39655173}
+          size: {x: 0.4427481, y: 0.6034483}
+        - center: {x: -0.08396947, y: 0.39655173}
+          size: {x: 0.39694658, y: 0.6034483}
+        handTuned: 0
+      - frame: dwarf_punch_e5
+        shapes:
+        - center: {x: -0.06870229, y: -0.6034483}
+          size: {x: 0.47328246, y: 0.39655173}
+        - center: {x: 0.022900764, y: -0.01724138}
+          size: {x: 0.35114503, y: 0.46551725}
+        - center: {x: 0.022900764, y: 0.5862069}
+          size: {x: 0.29007635, y: 0.41379312}
+        handTuned: 0
+      - frame: dwarf_punch_w0
+        shapes:
+        - center: {x: 0.022900764, y: -0.6034483}
+          size: {x: 0.48854962, y: 0.39655173}
+        - center: {x: 0.114503816, y: -0.01724138}
+          size: {x: 0.36641222, y: 0.46551725}
+        - center: {x: 0.099236645, y: 0.5862069}
+          size: {x: 0.29007635, y: 0.41379312}
+        handTuned: 0
+      - frame: dwarf_punch_w1
+        shapes:
+        - center: {x: 0.06870229, y: -0.43103448}
+          size: {x: 0.5038168, y: 0.5689655}
+        - center: {x: 0.2519084, y: 0.31034482}
+          size: {x: 0.3816794, y: 0.5862069}
+        handTuned: 0
+      - frame: dwarf_punch_w2
+        shapes:
+        - center: {x: -0.099236645, y: -0.39655173}
+          size: {x: 0.48854962, y: 0.6034483}
+        - center: {x: 0.1908397, y: 0.39655173}
+          size: {x: 0.4427481, y: 0.6034483}
+        handTuned: 0
+      - frame: dwarf_punch_w3
+        shapes:
+        - center: {x: -0.32824427, y: -0.39655173}
+          size: {x: 0.47328246, y: 0.6034483}
+        - center: {x: 0.06870229, y: 0.39655173}
+          size: {x: 0.5954198, y: 0.6034483}
+        handTuned: 0
+      - frame: dwarf_punch_w4
+        shapes:
+        - center: {x: -0.22137405, y: -0.39655173}
+          size: {x: 0.45801526, y: 0.6034483}
+        - center: {x: -0.099236645, y: 0.39655173}
+          size: {x: 0.39694658, y: 0.6034483}
+        handTuned: 0
+      - frame: dwarf_punch_w5
+        shapes:
+        - center: {x: -0.06870229, y: -0.6034483}
+          size: {x: 0.48854962, y: 0.39655173}
+        - center: {x: 0.022900764, y: -0.01724138}
+          size: {x: 0.36641222, y: 0.46551725}
+        - center: {x: 0.03816794, y: 0.5862069}
+          size: {x: 0.29007635, y: 0.41379312}
+        handTuned: 0
+      - frame: dwarf_running_e0
+        shapes:
+        - center: {x: -0.15686275, y: -0.46969697}
+          size: {x: 0.5686275, y: 0.530303}
+        - center: {x: 0.019607844, y: 0.24242425}
+          size: {x: 0.54901963, y: 0.54545456}
+        handTuned: 0
+      - frame: dwarf_running_e1
+        shapes:
+        - center: {x: -0.19607843, y: -0.45454547}
+          size: {x: 0.5294118, y: 0.5151515}
+        - center: {x: 0.078431375, y: 0.21212122}
+          size: {x: 0.5686275, y: 0.5151515}
+        handTuned: 0
+      - frame: dwarf_running_e2
+        shapes:
+        - center: {x: -0.15686275, y: -0.46969697}
+          size: {x: 0.4509804, y: 0.530303}
+        - center: {x: 0.11764706, y: 0.24242425}
+          size: {x: 0.5686275, y: 0.54545456}
+        handTuned: 0
+      - frame: dwarf_running_e3
+        shapes:
+        - center: {x: -0.19607843, y: -0.16666667}
+          size: {x: 0.60784316, y: 0.5}
+        - center: {x: 0.1764706, y: 0.4848485}
+          size: {x: 0.5882353, y: 0.5151515}
+        handTuned: 0
+      - frame: dwarf_running_e4
+        shapes:
+        - center: {x: -0.11764706, y: -0.4848485}
+          size: {x: 0.64705884, y: 0.5151515}
+        - center: {x: 0.039215688, y: 0.1969697}
+          size: {x: 0.60784316, y: 0.530303}
+        handTuned: 0
+      - frame: dwarf_running_e5
+        shapes:
+        - center: {x: 0.05882353, y: -0.530303}
+          size: {x: 0.43137255, y: 0.46969697}
+        - center: {x: 0.11764706, y: 0.10606061}
+          size: {x: 0.5686275, y: 0.46969697}
+        handTuned: 0
+      - frame: dwarf_running_e6
+        shapes:
+        - center: {x: -0.09803922, y: -0.46969697}
+          size: {x: 0.627451, y: 0.530303}
+        - center: {x: 0.078431375, y: 0.22727273}
+          size: {x: 0.5686275, y: 0.530303}
+        handTuned: 0
+      - frame: dwarf_running_e7
+        shapes:
+        - center: {x: -0.11764706, y: -0.34848484}
+          size: {x: 0.64705884, y: 0.530303}
+        - center: {x: 0.09803922, y: 0.34848484}
+          size: {x: 0.54901963, y: 0.530303}
+        handTuned: 0
+      - frame: dwarf_running_w0
+        shapes:
+        - center: {x: -0.15686275, y: -0.46969697}
+          size: {x: 0.5686275, y: 0.530303}
+        - center: {x: 0.019607844, y: 0.24242425}
+          size: {x: 0.54901963, y: 0.54545456}
+        handTuned: 0
+      - frame: dwarf_running_w1
+        shapes:
+        - center: {x: -0.19607843, y: -0.45454547}
+          size: {x: 0.5294118, y: 0.5151515}
+        - center: {x: 0.078431375, y: 0.21212122}
+          size: {x: 0.5686275, y: 0.5151515}
+        handTuned: 0
+      - frame: dwarf_running_w2
+        shapes:
+        - center: {x: -0.15686275, y: -0.46969697}
+          size: {x: 0.4509804, y: 0.530303}
+        - center: {x: 0.11764706, y: 0.24242425}
+          size: {x: 0.5686275, y: 0.54545456}
+        handTuned: 0
+      - frame: dwarf_running_w3
+        shapes:
+        - center: {x: -0.19607843, y: -0.16666667}
+          size: {x: 0.60784316, y: 0.5}
+        - center: {x: 0.1764706, y: 0.4848485}
+          size: {x: 0.5882353, y: 0.5151515}
+        handTuned: 0
+      - frame: dwarf_running_w4
+        shapes:
+        - center: {x: -0.11764706, y: -0.4848485}
+          size: {x: 0.64705884, y: 0.5151515}
+        - center: {x: 0.039215688, y: 0.1969697}
+          size: {x: 0.60784316, y: 0.530303}
+        handTuned: 0
+      - frame: dwarf_running_w5
+        shapes:
+        - center: {x: 0.05882353, y: -0.530303}
+          size: {x: 0.43137255, y: 0.46969697}
+        - center: {x: 0.11764706, y: 0.10606061}
+          size: {x: 0.5686275, y: 0.46969697}
+        handTuned: 0
+      - frame: dwarf_running_w6
+        shapes:
+        - center: {x: -0.09803922, y: -0.46969697}
+          size: {x: 0.627451, y: 0.530303}
+        - center: {x: 0.078431375, y: 0.22727273}
+          size: {x: 0.5686275, y: 0.530303}
+        handTuned: 0
+      - frame: dwarf_running_w7
+        shapes:
+        - center: {x: -0.11764706, y: -0.34848484}
+          size: {x: 0.64705884, y: 0.530303}
+        - center: {x: 0.09803922, y: 0.34848484}
+          size: {x: 0.54901963, y: 0.530303}
+        handTuned: 0
+      - frame: dwarf_spellcasting_1_e0
+        shapes:
+        - center: {x: 0.07042254, y: -0.62601626}
+          size: {x: 0.45070422, y: 0.37398374}
+        - center: {x: 0.09859155, y: -0.05691057}
+          size: {x: 0.33802816, y: 0.45528457}
+        - center: {x: 0.07042254, y: 0.52845526}
+          size: {x: 0.28169015, y: 0.3902439}
+        handTuned: 0
+      - frame: dwarf_spellcasting_1_e1
+        shapes:
+        - center: {x: 0.12676056, y: -0.62601626}
+          size: {x: 0.45070422, y: 0.37398374}
+        - center: {x: 0.1971831, y: 0.17073171}
+          size: {x: 0.32394367, y: 0.68292683}
+        handTuned: 0
+      - frame: dwarf_spellcasting_1_e2
+        shapes:
+        - center: {x: 0.16901408, y: -0.44715446}
+          size: {x: 0.4084507, y: 0.55284554}
+        - center: {x: 0.2535211, y: 0.2682927}
+          size: {x: 0.3802817, y: 0.55284554}
+        handTuned: 0
+      - frame: dwarf_spellcasting_1_e3
+        shapes:
+        - center: {x: 0.22535211, y: -0.17073171}
+          size: {x: 0.43661973, y: 0.8292683}
+        handTuned: 0
+      - frame: dwarf_spellcasting_1_e4
+        shapes:
+        - center: {x: 0.26760563, y: -0.05691057}
+          size: {x: 0.47887325, y: 0.9430894}
+        handTuned: 0
+      - frame: dwarf_spellcasting_1_e5
+        shapes:
+        - center: {x: 0.056338027, y: -0.398374}
+          size: {x: 0.46478873, y: 0.60162604}
+        - center: {x: -0.028169014, y: 0.40650406}
+          size: {x: 0.63380283, y: 0.5934959}
+        handTuned: 0
+      - frame: dwarf_spellcasting_1_e6
+        shapes:
+        - center: {x: -0.15492958, y: -0.4796748}
+          size: {x: 0.45070422, y: 0.5203252}
+        - center: {x: -0.14084508, y: 0.23577236}
+          size: {x: 0.3802817, y: 0.5203252}
+        handTuned: 0
+      - frame: dwarf_spellcasting_1_e7
+        shapes:
+        - center: {x: -0.07042254, y: -0.62601626}
+          size: {x: 0.4225352, y: 0.37398374}
+        - center: {x: 0, y: -0.05691057}
+          size: {x: 0.35211268, y: 0.45528457}
+        - center: {x: 0, y: 0.52845526}
+          size: {x: 0.26760563, y: 0.3902439}
+        handTuned: 0
+      - frame: dwarf_spellcasting_1_w0
+        shapes:
+        - center: {x: 0.07042254, y: -0.62601626}
+          size: {x: 0.45070422, y: 0.37398374}
+        - center: {x: 0.09859155, y: -0.05691057}
+          size: {x: 0.33802816, y: 0.45528457}
+        - center: {x: 0.07042254, y: 0.52845526}
+          size: {x: 0.28169015, y: 0.3902439}
+        handTuned: 0
+      - frame: dwarf_spellcasting_1_w1
+        shapes:
+        - center: {x: 0.12676056, y: -0.62601626}
+          size: {x: 0.45070422, y: 0.37398374}
+        - center: {x: 0.1971831, y: 0.17073171}
+          size: {x: 0.32394367, y: 0.68292683}
+        handTuned: 0
+      - frame: dwarf_spellcasting_1_w2
+        shapes:
+        - center: {x: 0.16901408, y: -0.44715446}
+          size: {x: 0.4084507, y: 0.55284554}
+        - center: {x: 0.2535211, y: 0.2682927}
+          size: {x: 0.3802817, y: 0.55284554}
+        handTuned: 0
+      - frame: dwarf_spellcasting_1_w3
+        shapes:
+        - center: {x: 0.22535211, y: -0.17073171}
+          size: {x: 0.43661973, y: 0.8292683}
+        handTuned: 0
+      - frame: dwarf_spellcasting_1_w4
+        shapes:
+        - center: {x: 0.26760563, y: -0.05691057}
+          size: {x: 0.47887325, y: 0.9430894}
+        handTuned: 0
+      - frame: dwarf_spellcasting_1_w5
+        shapes:
+        - center: {x: 0.056338027, y: -0.398374}
+          size: {x: 0.46478873, y: 0.60162604}
+        - center: {x: -0.028169014, y: 0.40650406}
+          size: {x: 0.63380283, y: 0.5934959}
+        handTuned: 0
+      - frame: dwarf_spellcasting_1_w6
+        shapes:
+        - center: {x: -0.15492958, y: -0.4796748}
+          size: {x: 0.45070422, y: 0.5203252}
+        - center: {x: -0.14084508, y: 0.23577236}
+          size: {x: 0.3802817, y: 0.5203252}
+        handTuned: 0
+      - frame: dwarf_spellcasting_1_w7
+        shapes:
+        - center: {x: -0.07042254, y: -0.62601626}
+          size: {x: 0.4225352, y: 0.37398374}
+        - center: {x: -0, y: -0.05691057}
+          size: {x: 0.35211268, y: 0.45528457}
+        - center: {x: -0, y: 0.52845526}
+          size: {x: 0.26760563, y: 0.3902439}
+        handTuned: 0
+      - frame: dwarf_spellcasting_2_e0
+        shapes:
+        - center: {x: -0.14563107, y: -0.6101695}
+          size: {x: 0.5825243, y: 0.3898305}
+        - center: {x: -0.048543688, y: 0.2542373}
+          size: {x: 0.44660193, y: 0.7457627}
+        handTuned: 0
+      - frame: dwarf_spellcasting_2_e1
+        shapes:
+        - center: {x: -0.08737864, y: -0.6101695}
+          size: {x: 0.5631068, y: 0.3898305}
+        - center: {x: -0.106796116, y: -0.016949153}
+          size: {x: 0.46601942, y: 0.47457626}
+        - center: {x: -0.106796116, y: 0.59322035}
+          size: {x: 0.3883495, y: 0.40677965}
+        handTuned: 0
+      - frame: dwarf_spellcasting_2_e2
+        shapes:
+        - center: {x: 0.08737864, y: -0.4915254}
+          size: {x: 0.46601942, y: 0.5084746}
+        - center: {x: 0.18446602, y: 0.18644068}
+          size: {x: 0.44660193, y: 0.5084746}
+        handTuned: 0
+      - frame: dwarf_spellcasting_2_e3
+        shapes:
+        - center: {x: 0.2038835, y: -0.59322035}
+          size: {x: 0.5436893, y: 0.40677965}
+        - center: {x: 0.3592233, y: -0.033898305}
+          size: {x: 0.42718446, y: 0.42372882}
+        handTuned: 0
+      - frame: dwarf_spellcasting_2_e4
+        shapes:
+        - center: {x: 0.24271844, y: -0.16949153}
+          size: {x: 0.5436893, y: 0.8305085}
+        handTuned: 0
+      - frame: dwarf_spellcasting_2_e5
+        shapes:
+        - center: {x: 0.1262136, y: -0.40677965}
+          size: {x: 0.6213592, y: 0.59322035}
+        - center: {x: -0.029126214, y: 0.33898306}
+          size: {x: 0.5825243, y: 0.55932206}
+        handTuned: 0
+      - frame: dwarf_spellcasting_2_e6
+        shapes:
+        - center: {x: -0.22330096, y: -0.45762712}
+          size: {x: 0.5436893, y: 0.5423729}
+        - center: {x: -0.08737864, y: 0.2881356}
+          size: {x: 0.52427185, y: 0.5423729}
+        handTuned: 0
+      - frame: dwarf_spellcasting_2_e7
+        shapes:
+        - center: {x: -0.2038835, y: -0.6101695}
+          size: {x: 0.5631068, y: 0.3898305}
+        - center: {x: -0.1262136, y: 0.23728813}
+          size: {x: 0.44660193, y: 0.7288136}
+        handTuned: 0
+      - frame: dwarf_spellcasting_2_w0
+        shapes:
+        - center: {x: -0.1262136, y: -0.6101695}
+          size: {x: 0.5825243, y: 0.3898305}
+        - center: {x: -0.048543688, y: -0.016949153}
+          size: {x: 0.46601942, y: 0.47457626}
+        - center: {x: -0.08737864, y: 0.59322035}
+          size: {x: 0.3883495, y: 0.40677965}
+        handTuned: 0
+      - frame: dwarf_spellcasting_2_w1
+        shapes:
+        - center: {x: -0.067961164, y: -0.6101695}
+          size: {x: 0.5631068, y: 0.3898305}
+        - center: {x: -0.08737864, y: -0.016949153}
+          size: {x: 0.46601942, y: 0.47457626}
+        - center: {x: -0.08737864, y: 0.59322035}
+          size: {x: 0.3883495, y: 0.40677965}
+        handTuned: 0
+      - frame: dwarf_spellcasting_2_w2
+        shapes:
+        - center: {x: 0.048543688, y: -0.6779661}
+          size: {x: 0.4854369, y: 0.3220339}
+        - center: {x: 0.16504854, y: -0.16949153}
+          size: {x: 0.4854369, y: 0.3898305}
+        - center: {x: 0.2038835, y: 0.3559322}
+          size: {x: 0.36893204, y: 0.33898306}
+        handTuned: 0
+      - frame: dwarf_spellcasting_2_w3
+        shapes:
+        - center: {x: 0.18446602, y: -0.59322035}
+          size: {x: 0.5436893, y: 0.40677965}
+        - center: {x: 0.3592233, y: -0.033898305}
+          size: {x: 0.407767, y: 0.42372882}
+        handTuned: 0
+      - frame: dwarf_spellcasting_2_w4
+        shapes:
+        - center: {x: 0.22330096, y: -0.16949153}
+          size: {x: 0.5436893, y: 0.8305085}
+        handTuned: 0
+      - frame: dwarf_spellcasting_2_w5
+        shapes:
+        - center: {x: 0.1262136, y: -0.40677965}
+          size: {x: 0.6407767, y: 0.59322035}
+        - center: {x: -0.048543688, y: 0.37288135}
+          size: {x: 0.5825243, y: 0.59322035}
+        handTuned: 0
+      - frame: dwarf_spellcasting_2_w6
+        shapes:
+        - center: {x: -0.2038835, y: -0.45762712}
+          size: {x: 0.5436893, y: 0.5423729}
+        - center: {x: -0.067961164, y: 0.2881356}
+          size: {x: 0.52427185, y: 0.5423729}
+        handTuned: 0
+      - frame: dwarf_spellcasting_2_w7
+        shapes:
+        - center: {x: -0.2038835, y: -0.6101695}
+          size: {x: 0.5825243, y: 0.3898305}
+        - center: {x: -0.1262136, y: -0.033898305}
+          size: {x: 0.46601942, y: 0.45762712}
+        - center: {x: -0.1262136, y: 0.55932206}
+          size: {x: 0.3883495, y: 0.40677965}
+        handTuned: 0
+      - frame: dwarf_spellcasting_3_e0
+        shapes:
+        - center: {x: 0.097345136, y: -0.6034483}
+          size: {x: 0.5663717, y: 0.39655173}
+        - center: {x: 0.15044248, y: 0.25862068}
+          size: {x: 0.40707964, y: 0.7413793}
+        handTuned: 0
+      - frame: dwarf_spellcasting_3_e1
+        shapes:
+        - center: {x: 0.061946902, y: -0.39655173}
+          size: {x: 0.49557522, y: 0.6034483}
+        - center: {x: 0.23893805, y: 0.39655173}
+          size: {x: 0.49557522, y: 0.6034483}
+        handTuned: 0
+      - frame: dwarf_spellcasting_3_e2
+        shapes:
+        - center: {x: 0.061946902, y: -0.39655173}
+          size: {x: 0.53097343, y: 0.6034483}
+        - center: {x: 0.18584071, y: 0.39655173}
+          size: {x: 0.40707964, y: 0.6034483}
+        handTuned: 0
+      - frame: dwarf_spellcasting_3_e3
+        shapes:
+        - center: {x: -0.026548672, y: -0.39655173}
+          size: {x: 0.5132743, y: 0.6034483}
+        - center: {x: 0.22123894, y: 0.39655173}
+          size: {x: 0.4778761, y: 0.6034483}
+        handTuned: 0
+      - frame: dwarf_spellcasting_3_e4
+        shapes:
+        - center: {x: -0.11504425, y: -0.39655173}
+          size: {x: 0.53097343, y: 0.6034483}
+        - center: {x: 0.16814159, y: 0.39655173}
+          size: {x: 0.460177, y: 0.6034483}
+        handTuned: 0
+      - frame: dwarf_spellcasting_3_e5
+        shapes:
+        - center: {x: -0.27433628, y: -0.41379312}
+          size: {x: 0.5132743, y: 0.5862069}
+        - center: {x: 0.044247787, y: 0.36206895}
+          size: {x: 0.5840708, y: 0.6034483}
+        handTuned: 0
+      - frame: dwarf_spellcasting_3_e6
+        shapes:
+        - center: {x: -0.25663716, y: -0.6034483}
+          size: {x: 0.49557522, y: 0.39655173}
+        - center: {x: -0.13274336, y: -0.01724138}
+          size: {x: 0.44247788, y: 0.46551725}
+        - center: {x: -0.097345136, y: 0.5862069}
+          size: {x: 0.37168142, y: 0.41379312}
+        handTuned: 0
+      - frame: dwarf_spellcasting_3_e7
+        shapes:
+        - center: {x: -0.044247787, y: -0.6034483}
+          size: {x: 0.460177, y: 0.39655173}
+        - center: {x: 0.044247787, y: 0.25862068}
+          size: {x: 0.40707964, y: 0.7413793}
+        handTuned: 0
+      - frame: dwarf_spellcasting_3_w0
+        shapes:
+        - center: {x: 0.097345136, y: -0.6034483}
+          size: {x: 0.54867256, y: 0.39655173}
+        - center: {x: 0.13274336, y: -0.01724138}
+          size: {x: 0.40707964, y: 0.46551725}
+        - center: {x: 0.097345136, y: 0.5862069}
+          size: {x: 0.33628318, y: 0.41379312}
+        handTuned: 0
+      - frame: dwarf_spellcasting_3_w1
+        shapes:
+        - center: {x: 0.044247787, y: -0.6034483}
+          size: {x: 0.53097343, y: 0.39655173}
+        - center: {x: 0.097345136, y: -0.01724138}
+          size: {x: 0.40707964, y: 0.46551725}
+        - center: {x: 0.2920354, y: 0.5862069}
+          size: {x: 0.49557522, y: 0.41379312}
+        handTuned: 0
+      - frame: dwarf_spellcasting_3_w2
+        shapes:
+        - center: {x: 0.061946902, y: -0.39655173}
+          size: {x: 0.5132743, y: 0.6034483}
+        - center: {x: 0.16814159, y: 0.39655173}
+          size: {x: 0.40707964, y: 0.6034483}
+        handTuned: 0
+      - frame: dwarf_spellcasting_3_w3
+        shapes:
+        - center: {x: -0.026548672, y: -0.39655173}
+          size: {x: 0.49557522, y: 0.6034483}
+        - center: {x: 0.20353982, y: 0.39655173}
+          size: {x: 0.4778761, y: 0.6034483}
+        handTuned: 0
+      - frame: dwarf_spellcasting_3_w4
+        shapes:
+        - center: {x: -0.11504425, y: -0.39655173}
+          size: {x: 0.54867256, y: 0.6034483}
+        - center: {x: 0.16814159, y: 0.39655173}
+          size: {x: 0.4778761, y: 0.6034483}
+        handTuned: 0
+      - frame: dwarf_spellcasting_3_w5
+        shapes:
+        - center: {x: -0.2920354, y: -0.41379312}
+          size: {x: 0.5132743, y: 0.5862069}
+        - center: {x: 0.044247787, y: 0.36206895}
+          size: {x: 0.6017699, y: 0.6034483}
+        handTuned: 0
+      - frame: dwarf_spellcasting_3_w6
+        shapes:
+        - center: {x: -0.25663716, y: -0.6034483}
+          size: {x: 0.5132743, y: 0.39655173}
+        - center: {x: -0.11504425, y: -0.01724138}
+          size: {x: 0.44247788, y: 0.46551725}
+        - center: {x: -0.097345136, y: 0.5862069}
+          size: {x: 0.3539823, y: 0.41379312}
+        handTuned: 0
+      - frame: dwarf_spellcasting_3_w7
+        shapes:
+        - center: {x: -0.026548672, y: -0.6034483}
+          size: {x: 0.460177, y: 0.39655173}
+        - center: {x: 0.061946902, y: 0.25862068}
+          size: {x: 0.40707964, y: 0.7413793}
+        handTuned: 0
+      - frame: dwarf_spellcasting_4_e0
+        shapes:
+        - center: {x: -0.0952381, y: -0.60683763}
+          size: {x: 0.4920635, y: 0.3931624}
+        - center: {x: -0.04761905, y: 0.24786325}
+          size: {x: 0.3809524, y: 0.73504275}
+        handTuned: 0
+      - frame: dwarf_spellcasting_4_e1
+        shapes:
+        - center: {x: -0.06349207, y: -0.60683763}
+          size: {x: 0.4920635, y: 0.3931624}
+        - center: {x: 0.04761905, y: -0.025641026}
+          size: {x: 0.3809524, y: 0.46153846}
+        - center: {x: 0.04761905, y: 0.5726496}
+          size: {x: 0.31746033, y: 0.41025642}
+        handTuned: 0
+      - frame: dwarf_spellcasting_4_e2
+        shapes:
+        - center: {x: 0.031746034, y: -0.60683763}
+          size: {x: 0.4920635, y: 0.3931624}
+        - center: {x: 0.12698413, y: 0.23076923}
+          size: {x: 0.33333334, y: 0.71794873}
+        handTuned: 0
+      - frame: dwarf_spellcasting_4_e3
+        shapes:
+        - center: {x: 0.0952381, y: -0.60683763}
+          size: {x: 0.52380955, y: 0.3931624}
+        - center: {x: 0.20634921, y: 0.25641027}
+          size: {x: 0.34920636, y: 0.74358976}
+        handTuned: 0
+      - frame: dwarf_spellcasting_4_e4
+        shapes:
+        - center: {x: 0.0952381, y: -0.4017094}
+          size: {x: 0.52380955, y: 0.5982906}
+        - center: {x: 0.2857143, y: 0.3931624}
+          size: {x: 0.36507937, y: 0.60683763}
+        handTuned: 0
+      - frame: dwarf_spellcasting_4_e5
+        shapes:
+        - center: {x: -0.04761905, y: -0.4017094}
+          size: {x: 0.53968257, y: 0.5982906}
+        - center: {x: -0.031746034, y: 0.3846154}
+          size: {x: 0.6825397, y: 0.5982906}
+        handTuned: 0
+      - frame: dwarf_spellcasting_4_e6
+        shapes:
+        - center: {x: -0.34920636, y: -0.41880342}
+          size: {x: 0.46031746, y: 0.5811966}
+        - center: {x: -0.20634921, y: 0.33333334}
+          size: {x: 0.41269842, y: 0.5811966}
+        handTuned: 0
+      - frame: dwarf_spellcasting_4_e7
+        shapes:
+        - center: {x: -0.22222222, y: -0.60683763}
+          size: {x: 0.46031746, y: 0.3931624}
+        - center: {x: -0.12698413, y: -0.008547009}
+          size: {x: 0.3968254, y: 0.47863248}
+        - center: {x: -0.11111111, y: 0.5982906}
+          size: {x: 0.31746033, y: 0.4017094}
+        handTuned: 0
+      - frame: dwarf_spellcasting_4_w0
+        shapes:
+        - center: {x: -0.0952381, y: -0.60683763}
+          size: {x: 0.4920635, y: 0.3931624}
+        - center: {x: -0.04761905, y: 0.24786325}
+          size: {x: 0.3809524, y: 0.73504275}
+        handTuned: 0
+      - frame: dwarf_spellcasting_4_w1
+        shapes:
+        - center: {x: -0.06349207, y: -0.60683763}
+          size: {x: 0.4920635, y: 0.3931624}
+        - center: {x: 0.04761905, y: -0.025641026}
+          size: {x: 0.3809524, y: 0.46153846}
+        - center: {x: 0.04761905, y: 0.5726496}
+          size: {x: 0.31746033, y: 0.41025642}
+        handTuned: 0
+      - frame: dwarf_spellcasting_4_w2
+        shapes:
+        - center: {x: 0.031746034, y: -0.60683763}
+          size: {x: 0.4920635, y: 0.3931624}
+        - center: {x: 0.12698413, y: 0.23076923}
+          size: {x: 0.33333334, y: 0.71794873}
+        handTuned: 0
+      - frame: dwarf_spellcasting_4_w3
+        shapes:
+        - center: {x: 0.0952381, y: -0.60683763}
+          size: {x: 0.52380955, y: 0.3931624}
+        - center: {x: 0.20634921, y: 0.25641027}
+          size: {x: 0.34920636, y: 0.74358976}
+        handTuned: 0
+      - frame: dwarf_spellcasting_4_w4
+        shapes:
+        - center: {x: 0.0952381, y: -0.4017094}
+          size: {x: 0.52380955, y: 0.5982906}
+        - center: {x: 0.2857143, y: 0.3931624}
+          size: {x: 0.36507937, y: 0.60683763}
+        handTuned: 0
+      - frame: dwarf_spellcasting_4_w5
+        shapes:
+        - center: {x: -0.04761905, y: -0.4017094}
+          size: {x: 0.53968257, y: 0.5982906}
+        - center: {x: -0.031746034, y: 0.3846154}
+          size: {x: 0.6825397, y: 0.5982906}
+        handTuned: 0
+      - frame: dwarf_spellcasting_4_w6
+        shapes:
+        - center: {x: -0.34920636, y: -0.41880342}
+          size: {x: 0.46031746, y: 0.5811966}
+        - center: {x: -0.20634921, y: 0.33333334}
+          size: {x: 0.41269842, y: 0.5811966}
+        handTuned: 0
+      - frame: dwarf_spellcasting_4_w7
+        shapes:
+        - center: {x: -0.22222222, y: -0.60683763}
+          size: {x: 0.46031746, y: 0.3931624}
+        - center: {x: -0.12698413, y: -0.008547009}
+          size: {x: 0.3968254, y: 0.47863248}
+        - center: {x: -0.11111111, y: 0.5982906}
+          size: {x: 0.31746033, y: 0.4017094}
+        handTuned: 0
+      - frame: dwarf_spellcasting_5_e0
+        shapes:
+        - center: {x: 0.048543688, y: -0.53333336}
+          size: {x: 0.5825243, y: 0.46666667}
+        - center: {x: 0.106796116, y: 0.08}
+          size: {x: 0.44660193, y: 0.46666667}
+        handTuned: 0
+      - frame: dwarf_spellcasting_5_e1
+        shapes:
+        - center: {x: -0.009708738, y: -0.6666667}
+          size: {x: 0.5631068, y: 0.33333334}
+        - center: {x: 0.067961164, y: -0.14666666}
+          size: {x: 0.36893204, y: 0.4}
+        - center: {x: 0.2038835, y: 0.38666666}
+          size: {x: 0.5048544, y: 0.34666666}
+        handTuned: 0
+      - frame: dwarf_spellcasting_5_e2
+        shapes:
+        - center: {x: 0.106796116, y: -0.6}
+          size: {x: 0.5631068, y: 0.4}
+        - center: {x: 0.14563107, y: 0}
+          size: {x: 0.33009708, y: 0.46666667}
+        - center: {x: 0.2815534, y: 0.6}
+          size: {x: 0.3883495, y: 0.4}
+        handTuned: 0
+      - frame: dwarf_spellcasting_5_e3
+        shapes:
+        - center: {x: 0.14563107, y: -0.61333334}
+          size: {x: 0.6796116, y: 0.38666666}
+        - center: {x: 0.32038835, y: -0.10666667}
+          size: {x: 0.46601942, y: 0.38666666}
+        handTuned: 0
+      - frame: dwarf_spellcasting_5_e4
+        shapes:
+        - center: {x: -0.592233, y: -0.6}
+          size: {x: 0.36893204, y: 0.32}
+        - center: {x: -0.029126214, y: -0.48}
+          size: {x: 0.42718446, y: 0.38666666}
+        - center: {x: 0.5339806, y: -0.56}
+          size: {x: 0.36893204, y: 0.36}
+        handTuned: 0
+      - frame: dwarf_spellcasting_5_e5
+        shapes:
+        - center: {x: -0.65048546, y: -0.62666667}
+          size: {x: 0.34951457, y: 0.29333332}
+        - center: {x: -0.1262136, y: -0.52}
+          size: {x: 0.407767, y: 0.34666666}
+        - center: {x: 0.39805827, y: -0.5733333}
+          size: {x: 0.34951457, y: 0.34666666}
+        handTuned: 0
+      - frame: dwarf_spellcasting_5_e6
+        shapes:
+        - center: {x: -0.18446602, y: -0.68}
+          size: {x: 0.5825243, y: 0.32}
+        - center: {x: 0.048543688, y: -0.18666667}
+          size: {x: 0.46601942, y: 0.38666666}
+        - center: {x: -0.009708738, y: 0.32}
+          size: {x: 0.36893204, y: 0.33333334}
+        handTuned: 0
+      - frame: dwarf_spellcasting_5_e7
+        shapes:
+        - center: {x: -0.106796116, y: -0.6933333}
+          size: {x: 0.5825243, y: 0.30666667}
+        - center: {x: -0.029126214, y: -0.22666667}
+          size: {x: 0.46601942, y: 0.37333333}
+        - center: {x: -0.029126214, y: 0.25333333}
+          size: {x: 0.34951457, y: 0.32}
+        handTuned: 0
+      - frame: dwarf_spellcasting_5_w0
+        shapes:
+        - center: {x: 0.029126214, y: -0.6933333}
+          size: {x: 0.6213592, y: 0.30666667}
+        - center: {x: 0.1262136, y: -0.24}
+          size: {x: 0.4854369, y: 0.36}
+        - center: {x: 0.1262136, y: 0.22666667}
+          size: {x: 0.36893204, y: 0.32}
+        handTuned: 0
+      - frame: dwarf_spellcasting_5_w1
+        shapes:
+        - center: {x: -0.009708738, y: -0.6666667}
+          size: {x: 0.5436893, y: 0.33333334}
+        - center: {x: 0.067961164, y: -0.14666666}
+          size: {x: 0.34951457, y: 0.4}
+        - center: {x: 0.2038835, y: 0.38666666}
+          size: {x: 0.4854369, y: 0.34666666}
+        handTuned: 0
+      - frame: dwarf_spellcasting_5_w2
+        shapes:
+        - center: {x: 0.08737864, y: -0.6}
+          size: {x: 0.5631068, y: 0.4}
+        - center: {x: 0.14563107, y: 0}
+          size: {x: 0.34951457, y: 0.46666667}
+        - center: {x: 0.2815534, y: 0.6}
+          size: {x: 0.407767, y: 0.4}
+        handTuned: 0
+      - frame: dwarf_spellcasting_5_w3
+        shapes:
+        - center: {x: 0.1262136, y: -0.61333334}
+          size: {x: 0.6796116, y: 0.38666666}
+        - center: {x: 0.32038835, y: -0.10666667}
+          size: {x: 0.4854369, y: 0.38666666}
+        handTuned: 0
+      - frame: dwarf_spellcasting_5_w4
+        shapes:
+        - center: {x: 0.57281554, y: -0.56}
+          size: {x: 0.34951457, y: 0.36}
+        - center: {x: 0.029126214, y: -0.49333334}
+          size: {x: 0.42718446, y: 0.37333333}
+        - center: {x: -0.5533981, y: -0.5733333}
+          size: {x: 0.3883495, y: 0.32}
+        handTuned: 0
+      - frame: dwarf_spellcasting_5_w5
+        shapes:
+        - center: {x: 0.41747573, y: -0.5733333}
+          size: {x: 0.34951457, y: 0.34666666}
+        - center: {x: -0.106796116, y: -0.52}
+          size: {x: 0.407767, y: 0.34666666}
+        - center: {x: -0.6407767, y: -0.62666667}
+          size: {x: 0.3592233, y: 0.29333332}
+        handTuned: 0
+      - frame: dwarf_spellcasting_5_w6
+        shapes:
+        - center: {x: -0.2038835, y: -0.68}
+          size: {x: 0.5825243, y: 0.32}
+        - center: {x: 0.048543688, y: -0.18666667}
+          size: {x: 0.4854369, y: 0.38666666}
+        - center: {x: -0.009708738, y: 0.32}
+          size: {x: 0.3883495, y: 0.33333334}
+        handTuned: 0
+      - frame: dwarf_spellcasting_5_w7
+        shapes:
+        - center: {x: -0.08737864, y: -0.6933333}
+          size: {x: 0.5825243, y: 0.30666667}
+        - center: {x: -0.029126214, y: -0.22666667}
+          size: {x: 0.4854369, y: 0.37333333}
+        - center: {x: -0.029126214, y: 0.25333333}
+          size: {x: 0.36893204, y: 0.32}
+        handTuned: 0
+      - frame: dwarf_walking_e0
+        shapes:
+        - center: {x: 0, y: -0.6134454}
+          size: {x: 0.5121951, y: 0.38655463}
+        - center: {x: 0.12195122, y: -0.042016808}
+          size: {x: 0.58536583, y: 0.45378152}
+        - center: {x: 0.24390244, y: 0.5462185}
+          size: {x: 0.41463414, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_walking_e1
+        shapes:
+        - center: {x: -0.048780486, y: -0.5966387}
+          size: {x: 0.36585367, y: 0.40336135}
+        - center: {x: 0.024390243, y: 0.008403362}
+          size: {x: 0.58536583, y: 0.47058824}
+        - center: {x: 0.09756097, y: 0.60504204}
+          size: {x: 0.41463414, y: 0.394958}
+        handTuned: 0
+      - frame: dwarf_walking_e2
+        shapes:
+        - center: {x: -0.19512194, y: -0.6134454}
+          size: {x: 0.46341464, y: 0.38655463}
+        - center: {x: -0.09756097, y: -0.025210084}
+          size: {x: 0.6585366, y: 0.47058824}
+        - center: {x: -0.024390243, y: 0.57983196}
+          size: {x: 0.4390244, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_walking_e3
+        shapes:
+        - center: {x: -0.2195122, y: -0.27731094}
+          size: {x: 0.5365854, y: 0.7226891}
+        - center: {x: -0.048780486, y: 0.57983196}
+          size: {x: 0.41463414, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_walking_e4
+        shapes:
+        - center: {x: -0.12195122, y: -0.6134454}
+          size: {x: 0.4878049, y: 0.38655463}
+        - center: {x: -0.048780486, y: -0.042016808}
+          size: {x: 0.6097561, y: 0.45378152}
+        - center: {x: 0.024390243, y: 0.5462185}
+          size: {x: 0.4390244, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_walking_e5
+        shapes:
+        - center: {x: -0.12195122, y: -0.27731094}
+          size: {x: 0.5365854, y: 0.7226891}
+        - center: {x: 0.07317073, y: 0.57983196}
+          size: {x: 0.3902439, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_walking_e6
+        shapes:
+        - center: {x: 0, y: -0.6134454}
+          size: {x: 0.41463414, y: 0.38655463}
+        - center: {x: 0.024390243, y: -0.025210084}
+          size: {x: 0.63414633, y: 0.47058824}
+        - center: {x: 0.17073171, y: 0.57983196}
+          size: {x: 0.4390244, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_walking_e7
+        shapes:
+        - center: {x: -0.024390243, y: -0.6134454}
+          size: {x: 0.4390244, y: 0.38655463}
+        - center: {x: 0.048780486, y: -0.025210084}
+          size: {x: 0.5609756, y: 0.47058824}
+        - center: {x: 0.14634146, y: 0.57983196}
+          size: {x: 0.41463414, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_walking_w0
+        shapes:
+        - center: {x: -0, y: -0.6134454}
+          size: {x: 0.5121951, y: 0.38655463}
+        - center: {x: 0.12195122, y: -0.042016808}
+          size: {x: 0.58536583, y: 0.45378152}
+        - center: {x: 0.24390244, y: 0.5462185}
+          size: {x: 0.41463414, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_walking_w1
+        shapes:
+        - center: {x: -0.048780486, y: -0.5966387}
+          size: {x: 0.36585367, y: 0.40336135}
+        - center: {x: 0.024390243, y: 0.008403362}
+          size: {x: 0.58536583, y: 0.47058824}
+        - center: {x: 0.09756097, y: 0.60504204}
+          size: {x: 0.41463414, y: 0.394958}
+        handTuned: 0
+      - frame: dwarf_walking_w2
+        shapes:
+        - center: {x: -0.19512194, y: -0.6134454}
+          size: {x: 0.46341464, y: 0.38655463}
+        - center: {x: -0.09756097, y: -0.025210084}
+          size: {x: 0.6585366, y: 0.47058824}
+        - center: {x: -0.024390243, y: 0.57983196}
+          size: {x: 0.4390244, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_walking_w3
+        shapes:
+        - center: {x: -0.2195122, y: -0.27731094}
+          size: {x: 0.5365854, y: 0.7226891}
+        - center: {x: -0.048780486, y: 0.57983196}
+          size: {x: 0.41463414, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_walking_w4
+        shapes:
+        - center: {x: -0.12195122, y: -0.6134454}
+          size: {x: 0.4878049, y: 0.38655463}
+        - center: {x: -0.048780486, y: -0.042016808}
+          size: {x: 0.6097561, y: 0.45378152}
+        - center: {x: 0.024390243, y: 0.5462185}
+          size: {x: 0.4390244, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_walking_w5
+        shapes:
+        - center: {x: -0.12195122, y: -0.27731094}
+          size: {x: 0.5365854, y: 0.7226891}
+        - center: {x: 0.07317073, y: 0.57983196}
+          size: {x: 0.3902439, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_walking_w6
+        shapes:
+        - center: {x: -0, y: -0.6134454}
+          size: {x: 0.41463414, y: 0.38655463}
+        - center: {x: 0.024390243, y: -0.025210084}
+          size: {x: 0.63414633, y: 0.47058824}
+        - center: {x: 0.17073171, y: 0.57983196}
+          size: {x: 0.4390244, y: 0.40336135}
+        handTuned: 0
+      - frame: dwarf_walking_w7
+        shapes:
+        - center: {x: -0.024390243, y: -0.6134454}
+          size: {x: 0.4390244, y: 0.38655463}
+        - center: {x: 0.048780486, y: -0.025210084}
+          size: {x: 0.5609756, y: 0.47058824}
+        - center: {x: 0.14634146, y: 0.57983196}
+          size: {x: 0.41463414, y: 0.40336135}
+        handTuned: 0
     scaleConfig:
       scaleIdle: 0
       tint: {r: 0, g: 0, b: 0, a: 0}

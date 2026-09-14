@@ -63,21 +63,22 @@ namespace Valkur.Gameplay.Combat
             // Check for collision damage during dash
             if (collisionDamage > 0f)
             {
-                var hits = Physics2D.OverlapCircleAll(
+                var hits = EntityHitFilter.Collapse(Physics2D.OverlapCircleAll(
                     (Vector2)transform.position,
                     0.5f,
-                    targetLayers);
+                    targetLayers), transform.position);
 
                 foreach (var hit in hits)
                 {
-                    if (hit.gameObject == gameObject) continue;
-                    var health = hit.GetComponent<Health>();
-                    if (health != null && !health.IsDead)
+                    // Through the parent: a hurtbox capsule lives on a child of its entity.
+                    var health = hit.GetComponentInParent<Health>();
+                    if (health == null || health.gameObject == gameObject) continue;
+                    if (!health.IsDead)
                     {
                         health.TakeDamage(Mathf.RoundToInt(collisionDamage), gameObject);
 
                         // Apply knockback to hit target
-                        var feedback = hit.GetComponent<CombatFeedback>();
+                        var feedback = health.GetComponent<CombatFeedback>();
                         if (feedback != null)
                             feedback.ApplyKnockback(transform.position);
                     }

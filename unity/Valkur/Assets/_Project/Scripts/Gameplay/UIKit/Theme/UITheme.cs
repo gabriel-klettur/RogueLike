@@ -142,6 +142,12 @@ namespace Valkur.UIKit
         /// <summary>A marker ring around an instance this editor can move, delete and save.</summary>
         public static readonly Color MARKER_RING        = new Color(1f, 0.82f, 0.30f, 0.85f);
 
+        // An entity's collision layers, drawn over art: the capsules a blow can land on and the
+        // footprint it stands on. Same pair as the in-game collision overlay, so the editor and
+        // the game name the two layers with the same colour.
+        public static readonly Color COLLISION_HURTBOX   = new Color(1f, 0.45f, 0.80f, 0.95f);
+        public static readonly Color COLLISION_FOOTPRINT = new Color(0.40f, 0.85f, 1f, 0.95f);
+
         /// <summary>
         /// A marker ring around an instance the editor will REFUSE to edit — a light owned by
         /// a building, say. Drawn, because the author wondering why a corner is bright needs to

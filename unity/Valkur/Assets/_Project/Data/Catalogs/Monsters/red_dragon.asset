@@ -403,6 +403,8 @@ MonoBehaviour:
     statePacing:
     - state: idle
       animationSpeedMultiplier: 0.35
+    walkReferenceSpeed: 0
+    runReferenceSpeed: 0
     loadouts: []
     castMuzzle: {x: 0.8, y: 0.08}
     castMuzzleFrames:
@@ -586,6 +588,484 @@ MonoBehaviour:
     - frame: red_dragon_walk_w7
       offset: {x: 0.88148445, y: 0.31958762}
       handTuned: 0
+    castMuzzlePoints: []
+    collision:
+      footprintSize: {x: 3.4125001, y: 1.2140626}
+      footprintOffset: {x: 0, y: 0}
+      footprintHandTuned: 0
+      hurtScale: 1
+      hurtShapes: []
+      hurtShapeFrames:
+      - frame: red_dragon_attack_e0
+        shapes:
+        - center: {x: -0.48766604, y: -0.2783505}
+          size: {x: 0.3529412, y: 0.4329897}
+        - center: {x: 0.2865275, y: -0.13402061}
+          size: {x: 0.64895636, y: 0.6185567}
+        handTuned: 0
+      - frame: red_dragon_attack_e1
+        shapes:
+        - center: {x: -0.7381404, y: -0.3814433}
+          size: {x: 0.2618596, y: 0.3298969}
+        - center: {x: -0.11195446, y: -0.21649484}
+          size: {x: 0.54648954, y: 0.53608245}
+        - center: {x: 0.5256167, y: -0.31958762}
+          size: {x: 0.27324477, y: 0.30927834}
+        handTuned: 0
+      - frame: red_dragon_attack_e2
+        shapes:
+        - center: {x: -0.5673624, y: -0.29896906}
+          size: {x: 0.31878558, y: 0.49484536}
+        - center: {x: -0.10056926, y: -0.030927835}
+          size: {x: 0.37571156, y: 0.5979381}
+        - center: {x: 0.3662239, y: 0.010309278}
+          size: {x: 0.31878558, y: 0.7628866}
+        handTuned: 0
+      - frame: red_dragon_attack_e3
+        shapes:
+        - center: {x: -0.48766604, y: -0.21649484}
+          size: {x: 0.3529412, y: 0.53608245}
+        - center: {x: 0.2865275, y: -0.11340206}
+          size: {x: 0.64895636, y: 0.63917524}
+        handTuned: 0
+      - frame: red_dragon_attack_e4
+        shapes:
+        - center: {x: -0.5104364, y: -0.2783505}
+          size: {x: 0.37571156, y: 0.4329897}
+        - center: {x: 0.04743833, y: -0.030927835}
+          size: {x: 0.45540798, y: 0.556701}
+        - center: {x: 0.61480075, y: -0.17525773}
+          size: {x: 0.38519925, y: 0.45360824}
+        handTuned: 0
+      - frame: red_dragon_attack_e5
+        shapes:
+        - center: {x: -0.61290324, y: -0.25773194}
+          size: {x: 0.3643264, y: 0.371134}
+        - center: {x: -0.055028465, y: -0.15463917}
+          size: {x: 0.42125237, y: 0.556701}
+        - center: {x: 0.5028463, y: -0.2371134}
+          size: {x: 0.3643264, y: 0.4329897}
+        handTuned: 0
+      - frame: red_dragon_attack_e6
+        shapes:
+        - center: {x: -0.59013283, y: -0.29896906}
+          size: {x: 0.34155598, y: 0.45360824}
+        - center: {x: 0.14990513, y: -0.13402061}
+          size: {x: 0.62618595, y: 0.6185567}
+        handTuned: 0
+      - frame: red_dragon_attack_e7
+        shapes:
+        - center: {x: -0.46489564, y: -0.36082473}
+          size: {x: 0.33017078, y: 0.39175257}
+        - center: {x: 0.2637571, y: -0.21649484}
+          size: {x: 0.62618595, y: 0.57731956}
+        handTuned: 0
+      - frame: red_dragon_attack_w0
+        shapes:
+        - center: {x: 0.28273246, y: -0.13402061}
+          size: {x: 0.64895636, y: 0.6185567}
+        - center: {x: -0.4914611, y: -0.2783505}
+          size: {x: 0.3529412, y: 0.4329897}
+        handTuned: 0
+      - frame: red_dragon_attack_w1
+        shapes:
+        - center: {x: 0.44212523, y: -0.29896906}
+          size: {x: 0.3529412, y: 0.41237113}
+        - center: {x: -0.092979126, y: -0.19587629}
+          size: {x: 0.40986717, y: 0.556701}
+        - center: {x: -0.63757116, y: -0.2783505}
+          size: {x: 0.36242884, y: 0.39175257}
+        handTuned: 0
+      - frame: red_dragon_attack_w2
+        shapes:
+        - center: {x: -0.10436433, y: -0.40206185}
+          size: {x: 0.44402277, y: 0.5979381}
+        - center: {x: 0.07779886, y: 0.36082473}
+          size: {x: 0.39848197, y: 0.57731956}
+        handTuned: 0
+      - frame: red_dragon_attack_w3
+        shapes:
+        - center: {x: 0.055028465, y: -0.11340206}
+          size: {x: 0.87666035, y: 0.63917524}
+        handTuned: 0
+      - frame: red_dragon_attack_w4
+        shapes:
+        - center: {x: 0.62428844, y: -0.17525773}
+          size: {x: 0.37571156, y: 0.45360824}
+        - center: {x: 0.06641366, y: -0.030927835}
+          size: {x: 0.45540798, y: 0.556701}
+        - center: {x: -0.5028463, y: -0.2783505}
+          size: {x: 0.38709676, y: 0.4742268}
+        handTuned: 0
+      - frame: red_dragon_attack_w5
+        shapes:
+        - center: {x: 0.5218216, y: -0.25773194}
+          size: {x: 0.3643264, y: 0.45360824}
+        - center: {x: -0.036053132, y: -0.15463917}
+          size: {x: 0.42125237, y: 0.556701}
+        - center: {x: -0.5939279, y: -0.2783505}
+          size: {x: 0.3643264, y: 0.39175257}
+        handTuned: 0
+      - frame: red_dragon_attack_w6
+        shapes:
+        - center: {x: 0.14611006, y: -0.13402061}
+          size: {x: 0.62618595, y: 0.6185567}
+        - center: {x: -0.5939279, y: -0.29896906}
+          size: {x: 0.34155598, y: 0.45360824}
+        handTuned: 0
+      - frame: red_dragon_attack_w7
+        shapes:
+        - center: {x: 0.28273246, y: -0.21649484}
+          size: {x: 0.60341555, y: 0.57731956}
+        - center: {x: -0.43453512, y: -0.31958762}
+          size: {x: 0.34155598, y: 0.4329897}
+        handTuned: 0
+      - frame: red_dragon_cast_e0
+        shapes:
+        - center: {x: -0.48766604, y: -0.2783505}
+          size: {x: 0.3529412, y: 0.4329897}
+        - center: {x: 0.2865275, y: -0.13402061}
+          size: {x: 0.64895636, y: 0.6185567}
+        handTuned: 0
+      - frame: red_dragon_cast_e1
+        shapes:
+        - center: {x: -0.7381404, y: -0.3814433}
+          size: {x: 0.2618596, y: 0.3298969}
+        - center: {x: -0.11195446, y: -0.21649484}
+          size: {x: 0.54648954, y: 0.53608245}
+        - center: {x: 0.5256167, y: -0.31958762}
+          size: {x: 0.27324477, y: 0.30927834}
+        handTuned: 0
+      - frame: red_dragon_cast_e2
+        shapes:
+        - center: {x: -0.5673624, y: -0.29896906}
+          size: {x: 0.31878558, y: 0.49484536}
+        - center: {x: -0.10056926, y: -0.030927835}
+          size: {x: 0.37571156, y: 0.5979381}
+        - center: {x: 0.3662239, y: 0.010309278}
+          size: {x: 0.31878558, y: 0.7628866}
+        handTuned: 0
+      - frame: red_dragon_cast_e3
+        shapes:
+        - center: {x: -0.48766604, y: -0.21649484}
+          size: {x: 0.3529412, y: 0.53608245}
+        - center: {x: 0.2865275, y: -0.11340206}
+          size: {x: 0.64895636, y: 0.63917524}
+        handTuned: 0
+      - frame: red_dragon_cast_e4
+        shapes:
+        - center: {x: -0.5104364, y: -0.2783505}
+          size: {x: 0.37571156, y: 0.4329897}
+        - center: {x: 0.04743833, y: -0.030927835}
+          size: {x: 0.45540798, y: 0.556701}
+        - center: {x: 0.61480075, y: -0.17525773}
+          size: {x: 0.38519925, y: 0.45360824}
+        handTuned: 0
+      - frame: red_dragon_cast_e5
+        shapes:
+        - center: {x: -0.61290324, y: -0.25773194}
+          size: {x: 0.3643264, y: 0.371134}
+        - center: {x: -0.055028465, y: -0.15463917}
+          size: {x: 0.42125237, y: 0.556701}
+        - center: {x: 0.5028463, y: -0.2371134}
+          size: {x: 0.3643264, y: 0.4329897}
+        handTuned: 0
+      - frame: red_dragon_cast_e6
+        shapes:
+        - center: {x: -0.59013283, y: -0.29896906}
+          size: {x: 0.34155598, y: 0.45360824}
+        - center: {x: 0.14990513, y: -0.13402061}
+          size: {x: 0.62618595, y: 0.6185567}
+        handTuned: 0
+      - frame: red_dragon_cast_e7
+        shapes:
+        - center: {x: -0.46489564, y: -0.36082473}
+          size: {x: 0.33017078, y: 0.39175257}
+        - center: {x: 0.2637571, y: -0.21649484}
+          size: {x: 0.62618595, y: 0.57731956}
+        handTuned: 0
+      - frame: red_dragon_cast_w0
+        shapes:
+        - center: {x: 0.28273246, y: -0.13402061}
+          size: {x: 0.64895636, y: 0.6185567}
+        - center: {x: -0.4914611, y: -0.2783505}
+          size: {x: 0.3529412, y: 0.4329897}
+        handTuned: 0
+      - frame: red_dragon_cast_w1
+        shapes:
+        - center: {x: 0.44212523, y: -0.29896906}
+          size: {x: 0.3529412, y: 0.41237113}
+        - center: {x: -0.092979126, y: -0.19587629}
+          size: {x: 0.40986717, y: 0.556701}
+        - center: {x: -0.63757116, y: -0.2783505}
+          size: {x: 0.36242884, y: 0.39175257}
+        handTuned: 0
+      - frame: red_dragon_cast_w2
+        shapes:
+        - center: {x: -0.10436433, y: -0.40206185}
+          size: {x: 0.44402277, y: 0.5979381}
+        - center: {x: 0.07779886, y: 0.36082473}
+          size: {x: 0.39848197, y: 0.57731956}
+        handTuned: 0
+      - frame: red_dragon_cast_w3
+        shapes:
+        - center: {x: 0.055028465, y: -0.11340206}
+          size: {x: 0.87666035, y: 0.63917524}
+        handTuned: 0
+      - frame: red_dragon_cast_w4
+        shapes:
+        - center: {x: 0.62428844, y: -0.17525773}
+          size: {x: 0.37571156, y: 0.45360824}
+        - center: {x: 0.06641366, y: -0.030927835}
+          size: {x: 0.45540798, y: 0.556701}
+        - center: {x: -0.5028463, y: -0.2783505}
+          size: {x: 0.38709676, y: 0.4742268}
+        handTuned: 0
+      - frame: red_dragon_cast_w5
+        shapes:
+        - center: {x: 0.5218216, y: -0.25773194}
+          size: {x: 0.3643264, y: 0.45360824}
+        - center: {x: -0.036053132, y: -0.15463917}
+          size: {x: 0.42125237, y: 0.556701}
+        - center: {x: -0.5939279, y: -0.2783505}
+          size: {x: 0.3643264, y: 0.39175257}
+        handTuned: 0
+      - frame: red_dragon_cast_w6
+        shapes:
+        - center: {x: 0.14611006, y: -0.13402061}
+          size: {x: 0.62618595, y: 0.6185567}
+        - center: {x: -0.5939279, y: -0.29896906}
+          size: {x: 0.34155598, y: 0.45360824}
+        handTuned: 0
+      - frame: red_dragon_cast_w7
+        shapes:
+        - center: {x: 0.28273246, y: -0.21649484}
+          size: {x: 0.60341555, y: 0.57731956}
+        - center: {x: -0.43453512, y: -0.31958762}
+          size: {x: 0.34155598, y: 0.4329897}
+        handTuned: 0
+      - frame: red_dragon_idle_e0
+        shapes:
+        - center: {x: -0.5830721, y: -0.51890033}
+          size: {x: 0.39498433, y: 0.19243987}
+        - center: {x: 0.009404388, y: -0.06185567}
+          size: {x: 0.46081504, y: 0.5532646}
+        - center: {x: 0.60188085, y: -0.10996564}
+          size: {x: 0.39498433, y: 0.6494845}
+        handTuned: 0
+      - frame: red_dragon_idle_e1
+        shapes:
+        - center: {x: -0.6159875, y: -0.5670103}
+          size: {x: 0.38401255, y: 0.19243987}
+        - center: {x: -0.03448276, y: -0.085910656}
+          size: {x: 0.46081504, y: 0.5292096}
+        - center: {x: 0.5579937, y: -0.06185567}
+          size: {x: 0.39498433, y: 0.6975945}
+        handTuned: 0
+      - frame: red_dragon_idle_e2
+        shapes:
+        - center: {x: -0.5501567, y: -0.23024055}
+          size: {x: 0.36206895, y: 0.5292096}
+        - center: {x: -0.012539185, y: 0.03436426}
+          size: {x: 0.43887147, y: 0.6494845}
+        - center: {x: 0.53605014, y: 0.058419243}
+          size: {x: 0.37304077, y: 0.7697595}
+        handTuned: 0
+      - frame: red_dragon_idle_e3
+        shapes:
+        - center: {x: -0.6050157, y: -0.4707904}
+          size: {x: 0.39498433, y: 0.19243987}
+        - center: {x: 0.2633229, y: -0.13402061}
+          size: {x: 0.7366771, y: 0.6254296}
+        handTuned: 0
+      - frame: red_dragon_idle_e4
+        shapes:
+        - center: {x: -0.52821314, y: -0.06185567}
+          size: {x: 0.38401255, y: 0.5051546}
+        - center: {x: 0.29467085, y: -0.06185567}
+          size: {x: 0.70219433, y: 0.6975945}
+        handTuned: 0
+      - frame: red_dragon_idle_e5
+        shapes:
+        - center: {x: -0.57210034, y: -0.51890033}
+          size: {x: 0.36206895, y: 0.19243987}
+        - center: {x: -0.012539185, y: -0.06185567}
+          size: {x: 0.46081504, y: 0.5532646}
+        - center: {x: 0.5799373, y: -0.10996564}
+          size: {x: 0.39498433, y: 0.6494845}
+        handTuned: 0
+      - frame: red_dragon_idle_w0
+        shapes:
+        - center: {x: 0.5940439, y: -0.10996564}
+          size: {x: 0.38401255, y: 0.6494845}
+        - center: {x: 0.012539185, y: -0.06185567}
+          size: {x: 0.46081504, y: 0.5532646}
+        - center: {x: -0.5799373, y: -0.51890033}
+          size: {x: 0.39498433, y: 0.19243987}
+        handTuned: 0
+      - frame: red_dragon_idle_w1
+        shapes:
+        - center: {x: 0.57210034, y: -0.06185567}
+          size: {x: 0.38401255, y: 0.6975945}
+        - center: {x: -0.009404388, y: -0.085910656}
+          size: {x: 0.46081504, y: 0.5292096}
+        - center: {x: -0.60188085, y: -0.5670103}
+          size: {x: 0.39498433, y: 0.19243987}
+        handTuned: 0
+      - frame: red_dragon_idle_w2
+        shapes:
+        - center: {x: 0.5501567, y: 0.03436426}
+          size: {x: 0.36206895, y: 0.7938144}
+        - center: {x: 0.012539185, y: 0.03436426}
+          size: {x: 0.43887147, y: 0.6494845}
+        - center: {x: -0.53605014, y: -0.23024055}
+          size: {x: 0.37304077, y: 0.5292096}
+        handTuned: 0
+      - frame: red_dragon_idle_w3
+        shapes:
+        - center: {x: 0.45141065, y: -0.085910656}
+          size: {x: 0.54858935, y: 0.6254296}
+        - center: {x: -0.23981191, y: -0.10996564}
+          size: {x: 0.36206895, y: 0.5051546}
+        - center: {x: -0.6786834, y: -0.49484536}
+          size: {x: 0.29623824, y: 0.16838488}
+        handTuned: 0
+      - frame: red_dragon_idle_w4
+        shapes:
+        - center: {x: 0.28683385, y: -0.06185567}
+          size: {x: 0.69122255, y: 0.6975945}
+        - center: {x: -0.52507836, y: -0.06185567}
+          size: {x: 0.38401255, y: 0.5051546}
+        handTuned: 0
+      - frame: red_dragon_idle_w5
+        shapes:
+        - center: {x: 0.5940439, y: -0.10996564}
+          size: {x: 0.38401255, y: 0.6494845}
+        - center: {x: 0.012539185, y: -0.06185567}
+          size: {x: 0.46081504, y: 0.5532646}
+        - center: {x: -0.5799373, y: -0.49484536}
+          size: {x: 0.39498433, y: 0.21649484}
+        handTuned: 0
+      - frame: red_dragon_walk_e0
+        shapes:
+        - center: {x: -0.451876, y: -0.06185567}
+          size: {x: 0.3425775, y: 0.5051546}
+        - center: {x: 0.3132137, y: 0.03436426}
+          size: {x: 0.6508972, y: 0.6975945}
+        handTuned: 0
+      - frame: red_dragon_walk_e1
+        shapes:
+        - center: {x: -0.5203915, y: -0.1580756}
+          size: {x: 0.3425775, y: 0.45704466}
+        - center: {x: 0.24469821, y: 0.03436426}
+          size: {x: 0.6508972, y: 0.6494845}
+        handTuned: 0
+      - frame: red_dragon_walk_e2
+        shapes:
+        - center: {x: -0.60032624, y: -0.39862543}
+          size: {x: 0.39967373, y: 0.21649484}
+        - center: {x: -0.0065252855, y: 0.03436426}
+          size: {x: 0.46818924, y: 0.6494845}
+        - center: {x: 0.59380096, y: -0.013745705}
+          size: {x: 0.406199, y: 0.5051546}
+        handTuned: 0
+      - frame: red_dragon_walk_e3
+        shapes:
+        - center: {x: -0.4290375, y: -0.085910656}
+          size: {x: 0.3425775, y: 0.48109967}
+        - center: {x: 0.32463294, y: 0.03436426}
+          size: {x: 0.63947797, y: 0.6494845}
+        handTuned: 0
+      - frame: red_dragon_walk_e4
+        shapes:
+        - center: {x: -0.46329528, y: -0.1580756}
+          size: {x: 0.35399672, y: 0.45704466}
+        - center: {x: 0.33115825, y: 0.010309278}
+          size: {x: 0.6688418, y: 0.6254296}
+        handTuned: 0
+      - frame: red_dragon_walk_e5
+        shapes:
+        - center: {x: -0.47471452, y: -0.1580756}
+          size: {x: 0.3425775, y: 0.45704466}
+        - center: {x: 0.2903752, y: 0.010309278}
+          size: {x: 0.6508972, y: 0.6254296}
+        handTuned: 0
+      - frame: red_dragon_walk_e6
+        shapes:
+        - center: {x: -0.48613375, y: -0.10996564}
+          size: {x: 0.35399672, y: 0.4089347}
+        - center: {x: 0.30179444, y: 0.010309278}
+          size: {x: 0.6623165, y: 0.6735395}
+        handTuned: 0
+      - frame: red_dragon_walk_e7
+        shapes:
+        - center: {x: -0.41761827, y: -0.18213059}
+          size: {x: 0.33115825, y: 0.38487974}
+        - center: {x: 0.3132137, y: -0.06185567}
+          size: {x: 0.62805873, y: 0.6975945}
+        handTuned: 0
+      - frame: red_dragon_walk_w0
+        shapes:
+        - center: {x: 0.32626426, y: 0.03436426}
+          size: {x: 0.6508972, y: 0.6975945}
+        - center: {x: -0.4502447, y: -0.06185567}
+          size: {x: 0.35399672, y: 0.5051546}
+        handTuned: 0
+      - frame: red_dragon_walk_w1
+        shapes:
+        - center: {x: 0.24632953, y: 0.058419243}
+          size: {x: 0.63947797, y: 0.6254296}
+        - center: {x: -0.5187602, y: -0.13402061}
+          size: {x: 0.35399672, y: 0.48109967}
+        handTuned: 0
+      - frame: red_dragon_walk_w2
+        shapes:
+        - center: {x: 0.60032624, y: -0.03780069}
+          size: {x: 0.39967373, y: 0.5292096}
+        - center: {x: 0.0065252855, y: 0.03436426}
+          size: {x: 0.46818924, y: 0.6494845}
+        - center: {x: -0.59380096, y: -0.35051546}
+          size: {x: 0.406199, y: 0.2646048}
+        handTuned: 0
+      - frame: red_dragon_walk_w3
+        shapes:
+        - center: {x: 0.61174554, y: -0.03780069}
+          size: {x: 0.3425775, y: 0.57731956}
+        - center: {x: 0.09787928, y: 0.058419243}
+          size: {x: 0.39967373, y: 0.6254296}
+        - center: {x: -0.4274062, y: -0.085910656}
+          size: {x: 0.35399672, y: 0.48109967}
+        handTuned: 0
+      - frame: red_dragon_walk_w4
+        shapes:
+        - center: {x: 0.64600325, y: -0.085910656}
+          size: {x: 0.35399672, y: 0.5292096}
+        - center: {x: 0.09787928, y: 0.010309278}
+          size: {x: 0.42251223, y: 0.6254296}
+        - center: {x: -0.46166396, y: -0.1580756}
+          size: {x: 0.365416, y: 0.5051546}
+        handTuned: 0
+      - frame: red_dragon_walk_w5
+        shapes:
+        - center: {x: 0.3034258, y: 0.010309278}
+          size: {x: 0.6508972, y: 0.6254296}
+        - center: {x: -0.4730832, y: -0.13402061}
+          size: {x: 0.35399672, y: 0.48109967}
+        handTuned: 0
+      - frame: red_dragon_walk_w6
+        shapes:
+        - center: {x: 0.31484503, y: 0.010309278}
+          size: {x: 0.6623165, y: 0.6735395}
+        - center: {x: -0.48450243, y: -0.085910656}
+          size: {x: 0.365416, y: 0.4329897}
+        handTuned: 0
+      - frame: red_dragon_walk_w7
+        shapes:
+        - center: {x: 0.31484503, y: -0.06185567}
+          size: {x: 0.6166395, y: 0.6975945}
+        - center: {x: -0.41598696, y: -0.1580756}
+          size: {x: 0.3425775, y: 0.4089347}
+        handTuned: 0
     scaleConfig:
       scaleIdle: 0
       tint: {r: 0, g: 0, b: 0, a: 0}

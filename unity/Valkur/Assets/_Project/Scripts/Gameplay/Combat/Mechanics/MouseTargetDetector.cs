@@ -51,9 +51,11 @@ namespace Valkur.Gameplay.Combat
             GameObject newTarget = null;
             if (hit != null)
             {
-                var health = hit.GetComponent<Health>();
+                // Through the parent: the body under the pointer is usually a hurtbox capsule,
+                // which lives on a child of the entity it belongs to.
+                var health = hit.GetComponentInParent<Health>();
                 if (health != null && !health.IsDead)
-                    newTarget = hit.gameObject;
+                    newTarget = health.gameObject;
             }
 
             SetCurrentTarget(newTarget);

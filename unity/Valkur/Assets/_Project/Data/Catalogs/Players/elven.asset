@@ -1428,6 +1428,8 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 0
+      repeatFrameCount: 0
       timeline:
         steps: []
         releaseStep: 0
@@ -1513,6 +1515,8 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 0
+      repeatFrameCount: 0
       timeline:
         steps: []
         releaseStep: 0
@@ -1696,9 +1700,2233 @@ MonoBehaviour:
         recoverMode: 2
     stateVariants: []
     statePacing: []
+    walkReferenceSpeed: 0
+    runReferenceSpeed: 0
     loadouts: []
     castMuzzle: {x: 0, y: 0}
     castMuzzleFrames: []
+    castMuzzlePoints: []
+    collision:
+      footprintSize: {x: 0.6296875, y: 0.28335935}
+      footprintOffset: {x: 0, y: 0}
+      footprintHandTuned: 0
+      hurtScale: 1
+      hurtShapes: []
+      hurtShapeFrames:
+      - frame: elven_archer_attack_e0
+        shapes:
+        - center: {x: 0.09422492, y: -0.48474577}
+          size: {x: 0.38905776, y: 0.51525426}
+        - center: {x: 0.19148937, y: 0.20677966}
+          size: {x: 0.38905776, y: 0.5016949}
+        handTuned: 0
+      - frame: elven_archer_attack_e1
+        shapes:
+        - center: {x: -0.027355623, y: -0.41694915}
+          size: {x: 0.41337386, y: 0.58305085}
+        - center: {x: 0.05775076, y: 0.38305086}
+          size: {x: 0.49848023, y: 0.5966102}
+        handTuned: 0
+      - frame: elven_archer_attack_e2
+        shapes:
+        - center: {x: -0.19756839, y: -0.43050846}
+          size: {x: 0.41337386, y: 0.5694915}
+        - center: {x: -0.13677812, y: 0.3423729}
+          size: {x: 0.52279633, y: 0.58305085}
+        handTuned: 0
+      - frame: elven_archer_attack_e3
+        shapes:
+        - center: {x: -0.34346506, y: -0.40338984}
+          size: {x: 0.43768996, y: 0.5966102}
+        - center: {x: -0.27051672, y: 0.40677965}
+          size: {x: 0.5349544, y: 0.59322035}
+        handTuned: 0
+      - frame: elven_archer_attack_e4
+        shapes:
+        - center: {x: 0.19148937, y: -0.41694915}
+          size: {x: 0.43768996, y: 0.5559322}
+        - center: {x: 0.30091184, y: 0.3423729}
+          size: {x: 0.54711246, y: 0.58305085}
+        handTuned: 0
+      - frame: elven_archer_attack_e5
+        shapes:
+        - center: {x: 0.10638298, y: -0.41694915}
+          size: {x: 0.42553192, y: 0.5559322}
+        - center: {x: 0.19148937, y: 0.3423729}
+          size: {x: 0.5106383, y: 0.58305085}
+        handTuned: 0
+      - frame: elven_archer_attack_e6
+        shapes:
+        - center: {x: 0.009118541, y: -0.48474577}
+          size: {x: 0.44984803, y: 0.51525426}
+        - center: {x: 0.13069908, y: 0.15254237}
+          size: {x: 0.52279633, y: 0.44745764}
+        handTuned: 0
+      - frame: elven_archer_attack_e7
+        shapes:
+        - center: {x: -0.051671732, y: -0.48474577}
+          size: {x: 0.38905776, y: 0.51525426}
+        - center: {x: 0.03343465, y: 0.19322033}
+          size: {x: 0.4012158, y: 0.4881356}
+        handTuned: 0
+      - frame: elven_archer_attack_w0
+        shapes:
+        - center: {x: 0.10030395, y: -0.48474577}
+          size: {x: 0.38905776, y: 0.51525426}
+        - center: {x: 0.17325228, y: 0.17966102}
+          size: {x: 0.38905776, y: 0.47457626}
+        handTuned: 0
+      - frame: elven_archer_attack_w1
+        shapes:
+        - center: {x: -0.03343465, y: -0.41694915}
+          size: {x: 0.42553192, y: 0.58305085}
+        - center: {x: 0.06382979, y: 0.38305086}
+          size: {x: 0.49848023, y: 0.5966102}
+        handTuned: 0
+      - frame: elven_archer_attack_w2
+        shapes:
+        - center: {x: -0.20364742, y: -0.43050846}
+          size: {x: 0.42553192, y: 0.5694915}
+        - center: {x: -0.13069908, y: 0.3423729}
+          size: {x: 0.52279633, y: 0.58305085}
+        handTuned: 0
+      - frame: elven_archer_attack_w3
+        shapes:
+        - center: {x: -0.337386, y: -0.41694915}
+          size: {x: 0.43768996, y: 0.58305085}
+        - center: {x: -0.27659574, y: 0.38305086}
+          size: {x: 0.52279633, y: 0.5966102}
+        handTuned: 0
+      - frame: elven_archer_attack_w4
+        shapes:
+        - center: {x: 0.19756839, y: -0.41694915}
+          size: {x: 0.43768996, y: 0.5559322}
+        - center: {x: 0.29483283, y: 0.3423729}
+          size: {x: 0.5349544, y: 0.58305085}
+        handTuned: 0
+      - frame: elven_archer_attack_w5
+        shapes:
+        - center: {x: 0.11246201, y: -0.41694915}
+          size: {x: 0.42553192, y: 0.5559322}
+        - center: {x: 0.19756839, y: 0.3423729}
+          size: {x: 0.5106383, y: 0.58305085}
+        handTuned: 0
+      - frame: elven_archer_attack_w6
+        shapes:
+        - center: {x: -0.009118541, y: -0.47118643}
+          size: {x: 0.44984803, y: 0.5016949}
+        - center: {x: 0.13677812, y: 0.15254237}
+          size: {x: 0.52279633, y: 0.44745764}
+        handTuned: 0
+      - frame: elven_archer_attack_w7
+        shapes:
+        - center: {x: -0.045592707, y: -0.48474577}
+          size: {x: 0.38905776, y: 0.51525426}
+        - center: {x: 0.027355623, y: 0.19322033}
+          size: {x: 0.41337386, y: 0.4881356}
+        handTuned: 0
+      - frame: elven_archer_cast_e0
+        shapes:
+        - center: {x: -0.10810811, y: -0.6277372}
+          size: {x: 0.45945945, y: 0.37226278}
+        - center: {x: -0.0945946, y: -0.06934307}
+          size: {x: 0.3918919, y: 0.4489051}
+        - center: {x: -0.13513513, y: 0.5}
+          size: {x: 0.2972973, y: 0.38321167}
+        handTuned: 0
+      - frame: elven_archer_cast_e1
+        shapes:
+        - center: {x: -0.1891892, y: -0.649635}
+          size: {x: 0.4864865, y: 0.35036495}
+        - center: {x: -0.27027026, y: -0.11313868}
+          size: {x: 0.35135135, y: 0.4051095}
+        - center: {x: -0.067567565, y: 0.43430656}
+          size: {x: 0.47297296, y: 0.36131388}
+        handTuned: 0
+      - frame: elven_archer_cast_e2
+        shapes:
+        - center: {x: -0.067567565, y: -0.40875912}
+          size: {x: 0.527027, y: 0.5912409}
+        - center: {x: 0.14864865, y: 0.39051095}
+          size: {x: 0.5810811, y: 0.6021898}
+        handTuned: 0
+      - frame: elven_archer_cast_e3
+        shapes:
+        - center: {x: -0.067567565, y: -0.45255473}
+          size: {x: 0.47297296, y: 0.54744524}
+        - center: {x: 0.12162162, y: 0.23722628}
+          size: {x: 0.5540541, y: 0.49270073}
+        handTuned: 0
+      - frame: elven_archer_cast_e4
+        shapes:
+        - center: {x: -0.027027028, y: -0.649635}
+          size: {x: 0.5405405, y: 0.35036495}
+        - center: {x: 0.17567568, y: -0.11313868}
+          size: {x: 0.47297296, y: 0.4051095}
+        - center: {x: -0.027027028, y: 0.42335767}
+          size: {x: 0.43243244, y: 0.35036495}
+        handTuned: 0
+      - frame: elven_archer_cast_e5
+        shapes:
+        - center: {x: -0.12162162, y: -0.025547445}
+          size: {x: 0.5540541, y: 0.97445256}
+        handTuned: 0
+      - frame: elven_archer_cast_e6
+        shapes:
+        - center: {x: -0.1891892, y: -0.40875912}
+          size: {x: 0.5675676, y: 0.5693431}
+        - center: {x: -0.04054054, y: 0.34671533}
+          size: {x: 0.5810811, y: 0.580292}
+        handTuned: 0
+      - frame: elven_archer_cast_e7
+        shapes:
+        - center: {x: -0.10810811, y: -0.40875912}
+          size: {x: 0.5675676, y: 0.5912409}
+        - center: {x: 0.027027028, y: 0.37956205}
+          size: {x: 0.6486486, y: 0.5912409}
+        handTuned: 0
+      - frame: elven_archer_cast_w0
+        shapes:
+        - center: {x: -0.10810811, y: -0.6277372}
+          size: {x: 0.45945945, y: 0.37226278}
+        - center: {x: -0.0945946, y: -0.06934307}
+          size: {x: 0.3918919, y: 0.4489051}
+        - center: {x: -0.13513513, y: 0.5}
+          size: {x: 0.2972973, y: 0.38321167}
+        handTuned: 0
+      - frame: elven_archer_cast_w1
+        shapes:
+        - center: {x: -0.1891892, y: -0.649635}
+          size: {x: 0.4864865, y: 0.35036495}
+        - center: {x: -0.27027026, y: -0.11313868}
+          size: {x: 0.35135135, y: 0.4051095}
+        - center: {x: -0.067567565, y: 0.43430656}
+          size: {x: 0.47297296, y: 0.36131388}
+        handTuned: 0
+      - frame: elven_archer_cast_w2
+        shapes:
+        - center: {x: -0.067567565, y: -0.40875912}
+          size: {x: 0.527027, y: 0.5912409}
+        - center: {x: 0.14864865, y: 0.39051095}
+          size: {x: 0.5810811, y: 0.6021898}
+        handTuned: 0
+      - frame: elven_archer_cast_w3
+        shapes:
+        - center: {x: -0.067567565, y: -0.45255473}
+          size: {x: 0.47297296, y: 0.54744524}
+        - center: {x: 0.12162162, y: 0.23722628}
+          size: {x: 0.5540541, y: 0.49270073}
+        handTuned: 0
+      - frame: elven_archer_cast_w4
+        shapes:
+        - center: {x: -0.027027028, y: -0.649635}
+          size: {x: 0.5405405, y: 0.35036495}
+        - center: {x: 0.17567568, y: -0.11313868}
+          size: {x: 0.47297296, y: 0.4051095}
+        - center: {x: -0.027027028, y: 0.42335767}
+          size: {x: 0.43243244, y: 0.35036495}
+        handTuned: 0
+      - frame: elven_archer_cast_w5
+        shapes:
+        - center: {x: -0.12162162, y: -0.025547445}
+          size: {x: 0.5540541, y: 0.97445256}
+        handTuned: 0
+      - frame: elven_archer_cast_w6
+        shapes:
+        - center: {x: -0.1891892, y: -0.40875912}
+          size: {x: 0.5675676, y: 0.5693431}
+        - center: {x: -0.04054054, y: 0.34671533}
+          size: {x: 0.5810811, y: 0.580292}
+        handTuned: 0
+      - frame: elven_archer_cast_w7
+        shapes:
+        - center: {x: -0.10810811, y: -0.40875912}
+          size: {x: 0.5675676, y: 0.5912409}
+        - center: {x: 0.027027028, y: 0.37956205}
+          size: {x: 0.6486486, y: 0.5912409}
+        handTuned: 0
+      - frame: elven_bard_cast_e0
+        shapes:
+        - center: {x: -0.10280374, y: -0.26459143}
+          size: {x: 0.44859812, y: 0.73540854}
+        - center: {x: -0.17289719, y: 0.5953307}
+          size: {x: 0.3224299, y: 0.40466926}
+        handTuned: 0
+      - frame: elven_bard_cast_e1
+        shapes:
+        - center: {x: -0.1448598, y: -0.6031128}
+          size: {x: 0.54672897, y: 0.39688715}
+        - center: {x: -0.21495327, y: -0.019455252}
+          size: {x: 0.36448598, y: 0.46692607}
+        - center: {x: -0.046728972, y: 0.5642023}
+          size: {x: 0.5046729, y: 0.39688715}
+        handTuned: 0
+      - frame: elven_bard_cast_e2
+        shapes:
+        - center: {x: -0.10280374, y: -0.40466926}
+          size: {x: 0.5046729, y: 0.5719844}
+        - center: {x: 0.023364486, y: 0.34241244}
+          size: {x: 0.5186916, y: 0.5486381}
+        handTuned: 0
+      - frame: elven_bard_cast_e3
+        shapes:
+        - center: {x: -0.11682243, y: -0.6381323}
+          size: {x: 0.57476634, y: 0.3618677}
+        - center: {x: -0.10280374, y: -0.08949416}
+          size: {x: 0.39252338, y: 0.42023346}
+        - center: {x: -0.004672897, y: 0.47081712}
+          size: {x: 0.46261683, y: 0.37354085}
+        handTuned: 0
+      - frame: elven_bard_cast_e4
+        shapes:
+        - center: {x: -0.088785045, y: -0.42801556}
+          size: {x: 0.57476634, y: 0.5486381}
+        - center: {x: 0.023364486, y: 0.31906614}
+          size: {x: 0.46261683, y: 0.5719844}
+        handTuned: 0
+      - frame: elven_bard_cast_e5
+        shapes:
+        - center: {x: -0.17289719, y: -0.40466926}
+          size: {x: 0.57476634, y: 0.5719844}
+        - center: {x: -0.10280374, y: 0.3774319}
+          size: {x: 0.47663552, y: 0.58365756}
+        handTuned: 0
+      - frame: elven_bard_cast_e6
+        shapes:
+        - center: {x: -0.11682243, y: -0.4163424}
+          size: {x: 0.60280377, y: 0.56031126}
+        - center: {x: -0.004672897, y: 0.34241244}
+          size: {x: 0.4906542, y: 0.5719844}
+        handTuned: 0
+      - frame: elven_bard_cast_e7
+        shapes:
+        - center: {x: -0.03271028, y: -0.6031128}
+          size: {x: 0.57476634, y: 0.39688715}
+        - center: {x: -0.046728972, y: -0.019455252}
+          size: {x: 0.42056075, y: 0.46692607}
+        - center: {x: -0.004672897, y: 0.57587546}
+          size: {x: 0.4906542, y: 0.4085603}
+        handTuned: 0
+      - frame: elven_bard_cast_w0
+        shapes:
+        - center: {x: -0.093457945, y: -0.26459143}
+          size: {x: 0.44859812, y: 0.73540854}
+        - center: {x: -0.17757009, y: 0.5953307}
+          size: {x: 0.3364486, y: 0.40466926}
+        handTuned: 0
+      - frame: elven_bard_cast_w1
+        shapes:
+        - center: {x: -0.13551402, y: -0.6031128}
+          size: {x: 0.54672897, y: 0.39688715}
+        - center: {x: -0.21962617, y: -0.019455252}
+          size: {x: 0.37850466, y: 0.46692607}
+        - center: {x: -0.05140187, y: 0.5642023}
+          size: {x: 0.4906542, y: 0.39688715}
+        handTuned: 0
+      - frame: elven_bard_cast_w2
+        shapes:
+        - center: {x: -0.12149533, y: -0.6031128}
+          size: {x: 0.5607477, y: 0.37354085}
+        - center: {x: -0.05140187, y: -0.031128405}
+          size: {x: 0.43457943, y: 0.4319066}
+        - center: {x: 0.10280374, y: 0.52918285}
+          size: {x: 0.5607477, y: 0.3618677}
+        handTuned: 0
+      - frame: elven_bard_cast_w3
+        shapes:
+        - center: {x: -0.12149533, y: -0.4396887}
+          size: {x: 0.53271025, y: 0.53696495}
+        - center: {x: -0.05140187, y: 0.28404668}
+          size: {x: 0.43457943, y: 0.56031126}
+        handTuned: 0
+      - frame: elven_bard_cast_w4
+        shapes:
+        - center: {x: -0.07943925, y: -0.42801556}
+          size: {x: 0.57476634, y: 0.5486381}
+        - center: {x: 0.018691588, y: 0.31906614}
+          size: {x: 0.47663552, y: 0.5719844}
+        handTuned: 0
+      - frame: elven_bard_cast_w5
+        shapes:
+        - center: {x: -0.1635514, y: -0.40466926}
+          size: {x: 0.57476634, y: 0.5719844}
+        - center: {x: -0.10747664, y: 0.3774319}
+          size: {x: 0.4906542, y: 0.58365756}
+        handTuned: 0
+      - frame: elven_bard_cast_w6
+        shapes:
+        - center: {x: -0.10747664, y: -0.4163424}
+          size: {x: 0.60280377, y: 0.56031126}
+        - center: {x: 0.004672897, y: 0.34241244}
+          size: {x: 0.4906542, y: 0.5719844}
+        handTuned: 0
+      - frame: elven_bard_cast_w7
+        shapes:
+        - center: {x: -0.05140187, y: -0.6031128}
+          size: {x: 0.57476634, y: 0.39688715}
+        - center: {x: -0.05140187, y: -0.019455252}
+          size: {x: 0.40654206, y: 0.46692607}
+        - center: {x: -0.009345794, y: 0.57587546}
+          size: {x: 0.5046729, y: 0.4085603}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_1_e0
+        shapes:
+        - center: {x: -0.17669173, y: -0.61509436}
+          size: {x: 0.50751877, y: 0.38490567}
+        - center: {x: -0.13157895, y: -0.03773585}
+          size: {x: 0.32706767, y: 0.46415094}
+        - center: {x: -0.041353382, y: 0.5509434}
+          size: {x: 0.37218046, y: 0.3962264}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_1_e1
+        shapes:
+        - center: {x: -0.05263158, y: -0.071698114}
+          size: {x: 0.518797, y: 0.9056604}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_1_e2
+        shapes:
+        - center: {x: 0.116541356, y: -0.4}
+          size: {x: 0.4849624, y: 0.6}
+        - center: {x: -0.030075189, y: 0.3018868}
+          size: {x: 0.518797, y: 0.509434}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_1_e3
+        shapes:
+        - center: {x: 0.15037593, y: -0.4}
+          size: {x: 0.5413534, y: 0.6}
+        - center: {x: -0.018796992, y: 0.24528302}
+          size: {x: 0.6879699, y: 0.4528302}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_1_e4
+        shapes:
+        - center: {x: -0.08646616, y: -0.44528303}
+          size: {x: 0.55263156, y: 0.53207546}
+        - center: {x: 0.116541356, y: 0.26792452}
+          size: {x: 0.39473686, y: 0.54339623}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_1_e5
+        shapes:
+        - center: {x: -0.06390978, y: -0.61509436}
+          size: {x: 0.55263156, y: 0.36226416}
+        - center: {x: -0.041353382, y: -0.06037736}
+          size: {x: 0.34962407, y: 0.41886792}
+        - center: {x: 0.04887218, y: 0.50566036}
+          size: {x: 0.39473686, y: 0.3735849}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_1_e6
+        shapes:
+        - center: {x: -0.08646616, y: -0.61509436}
+          size: {x: 0.50751877, y: 0.38490567}
+        - center: {x: -0.041353382, y: -0.03773585}
+          size: {x: 0.34962407, y: 0.46415094}
+        - center: {x: 0.060150377, y: 0.5509434}
+          size: {x: 0.40601504, y: 0.3962264}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_1_e7
+        shapes:
+        - center: {x: -0.075187966, y: -0.61509436}
+          size: {x: 0.49624062, y: 0.38490567}
+        - center: {x: -0.05263158, y: -0.049056605}
+          size: {x: 0.31578946, y: 0.4528302}
+        - center: {x: 0.0037593986, y: 0.5283019}
+          size: {x: 0.39473686, y: 0.3962264}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_1_w0
+        shapes:
+        - center: {x: -0.17293233, y: -0.61509436}
+          size: {x: 0.49624062, y: 0.38490567}
+        - center: {x: -0.12781955, y: -0.03773585}
+          size: {x: 0.33834586, y: 0.46415094}
+        - center: {x: -0.04887218, y: 0.5509434}
+          size: {x: 0.34962407, y: 0.3962264}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_1_w1
+        shapes:
+        - center: {x: -0.04887218, y: -0.071698114}
+          size: {x: 0.5300752, y: 0.9056604}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_1_w2
+        shapes:
+        - center: {x: 0.13157895, y: -0.4}
+          size: {x: 0.4849624, y: 0.6}
+        - center: {x: -0.02631579, y: 0.3018868}
+          size: {x: 0.5300752, y: 0.509434}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_1_w3
+        shapes:
+        - center: {x: 0.15413533, y: -0.4}
+          size: {x: 0.5300752, y: 0.6}
+        - center: {x: -0.02631579, y: 0.23396227}
+          size: {x: 0.6879699, y: 0.44150943}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_1_w4
+        shapes:
+        - center: {x: -0.09398496, y: -0.44528303}
+          size: {x: 0.55263156, y: 0.53207546}
+        - center: {x: 0.120300755, y: 0.26792452}
+          size: {x: 0.38345864, y: 0.54339623}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_1_w5
+        shapes:
+        - center: {x: -0.071428575, y: -0.42264152}
+          size: {x: 0.50751877, y: 0.554717}
+        - center: {x: 0.041353382, y: 0.3245283}
+          size: {x: 0.37218046, y: 0.554717}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_1_w6
+        shapes:
+        - center: {x: -0.082706764, y: -0.61509436}
+          size: {x: 0.518797, y: 0.38490567}
+        - center: {x: -0.037593983, y: -0.03773585}
+          size: {x: 0.33834586, y: 0.46415094}
+        - center: {x: 0.06390978, y: 0.5509434}
+          size: {x: 0.39473686, y: 0.3962264}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_1_w7
+        shapes:
+        - center: {x: -0.071428575, y: -0.61509436}
+          size: {x: 0.4849624, y: 0.38490567}
+        - center: {x: -0.04887218, y: -0.049056605}
+          size: {x: 0.32706767, y: 0.4528302}
+        - center: {x: -0.0037593986, y: 0.5283019}
+          size: {x: 0.39473686, y: 0.3962264}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_2_e0
+        shapes:
+        - center: {x: -0.278481, y: -0.6031128}
+          size: {x: 0.51898736, y: 0.39688715}
+        - center: {x: -0.25316456, y: -0.007782101}
+          size: {x: 0.34177214, y: 0.47859922}
+        - center: {x: -0.12658228, y: 0.5953307}
+          size: {x: 0.4177215, y: 0.40466926}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_2_e1
+        shapes:
+        - center: {x: -0.06329114, y: -0.4163424}
+          size: {x: 0.556962, y: 0.53696495}
+        - center: {x: -0.025316456, y: 0.31906614}
+          size: {x: 0.39240506, y: 0.5719844}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_2_e2
+        shapes:
+        - center: {x: -0.050632913, y: -0.4163424}
+          size: {x: 0.56962025, y: 0.56031126}
+        - center: {x: -0.012658228, y: 0.34241244}
+          size: {x: 0.4050633, y: 0.5719844}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_2_e3
+        shapes:
+        - center: {x: 0.20253165, y: -0.38132295}
+          size: {x: 0.51898736, y: 0.5486381}
+        - center: {x: 0.025316456, y: 0.36575875}
+          size: {x: 0.49367088, y: 0.5719844}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_2_e4
+        shapes:
+        - center: {x: -0.17721519, y: -0.4396887}
+          size: {x: 0.5949367, y: 0.53696495}
+        - center: {x: -0.088607594, y: 0.28404668}
+          size: {x: 0.4050633, y: 0.56031126}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_2_e5
+        shapes:
+        - center: {x: -0.11392405, y: -0.49805447}
+          size: {x: 0.5063291, y: 0.5019455}
+        - center: {x: -0.03797468, y: 0.17898832}
+          size: {x: 0.4050633, y: 0.5019455}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_2_e6
+        shapes:
+        - center: {x: -0.088607594, y: -0.45136186}
+          size: {x: 0.556962, y: 0.5486381}
+        - center: {x: -0.025316456, y: 0.27237353}
+          size: {x: 0.39240506, y: 0.5486381}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_2_e7
+        shapes:
+        - center: {x: 0.07594936, y: -0.61478597}
+          size: {x: 0.5443038, y: 0.385214}
+        - center: {x: 0.11392405, y: -0.042801555}
+          size: {x: 0.35443038, y: 0.46692607}
+        - center: {x: 0.24050634, y: 0.540856}
+          size: {x: 0.43037975, y: 0.39688715}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_2_w0
+        shapes:
+        - center: {x: -0.278481, y: -0.6031128}
+          size: {x: 0.51898736, y: 0.39688715}
+        - center: {x: -0.25316456, y: -0.007782101}
+          size: {x: 0.34177214, y: 0.47859922}
+        - center: {x: -0.12658228, y: 0.5953307}
+          size: {x: 0.4177215, y: 0.40466926}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_2_w1
+        shapes:
+        - center: {x: -0.06329114, y: -0.4163424}
+          size: {x: 0.556962, y: 0.53696495}
+        - center: {x: -0.025316456, y: 0.31906614}
+          size: {x: 0.39240506, y: 0.5719844}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_2_w2
+        shapes:
+        - center: {x: -0.050632913, y: -0.4163424}
+          size: {x: 0.56962025, y: 0.56031126}
+        - center: {x: -0.012658228, y: 0.34241244}
+          size: {x: 0.4050633, y: 0.5719844}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_2_w3
+        shapes:
+        - center: {x: 0.20253165, y: -0.38132295}
+          size: {x: 0.51898736, y: 0.5486381}
+        - center: {x: 0.025316456, y: 0.36575875}
+          size: {x: 0.49367088, y: 0.5719844}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_2_w4
+        shapes:
+        - center: {x: -0.17721519, y: -0.4396887}
+          size: {x: 0.5949367, y: 0.53696495}
+        - center: {x: -0.088607594, y: 0.28404668}
+          size: {x: 0.4050633, y: 0.56031126}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_2_w5
+        shapes:
+        - center: {x: -0.11392405, y: -0.49805447}
+          size: {x: 0.5063291, y: 0.5019455}
+        - center: {x: -0.03797468, y: 0.17898832}
+          size: {x: 0.4050633, y: 0.5019455}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_2_w6
+        shapes:
+        - center: {x: -0.088607594, y: -0.45136186}
+          size: {x: 0.556962, y: 0.5486381}
+        - center: {x: -0.025316456, y: 0.27237353}
+          size: {x: 0.39240506, y: 0.5486381}
+        handTuned: 0
+      - frame: elven_bard_spellcasting_2_w7
+        shapes:
+        - center: {x: 0.07594936, y: -0.61478597}
+          size: {x: 0.5443038, y: 0.385214}
+        - center: {x: 0.11392405, y: -0.042801555}
+          size: {x: 0.35443038, y: 0.46692607}
+        - center: {x: 0.24050634, y: 0.540856}
+          size: {x: 0.43037975, y: 0.39688715}
+        handTuned: 0
+      - frame: elven_die_e0
+        shapes:
+        - center: {x: -0.044619422, y: -0.3929961}
+          size: {x: 0.32545933, y: 0.57587546}
+        - center: {x: 0.13385826, y: 0.40466926}
+          size: {x: 0.29396325, y: 0.5953307}
+        handTuned: 0
+      - frame: elven_die_e1
+        shapes:
+        - center: {x: 0.23884514, y: -0.45525292}
+          size: {x: 0.35695538, y: 0.51361865}
+        - center: {x: 0.10236221, y: 0.21400778}
+          size: {x: 0.3464567, y: 0.52918285}
+        handTuned: 0
+      - frame: elven_die_e2
+        shapes:
+        - center: {x: -0.27559054, y: -0.71984434}
+          size: {x: 0.2624672, y: 0.18677042}
+        - center: {x: 0.2913386, y: -0.3307393}
+          size: {x: 0.47244096, y: 0.48249027}
+        handTuned: 0
+      - frame: elven_die_e3
+        shapes:
+        - center: {x: -0.28608924, y: -0.79766536}
+          size: {x: 0.31496063, y: 0.14007781}
+        - center: {x: 0.38582677, y: -0.48638132}
+          size: {x: 0.56692916, y: 0.38910505}
+        handTuned: 0
+      - frame: elven_die_e4
+        shapes:
+        - center: {x: -0.7270341, y: -0.70428014}
+          size: {x: 0.18897638, y: 0.14007781}
+        - center: {x: -0.44356954, y: -0.68871593}
+          size: {x: 0.22047244, y: 0.18677042}
+        - center: {x: -0.11811024, y: -0.5953307}
+          size: {x: 0.23097113, y: 0.28015563}
+        - center: {x: 0.20734908, y: -0.5175097}
+          size: {x: 0.22047244, y: 0.35797665}
+        - center: {x: 0.5013123, y: -0.6420233}
+          size: {x: 0.19947506, y: 0.26459143}
+        handTuned: 0
+      - frame: elven_die_e5
+        shapes:
+        - center: {x: -0.664042, y: -0.71984434}
+          size: {x: 0.18897638, y: 0.12451362}
+        - center: {x: -0.37007874, y: -0.6575875}
+          size: {x: 0.23097113, y: 0.15564202}
+        - center: {x: 0.12335958, y: -0.6420233}
+          size: {x: 0.38845146, y: 0.26459143}
+        - center: {x: 0.5853018, y: -0.70428014}
+          size: {x: 0.19947506, y: 0.23346303}
+        handTuned: 0
+      - frame: elven_die_e6
+        shapes:
+        - center: {x: -0.5695538, y: -0.75097275}
+          size: {x: 0.19947506, y: 0.12451362}
+        - center: {x: -0.08661418, y: -0.68871593}
+          size: {x: 0.40944883, y: 0.21789883}
+        - center: {x: 0.43832022, y: -0.67315173}
+          size: {x: 0.24146982, y: 0.26459143}
+        - center: {x: 0.7637795, y: -0.78210115}
+          size: {x: 0.20997375, y: 0.18677042}
+        handTuned: 0
+      - frame: elven_die_e7
+        shapes:
+        - center: {x: -0.7585302, y: -0.76653695}
+          size: {x: 0.24146982, y: 0.108949415}
+        - center: {x: -0.4015748, y: -0.73540854}
+          size: {x: 0.28346458, y: 0.17120622}
+        - center: {x: 0.19685039, y: -0.70428014}
+          size: {x: 0.48293963, y: 0.23346303}
+        - center: {x: 0.7559055, y: -0.73540854}
+          size: {x: 0.24409449, y: 0.17120622}
+        handTuned: 0
+      - frame: elven_die_w0
+        shapes:
+        - center: {x: -0.060367454, y: -0.4085603}
+          size: {x: 0.32545933, y: 0.59143966}
+        - center: {x: 0.11811024, y: 0.40466926}
+          size: {x: 0.29396325, y: 0.5953307}
+        handTuned: 0
+      - frame: elven_die_w1
+        shapes:
+        - center: {x: 0.2335958, y: -0.45525292}
+          size: {x: 0.3464567, y: 0.51361865}
+        - center: {x: 0.08661418, y: 0.21400778}
+          size: {x: 0.3464567, y: 0.52918285}
+        handTuned: 0
+      - frame: elven_die_w2
+        shapes:
+        - center: {x: 0.30708662, y: -0.3307393}
+          size: {x: 0.46194226, y: 0.48249027}
+        - center: {x: -0.25984251, y: -0.70428014}
+          size: {x: 0.27296588, y: 0.20233463}
+        handTuned: 0
+      - frame: elven_die_w3
+        shapes:
+        - center: {x: 0.39107612, y: -0.48638132}
+          size: {x: 0.56692916, y: 0.38910505}
+        - center: {x: -0.2808399, y: -0.79766536}
+          size: {x: 0.31496063, y: 0.14007781}
+        handTuned: 0
+      - frame: elven_die_w4
+        shapes:
+        - center: {x: 0.51706034, y: -0.6420233}
+          size: {x: 0.18897638, y: 0.26459143}
+        - center: {x: 0.22309712, y: -0.5330739}
+          size: {x: 0.23097113, y: 0.34241244}
+        - center: {x: -0.10236221, y: -0.5953307}
+          size: {x: 0.22047244, y: 0.28015563}
+        - center: {x: -0.42782152, y: -0.68871593}
+          size: {x: 0.23097113, y: 0.18677042}
+        - center: {x: -0.7322835, y: -0.70428014}
+          size: {x: 0.19947506, y: 0.14007781}
+        handTuned: 0
+      - frame: elven_die_w5
+        shapes:
+        - center: {x: 0.60104984, y: -0.71984434}
+          size: {x: 0.18897638, y: 0.21789883}
+        - center: {x: 0.1496063, y: -0.6420233}
+          size: {x: 0.38845146, y: 0.26459143}
+        - center: {x: -0.34383202, y: -0.67315173}
+          size: {x: 0.23097113, y: 0.17120622}
+        - center: {x: -0.648294, y: -0.71984434}
+          size: {x: 0.19947506, y: 0.12451362}
+        handTuned: 0
+      - frame: elven_die_w6
+        shapes:
+        - center: {x: 0.77952754, y: -0.79766536}
+          size: {x: 0.19947506, y: 0.17120622}
+        - center: {x: 0.10761155, y: -0.68871593}
+          size: {x: 0.5984252, y: 0.24902724}
+        - center: {x: -0.5748032, y: -0.75097275}
+          size: {x: 0.20997375, y: 0.12451362}
+        handTuned: 0
+      - frame: elven_die_w7
+        shapes:
+        - center: {x: 0.7585302, y: -0.73540854}
+          size: {x: 0.24146982, y: 0.17120622}
+        - center: {x: 0.20209974, y: -0.70428014}
+          size: {x: 0.48293963, y: 0.23346303}
+        - center: {x: -0.39632547, y: -0.73540854}
+          size: {x: 0.28346458, y: 0.17120622}
+        - center: {x: -0.7559055, y: -0.76653695}
+          size: {x: 0.24409449, y: 0.108949415}
+        handTuned: 0
+      - frame: elven_hit_reaction_e0
+        shapes:
+        - center: {x: 0.12340426, y: -0.6015625}
+          size: {x: 0.5361702, y: 0.3984375}
+        - center: {x: 0.22553192, y: 0.2578125}
+          size: {x: 0.3319149, y: 0.7421875}
+        handTuned: 0
+      - frame: elven_hit_reaction_e1
+        shapes:
+        - center: {x: 0.21276596, y: -0.6015625}
+          size: {x: 0.49787235, y: 0.3984375}
+        - center: {x: 0.32765958, y: -0.015625}
+          size: {x: 0.3319149, y: 0.46875}
+        - center: {x: 0.16170213, y: 0.58203125}
+          size: {x: 0.47234043, y: 0.41015625}
+        handTuned: 0
+      - frame: elven_hit_reaction_e2
+        shapes:
+        - center: {x: 0.16170213, y: -0.42578125}
+          size: {x: 0.47234043, y: 0.57421875}
+        - center: {x: -0.11914894, y: 0.34765625}
+          size: {x: 0.5489362, y: 0.57421875}
+        handTuned: 0
+      - frame: elven_hit_reaction_e3
+        shapes:
+        - center: {x: -0.05531915, y: -0.66015625}
+          size: {x: 0.45957446, y: 0.33984375}
+        - center: {x: 0.07234043, y: -0.14453125}
+          size: {x: 0.38297874, y: 0.41015625}
+        - center: {x: 0.17446809, y: 0.3828125}
+          size: {x: 0.3319149, y: 0.3515625}
+        handTuned: 0
+      - frame: elven_hit_reaction_w0
+        shapes:
+        - center: {x: 0.11914894, y: -0.6015625}
+          size: {x: 0.5489362, y: 0.3984375}
+        - center: {x: 0.2212766, y: 0.2578125}
+          size: {x: 0.34468085, y: 0.7421875}
+        handTuned: 0
+      - frame: elven_hit_reaction_w1
+        shapes:
+        - center: {x: 0.20851064, y: -0.6015625}
+          size: {x: 0.48510638, y: 0.3984375}
+        - center: {x: 0.32340425, y: -0.015625}
+          size: {x: 0.31914893, y: 0.46875}
+        - center: {x: 0.1574468, y: 0.58203125}
+          size: {x: 0.45957446, y: 0.41015625}
+        handTuned: 0
+      - frame: elven_hit_reaction_w2
+        shapes:
+        - center: {x: 0.17021276, y: -0.42578125}
+          size: {x: 0.47234043, y: 0.57421875}
+        - center: {x: -0.12340426, y: 0.34765625}
+          size: {x: 0.56170213, y: 0.57421875}
+        handTuned: 0
+      - frame: elven_hit_reaction_w3
+        shapes:
+        - center: {x: -0.05957447, y: -0.66015625}
+          size: {x: 0.47234043, y: 0.33984375}
+        - center: {x: 0.05531915, y: -0.14453125}
+          size: {x: 0.38297874, y: 0.41015625}
+        - center: {x: 0.18297872, y: 0.3828125}
+          size: {x: 0.3319149, y: 0.3515625}
+        handTuned: 0
+      - frame: elven_idle_e0
+        shapes:
+        - center: {x: -0.0625, y: -0.26171875}
+          size: {x: 0.625, y: 0.73828125}
+        - center: {x: -0.0625, y: 0.59765625}
+          size: {x: 0.5, y: 0.40234375}
+        handTuned: 0
+      - frame: elven_idle_e1
+        shapes:
+        - center: {x: -0.03125, y: -0.26171875}
+          size: {x: 0.65625, y: 0.73828125}
+        - center: {x: -0.03125, y: 0.59765625}
+          size: {x: 0.53125, y: 0.40234375}
+        handTuned: 0
+      - frame: elven_idle_e2
+        shapes:
+        - center: {x: -0.03125, y: -0.2734375}
+          size: {x: 0.65625, y: 0.7265625}
+        - center: {x: 0, y: 0.58203125}
+          size: {x: 0.5, y: 0.41015625}
+        handTuned: 0
+      - frame: elven_idle_e3
+        shapes:
+        - center: {x: -0.0625, y: -0.2734375}
+          size: {x: 0.6875, y: 0.7265625}
+        - center: {x: -0.03125, y: 0.58203125}
+          size: {x: 0.53125, y: 0.41015625}
+        handTuned: 0
+      - frame: elven_idle_e4
+        shapes:
+        - center: {x: -0.09375, y: -0.2734375}
+          size: {x: 0.65625, y: 0.7265625}
+        - center: {x: -0.0625, y: 0.58203125}
+          size: {x: 0.5, y: 0.41015625}
+        handTuned: 0
+      - frame: elven_idle_e5
+        shapes:
+        - center: {x: -0.03125, y: -0.26171875}
+          size: {x: 0.65625, y: 0.73828125}
+        - center: {x: -0.0625, y: 0.59765625}
+          size: {x: 0.5, y: 0.40234375}
+        handTuned: 0
+      - frame: elven_idle_w0
+        shapes:
+        - center: {x: -0.0625, y: -0.26171875}
+          size: {x: 0.625, y: 0.73828125}
+        - center: {x: -0.0625, y: 0.59765625}
+          size: {x: 0.5, y: 0.40234375}
+        handTuned: 0
+      - frame: elven_idle_w1
+        shapes:
+        - center: {x: -0.03125, y: -0.26171875}
+          size: {x: 0.65625, y: 0.73828125}
+        - center: {x: -0.03125, y: 0.59765625}
+          size: {x: 0.53125, y: 0.40234375}
+        handTuned: 0
+      - frame: elven_idle_w2
+        shapes:
+        - center: {x: -0.03125, y: -0.2734375}
+          size: {x: 0.65625, y: 0.7265625}
+        - center: {x: -0, y: 0.58203125}
+          size: {x: 0.5, y: 0.41015625}
+        handTuned: 0
+      - frame: elven_idle_w3
+        shapes:
+        - center: {x: -0.0625, y: -0.2734375}
+          size: {x: 0.6875, y: 0.7265625}
+        - center: {x: -0.03125, y: 0.58203125}
+          size: {x: 0.53125, y: 0.41015625}
+        handTuned: 0
+      - frame: elven_idle_w4
+        shapes:
+        - center: {x: -0.09375, y: -0.2734375}
+          size: {x: 0.65625, y: 0.7265625}
+        - center: {x: -0.0625, y: 0.58203125}
+          size: {x: 0.5, y: 0.41015625}
+        handTuned: 0
+      - frame: elven_idle_w5
+        shapes:
+        - center: {x: -0.03125, y: -0.26171875}
+          size: {x: 0.65625, y: 0.73828125}
+        - center: {x: -0.0625, y: 0.59765625}
+          size: {x: 0.5, y: 0.40234375}
+        handTuned: 0
+      - frame: elven_kick_1_e0
+        shapes:
+        - center: {x: -0.10810811, y: -0.5945946}
+          size: {x: 0.38223937, y: 0.4054054}
+        - center: {x: -0.05019305, y: 0.26640928}
+          size: {x: 0.27799228, y: 0.7335907}
+        handTuned: 0
+      - frame: elven_kick_1_e1
+        shapes:
+        - center: {x: 0.019305019, y: -0.6061776}
+          size: {x: 0.25482625, y: 0.3938224}
+        - center: {x: 0.14671814, y: -0.015444015}
+          size: {x: 0.28957528, y: 0.47490346}
+        - center: {x: 0.08880309, y: 0.5868726}
+          size: {x: 0.27799228, y: 0.4054054}
+        handTuned: 0
+      - frame: elven_kick_1_e2
+        shapes:
+        - center: {x: -0.13127413, y: -0.4208494}
+          size: {x: 0.24324325, y: 0.57915056}
+        - center: {x: 0.12355212, y: 0.3783784}
+          size: {x: 0.5212355, y: 0.5907336}
+        handTuned: 0
+      - frame: elven_kick_1_e3
+        shapes:
+        - center: {x: -0.23552124, y: -0.4208494}
+          size: {x: 0.23166023, y: 0.57915056}
+        - center: {x: -0.06177606, y: 0.36679536}
+          size: {x: 0.6138996, y: 0.57915056}
+        handTuned: 0
+      - frame: elven_kick_1_e4
+        shapes:
+        - center: {x: -0.17760618, y: -0.6177606}
+          size: {x: 0.15057915, y: 0.35907337}
+        - center: {x: -0.13127413, y: -0.06177606}
+          size: {x: 0.24324325, y: 0.42857143}
+        - center: {x: -0.11969112, y: 0.5057915}
+          size: {x: 0.3011583, y: 0.37065637}
+        handTuned: 0
+      - frame: elven_kick_1_e5
+        shapes:
+        - center: {x: -0.027027028, y: -0.6177606}
+          size: {x: 0.3243243, y: 0.35907337}
+        - center: {x: -0.038610037, y: -0.07335907}
+          size: {x: 0.26640928, y: 0.4169884}
+        - center: {x: -0.08494209, y: 0.48262548}
+          size: {x: 0.28957528, y: 0.37065637}
+        handTuned: 0
+      - frame: elven_kick_1_e6
+        shapes:
+        - center: {x: -0.16602316, y: -0.64092666}
+          size: {x: 0.4169884, y: 0.35907337}
+        - center: {x: -0.11969112, y: 0.16988418}
+          size: {x: 0.27799228, y: 0.6833977}
+        handTuned: 0
+      - frame: elven_kick_1_e7
+        shapes:
+        - center: {x: -0.11969112, y: -0.6293436}
+          size: {x: 0.3938224, y: 0.37065637}
+        - center: {x: -0.08494209, y: 0.2046332}
+          size: {x: 0.26640928, y: 0.6949807}
+        handTuned: 0
+      - frame: elven_kick_1_w0
+        shapes:
+        - center: {x: -0.1003861, y: -0.5945946}
+          size: {x: 0.38223937, y: 0.4054054}
+        - center: {x: -0.077220075, y: 0.0077220076}
+          size: {x: 0.26640928, y: 0.47490346}
+        - center: {x: -0.019305019, y: 0.6023166}
+          size: {x: 0.25482625, y: 0.3976834}
+        handTuned: 0
+      - frame: elven_kick_1_w1
+        shapes:
+        - center: {x: 0.015444015, y: -0.6061776}
+          size: {x: 0.24324325, y: 0.3938224}
+        - center: {x: 0.14285715, y: -0.015444015}
+          size: {x: 0.27799228, y: 0.47490346}
+        - center: {x: 0.08494209, y: 0.5868726}
+          size: {x: 0.26640928, y: 0.4054054}
+        handTuned: 0
+      - frame: elven_kick_1_w2
+        shapes:
+        - center: {x: -0.12355212, y: -0.4208494}
+          size: {x: 0.24324325, y: 0.57915056}
+        - center: {x: 0.11969112, y: 0.3783784}
+          size: {x: 0.5096525, y: 0.5907336}
+        handTuned: 0
+      - frame: elven_kick_1_w3
+        shapes:
+        - center: {x: -0.22779922, y: -0.4208494}
+          size: {x: 0.23166023, y: 0.57915056}
+        - center: {x: -0.06563707, y: 0.36679536}
+          size: {x: 0.6023166, y: 0.57915056}
+        handTuned: 0
+      - frame: elven_kick_1_w4
+        shapes:
+        - center: {x: -0.19305019, y: -0.6177606}
+          size: {x: 0.15057915, y: 0.35907337}
+        - center: {x: -0.14671814, y: -0.06177606}
+          size: {x: 0.24324325, y: 0.42857143}
+        - center: {x: -0.11196911, y: 0.5057915}
+          size: {x: 0.3011583, y: 0.37065637}
+        handTuned: 0
+      - frame: elven_kick_1_w5
+        shapes:
+        - center: {x: -0.03088803, y: -0.6177606}
+          size: {x: 0.3127413, y: 0.35907337}
+        - center: {x: -0.077220075, y: 0.18146718}
+          size: {x: 0.28957528, y: 0.6718147}
+        handTuned: 0
+      - frame: elven_kick_1_w6
+        shapes:
+        - center: {x: -0.15830116, y: -0.64092666}
+          size: {x: 0.4169884, y: 0.35907337}
+        - center: {x: -0.12355212, y: 0.16988418}
+          size: {x: 0.28957528, y: 0.6833977}
+        handTuned: 0
+      - frame: elven_kick_1_w7
+        shapes:
+        - center: {x: -0.11196911, y: -0.6293436}
+          size: {x: 0.3938224, y: 0.37065637}
+        - center: {x: -0.077220075, y: 0.2046332}
+          size: {x: 0.26640928, y: 0.6949807}
+        handTuned: 0
+      - frame: elven_knockdown_recovery_e0
+        shapes:
+        - center: {x: 0.25373134, y: -0.6108949}
+          size: {x: 0.41791046, y: 0.38910505}
+        - center: {x: 0.21791045, y: -0.0038910506}
+          size: {x: 0.26268658, y: 0.46692607}
+        - center: {x: 0.110447764, y: 0.60700387}
+          size: {x: 0.27462685, y: 0.3929961}
+        handTuned: 0
+      - frame: elven_knockdown_recovery_e1
+        shapes:
+        - center: {x: 0.33731344, y: -0.47081712}
+          size: {x: 0.28656715, y: 0.52918285}
+        - center: {x: -0.032835823, y: 0.18287937}
+          size: {x: 0.37014925, y: 0.49805447}
+        handTuned: 0
+      - frame: elven_knockdown_recovery_e2
+        shapes:
+        - center: {x: -0.2835821, y: -0.3774319}
+          size: {x: 0.31044775, y: 0.37354085}
+        - center: {x: 0.19402985, y: -0.3307393}
+          size: {x: 0.35820895, y: 0.51361865}
+        - center: {x: 0.67164177, y: -0.5019455}
+          size: {x: 0.31044775, y: 0.40466926}
+        handTuned: 0
+      - frame: elven_knockdown_recovery_e3
+        shapes:
+        - center: {x: -0.55820894, y: -0.76653695}
+          size: {x: 0.20298508, y: 0.20233463}
+        - center: {x: -0.06865671, y: -0.70428014}
+          size: {x: 0.42985076, y: 0.23346303}
+        - center: {x: 0.46865672, y: -0.67315173}
+          size: {x: 0.25074628, y: 0.26459143}
+        - center: {x: 0.7880597, y: -0.9066148}
+          size: {x: 0.2119403, y: 0.09338521}
+        handTuned: 0
+      - frame: elven_knockdown_recovery_e4
+        shapes:
+        - center: {x: -0.64179105, y: -0.5953307}
+          size: {x: 0.35820895, y: 0.31128404}
+        - center: {x: -0.1880597, y: -0.71984434}
+          size: {x: 0.23880596, y: 0.21789883}
+        - center: {x: 0.14626865, y: -0.75097275}
+          size: {x: 0.23880596, y: 0.12451362}
+        - center: {x: 0.44477612, y: -0.78210115}
+          size: {x: 0.20298508, y: 0.12451362}
+        handTuned: 0
+      - frame: elven_knockdown_recovery_e5
+        shapes:
+        - center: {x: -0.1402985, y: -0.6108949}
+          size: {x: 0.35820895, y: 0.38910505}
+        - center: {x: -0.08059701, y: -0.08171206}
+          size: {x: 0.29850745, y: 0.38910505}
+        handTuned: 0
+      - frame: elven_knockdown_recovery_e6
+        shapes:
+        - center: {x: -0.020895522, y: -0.6575875}
+          size: {x: 0.19104478, y: 0.34241244}
+        - center: {x: -0.06865671, y: 0.08949416}
+          size: {x: 0.31044775, y: 0.6536965}
+        handTuned: 0
+      - frame: elven_knockdown_recovery_e7
+        shapes:
+        - center: {x: -0.06865671, y: -0.6264591}
+          size: {x: 0.42985076, y: 0.37354085}
+        - center: {x: 0.05074627, y: 0.19844358}
+          size: {x: 0.26268658, y: 0.7003891}
+        handTuned: 0
+      - frame: elven_knockdown_recovery_w0
+        shapes:
+        - center: {x: 0.2597015, y: -0.6108949}
+          size: {x: 0.42985076, y: 0.38910505}
+        - center: {x: 0.2238806, y: -0.0038910506}
+          size: {x: 0.27462685, y: 0.46692607}
+        - center: {x: 0.104477614, y: 0.60700387}
+          size: {x: 0.27462685, y: 0.3929961}
+        handTuned: 0
+      - frame: elven_knockdown_recovery_w1
+        shapes:
+        - center: {x: 0.3432836, y: -0.47081712}
+          size: {x: 0.27462685, y: 0.52918285}
+        - center: {x: -0.03880597, y: 0.18287937}
+          size: {x: 0.37014925, y: 0.49805447}
+        handTuned: 0
+      - frame: elven_knockdown_recovery_w2
+        shapes:
+        - center: {x: 0.68955225, y: -0.5019455}
+          size: {x: 0.31044775, y: 0.40466926}
+        - center: {x: 0.2119403, y: -0.3307393}
+          size: {x: 0.35820895, y: 0.51361865}
+        - center: {x: -0.26567164, y: -0.3618677}
+          size: {x: 0.31044775, y: 0.35797665}
+        handTuned: 0
+      - frame: elven_knockdown_recovery_w3
+        shapes:
+        - center: {x: 0.79701495, y: -0.9066148}
+          size: {x: 0.20298508, y: 0.09338521}
+        - center: {x: 0.12835822, y: -0.67315173}
+          size: {x: 0.6089552, y: 0.26459143}
+        - center: {x: -0.5522388, y: -0.76653695}
+          size: {x: 0.21492538, y: 0.20233463}
+        handTuned: 0
+      - frame: elven_knockdown_recovery_w4
+        shapes:
+        - center: {x: 0.45074627, y: -0.81322956}
+          size: {x: 0.19104478, y: 0.12451362}
+        - center: {x: 0.1641791, y: -0.75097275}
+          size: {x: 0.23880596, y: 0.12451362}
+        - center: {x: -0.17014925, y: -0.71984434}
+          size: {x: 0.23880596, y: 0.21789883}
+        - center: {x: -0.6328358, y: -0.5953307}
+          size: {x: 0.36716416, y: 0.31128404}
+        handTuned: 0
+      - frame: elven_knockdown_recovery_w5
+        shapes:
+        - center: {x: -0.13432837, y: -0.3463035}
+          size: {x: 0.34626865, y: 0.6536965}
+        handTuned: 0
+      - frame: elven_knockdown_recovery_w6
+        shapes:
+        - center: {x: -0.014925373, y: -0.6575875}
+          size: {x: 0.17910448, y: 0.34241244}
+        - center: {x: -0.06268657, y: 0.08949416}
+          size: {x: 0.29850745, y: 0.6536965}
+        handTuned: 0
+      - frame: elven_knockdown_recovery_w7
+        shapes:
+        - center: {x: -0.06268657, y: -0.6264591}
+          size: {x: 0.41791046, y: 0.37354085}
+        - center: {x: 0.04477612, y: 0.19844358}
+          size: {x: 0.26268658, y: 0.7003891}
+        handTuned: 0
+      - frame: elven_punch_e0
+        shapes:
+        - center: {x: 0.07317073, y: -0.6031128}
+          size: {x: 0.4390244, y: 0.39688715}
+        - center: {x: 0.09756097, y: -0.007782101}
+          size: {x: 0.2682927, y: 0.47859922}
+        - center: {x: 0.17073171, y: 0.5953307}
+          size: {x: 0.2682927, y: 0.40466926}
+        handTuned: 0
+      - frame: elven_punch_e1
+        shapes:
+        - center: {x: 0.24390244, y: -0.61478597}
+          size: {x: 0.4390244, y: 0.385214}
+        - center: {x: 0.3292683, y: -0.042801555}
+          size: {x: 0.2804878, y: 0.46692607}
+        - center: {x: 0.3902439, y: 0.540856}
+          size: {x: 0.29268292, y: 0.39688715}
+        handTuned: 0
+      - frame: elven_punch_e2
+        shapes:
+        - center: {x: 0.24390244, y: -0.6031128}
+          size: {x: 0.4878049, y: 0.39688715}
+        - center: {x: 0.42682928, y: -0.019455252}
+          size: {x: 0.2804878, y: 0.46692607}
+        - center: {x: 0.4878049, y: 0.5642023}
+          size: {x: 0.34146342, y: 0.39688715}
+        handTuned: 0
+      - frame: elven_punch_e3
+        shapes:
+        - center: {x: -0.2804878, y: -0.6381323}
+          size: {x: 0.5731707, y: 0.3618677}
+        - center: {x: -0.15853658, y: -0.07782101}
+          size: {x: 0.3292683, y: 0.4319066}
+        - center: {x: 0.13414635, y: 0.49416342}
+          size: {x: 0.4512195, y: 0.37354085}
+        handTuned: 0
+      - frame: elven_punch_e4
+        shapes:
+        - center: {x: -0.40243903, y: -0.6031128}
+          size: {x: 0.35365853, y: 0.39688715}
+        - center: {x: -0.19512194, y: 0.23735408}
+          size: {x: 0.31707317, y: 0.7237354}
+        handTuned: 0
+      - frame: elven_punch_e5
+        shapes:
+        - center: {x: -0.1097561, y: -0.6031128}
+          size: {x: 0.40243903, y: 0.39688715}
+        - center: {x: -0.07317073, y: -0.007782101}
+          size: {x: 0.2682927, y: 0.47859922}
+        - center: {x: -0.0121951215, y: 0.5953307}
+          size: {x: 0.25609756, y: 0.40466926}
+        handTuned: 0
+      - frame: elven_punch_w0
+        shapes:
+        - center: {x: 0.07317073, y: -0.6031128}
+          size: {x: 0.4390244, y: 0.39688715}
+        - center: {x: 0.09756097, y: -0.007782101}
+          size: {x: 0.2682927, y: 0.47859922}
+        - center: {x: 0.17073171, y: 0.5953307}
+          size: {x: 0.2682927, y: 0.40466926}
+        handTuned: 0
+      - frame: elven_punch_w1
+        shapes:
+        - center: {x: 0.24390244, y: -0.61478597}
+          size: {x: 0.4390244, y: 0.385214}
+        - center: {x: 0.3292683, y: -0.042801555}
+          size: {x: 0.2804878, y: 0.46692607}
+        - center: {x: 0.3902439, y: 0.540856}
+          size: {x: 0.29268292, y: 0.39688715}
+        handTuned: 0
+      - frame: elven_punch_w2
+        shapes:
+        - center: {x: 0.24390244, y: -0.6031128}
+          size: {x: 0.4878049, y: 0.39688715}
+        - center: {x: 0.42682928, y: -0.019455252}
+          size: {x: 0.2804878, y: 0.46692607}
+        - center: {x: 0.4878049, y: 0.5642023}
+          size: {x: 0.34146342, y: 0.39688715}
+        handTuned: 0
+      - frame: elven_punch_w3
+        shapes:
+        - center: {x: -0.2804878, y: -0.6381323}
+          size: {x: 0.5731707, y: 0.3618677}
+        - center: {x: -0.15853658, y: -0.07782101}
+          size: {x: 0.3292683, y: 0.4319066}
+        - center: {x: 0.13414635, y: 0.49416342}
+          size: {x: 0.4512195, y: 0.37354085}
+        handTuned: 0
+      - frame: elven_punch_w4
+        shapes:
+        - center: {x: -0.40243903, y: -0.6031128}
+          size: {x: 0.35365853, y: 0.39688715}
+        - center: {x: -0.19512194, y: 0.23735408}
+          size: {x: 0.31707317, y: 0.7237354}
+        handTuned: 0
+      - frame: elven_punch_w5
+        shapes:
+        - center: {x: -0.1097561, y: -0.6031128}
+          size: {x: 0.40243903, y: 0.39688715}
+        - center: {x: -0.07317073, y: -0.007782101}
+          size: {x: 0.2682927, y: 0.47859922}
+        - center: {x: -0.0121951215, y: 0.5953307}
+          size: {x: 0.25609756, y: 0.40466926}
+        handTuned: 0
+      - frame: elven_run_e0
+        shapes:
+        - center: {x: -0.41525424, y: -0.61509436}
+          size: {x: 0.22881356, y: 0.38490567}
+        - center: {x: -0.084745765, y: -0.03773585}
+          size: {x: 0.33050847, y: 0.46415094}
+        - center: {x: 0.004237288, y: 0.5509434}
+          size: {x: 0.34322035, y: 0.3962264}
+        handTuned: 0
+      - frame: elven_run_e1
+        shapes:
+        - center: {x: -0.04661017, y: -0.6264151}
+          size: {x: 0.16525424, y: 0.3735849}
+        - center: {x: -0.059322033, y: -0.071698114}
+          size: {x: 0.33050847, y: 0.4528302}
+        - center: {x: 0.118644066, y: 0.49433962}
+          size: {x: 0.33050847, y: 0.38490567}
+        handTuned: 0
+      - frame: elven_run_e2
+        shapes:
+        - center: {x: 0.029661017, y: -0.61509436}
+          size: {x: 0.21610169, y: 0.38490567}
+        - center: {x: 0.105932206, y: -0.049056605}
+          size: {x: 0.34322035, y: 0.4528302}
+        - center: {x: 0.2584746, y: 0.5169811}
+          size: {x: 0.36864406, y: 0.38490567}
+        handTuned: 0
+      - frame: elven_run_e3
+        shapes:
+        - center: {x: -0.033898305, y: -0.25283018}
+          size: {x: 0.66101694, y: 0.49811321}
+        - center: {x: 0.08050848, y: 0.44150943}
+          size: {x: 0.41949153, y: 0.5584906}
+        handTuned: 0
+      - frame: elven_run_e4
+        shapes:
+        - center: {x: -0.55508476, y: -0.61509436}
+          size: {x: 0.26694915, y: 0.38490567}
+        - center: {x: -0.26271185, y: -0.049056605}
+          size: {x: 0.38135594, y: 0.4528302}
+        - center: {x: -0.18644068, y: 0.5169811}
+          size: {x: 0.33050847, y: 0.38490567}
+        handTuned: 0
+      - frame: elven_run_e5
+        shapes:
+        - center: {x: -0.3898305, y: -0.61509436}
+          size: {x: 0.22881356, y: 0.38490567}
+        - center: {x: -0.2881356, y: -0.049056605}
+          size: {x: 0.30508474, y: 0.4528302}
+        - center: {x: -0.13559322, y: 0.5169811}
+          size: {x: 0.30508474, y: 0.38490567}
+        handTuned: 0
+      - frame: elven_run_e6
+        shapes:
+        - center: {x: -0.14830509, y: -0.61509436}
+          size: {x: 0.26694915, y: 0.38490567}
+        - center: {x: -0.21186441, y: -0.049056605}
+          size: {x: 0.3559322, y: 0.4528302}
+        - center: {x: 0.016949153, y: 0.5283019}
+          size: {x: 0.30508474, y: 0.3962264}
+        handTuned: 0
+      - frame: elven_run_e7
+        shapes:
+        - center: {x: -0.40254238, y: -0.5924528}
+          size: {x: 0.24152543, y: 0.38490567}
+        - center: {x: -0.23728813, y: -0.026415095}
+          size: {x: 0.33050847, y: 0.4528302}
+        - center: {x: -0.14830509, y: 0.5509434}
+          size: {x: 0.34322035, y: 0.3962264}
+        handTuned: 0
+      - frame: elven_run_punch_e0
+        shapes:
+        - center: {x: 0.0875, y: -0.4085603}
+          size: {x: 0.3625, y: 0.59143966}
+        - center: {x: 0.3375, y: 0.40466926}
+          size: {x: 0.3375, y: 0.5953307}
+        handTuned: 0
+      - frame: elven_run_punch_e1
+        shapes:
+        - center: {x: 0.0875, y: -0.4396887}
+          size: {x: 0.4625, y: 0.56031126}
+        - center: {x: 0.4125, y: 0.30739298}
+          size: {x: 0.3375, y: 0.56031126}
+        handTuned: 0
+      - frame: elven_run_punch_e2
+        shapes:
+        - center: {x: 0.2, y: -0.3929961}
+          size: {x: 0.475, y: 0.48249027}
+        - center: {x: 0.4625, y: 0.26070037}
+          size: {x: 0.3375, y: 0.54474705}
+        handTuned: 0
+      - frame: elven_run_punch_e3
+        shapes:
+        - center: {x: 0.225, y: -0.4241245}
+          size: {x: 0.575, y: 0.57587546}
+        - center: {x: 0.4, y: 0.3696498}
+          size: {x: 0.35, y: 0.59143966}
+        handTuned: 0
+      - frame: elven_run_punch_e4
+        shapes:
+        - center: {x: -0.25, y: -0.3774319}
+          size: {x: 0.55, y: 0.56031126}
+        - center: {x: 0.0625, y: 0.385214}
+          size: {x: 0.4125, y: 0.57587546}
+        handTuned: 0
+      - frame: elven_run_punch_e5
+        shapes:
+        - center: {x: -0.275, y: -0.4085603}
+          size: {x: 0.4, y: 0.59143966}
+        - center: {x: -0.0125, y: 0.4007782}
+          size: {x: 0.3625, y: 0.59143966}
+        handTuned: 0
+      - frame: elven_run_punch_e6
+        shapes:
+        - center: {x: -0.0875, y: -0.4241245}
+          size: {x: 0.4125, y: 0.57587546}
+        - center: {x: 0.2125, y: 0.3696498}
+          size: {x: 0.2875, y: 0.59143966}
+        handTuned: 0
+      - frame: elven_run_punch_e7
+        shapes:
+        - center: {x: -0.025, y: -0.4085603}
+          size: {x: 0.375, y: 0.59143966}
+        - center: {x: 0.2625, y: 0.4007782}
+          size: {x: 0.3375, y: 0.59143966}
+        handTuned: 0
+      - frame: elven_run_punch_w0
+        shapes:
+        - center: {x: 0.0875, y: -0.4085603}
+          size: {x: 0.3625, y: 0.59143966}
+        - center: {x: 0.3375, y: 0.40466926}
+          size: {x: 0.3375, y: 0.5953307}
+        handTuned: 0
+      - frame: elven_run_punch_w1
+        shapes:
+        - center: {x: 0.0875, y: -0.4396887}
+          size: {x: 0.4625, y: 0.56031126}
+        - center: {x: 0.4125, y: 0.30739298}
+          size: {x: 0.3375, y: 0.56031126}
+        handTuned: 0
+      - frame: elven_run_punch_w2
+        shapes:
+        - center: {x: 0.2, y: -0.3929961}
+          size: {x: 0.475, y: 0.48249027}
+        - center: {x: 0.4625, y: 0.26070037}
+          size: {x: 0.3375, y: 0.54474705}
+        handTuned: 0
+      - frame: elven_run_punch_w3
+        shapes:
+        - center: {x: 0.225, y: -0.4241245}
+          size: {x: 0.575, y: 0.57587546}
+        - center: {x: 0.4, y: 0.3696498}
+          size: {x: 0.35, y: 0.59143966}
+        handTuned: 0
+      - frame: elven_run_punch_w4
+        shapes:
+        - center: {x: -0.25, y: -0.3774319}
+          size: {x: 0.55, y: 0.56031126}
+        - center: {x: 0.0625, y: 0.385214}
+          size: {x: 0.4125, y: 0.57587546}
+        handTuned: 0
+      - frame: elven_run_punch_w5
+        shapes:
+        - center: {x: -0.275, y: -0.4085603}
+          size: {x: 0.4, y: 0.59143966}
+        - center: {x: -0.0125, y: 0.4007782}
+          size: {x: 0.3625, y: 0.59143966}
+        handTuned: 0
+      - frame: elven_run_punch_w6
+        shapes:
+        - center: {x: -0.0875, y: -0.4241245}
+          size: {x: 0.4125, y: 0.57587546}
+        - center: {x: 0.2125, y: 0.3696498}
+          size: {x: 0.2875, y: 0.59143966}
+        handTuned: 0
+      - frame: elven_run_punch_w7
+        shapes:
+        - center: {x: -0.025, y: -0.4085603}
+          size: {x: 0.375, y: 0.59143966}
+        - center: {x: 0.2625, y: 0.4007782}
+          size: {x: 0.3375, y: 0.59143966}
+        handTuned: 0
+      - frame: elven_run_w0
+        shapes:
+        - center: {x: -0.41101694, y: -0.61509436}
+          size: {x: 0.24152543, y: 0.38490567}
+        - center: {x: -0.06779661, y: -0.03773585}
+          size: {x: 0.33050847, y: 0.46415094}
+        - center: {x: 0.008474576, y: 0.5509434}
+          size: {x: 0.33050847, y: 0.3962264}
+        handTuned: 0
+      - frame: elven_run_w1
+        shapes:
+        - center: {x: -0.055084746, y: -0.6264151}
+          size: {x: 0.16525424, y: 0.3735849}
+        - center: {x: -0.055084746, y: -0.071698114}
+          size: {x: 0.34322035, y: 0.4528302}
+        - center: {x: 0.12288135, y: 0.49433962}
+          size: {x: 0.31779662, y: 0.38490567}
+        handTuned: 0
+      - frame: elven_run_w2
+        shapes:
+        - center: {x: 0.021186441, y: -0.61509436}
+          size: {x: 0.21610169, y: 0.38490567}
+        - center: {x: 0.11016949, y: -0.049056605}
+          size: {x: 0.33050847, y: 0.4528302}
+        - center: {x: 0.27542374, y: 0.5169811}
+          size: {x: 0.36864406, y: 0.38490567}
+        handTuned: 0
+      - frame: elven_run_w3
+        shapes:
+        - center: {x: -0.029661017, y: -0.24150944}
+          size: {x: 0.64830506, y: 0.48679245}
+        - center: {x: 0.0720339, y: 0.44150943}
+          size: {x: 0.41949153, y: 0.5584906}
+        handTuned: 0
+      - frame: elven_run_w4
+        shapes:
+        - center: {x: -0.5508475, y: -0.61509436}
+          size: {x: 0.2542373, y: 0.38490567}
+        - center: {x: -0.27118644, y: -0.049056605}
+          size: {x: 0.38135594, y: 0.4528302}
+        - center: {x: -0.1822034, y: 0.5169811}
+          size: {x: 0.34322035, y: 0.38490567}
+        handTuned: 0
+      - frame: elven_run_w5
+        shapes:
+        - center: {x: -0.3855932, y: -0.61509436}
+          size: {x: 0.24152543, y: 0.38490567}
+        - center: {x: -0.29661018, y: -0.049056605}
+          size: {x: 0.30508474, y: 0.4528302}
+        - center: {x: -0.1440678, y: 0.5169811}
+          size: {x: 0.30508474, y: 0.38490567}
+        handTuned: 0
+      - frame: elven_run_w6
+        shapes:
+        - center: {x: -0.1440678, y: -0.61509436}
+          size: {x: 0.2542373, y: 0.38490567}
+        - center: {x: -0.20762712, y: -0.049056605}
+          size: {x: 0.36864406, y: 0.4528302}
+        - center: {x: 0.008474576, y: 0.5283019}
+          size: {x: 0.30508474, y: 0.3962264}
+        handTuned: 0
+      - frame: elven_run_w7
+        shapes:
+        - center: {x: -0.41101694, y: -0.5924528}
+          size: {x: 0.24152543, y: 0.38490567}
+        - center: {x: -0.23305085, y: -0.026415095}
+          size: {x: 0.34322035, y: 0.4528302}
+        - center: {x: -0.15677966, y: 0.5509434}
+          size: {x: 0.34322035, y: 0.3962264}
+        handTuned: 0
+      - frame: elven_spellcasting_1_e0
+        shapes:
+        - center: {x: 0.046153847, y: -0.6996997}
+          size: {x: 0.52307695, y: 0.3003003}
+        - center: {x: 0.10769231, y: -0.015015015}
+          size: {x: 0.30769232, y: 0.5765766}
+        handTuned: 0
+      - frame: elven_spellcasting_1_e1
+        shapes:
+        - center: {x: 0.015384615, y: -0.6636637}
+          size: {x: 0.5538462, y: 0.33633634}
+        - center: {x: 0.12307692, y: -0.15915915}
+          size: {x: 0.26153848, y: 0.4084084}
+        - center: {x: 0.16923077, y: 0.35735735}
+          size: {x: 0.36923078, y: 0.34834835}
+        handTuned: 0
+      - frame: elven_spellcasting_1_e2
+        shapes:
+        - center: {x: 0.15384616, y: -0.5915916}
+          size: {x: 0.5692308, y: 0.4084084}
+        - center: {x: 0.13846155, y: 0.009009009}
+          size: {x: 0.30769232, y: 0.4804805}
+        - center: {x: 0.21538462, y: 0.6006006}
+          size: {x: 0.35384616, y: 0.3993994}
+        handTuned: 0
+      - frame: elven_spellcasting_1_e3
+        shapes:
+        - center: {x: 0.15384616, y: -0.6036036}
+          size: {x: 0.63076925, y: 0.3963964}
+        - center: {x: 0.36923078, y: -0.08708709}
+          size: {x: 0.41538462, y: 0.4084084}
+        handTuned: 0
+      - frame: elven_spellcasting_1_e4
+        shapes:
+        - center: {x: -0.092307694, y: -0.6636637}
+          size: {x: 0.6, y: 0.33633634}
+        - center: {x: 0.03076923, y: -0.21921922}
+          size: {x: 0.3846154, y: 0.34834835}
+        handTuned: 0
+      - frame: elven_spellcasting_1_e5
+        shapes:
+        - center: {x: -0.2769231, y: -0.5795796}
+          size: {x: 0.50769234, y: 0.4204204}
+        - center: {x: -0.10769231, y: -0.027027028}
+          size: {x: 0.36923078, y: 0.4204204}
+        handTuned: 0
+      - frame: elven_spellcasting_1_e6
+        shapes:
+        - center: {x: -0.16923077, y: -0.6996997}
+          size: {x: 0.5538462, y: 0.3003003}
+        - center: {x: -0.03076923, y: -0.015015015}
+          size: {x: 0.35384616, y: 0.5765766}
+        handTuned: 0
+      - frame: elven_spellcasting_1_e7
+        shapes:
+        - center: {x: -0.07692308, y: -0.6876877}
+          size: {x: 0.52307695, y: 0.3123123}
+        - center: {x: 0.03076923, y: 0.009009009}
+          size: {x: 0.32307693, y: 0.5765766}
+        handTuned: 0
+      - frame: elven_spellcasting_1_w0
+        shapes:
+        - center: {x: 0.046153847, y: -0.6996997}
+          size: {x: 0.52307695, y: 0.3003003}
+        - center: {x: 0.10769231, y: -0.015015015}
+          size: {x: 0.30769232, y: 0.5765766}
+        handTuned: 0
+      - frame: elven_spellcasting_1_w1
+        shapes:
+        - center: {x: 0.015384615, y: -0.6636637}
+          size: {x: 0.5538462, y: 0.33633634}
+        - center: {x: 0.12307692, y: -0.15915915}
+          size: {x: 0.26153848, y: 0.4084084}
+        - center: {x: 0.16923077, y: 0.35735735}
+          size: {x: 0.36923078, y: 0.34834835}
+        handTuned: 0
+      - frame: elven_spellcasting_1_w2
+        shapes:
+        - center: {x: 0.15384616, y: -0.5915916}
+          size: {x: 0.5692308, y: 0.4084084}
+        - center: {x: 0.13846155, y: 0.009009009}
+          size: {x: 0.30769232, y: 0.4804805}
+        - center: {x: 0.21538462, y: 0.6006006}
+          size: {x: 0.35384616, y: 0.3993994}
+        handTuned: 0
+      - frame: elven_spellcasting_1_w3
+        shapes:
+        - center: {x: 0.15384616, y: -0.6036036}
+          size: {x: 0.63076925, y: 0.3963964}
+        - center: {x: 0.36923078, y: -0.08708709}
+          size: {x: 0.41538462, y: 0.4084084}
+        handTuned: 0
+      - frame: elven_spellcasting_1_w4
+        shapes:
+        - center: {x: -0.092307694, y: -0.6636637}
+          size: {x: 0.6, y: 0.33633634}
+        - center: {x: 0.03076923, y: -0.21921922}
+          size: {x: 0.3846154, y: 0.34834835}
+        handTuned: 0
+      - frame: elven_spellcasting_1_w5
+        shapes:
+        - center: {x: -0.2769231, y: -0.5795796}
+          size: {x: 0.50769234, y: 0.4204204}
+        - center: {x: -0.10769231, y: -0.027027028}
+          size: {x: 0.36923078, y: 0.4204204}
+        handTuned: 0
+      - frame: elven_spellcasting_1_w6
+        shapes:
+        - center: {x: -0.16923077, y: -0.6996997}
+          size: {x: 0.5538462, y: 0.3003003}
+        - center: {x: -0.03076923, y: -0.015015015}
+          size: {x: 0.35384616, y: 0.5765766}
+        handTuned: 0
+      - frame: elven_spellcasting_1_w7
+        shapes:
+        - center: {x: -0.07692308, y: -0.6876877}
+          size: {x: 0.52307695, y: 0.3123123}
+        - center: {x: 0.03076923, y: 0.009009009}
+          size: {x: 0.32307693, y: 0.5765766}
+        handTuned: 0
+      - frame: elven_spellcasting_2_e0
+        shapes:
+        - center: {x: -0.0034129692, y: -0.41538462}
+          size: {x: 0.50511944, y: 0.5846154}
+        - center: {x: 0.11945392, y: 0.4}
+          size: {x: 0.32764506, y: 0.6}
+        handTuned: 0
+      - frame: elven_spellcasting_2_e1
+        shapes:
+        - center: {x: -0.044368602, y: -0.4}
+          size: {x: 0.5460751, y: 0.53846157}
+        - center: {x: 0.051194537, y: 0.35384616}
+          size: {x: 0.50511944, y: 0.5846154}
+        handTuned: 0
+      - frame: elven_spellcasting_2_e2
+        shapes:
+        - center: {x: -0.07167236, y: -0.41538462}
+          size: {x: 0.49146757, y: 0.5538462}
+        - center: {x: 0.023890786, y: 0.33846155}
+          size: {x: 0.3139932, y: 0.5692308}
+        handTuned: 0
+      - frame: elven_spellcasting_2_e3
+        shapes:
+        - center: {x: -0.058020476, y: -0.43076923}
+          size: {x: 0.50511944, y: 0.53846157}
+        - center: {x: -0.044368602, y: 0.2923077}
+          size: {x: 0.32764506, y: 0.5538462}
+        handTuned: 0
+      - frame: elven_spellcasting_2_e4
+        shapes:
+        - center: {x: 0.037542664, y: -0.44615385}
+          size: {x: 0.57337886, y: 0.52307695}
+        - center: {x: 0.092150174, y: 0.26153848}
+          size: {x: 0.32764506, y: 0.5538462}
+        handTuned: 0
+      - frame: elven_spellcasting_2_e5
+        shapes:
+        - center: {x: -0.221843, y: -0.43076923}
+          size: {x: 0.55972695, y: 0.53846157}
+        - center: {x: 0.11945392, y: 0.2923077}
+          size: {x: 0.49146757, y: 0.5538462}
+        handTuned: 0
+      - frame: elven_spellcasting_2_e6
+        shapes:
+        - center: {x: -0.13993174, y: -0.44615385}
+          size: {x: 0.55972695, y: 0.52307695}
+        - center: {x: 0.105802044, y: 0.24615385}
+          size: {x: 0.42320818, y: 0.53846157}
+        handTuned: 0
+      - frame: elven_spellcasting_2_e7
+        shapes:
+        - center: {x: -0.13993174, y: -0.43076923}
+          size: {x: 0.4778157, y: 0.5692308}
+        - center: {x: -0.07167236, y: 0.35384616}
+          size: {x: 0.32764506, y: 0.5846154}
+        handTuned: 0
+      - frame: elven_spellcasting_2_w0
+        shapes:
+        - center: {x: 0.0034129692, y: -0.41538462}
+          size: {x: 0.50511944, y: 0.5846154}
+        - center: {x: 0.11262798, y: 0.4}
+          size: {x: 0.3139932, y: 0.6}
+        handTuned: 0
+      - frame: elven_spellcasting_2_w1
+        shapes:
+        - center: {x: -0.06484642, y: -0.41538462}
+          size: {x: 0.5460751, y: 0.5538462}
+        - center: {x: 0.044368602, y: 0.35384616}
+          size: {x: 0.49146757, y: 0.5846154}
+        handTuned: 0
+      - frame: elven_spellcasting_2_w2
+        shapes:
+        - center: {x: -0.06484642, y: -0.43076923}
+          size: {x: 0.49146757, y: 0.53846157}
+        - center: {x: 0.017064847, y: 0.30769232}
+          size: {x: 0.32764506, y: 0.5692308}
+        handTuned: 0
+      - frame: elven_spellcasting_2_w3
+        shapes:
+        - center: {x: -0.051194537, y: -0.43076923}
+          size: {x: 0.50511944, y: 0.53846157}
+        - center: {x: -0.037542664, y: 0.2923077}
+          size: {x: 0.32764506, y: 0.5538462}
+        handTuned: 0
+      - frame: elven_spellcasting_2_w4
+        shapes:
+        - center: {x: 0.030716723, y: -0.44615385}
+          size: {x: 0.5870307, y: 0.52307695}
+        - center: {x: 0.09897611, y: 0.26153848}
+          size: {x: 0.32764506, y: 0.5538462}
+        handTuned: 0
+      - frame: elven_spellcasting_2_w5
+        shapes:
+        - center: {x: -0.21501707, y: -0.43076923}
+          size: {x: 0.55972695, y: 0.53846157}
+        - center: {x: 0.12627986, y: 0.2923077}
+          size: {x: 0.49146757, y: 0.5538462}
+        handTuned: 0
+      - frame: elven_spellcasting_2_w6
+        shapes:
+        - center: {x: -0.16040955, y: -0.44615385}
+          size: {x: 0.55972695, y: 0.52307695}
+        - center: {x: 0.11262798, y: 0.24615385}
+          size: {x: 0.42320818, y: 0.53846157}
+        handTuned: 0
+      - frame: elven_spellcasting_2_w7
+        shapes:
+        - center: {x: -0.1331058, y: -0.43076923}
+          size: {x: 0.4778157, y: 0.5692308}
+        - center: {x: -0.06484642, y: 0.35384616}
+          size: {x: 0.32764506, y: 0.5846154}
+        handTuned: 0
+      - frame: elven_spellcasting_3_e0
+        shapes:
+        - center: {x: -0.29863015, y: -0.5955056}
+          size: {x: 0.41643837, y: 0.37453184}
+        - center: {x: -0.15616438, y: 0.25842696}
+          size: {x: 0.25205478, y: 0.71910113}
+        handTuned: 0
+      - frame: elven_spellcasting_3_e1
+        shapes:
+        - center: {x: -0.024657534, y: -0.3857678}
+          size: {x: 0.42739725, y: 0.52434456}
+        - center: {x: 0.16164383, y: 0.3483146}
+          size: {x: 0.37260273, y: 0.5692884}
+        handTuned: 0
+      - frame: elven_spellcasting_3_e2
+        shapes:
+        - center: {x: 0.008219178, y: -0.4456929}
+          size: {x: 0.43835616, y: 0.52434456}
+        - center: {x: 0.21643835, y: 0.27340823}
+          size: {x: 0.40547946, y: 0.5543071}
+        handTuned: 0
+      - frame: elven_spellcasting_3_e3
+        shapes:
+        - center: {x: -0.07945205, y: -0.4307116}
+          size: {x: 0.46027398, y: 0.53932583}
+        - center: {x: 0.21643835, y: 0.31835207}
+          size: {x: 0.42739725, y: 0.5692884}
+        handTuned: 0
+      - frame: elven_spellcasting_3_e4
+        shapes:
+        - center: {x: -0.26575342, y: -0.37078652}
+          size: {x: 0.49315068, y: 0.5692884}
+        - center: {x: -0.090410955, y: 0.3895131}
+          size: {x: 0.40547946, y: 0.61048687}
+        handTuned: 0
+      - frame: elven_spellcasting_3_e5
+        shapes:
+        - center: {x: -0.23287672, y: -0.40074906}
+          size: {x: 0.46027398, y: 0.53932583}
+        - center: {x: -0.04657534, y: 0.3483146}
+          size: {x: 0.38356164, y: 0.5692884}
+        handTuned: 0
+      - frame: elven_spellcasting_3_e6
+        shapes:
+        - center: {x: -0.11232877, y: -0.40074906}
+          size: {x: 0.44931507, y: 0.53932583}
+        - center: {x: 0.019178081, y: 0.36329588}
+          size: {x: 0.33972603, y: 0.58426964}
+        handTuned: 0
+      - frame: elven_spellcasting_3_e7
+        shapes:
+        - center: {x: -0.057534248, y: -0.61048687}
+          size: {x: 0.43835616, y: 0.3895131}
+        - center: {x: 0.052054796, y: 0.25842696}
+          size: {x: 0.2630137, y: 0.71910113}
+        handTuned: 0
+      - frame: elven_spellcasting_3_w0
+        shapes:
+        - center: {x: -0.2931507, y: -0.5955056}
+          size: {x: 0.41643837, y: 0.37453184}
+        - center: {x: -0.15068494, y: 0.25842696}
+          size: {x: 0.25205478, y: 0.71910113}
+        handTuned: 0
+      - frame: elven_spellcasting_3_w1
+        shapes:
+        - center: {x: -0.019178081, y: -0.3857678}
+          size: {x: 0.42739725, y: 0.52434456}
+        - center: {x: 0.15616438, y: 0.3483146}
+          size: {x: 0.36164382, y: 0.5692884}
+        handTuned: 0
+      - frame: elven_spellcasting_3_w2
+        shapes:
+        - center: {x: -0.008219178, y: -0.4456929}
+          size: {x: 0.43835616, y: 0.52434456}
+        - center: {x: 0.22191781, y: 0.27340823}
+          size: {x: 0.40547946, y: 0.5543071}
+        handTuned: 0
+      - frame: elven_spellcasting_3_w3
+        shapes:
+        - center: {x: -0.08493151, y: -0.4307116}
+          size: {x: 0.4712329, y: 0.53932583}
+        - center: {x: 0.22191781, y: 0.31835207}
+          size: {x: 0.42739725, y: 0.5692884}
+        handTuned: 0
+      - frame: elven_spellcasting_3_w4
+        shapes:
+        - center: {x: -0.26027396, y: -0.37078652}
+          size: {x: 0.49315068, y: 0.5692884}
+        - center: {x: -0.073972605, y: 0.3895131}
+          size: {x: 0.41643837, y: 0.61048687}
+        handTuned: 0
+      - frame: elven_spellcasting_3_w5
+        shapes:
+        - center: {x: -0.23835616, y: -0.40074906}
+          size: {x: 0.44931507, y: 0.53932583}
+        - center: {x: -0.063013695, y: 0.3483146}
+          size: {x: 0.38356164, y: 0.5692884}
+        handTuned: 0
+      - frame: elven_spellcasting_3_w6
+        shapes:
+        - center: {x: -0.11780822, y: -0.40074906}
+          size: {x: 0.46027398, y: 0.53932583}
+        - center: {x: 0.024657534, y: 0.36329588}
+          size: {x: 0.33972603, y: 0.58426964}
+        handTuned: 0
+      - frame: elven_spellcasting_3_w7
+        shapes:
+        - center: {x: -0.063013695, y: -0.61048687}
+          size: {x: 0.44931507, y: 0.3895131}
+        - center: {x: 0.057534248, y: 0.25842696}
+          size: {x: 0.2630137, y: 0.71910113}
+        handTuned: 0
+      - frame: elven_spellcasting_4_e0
+        shapes:
+        - center: {x: 0.1295681, y: -0.5966387}
+          size: {x: 0.49169436, y: 0.40336135}
+        - center: {x: -0.016611295, y: 0.008403362}
+          size: {x: 0.37209302, y: 0.47058824}
+        - center: {x: 0.18272425, y: 0.60504204}
+          size: {x: 0.22591361, y: 0.394958}
+        handTuned: 0
+      - frame: elven_spellcasting_4_e1
+        shapes:
+        - center: {x: 0.089701, y: -0.60784316}
+          size: {x: 0.50498337, y: 0.39215687}
+        - center: {x: -0.069767445, y: -0.025210084}
+          size: {x: 0.34551495, y: 0.45938376}
+        - center: {x: 0.1295681, y: 0.557423}
+          size: {x: 0.22591361, y: 0.39215687}
+        handTuned: 0
+      - frame: elven_spellcasting_4_e2
+        shapes:
+        - center: {x: 0.10299003, y: -0.4397759}
+          size: {x: 0.49169436, y: 0.5154062}
+        - center: {x: 0.049833886, y: 0.21008404}
+          size: {x: 0.41196012, y: 0.4929972}
+        handTuned: 0
+      - frame: elven_spellcasting_4_e3
+        shapes:
+        - center: {x: -0.029900333, y: -0.56302524}
+          size: {x: 0.4651163, y: 0.41456583}
+        - center: {x: 0.036544852, y: 0.019607844}
+          size: {x: 0.29235882, y: 0.4369748}
+        handTuned: 0
+      - frame: elven_spellcasting_4_e4
+        shapes:
+        - center: {x: 0.036544852, y: -0.56302524}
+          size: {x: 0.47840533, y: 0.41456583}
+        - center: {x: 0.07641196, y: 0.008403362}
+          size: {x: 0.30564785, y: 0.4257703}
+        handTuned: 0
+      - frame: elven_spellcasting_4_e5
+        shapes:
+        - center: {x: -0.056478404, y: -0.56302524}
+          size: {x: 0.5182724, y: 0.41456583}
+        - center: {x: 0.06312292, y: 0.019607844}
+          size: {x: 0.34551495, y: 0.4369748}
+        handTuned: 0
+      - frame: elven_spellcasting_4_e6
+        shapes:
+        - center: {x: -0.029900333, y: -0.5966387}
+          size: {x: 0.59800667, y: 0.40336135}
+        - center: {x: 0.036544852, y: -0.04761905}
+          size: {x: 0.3986711, y: 0.41456583}
+        handTuned: 0
+      - frame: elven_spellcasting_4_e7
+        shapes:
+        - center: {x: -0.12292359, y: -0.5742297}
+          size: {x: 0.55813956, y: 0.4257703}
+        - center: {x: -0.12292359, y: 0.019607844}
+          size: {x: 0.37209302, y: 0.4369748}
+        handTuned: 0
+      - frame: elven_spellcasting_4_w0
+        shapes:
+        - center: {x: 0.13621262, y: -0.5966387}
+          size: {x: 0.49169436, y: 0.40336135}
+        - center: {x: -0.023255814, y: 0.008403362}
+          size: {x: 0.38538206, y: 0.47058824}
+        - center: {x: 0.17607974, y: 0.60504204}
+          size: {x: 0.21262458, y: 0.394958}
+        handTuned: 0
+      - frame: elven_spellcasting_4_w1
+        shapes:
+        - center: {x: 0.096345514, y: -0.5966387}
+          size: {x: 0.50498337, y: 0.3809524}
+        - center: {x: -0.07641196, y: -0.025210084}
+          size: {x: 0.358804, y: 0.45938376}
+        - center: {x: 0.12292359, y: 0.557423}
+          size: {x: 0.23920266, y: 0.39215687}
+        handTuned: 0
+      - frame: elven_spellcasting_4_w2
+        shapes:
+        - center: {x: 0.10963455, y: -0.4397759}
+          size: {x: 0.49169436, y: 0.5154062}
+        - center: {x: 0.056478404, y: 0.21008404}
+          size: {x: 0.41196012, y: 0.4929972}
+        handTuned: 0
+      - frame: elven_spellcasting_4_w3
+        shapes:
+        - center: {x: -0.036544852, y: -0.5742297}
+          size: {x: 0.47840533, y: 0.4257703}
+        - center: {x: 0.029900333, y: 0.019607844}
+          size: {x: 0.30564785, y: 0.4369748}
+        handTuned: 0
+      - frame: elven_spellcasting_4_w4
+        shapes:
+        - center: {x: 0.04318937, y: -0.56302524}
+          size: {x: 0.47840533, y: 0.41456583}
+        - center: {x: 0.069767445, y: 0.008403362}
+          size: {x: 0.29235882, y: 0.4257703}
+        handTuned: 0
+      - frame: elven_spellcasting_4_w5
+        shapes:
+        - center: {x: -0.049833886, y: -0.56302524}
+          size: {x: 0.5182724, y: 0.41456583}
+        - center: {x: 0.069767445, y: 0.019607844}
+          size: {x: 0.34551495, y: 0.4369748}
+        handTuned: 0
+      - frame: elven_spellcasting_4_w6
+        shapes:
+        - center: {x: -0.036544852, y: -0.5966387}
+          size: {x: 0.6112957, y: 0.40336135}
+        - center: {x: 0.016611295, y: -0.04761905}
+          size: {x: 0.3986711, y: 0.41456583}
+        handTuned: 0
+      - frame: elven_spellcasting_4_w7
+        shapes:
+        - center: {x: -0.1295681, y: -0.5742297}
+          size: {x: 0.54485047, y: 0.4257703}
+        - center: {x: -0.1295681, y: 0.019607844}
+          size: {x: 0.358804, y: 0.4369748}
+        handTuned: 0
+      - frame: elven_spellcasting_5_e0
+        shapes:
+        - center: {x: 0.015384615, y: -0.54198474}
+          size: {x: 0.50769234, y: 0.45801526}
+        - center: {x: -0.06538462, y: -0.003816794}
+          size: {x: 0.45, y: 0.40076336}
+        handTuned: 0
+      - frame: elven_spellcasting_5_e1
+        shapes:
+        - center: {x: -0.1, y: -0.5305343}
+          size: {x: 0.5538462, y: 0.46946564}
+        - center: {x: -0.01923077, y: 0.01908397}
+          size: {x: 0.4730769, y: 0.40076336}
+        handTuned: 0
+      - frame: elven_spellcasting_5_e2
+        shapes:
+        - center: {x: -0.053846154, y: -0.49618322}
+          size: {x: 0.6, y: 0.45801526}
+        - center: {x: -0.03076923, y: 0.122137405}
+          size: {x: 0.46153846, y: 0.48091602}
+        handTuned: 0
+      - frame: elven_spellcasting_5_e3
+        shapes:
+        - center: {x: 0.015384615, y: -0.3816794}
+          size: {x: 0.5769231, y: 0.5496183}
+        - center: {x: 0.10769231, y: 0.3625954}
+          size: {x: 0.36923078, y: 0.5610687}
+        handTuned: 0
+      - frame: elven_spellcasting_5_e4
+        shapes:
+        - center: {x: -0.13461539, y: -0.59923667}
+          size: {x: 0.61153847, y: 0.40076336}
+        - center: {x: 0.015384615, y: 0.259542}
+          size: {x: 0.36923078, y: 0.73282444}
+        handTuned: 0
+      - frame: elven_spellcasting_5_e5
+        shapes:
+        - center: {x: -0.15769231, y: -0.40458015}
+          size: {x: 0.5653846, y: 0.5954198}
+        - center: {x: 0.015384615, y: 0.38549617}
+          size: {x: 0.46153846, y: 0.60687023}
+        handTuned: 0
+      - frame: elven_spellcasting_5_e6
+        shapes:
+        - center: {x: -0.11153846, y: -0.40458015}
+          size: {x: 0.5423077, y: 0.5954198}
+        - center: {x: 0.03846154, y: 0.35114503}
+          size: {x: 0.41538462, y: 0.57251906}
+        handTuned: 0
+      - frame: elven_spellcasting_5_e7
+        shapes:
+        - center: {x: 0.026923077, y: -0.17557251}
+          size: {x: 0.5423077, y: 0.8244275}
+        handTuned: 0
+      - frame: elven_spellcasting_5_w0
+        shapes:
+        - center: {x: 0.0076923077, y: -0.54198474}
+          size: {x: 0.50769234, y: 0.45801526}
+        - center: {x: -0.073076926, y: 0.007633588}
+          size: {x: 0.45, y: 0.41221374}
+        handTuned: 0
+      - frame: elven_spellcasting_5_w1
+        shapes:
+        - center: {x: -0.10769231, y: -0.5305343}
+          size: {x: 0.5538462, y: 0.46946564}
+        - center: {x: -0.026923077, y: 0.01908397}
+          size: {x: 0.4730769, y: 0.40076336}
+        handTuned: 0
+      - frame: elven_spellcasting_5_w2
+        shapes:
+        - center: {x: -0.06153846, y: -0.48473284}
+          size: {x: 0.6, y: 0.46946564}
+        - center: {x: -0.03846154, y: 0.15648855}
+          size: {x: 0.46153846, y: 0.4923664}
+        handTuned: 0
+      - frame: elven_spellcasting_5_w3
+        shapes:
+        - center: {x: 0.01923077, y: -0.35877863}
+          size: {x: 0.5653846, y: 0.52671754}
+        - center: {x: 0.1, y: 0.3625954}
+          size: {x: 0.36923078, y: 0.5610687}
+        handTuned: 0
+      - frame: elven_spellcasting_5_w4
+        shapes:
+        - center: {x: -0.11923077, y: -0.59923667}
+          size: {x: 0.61153847, y: 0.40076336}
+        - center: {x: 0.0076923077, y: 0.259542}
+          size: {x: 0.36923078, y: 0.73282444}
+        handTuned: 0
+      - frame: elven_spellcasting_5_w5
+        shapes:
+        - center: {x: -0.16538462, y: -0.40458015}
+          size: {x: 0.5653846, y: 0.5954198}
+        - center: {x: 0.0076923077, y: 0.3740458}
+          size: {x: 0.46153846, y: 0.5954198}
+        handTuned: 0
+      - frame: elven_spellcasting_5_w6
+        shapes:
+        - center: {x: -0.11923077, y: -0.40458015}
+          size: {x: 0.5423077, y: 0.5954198}
+        - center: {x: 0.03076923, y: 0.35114503}
+          size: {x: 0.41538462, y: 0.57251906}
+        handTuned: 0
+      - frame: elven_spellcasting_5_w7
+        shapes:
+        - center: {x: 0.01923077, y: -0.45038167}
+          size: {x: 0.5423077, y: 0.5496183}
+        - center: {x: -0.03846154, y: 0.1908397}
+          size: {x: 0.46153846, y: 0.45801526}
+        handTuned: 0
+      - frame: elven_walking_e0
+        shapes:
+        - center: {x: -0.06666667, y: -0.5846154}
+          size: {x: 0.3, y: 0.3923077}
+        - center: {x: 0.083333336, y: 0.0038461538}
+          size: {x: 0.35, y: 0.4730769}
+        - center: {x: 0.1, y: 0.6}
+          size: {x: 0.26666668, y: 0.4}
+        handTuned: 0
+      - frame: elven_walking_e1
+        shapes:
+        - center: {x: -0.05, y: -0.5846154}
+          size: {x: 0.41666666, y: 0.3923077}
+        - center: {x: 0.083333336, y: 0.0038461538}
+          size: {x: 0.38333333, y: 0.4730769}
+        - center: {x: 0.1, y: 0.6}
+          size: {x: 0.26666668, y: 0.4}
+        handTuned: 0
+      - frame: elven_walking_e2
+        shapes:
+        - center: {x: 0.21666667, y: -0.6076923}
+          size: {x: 0.25, y: 0.3923077}
+        - center: {x: 0.18333334, y: -0.03076923}
+          size: {x: 0.31666666, y: 0.46153846}
+        - center: {x: 0.2, y: 0.5576923}
+          size: {x: 0.26666668, y: 0.40384614}
+        handTuned: 0
+      - frame: elven_walking_e3
+        shapes:
+        - center: {x: 0.15, y: -0.6076923}
+          size: {x: 0.55, y: 0.36923078}
+        - center: {x: 0.083333336, y: -0.042307694}
+          size: {x: 0.41666666, y: 0.42692307}
+        - center: {x: 0.11666667, y: 0.52307695}
+          size: {x: 0.31666666, y: 0.36923078}
+        handTuned: 0
+      - frame: elven_walking_e4
+        shapes:
+        - center: {x: -0.16666667, y: -0.63076925}
+          size: {x: 0.6, y: 0.36923078}
+        - center: {x: -0.15, y: -0.06538462}
+          size: {x: 0.31666666, y: 0.42692307}
+        - center: {x: -0.1, y: 0.51153845}
+          size: {x: 0.26666668, y: 0.38076922}
+        handTuned: 0
+      - frame: elven_walking_e5
+        shapes:
+        - center: {x: -0.28333333, y: -0.33076924}
+          size: {x: 0.38333333, y: 0.66923076}
+        - center: {x: -0.23333333, y: 0.47692308}
+          size: {x: 0.26666668, y: 0.36923078}
+        handTuned: 0
+      - frame: elven_walking_e6
+        shapes:
+        - center: {x: -0.3, y: -0.61923075}
+          size: {x: 0.53333336, y: 0.3576923}
+        - center: {x: -0.18333334, y: 0.18846154}
+          size: {x: 0.28333333, y: 0.6807692}
+        handTuned: 0
+      - frame: elven_walking_e7
+        shapes:
+        - center: {x: -0.31666666, y: -0.61923075}
+          size: {x: 0.28333333, y: 0.38076922}
+        - center: {x: -0.2, y: -0.053846154}
+          size: {x: 0.33333334, y: 0.46153846}
+        - center: {x: -0.2, y: 0.52307695}
+          size: {x: 0.26666668, y: 0.3923077}
+        handTuned: 0
+      - frame: elven_walking_w0
+        shapes:
+        - center: {x: -0.06666667, y: -0.5846154}
+          size: {x: 0.3, y: 0.3923077}
+        - center: {x: 0.083333336, y: 0.0038461538}
+          size: {x: 0.35, y: 0.4730769}
+        - center: {x: 0.1, y: 0.6}
+          size: {x: 0.26666668, y: 0.4}
+        handTuned: 0
+      - frame: elven_walking_w1
+        shapes:
+        - center: {x: -0.05, y: -0.5846154}
+          size: {x: 0.41666666, y: 0.3923077}
+        - center: {x: 0.083333336, y: 0.0038461538}
+          size: {x: 0.38333333, y: 0.4730769}
+        - center: {x: 0.1, y: 0.6}
+          size: {x: 0.26666668, y: 0.4}
+        handTuned: 0
+      - frame: elven_walking_w2
+        shapes:
+        - center: {x: 0.21666667, y: -0.6076923}
+          size: {x: 0.25, y: 0.3923077}
+        - center: {x: 0.18333334, y: -0.03076923}
+          size: {x: 0.31666666, y: 0.46153846}
+        - center: {x: 0.2, y: 0.5576923}
+          size: {x: 0.26666668, y: 0.40384614}
+        handTuned: 0
+      - frame: elven_walking_w3
+        shapes:
+        - center: {x: 0.15, y: -0.6076923}
+          size: {x: 0.55, y: 0.36923078}
+        - center: {x: 0.083333336, y: -0.042307694}
+          size: {x: 0.41666666, y: 0.42692307}
+        - center: {x: 0.11666667, y: 0.52307695}
+          size: {x: 0.31666666, y: 0.36923078}
+        handTuned: 0
+      - frame: elven_walking_w4
+        shapes:
+        - center: {x: -0.16666667, y: -0.63076925}
+          size: {x: 0.6, y: 0.36923078}
+        - center: {x: -0.15, y: -0.06538462}
+          size: {x: 0.31666666, y: 0.42692307}
+        - center: {x: -0.1, y: 0.51153845}
+          size: {x: 0.26666668, y: 0.38076922}
+        handTuned: 0
+      - frame: elven_walking_w5
+        shapes:
+        - center: {x: -0.28333333, y: -0.33076924}
+          size: {x: 0.38333333, y: 0.66923076}
+        - center: {x: -0.23333333, y: 0.47692308}
+          size: {x: 0.26666668, y: 0.36923078}
+        handTuned: 0
+      - frame: elven_walking_w6
+        shapes:
+        - center: {x: -0.3, y: -0.61923075}
+          size: {x: 0.53333336, y: 0.3576923}
+        - center: {x: -0.18333334, y: 0.18846154}
+          size: {x: 0.28333333, y: 0.6807692}
+        handTuned: 0
+      - frame: elven_walking_w7
+        shapes:
+        - center: {x: -0.31666666, y: -0.61923075}
+          size: {x: 0.28333333, y: 0.38076922}
+        - center: {x: -0.2, y: -0.053846154}
+          size: {x: 0.33333334, y: 0.46153846}
+        - center: {x: -0.2, y: 0.52307695}
+          size: {x: 0.26666668, y: 0.3923077}
+        handTuned: 0
     scaleConfig:
       scaleIdle: 0
       tint: {r: 0, g: 0, b: 0, a: 0}

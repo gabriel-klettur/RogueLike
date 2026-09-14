@@ -1081,10 +1081,1195 @@ MonoBehaviour:
         recoverMode: 2
     stateVariants: []
     statePacing: []
+    walkReferenceSpeed: 0
+    runReferenceSpeed: 0
     loadouts: []
     castMuzzle: {x: 0, y: 0}
     castMuzzleFrames: []
     castMuzzlePoints: []
+    collision:
+      footprintSize: {x: 0.73043746, y: 0.32869685}
+      footprintOffset: {x: 0, y: 0}
+      footprintHandTuned: 0
+      hurtScale: 1
+      hurtShapes: []
+      hurtShapeFrames:
+      - frame: barbarian_armed_attack_2_e0
+        shapes:
+        - center: {x: -0.26190478, y: -0.6516854}
+          size: {x: 0.33333334, y: 0.3483146}
+        - center: {x: -0.11904762, y: -0.17977528}
+          size: {x: 0.35714287, y: 0.3483146}
+        handTuned: 0
+      - frame: barbarian_armed_attack_2_e1
+        shapes:
+        - center: {x: -0.27380952, y: -0.6516854}
+          size: {x: 0.39285713, y: 0.3258427}
+        - center: {x: 0.023809524, y: -0.21348314}
+          size: {x: 0.3809524, y: 0.33707866}
+        handTuned: 0
+      - frame: barbarian_armed_attack_2_e2
+        shapes:
+        - center: {x: -0.15476191, y: -0.53932583}
+          size: {x: 0.3452381, y: 0.43820226}
+        - center: {x: -0.023809524, y: 0.04494382}
+          size: {x: 0.33333334, y: 0.46067417}
+        handTuned: 0
+      - frame: barbarian_armed_attack_2_e3
+        shapes:
+        - center: {x: 0.083333336, y: -0.58426964}
+          size: {x: 0.32142857, y: 0.39325842}
+        - center: {x: 0.27380952, y: 0}
+          size: {x: 0.25, y: 0.46067417}
+        - center: {x: 0.21428572, y: 0.5955056}
+          size: {x: 0.4047619, y: 0.40449437}
+        handTuned: 0
+      - frame: barbarian_armed_attack_2_e4
+        shapes:
+        - center: {x: 0.10714286, y: -0.6853933}
+          size: {x: 0.3452381, y: 0.31460676}
+        - center: {x: 0.30952382, y: -0.21348314}
+          size: {x: 0.35714287, y: 0.38202247}
+        - center: {x: 0.17857143, y: 0.26966292}
+          size: {x: 0.20238096, y: 0.3258427}
+        handTuned: 0
+      - frame: barbarian_armed_attack_2_e5
+        shapes:
+        - center: {x: -0.45238096, y: -0.56179774}
+          size: {x: 0.33333334, y: 0.3258427}
+        - center: {x: 0.071428575, y: -0.43820226}
+          size: {x: 0.42857143, y: 0.31460676}
+        - center: {x: 0.63095236, y: -0.66292137}
+          size: {x: 0.3690476, y: 0.15730338}
+        handTuned: 0
+      - frame: barbarian_armed_attack_2_e6
+        shapes:
+        - center: {x: -0.25, y: -0.6741573}
+          size: {x: 0.5595238, y: 0.3258427}
+        - center: {x: -0.21428572, y: -0.23595506}
+          size: {x: 0.2857143, y: 0.33707866}
+        handTuned: 0
+      - frame: barbarian_armed_attack_2_e7
+        shapes:
+        - center: {x: -0.70238096, y: -0.5955056}
+          size: {x: 0.29761904, y: 0.29213482}
+        - center: {x: -0.25, y: -0.33707866}
+          size: {x: 0.3452381, y: 0.3483146}
+        - center: {x: 0.20238096, y: -0.23595506}
+          size: {x: 0.29761904, y: 0.20224719}
+        handTuned: 0
+      - frame: barbarian_armed_attack_2_w0
+        shapes:
+        - center: {x: -0.26190478, y: -0.6516854}
+          size: {x: 0.33333334, y: 0.3483146}
+        - center: {x: -0.11904762, y: -0.17977528}
+          size: {x: 0.35714287, y: 0.3483146}
+        handTuned: 0
+      - frame: barbarian_armed_attack_2_w1
+        shapes:
+        - center: {x: -0.27380952, y: -0.6516854}
+          size: {x: 0.39285713, y: 0.3258427}
+        - center: {x: 0.023809524, y: -0.21348314}
+          size: {x: 0.3809524, y: 0.33707866}
+        handTuned: 0
+      - frame: barbarian_armed_attack_2_w2
+        shapes:
+        - center: {x: -0.15476191, y: -0.53932583}
+          size: {x: 0.3452381, y: 0.43820226}
+        - center: {x: -0.023809524, y: 0.04494382}
+          size: {x: 0.33333334, y: 0.46067417}
+        handTuned: 0
+      - frame: barbarian_armed_attack_2_w3
+        shapes:
+        - center: {x: 0.083333336, y: -0.58426964}
+          size: {x: 0.32142857, y: 0.39325842}
+        - center: {x: 0.27380952, y: 0}
+          size: {x: 0.25, y: 0.46067417}
+        - center: {x: 0.21428572, y: 0.5955056}
+          size: {x: 0.4047619, y: 0.40449437}
+        handTuned: 0
+      - frame: barbarian_armed_attack_2_w4
+        shapes:
+        - center: {x: 0.10714286, y: -0.6853933}
+          size: {x: 0.3452381, y: 0.31460676}
+        - center: {x: 0.30952382, y: -0.21348314}
+          size: {x: 0.35714287, y: 0.38202247}
+        - center: {x: 0.17857143, y: 0.26966292}
+          size: {x: 0.20238096, y: 0.3258427}
+        handTuned: 0
+      - frame: barbarian_armed_attack_2_w5
+        shapes:
+        - center: {x: 0.64285713, y: -0.66292137}
+          size: {x: 0.35714287, y: 0.15730338}
+        - center: {x: 0.0952381, y: -0.43820226}
+          size: {x: 0.42857143, y: 0.31460676}
+        - center: {x: -0.44047618, y: -0.56179774}
+          size: {x: 0.3452381, y: 0.3258427}
+        handTuned: 0
+      - frame: barbarian_armed_attack_2_w6
+        shapes:
+        - center: {x: -0.25, y: -0.6741573}
+          size: {x: 0.5595238, y: 0.3258427}
+        - center: {x: -0.21428572, y: -0.23595506}
+          size: {x: 0.2857143, y: 0.33707866}
+        handTuned: 0
+      - frame: barbarian_armed_attack_2_w7
+        shapes:
+        - center: {x: 0.20238096, y: -0.23595506}
+          size: {x: 0.29761904, y: 0.20224719}
+        - center: {x: -0.25, y: -0.33707866}
+          size: {x: 0.3452381, y: 0.3483146}
+        - center: {x: -0.70238096, y: -0.5955056}
+          size: {x: 0.29761904, y: 0.29213482}
+        handTuned: 0
+      - frame: barbarian_armed_attack_e0
+        shapes:
+        - center: {x: 0.24657534, y: -0.58181816}
+          size: {x: 0.28767124, y: 0.4181818}
+        - center: {x: 0.41095892, y: -0.018181818}
+          size: {x: 0.31506848, y: 0.43636364}
+        handTuned: 0
+      - frame: barbarian_armed_attack_e1
+        shapes:
+        - center: {x: 0.4520548, y: -0.5272727}
+          size: {x: 0.2739726, y: 0.47272727}
+        - center: {x: 0.23287672, y: 0.14545454}
+          size: {x: 0.38356164, y: 0.4909091}
+        handTuned: 0
+      - frame: barbarian_armed_attack_e2
+        shapes:
+        - center: {x: 0.47945204, y: -0.38181818}
+          size: {x: 0.30136988, y: 0.58181816}
+        - center: {x: 0.19178082, y: 0.38181818}
+          size: {x: 0.39726028, y: 0.6181818}
+        handTuned: 0
+      - frame: barbarian_armed_attack_e3
+        shapes:
+        - center: {x: -0.19178082, y: -0.38181818}
+          size: {x: 0.26027396, y: 0.43636364}
+        - center: {x: 0.21917808, y: -0.3090909}
+          size: {x: 0.369863, y: 0.43636364}
+        - center: {x: 0.6849315, y: -0.7090909}
+          size: {x: 0.31506848, y: 0.18181819}
+        handTuned: 0
+      - frame: barbarian_armed_attack_e4
+        shapes:
+        - center: {x: -0.7123288, y: -0.56363636}
+          size: {x: 0.26027396, y: 0.25454545}
+        - center: {x: -0.30136988, y: -0.21818182}
+          size: {x: 0.31506848, y: 0.38181818}
+        - center: {x: 0.15068494, y: -0.34545454}
+          size: {x: 0.30136988, y: 0.43636364}
+        - center: {x: 0.56164384, y: -0.38181818}
+          size: {x: 0.2739726, y: 0.18181819}
+        handTuned: 0
+      - frame: barbarian_armed_attack_e5
+        shapes:
+        - center: {x: -0.6849315, y: -0.45454547}
+          size: {x: 0.28767124, y: 0.36363637}
+        - center: {x: -0.26027396, y: -0.34545454}
+          size: {x: 0.3561644, y: 0.36363637}
+        - center: {x: 0.19178082, y: -0.7818182}
+          size: {x: 0.31506848, y: 0.18181819}
+        handTuned: 0
+      - frame: barbarian_armed_attack_e6
+        shapes:
+        - center: {x: -0.20547946, y: -0.58181816}
+          size: {x: 0.3561644, y: 0.38181818}
+        - center: {x: -0.16438356, y: -0.09090909}
+          size: {x: 0.20547946, y: 0.4}
+        handTuned: 0
+      - frame: barbarian_armed_attack_e7
+        shapes:
+        - center: {x: -0.08219178, y: -0.6}
+          size: {x: 0.28767124, y: 0.4}
+        - center: {x: 0.06849315, y: -0.07272727}
+          size: {x: 0.30136988, y: 0.4181818}
+        handTuned: 0
+      - frame: barbarian_armed_attack_w0
+        shapes:
+        - center: {x: 0.24657534, y: -0.58181816}
+          size: {x: 0.28767124, y: 0.4181818}
+        - center: {x: 0.41095892, y: -0.018181818}
+          size: {x: 0.31506848, y: 0.43636364}
+        handTuned: 0
+      - frame: barbarian_armed_attack_w1
+        shapes:
+        - center: {x: 0.4520548, y: -0.5272727}
+          size: {x: 0.2739726, y: 0.47272727}
+        - center: {x: 0.23287672, y: 0.14545454}
+          size: {x: 0.38356164, y: 0.4909091}
+        handTuned: 0
+      - frame: barbarian_armed_attack_w2
+        shapes:
+        - center: {x: 0.47945204, y: -0.38181818}
+          size: {x: 0.30136988, y: 0.58181816}
+        - center: {x: 0.19178082, y: 0.38181818}
+          size: {x: 0.39726028, y: 0.6181818}
+        handTuned: 0
+      - frame: barbarian_armed_attack_w3
+        shapes:
+        - center: {x: 0.69863015, y: -0.7090909}
+          size: {x: 0.30136988, y: 0.18181819}
+        - center: {x: 0.08219178, y: -0.36363637}
+          size: {x: 0.53424656, y: 0.45454547}
+        handTuned: 0
+      - frame: barbarian_armed_attack_w4
+        shapes:
+        - center: {x: 0.5753425, y: -0.38181818}
+          size: {x: 0.26027396, y: 0.18181819}
+        - center: {x: 0.16438356, y: -0.34545454}
+          size: {x: 0.31506848, y: 0.43636364}
+        - center: {x: -0.28767124, y: -0.2}
+          size: {x: 0.30136988, y: 0.4}
+        - center: {x: -0.69863015, y: -0.5272727}
+          size: {x: 0.2739726, y: 0.29090908}
+        handTuned: 0
+      - frame: barbarian_armed_attack_w5
+        shapes:
+        - center: {x: 0.20547946, y: -0.7818182}
+          size: {x: 0.30136988, y: 0.18181819}
+        - center: {x: -0.23287672, y: -0.34545454}
+          size: {x: 0.3561644, y: 0.36363637}
+        - center: {x: -0.6712329, y: -0.4181818}
+          size: {x: 0.30136988, y: 0.36363637}
+        handTuned: 0
+      - frame: barbarian_armed_attack_w6
+        shapes:
+        - center: {x: -0.20547946, y: -0.58181816}
+          size: {x: 0.3561644, y: 0.38181818}
+        - center: {x: -0.16438356, y: -0.09090909}
+          size: {x: 0.20547946, y: 0.4}
+        handTuned: 0
+      - frame: barbarian_armed_attack_w7
+        shapes:
+        - center: {x: -0.08219178, y: -0.6}
+          size: {x: 0.28767124, y: 0.4}
+        - center: {x: 0.06849315, y: -0.07272727}
+          size: {x: 0.30136988, y: 0.4181818}
+        handTuned: 0
+      - frame: barbarian_armed_idle_2_e0
+        shapes:
+        - center: {x: -0.22, y: -0.40677965}
+          size: {x: 0.5, y: 0.59322035}
+        - center: {x: -0.02, y: 0.37288135}
+          size: {x: 0.58, y: 0.59322035}
+        handTuned: 0
+      - frame: barbarian_armed_idle_2_e1
+        shapes:
+        - center: {x: -0.18, y: -0.40677965}
+          size: {x: 0.5, y: 0.59322035}
+        - center: {x: 0.02, y: 0.37288135}
+          size: {x: 0.54, y: 0.59322035}
+        handTuned: 0
+      - frame: barbarian_armed_idle_2_e2
+        shapes:
+        - center: {x: -0.12, y: -0.6101695}
+          size: {x: 0.52, y: 0.3898305}
+        - center: {x: -0.08, y: -0.016949153}
+          size: {x: 0.44, y: 0.47457626}
+        - center: {x: 0.1, y: 0.59322035}
+          size: {x: 0.54, y: 0.40677965}
+        handTuned: 0
+      - frame: barbarian_armed_idle_2_e3
+        shapes:
+        - center: {x: -0.14, y: -0.42372882}
+          size: {x: 0.5, y: 0.5762712}
+        - center: {x: 0.1, y: 0.33898306}
+          size: {x: 0.58, y: 0.59322035}
+        handTuned: 0
+      - frame: barbarian_armed_idle_2_e4
+        shapes:
+        - center: {x: -0.14, y: -0.42372882}
+          size: {x: 0.54, y: 0.5762712}
+        - center: {x: 0.08, y: 0.33898306}
+          size: {x: 0.56, y: 0.59322035}
+        handTuned: 0
+      - frame: barbarian_armed_idle_2_e5
+        shapes:
+        - center: {x: -0.06, y: -0.40677965}
+          size: {x: 0.5, y: 0.59322035}
+        - center: {x: 0.18, y: 0.37288135}
+          size: {x: 0.58, y: 0.59322035}
+        handTuned: 0
+      - frame: barbarian_armed_idle_2_w0
+        shapes:
+        - center: {x: -0.22, y: -0.40677965}
+          size: {x: 0.5, y: 0.59322035}
+        - center: {x: -0.02, y: 0.37288135}
+          size: {x: 0.58, y: 0.59322035}
+        handTuned: 0
+      - frame: barbarian_armed_idle_2_w1
+        shapes:
+        - center: {x: -0.18, y: -0.40677965}
+          size: {x: 0.5, y: 0.59322035}
+        - center: {x: 0.02, y: 0.37288135}
+          size: {x: 0.54, y: 0.59322035}
+        handTuned: 0
+      - frame: barbarian_armed_idle_2_w2
+        shapes:
+        - center: {x: -0.12, y: -0.6101695}
+          size: {x: 0.52, y: 0.3898305}
+        - center: {x: -0.08, y: -0.016949153}
+          size: {x: 0.44, y: 0.47457626}
+        - center: {x: 0.1, y: 0.59322035}
+          size: {x: 0.54, y: 0.40677965}
+        handTuned: 0
+      - frame: barbarian_armed_idle_2_w3
+        shapes:
+        - center: {x: -0.14, y: -0.42372882}
+          size: {x: 0.5, y: 0.5762712}
+        - center: {x: 0.1, y: 0.33898306}
+          size: {x: 0.58, y: 0.59322035}
+        handTuned: 0
+      - frame: barbarian_armed_idle_2_w4
+        shapes:
+        - center: {x: -0.14, y: -0.42372882}
+          size: {x: 0.54, y: 0.5762712}
+        - center: {x: 0.08, y: 0.33898306}
+          size: {x: 0.56, y: 0.59322035}
+        handTuned: 0
+      - frame: barbarian_armed_idle_2_w5
+        shapes:
+        - center: {x: -0.06, y: -0.40677965}
+          size: {x: 0.5, y: 0.59322035}
+        - center: {x: 0.18, y: 0.37288135}
+          size: {x: 0.58, y: 0.59322035}
+        handTuned: 0
+      - frame: barbarian_armed_running_2_e0
+        shapes:
+        - center: {x: -0.24590164, y: -0.4728682}
+          size: {x: 0.55737704, y: 0.5271318}
+        - center: {x: 0.016393442, y: 0.20930232}
+          size: {x: 0.4918033, y: 0.5271318}
+        handTuned: 0
+      - frame: barbarian_armed_running_2_e1
+        shapes:
+        - center: {x: -0.26229507, y: -0.51937985}
+          size: {x: 0.3114754, y: 0.48062015}
+        - center: {x: 0.08196721, y: 0.14728682}
+          size: {x: 0.45901638, y: 0.49612403}
+        handTuned: 0
+      - frame: barbarian_armed_running_2_e2
+        shapes:
+        - center: {x: -0.13114753, y: -0.4883721}
+          size: {x: 0.3442623, y: 0.5116279}
+        - center: {x: 0.18032786, y: 0.17829457}
+          size: {x: 0.4918033, y: 0.5271318}
+        handTuned: 0
+      - frame: barbarian_armed_running_2_e3
+        shapes:
+        - center: {x: -0.14754099, y: -0.1627907}
+          size: {x: 0.52459013, y: 0.49612403}
+        - center: {x: 0.24590164, y: 0.48062015}
+          size: {x: 0.4918033, y: 0.51937985}
+        handTuned: 0
+      - frame: barbarian_armed_running_2_e4
+        shapes:
+        - center: {x: -0.06557377, y: -0.503876}
+          size: {x: 0.5409836, y: 0.49612403}
+        - center: {x: 0.14754099, y: 0.17829457}
+          size: {x: 0.4918033, y: 0.49612403}
+        handTuned: 0
+      - frame: barbarian_armed_running_2_e5
+        shapes:
+        - center: {x: -0.13114753, y: -0.53488374}
+          size: {x: 0.40983605, y: 0.4651163}
+        - center: {x: 0.22950819, y: 0.1007752}
+          size: {x: 0.47540984, y: 0.48062015}
+        handTuned: 0
+      - frame: barbarian_armed_running_2_e6
+        shapes:
+        - center: {x: -0.08196721, y: -0.4728682}
+          size: {x: 0.59016395, y: 0.49612403}
+        - center: {x: 0.26229507, y: 0.20930232}
+          size: {x: 0.5081967, y: 0.49612403}
+        handTuned: 0
+      - frame: barbarian_armed_running_2_e7
+        shapes:
+        - center: {x: -0.13114753, y: -0.2248062}
+          size: {x: 0.47540984, y: 0.5271318}
+        - center: {x: 0.24590164, y: 0.4651163}
+          size: {x: 0.4918033, y: 0.53488374}
+        handTuned: 0
+      - frame: barbarian_armed_running_2_w0
+        shapes:
+        - center: {x: -0.24590164, y: -0.4728682}
+          size: {x: 0.55737704, y: 0.5271318}
+        - center: {x: 0.016393442, y: 0.20930232}
+          size: {x: 0.4918033, y: 0.5271318}
+        handTuned: 0
+      - frame: barbarian_armed_running_2_w1
+        shapes:
+        - center: {x: -0.26229507, y: -0.51937985}
+          size: {x: 0.3114754, y: 0.48062015}
+        - center: {x: 0.08196721, y: 0.14728682}
+          size: {x: 0.45901638, y: 0.49612403}
+        handTuned: 0
+      - frame: barbarian_armed_running_2_w2
+        shapes:
+        - center: {x: -0.13114753, y: -0.4883721}
+          size: {x: 0.3442623, y: 0.5116279}
+        - center: {x: 0.18032786, y: 0.17829457}
+          size: {x: 0.4918033, y: 0.5271318}
+        handTuned: 0
+      - frame: barbarian_armed_running_2_w3
+        shapes:
+        - center: {x: -0.14754099, y: -0.1627907}
+          size: {x: 0.52459013, y: 0.49612403}
+        - center: {x: 0.24590164, y: 0.48062015}
+          size: {x: 0.4918033, y: 0.51937985}
+        handTuned: 0
+      - frame: barbarian_armed_running_2_w4
+        shapes:
+        - center: {x: -0.06557377, y: -0.503876}
+          size: {x: 0.5409836, y: 0.49612403}
+        - center: {x: 0.14754099, y: 0.17829457}
+          size: {x: 0.4918033, y: 0.49612403}
+        handTuned: 0
+      - frame: barbarian_armed_running_2_w5
+        shapes:
+        - center: {x: -0.13114753, y: -0.53488374}
+          size: {x: 0.40983605, y: 0.4651163}
+        - center: {x: 0.22950819, y: 0.1007752}
+          size: {x: 0.47540984, y: 0.48062015}
+        handTuned: 0
+      - frame: barbarian_armed_running_2_w6
+        shapes:
+        - center: {x: -0.08196721, y: -0.4728682}
+          size: {x: 0.59016395, y: 0.49612403}
+        - center: {x: 0.26229507, y: 0.20930232}
+          size: {x: 0.5081967, y: 0.49612403}
+        handTuned: 0
+      - frame: barbarian_armed_running_2_w7
+        shapes:
+        - center: {x: -0.13114753, y: -0.2248062}
+          size: {x: 0.47540984, y: 0.5271318}
+        - center: {x: 0.24590164, y: 0.4651163}
+          size: {x: 0.4918033, y: 0.53488374}
+        handTuned: 0
+      - frame: barbarian_armed_walking_2_e0
+        shapes:
+        - center: {x: -0.2, y: -0.60902256}
+          size: {x: 0.5, y: 0.39097744}
+        - center: {x: -0.23333333, y: -0.007518797}
+          size: {x: 0.33333334, y: 0.45112783}
+        - center: {x: 0, y: 0.59398496}
+          size: {x: 0.53333336, y: 0.39097744}
+        handTuned: 0
+      - frame: barbarian_armed_walking_2_e1
+        shapes:
+        - center: {x: -0.35, y: -0.62406015}
+          size: {x: 0.45, y: 0.37593985}
+        - center: {x: -0.36666667, y: -0.05263158}
+          size: {x: 0.33333334, y: 0.43609023}
+        - center: {x: -0.1, y: 0.5338346}
+          size: {x: 0.5, y: 0.39097744}
+        handTuned: 0
+      - frame: barbarian_armed_walking_2_e2
+        shapes:
+        - center: {x: -0.41666666, y: -0.62406015}
+          size: {x: 0.28333333, y: 0.37593985}
+        - center: {x: -0.28333333, y: -0.037593983}
+          size: {x: 0.35, y: 0.45112783}
+        - center: {x: -0.11666667, y: 0.56390977}
+          size: {x: 0.48333332, y: 0.39097744}
+        handTuned: 0
+      - frame: barbarian_armed_walking_2_e3
+        shapes:
+        - center: {x: -0.2, y: -0.60902256}
+          size: {x: 0.26666668, y: 0.39097744}
+        - center: {x: -0.016666668, y: -0.007518797}
+          size: {x: 0.35, y: 0.45112783}
+        - center: {x: 0.083333336, y: 0.60150373}
+          size: {x: 0.45, y: 0.39849624}
+        handTuned: 0
+      - frame: barbarian_armed_walking_2_e4
+        shapes:
+        - center: {x: 0.06666667, y: -0.62406015}
+          size: {x: 0.5, y: 0.37593985}
+        - center: {x: 0.1, y: -0.05263158}
+          size: {x: 0.33333334, y: 0.43609023}
+        - center: {x: 0.31666666, y: 0.5338346}
+          size: {x: 0.51666665, y: 0.39097744}
+        handTuned: 0
+      - frame: barbarian_armed_walking_2_e5
+        shapes:
+        - center: {x: -0.1, y: -0.42857143}
+          size: {x: 0.43333334, y: 0.5714286}
+        - center: {x: 0.23333333, y: 0.35338345}
+          size: {x: 0.46666667, y: 0.5714286}
+        handTuned: 0
+      - frame: barbarian_armed_walking_2_e6
+        shapes:
+        - center: {x: -0.18333334, y: -0.44360903}
+          size: {x: 0.41666666, y: 0.556391}
+        - center: {x: 0.15, y: 0.32330826}
+          size: {x: 0.48333332, y: 0.5714286}
+        handTuned: 0
+      - frame: barbarian_armed_walking_2_e7
+        shapes:
+        - center: {x: -0.26666668, y: -0.62406015}
+          size: {x: 0.36666667, y: 0.37593985}
+        - center: {x: -0.13333334, y: -0.037593983}
+          size: {x: 0.33333334, y: 0.45112783}
+        - center: {x: 0.11666667, y: 0.56390977}
+          size: {x: 0.48333332, y: 0.39097744}
+        handTuned: 0
+      - frame: barbarian_armed_walking_2_w0
+        shapes:
+        - center: {x: -0.2, y: -0.60902256}
+          size: {x: 0.5, y: 0.39097744}
+        - center: {x: -0.23333333, y: -0.007518797}
+          size: {x: 0.33333334, y: 0.45112783}
+        - center: {x: -0, y: 0.59398496}
+          size: {x: 0.53333336, y: 0.39097744}
+        handTuned: 0
+      - frame: barbarian_armed_walking_2_w1
+        shapes:
+        - center: {x: -0.35, y: -0.62406015}
+          size: {x: 0.45, y: 0.37593985}
+        - center: {x: -0.36666667, y: -0.05263158}
+          size: {x: 0.33333334, y: 0.43609023}
+        - center: {x: -0.1, y: 0.5338346}
+          size: {x: 0.5, y: 0.39097744}
+        handTuned: 0
+      - frame: barbarian_armed_walking_2_w2
+        shapes:
+        - center: {x: -0.41666666, y: -0.62406015}
+          size: {x: 0.28333333, y: 0.37593985}
+        - center: {x: -0.28333333, y: -0.037593983}
+          size: {x: 0.35, y: 0.45112783}
+        - center: {x: -0.11666667, y: 0.56390977}
+          size: {x: 0.48333332, y: 0.39097744}
+        handTuned: 0
+      - frame: barbarian_armed_walking_2_w3
+        shapes:
+        - center: {x: -0.2, y: -0.60902256}
+          size: {x: 0.26666668, y: 0.39097744}
+        - center: {x: -0.016666668, y: -0.007518797}
+          size: {x: 0.35, y: 0.45112783}
+        - center: {x: 0.083333336, y: 0.60150373}
+          size: {x: 0.45, y: 0.39849624}
+        handTuned: 0
+      - frame: barbarian_armed_walking_2_w4
+        shapes:
+        - center: {x: 0.06666667, y: -0.62406015}
+          size: {x: 0.5, y: 0.37593985}
+        - center: {x: 0.1, y: -0.05263158}
+          size: {x: 0.33333334, y: 0.43609023}
+        - center: {x: 0.31666666, y: 0.5338346}
+          size: {x: 0.51666665, y: 0.39097744}
+        handTuned: 0
+      - frame: barbarian_armed_walking_2_w5
+        shapes:
+        - center: {x: -0.1, y: -0.42857143}
+          size: {x: 0.43333334, y: 0.5714286}
+        - center: {x: 0.23333333, y: 0.35338345}
+          size: {x: 0.46666667, y: 0.5714286}
+        handTuned: 0
+      - frame: barbarian_armed_walking_2_w6
+        shapes:
+        - center: {x: -0.18333334, y: -0.44360903}
+          size: {x: 0.41666666, y: 0.556391}
+        - center: {x: 0.15, y: 0.32330826}
+          size: {x: 0.48333332, y: 0.5714286}
+        handTuned: 0
+      - frame: barbarian_armed_walking_2_w7
+        shapes:
+        - center: {x: -0.26666668, y: -0.62406015}
+          size: {x: 0.36666667, y: 0.37593985}
+        - center: {x: -0.13333334, y: -0.037593983}
+          size: {x: 0.33333334, y: 0.45112783}
+        - center: {x: 0.11666667, y: 0.56390977}
+          size: {x: 0.48333332, y: 0.39097744}
+        handTuned: 0
+      - frame: barbarian_spellcasting_1_e0
+        shapes:
+        - center: {x: 0.06666667, y: -0.63870966}
+          size: {x: 0.64761907, y: 0.28387097}
+        - center: {x: 0.2, y: -0.21290323}
+          size: {x: 0.43809524, y: 0.3483871}
+        - center: {x: 0.123809524, y: 0.22580644}
+          size: {x: 0.4, y: 0.29677418}
+        handTuned: 0
+      - frame: barbarian_spellcasting_1_e1
+        shapes:
+        - center: {x: 0.04761905, y: -0.5483871}
+          size: {x: 0.6666667, y: 0.37419355}
+        - center: {x: 0.2761905, y: -0.045161292}
+          size: {x: 0.43809524, y: 0.38709676}
+        handTuned: 0
+      - frame: barbarian_spellcasting_1_e2
+        shapes:
+        - center: {x: 0.00952381, y: -0.47096774}
+          size: {x: 0.62857145, y: 0.42580646}
+        - center: {x: 0.16190477, y: 0.09677419}
+          size: {x: 0.36190477, y: 0.4516129}
+        handTuned: 0
+      - frame: barbarian_spellcasting_1_e3
+        shapes:
+        - center: {x: 0.00952381, y: -0.5483871}
+          size: {x: 0.6666667, y: 0.37419355}
+        - center: {x: 0.123809524, y: 0.019354839}
+          size: {x: 0.4, y: 0.4516129}
+        - center: {x: 0.2, y: 0.60645163}
+          size: {x: 0.36190477, y: 0.3935484}
+        handTuned: 0
+      - frame: barbarian_spellcasting_1_e4
+        shapes:
+        - center: {x: 0.08571429, y: -0.6}
+          size: {x: 0.6666667, y: 0.37419355}
+        - center: {x: 0.14285715, y: -0.10967742}
+          size: {x: 0.3809524, y: 0.37419355}
+        handTuned: 0
+      - frame: barbarian_spellcasting_1_e5
+        shapes:
+        - center: {x: -0.61904764, y: -0.6516129}
+          size: {x: 0.3809524, y: 0.21935484}
+        - center: {x: -0.028571429, y: -0.5096774}
+          size: {x: 0.43809524, y: 0.33548388}
+        - center: {x: 0.5619048, y: -0.57419354}
+          size: {x: 0.3809524, y: 0.29677418}
+        handTuned: 0
+      - frame: barbarian_spellcasting_1_e6
+        shapes:
+        - center: {x: -0.028571429, y: -0.5612903}
+          size: {x: 0.62857145, y: 0.36129034}
+        - center: {x: 0.028571429, y: -0.08387097}
+          size: {x: 0.53333336, y: 0.37419355}
+        handTuned: 0
+      - frame: barbarian_spellcasting_1_e7
+        shapes:
+        - center: {x: 0.123809524, y: -0.48387095}
+          size: {x: 0.5904762, y: 0.43870968}
+        - center: {x: 0.21904762, y: 0.08387097}
+          size: {x: 0.41904762, y: 0.43870968}
+        handTuned: 0
+      - frame: barbarian_spellcasting_1_w0
+        shapes:
+        - center: {x: 0.104761906, y: -0.48387095}
+          size: {x: 0.5904762, y: 0.43870968}
+        - center: {x: 0.16190477, y: 0.08387097}
+          size: {x: 0.41904762, y: 0.43870968}
+        handTuned: 0
+      - frame: barbarian_spellcasting_1_w1
+        shapes:
+        - center: {x: 0.04761905, y: -0.5483871}
+          size: {x: 0.64761907, y: 0.37419355}
+        - center: {x: 0.25714287, y: -0.045161292}
+          size: {x: 0.43809524, y: 0.38709676}
+        handTuned: 0
+      - frame: barbarian_spellcasting_1_w2
+        shapes:
+        - center: {x: 0.00952381, y: -0.47096774}
+          size: {x: 0.60952383, y: 0.42580646}
+        - center: {x: 0.18095239, y: 0.09677419}
+          size: {x: 0.36190477, y: 0.4516129}
+        handTuned: 0
+      - frame: barbarian_spellcasting_1_w3
+        shapes:
+        - center: {x: 0.00952381, y: -0.5612903}
+          size: {x: 0.6857143, y: 0.38709676}
+        - center: {x: 0.123809524, y: 0.019354839}
+          size: {x: 0.41904762, y: 0.4516129}
+        - center: {x: 0.2, y: 0.60645163}
+          size: {x: 0.3809524, y: 0.3935484}
+        handTuned: 0
+      - frame: barbarian_spellcasting_1_w4
+        shapes:
+        - center: {x: 0.06666667, y: -0.6}
+          size: {x: 0.6666667, y: 0.37419355}
+        - center: {x: 0.14285715, y: -0.09677419}
+          size: {x: 0.4, y: 0.38709676}
+        handTuned: 0
+      - frame: barbarian_spellcasting_1_w5
+        shapes:
+        - center: {x: 0.54285717, y: -0.57419354}
+          size: {x: 0.3809524, y: 0.29677418}
+        - center: {x: -0.04761905, y: -0.4967742}
+          size: {x: 0.43809524, y: 0.32258064}
+        - center: {x: -0.62857145, y: -0.6516129}
+          size: {x: 0.37142858, y: 0.21935484}
+        handTuned: 0
+      - frame: barbarian_spellcasting_1_w6
+        shapes:
+        - center: {x: -0.028571429, y: -0.5612903}
+          size: {x: 0.60952383, y: 0.36129034}
+        - center: {x: 0.028571429, y: -0.08387097}
+          size: {x: 0.51428574, y: 0.37419355}
+        handTuned: 0
+      - frame: barbarian_spellcasting_1_w7
+        shapes:
+        - center: {x: 0.08571429, y: -0.63870966}
+          size: {x: 0.64761907, y: 0.28387097}
+        - center: {x: 0.21904762, y: -0.019354839}
+          size: {x: 0.43809524, y: 0.5419355}
+        handTuned: 0
+      - frame: barbarian_spellcasting_2_e0
+        shapes:
+        - center: {x: 0.060606062, y: -0.4074074}
+          size: {x: 0.45454547, y: 0.5925926}
+        - center: {x: 0.045454547, y: 0.4074074}
+          size: {x: 0.3181818, y: 0.5925926}
+        handTuned: 0
+      - frame: barbarian_spellcasting_2_e1
+        shapes:
+        - center: {x: -0.030303031, y: -0.4814815}
+          size: {x: 0.5151515, y: 0.5185185}
+        - center: {x: 0.16666667, y: 0.18518518}
+          size: {x: 0.34848484, y: 0.5185185}
+        handTuned: 0
+      - frame: barbarian_spellcasting_2_e2
+        shapes:
+        - center: {x: -0.015151516, y: -0.46296296}
+          size: {x: 0.5, y: 0.537037}
+        - center: {x: 0.25757575, y: 0.25925925}
+          size: {x: 0.34848484, y: 0.5555556}
+        handTuned: 0
+      - frame: barbarian_spellcasting_2_e3
+        shapes:
+        - center: {x: 0.045454547, y: -0.42592594}
+          size: {x: 0.530303, y: 0.5740741}
+        - center: {x: 0.27272728, y: 0.35185185}
+          size: {x: 0.36363637, y: 0.5740741}
+        handTuned: 0
+      - frame: barbarian_spellcasting_2_e4
+        shapes:
+        - center: {x: -0.18181819, y: -0.4074074}
+          size: {x: 0.57575756, y: 0.5555556}
+        - center: {x: 0.21212122, y: 0.35185185}
+          size: {x: 0.45454547, y: 0.5740741}
+        handTuned: 0
+      - frame: barbarian_spellcasting_2_e5
+        shapes:
+        - center: {x: -0.27272728, y: -0.44444445}
+          size: {x: 0.5151515, y: 0.5555556}
+        - center: {x: -0.060606062, y: 0.2962963}
+          size: {x: 0.42424244, y: 0.5555556}
+        handTuned: 0
+      - frame: barbarian_spellcasting_2_e6
+        shapes:
+        - center: {x: -0.21212122, y: -0.42592594}
+          size: {x: 0.4848485, y: 0.5740741}
+        - center: {x: 0, y: 0.35185185}
+          size: {x: 0.33333334, y: 0.5740741}
+        handTuned: 0
+      - frame: barbarian_spellcasting_2_e7
+        shapes:
+        - center: {x: 0, y: -0.5925926}
+          size: {x: 0.45454547, y: 0.4074074}
+        - center: {x: 0.07575758, y: 0.25925925}
+          size: {x: 0.34848484, y: 0.7407407}
+        handTuned: 0
+      - frame: barbarian_spellcasting_2_w0
+        shapes:
+        - center: {x: 0.060606062, y: -0.4074074}
+          size: {x: 0.45454547, y: 0.5925926}
+        - center: {x: 0.045454547, y: 0.4074074}
+          size: {x: 0.3181818, y: 0.5925926}
+        handTuned: 0
+      - frame: barbarian_spellcasting_2_w1
+        shapes:
+        - center: {x: -0.030303031, y: -0.4814815}
+          size: {x: 0.5151515, y: 0.5185185}
+        - center: {x: 0.16666667, y: 0.18518518}
+          size: {x: 0.34848484, y: 0.5185185}
+        handTuned: 0
+      - frame: barbarian_spellcasting_2_w2
+        shapes:
+        - center: {x: -0.015151516, y: -0.46296296}
+          size: {x: 0.5, y: 0.537037}
+        - center: {x: 0.25757575, y: 0.25925925}
+          size: {x: 0.34848484, y: 0.5555556}
+        handTuned: 0
+      - frame: barbarian_spellcasting_2_w3
+        shapes:
+        - center: {x: 0.045454547, y: -0.42592594}
+          size: {x: 0.530303, y: 0.5740741}
+        - center: {x: 0.27272728, y: 0.35185185}
+          size: {x: 0.36363637, y: 0.5740741}
+        handTuned: 0
+      - frame: barbarian_spellcasting_2_w4
+        shapes:
+        - center: {x: -0.18181819, y: -0.4074074}
+          size: {x: 0.57575756, y: 0.5555556}
+        - center: {x: 0.21212122, y: 0.35185185}
+          size: {x: 0.45454547, y: 0.5740741}
+        handTuned: 0
+      - frame: barbarian_spellcasting_2_w5
+        shapes:
+        - center: {x: -0.27272728, y: -0.44444445}
+          size: {x: 0.5151515, y: 0.5555556}
+        - center: {x: -0.060606062, y: 0.2962963}
+          size: {x: 0.42424244, y: 0.5555556}
+        handTuned: 0
+      - frame: barbarian_spellcasting_2_w6
+        shapes:
+        - center: {x: -0.21212122, y: -0.42592594}
+          size: {x: 0.4848485, y: 0.5740741}
+        - center: {x: -0, y: 0.35185185}
+          size: {x: 0.33333334, y: 0.5740741}
+        handTuned: 0
+      - frame: barbarian_spellcasting_2_w7
+        shapes:
+        - center: {x: -0, y: -0.5925926}
+          size: {x: 0.45454547, y: 0.4074074}
+        - center: {x: 0.07575758, y: 0.25925925}
+          size: {x: 0.34848484, y: 0.7407407}
+        handTuned: 0
+      - frame: barbarian_spellcasting_3_e0
+        shapes:
+        - center: {x: 0.06422018, y: -0.46478873}
+          size: {x: 0.5504587, y: 0.45070422}
+        - center: {x: 0.10091743, y: 0.12676056}
+          size: {x: 0.36697248, y: 0.47887325}
+        handTuned: 0
+      - frame: barbarian_spellcasting_3_e1
+        shapes:
+        - center: {x: 0.08256881, y: -0.47887325}
+          size: {x: 0.6055046, y: 0.43661973}
+        - center: {x: 0.19266056, y: 0.12676056}
+          size: {x: 0.42201835, y: 0.45070422}
+        handTuned: 0
+      - frame: barbarian_spellcasting_3_e2
+        shapes:
+        - center: {x: -0.06422018, y: -0.53521127}
+          size: {x: 0.64220184, y: 0.3802817}
+        - center: {x: 0.04587156, y: 0.028169014}
+          size: {x: 0.3853211, y: 0.46478873}
+        - center: {x: -0.027522936, y: 0.6056338}
+          size: {x: 0.3119266, y: 0.3943662}
+        handTuned: 0
+      - frame: barbarian_spellcasting_3_e3
+        shapes:
+        - center: {x: -0.027522936, y: -0.5492958}
+          size: {x: 0.6055046, y: 0.4225352}
+        - center: {x: 0.027522936, y: 0.028169014}
+          size: {x: 0.36697248, y: 0.43661973}
+        handTuned: 0
+      - frame: barbarian_spellcasting_3_e4
+        shapes:
+        - center: {x: -0.57798165, y: -0.53521127}
+          size: {x: 0.34862384, y: 0.32394367}
+        - center: {x: -0.04587156, y: -0.43661973}
+          size: {x: 0.40366971, y: 0.3943662}
+        - center: {x: 0.48623854, y: -0.57746476}
+          size: {x: 0.34862384, y: 0.28169015}
+        handTuned: 0
+      - frame: barbarian_spellcasting_3_e5
+        shapes:
+        - center: {x: -0.6513761, y: -0.52112675}
+          size: {x: 0.34862384, y: 0.33802816}
+        - center: {x: -0.10091743, y: -0.46478873}
+          size: {x: 0.42201835, y: 0.3943662}
+        - center: {x: 0.4678899, y: -0.57746476}
+          size: {x: 0.36697248, y: 0.30985916}
+        handTuned: 0
+      - frame: barbarian_spellcasting_3_e6
+        shapes:
+        - center: {x: -0.13761468, y: -0.29577464}
+          size: {x: 0.56880736, y: 0.6197183}
+        handTuned: 0
+      - frame: barbarian_spellcasting_3_e7
+        shapes:
+        - center: {x: 0.04587156, y: -0.46478873}
+          size: {x: 0.5321101, y: 0.45070422}
+        - center: {x: 0.08256881, y: 0.12676056}
+          size: {x: 0.3853211, y: 0.47887325}
+        handTuned: 0
+      - frame: barbarian_spellcasting_3_w0
+        shapes:
+        - center: {x: 0.04587156, y: -0.47887325}
+          size: {x: 0.5504587, y: 0.46478873}
+        - center: {x: 0.10091743, y: 0.12676056}
+          size: {x: 0.3853211, y: 0.47887325}
+        handTuned: 0
+      - frame: barbarian_spellcasting_3_w1
+        shapes:
+        - center: {x: 0.08256881, y: -0.47887325}
+          size: {x: 0.6238532, y: 0.43661973}
+        - center: {x: 0.19266056, y: 0.12676056}
+          size: {x: 0.40366971, y: 0.45070422}
+        handTuned: 0
+      - frame: barbarian_spellcasting_3_w2
+        shapes:
+        - center: {x: -0.06422018, y: -0.53521127}
+          size: {x: 0.6605505, y: 0.3802817}
+        - center: {x: 0.06422018, y: 0.028169014}
+          size: {x: 0.3853211, y: 0.46478873}
+        - center: {x: -0.027522936, y: 0.6056338}
+          size: {x: 0.29357797, y: 0.3943662}
+        handTuned: 0
+      - frame: barbarian_spellcasting_3_w3
+        shapes:
+        - center: {x: -0.027522936, y: -0.5492958}
+          size: {x: 0.58715594, y: 0.4225352}
+        - center: {x: 0.04587156, y: 0.028169014}
+          size: {x: 0.36697248, y: 0.43661973}
+        handTuned: 0
+      - frame: barbarian_spellcasting_3_w4
+        shapes:
+        - center: {x: -0.06422018, y: -0.6760563}
+          size: {x: 0.6238532, y: 0.32394367}
+        - center: {x: -0.0091743115, y: -0.23943663}
+          size: {x: 0.3853211, y: 0.33802816}
+        handTuned: 0
+      - frame: barbarian_spellcasting_3_w5
+        shapes:
+        - center: {x: 0.4678899, y: -0.5633803}
+          size: {x: 0.34862384, y: 0.29577464}
+        - center: {x: -0.33027524, y: -0.47887325}
+          size: {x: 0.66972476, y: 0.3802817}
+        handTuned: 0
+      - frame: barbarian_spellcasting_3_w6
+        shapes:
+        - center: {x: -0.119266056, y: -0.28169015}
+          size: {x: 0.56880736, y: 0.63380283}
+        handTuned: 0
+      - frame: barbarian_spellcasting_3_w7
+        shapes:
+        - center: {x: 0.04587156, y: -0.47887325}
+          size: {x: 0.5504587, y: 0.46478873}
+        - center: {x: 0.06422018, y: 0.12676056}
+          size: {x: 0.3853211, y: 0.47887325}
+        handTuned: 0
+      - frame: barbarian_spellcasting_4_e0
+        shapes:
+        - center: {x: 0, y: -0.5882353}
+          size: {x: 0.5555556, y: 0.3882353}
+        - center: {x: 0.074074075, y: -0.08235294}
+          size: {x: 0.4074074, y: 0.4}
+        handTuned: 0
+      - frame: barbarian_spellcasting_4_e1
+        shapes:
+        - center: {x: 0, y: -0.34117648}
+          size: {x: 0.5925926, y: 0.65882355}
+        handTuned: 0
+      - frame: barbarian_spellcasting_4_e2
+        shapes:
+        - center: {x: -0.018518519, y: -0.67058825}
+          size: {x: 0.5740741, y: 0.32941177}
+        - center: {x: -0.09259259, y: -0.1882353}
+          size: {x: 0.3888889, y: 0.3882353}
+        - center: {x: -0.09259259, y: 0.29411766}
+          size: {x: 0.6111111, y: 0.32941177}
+        handTuned: 0
+      - frame: barbarian_spellcasting_4_e3
+        shapes:
+        - center: {x: 0.037037037, y: -0.65882355}
+          size: {x: 0.5555556, y: 0.34117648}
+        - center: {x: 0.074074075, y: -0.14117648}
+          size: {x: 0.4074074, y: 0.4117647}
+        - center: {x: 0.14814815, y: 0.3764706}
+          size: {x: 0.5555556, y: 0.34117648}
+        handTuned: 0
+      - frame: barbarian_spellcasting_4_e4
+        shapes:
+        - center: {x: 0.074074075, y: -0.6}
+          size: {x: 0.5925926, y: 0.4}
+        - center: {x: 0.074074075, y: 0.25882354}
+          size: {x: 0.44444445, y: 0.7411765}
+        handTuned: 0
+      - frame: barbarian_spellcasting_4_e5
+        shapes:
+        - center: {x: 0, y: -0.67058825}
+          size: {x: 0.5925926, y: 0.32941177}
+        - center: {x: 0.018518519, y: -0.1764706}
+          size: {x: 0.35185185, y: 0.4}
+        - center: {x: 0.09259259, y: 0.32941177}
+          size: {x: 0.6481481, y: 0.34117648}
+        handTuned: 0
+      - frame: barbarian_spellcasting_4_e6
+        shapes:
+        - center: {x: -0.12962963, y: -0.62352943}
+          size: {x: 0.5740741, y: 0.3764706}
+        - center: {x: 0.037037037, y: -0.105882354}
+          size: {x: 0.5185185, y: 0.3764706}
+        handTuned: 0
+      - frame: barbarian_spellcasting_4_e7
+        shapes:
+        - center: {x: -0.018518519, y: -0.6}
+          size: {x: 0.5740741, y: 0.4}
+        - center: {x: 0.055555556, y: -0.08235294}
+          size: {x: 0.3888889, y: 0.4}
+        handTuned: 0
+      - frame: barbarian_spellcasting_4_w0
+        shapes:
+        - center: {x: -0, y: -0.5882353}
+          size: {x: 0.5555556, y: 0.3882353}
+        - center: {x: 0.074074075, y: -0.08235294}
+          size: {x: 0.4074074, y: 0.4}
+        handTuned: 0
+      - frame: barbarian_spellcasting_4_w1
+        shapes:
+        - center: {x: -0, y: -0.34117648}
+          size: {x: 0.5925926, y: 0.65882355}
+        handTuned: 0
+      - frame: barbarian_spellcasting_4_w2
+        shapes:
+        - center: {x: -0.018518519, y: -0.67058825}
+          size: {x: 0.5740741, y: 0.32941177}
+        - center: {x: -0.09259259, y: -0.1882353}
+          size: {x: 0.3888889, y: 0.3882353}
+        - center: {x: -0.09259259, y: 0.29411766}
+          size: {x: 0.6111111, y: 0.32941177}
+        handTuned: 0
+      - frame: barbarian_spellcasting_4_w3
+        shapes:
+        - center: {x: 0.037037037, y: -0.65882355}
+          size: {x: 0.5555556, y: 0.34117648}
+        - center: {x: 0.074074075, y: -0.14117648}
+          size: {x: 0.4074074, y: 0.4117647}
+        - center: {x: 0.14814815, y: 0.3764706}
+          size: {x: 0.5555556, y: 0.34117648}
+        handTuned: 0
+      - frame: barbarian_spellcasting_4_w4
+        shapes:
+        - center: {x: 0.074074075, y: -0.6}
+          size: {x: 0.5925926, y: 0.4}
+        - center: {x: 0.074074075, y: 0.25882354}
+          size: {x: 0.44444445, y: 0.7411765}
+        handTuned: 0
+      - frame: barbarian_spellcasting_4_w5
+        shapes:
+        - center: {x: -0, y: -0.67058825}
+          size: {x: 0.5925926, y: 0.32941177}
+        - center: {x: 0.018518519, y: -0.1764706}
+          size: {x: 0.35185185, y: 0.4}
+        - center: {x: 0.09259259, y: 0.32941177}
+          size: {x: 0.6481481, y: 0.34117648}
+        handTuned: 0
+      - frame: barbarian_spellcasting_4_w6
+        shapes:
+        - center: {x: -0.12962963, y: -0.62352943}
+          size: {x: 0.5740741, y: 0.3764706}
+        - center: {x: 0.037037037, y: -0.105882354}
+          size: {x: 0.5185185, y: 0.3764706}
+        handTuned: 0
+      - frame: barbarian_spellcasting_4_w7
+        shapes:
+        - center: {x: -0.018518519, y: -0.6}
+          size: {x: 0.5740741, y: 0.4}
+        - center: {x: 0.055555556, y: -0.08235294}
+          size: {x: 0.3888889, y: 0.4}
+        handTuned: 0
+      - frame: barbarian_spellcasting_5_e0
+        shapes:
+        - center: {x: 0.09859155, y: -0.6333333}
+          size: {x: 0.45070422, y: 0.36666667}
+        - center: {x: 0.15492958, y: 0.15}
+          size: {x: 0.30985916, y: 0.68333334}
+        handTuned: 0
+      - frame: barbarian_spellcasting_5_e1
+        shapes:
+        - center: {x: 0.08450704, y: -0.45}
+          size: {x: 0.49295774, y: 0.55}
+        - center: {x: 0.18309858, y: 0.26666668}
+          size: {x: 0.33802816, y: 0.56666666}
+        handTuned: 0
+      - frame: barbarian_spellcasting_5_e2
+        shapes:
+        - center: {x: -0.014084507, y: -0.6}
+          size: {x: 0.47887325, y: 0.4}
+        - center: {x: 0.35211268, y: 0}
+          size: {x: 0.3943662, y: 0.46666667}
+        - center: {x: 0.18309858, y: 0.6}
+          size: {x: 0.28169015, y: 0.4}
+        handTuned: 0
+      - frame: barbarian_spellcasting_5_e3
+        shapes:
+        - center: {x: 0.08450704, y: -0.4}
+          size: {x: 0.46478873, y: 0.6}
+        - center: {x: 0.15492958, y: 0.38333333}
+          size: {x: 0.36619717, y: 0.5833333}
+        handTuned: 0
+      - frame: barbarian_spellcasting_5_e4
+        shapes:
+        - center: {x: -0.18309858, y: -0.46666667}
+          size: {x: 0.5070422, y: 0.53333336}
+        - center: {x: 0.08450704, y: 0.26666668}
+          size: {x: 0.4084507, y: 0.53333336}
+        handTuned: 0
+      - frame: barbarian_spellcasting_5_e5
+        shapes:
+        - center: {x: -0.32394367, y: -0.48333332}
+          size: {x: 0.47887325, y: 0.51666665}
+        - center: {x: -0.09859155, y: 0.23333333}
+          size: {x: 0.3943662, y: 0.53333336}
+        handTuned: 0
+      - frame: barbarian_spellcasting_5_e6
+        shapes:
+        - center: {x: -0.15492958, y: -0.45}
+          size: {x: 0.45070422, y: 0.55}
+        - center: {x: -0.014084507, y: 0.26666668}
+          size: {x: 0.30985916, y: 0.56666666}
+        handTuned: 0
+      - frame: barbarian_spellcasting_5_e7
+        shapes:
+        - center: {x: 0.07042254, y: -0.6}
+          size: {x: 0.4225352, y: 0.36666667}
+        - center: {x: 0.16901408, y: 0.16666667}
+          size: {x: 0.29577464, y: 0.6666667}
+        handTuned: 0
+      - frame: barbarian_spellcasting_5_w0
+        shapes:
+        - center: {x: 0.09859155, y: -0.6333333}
+          size: {x: 0.45070422, y: 0.36666667}
+        - center: {x: 0.15492958, y: 0.15}
+          size: {x: 0.30985916, y: 0.68333334}
+        handTuned: 0
+      - frame: barbarian_spellcasting_5_w1
+        shapes:
+        - center: {x: 0.08450704, y: -0.45}
+          size: {x: 0.49295774, y: 0.55}
+        - center: {x: 0.18309858, y: 0.26666668}
+          size: {x: 0.33802816, y: 0.56666666}
+        handTuned: 0
+      - frame: barbarian_spellcasting_5_w2
+        shapes:
+        - center: {x: -0.014084507, y: -0.6}
+          size: {x: 0.47887325, y: 0.4}
+        - center: {x: 0.35211268, y: 0}
+          size: {x: 0.3943662, y: 0.46666667}
+        - center: {x: 0.18309858, y: 0.6}
+          size: {x: 0.28169015, y: 0.4}
+        handTuned: 0
+      - frame: barbarian_spellcasting_5_w3
+        shapes:
+        - center: {x: 0.08450704, y: -0.4}
+          size: {x: 0.46478873, y: 0.6}
+        - center: {x: 0.15492958, y: 0.38333333}
+          size: {x: 0.36619717, y: 0.5833333}
+        handTuned: 0
+      - frame: barbarian_spellcasting_5_w4
+        shapes:
+        - center: {x: -0.18309858, y: -0.46666667}
+          size: {x: 0.5070422, y: 0.53333336}
+        - center: {x: 0.08450704, y: 0.26666668}
+          size: {x: 0.4084507, y: 0.53333336}
+        handTuned: 0
+      - frame: barbarian_spellcasting_5_w5
+        shapes:
+        - center: {x: -0.32394367, y: -0.48333332}
+          size: {x: 0.47887325, y: 0.51666665}
+        - center: {x: -0.09859155, y: 0.23333333}
+          size: {x: 0.3943662, y: 0.53333336}
+        handTuned: 0
+      - frame: barbarian_spellcasting_5_w6
+        shapes:
+        - center: {x: -0.15492958, y: -0.45}
+          size: {x: 0.45070422, y: 0.55}
+        - center: {x: -0.014084507, y: 0.26666668}
+          size: {x: 0.30985916, y: 0.56666666}
+        handTuned: 0
+      - frame: barbarian_spellcasting_5_w7
+        shapes:
+        - center: {x: 0.07042254, y: -0.6}
+          size: {x: 0.4225352, y: 0.36666667}
+        - center: {x: 0.16901408, y: 0.16666667}
+          size: {x: 0.29577464, y: 0.6666667}
+        handTuned: 0
     scaleConfig:
       scaleIdle: 0
       tint: {r: 0, g: 0, b: 0, a: 1}

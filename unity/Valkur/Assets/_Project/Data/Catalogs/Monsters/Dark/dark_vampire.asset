@@ -1145,10 +1145,1379 @@ MonoBehaviour:
     statePacing:
     - state: idle
       animationSpeedMultiplier: 0.1
+    walkReferenceSpeed: 0
+    runReferenceSpeed: 0
     loadouts: []
     castMuzzle: {x: 0, y: 0}
     castMuzzleFrames: []
     castMuzzlePoints: []
+    collision:
+      footprintSize: {x: 0.825, y: 0.37124997}
+      footprintOffset: {x: 0, y: 0}
+      footprintHandTuned: 0
+      hurtScale: 1
+      hurtShapes: []
+      hurtShapeFrames:
+      - frame: vampire_die_e0
+        shapes:
+        - center: {x: -0.010309278, y: -0.38666666}
+          size: {x: 0.5498282, y: 0.58666664}
+        - center: {x: -0.0790378, y: 0.41333333}
+          size: {x: 0.42611682, y: 0.58666664}
+        handTuned: 0
+      - frame: vampire_die_e1
+        shapes:
+        - center: {x: -0.03780069, y: -0.17333333}
+          size: {x: 0.49484536, y: 0.7733333}
+        handTuned: 0
+      - frame: vampire_die_e2
+        shapes:
+        - center: {x: -0.03780069, y: -0.6}
+          size: {x: 0.5223368, y: 0.4}
+        - center: {x: -0.024054984, y: -0.053333335}
+          size: {x: 0.42611682, y: 0.41333333}
+        handTuned: 0
+      - frame: vampire_die_e3
+        shapes:
+        - center: {x: -0.58762884, y: -0.6933333}
+          size: {x: 0.38487974, y: 0.22666667}
+        - center: {x: 0.22336769, y: -0.52}
+          size: {x: 0.7010309, y: 0.37333333}
+        handTuned: 0
+      - frame: vampire_die_e4
+        shapes:
+        - center: {x: -0.5738832, y: -0.76}
+          size: {x: 0.34364262, y: 0.18666667}
+        - center: {x: 0.209622, y: -0.6}
+          size: {x: 0.6597938, y: 0.32}
+        handTuned: 0
+      - frame: vampire_die_e5
+        shapes:
+        - center: {x: -0.62886596, y: -0.7733333}
+          size: {x: 0.28865978, y: 0.12}
+        - center: {x: -0.20274915, y: -0.64}
+          size: {x: 0.35738832, y: 0.22666667}
+        - center: {x: 0.2783505, y: -0.6}
+          size: {x: 0.34364262, y: 0.26666668}
+        - center: {x: 0.7010309, y: -0.6666667}
+          size: {x: 0.29896906, y: 0.22666667}
+        handTuned: 0
+      - frame: vampire_die_e6
+        shapes:
+        - center: {x: -0.5463917, y: -0.70666665}
+          size: {x: 0.42611682, y: 0.13333334}
+        - center: {x: 0.18213059, y: -0.68}
+          size: {x: 0.46735394, y: 0.21333334}
+        - center: {x: 0.7182131, y: -0.73333335}
+          size: {x: 0.23367697, y: 0.16}
+        handTuned: 0
+      - frame: vampire_die_e7
+        shapes:
+        - center: {x: -0.76632303, y: -0.73333335}
+          size: {x: 0.23367697, y: 0.13333334}
+        - center: {x: -0.4226804, y: -0.70666665}
+          size: {x: 0.2749141, y: 0.16}
+        - center: {x: 0.30584192, y: -0.72}
+          size: {x: 0.6185567, y: 0.2}
+        handTuned: 0
+      - frame: vampire_die_w0
+        shapes:
+        - center: {x: -0.01718213, y: -0.38666666}
+          size: {x: 0.5498282, y: 0.58666664}
+        - center: {x: -0.072164945, y: 0.41333333}
+          size: {x: 0.43986255, y: 0.58666664}
+        handTuned: 0
+      - frame: vampire_die_w1
+        shapes:
+        - center: {x: -0.030927835, y: -0.17333333}
+          size: {x: 0.50859106, y: 0.7733333}
+        handTuned: 0
+      - frame: vampire_die_w2
+        shapes:
+        - center: {x: -0.01718213, y: -0.6}
+          size: {x: 0.5223368, y: 0.4}
+        - center: {x: -0.01718213, y: -0.053333335}
+          size: {x: 0.41237113, y: 0.41333333}
+        handTuned: 0
+      - frame: vampire_die_w3
+        shapes:
+        - center: {x: 0.53264606, y: -0.49333334}
+          size: {x: 0.38487974, y: 0.34666666}
+        - center: {x: -0.030927835, y: -0.5466667}
+          size: {x: 0.45360824, y: 0.34666666}
+        - center: {x: -0.59450173, y: -0.6933333}
+          size: {x: 0.38487974, y: 0.22666667}
+        handTuned: 0
+      - frame: vampire_die_w4
+        shapes:
+        - center: {x: 0.21649484, y: -0.6}
+          size: {x: 0.6460481, y: 0.32}
+        - center: {x: -0.5670103, y: -0.76}
+          size: {x: 0.35738832, y: 0.18666667}
+        handTuned: 0
+      - frame: vampire_die_w5
+        shapes:
+        - center: {x: 0.7113402, y: -0.6666667}
+          size: {x: 0.28865978, y: 0.22666667}
+        - center: {x: 0.28522336, y: -0.6}
+          size: {x: 0.35738832, y: 0.26666668}
+        - center: {x: -0.19587629, y: -0.64}
+          size: {x: 0.34364262, y: 0.22666667}
+        - center: {x: -0.6219931, y: -0.7733333}
+          size: {x: 0.3024055, y: 0.12}
+        handTuned: 0
+      - frame: vampire_die_w6
+        shapes:
+        - center: {x: 0.7113402, y: -0.73333335}
+          size: {x: 0.23367697, y: 0.16}
+        - center: {x: 0.17525773, y: -0.68}
+          size: {x: 0.46735394, y: 0.21333334}
+        - center: {x: -0.5532646, y: -0.70666665}
+          size: {x: 0.42611682, y: 0.13333334}
+        handTuned: 0
+      - frame: vampire_die_w7
+        shapes:
+        - center: {x: 0.32646048, y: -0.73333335}
+          size: {x: 0.6185567, y: 0.21333334}
+        - center: {x: -0.40206185, y: -0.70666665}
+          size: {x: 0.2749141, y: 0.16}
+        - center: {x: -0.75601375, y: -0.73333335}
+          size: {x: 0.24398625, y: 0.13333334}
+        handTuned: 0
+      - frame: vampire_hit_reaction_e0
+        shapes:
+        - center: {x: 0.15068494, y: -0.6015625}
+          size: {x: 0.5753425, y: 0.3984375}
+        - center: {x: 0.1369863, y: -0.00390625}
+          size: {x: 0.42465752, y: 0.48046875}
+        - center: {x: 0.21917808, y: 0.59765625}
+          size: {x: 0.34246576, y: 0.40234375}
+        handTuned: 0
+      - frame: vampire_hit_reaction_e1
+        shapes:
+        - center: {x: 0.08219178, y: -0.4375}
+          size: {x: 0.6438356, y: 0.5625}
+        - center: {x: 0.10958904, y: 0.3125}
+          size: {x: 0.47945204, y: 0.5625}
+        handTuned: 0
+      - frame: vampire_hit_reaction_e2
+        shapes:
+        - center: {x: -0.15068494, y: -0.5078125}
+          size: {x: 0.60273975, y: 0.4921875}
+        - center: {x: 0.20547946, y: 0.1484375}
+          size: {x: 0.5205479, y: 0.4921875}
+        handTuned: 0
+      - frame: vampire_hit_reaction_e3
+        shapes:
+        - center: {x: -0.05479452, y: -0.4609375}
+          size: {x: 0.56164384, y: 0.5390625}
+        - center: {x: 0.04109589, y: 0.2421875}
+          size: {x: 0.46575344, y: 0.5390625}
+        handTuned: 0
+      - frame: vampire_hit_reaction_w0
+        shapes:
+        - center: {x: 0.15068494, y: -0.6015625}
+          size: {x: 0.5753425, y: 0.3984375}
+        - center: {x: 0.1369863, y: -0.00390625}
+          size: {x: 0.42465752, y: 0.48046875}
+        - center: {x: 0.21917808, y: 0.59765625}
+          size: {x: 0.34246576, y: 0.40234375}
+        handTuned: 0
+      - frame: vampire_hit_reaction_w1
+        shapes:
+        - center: {x: 0.08219178, y: -0.4375}
+          size: {x: 0.6438356, y: 0.5625}
+        - center: {x: 0.10958904, y: 0.3125}
+          size: {x: 0.47945204, y: 0.5625}
+        handTuned: 0
+      - frame: vampire_hit_reaction_w2
+        shapes:
+        - center: {x: -0.15068494, y: -0.5078125}
+          size: {x: 0.60273975, y: 0.4921875}
+        - center: {x: 0.20547946, y: 0.1484375}
+          size: {x: 0.5205479, y: 0.4921875}
+        handTuned: 0
+      - frame: vampire_hit_reaction_w3
+        shapes:
+        - center: {x: -0.05479452, y: -0.4609375}
+          size: {x: 0.56164384, y: 0.5390625}
+        - center: {x: 0.04109589, y: 0.2421875}
+          size: {x: 0.46575344, y: 0.5390625}
+        handTuned: 0
+      - frame: vampire_idle_e0
+        shapes:
+        - center: {x: -0.057142857, y: -0.5945946}
+          size: {x: 0.6857143, y: 0.4054054}
+        - center: {x: -0.035714287, y: 0.0077220076}
+          size: {x: 0.53571427, y: 0.47490346}
+        - center: {x: 0.007142857, y: 0.6023166}
+          size: {x: 0.45, y: 0.3976834}
+        handTuned: 0
+      - frame: vampire_idle_e1
+        shapes:
+        - center: {x: 0.071428575, y: -0.6061776}
+          size: {x: 0.64285713, y: 0.3938224}
+        - center: {x: 0.05, y: 0.23938224}
+          size: {x: 0.53571427, y: 0.7297297}
+        handTuned: 0
+      - frame: vampire_idle_e2
+        shapes:
+        - center: {x: -0.035714287, y: -0.6061776}
+          size: {x: 0.62142855, y: 0.3938224}
+        - center: {x: 0.071428575, y: -0.027027028}
+          size: {x: 0.55714285, y: 0.46332046}
+        - center: {x: 0.2, y: 0.5637066}
+          size: {x: 0.47142857, y: 0.4054054}
+        handTuned: 0
+      - frame: vampire_idle_e3
+        shapes:
+        - center: {x: 0.071428575, y: -0.6061776}
+          size: {x: 0.6857143, y: 0.3938224}
+        - center: {x: 0.071428575, y: -0.015444015}
+          size: {x: 0.55714285, y: 0.47490346}
+        - center: {x: 0.071428575, y: 0.5868726}
+          size: {x: 0.47142857, y: 0.4054054}
+        handTuned: 0
+      - frame: vampire_idle_e4
+        shapes:
+        - center: {x: -0.014285714, y: -0.6177606}
+          size: {x: 0.6857143, y: 0.38223937}
+        - center: {x: -0.035714287, y: -0.05019305}
+          size: {x: 0.57857144, y: 0.46332046}
+        - center: {x: 0.028571429, y: 0.52895755}
+          size: {x: 0.47142857, y: 0.3938224}
+        handTuned: 0
+      - frame: vampire_idle_e5
+        shapes:
+        - center: {x: 0.05, y: -0.27027026}
+          size: {x: 0.57857144, y: 0.7297297}
+        - center: {x: 0.092857145, y: 0.5868726}
+          size: {x: 0.45, y: 0.4054054}
+        handTuned: 0
+      - frame: vampire_idle_w0
+        shapes:
+        - center: {x: -0.071428575, y: -0.5945946}
+          size: {x: 0.6857143, y: 0.4054054}
+        - center: {x: -0.05, y: 0.0077220076}
+          size: {x: 0.53571427, y: 0.47490346}
+        - center: {x: 0.014285714, y: 0.6023166}
+          size: {x: 0.42857143, y: 0.3976834}
+        handTuned: 0
+      - frame: vampire_idle_w1
+        shapes:
+        - center: {x: 0.057142857, y: -0.6061776}
+          size: {x: 0.64285713, y: 0.3938224}
+        - center: {x: 0.07857143, y: 0.23938224}
+          size: {x: 0.53571427, y: 0.7297297}
+        handTuned: 0
+      - frame: vampire_idle_w2
+        shapes:
+        - center: {x: -0.05, y: -0.6061776}
+          size: {x: 0.62142855, y: 0.3938224}
+        - center: {x: 0.057142857, y: -0.027027028}
+          size: {x: 0.55714285, y: 0.46332046}
+        - center: {x: 0.18571429, y: 0.5637066}
+          size: {x: 0.47142857, y: 0.4054054}
+        handTuned: 0
+      - frame: vampire_idle_w3
+        shapes:
+        - center: {x: 0.057142857, y: -0.6061776}
+          size: {x: 0.6857143, y: 0.3938224}
+        - center: {x: 0.07857143, y: -0.015444015}
+          size: {x: 0.57857144, y: 0.47490346}
+        - center: {x: 0.057142857, y: 0.5868726}
+          size: {x: 0.47142857, y: 0.4054054}
+        handTuned: 0
+      - frame: vampire_idle_w4
+        shapes:
+        - center: {x: -0.007142857, y: -0.6177606}
+          size: {x: 0.70714283, y: 0.38223937}
+        - center: {x: -0.05, y: -0.05019305}
+          size: {x: 0.57857144, y: 0.46332046}
+        - center: {x: 0.057142857, y: 0.52895755}
+          size: {x: 0.47142857, y: 0.3938224}
+        handTuned: 0
+      - frame: vampire_idle_w5
+        shapes:
+        - center: {x: 0.035714287, y: -0.27027026}
+          size: {x: 0.57857144, y: 0.7297297}
+        - center: {x: 0.1, y: 0.5868726}
+          size: {x: 0.42857143, y: 0.4054054}
+        handTuned: 0
+      - frame: vampire_kick_e0
+        shapes:
+        - center: {x: -0.15625, y: -0.27906978}
+          size: {x: 0.34375, y: 0.7209302}
+        - center: {x: -0.020833334, y: 0.5697674}
+          size: {x: 0.27083334, y: 0.40697673}
+        handTuned: 0
+      - frame: vampire_kick_e1
+        shapes:
+        - center: {x: -0.0625, y: 0}
+          size: {x: 0.41666666, y: 1}
+        handTuned: 0
+      - frame: vampire_kick_e2
+        shapes:
+        - center: {x: 0.010416667, y: -0.39534885}
+          size: {x: 0.42708334, y: 0.60465115}
+        - center: {x: 0.114583336, y: 0.39534885}
+          size: {x: 0.38541666, y: 0.60465115}
+        handTuned: 0
+      - frame: vampire_kick_e3
+        shapes:
+        - center: {x: 0, y: -0.41860464}
+          size: {x: 0.375, y: 0.5813953}
+        - center: {x: 0.104166664, y: 0.38372093}
+          size: {x: 0.5208333, y: 0.59302324}
+        handTuned: 0
+      - frame: vampire_kick_e4
+        shapes:
+        - center: {x: 0.0625, y: -0.41860464}
+          size: {x: 0.5, y: 0.5813953}
+        - center: {x: 0, y: 0.38372093}
+          size: {x: 0.41666666, y: 0.59302324}
+        handTuned: 0
+      - frame: vampire_kick_e5
+        shapes:
+        - center: {x: -0.083333336, y: -0.44186047}
+          size: {x: 0.45833334, y: 0.55813956}
+        - center: {x: -0.19791667, y: 0.3139535}
+          size: {x: 0.40625, y: 0.5697674}
+        handTuned: 0
+      - frame: vampire_kick_e6
+        shapes:
+        - center: {x: -0.03125, y: -0.41860464}
+          size: {x: 0.46875, y: 0.5813953}
+        - center: {x: -0.104166664, y: 0.37209302}
+          size: {x: 0.41666666, y: 0.5813953}
+        handTuned: 0
+      - frame: vampire_kick_e7
+        shapes:
+        - center: {x: -0.114583336, y: -0.43023255}
+          size: {x: 0.32291666, y: 0.5697674}
+        - center: {x: -0.052083332, y: 0.3372093}
+          size: {x: 0.42708334, y: 0.5697674}
+        handTuned: 0
+      - frame: vampire_kick_e8
+        shapes:
+        - center: {x: -0.083333336, y: -0.43023255}
+          size: {x: 0.5208333, y: 0.5697674}
+        - center: {x: -0.114583336, y: 0.3372093}
+          size: {x: 0.44791666, y: 0.5697674}
+        handTuned: 0
+      - frame: vampire_kick_e9
+        shapes:
+        - center: {x: -0.15625, y: -0.43023255}
+          size: {x: 0.42708334, y: 0.5697674}
+        - center: {x: -0.21875, y: 0.3372093}
+          size: {x: 0.34375, y: 0.5697674}
+        handTuned: 0
+      - frame: vampire_kick_w0
+        shapes:
+        - center: {x: -0.15625, y: -0.27906978}
+          size: {x: 0.34375, y: 0.7209302}
+        - center: {x: -0.020833334, y: 0.5697674}
+          size: {x: 0.27083334, y: 0.40697673}
+        handTuned: 0
+      - frame: vampire_kick_w1
+        shapes:
+        - center: {x: -0.0625, y: 0}
+          size: {x: 0.41666666, y: 1}
+        handTuned: 0
+      - frame: vampire_kick_w2
+        shapes:
+        - center: {x: 0.010416667, y: -0.39534885}
+          size: {x: 0.42708334, y: 0.60465115}
+        - center: {x: 0.114583336, y: 0.39534885}
+          size: {x: 0.38541666, y: 0.60465115}
+        handTuned: 0
+      - frame: vampire_kick_w3
+        shapes:
+        - center: {x: -0, y: -0.41860464}
+          size: {x: 0.375, y: 0.5813953}
+        - center: {x: 0.104166664, y: 0.38372093}
+          size: {x: 0.5208333, y: 0.59302324}
+        handTuned: 0
+      - frame: vampire_kick_w4
+        shapes:
+        - center: {x: 0.0625, y: -0.41860464}
+          size: {x: 0.5, y: 0.5813953}
+        - center: {x: -0, y: 0.38372093}
+          size: {x: 0.41666666, y: 0.59302324}
+        handTuned: 0
+      - frame: vampire_kick_w5
+        shapes:
+        - center: {x: -0.083333336, y: -0.44186047}
+          size: {x: 0.45833334, y: 0.55813956}
+        - center: {x: -0.19791667, y: 0.3139535}
+          size: {x: 0.40625, y: 0.5697674}
+        handTuned: 0
+      - frame: vampire_kick_w6
+        shapes:
+        - center: {x: -0.03125, y: -0.41860464}
+          size: {x: 0.46875, y: 0.5813953}
+        - center: {x: -0.104166664, y: 0.37209302}
+          size: {x: 0.41666666, y: 0.5813953}
+        handTuned: 0
+      - frame: vampire_kick_w7
+        shapes:
+        - center: {x: -0.114583336, y: -0.43023255}
+          size: {x: 0.32291666, y: 0.5697674}
+        - center: {x: -0.052083332, y: 0.3372093}
+          size: {x: 0.42708334, y: 0.5697674}
+        handTuned: 0
+      - frame: vampire_kick_w8
+        shapes:
+        - center: {x: -0.083333336, y: -0.43023255}
+          size: {x: 0.5208333, y: 0.5697674}
+        - center: {x: -0.114583336, y: 0.3372093}
+          size: {x: 0.44791666, y: 0.5697674}
+        handTuned: 0
+      - frame: vampire_kick_w9
+        shapes:
+        - center: {x: -0.15625, y: -0.43023255}
+          size: {x: 0.42708334, y: 0.5697674}
+        - center: {x: -0.21875, y: 0.3372093}
+          size: {x: 0.34375, y: 0.5697674}
+        handTuned: 0
+      - frame: vampire_knockdown_recovery_e0
+        shapes:
+        - center: {x: 0.024647888, y: -0.40963855}
+          size: {x: 0.4964789, y: 0.5903614}
+        - center: {x: -0.038732395, y: 0.39759037}
+          size: {x: 0.3697183, y: 0.60240966}
+        handTuned: 0
+      - frame: vampire_knockdown_recovery_e1
+        shapes:
+        - center: {x: -0.22887324, y: -0.40963855}
+          size: {x: 0.7077465, y: 0.39759037}
+        - center: {x: 0.6126761, y: -0.48192772}
+          size: {x: 0.38732395, y: 0.3493976}
+        handTuned: 0
+      - frame: vampire_knockdown_recovery_e2
+        shapes:
+        - center: {x: -0.36619717, y: -0.67469877}
+          size: {x: 0.6126761, y: 0.27710843}
+        - center: {x: 0.35211268, y: -0.72289157}
+          size: {x: 0.2746479, y: 0.18072289}
+        - center: {x: 0.7007042, y: -0.8192771}
+          size: {x: 0.24295774, y: 0.10843374}
+        handTuned: 0
+      - frame: vampire_knockdown_recovery_e3
+        shapes:
+        - center: {x: -0.6830986, y: -0.74698794}
+          size: {x: 0.19014084, y: 0.13253012}
+        - center: {x: -0.38732395, y: -0.7108434}
+          size: {x: 0.23239437, y: 0.16867469}
+        - center: {x: -0.059859157, y: -0.62650603}
+          size: {x: 0.22183098, y: 0.20481928}
+        - center: {x: 0.40492958, y: -0.6626506}
+          size: {x: 0.3697183, y: 0.24096386}
+        handTuned: 0
+      - frame: vampire_knockdown_recovery_e4
+        shapes:
+        - center: {x: -0.64084506, y: -0.73493975}
+          size: {x: 0.35915494, y: 0.16867469}
+        - center: {x: 0.09859155, y: -0.4939759}
+          size: {x: 0.63380283, y: 0.36144578}
+        handTuned: 0
+      - frame: vampire_knockdown_recovery_e5
+        shapes:
+        - center: {x: -0.07042254, y: -0.62650603}
+          size: {x: 0.40140846, y: 0.37349397}
+        - center: {x: 0.045774646, y: -0.12048193}
+          size: {x: 0.3274648, y: 0.37349397}
+        handTuned: 0
+      - frame: vampire_knockdown_recovery_e6
+        shapes:
+        - center: {x: -0.57746476, y: -0.42168674}
+          size: {x: 0.31690142, y: 0.33734939}
+        - center: {x: 0.10915493, y: -0.26506025}
+          size: {x: 0.5809859, y: 0.4939759}
+        handTuned: 0
+      - frame: vampire_knockdown_recovery_e7
+        shapes:
+        - center: {x: -0.07042254, y: -0.43373495}
+          size: {x: 0.5070422, y: 0.56626505}
+        - center: {x: 0.0035211267, y: 0.31325302}
+          size: {x: 0.34859154, y: 0.56626505}
+        handTuned: 0
+      - frame: vampire_knockdown_recovery_w0
+        shapes:
+        - center: {x: 0.028169014, y: -0.40963855}
+          size: {x: 0.5070422, y: 0.5903614}
+        - center: {x: -0.045774646, y: 0.39759037}
+          size: {x: 0.3697183, y: 0.60240966}
+        handTuned: 0
+      - frame: vampire_knockdown_recovery_w1
+        shapes:
+        - center: {x: 0.6197183, y: -0.48192772}
+          size: {x: 0.3802817, y: 0.3493976}
+        - center: {x: -0.22535211, y: -0.40963855}
+          size: {x: 0.7183099, y: 0.39759037}
+        handTuned: 0
+      - frame: vampire_knockdown_recovery_w2
+        shapes:
+        - center: {x: 0.7253521, y: -0.8313253}
+          size: {x: 0.23239437, y: 0.09638554}
+        - center: {x: 0.38732395, y: -0.72289157}
+          size: {x: 0.2746479, y: 0.18072289}
+        - center: {x: -0.35211268, y: -0.6626506}
+          size: {x: 0.63380283, y: 0.26506025}
+        handTuned: 0
+      - frame: vampire_knockdown_recovery_w3
+        shapes:
+        - center: {x: 0.42957747, y: -0.6506024}
+          size: {x: 0.35915494, y: 0.25301206}
+        - center: {x: -0.03521127, y: -0.6385542}
+          size: {x: 0.23239437, y: 0.21686748}
+        - center: {x: -0.37323943, y: -0.7108434}
+          size: {x: 0.23239437, y: 0.16867469}
+        - center: {x: -0.67957747, y: -0.74698794}
+          size: {x: 0.20070423, y: 0.13253012}
+        handTuned: 0
+      - frame: vampire_knockdown_recovery_w4
+        shapes:
+        - center: {x: 0.112676054, y: -0.4939759}
+          size: {x: 0.63380283, y: 0.36144578}
+        - center: {x: -0.62676054, y: -0.7108434}
+          size: {x: 0.35915494, y: 0.19277108}
+        handTuned: 0
+      - frame: vampire_knockdown_recovery_w5
+        shapes:
+        - center: {x: -0.07746479, y: -0.62650603}
+          size: {x: 0.40140846, y: 0.37349397}
+        - center: {x: 0.038732395, y: -0.12048193}
+          size: {x: 0.3274648, y: 0.37349397}
+        handTuned: 0
+      - frame: vampire_knockdown_recovery_w6
+        shapes:
+        - center: {x: 0.10211267, y: -0.26506025}
+          size: {x: 0.5809859, y: 0.4939759}
+        - center: {x: -0.58450705, y: -0.43373495}
+          size: {x: 0.31690142, y: 0.3253012}
+        handTuned: 0
+      - frame: vampire_knockdown_recovery_w7
+        shapes:
+        - center: {x: -0.06690141, y: -0.43373495}
+          size: {x: 0.4964789, y: 0.56626505}
+        - center: {x: -0.0035211267, y: 0.31325302}
+          size: {x: 0.34859154, y: 0.56626505}
+        handTuned: 0
+      - frame: vampire_punch_e0
+        shapes:
+        - center: {x: 0.103896104, y: -0.5862069}
+          size: {x: 0.48051947, y: 0.3908046}
+        - center: {x: 0.077922076, y: 0}
+          size: {x: 0.35064936, y: 0.47126436}
+        - center: {x: 0.12987013, y: 0.59770113}
+          size: {x: 0.2987013, y: 0.40229884}
+        handTuned: 0
+      - frame: vampire_punch_e1
+        shapes:
+        - center: {x: 0.22077923, y: -0.6091954}
+          size: {x: 0.5194805, y: 0.3448276}
+        - center: {x: 0.22077923, y: -0.06896552}
+          size: {x: 0.38961038, y: 0.42528737}
+        - center: {x: 0.4025974, y: 0.49425286}
+          size: {x: 0.2857143, y: 0.3678161}
+        handTuned: 0
+      - frame: vampire_punch_e2
+        shapes:
+        - center: {x: -0.064935066, y: -0.44827586}
+          size: {x: 0.5714286, y: 0.50574714}
+        - center: {x: -0.012987013, y: 0.2413793}
+          size: {x: 0.46753246, y: 0.50574714}
+        handTuned: 0
+      - frame: vampire_punch_e3
+        shapes:
+        - center: {x: -0.22077923, y: -0.43678162}
+          size: {x: 0.4935065, y: 0.47126436}
+        - center: {x: -0.09090909, y: 0.21839081}
+          size: {x: 0.38961038, y: 0.50574714}
+        handTuned: 0
+      - frame: vampire_punch_e4
+        shapes:
+        - center: {x: -0.16883117, y: -0.6321839}
+          size: {x: 0.36363637, y: 0.3678161}
+        - center: {x: -0.077922076, y: -0.06896552}
+          size: {x: 0.32467532, y: 0.42528737}
+        - center: {x: 0, y: 0.50574714}
+          size: {x: 0.2987013, y: 0.37931034}
+        handTuned: 0
+      - frame: vampire_punch_e5
+        shapes:
+        - center: {x: 0.09090909, y: -0.6091954}
+          size: {x: 0.41558442, y: 0.3908046}
+        - center: {x: 0.051948052, y: -0.03448276}
+          size: {x: 0.32467532, y: 0.4597701}
+        - center: {x: 0.103896104, y: 0.55172414}
+          size: {x: 0.27272728, y: 0.40229884}
+        handTuned: 0
+      - frame: vampire_punch_w0
+        shapes:
+        - center: {x: 0.103896104, y: -0.5862069}
+          size: {x: 0.48051947, y: 0.3908046}
+        - center: {x: 0.077922076, y: 0}
+          size: {x: 0.35064936, y: 0.47126436}
+        - center: {x: 0.12987013, y: 0.59770113}
+          size: {x: 0.2987013, y: 0.40229884}
+        handTuned: 0
+      - frame: vampire_punch_w1
+        shapes:
+        - center: {x: 0.22077923, y: -0.6091954}
+          size: {x: 0.5194805, y: 0.3448276}
+        - center: {x: 0.22077923, y: -0.06896552}
+          size: {x: 0.38961038, y: 0.42528737}
+        - center: {x: 0.4025974, y: 0.49425286}
+          size: {x: 0.2857143, y: 0.3678161}
+        handTuned: 0
+      - frame: vampire_punch_w2
+        shapes:
+        - center: {x: -0.064935066, y: -0.44827586}
+          size: {x: 0.5714286, y: 0.50574714}
+        - center: {x: -0.012987013, y: 0.2413793}
+          size: {x: 0.46753246, y: 0.50574714}
+        handTuned: 0
+      - frame: vampire_punch_w3
+        shapes:
+        - center: {x: -0.22077923, y: -0.43678162}
+          size: {x: 0.4935065, y: 0.47126436}
+        - center: {x: -0.09090909, y: 0.21839081}
+          size: {x: 0.38961038, y: 0.50574714}
+        handTuned: 0
+      - frame: vampire_punch_w4
+        shapes:
+        - center: {x: -0.16883117, y: -0.6321839}
+          size: {x: 0.36363637, y: 0.3678161}
+        - center: {x: -0.077922076, y: -0.06896552}
+          size: {x: 0.32467532, y: 0.42528737}
+        - center: {x: -0, y: 0.50574714}
+          size: {x: 0.2987013, y: 0.37931034}
+        handTuned: 0
+      - frame: vampire_punch_w5
+        shapes:
+        - center: {x: 0.09090909, y: -0.6091954}
+          size: {x: 0.41558442, y: 0.3908046}
+        - center: {x: 0.051948052, y: -0.03448276}
+          size: {x: 0.32467532, y: 0.4597701}
+        - center: {x: 0.103896104, y: 0.55172414}
+          size: {x: 0.27272728, y: 0.40229884}
+        handTuned: 0
+      - frame: vampire_running_attack_e0
+        shapes:
+        - center: {x: -0.5585284, y: -0.16546762}
+          size: {x: 0.36120403, y: 0.2877698}
+        - center: {x: -0.02341137, y: -0.035971224}
+          size: {x: 0.44147158, y: 0.4172662}
+        - center: {x: 0.5250836, y: -0.021582734}
+          size: {x: 0.37458193, y: 0.5179856}
+        handTuned: 0
+      - frame: vampire_running_attack_e1
+        shapes:
+        - center: {x: -0.65217394, y: -0.23741007}
+          size: {x: 0.3478261, y: 0.38848922}
+        - center: {x: 0.13712375, y: 0.007194245}
+          size: {x: 0.6555184, y: 0.46043167}
+        handTuned: 0
+      - frame: vampire_running_attack_e2
+        shapes:
+        - center: {x: -0.51839465, y: 0.07913669}
+          size: {x: 0.37458193, y: 0.44604316}
+        - center: {x: 0.030100334, y: 0.25179857}
+          size: {x: 0.44147158, y: 0.47482014}
+        - center: {x: 0.57859534, y: 0.26618704}
+          size: {x: 0.37458193, y: 0.37410071}
+        handTuned: 0
+      - frame: vampire_running_attack_e3
+        shapes:
+        - center: {x: -0.5852843, y: -0.07913669}
+          size: {x: 0.38795987, y: 0.48920864}
+        - center: {x: -0.0100334445, y: 0.05035971}
+          size: {x: 0.4548495, y: 0.4172662}
+        - center: {x: 0.5652174, y: 0.25179857}
+          size: {x: 0.38795987, y: 0.15827338}
+        handTuned: 0
+      - frame: vampire_running_attack_e4
+        shapes:
+        - center: {x: -0.5986622, y: -0.021582734}
+          size: {x: 0.4013378, y: 0.37410071}
+        - center: {x: 0.26755852, y: 0.107913665}
+          size: {x: 0.7324415, y: 0.44604316}
+        handTuned: 0
+      - frame: vampire_running_attack_e5
+        shapes:
+        - center: {x: -0.638796, y: 0.035971224}
+          size: {x: 0.36120403, y: 0.37410071}
+        - center: {x: -0.10367893, y: 0.26618704}
+          size: {x: 0.44147158, y: 0.4028777}
+        - center: {x: 0.44481605, y: 0.23741007}
+          size: {x: 0.37458193, y: 0.48920864}
+        handTuned: 0
+      - frame: vampire_running_attack_e6
+        shapes:
+        - center: {x: -0.67892975, y: -0.07913669}
+          size: {x: 0.32107022, y: 0.31654677}
+        - center: {x: -0.18394649, y: 0.19424461}
+          size: {x: 0.38795987, y: 0.44604316}
+        - center: {x: 0.32441473, y: 0.25179857}
+          size: {x: 0.33444816, y: 0.5611511}
+        handTuned: 0
+      - frame: vampire_running_attack_e7
+        shapes:
+        - center: {x: -0.5986622, y: -0.035971224}
+          size: {x: 0.3478261, y: 0.38848922}
+        - center: {x: 0.19063546, y: 0.28057554}
+          size: {x: 0.6555184, y: 0.47482014}
+        handTuned: 0
+      - frame: vampire_running_attack_w0
+        shapes:
+        - center: {x: 0.5451505, y: 0.007194245}
+          size: {x: 0.37458193, y: 0.5179856}
+        - center: {x: -0.0033444816, y: -0.035971224}
+          size: {x: 0.44147158, y: 0.4172662}
+        - center: {x: -0.5518395, y: -0.16546762}
+          size: {x: 0.37458193, y: 0.2877698}
+        handTuned: 0
+      - frame: vampire_running_attack_w1
+        shapes:
+        - center: {x: 0.4381271, y: 0.07913669}
+          size: {x: 0.3478261, y: 0.4172662}
+        - center: {x: -0.09698997, y: 0.007194245}
+          size: {x: 0.4013378, y: 0.46043167}
+        - center: {x: -0.632107, y: -0.23741007}
+          size: {x: 0.3478261, y: 0.38848922}
+        handTuned: 0
+      - frame: vampire_running_attack_w2
+        shapes:
+        - center: {x: 0.5719063, y: 0.26618704}
+          size: {x: 0.37458193, y: 0.37410071}
+        - center: {x: 0.02341137, y: 0.25179857}
+          size: {x: 0.44147158, y: 0.47482014}
+        - center: {x: -0.5250836, y: 0.05035971}
+          size: {x: 0.37458193, y: 0.47482014}
+        handTuned: 0
+      - frame: vampire_running_attack_w3
+        shapes:
+        - center: {x: 0.5585284, y: 0.25179857}
+          size: {x: 0.38795987, y: 0.15827338}
+        - center: {x: -0.016722407, y: 0.05035971}
+          size: {x: 0.4548495, y: 0.4172662}
+        - center: {x: -0.59197325, y: -0.09352518}
+          size: {x: 0.38795987, y: 0.50359714}
+        handTuned: 0
+      - frame: vampire_running_attack_w4
+        shapes:
+        - center: {x: 0.26421404, y: 0.09352518}
+          size: {x: 0.73578596, y: 0.46043167}
+        - center: {x: -0.6020067, y: -0.021582734}
+          size: {x: 0.3979933, y: 0.37410071}
+        handTuned: 0
+      - frame: vampire_running_attack_w5
+        shapes:
+        - center: {x: 0.46488294, y: 0.23741007}
+          size: {x: 0.37458193, y: 0.48920864}
+        - center: {x: -0.08361204, y: 0.26618704}
+          size: {x: 0.44147158, y: 0.4028777}
+        - center: {x: -0.62876254, y: 0.035971224}
+          size: {x: 0.37123746, y: 0.37410071}
+        handTuned: 0
+      - frame: vampire_running_attack_w6
+        shapes:
+        - center: {x: 0.33110368, y: 0.25179857}
+          size: {x: 0.32107022, y: 0.5611511}
+        - center: {x: -0.15050167, y: 0.22302158}
+          size: {x: 0.37458193, y: 0.44604316}
+        - center: {x: -0.6454849, y: -0.09352518}
+          size: {x: 0.33444816, y: 0.35971224}
+        handTuned: 0
+      - frame: vampire_running_attack_w7
+        shapes:
+        - center: {x: 0.19732441, y: 0.28057554}
+          size: {x: 0.64214045, y: 0.47482014}
+        - center: {x: -0.59197325, y: 0.007194245}
+          size: {x: 0.36120403, y: 0.4028777}
+        handTuned: 0
+      - frame: vampire_running_e0
+        shapes:
+        - center: {x: 0.109375, y: -0.37209302}
+          size: {x: 0.640625, y: 0.5813953}
+        - center: {x: 0.1875, y: 0.39534885}
+          size: {x: 0.4375, y: 0.60465115}
+        handTuned: 0
+      - frame: vampire_running_e1
+        shapes:
+        - center: {x: 0.09375, y: -0.627907}
+          size: {x: 0.5625, y: 0.37209302}
+        - center: {x: -0.09375, y: -0.058139537}
+          size: {x: 0.4375, y: 0.43023255}
+        - center: {x: 0.015625, y: 0.5232558}
+          size: {x: 0.421875, y: 0.38372093}
+        handTuned: 0
+      - frame: vampire_running_e2
+        shapes:
+        - center: {x: -0.328125, y: -0.627907}
+          size: {x: 0.390625, y: 0.37209302}
+        - center: {x: -0.046875, y: -0.058139537}
+          size: {x: 0.453125, y: 0.43023255}
+        - center: {x: 0.09375, y: 0.5232558}
+          size: {x: 0.46875, y: 0.38372093}
+        handTuned: 0
+      - frame: vampire_running_e3
+        shapes:
+        - center: {x: -0.234375, y: -0.37209302}
+          size: {x: 0.546875, y: 0.55813956}
+        - center: {x: -0.078125, y: 0.38372093}
+          size: {x: 0.453125, y: 0.5697674}
+        handTuned: 0
+      - frame: vampire_running_e4
+        shapes:
+        - center: {x: -0.1875, y: -0.10465116}
+          size: {x: 0.53125, y: 0.89534885}
+        handTuned: 0
+      - frame: vampire_running_e5
+        shapes:
+        - center: {x: -0.15625, y: -0.44186047}
+          size: {x: 0.5, y: 0.53488374}
+        - center: {x: 0.046875, y: 0.26744187}
+          size: {x: 0.421875, y: 0.54651165}
+        handTuned: 0
+      - frame: vampire_running_e6
+        shapes:
+        - center: {x: -0.28125, y: -0.59302324}
+          size: {x: 0.25, y: 0.3604651}
+        - center: {x: -0.0625, y: -0.034883723}
+          size: {x: 0.4375, y: 0.43023255}
+        - center: {x: 0.046875, y: 0.53488374}
+          size: {x: 0.453125, y: 0.37209302}
+        handTuned: 0
+      - frame: vampire_running_e7
+        shapes:
+        - center: {x: 0.09375, y: -0.627907}
+          size: {x: 0.5, y: 0.3488372}
+        - center: {x: 0.0625, y: 0.1627907}
+          size: {x: 0.40625, y: 0.6744186}
+        handTuned: 0
+      - frame: vampire_running_w0
+        shapes:
+        - center: {x: 0.109375, y: -0.37209302}
+          size: {x: 0.640625, y: 0.5813953}
+        - center: {x: 0.1875, y: 0.39534885}
+          size: {x: 0.4375, y: 0.60465115}
+        handTuned: 0
+      - frame: vampire_running_w1
+        shapes:
+        - center: {x: 0.09375, y: -0.627907}
+          size: {x: 0.5625, y: 0.37209302}
+        - center: {x: -0.09375, y: -0.058139537}
+          size: {x: 0.4375, y: 0.43023255}
+        - center: {x: 0.015625, y: 0.5232558}
+          size: {x: 0.421875, y: 0.38372093}
+        handTuned: 0
+      - frame: vampire_running_w2
+        shapes:
+        - center: {x: -0.328125, y: -0.627907}
+          size: {x: 0.390625, y: 0.37209302}
+        - center: {x: -0.046875, y: -0.058139537}
+          size: {x: 0.453125, y: 0.43023255}
+        - center: {x: 0.09375, y: 0.5232558}
+          size: {x: 0.46875, y: 0.38372093}
+        handTuned: 0
+      - frame: vampire_running_w3
+        shapes:
+        - center: {x: -0.234375, y: -0.37209302}
+          size: {x: 0.546875, y: 0.55813956}
+        - center: {x: -0.078125, y: 0.38372093}
+          size: {x: 0.453125, y: 0.5697674}
+        handTuned: 0
+      - frame: vampire_running_w4
+        shapes:
+        - center: {x: -0.1875, y: -0.10465116}
+          size: {x: 0.53125, y: 0.89534885}
+        handTuned: 0
+      - frame: vampire_running_w5
+        shapes:
+        - center: {x: -0.15625, y: -0.44186047}
+          size: {x: 0.5, y: 0.53488374}
+        - center: {x: 0.046875, y: 0.26744187}
+          size: {x: 0.421875, y: 0.54651165}
+        handTuned: 0
+      - frame: vampire_running_w6
+        shapes:
+        - center: {x: -0.28125, y: -0.59302324}
+          size: {x: 0.25, y: 0.3604651}
+        - center: {x: -0.0625, y: -0.034883723}
+          size: {x: 0.4375, y: 0.43023255}
+        - center: {x: 0.046875, y: 0.53488374}
+          size: {x: 0.453125, y: 0.37209302}
+        handTuned: 0
+      - frame: vampire_running_w7
+        shapes:
+        - center: {x: 0.09375, y: -0.627907}
+          size: {x: 0.5, y: 0.3488372}
+        - center: {x: 0.0625, y: 0.1627907}
+          size: {x: 0.40625, y: 0.6744186}
+        handTuned: 0
+      - frame: vampire_spellcasting_1_e0
+        shapes:
+        - center: {x: 0.041322313, y: -0.6666667}
+          size: {x: 0.54545456, y: 0.33333334}
+        - center: {x: 0.0785124, y: -0.1724138}
+          size: {x: 0.33471075, y: 0.3908046}
+        - center: {x: 0.14049587, y: 0.33333334}
+          size: {x: 0.27272728, y: 0.3448276}
+        handTuned: 0
+      - frame: vampire_spellcasting_1_e1
+        shapes:
+        - center: {x: -0.08264463, y: -0.4597701}
+          size: {x: 0.5206612, y: 0.54022986}
+        - center: {x: 0.004132231, y: 0.25287357}
+          size: {x: 0.35950413, y: 0.54022986}
+        handTuned: 0
+      - frame: vampire_spellcasting_1_e2
+        shapes:
+        - center: {x: -0.08264463, y: -0.40229884}
+          size: {x: 0.57024795, y: 0.59770113}
+        - center: {x: -0.23140496, y: 0.3908046}
+          size: {x: 0.47107437, y: 0.6091954}
+        handTuned: 0
+      - frame: vampire_spellcasting_1_e3
+        shapes:
+        - center: {x: -0.19421488, y: -0.43678162}
+          size: {x: 0.55785125, y: 0.5632184}
+        - center: {x: -0.1570248, y: 0.33333334}
+          size: {x: 0.37190083, y: 0.57471263}
+        handTuned: 0
+      - frame: vampire_spellcasting_1_e4
+        shapes:
+        - center: {x: -0.60330576, y: -0.42528737}
+          size: {x: 0.3966942, y: 0.3218391}
+        - center: {x: 0.004132231, y: -0.25287357}
+          size: {x: 0.45867768, y: 0.51724136}
+        - center: {x: 0.607438, y: -0.35632184}
+          size: {x: 0.39256197, y: 0.43678162}
+        handTuned: 0
+      - frame: vampire_spellcasting_1_e5
+        shapes:
+        - center: {x: -0.045454547, y: -0.47126436}
+          size: {x: 0.58264464, y: 0.52873564}
+        - center: {x: 0.09090909, y: 0.21839081}
+          size: {x: 0.3966942, y: 0.52873564}
+        handTuned: 0
+      - frame: vampire_spellcasting_1_e6
+        shapes:
+        - center: {x: -0.1446281, y: -0.51724136}
+          size: {x: 0.55785125, y: 0.4827586}
+        - center: {x: -0.045454547, y: 0.12643678}
+          size: {x: 0.4338843, y: 0.4827586}
+        handTuned: 0
+      - frame: vampire_spellcasting_1_e7
+        shapes:
+        - center: {x: -0.11983471, y: -0.6551724}
+          size: {x: 0.55785125, y: 0.3448276}
+        - center: {x: -0.03305785, y: -0.12643678}
+          size: {x: 0.34710744, y: 0.41379312}
+        - center: {x: 0.02892562, y: 0.41379312}
+          size: {x: 0.28512397, y: 0.35632184}
+        handTuned: 0
+      - frame: vampire_spellcasting_1_w0
+        shapes:
+        - center: {x: 0.045454547, y: -0.6666667}
+          size: {x: 0.53305787, y: 0.33333334}
+        - center: {x: 0.08264463, y: -0.1724138}
+          size: {x: 0.32231405, y: 0.3908046}
+        - center: {x: 0.1446281, y: 0.33333334}
+          size: {x: 0.28512397, y: 0.3448276}
+        handTuned: 0
+      - frame: vampire_spellcasting_1_w1
+        shapes:
+        - center: {x: -0.09090909, y: -0.4597701}
+          size: {x: 0.5206612, y: 0.54022986}
+        - center: {x: -0.004132231, y: 0.25287357}
+          size: {x: 0.35950413, y: 0.54022986}
+        handTuned: 0
+      - frame: vampire_spellcasting_1_w2
+        shapes:
+        - center: {x: -0.09090909, y: -0.40229884}
+          size: {x: 0.57024795, y: 0.59770113}
+        - center: {x: -0.22727273, y: 0.3908046}
+          size: {x: 0.45867768, y: 0.6091954}
+        handTuned: 0
+      - frame: vampire_spellcasting_1_w3
+        shapes:
+        - center: {x: -0.19008264, y: -0.43678162}
+          size: {x: 0.54545456, y: 0.5632184}
+        - center: {x: -0.15289256, y: 0.33333334}
+          size: {x: 0.38429752, y: 0.57471263}
+        handTuned: 0
+      - frame: vampire_spellcasting_1_w4
+        shapes:
+        - center: {x: 0.60330576, y: -0.3448276}
+          size: {x: 0.3966942, y: 0.44827586}
+        - center: {x: -0.004132231, y: -0.2413793}
+          size: {x: 0.45867768, y: 0.50574714}
+        - center: {x: -0.607438, y: -0.42528737}
+          size: {x: 0.39256197, y: 0.3218391}
+        handTuned: 0
+      - frame: vampire_spellcasting_1_w5
+        shapes:
+        - center: {x: -0.041322313, y: -0.47126436}
+          size: {x: 0.59504133, y: 0.52873564}
+        - center: {x: 0.08264463, y: 0.21839081}
+          size: {x: 0.3966942, y: 0.52873564}
+        handTuned: 0
+      - frame: vampire_spellcasting_1_w6
+        shapes:
+        - center: {x: -0.15289256, y: -0.51724136}
+          size: {x: 0.55785125, y: 0.4827586}
+        - center: {x: -0.053719006, y: 0.12643678}
+          size: {x: 0.4338843, y: 0.4827586}
+        handTuned: 0
+      - frame: vampire_spellcasting_1_w7
+        shapes:
+        - center: {x: -0.11570248, y: -0.47126436}
+          size: {x: 0.49586776, y: 0.52873564}
+        - center: {x: -0.016528925, y: 0.22988506}
+          size: {x: 0.32231405, y: 0.54022986}
+        handTuned: 0
+      - frame: vampire_spellcasting_2_e0
+        shapes:
+        - center: {x: -0.0044444446, y: -0.4899329}
+          size: {x: 0.6755555, y: 0.5100671}
+        - center: {x: -0.057777777, y: 0.22147651}
+          size: {x: 0.48, y: 0.52348995}
+        handTuned: 0
+      - frame: vampire_spellcasting_2_e1
+        shapes:
+        - center: {x: -0.093333334, y: -0.39597315}
+          size: {x: 0.58666664, y: 0.60402685}
+        - center: {x: -0.057777777, y: 0.38926175}
+          size: {x: 0.40888888, y: 0.6107383}
+        handTuned: 0
+      - frame: vampire_spellcasting_2_e2
+        shapes:
+        - center: {x: -0.04, y: -0.16778524}
+          size: {x: 0.64, y: 0.8322148}
+        handTuned: 0
+      - frame: vampire_spellcasting_2_e3
+        shapes:
+        - center: {x: -0.022222223, y: -0.4899329}
+          size: {x: 0.6577778, y: 0.5100671}
+        - center: {x: -0.075555556, y: 0.22147651}
+          size: {x: 0.53333336, y: 0.52348995}
+        handTuned: 0
+      - frame: vampire_spellcasting_2_e4
+        shapes:
+        - center: {x: 0.013333334, y: -0.4899329}
+          size: {x: 0.6933333, y: 0.5100671}
+        - center: {x: -0.022222223, y: 0.2080537}
+          size: {x: 0.51555556, y: 0.5100671}
+        handTuned: 0
+      - frame: vampire_spellcasting_2_e5
+        shapes:
+        - center: {x: 0.031111112, y: -0.59731543}
+          size: {x: 0.64, y: 0.40268457}
+        - center: {x: -0.12888889, y: -0.046979867}
+          size: {x: 0.5511111, y: 0.4161074}
+        handTuned: 0
+      - frame: vampire_spellcasting_2_e6
+        shapes:
+        - center: {x: 0.013333334, y: -0.46308726}
+          size: {x: 0.62222224, y: 0.53691274}
+        - center: {x: 0.12, y: 0.23489933}
+          size: {x: 0.51555556, y: 0.53691274}
+        handTuned: 0
+      - frame: vampire_spellcasting_2_e7
+        shapes:
+        - center: {x: -0.022222223, y: -0.46308726}
+          size: {x: 0.58666664, y: 0.53691274}
+        - center: {x: 0.13777778, y: 0.24832214}
+          size: {x: 0.42666668, y: 0.5503356}
+        handTuned: 0
+      - frame: vampire_spellcasting_2_w0
+        shapes:
+        - center: {x: 0.0044444446, y: -0.4899329}
+          size: {x: 0.6755555, y: 0.5100671}
+        - center: {x: -0.04888889, y: 0.22147651}
+          size: {x: 0.48, y: 0.52348995}
+        handTuned: 0
+      - frame: vampire_spellcasting_2_w1
+        shapes:
+        - center: {x: -0.08444444, y: -0.39597315}
+          size: {x: 0.58666664, y: 0.60402685}
+        - center: {x: -0.06666667, y: 0.38926175}
+          size: {x: 0.3911111, y: 0.6107383}
+        handTuned: 0
+      - frame: vampire_spellcasting_2_w2
+        shapes:
+        - center: {x: -0.031111112, y: -0.16778524}
+          size: {x: 0.64, y: 0.8322148}
+        handTuned: 0
+      - frame: vampire_spellcasting_2_w3
+        shapes:
+        - center: {x: -0.013333334, y: -0.4899329}
+          size: {x: 0.6577778, y: 0.5100671}
+        - center: {x: -0.06666667, y: 0.22147651}
+          size: {x: 0.53333336, y: 0.52348995}
+        handTuned: 0
+      - frame: vampire_spellcasting_2_w4
+        shapes:
+        - center: {x: 0.022222223, y: -0.4899329}
+          size: {x: 0.6933333, y: 0.5100671}
+        - center: {x: -0.013333334, y: 0.2080537}
+          size: {x: 0.51555556, y: 0.5100671}
+        handTuned: 0
+      - frame: vampire_spellcasting_2_w5
+        shapes:
+        - center: {x: 0.022222223, y: -0.59731543}
+          size: {x: 0.6577778, y: 0.40268457}
+        - center: {x: -0.13777778, y: -0.046979867}
+          size: {x: 0.5688889, y: 0.4161074}
+        handTuned: 0
+      - frame: vampire_spellcasting_2_w6
+        shapes:
+        - center: {x: 0.022222223, y: -0.46308726}
+          size: {x: 0.62222224, y: 0.53691274}
+        - center: {x: 0.093333334, y: 0.23489933}
+          size: {x: 0.51555556, y: 0.53691274}
+        handTuned: 0
+      - frame: vampire_spellcasting_2_w7
+        shapes:
+        - center: {x: -0.013333334, y: -0.46308726}
+          size: {x: 0.58666664, y: 0.53691274}
+        - center: {x: 0.12888889, y: 0.24832214}
+          size: {x: 0.44444445, y: 0.5503356}
+        handTuned: 0
+      - frame: vampire_spellcasting_3_e0
+        shapes:
+        - center: {x: 0.057268724, y: -0.6421053}
+          size: {x: 0.5814978, y: 0.35789475}
+        - center: {x: 0.057268724, y: 0.1368421}
+          size: {x: 0.4229075, y: 0.67368424}
+        handTuned: 0
+      - frame: vampire_spellcasting_3_e1
+        shapes:
+        - center: {x: 0.0969163, y: -0.49473685}
+          size: {x: 0.56828195, y: 0.50526315}
+        - center: {x: -0.008810572, y: 0.18947369}
+          size: {x: 0.43612334, y: 0.51578945}
+        handTuned: 0
+      - frame: vampire_spellcasting_3_e2
+        shapes:
+        - center: {x: 0.004405286, y: -0.49473685}
+          size: {x: 0.5814978, y: 0.50526315}
+        - center: {x: -0.03524229, y: 0.17894737}
+          size: {x: 0.46255508, y: 0.50526315}
+        handTuned: 0
+      - frame: vampire_spellcasting_3_e3
+        shapes:
+        - center: {x: -0.008810572, y: 0}
+          size: {x: 0.5947136, y: 1}
+        handTuned: 0
+      - frame: vampire_spellcasting_3_e4
+        shapes:
+        - center: {x: -0.008810572, y: -0.07368421}
+          size: {x: 0.6740088, y: 0.86315787}
+        handTuned: 0
+      - frame: vampire_spellcasting_3_e5
+        shapes:
+        - center: {x: -0.08810572, y: -0.4631579}
+          size: {x: 0.56828195, y: 0.4526316}
+        - center: {x: 0.004405286, y: 0.15789473}
+          size: {x: 0.4229075, y: 0.4631579}
+        handTuned: 0
+      - frame: vampire_spellcasting_3_e6
+        shapes:
+        - center: {x: -0.008810572, y: -0.10526316}
+          size: {x: 0.56828195, y: 0.8947368}
+        handTuned: 0
+      - frame: vampire_spellcasting_3_e7
+        shapes:
+        - center: {x: 0.004405286, y: -0.4526316}
+          size: {x: 0.5550661, y: 0.5473684}
+        - center: {x: -0.06167401, y: 0.2736842}
+          size: {x: 0.43612334, y: 0.55789477}
+        handTuned: 0
+      - frame: vampire_spellcasting_3_w0
+        shapes:
+        - center: {x: 0.06167401, y: -0.6421053}
+          size: {x: 0.56828195, y: 0.35789475}
+        - center: {x: 0.04845815, y: 0.1368421}
+          size: {x: 0.4229075, y: 0.67368424}
+        handTuned: 0
+      - frame: vampire_spellcasting_3_w1
+        shapes:
+        - center: {x: 0.08810572, y: -0.49473685}
+          size: {x: 0.56828195, y: 0.50526315}
+        - center: {x: 0.008810572, y: 0.18947369}
+          size: {x: 0.43612334, y: 0.51578945}
+        handTuned: 0
+      - frame: vampire_spellcasting_3_w2
+        shapes:
+        - center: {x: 0.008810572, y: -0.49473685}
+          size: {x: 0.5947136, y: 0.50526315}
+        - center: {x: -0.030837005, y: 0.17894737}
+          size: {x: 0.4493392, y: 0.50526315}
+        handTuned: 0
+      - frame: vampire_spellcasting_3_w3
+        shapes:
+        - center: {x: -0.017621145, y: 0}
+          size: {x: 0.5947136, y: 1}
+        handTuned: 0
+      - frame: vampire_spellcasting_3_w4
+        shapes:
+        - center: {x: -0.017621145, y: -0.07368421}
+          size: {x: 0.6740088, y: 0.86315787}
+        handTuned: 0
+      - frame: vampire_spellcasting_3_w5
+        shapes:
+        - center: {x: -0.0969163, y: -0.4631579}
+          size: {x: 0.56828195, y: 0.4526316}
+        - center: {x: -0.004405286, y: 0.15789473}
+          size: {x: 0.4229075, y: 0.4631579}
+        handTuned: 0
+      - frame: vampire_spellcasting_3_w6
+        shapes:
+        - center: {x: -0.004405286, y: -0.47368422}
+          size: {x: 0.5814978, y: 0.5263158}
+        - center: {x: -0.017621145, y: 0.25263157}
+          size: {x: 0.4889868, y: 0.5368421}
+        handTuned: 0
+      - frame: vampire_spellcasting_3_w7
+        shapes:
+        - center: {x: 0.008810572, y: -0.4526316}
+          size: {x: 0.56828195, y: 0.5473684}
+        - center: {x: -0.04405286, y: 0.2736842}
+          size: {x: 0.43612334, y: 0.55789477}
+        handTuned: 0
+      - frame: vampire_walking_e0
+        shapes:
+        - center: {x: 0.30939227, y: -0.5913978}
+          size: {x: 0.44751382, y: 0.38709676}
+        - center: {x: 0.30939227, y: 0.26881722}
+          size: {x: 0.38121548, y: 0.7311828}
+        handTuned: 0
+      - frame: vampire_walking_e1
+        shapes:
+        - center: {x: 0.17679559, y: -0.60215056}
+          size: {x: 0.5469613, y: 0.37634408}
+        - center: {x: 0.19337016, y: 0.22580644}
+          size: {x: 0.43093923, y: 0.7096774}
+        handTuned: 0
+      - frame: vampire_walking_e2
+        shapes:
+        - center: {x: -0.0718232, y: -0.61290324}
+          size: {x: 0.5966851, y: 0.3655914}
+        - center: {x: -0.10497238, y: -0.06451613}
+          size: {x: 0.4640884, y: 0.4408602}
+        - center: {x: -0.0718232, y: 0.49462366}
+          size: {x: 0.3646409, y: 0.37634408}
+        handTuned: 0
+      - frame: vampire_walking_e3
+        shapes:
+        - center: {x: -0.22099447, y: -0.60215056}
+          size: {x: 0.5469613, y: 0.3548387}
+        - center: {x: -0.2044199, y: -0.06451613}
+          size: {x: 0.43093923, y: 0.4408602}
+        - center: {x: -0.1878453, y: 0.49462366}
+          size: {x: 0.3480663, y: 0.37634408}
+        handTuned: 0
+      - frame: vampire_walking_e4
+        shapes:
+        - center: {x: -0.2044199, y: -0.6344086}
+          size: {x: 0.4640884, y: 0.3655914}
+        - center: {x: -0.10497238, y: -0.086021505}
+          size: {x: 0.43093923, y: 0.4408602}
+        - center: {x: -0.10497238, y: 0.47311828}
+          size: {x: 0.3646409, y: 0.37634408}
+        handTuned: 0
+      - frame: vampire_walking_e5
+        shapes:
+        - center: {x: -0.13812155, y: -0.6451613}
+          size: {x: 0.53038675, y: 0.3548387}
+        - center: {x: -0.10497238, y: 0.11827957}
+          size: {x: 0.39779004, y: 0.6666667}
+        handTuned: 0
+      - frame: vampire_walking_e6
+        shapes:
+        - center: {x: -0.0718232, y: -0.6344086}
+          size: {x: 0.39779004, y: 0.3655914}
+        - center: {x: 0.07734807, y: -0.086021505}
+          size: {x: 0.41436464, y: 0.4408602}
+        - center: {x: 0.044198897, y: 0.47311828}
+          size: {x: 0.3480663, y: 0.37634408}
+        handTuned: 0
+      - frame: vampire_walking_e7
+        shapes:
+        - center: {x: 0.160221, y: -0.31182796}
+          size: {x: 0.49723756, y: 0.68817204}
+        - center: {x: 0.12707183, y: 0.50537634}
+          size: {x: 0.3646409, y: 0.38709676}
+        handTuned: 0
+      - frame: vampire_walking_w0
+        shapes:
+        - center: {x: 0.3038674, y: -0.5913978}
+          size: {x: 0.4640884, y: 0.38709676}
+        - center: {x: 0.2872928, y: 0.26881722}
+          size: {x: 0.38121548, y: 0.7311828}
+        handTuned: 0
+      - frame: vampire_walking_w1
+        shapes:
+        - center: {x: 0.1878453, y: -0.60215056}
+          size: {x: 0.5469613, y: 0.37634408}
+        - center: {x: 0.1878453, y: -0.032258064}
+          size: {x: 0.44751382, y: 0.4516129}
+        - center: {x: 0.17127071, y: 0.5483871}
+          size: {x: 0.3646409, y: 0.38709676}
+        handTuned: 0
+      - frame: vampire_walking_w2
+        shapes:
+        - center: {x: -0.06077348, y: -0.61290324}
+          size: {x: 0.5966851, y: 0.3655914}
+        - center: {x: -0.09392265, y: -0.06451613}
+          size: {x: 0.4640884, y: 0.4408602}
+        - center: {x: -0.07734807, y: 0.49462366}
+          size: {x: 0.38121548, y: 0.37634408}
+        handTuned: 0
+      - frame: vampire_walking_w3
+        shapes:
+        - center: {x: -0.22651933, y: -0.60215056}
+          size: {x: 0.5635359, y: 0.3548387}
+        - center: {x: -0.19337016, y: -0.06451613}
+          size: {x: 0.43093923, y: 0.4408602}
+        - center: {x: -0.19337016, y: 0.49462366}
+          size: {x: 0.3646409, y: 0.37634408}
+        handTuned: 0
+      - frame: vampire_walking_w4
+        shapes:
+        - center: {x: -0.20994475, y: -0.6344086}
+          size: {x: 0.48066297, y: 0.3655914}
+        - center: {x: -0.09392265, y: -0.086021505}
+          size: {x: 0.43093923, y: 0.4408602}
+        - center: {x: -0.09392265, y: 0.47311828}
+          size: {x: 0.3646409, y: 0.37634408}
+        handTuned: 0
+      - frame: vampire_walking_w5
+        shapes:
+        - center: {x: -0.1436464, y: -0.6451613}
+          size: {x: 0.5469613, y: 0.3548387}
+        - center: {x: -0.09392265, y: 0.11827957}
+          size: {x: 0.39779004, y: 0.6666667}
+        handTuned: 0
+      - frame: vampire_walking_w6
+        shapes:
+        - center: {x: -0.06077348, y: -0.6344086}
+          size: {x: 0.39779004, y: 0.3655914}
+        - center: {x: 0.0718232, y: 0.16129032}
+          size: {x: 0.39779004, y: 0.68817204}
+        handTuned: 0
+      - frame: vampire_walking_w7
+        shapes:
+        - center: {x: 0.17127071, y: -0.31182796}
+          size: {x: 0.49723756, y: 0.68817204}
+        - center: {x: 0.10497238, y: 0.50537634}
+          size: {x: 0.3646409, y: 0.38709676}
+        handTuned: 0
     scaleConfig:
       scaleIdle: 0
       tint: {r: 0, g: 0, b: 0, a: 1}

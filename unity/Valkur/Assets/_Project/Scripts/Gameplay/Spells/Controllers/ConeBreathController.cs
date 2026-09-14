@@ -225,16 +225,16 @@ namespace Valkur.Gameplay.Spells
             for (int i = 0; i < count; i++)
             {
                 var hit = _hitBuffer[i];
-                if (hit == null || hit.gameObject == _caster.gameObject) continue;
+                if (hit == null) continue;
                 var health = hit.GetComponentInParent<Health>();
-                if (health == null || health.IsDead) continue;
+                if (health == null || health.IsDead || health.gameObject == _caster.gameObject) continue;
 
                 Vector2 point;
-                if (!InsideCone(hit, origin, out point)) continue;
+                if (!InsideCone(health.gameObject, hit, origin, out point)) continue;
 
                 connected = true;
                 health.TakeDotDamage(_damagePerTick, _caster.gameObject, _damageElement);
-                GameEvents.FireHitDealt(_caster.gameObject, hit.gameObject, _damagePerTick);
+                GameEvents.FireHitDealt(_caster.gameObject, health.gameObject, _damagePerTick);
 
                 if (refreshBurn)
                 {
@@ -262,9 +262,38 @@ namespace Valkur.Gameplay.Spells
         /// contact written to <paramref name="point"/>. Both the reach and the half-width come
         /// from the rig, so the test is against the shape actually on screen.
         /// </summary>
-        private bool InsideCone(Collider2D hit, Vector2 origin, out Vector2 point)
+        /// <summary>
+        /// Whether the fire reaches this BODY: every sample of its hurtbox is tried, so a long
+        /// creature whose nearest point sits just outside the wedge is still burnt where the
+        /// wedge visibly covers it. The accepted sample nearest the caster is the impact point.
+        /// </summary>
+        private bool InsideCone(GameObject victim, Collider2D hit, Vector2 origin, out Vector2 point)
         {
             point = hit.ClosestPoint(origin);
+            _probePoints.Clear();
+            Combat.EntityBody.ProbePoints(victim, origin, _probePoints);
+            _probePoints.Add(point);
+
+            bool found = false;
+            float best = float.PositiveInfinity;
+            for (int i = 0; i < _probePoints.Count; i++)
+            {
+                if (!InsideWedge(_probePoints[i], origin)) continue;
+                float d = (_probePoints[i] - origin).sqrMagnitude;
+                if (d >= best) continue;
+                best = d;
+                point = _probePoints[i];
+                found = true;
+            }
+            _probePoints.Clear();
+            return found;
+        }
+
+        private readonly System.Collections.Generic.List<Vector2> _probePoints =
+            new System.Collections.Generic.List<Vector2>(16);
+
+        private bool InsideWedge(Vector2 point, Vector2 origin)
+        {
             Vector2 offset = point - origin;
 
             float along = Vector2.Dot(offset, _direction);

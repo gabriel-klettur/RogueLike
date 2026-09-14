@@ -142,6 +142,9 @@ namespace Valkur.Gameplay.Spells
             // an author comes to believe an area moved when nothing moved. Free when off.
             Debugging.SpellDebugAreas.BeginCast(spell, transform);
             if (Debugging.SpellDebugAreas.Enabled) RecordCastGeometry(spell, ctx);
+            // Opens a new serial but does not clear: the entity picture stays until this cast
+            // actually reaches something. Free when off.
+            Debugging.EntityCollisionDebug.BeginCast(spell, transform);
 
             if (Executors.TryGetValue(spell.type, out var executor))
             {

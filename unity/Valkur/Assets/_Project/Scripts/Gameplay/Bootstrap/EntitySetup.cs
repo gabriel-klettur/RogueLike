@@ -63,6 +63,13 @@ namespace Valkur.Gameplay
                 EntitySpriteHelper.EnsurePlayerSprite(spriteRenderer);
             EntitySpriteHelper.EnsureUnlitMaterial(spriteRenderer);
 
+            // The player keeps the prefab's hand-tuned footprint — movement, the void clamp and
+            // every door and portal were tuned against it — and gains a hurtbox, so a monster's
+            // blow lands on the body it can see instead of on a 0.5 x 0.3 box at the boots.
+            EntityColliderConfigurator.InstallRig(go,
+                appliedDataDrivenVisuals ? def.assetConfig.collision : null,
+                spriteRenderer, go.GetComponent<Collider2D>());
+
             // Only for a character that declares one. Adding the component unconditionally
             // would put an inert MonoBehaviour on four of the five players and make
             // "does this character have loadouts?" a question you answer by reading its
@@ -144,6 +151,7 @@ namespace Valkur.Gameplay
             EnsureCraftingPanelUI();
             EnsureCombatRangeVisualizer();
             EnsureSpellDebugRenderer();
+            EnsureEntityCollisionDebugRenderer();
         }
 
         public static void ConfigureMonster(GameObject go, MonsterDefinition def)
@@ -166,7 +174,11 @@ namespace Valkur.Gameplay
             if (!appliedDataDrivenVisuals)
                 EntitySpriteHelper.EnsureMonsterSprite(spriteRenderer);
             EntitySpriteHelper.EnsureUnlitMaterial(spriteRenderer);
-            EntityColliderConfigurator.ConfigureNpcBodyCollider(go, spriteRenderer);
+            // Feet on the ground, body where it is drawn. The footprint is sized once from the
+            // idle frame the binder just seated; the hurtbox follows every frame after this.
+            var collisionProfile = def.assetConfig != null ? def.assetConfig.collision : null;
+            var footprint = EntityColliderConfigurator.ConfigureNpcFootprint(go, spriteRenderer, collisionProfile);
+            EntityColliderConfigurator.InstallRig(go, collisionProfile, spriteRenderer, footprint);
             // hp / defense / meleeDamage are the three stats MonsterDefinition.level scales;
             // everything else is read straight off def.stats on purpose. Level <= 1 — every
             // shipped monster today — returns the authored struct unchanged.
@@ -290,6 +302,12 @@ namespace Valkur.Gameplay
         /// </summary>
         private static void InitPlayerProgression(GameObject go, PlayerDefinition def)
         {
+            // The pool running spends. BEFORE PlayerStats, so its first push finds it: the class's
+            // maxDexterity becomes StatKind.MaxEnergy, and Energy.SetMax keeps a full pool full.
+            // Nothing ever added this component, which is why food with 'energy' did nothing.
+            if (go.GetComponent<Valkur.Gameplay.Player.Energy>() == null)
+                go.AddComponent<Valkur.Gameplay.Player.Energy>().SetExternallyRegulated(true);
+
             if (go.GetComponent<PlayerStats>() == null)
                 go.AddComponent<PlayerStats>();
 

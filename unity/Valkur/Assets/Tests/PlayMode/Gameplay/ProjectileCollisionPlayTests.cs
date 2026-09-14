@@ -111,7 +111,9 @@ namespace Valkur.Tests.PlayMode.Gameplay
 
             var legacy = go.AddComponent<CircleCollider2D>();
             legacy.radius = 2f;
-            EntityColliderConfigurator.ConfigureNpcBodyCollider(go, renderer);
+            // What EntitySetup.ConfigureMonster does: a footprint at the feet plus the hurtbox.
+            var footprint = EntityColliderConfigurator.ConfigureNpcFootprint(go, renderer);
+            EntityColliderConfigurator.InstallRig(go, null, renderer, footprint);
 
             var h = go.AddComponent<Health>();
             h.Initialize(hp);
@@ -257,12 +259,15 @@ namespace Valkur.Tests.PlayMode.Gameplay
                 yield return null;
             }
 
-            var box = _target.GetComponent<BoxCollider2D>();
+            var rig = _target.GetComponent<Valkur.Gameplay.Combat.EntityColliderRig>();
             var h = _target.GetComponent<Health>();
 
-            Assert.IsNotNull(box, "Configured NPCs must expose one cheap BoxCollider2D body.");
-            Assert.AreEqual(box.bounds.size.x, box.bounds.size.y, 0.001f, "NPC body collider must be square in world space.");
-            Assert.Less(h.CurrentHp, 100, "Projectile should damage the configured NPC body collider.");
+            // A configured NPC is a footprint capsule at the feet (walking) plus a hurtbox rig
+            // on a child (being hit) — the single square BoxCollider2D body is gone.
+            Assert.IsNotNull(rig, "Configured NPCs must carry an EntityColliderRig.");
+            Assert.IsInstanceOf<CapsuleCollider2D>(rig.Footprint, "The footprint is a capsule on the root.");
+            Assert.Greater(rig.HurtboxCount, 0, "The rig must expose at least one hurtbox.");
+            Assert.Less(h.CurrentHp, 100, "Projectile should damage the configured NPC through its hurtbox.");
             Assert.IsTrue(_projectile == null || !_projectile.activeInHierarchy,
                 "Projectile must expire after hitting the configured NPC body collider.");
         }

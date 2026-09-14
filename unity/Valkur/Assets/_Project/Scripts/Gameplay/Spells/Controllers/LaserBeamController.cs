@@ -468,9 +468,12 @@ namespace Valkur.Gameplay.Spells
                         foreach (var c in hits)
                         {
                             if (c.gameObject == gameObject) continue;
-                            if (damagedThisTick.Contains(c.gameObject)) continue;
 
                             var health = c.GetComponentInParent<Health>();
+                            // Keyed on the ENTITY, never the collider: a body is a footprint plus
+                            // hurtbox capsules, and those sit on different GameObjects.
+                            if (health != null && damagedThisTick.Contains(health.gameObject)) continue;
+                            if (health != null && _ctx.Caster != null && health.gameObject == _ctx.Caster.gameObject) continue;
                             if (health != null && !health.IsDead)
                             {
                                 // Was attributing every hit to the beam's own GameObject
@@ -480,9 +483,9 @@ namespace Valkur.Gameplay.Spells
                                 // bypasses the post-hit grace window like any other DoT.
                                 GameObject casterGo = _ctx.Caster != null ? _ctx.Caster.gameObject : gameObject;
                                 health.TakeDotDamage(dmg, casterGo, ProjectileExecutor.ResolveElement(_ctx.Spell));
-                                Valkur.Core.GameEvents.FireHitDealt(casterGo, c.gameObject, dmg);
+                                Valkur.Core.GameEvents.FireHitDealt(casterGo, health.gameObject, dmg);
                                 Combat.StatusApplicationFactory.ApplyAll(_ctx.Spell.statusApplications, health.gameObject, casterGo);
-                                damagedThisTick.Add(c.gameObject);
+                                damagedThisTick.Add(health.gameObject);
                             }
                         }
                     }

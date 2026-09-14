@@ -18,6 +18,12 @@ namespace Valkur.Gameplay.Spells.Debugging
     ///
     /// <para>Free when the overlay is off: <see cref="SpellDebugAreas"/> returns on its first
     /// line, so what remains is the <c>Physics2D</c> call the site was already making.</para>
+    ///
+    /// <para><b>Every query result is folded to one collider per entity</b>
+    /// (<see cref="Combat.EntityHitFilter"/>) before it is returned. An entity's hurtbox is
+    /// several capsules, and the executors that call this walk the result and damage each
+    /// <c>Health</c> they find; folding here is what keeps a splash from hitting a dragon once
+    /// per capsule without every executor having to learn about capsules.</para>
     /// </summary>
     public static class SpellProbe
     {
@@ -25,14 +31,37 @@ namespace Valkur.Gameplay.Spells.Debugging
                                                     SpellDebugRole role, string label = null)
         {
             SpellDebugAreas.Circle(centre, radius, role, label);
-            return Physics2D.OverlapCircleAll(centre, radius, mask);
+            var hits = Physics2D.OverlapCircleAll(centre, radius, mask);
+            RecordContacts(hits, hits.Length);
+            return Combat.EntityHitFilter.Collapse(hits, centre);
         }
 
         public static int OverlapCircleNonAlloc(Vector2 centre, float radius, Collider2D[] results,
                                                 LayerMask mask, SpellDebugRole role, string label = null)
         {
             SpellDebugAreas.Circle(centre, radius, role, label);
-            return Physics2D.OverlapCircleNonAlloc(centre, radius, results, mask);
+            int count = Physics2D.OverlapCircleNonAlloc(centre, radius, results, mask);
+            RecordContacts(results, count);
+            return Combat.EntityHitFilter.Collapse(results, count, centre);
+        }
+
+        /// <summary>
+        /// Every collider a spell query returned, handed to the entity-collision overlay BEFORE
+        /// the executor narrows it. That ordering is the point: a target the executor then
+        /// rejects is exactly the one an author cannot otherwise see. Free when that overlay is off.
+        /// </summary>
+        private static void RecordContacts(Collider2D[] colliders, int count)
+        {
+            if (!EntityCollisionDebug.Enabled || colliders == null) return;
+            for (int i = 0; i < count && i < colliders.Length; i++)
+                EntityCollisionDebug.Touched(colliders[i]);
+        }
+
+        private static void RecordContacts(RaycastHit2D[] hits)
+        {
+            if (!EntityCollisionDebug.Enabled || hits == null) return;
+            for (int i = 0; i < hits.Length; i++)
+                EntityCollisionDebug.Touched(hits[i].collider);
         }
 
         /// <summary>
@@ -56,7 +85,9 @@ namespace Valkur.Gameplay.Spells.Debugging
                                         centre + axis * (length * 0.5f),
                                         half * 0.5f, role, label);
             }
-            return Physics2D.OverlapCapsuleAll(centre, size, capsuleDirection, angle, mask);
+            var hits = Physics2D.OverlapCapsuleAll(centre, size, capsuleDirection, angle, mask);
+            RecordContacts(hits, hits.Length);
+            return Combat.EntityHitFilter.Collapse(hits, centre);
         }
 
         public static RaycastHit2D[] CircleCastAll(Vector2 origin, float radius, Vector2 direction,
@@ -64,7 +95,9 @@ namespace Valkur.Gameplay.Spells.Debugging
                                                    SpellDebugRole role, string label = null)
         {
             SpellDebugAreas.Segment(origin, origin + direction.normalized * distance, radius, role, label);
-            return Physics2D.CircleCastAll(origin, radius, direction, distance, mask);
+            var hits = Physics2D.CircleCastAll(origin, radius, direction, distance, mask);
+            RecordContacts(hits);
+            return Combat.EntityHitFilter.Collapse(hits);
         }
 
         public static RaycastHit2D CircleCast(Vector2 origin, float radius, Vector2 direction,
@@ -72,7 +105,9 @@ namespace Valkur.Gameplay.Spells.Debugging
                                               SpellDebugRole role, string label = null)
         {
             SpellDebugAreas.Segment(origin, origin + direction.normalized * distance, radius, role, label);
-            return Physics2D.CircleCast(origin, radius, direction, distance, mask);
+            var hit = Physics2D.CircleCast(origin, radius, direction, distance, mask);
+            if (EntityCollisionDebug.Enabled) EntityCollisionDebug.Touched(hit.collider);
+            return hit;
         }
     }
 }

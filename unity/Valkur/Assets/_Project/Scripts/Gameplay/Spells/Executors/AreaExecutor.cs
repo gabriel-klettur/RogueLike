@@ -27,13 +27,14 @@ namespace Valkur.Gameplay.Spells
                 Debugging.SpellDebugRole.Damage, "area " + radius.ToString("0.##") + " u");
             foreach (var hit in hits)
             {
-                if (hit.gameObject == ctx.Caster.gameObject) continue;
                 var health = hit.GetComponentInParent<Health>();
-                if (health == null || health.IsDead) continue;
+                // The caster is excluded by its ENTITY: its own hurtbox capsules are children, so
+                // comparing the collider's GameObject would let a caster blast itself.
+                if (health == null || health.IsDead || health.gameObject == ctx.Caster.gameObject) continue;
 
                 int dealt = SpellPower.ScaleToInt(ctx.Spell.damage, ctx.Caster);
                 health.TakeDamage(dealt, ctx.Caster.gameObject, element);
-                Valkur.Core.GameEvents.FireHitDealt(ctx.Caster.gameObject, hit.gameObject, dealt);
+                Valkur.Core.GameEvents.FireHitDealt(ctx.Caster.gameObject, health.gameObject, dealt);
                 StatusApplicationFactory.ApplyAll(ctx.Spell.statusApplications,
                                                   health.gameObject, ctx.Caster.gameObject);
 

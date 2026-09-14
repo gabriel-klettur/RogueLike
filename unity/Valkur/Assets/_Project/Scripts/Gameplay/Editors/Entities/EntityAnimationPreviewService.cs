@@ -192,6 +192,7 @@ namespace Valkur.Gameplay.Entities
         {
             if (!_initialized) return;
             ClearRigs();
+            ShutdownCollisionOverlay();
             // The camera lets go of the texture FIRST: releasing a RenderTexture a live camera
             // still names as its target logs "Releasing render texture that is set as
             // Camera.targetTexture!" into a console this project requires to be clean.
@@ -502,6 +503,7 @@ namespace Valkur.Gameplay.Entities
             // the mouth, or drift off it, as the animation plays is the whole reason the
             // muzzle is authored here rather than in the Inspector.
             UpdateMuzzleMarker();
+            UpdateCollisionOverlay();
         }
 
         // ── Rig construction ─────────────────────────────────────────────────────

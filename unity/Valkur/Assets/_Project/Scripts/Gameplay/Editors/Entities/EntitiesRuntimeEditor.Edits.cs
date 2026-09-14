@@ -141,6 +141,7 @@ namespace Valkur.Gameplay.Entities
             if (!string.IsNullOrEmpty(_selectedKey) && _selectedKey == def.monsterKey)
                 ShowMonsterProperties(def.monsterKey);
             RefreshMuzzleEditor();
+            RefreshCollisionEditor();
             RefreshTimelinePanel();
 
             SetStatus(live > 0

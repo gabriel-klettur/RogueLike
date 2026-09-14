@@ -1332,6 +1332,8 @@ MonoBehaviour:
       - weapon_toggle
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 0
+      repeatFrameCount: 0
       timeline:
         steps: []
         releaseStep: 0
@@ -1418,6 +1420,8 @@ MonoBehaviour:
       - dash
       animationSpeedMultiplier: 4
       holdLastFrame: 1
+      repeatFrom: 0
+      repeatFrameCount: 0
       timeline:
         steps: []
         releaseStep: 0
@@ -1961,6 +1965,8 @@ MonoBehaviour:
         animationSpeedMultiplier: 1
         holdLastFrame: 0
     statePacing: []
+    walkReferenceSpeed: 0
+    runReferenceSpeed: 0
     loadouts:
     - key: armed
       states:
@@ -3164,6 +3170,8 @@ MonoBehaviour:
         - slash_stab
         animationSpeedMultiplier: 1
         holdLastFrame: 0
+        repeatFrom: 0
+        repeatFrameCount: 0
         timeline:
           steps: []
           releaseStep: 0
@@ -3250,6 +3258,8 @@ MonoBehaviour:
         - weapon_toggle
         animationSpeedMultiplier: 1
         holdLastFrame: 0
+        repeatFrom: 0
+        repeatFrameCount: 0
         timeline:
           steps: []
           releaseStep: 0
@@ -3259,6 +3269,3680 @@ MonoBehaviour:
           recoverMode: 2
     castMuzzle: {x: 0, y: 0}
     castMuzzleFrames: []
+    castMuzzlePoints: []
+    collision:
+      footprintSize: {x: 1.0704688, y: 0.48171094}
+      footprintOffset: {x: 0, y: 0}
+      footprintHandTuned: 0
+      hurtScale: 1
+      hurtShapes: []
+      hurtShapeFrames:
+      - frame: mague_armed_1_e0
+        shapes:
+        - center: {x: -0.17098446, y: -0.6721311}
+          size: {x: 0.31088084, y: 0.32786885}
+        - center: {x: -0.119170986, y: -0.16393442}
+          size: {x: 0.2849741, y: 0.37704918}
+        - center: {x: -0.041450776, y: 0.3442623}
+          size: {x: 0.25906736, y: 0.32786885}
+        handTuned: 0
+      - frame: mague_armed_1_e1
+        shapes:
+        - center: {x: 0.049222797, y: -0.60655737}
+          size: {x: 0.29792747, y: 0.39344263}
+        - center: {x: 0.10103627, y: -0.016393442}
+          size: {x: 0.24611399, y: 0.45901638}
+        - center: {x: 0.19170985, y: 0.59016395}
+          size: {x: 0.18134715, y: 0.40983605}
+        handTuned: 0
+      - frame: mague_armed_1_e2
+        shapes:
+        - center: {x: 0.26943004, y: -0.6229508}
+          size: {x: 0.2849741, y: 0.37704918}
+        - center: {x: 0.30829015, y: -0.06557377}
+          size: {x: 0.19430052, y: 0.44262296}
+        - center: {x: 0.1658031, y: 0.5081967}
+          size: {x: 0.25906736, y: 0.39344263}
+        handTuned: 0
+      - frame: mague_armed_1_e3
+        shapes:
+        - center: {x: 0.36010364, y: -0.57377046}
+          size: {x: 0.34974092, y: 0.4262295}
+        - center: {x: 0.46373057, y: 0.016393442}
+          size: {x: 0.19430052, y: 0.4262295}
+        handTuned: 0
+      - frame: mague_armed_1_e4
+        shapes:
+        - center: {x: -0.4041451, y: -0.39344263}
+          size: {x: 0.3626943, y: 0.37704918}
+        - center: {x: 0.126943, y: -0.36065573}
+          size: {x: 0.42746115, y: 0.44262296}
+        - center: {x: 0.6476684, y: -0.18032786}
+          size: {x: 0.3523316, y: 0.09836066}
+        handTuned: 0
+      - frame: mague_armed_1_e5
+        shapes:
+        - center: {x: -0.24870466, y: -0.59016395}
+          size: {x: 0.2849741, y: 0.40983605}
+        - center: {x: -0.3523316, y: -0.016393442}
+          size: {x: 0.44041452, y: 0.4262295}
+        handTuned: 0
+      - frame: mague_armed_1_e6
+        shapes:
+        - center: {x: -0.3523316, y: -0.704918}
+          size: {x: 0.31088084, y: 0.29508197}
+        - center: {x: -0.3523316, y: -0.24590164}
+          size: {x: 0.23316061, y: 0.36065573}
+        - center: {x: -0.2746114, y: 0.22950819}
+          size: {x: 0.25906736, y: 0.3114754}
+        handTuned: 0
+      - frame: mague_armed_1_e7
+        shapes:
+        - center: {x: -0.2357513, y: -0.39344263}
+          size: {x: 0.29792747, y: 0.60655737}
+        - center: {x: -0.13212435, y: 0.36065573}
+          size: {x: 0.24611399, y: 0.3442623}
+        handTuned: 0
+      - frame: mague_armed_1_w0
+        shapes:
+        - center: {x: -0.1658031, y: -0.39344263}
+          size: {x: 0.31088084, y: 0.60655737}
+        - center: {x: -0.049222797, y: 0.3442623}
+          size: {x: 0.27202073, y: 0.32786885}
+        handTuned: 0
+      - frame: mague_armed_1_w1
+        shapes:
+        - center: {x: 0.041450776, y: -0.60655737}
+          size: {x: 0.31088084, y: 0.39344263}
+        - center: {x: 0.106217615, y: -0.016393442}
+          size: {x: 0.24611399, y: 0.45901638}
+        - center: {x: 0.18393782, y: 0.59016395}
+          size: {x: 0.16839378, y: 0.40983605}
+        handTuned: 0
+      - frame: mague_armed_1_w2
+        shapes:
+        - center: {x: 0.26165804, y: -0.6229508}
+          size: {x: 0.29792747, y: 0.37704918}
+        - center: {x: 0.28756475, y: -0.06557377}
+          size: {x: 0.19430052, y: 0.44262296}
+        - center: {x: 0.15803109, y: 0.5081967}
+          size: {x: 0.27202073, y: 0.39344263}
+        handTuned: 0
+      - frame: mague_armed_1_w3
+        shapes:
+        - center: {x: 0.3523316, y: -0.57377046}
+          size: {x: 0.33678755, y: 0.4262295}
+        - center: {x: 0.45595855, y: 0.016393442}
+          size: {x: 0.20725389, y: 0.4262295}
+        handTuned: 0
+      - frame: mague_armed_1_w4
+        shapes:
+        - center: {x: 0.6502591, y: -0.18032786}
+          size: {x: 0.34974092, y: 0.09836066}
+        - center: {x: 0.13212435, y: -0.36065573}
+          size: {x: 0.42746115, y: 0.44262296}
+        - center: {x: -0.39896372, y: -0.39344263}
+          size: {x: 0.3626943, y: 0.37704918}
+        handTuned: 0
+      - frame: mague_armed_1_w5
+        shapes:
+        - center: {x: -0.25647667, y: -0.59016395}
+          size: {x: 0.27202073, y: 0.40983605}
+        - center: {x: -0.34715027, y: -0.016393442}
+          size: {x: 0.44041452, y: 0.4262295}
+        handTuned: 0
+      - frame: mague_armed_1_w6
+        shapes:
+        - center: {x: -0.34715027, y: -0.704918}
+          size: {x: 0.31088084, y: 0.29508197}
+        - center: {x: -0.36010364, y: -0.24590164}
+          size: {x: 0.24611399, y: 0.36065573}
+        - center: {x: -0.26943004, y: 0.22950819}
+          size: {x: 0.25906736, y: 0.3114754}
+        handTuned: 0
+      - frame: mague_armed_1_w7
+        shapes:
+        - center: {x: -0.24352331, y: -0.39344263}
+          size: {x: 0.31088084, y: 0.60655737}
+        - center: {x: -0.126943, y: 0.36065573}
+          size: {x: 0.24611399, y: 0.3442623}
+        handTuned: 0
+      - frame: mague_die_2_e0
+        shapes:
+        - center: {x: -0.3647059, y: -0.6015326}
+          size: {x: 0.32941177, y: 0.39846742}
+        - center: {x: -0.48235294, y: 0.011494253}
+          size: {x: 0.30588236, y: 0.4597701}
+        - center: {x: -0.5411765, y: 0.6130268}
+          size: {x: 0.2, y: 0.38697317}
+        handTuned: 0
+      - frame: mague_die_2_e1
+        shapes:
+        - center: {x: -0.1764706, y: -0.5095785}
+          size: {x: 0.32941177, y: 0.4597701}
+        - center: {x: -0.09411765, y: 0.10344828}
+          size: {x: 0.34117648, y: 0.4597701}
+        handTuned: 0
+      - frame: mague_die_2_e2
+        shapes:
+        - center: {x: -0.14117648, y: -0.44827586}
+          size: {x: 0.43529412, y: 0.39846742}
+        - center: {x: 0.4, y: -0.57088125}
+          size: {x: 0.24705882, y: 0.3065134}
+        handTuned: 0
+      - frame: mague_die_2_e3
+        shapes:
+        - center: {x: -0.07058824, y: -0.57088125}
+          size: {x: 0.2, y: 0.3065134}
+        - center: {x: 0.22352941, y: -0.61685824}
+          size: {x: 0.23529412, y: 0.29118773}
+        - center: {x: 0.5294118, y: -0.5095785}
+          size: {x: 0.21176471, y: 0.3678161}
+        handTuned: 0
+      - frame: mague_die_2_e4
+        shapes:
+        - center: {x: -0.16470589, y: -0.70881224}
+          size: {x: 0.15294118, y: 0.16858238}
+        - center: {x: 0.43529412, y: -0.66283524}
+          size: {x: 0.5411765, y: 0.24521072}
+        handTuned: 0
+      - frame: mague_die_2_e5
+        shapes:
+        - center: {x: -0.42352942, y: -0.77011496}
+          size: {x: 0.1764706, y: 0.13793103}
+        - center: {x: 0.14117648, y: -0.7394636}
+          size: {x: 0.5294118, y: 0.19923371}
+        - center: {x: 0.7058824, y: -0.6934866}
+          size: {x: 0.1764706, y: 0.21455939}
+        handTuned: 0
+      - frame: mague_die_2_e6
+        shapes:
+        - center: {x: -0.8117647, y: -0.7854406}
+          size: {x: 0.1882353, y: 0.18390805}
+        - center: {x: -0.22352941, y: -0.7394636}
+          size: {x: 0.5411765, y: 0.19923371}
+        - center: {x: 0.3764706, y: -0.8007663}
+          size: {x: 0.2, y: 0.13793103}
+        handTuned: 0
+      - frame: mague_die_2_w0
+        shapes:
+        - center: {x: -0.3647059, y: -0.6015326}
+          size: {x: 0.32941177, y: 0.39846742}
+        - center: {x: -0.48235294, y: 0.011494253}
+          size: {x: 0.30588236, y: 0.4597701}
+        - center: {x: -0.5411765, y: 0.6130268}
+          size: {x: 0.2, y: 0.38697317}
+        handTuned: 0
+      - frame: mague_die_2_w1
+        shapes:
+        - center: {x: -0.1764706, y: -0.5095785}
+          size: {x: 0.32941177, y: 0.4597701}
+        - center: {x: -0.09411765, y: 0.10344828}
+          size: {x: 0.34117648, y: 0.4597701}
+        handTuned: 0
+      - frame: mague_die_2_w2
+        shapes:
+        - center: {x: 0.4117647, y: -0.57088125}
+          size: {x: 0.23529412, y: 0.3065134}
+        - center: {x: -0.12941177, y: -0.44827586}
+          size: {x: 0.44705883, y: 0.39846742}
+        handTuned: 0
+      - frame: mague_die_2_w3
+        shapes:
+        - center: {x: 0.5411765, y: -0.5095785}
+          size: {x: 0.2, y: 0.3678161}
+        - center: {x: 0.105882354, y: -0.57088125}
+          size: {x: 0.3764706, y: 0.3065134}
+        handTuned: 0
+      - frame: mague_die_2_w4
+        shapes:
+        - center: {x: 0.8352941, y: -0.70881224}
+          size: {x: 0.14117648, y: 0.19923371}
+        - center: {x: 0.3529412, y: -0.66283524}
+          size: {x: 0.43529412, y: 0.24521072}
+        - center: {x: -0.15294118, y: -0.70881224}
+          size: {x: 0.16470589, y: 0.16858238}
+        handTuned: 0
+      - frame: mague_die_2_w5
+        shapes:
+        - center: {x: 0.25882354, y: -0.70881224}
+          size: {x: 0.62352943, y: 0.22988506}
+        - center: {x: -0.4117647, y: -0.77011496}
+          size: {x: 0.1882353, y: 0.13793103}
+        handTuned: 0
+      - frame: mague_die_2_w6
+        shapes:
+        - center: {x: 0.3882353, y: -0.8007663}
+          size: {x: 0.1882353, y: 0.13793103}
+        - center: {x: 0.11764706, y: -0.77011496}
+          size: {x: 0.22352941, y: 0.16858238}
+        - center: {x: -0.3529412, y: -0.7394636}
+          size: {x: 0.3882353, y: 0.19923371}
+        - center: {x: -0.8, y: -0.7854406}
+          size: {x: 0.2, y: 0.18390805}
+        handTuned: 0
+      - frame: mague_die_3_e0
+        shapes:
+        - center: {x: -0.13294798, y: 0}
+          size: {x: 0.3583815, y: 1}
+        handTuned: 0
+      - frame: mague_die_3_e1
+        shapes:
+        - center: {x: 0.17919075, y: -0.5175097}
+          size: {x: 0.3699422, y: 0.48249027}
+        - center: {x: -0.040462427, y: 0.13618676}
+          size: {x: 0.33526012, y: 0.48249027}
+        handTuned: 0
+      - frame: mague_die_3_e2
+        shapes:
+        - center: {x: 0.12138728, y: -0.6264591}
+          size: {x: 0.3583815, y: 0.37354085}
+        - center: {x: 0.0867052, y: -0.12840466}
+          size: {x: 0.20809248, y: 0.37354085}
+        handTuned: 0
+      - frame: mague_die_3_e3
+        shapes:
+        - center: {x: -0.32947975, y: -0.79766536}
+          size: {x: 0.1849711, y: 0.17120622}
+        - center: {x: 0.0867052, y: -0.67315173}
+          size: {x: 0.3699422, y: 0.26459143}
+        - center: {x: 0.50289017, y: -0.71984434}
+          size: {x: 0.1849711, y: 0.24902724}
+        handTuned: 0
+      - frame: mague_die_3_e4
+        shapes:
+        - center: {x: -0.37572256, y: -0.82879376}
+          size: {x: 0.1849711, y: 0.14007781}
+        - center: {x: 0.05202312, y: -0.75097275}
+          size: {x: 0.3815029, y: 0.18677042}
+        - center: {x: 0.5260116, y: -0.68871593}
+          size: {x: 0.23121387, y: 0.24902724}
+        - center: {x: 0.80924857, y: -0.82879376}
+          size: {x: 0.19075145, y: 0.14007781}
+        handTuned: 0
+      - frame: mague_die_3_e5
+        shapes:
+        - center: {x: -0.6647399, y: -0.70428014}
+          size: {x: 0.19653179, y: 0.14007781}
+        - center: {x: -0.040462427, y: -0.68871593}
+          size: {x: 0.56647396, y: 0.24902724}
+        - center: {x: 0.5953757, y: -0.78210115}
+          size: {x: 0.20809248, y: 0.15564202}
+        handTuned: 0
+      - frame: mague_die_3_e6
+        shapes:
+        - center: {x: -0.8150289, y: -0.78210115}
+          size: {x: 0.1849711, y: 0.15564202}
+        - center: {x: -0.39884394, y: -0.73540854}
+          size: {x: 0.3699422, y: 0.23346303}
+        - center: {x: 0.05202312, y: -0.75097275}
+          size: {x: 0.21965317, y: 0.18677042}
+        - center: {x: 0.32947975, y: -0.84435797}
+          size: {x: 0.19653179, y: 0.12451362}
+        handTuned: 0
+      - frame: mague_die_3_w0
+        shapes:
+        - center: {x: -0.12138728, y: 0}
+          size: {x: 0.3583815, y: 1}
+        handTuned: 0
+      - frame: mague_die_3_w1
+        shapes:
+        - center: {x: 0.19075145, y: -0.5175097}
+          size: {x: 0.3699422, y: 0.48249027}
+        - center: {x: -0.05202312, y: 0.13618676}
+          size: {x: 0.33526012, y: 0.48249027}
+        handTuned: 0
+      - frame: mague_die_3_w2
+        shapes:
+        - center: {x: 0.12138728, y: -0.6264591}
+          size: {x: 0.3468208, y: 0.37354085}
+        - center: {x: 0.0867052, y: -0.12840466}
+          size: {x: 0.19653179, y: 0.37354085}
+        handTuned: 0
+      - frame: mague_die_3_w3
+        shapes:
+        - center: {x: 0.51445085, y: -0.71984434}
+          size: {x: 0.1849711, y: 0.24902724}
+        - center: {x: 0.098265894, y: -0.67315173}
+          size: {x: 0.3699422, y: 0.26459143}
+        - center: {x: -0.32947975, y: -0.79766536}
+          size: {x: 0.19653179, y: 0.17120622}
+        handTuned: 0
+      - frame: mague_die_3_w4
+        shapes:
+        - center: {x: 0.8150289, y: -0.82879376}
+          size: {x: 0.1849711, y: 0.14007781}
+        - center: {x: 0.54913294, y: -0.67315173}
+          size: {x: 0.21965317, y: 0.26459143}
+        - center: {x: 0.0867052, y: -0.75097275}
+          size: {x: 0.3815029, y: 0.18677042}
+        - center: {x: -0.35260117, y: -0.79766536}
+          size: {x: 0.19653179, y: 0.14007781}
+        handTuned: 0
+      - frame: mague_die_3_w5
+        shapes:
+        - center: {x: 0.61849713, y: -0.78210115}
+          size: {x: 0.19653179, y: 0.15564202}
+        - center: {x: 0.31791908, y: -0.73540854}
+          size: {x: 0.24277456, y: 0.20233463}
+        - center: {x: -0.19075145, y: -0.68871593}
+          size: {x: 0.40462428, y: 0.24902724}
+        - center: {x: -0.6647399, y: -0.68871593}
+          size: {x: 0.20809248, y: 0.15564202}
+        handTuned: 0
+      - frame: mague_die_3_w6
+        shapes:
+        - center: {x: 0.35260117, y: -0.84435797}
+          size: {x: 0.1849711, y: 0.12451362}
+        - center: {x: 0.0867052, y: -0.75097275}
+          size: {x: 0.21965317, y: 0.18677042}
+        - center: {x: -0.37572256, y: -0.71984434}
+          size: {x: 0.3815029, y: 0.21789883}
+        - center: {x: -0.80924857, y: -0.78210115}
+          size: {x: 0.19075145, y: 0.15564202}
+        handTuned: 0
+      - frame: mague_die_e0
+        shapes:
+        - center: {x: -0.46005508, y: -0.27131784}
+          size: {x: 0.29752067, y: 0.72868216}
+        - center: {x: -0.61432505, y: 0.60465115}
+          size: {x: 0.23140496, y: 0.39534885}
+        handTuned: 0
+      - frame: mague_die_e1
+        shapes:
+        - center: {x: -0.338843, y: -0.51937985}
+          size: {x: 0.28650138, y: 0.48062015}
+        - center: {x: -0.44903582, y: 0.11627907}
+          size: {x: 0.3305785, y: 0.4651163}
+        handTuned: 0
+      - frame: mague_die_e2
+        shapes:
+        - center: {x: -0.46005508, y: -0.6744186}
+          size: {x: 0.23140496, y: 0.23255815}
+        - center: {x: -0.1184573, y: -0.42635658}
+          size: {x: 0.28650138, y: 0.41860464}
+        - center: {x: 0.2231405, y: -0.51937985}
+          size: {x: 0.23140496, y: 0.35658914}
+        handTuned: 0
+      - frame: mague_die_e3
+        shapes:
+        - center: {x: -0.34986225, y: -0.751938}
+          size: {x: 0.2093664, y: 0.12403101}
+        - center: {x: -0.019283747, y: -0.5813953}
+          size: {x: 0.25344354, y: 0.29457363}
+        - center: {x: 0.32231405, y: -0.53488374}
+          size: {x: 0.22038567, y: 0.31007752}
+        handTuned: 0
+      - frame: mague_die_e4
+        shapes:
+        - center: {x: -0.23966943, y: -0.78294575}
+          size: {x: 0.14325069, y: 0.12403101}
+        - center: {x: -0.019283747, y: -0.76744187}
+          size: {x: 0.16528925, y: 0.17054264}
+        - center: {x: 0.44352618, y: -0.7364341}
+          size: {x: 0.38567492, y: 0.23255815}
+        handTuned: 0
+      - frame: mague_die_e5
+        shapes:
+        - center: {x: -0.3168044, y: -0.82945734}
+          size: {x: 0.17630854, y: 0.10852713}
+        - center: {x: 0.09090909, y: -0.76744187}
+          size: {x: 0.36363637, y: 0.17054264}
+        - center: {x: 0.661157, y: -0.751938}
+          size: {x: 0.338843, y: 0.18604651}
+        handTuned: 0
+      - frame: mague_die_e6
+        shapes:
+        - center: {x: -0.62534434, y: -0.7209302}
+          size: {x: 0.1983471, y: 0.21705426}
+        - center: {x: -0.3168044, y: -0.751938}
+          size: {x: 0.24242425, y: 0.18604651}
+        - center: {x: 0.035812672, y: -0.7209302}
+          size: {x: 0.24242425, y: 0.21705426}
+        - center: {x: 0.53168046, y: -0.751938}
+          size: {x: 0.38567492, y: 0.18604651}
+        handTuned: 0
+      - frame: mague_die_w0
+        shapes:
+        - center: {x: -0.44352618, y: -0.27131784}
+          size: {x: 0.29752067, y: 0.72868216}
+        - center: {x: -0.60881543, y: 0.60465115}
+          size: {x: 0.24242425, y: 0.39534885}
+        handTuned: 0
+      - frame: mague_die_w1
+        shapes:
+        - center: {x: -0.3443526, y: -0.51937985}
+          size: {x: 0.28650138, y: 0.48062015}
+        - center: {x: -0.45454547, y: 0.11627907}
+          size: {x: 0.3305785, y: 0.4651163}
+        handTuned: 0
+      - frame: mague_die_w2
+        shapes:
+        - center: {x: 0.23966943, y: -0.53488374}
+          size: {x: 0.23140496, y: 0.34108528}
+        - center: {x: -0.101928376, y: -0.42635658}
+          size: {x: 0.28650138, y: 0.41860464}
+        - center: {x: -0.45454547, y: -0.65891474}
+          size: {x: 0.24242425, y: 0.24806201}
+        handTuned: 0
+      - frame: mague_die_w3
+        shapes:
+        - center: {x: 0.3278237, y: -0.53488374}
+          size: {x: 0.2093664, y: 0.31007752}
+        - center: {x: 0.008264462, y: -0.5813953}
+          size: {x: 0.24242425, y: 0.29457363}
+        - center: {x: -0.32231405, y: -0.7364341}
+          size: {x: 0.22038567, y: 0.13953489}
+        handTuned: 0
+      - frame: mague_die_w4
+        shapes:
+        - center: {x: 0.43801653, y: -0.7364341}
+          size: {x: 0.38567492, y: 0.23255815}
+        - center: {x: -0.024793388, y: -0.76744187}
+          size: {x: 0.16528925, y: 0.17054264}
+        - center: {x: -0.24517906, y: -0.79844964}
+          size: {x: 0.14325069, y: 0.10852713}
+        handTuned: 0
+      - frame: mague_die_w5
+        shapes:
+        - center: {x: 0.8236915, y: -0.7364341}
+          size: {x: 0.17630854, y: 0.2015504}
+        - center: {x: 0.261708, y: -0.76744187}
+          size: {x: 0.5179063, y: 0.17054264}
+        - center: {x: -0.31129476, y: -0.82945734}
+          size: {x: 0.18732782, y: 0.10852713}
+        handTuned: 0
+      - frame: mague_die_w6
+        shapes:
+        - center: {x: 0.5371901, y: -0.751938}
+          size: {x: 0.37465563, y: 0.18604651}
+        - center: {x: 0.0523416, y: -0.7209302}
+          size: {x: 0.24242425, y: 0.21705426}
+        - center: {x: -0.30027547, y: -0.76744187}
+          size: {x: 0.24242425, y: 0.17054264}
+        - center: {x: -0.6198347, y: -0.7209302}
+          size: {x: 0.2093664, y: 0.21705426}
+        handTuned: 0
+      - frame: mague_hit_2_e0
+        shapes:
+        - center: {x: 0.29098362, y: -0.6031128}
+          size: {x: 0.4795082, y: 0.39688715}
+        - center: {x: 0.16803278, y: -0.007782101}
+          size: {x: 0.38114753, y: 0.47859922}
+        - center: {x: -0.016393442, y: 0.5953307}
+          size: {x: 0.3442623, y: 0.40466926}
+        handTuned: 0
+      - frame: mague_hit_2_e1
+        shapes:
+        - center: {x: -0.12704918, y: -0.5097276}
+          size: {x: 0.4795082, y: 0.49027237}
+        - center: {x: 0.25409836, y: 0.15564202}
+          size: {x: 0.39344263, y: 0.5019455}
+        handTuned: 0
+      - frame: mague_hit_2_e2
+        shapes:
+        - center: {x: -0.15163934, y: -0.101167314}
+          size: {x: 0.52868855, y: 0.8988327}
+        handTuned: 0
+      - frame: mague_hit_2_e3
+        shapes:
+        - center: {x: -0.13934426, y: -0.59143966}
+          size: {x: 0.4180328, y: 0.385214}
+        - center: {x: -0.09016393, y: -0.019455252}
+          size: {x: 0.31967214, y: 0.46692607}
+        - center: {x: -0.016393442, y: 0.5642023}
+          size: {x: 0.29508197, y: 0.39688715}
+        handTuned: 0
+      - frame: mague_hit_2_w0
+        shapes:
+        - center: {x: 0.28688523, y: -0.6031128}
+          size: {x: 0.4918033, y: 0.39688715}
+        - center: {x: 0.16393442, y: -0.007782101}
+          size: {x: 0.36885247, y: 0.47859922}
+        - center: {x: -0.008196721, y: 0.5953307}
+          size: {x: 0.3442623, y: 0.40466926}
+        handTuned: 0
+      - frame: mague_hit_2_w1
+        shapes:
+        - center: {x: -0.11885246, y: -0.5097276}
+          size: {x: 0.4795082, y: 0.49027237}
+        - center: {x: 0.25, y: 0.15564202}
+          size: {x: 0.38114753, y: 0.5019455}
+        handTuned: 0
+      - frame: mague_hit_2_w2
+        shapes:
+        - center: {x: -0.1557377, y: -0.101167314}
+          size: {x: 0.5409836, y: 0.8988327}
+        handTuned: 0
+      - frame: mague_hit_2_w3
+        shapes:
+        - center: {x: -0.14344262, y: -0.59143966}
+          size: {x: 0.43032786, y: 0.385214}
+        - center: {x: -0.08196721, y: -0.019455252}
+          size: {x: 0.31967214, y: 0.46692607}
+        - center: {x: -0.008196721, y: 0.5642023}
+          size: {x: 0.29508197, y: 0.39688715}
+        handTuned: 0
+      - frame: mague_hit_e0
+        shapes:
+        - center: {x: 0, y: -0.26171875}
+          size: {x: 0.4117647, y: 0.73828125}
+        - center: {x: -0.07058824, y: 0.59765625}
+          size: {x: 0.29411766, y: 0.40234375}
+        handTuned: 0
+      - frame: mague_hit_e1
+        shapes:
+        - center: {x: 0.24705882, y: -0.44921875}
+          size: {x: 0.47058824, y: 0.55078125}
+        - center: {x: 0.023529412, y: 0.265625}
+          size: {x: 0.5058824, y: 0.5390625}
+        handTuned: 0
+      - frame: mague_hit_e2
+        shapes:
+        - center: {x: -0.29411766, y: -0.49609375}
+          size: {x: 0.44705883, y: 0.50390625}
+        - center: {x: 0.023529412, y: 0.1953125}
+          size: {x: 0.4117647, y: 0.515625}
+        handTuned: 0
+      - frame: mague_hit_e3
+        shapes:
+        - center: {x: -0.2, y: -0.6015625}
+          size: {x: 0.42352942, y: 0.3984375}
+        - center: {x: -0.14117648, y: -0.00390625}
+          size: {x: 0.34117648, y: 0.48046875}
+        - center: {x: -0.105882354, y: 0.59765625}
+          size: {x: 0.28235295, y: 0.40234375}
+        handTuned: 0
+      - frame: mague_hit_w0
+        shapes:
+        - center: {x: -0, y: -0.26171875}
+          size: {x: 0.4117647, y: 0.73828125}
+        - center: {x: -0.07058824, y: 0.59765625}
+          size: {x: 0.29411766, y: 0.40234375}
+        handTuned: 0
+      - frame: mague_hit_w1
+        shapes:
+        - center: {x: 0.24705882, y: -0.44921875}
+          size: {x: 0.47058824, y: 0.55078125}
+        - center: {x: 0.023529412, y: 0.265625}
+          size: {x: 0.5058824, y: 0.5390625}
+        handTuned: 0
+      - frame: mague_hit_w2
+        shapes:
+        - center: {x: -0.29411766, y: -0.49609375}
+          size: {x: 0.44705883, y: 0.50390625}
+        - center: {x: 0.023529412, y: 0.1953125}
+          size: {x: 0.4117647, y: 0.515625}
+        handTuned: 0
+      - frame: mague_hit_w3
+        shapes:
+        - center: {x: -0.2, y: -0.6015625}
+          size: {x: 0.42352942, y: 0.3984375}
+        - center: {x: -0.14117648, y: -0.00390625}
+          size: {x: 0.34117648, y: 0.48046875}
+        - center: {x: -0.105882354, y: 0.59765625}
+          size: {x: 0.28235295, y: 0.40234375}
+        handTuned: 0
+      - frame: mague_kick_e0
+        shapes:
+        - center: {x: 0.16593887, y: -0.619403}
+          size: {x: 0.40611354, y: 0.38059703}
+        - center: {x: 0.20524018, y: -0.048507463}
+          size: {x: 0.34061137, y: 0.45895523}
+        - center: {x: 0.23144105, y: 0.5335821}
+          size: {x: 0.26200873, y: 0.39179105}
+        handTuned: 0
+      - frame: mague_kick_e1
+        shapes:
+        - center: {x: 0.20524018, y: -0.5858209}
+          size: {x: 0.28820962, y: 0.39179105}
+        - center: {x: 0.29694322, y: -0.0037313432}
+          size: {x: 0.37991267, y: 0.45895523}
+        - center: {x: 0.27074236, y: 0.5895522}
+          size: {x: 0.27510917, y: 0.40298507}
+        handTuned: 0
+      - frame: mague_kick_e2
+        shapes:
+        - center: {x: -0.1091703, y: -0.5970149}
+          size: {x: 0.34061137, y: 0.40298507}
+        - center: {x: 0.16593887, y: 0.0074626864}
+          size: {x: 0.510917, y: 0.47014925}
+        - center: {x: -0.030567685, y: 0.6044776}
+          size: {x: 0.26200873, y: 0.3955224}
+        handTuned: 0
+      - frame: mague_kick_e3
+        shapes:
+        - center: {x: -0.18777293, y: -0.619403}
+          size: {x: 0.36681223, y: 0.38059703}
+        - center: {x: -0.0043668123, y: -0.05970149}
+          size: {x: 0.36681223, y: 0.4477612}
+        - center: {x: 0.11353712, y: 0.51119405}
+          size: {x: 0.27510917, y: 0.39179105}
+        handTuned: 0
+      - frame: mague_kick_e4
+        shapes:
+        - center: {x: -0.41048035, y: -0.5970149}
+          size: {x: 0.30131003, y: 0.38059703}
+        - center: {x: -0.24017467, y: -0.03731343}
+          size: {x: 0.34061137, y: 0.4477612}
+        - center: {x: -0.17467248, y: 0.52238804}
+          size: {x: 0.27510917, y: 0.38059703}
+        handTuned: 0
+      - frame: mague_kick_e5
+        shapes:
+        - center: {x: -0.37117904, y: -0.619403}
+          size: {x: 0.41921398, y: 0.38059703}
+        - center: {x: -0.37117904, y: -0.05970149}
+          size: {x: 0.31441048, y: 0.4477612}
+        - center: {x: -0.34497815, y: 0.5}
+          size: {x: 0.26200873, y: 0.38059703}
+        handTuned: 0
+      - frame: mague_kick_e6
+        shapes:
+        - center: {x: -0.18777293, y: -0.619403}
+          size: {x: 0.36681223, y: 0.38059703}
+        - center: {x: -0.17467248, y: 0.20895523}
+          size: {x: 0.30131003, y: 0.7164179}
+        handTuned: 0
+      - frame: mague_kick_e7
+        shapes:
+        - center: {x: -0.0043668123, y: -0.2835821}
+          size: {x: 0.36681223, y: 0.7164179}
+        - center: {x: 0.0349345, y: 0.55597013}
+          size: {x: 0.27510917, y: 0.39179105}
+        handTuned: 0
+      - frame: mague_kick_w0
+        shapes:
+        - center: {x: 0.16157205, y: -0.2947761}
+          size: {x: 0.3930131, y: 0.70522386}
+        - center: {x: 0.22707424, y: 0.5335821}
+          size: {x: 0.27510917, y: 0.39179105}
+        handTuned: 0
+      - frame: mague_kick_w1
+        shapes:
+        - center: {x: 0.20087336, y: -0.5858209}
+          size: {x: 0.27510917, y: 0.39179105}
+        - center: {x: 0.29257643, y: -0.0037313432}
+          size: {x: 0.3930131, y: 0.45895523}
+        - center: {x: 0.279476, y: 0.5895522}
+          size: {x: 0.27510917, y: 0.40298507}
+        handTuned: 0
+      - frame: mague_kick_w2
+        shapes:
+        - center: {x: -0.12663755, y: -0.5970149}
+          size: {x: 0.34061137, y: 0.40298507}
+        - center: {x: 0.14847161, y: 0.0074626864}
+          size: {x: 0.510917, y: 0.47014925}
+        - center: {x: -0.02183406, y: 0.6044776}
+          size: {x: 0.26200873, y: 0.3955224}
+        handTuned: 0
+      - frame: mague_kick_w3
+        shapes:
+        - center: {x: -0.1790393, y: -0.619403}
+          size: {x: 0.36681223, y: 0.38059703}
+        - center: {x: 0.0043668123, y: -0.05970149}
+          size: {x: 0.36681223, y: 0.4477612}
+        - center: {x: 0.09606987, y: 0.51119405}
+          size: {x: 0.27510917, y: 0.39179105}
+        handTuned: 0
+      - frame: mague_kick_w4
+        shapes:
+        - center: {x: -0.40174672, y: -0.5970149}
+          size: {x: 0.30131003, y: 0.38059703}
+        - center: {x: -0.2576419, y: -0.03731343}
+          size: {x: 0.34061137, y: 0.4477612}
+        - center: {x: -0.1790393, y: 0.52238804}
+          size: {x: 0.26200873, y: 0.38059703}
+        handTuned: 0
+      - frame: mague_kick_w5
+        shapes:
+        - center: {x: -0.3624454, y: -0.619403}
+          size: {x: 0.41921398, y: 0.38059703}
+        - center: {x: -0.3624454, y: -0.05970149}
+          size: {x: 0.31441048, y: 0.4477612}
+        - center: {x: -0.3624454, y: 0.5}
+          size: {x: 0.26200873, y: 0.38059703}
+        handTuned: 0
+      - frame: mague_kick_w6
+        shapes:
+        - center: {x: -0.1790393, y: -0.619403}
+          size: {x: 0.36681223, y: 0.38059703}
+        - center: {x: -0.1790393, y: 0.20895523}
+          size: {x: 0.28820962, y: 0.7164179}
+        handTuned: 0
+      - frame: mague_kick_w7
+        shapes:
+        - center: {x: -0.008733625, y: -0.2835821}
+          size: {x: 0.37991267, y: 0.7164179}
+        - center: {x: 0.04366812, y: 0.55597013}
+          size: {x: 0.27510917, y: 0.39179105}
+        handTuned: 0
+      - frame: mague_knockdown_recovery_e0
+        shapes:
+        - center: {x: 0.23076923, y: -0.088435374}
+          size: {x: 0.30769232, y: 0.88435376}
+        handTuned: 0
+      - frame: mague_knockdown_recovery_e1
+        shapes:
+        - center: {x: 0.43956044, y: -0.61904764}
+          size: {x: 0.34065935, y: 0.3809524}
+        - center: {x: 0.23076923, y: -0.11564626}
+          size: {x: 0.32967034, y: 0.39455783}
+        handTuned: 0
+      - frame: mague_knockdown_recovery_e2
+        shapes:
+        - center: {x: 0, y: -0.59183675}
+          size: {x: 0.4945055, y: 0.2993197}
+        - center: {x: 0.5934066, y: -0.68707484}
+          size: {x: 0.2747253, y: 0.23129252}
+        handTuned: 0
+      - frame: mague_knockdown_recovery_e3
+        shapes:
+        - center: {x: -0.82417583, y: -0.8367347}
+          size: {x: 0.17582418, y: 0.108843535}
+        - center: {x: -0.5604396, y: -0.82312924}
+          size: {x: 0.21978022, y: 0.14965986}
+        - center: {x: -0.25274727, y: -0.7823129}
+          size: {x: 0.21978022, y: 0.1632653}
+        - center: {x: 0.17582418, y: -0.75510204}
+          size: {x: 0.34065935, y: 0.1904762}
+        handTuned: 0
+      - frame: mague_knockdown_recovery_e4
+        shapes:
+        - center: {x: -0.7582418, y: -0.72789115}
+          size: {x: 0.1978022, y: 0.21768707}
+        - center: {x: -0.45054945, y: -0.64625853}
+          size: {x: 0.24175824, y: 0.27210885}
+        - center: {x: -0.13186814, y: -0.59183675}
+          size: {x: 0.20879121, y: 0.2993197}
+        handTuned: 0
+      - frame: mague_knockdown_recovery_e5
+        shapes:
+        - center: {x: -0.37362638, y: -0.56462586}
+          size: {x: 0.2967033, y: 0.43537414}
+        - center: {x: -0.30769232, y: 0.034013607}
+          size: {x: 0.23076923, y: 0.43537414}
+        handTuned: 0
+      - frame: mague_knockdown_recovery_e6
+        shapes:
+        - center: {x: -0.30769232, y: -0.67346936}
+          size: {x: 0.2967033, y: 0.3265306}
+        - center: {x: -0.20879121, y: -0.18367347}
+          size: {x: 0.26373628, y: 0.3809524}
+        - center: {x: -0.06593407, y: 0.3197279}
+          size: {x: 0.20879121, y: 0.34013605}
+        handTuned: 0
+      - frame: mague_knockdown_recovery_e7
+        shapes:
+        - center: {x: -0.032967035, y: -0.5782313}
+          size: {x: 0.2857143, y: 0.39455783}
+        - center: {x: -0.010989011, y: 0.006802721}
+          size: {x: 0.24175824, y: 0.46258503}
+        - center: {x: -0.010989011, y: 0.5986394}
+          size: {x: 0.1978022, y: 0.40136054}
+        handTuned: 0
+      - frame: mague_knockdown_recovery_w0
+        shapes:
+        - center: {x: 0.23076923, y: -0.088435374}
+          size: {x: 0.30769232, y: 0.88435376}
+        handTuned: 0
+      - frame: mague_knockdown_recovery_w1
+        shapes:
+        - center: {x: 0.43956044, y: -0.61904764}
+          size: {x: 0.34065935, y: 0.3809524}
+        - center: {x: 0.23076923, y: -0.11564626}
+          size: {x: 0.32967034, y: 0.39455783}
+        handTuned: 0
+      - frame: mague_knockdown_recovery_w2
+        shapes:
+        - center: {x: 0.6043956, y: -0.7414966}
+          size: {x: 0.26373628, y: 0.17687075}
+        - center: {x: 0.1978022, y: -0.63265306}
+          size: {x: 0.31868133, y: 0.2857143}
+        - center: {x: -0.21978022, y: -0.5782313}
+          size: {x: 0.2747253, y: 0.2857143}
+        handTuned: 0
+      - frame: mague_knockdown_recovery_w3
+        shapes:
+        - center: {x: 0.18681319, y: -0.75510204}
+          size: {x: 0.32967034, y: 0.1904762}
+        - center: {x: -0.23076923, y: -0.7823129}
+          size: {x: 0.21978022, y: 0.1632653}
+        - center: {x: -0.53846157, y: -0.8095238}
+          size: {x: 0.21978022, y: 0.1632653}
+        - center: {x: -0.8131868, y: -0.8367347}
+          size: {x: 0.18681319, y: 0.108843535}
+        handTuned: 0
+      - frame: mague_knockdown_recovery_w4
+        shapes:
+        - center: {x: -0.2967033, y: -0.60544217}
+          size: {x: 0.37362638, y: 0.31292516}
+        - center: {x: -0.74725276, y: -0.71428573}
+          size: {x: 0.20879121, y: 0.23129252}
+        handTuned: 0
+      - frame: mague_knockdown_recovery_w5
+        shapes:
+        - center: {x: -0.37362638, y: -0.56462586}
+          size: {x: 0.2967033, y: 0.43537414}
+        - center: {x: -0.30769232, y: 0.034013607}
+          size: {x: 0.23076923, y: 0.43537414}
+        handTuned: 0
+      - frame: mague_knockdown_recovery_w6
+        shapes:
+        - center: {x: -0.30769232, y: -0.67346936}
+          size: {x: 0.2967033, y: 0.3265306}
+        - center: {x: -0.20879121, y: -0.18367347}
+          size: {x: 0.26373628, y: 0.3809524}
+        - center: {x: -0.06593407, y: 0.3197279}
+          size: {x: 0.20879121, y: 0.34013605}
+        handTuned: 0
+      - frame: mague_knockdown_recovery_w7
+        shapes:
+        - center: {x: -0.032967035, y: -0.5782313}
+          size: {x: 0.2857143, y: 0.39455783}
+        - center: {x: -0.010989011, y: 0.006802721}
+          size: {x: 0.24175824, y: 0.46258503}
+        - center: {x: -0.010989011, y: 0.5986394}
+          size: {x: 0.1978022, y: 0.40136054}
+        handTuned: 0
+      - frame: mague_punch_e0
+        shapes:
+        - center: {x: 0.24, y: -0.27906978}
+          size: {x: 0.41333333, y: 0.7209302}
+        - center: {x: 0.30666667, y: 0.5697674}
+          size: {x: 0.29333332, y: 0.40697673}
+        handTuned: 0
+      - frame: mague_punch_e1
+        shapes:
+        - center: {x: 0.18666667, y: -0.61627907}
+          size: {x: 0.49333334, y: 0.38372093}
+        - center: {x: 0.30666667, y: -0.046511628}
+          size: {x: 0.42666668, y: 0.4651163}
+        - center: {x: 0.41333333, y: 0.53488374}
+          size: {x: 0.32, y: 0.39534885}
+        handTuned: 0
+      - frame: mague_punch_e2
+        shapes:
+        - center: {x: -0.10666667, y: -0.627907}
+          size: {x: 0.49333334, y: 0.37209302}
+        - center: {x: 0.14666666, y: -0.058139537}
+          size: {x: 0.48, y: 0.43023255}
+        - center: {x: 0.22666667, y: 0.5232558}
+          size: {x: 0.37333333, y: 0.38372093}
+        handTuned: 0
+      - frame: mague_punch_e3
+        shapes:
+        - center: {x: -0.26666668, y: -0.44186047}
+          size: {x: 0.49333334, y: 0.53488374}
+        - center: {x: 0.10666667, y: 0.27906978}
+          size: {x: 0.38666666, y: 0.55813956}
+        handTuned: 0
+      - frame: mague_punch_e4
+        shapes:
+        - center: {x: -0.17333333, y: -0.627907}
+          size: {x: 0.45333335, y: 0.37209302}
+        - center: {x: -0.08, y: 0.19767442}
+          size: {x: 0.33333334, y: 0.68604654}
+        handTuned: 0
+      - frame: mague_punch_e5
+        shapes:
+        - center: {x: 0.04, y: -0.26744187}
+          size: {x: 0.37333333, y: 0.73255813}
+        - center: {x: 0.08, y: 0.59302324}
+          size: {x: 0.28, y: 0.40697673}
+        handTuned: 0
+      - frame: mague_punch_w0
+        shapes:
+        - center: {x: 0.24, y: -0.27906978}
+          size: {x: 0.41333333, y: 0.7209302}
+        - center: {x: 0.30666667, y: 0.5697674}
+          size: {x: 0.29333332, y: 0.40697673}
+        handTuned: 0
+      - frame: mague_punch_w1
+        shapes:
+        - center: {x: 0.18666667, y: -0.61627907}
+          size: {x: 0.49333334, y: 0.38372093}
+        - center: {x: 0.30666667, y: -0.046511628}
+          size: {x: 0.42666668, y: 0.4651163}
+        - center: {x: 0.41333333, y: 0.53488374}
+          size: {x: 0.32, y: 0.39534885}
+        handTuned: 0
+      - frame: mague_punch_w2
+        shapes:
+        - center: {x: -0.10666667, y: -0.627907}
+          size: {x: 0.49333334, y: 0.37209302}
+        - center: {x: 0.14666666, y: -0.058139537}
+          size: {x: 0.48, y: 0.43023255}
+        - center: {x: 0.22666667, y: 0.5232558}
+          size: {x: 0.37333333, y: 0.38372093}
+        handTuned: 0
+      - frame: mague_punch_w3
+        shapes:
+        - center: {x: -0.26666668, y: -0.44186047}
+          size: {x: 0.49333334, y: 0.53488374}
+        - center: {x: 0.10666667, y: 0.27906978}
+          size: {x: 0.38666666, y: 0.55813956}
+        handTuned: 0
+      - frame: mague_punch_w4
+        shapes:
+        - center: {x: -0.17333333, y: -0.627907}
+          size: {x: 0.45333335, y: 0.37209302}
+        - center: {x: -0.08, y: 0.19767442}
+          size: {x: 0.33333334, y: 0.68604654}
+        handTuned: 0
+      - frame: mague_punch_w5
+        shapes:
+        - center: {x: 0.04, y: -0.26744187}
+          size: {x: 0.37333333, y: 0.73255813}
+        - center: {x: 0.08, y: 0.59302324}
+          size: {x: 0.28, y: 0.40697673}
+        handTuned: 0
+      - frame: mague_run_e0
+        shapes:
+        - center: {x: 0.10330579, y: -0.619403}
+          size: {x: 0.48347107, y: 0.38059703}
+        - center: {x: 0.22727273, y: -0.048507463}
+          size: {x: 0.35950413, y: 0.45895523}
+        - center: {x: 0.40082645, y: 0.5335821}
+          size: {x: 0.2603306, y: 0.39179105}
+        handTuned: 0
+      - frame: mague_run_e1
+        shapes:
+        - center: {x: -0.03305785, y: -0.619403}
+          size: {x: 0.47107437, y: 0.38059703}
+        - center: {x: 0.21487603, y: -0.05970149}
+          size: {x: 0.32231405, y: 0.4477612}
+        - center: {x: 0.46280992, y: 0.5}
+          size: {x: 0.27272728, y: 0.38059703}
+        handTuned: 0
+      - frame: mague_run_e2
+        shapes:
+        - center: {x: -0.1446281, y: -0.5970149}
+          size: {x: 0.4338843, y: 0.40298507}
+        - center: {x: 0.041322313, y: 0.0074626864}
+          size: {x: 0.37190083, y: 0.47014925}
+        - center: {x: 0.2644628, y: 0.6044776}
+          size: {x: 0.27272728, y: 0.3955224}
+        handTuned: 0
+      - frame: mague_run_e3
+        shapes:
+        - center: {x: -0.21900827, y: -0.3955224}
+          size: {x: 0.4338843, y: 0.6044776}
+        - center: {x: 0.053719006, y: 0.40298507}
+          size: {x: 0.33471075, y: 0.5970149}
+        handTuned: 0
+      - frame: mague_run_e4
+        shapes:
+        - center: {x: -0.3181818, y: -0.4067164}
+          size: {x: 0.4090909, y: 0.54850745}
+        - center: {x: 0.016528925, y: 0.3432836}
+          size: {x: 0.4214876, y: 0.5597015}
+        handTuned: 0
+      - frame: mague_run_e5
+        shapes:
+        - center: {x: -0.3553719, y: -0.619403}
+          size: {x: 0.47107437, y: 0.38059703}
+        - center: {x: -0.20661157, y: -0.05970149}
+          size: {x: 0.37190083, y: 0.4477612}
+        - center: {x: 0.016528925, y: 0.5}
+          size: {x: 0.27272728, y: 0.38059703}
+        handTuned: 0
+      - frame: mague_run_e6
+        shapes:
+        - center: {x: -0.26859504, y: -0.4402985}
+          size: {x: 0.4338843, y: 0.5597015}
+        - center: {x: 0.041322313, y: 0.33208954}
+          size: {x: 0.37190083, y: 0.5708955}
+        handTuned: 0
+      - frame: mague_run_e7
+        shapes:
+        - center: {x: -0.08264463, y: -0.619403}
+          size: {x: 0.32231405, y: 0.38059703}
+        - center: {x: 0.016528925, y: -0.05970149}
+          size: {x: 0.27272728, y: 0.4477612}
+        - center: {x: 0.12809917, y: 0.51119405}
+          size: {x: 0.2603306, y: 0.39179105}
+        handTuned: 0
+      - frame: mague_run_spellcast_e0
+        shapes:
+        - center: {x: 0.08045977, y: -0.40229884}
+          size: {x: 0.4597701, y: 0.59770113}
+        - center: {x: 0.26436782, y: 0.3908046}
+          size: {x: 0.3908046, y: 0.6091954}
+        handTuned: 0
+      - frame: mague_run_spellcast_e1
+        shapes:
+        - center: {x: -0.13793103, y: -0.37931034}
+          size: {x: 0.49425286, y: 0.52873564}
+        - center: {x: 0.27586207, y: 0.3678161}
+          size: {x: 0.35632184, y: 0.5862069}
+        handTuned: 0
+      - frame: mague_run_spellcast_e2
+        shapes:
+        - center: {x: -0.1724138, y: -0.43678162}
+          size: {x: 0.43678162, y: 0.5632184}
+        - center: {x: 0.04597701, y: 0.33333334}
+          size: {x: 0.47126436, y: 0.57471263}
+        handTuned: 0
+      - frame: mague_run_spellcast_e3
+        shapes:
+        - center: {x: 0, y: -0.44827586}
+          size: {x: 0.51724136, y: 0.55172414}
+        - center: {x: 0.18390805, y: 0.29885057}
+          size: {x: 0.35632184, y: 0.5632184}
+        handTuned: 0
+      - frame: mague_run_spellcast_e4
+        shapes:
+        - center: {x: -0.11494253, y: -0.44827586}
+          size: {x: 0.54022986, y: 0.55172414}
+        - center: {x: 0.27586207, y: 0.29885057}
+          size: {x: 0.42528737, y: 0.5632184}
+        handTuned: 0
+      - frame: mague_run_spellcast_e5
+        shapes:
+        - center: {x: -0.28735632, y: -0.4597701}
+          size: {x: 0.50574714, y: 0.54022986}
+        - center: {x: 0.14942528, y: 0.26436782}
+          size: {x: 0.3678161, y: 0.55172414}
+        handTuned: 0
+      - frame: mague_run_spellcast_e6
+        shapes:
+        - center: {x: -0.25287357, y: -0.42528737}
+          size: {x: 0.47126436, y: 0.57471263}
+        - center: {x: -0.13793103, y: 0.35632184}
+          size: {x: 0.40229884, y: 0.57471263}
+        handTuned: 0
+      - frame: mague_run_spellcast_e7
+        shapes:
+        - center: {x: -0.13793103, y: -0.42528737}
+          size: {x: 0.37931034, y: 0.57471263}
+        - center: {x: 0.06896552, y: 0.35632184}
+          size: {x: 0.35632184, y: 0.57471263}
+        handTuned: 0
+      - frame: mague_run_spellcast_w0
+        shapes:
+        - center: {x: 0.08045977, y: -0.40229884}
+          size: {x: 0.4597701, y: 0.59770113}
+        - center: {x: 0.26436782, y: 0.3908046}
+          size: {x: 0.3908046, y: 0.6091954}
+        handTuned: 0
+      - frame: mague_run_spellcast_w1
+        shapes:
+        - center: {x: -0.13793103, y: -0.37931034}
+          size: {x: 0.49425286, y: 0.52873564}
+        - center: {x: 0.27586207, y: 0.3678161}
+          size: {x: 0.35632184, y: 0.5862069}
+        handTuned: 0
+      - frame: mague_run_spellcast_w2
+        shapes:
+        - center: {x: -0.1724138, y: -0.43678162}
+          size: {x: 0.43678162, y: 0.5632184}
+        - center: {x: 0.04597701, y: 0.33333334}
+          size: {x: 0.47126436, y: 0.57471263}
+        handTuned: 0
+      - frame: mague_run_spellcast_w3
+        shapes:
+        - center: {x: -0, y: -0.44827586}
+          size: {x: 0.51724136, y: 0.55172414}
+        - center: {x: 0.18390805, y: 0.29885057}
+          size: {x: 0.35632184, y: 0.5632184}
+        handTuned: 0
+      - frame: mague_run_spellcast_w4
+        shapes:
+        - center: {x: -0.11494253, y: -0.44827586}
+          size: {x: 0.54022986, y: 0.55172414}
+        - center: {x: 0.27586207, y: 0.29885057}
+          size: {x: 0.42528737, y: 0.5632184}
+        handTuned: 0
+      - frame: mague_run_spellcast_w5
+        shapes:
+        - center: {x: -0.28735632, y: -0.4597701}
+          size: {x: 0.50574714, y: 0.54022986}
+        - center: {x: 0.14942528, y: 0.26436782}
+          size: {x: 0.3678161, y: 0.55172414}
+        handTuned: 0
+      - frame: mague_run_spellcast_w6
+        shapes:
+        - center: {x: -0.25287357, y: -0.42528737}
+          size: {x: 0.47126436, y: 0.57471263}
+        - center: {x: -0.13793103, y: 0.35632184}
+          size: {x: 0.40229884, y: 0.57471263}
+        handTuned: 0
+      - frame: mague_run_spellcast_w7
+        shapes:
+        - center: {x: -0.13793103, y: -0.42528737}
+          size: {x: 0.37931034, y: 0.57471263}
+        - center: {x: 0.06896552, y: 0.35632184}
+          size: {x: 0.35632184, y: 0.57471263}
+        handTuned: 0
+      - frame: mague_run_w0
+        shapes:
+        - center: {x: 0.09504132, y: -0.619403}
+          size: {x: 0.48347107, y: 0.38059703}
+        - center: {x: 0.23140496, y: -0.048507463}
+          size: {x: 0.37190083, y: 0.45895523}
+        - center: {x: 0.39256197, y: 0.5335821}
+          size: {x: 0.2603306, y: 0.39179105}
+        handTuned: 0
+      - frame: mague_run_w1
+        shapes:
+        - center: {x: -0.041322313, y: -0.619403}
+          size: {x: 0.47107437, y: 0.38059703}
+        - center: {x: 0.20661157, y: -0.05970149}
+          size: {x: 0.32231405, y: 0.4477612}
+        - center: {x: 0.46694216, y: 0.5}
+          size: {x: 0.2603306, y: 0.38059703}
+        handTuned: 0
+      - frame: mague_run_w2
+        shapes:
+        - center: {x: -0.15289256, y: -0.5970149}
+          size: {x: 0.4338843, y: 0.40298507}
+        - center: {x: 0.045454547, y: 0.0074626864}
+          size: {x: 0.35950413, y: 0.47014925}
+        - center: {x: 0.28099173, y: 0.6044776}
+          size: {x: 0.27272728, y: 0.3955224}
+        handTuned: 0
+      - frame: mague_run_w3
+        shapes:
+        - center: {x: -0.22727273, y: -0.3955224}
+          size: {x: 0.4338843, y: 0.6044776}
+        - center: {x: 0.05785124, y: 0.40298507}
+          size: {x: 0.34710744, y: 0.5970149}
+        handTuned: 0
+      - frame: mague_run_w4
+        shapes:
+        - center: {x: -0.3140496, y: -0.4067164}
+          size: {x: 0.4214876, y: 0.54850745}
+        - center: {x: 0.008264462, y: 0.3432836}
+          size: {x: 0.4214876, y: 0.5597015}
+        handTuned: 0
+      - frame: mague_run_w5
+        shapes:
+        - center: {x: -0.36363637, y: -0.619403}
+          size: {x: 0.47107437, y: 0.38059703}
+        - center: {x: -0.20247933, y: -0.05970149}
+          size: {x: 0.35950413, y: 0.4477612}
+        - center: {x: 0.03305785, y: 0.5}
+          size: {x: 0.27272728, y: 0.38059703}
+        handTuned: 0
+      - frame: mague_run_w6
+        shapes:
+        - center: {x: -0.2644628, y: -0.4402985}
+          size: {x: 0.4214876, y: 0.5597015}
+        - center: {x: 0.045454547, y: 0.33208954}
+          size: {x: 0.35950413, y: 0.5708955}
+        handTuned: 0
+      - frame: mague_run_w7
+        shapes:
+        - center: {x: -0.0785124, y: -0.619403}
+          size: {x: 0.33471075, y: 0.38059703}
+        - center: {x: 0.020661157, y: -0.05970149}
+          size: {x: 0.2603306, y: 0.4477612}
+        - center: {x: 0.11983471, y: 0.51119405}
+          size: {x: 0.2603306, y: 0.39179105}
+        handTuned: 0
+      - frame: mague_spellcast_1_e0
+        shapes:
+        - center: {x: 0.2818533, y: -0.7183099}
+          size: {x: 0.44787645, y: 0.28169015}
+        - center: {x: 0.3899614, y: -0.29014084}
+          size: {x: 0.37065637, y: 0.32676056}
+        - center: {x: 0.3899614, y: 0.14929578}
+          size: {x: 0.27799228, y: 0.29295775}
+        handTuned: 0
+      - frame: mague_spellcast_1_e1
+        shapes:
+        - center: {x: 0.034749035, y: -0.5492958}
+          size: {x: 0.44787645, y: 0.45070422}
+        - center: {x: 0.15830116, y: 0.03661972}
+          size: {x: 0.5096525, y: 0.45070422}
+        handTuned: 0
+      - frame: mague_spellcast_1_e2
+        shapes:
+        - center: {x: -0.32046333, y: -0.7070423}
+          size: {x: 0.49420848, y: 0.29295775}
+        - center: {x: -0.27413127, y: -0.25633803}
+          size: {x: 0.4169884, y: 0.33802816}
+        - center: {x: -0.27413127, y: 0.2056338}
+          size: {x: 0.5096525, y: 0.30422536}
+        handTuned: 0
+      - frame: mague_spellcast_1_e3
+        shapes:
+        - center: {x: -0.28957528, y: -0.6619718}
+          size: {x: 0.46332046, y: 0.33802816}
+        - center: {x: -0.25868726, y: -0.15492958}
+          size: {x: 0.3088803, y: 0.3943662}
+        - center: {x: -0.24324325, y: 0.35211268}
+          size: {x: 0.5096525, y: 0.33802816}
+        handTuned: 0
+      - frame: mague_spellcast_1_e4
+        shapes:
+        - center: {x: -0.22779922, y: -0.6056338}
+          size: {x: 0.49420848, y: 0.3943662}
+        - center: {x: -0.18146718, y: -0.008450705}
+          size: {x: 0.2934363, y: 0.47323942}
+        - center: {x: -0.15057915, y: 0.5971831}
+          size: {x: 0.5405405, y: 0.4028169}
+        handTuned: 0
+      - frame: mague_spellcast_1_e5
+        shapes:
+        - center: {x: -0.16602316, y: -0.6507042}
+          size: {x: 0.46332046, y: 0.34929577}
+        - center: {x: -0.11969112, y: -0.10985915}
+          size: {x: 0.3243243, y: 0.4169014}
+        - center: {x: -0.15057915, y: 0.44225353}
+          size: {x: 0.47876447, y: 0.36056337}
+        handTuned: 0
+      - frame: mague_spellcast_1_e6
+        shapes:
+        - center: {x: -0.22779922, y: -0.571831}
+          size: {x: 0.46332046, y: 0.428169}
+        - center: {x: -0.08880309, y: 0.014084507}
+          size: {x: 0.47876447, y: 0.428169}
+        handTuned: 0
+      - frame: mague_spellcast_1_e7
+        shapes:
+        - center: {x: 0.034749035, y: -0.7070423}
+          size: {x: 0.4169884, y: 0.29295775}
+        - center: {x: 0.06563707, y: -0.25633803}
+          size: {x: 0.35521236, y: 0.33802816}
+        - center: {x: 0.08108108, y: 0.1943662}
+          size: {x: 0.27799228, y: 0.29295775}
+        handTuned: 0
+      - frame: mague_spellcast_1_w0
+        shapes:
+        - center: {x: 0.28957528, y: -0.7183099}
+          size: {x: 0.46332046, y: 0.28169015}
+        - center: {x: 0.38223937, y: -0.29014084}
+          size: {x: 0.37065637, y: 0.32676056}
+        - center: {x: 0.38223937, y: 0.14929578}
+          size: {x: 0.27799228, y: 0.29295775}
+        handTuned: 0
+      - frame: mague_spellcast_1_w1
+        shapes:
+        - center: {x: 0.042471044, y: -0.5492958}
+          size: {x: 0.43243244, y: 0.45070422}
+        - center: {x: 0.16602316, y: 0.03661972}
+          size: {x: 0.49420848, y: 0.45070422}
+        handTuned: 0
+      - frame: mague_spellcast_1_w2
+        shapes:
+        - center: {x: -0.3127413, y: -0.45915493}
+          size: {x: 0.47876447, y: 0.5408451}
+        - center: {x: -0.26640928, y: 0.2056338}
+          size: {x: 0.49420848, y: 0.30422536}
+        handTuned: 0
+      - frame: mague_spellcast_1_w3
+        shapes:
+        - center: {x: -0.2972973, y: -0.6619718}
+          size: {x: 0.46332046, y: 0.33802816}
+        - center: {x: -0.26640928, y: -0.15492958}
+          size: {x: 0.3088803, y: 0.3943662}
+        - center: {x: -0.23552124, y: 0.35211268}
+          size: {x: 0.52509654, y: 0.33802816}
+        handTuned: 0
+      - frame: mague_spellcast_1_w4
+        shapes:
+        - center: {x: -0.22007722, y: -0.6056338}
+          size: {x: 0.47876447, y: 0.3943662}
+        - center: {x: -0.1891892, y: -0.008450705}
+          size: {x: 0.2934363, y: 0.47323942}
+        - center: {x: -0.14285715, y: 0.5971831}
+          size: {x: 0.52509654, y: 0.4028169}
+        handTuned: 0
+      - frame: mague_spellcast_1_w5
+        shapes:
+        - center: {x: -0.15830116, y: -0.6507042}
+          size: {x: 0.44787645, y: 0.34929577}
+        - center: {x: -0.12741312, y: -0.10985915}
+          size: {x: 0.3243243, y: 0.4169014}
+        - center: {x: -0.15830116, y: 0.44225353}
+          size: {x: 0.47876447, y: 0.36056337}
+        handTuned: 0
+      - frame: mague_spellcast_1_w6
+        shapes:
+        - center: {x: -0.22007722, y: -0.571831}
+          size: {x: 0.47876447, y: 0.428169}
+        - center: {x: -0.096525095, y: 0.014084507}
+          size: {x: 0.47876447, y: 0.428169}
+        handTuned: 0
+      - frame: mague_spellcast_1_w7
+        shapes:
+        - center: {x: 0.027027028, y: -0.7070423}
+          size: {x: 0.4169884, y: 0.29295775}
+        - center: {x: 0.057915058, y: -0.25633803}
+          size: {x: 0.35521236, y: 0.33802816}
+        - center: {x: 0.08880309, y: 0.1943662}
+          size: {x: 0.2934363, y: 0.29295775}
+        handTuned: 0
+      - frame: mague_spellcast_2_e0
+        shapes:
+        - center: {x: 0.24705882, y: -0.6031128}
+          size: {x: 0.42352942, y: 0.39688715}
+        - center: {x: 0.30588236, y: -0.007782101}
+          size: {x: 0.34117648, y: 0.47859922}
+        - center: {x: 0.3647059, y: 0.5953307}
+          size: {x: 0.25882354, y: 0.40466926}
+        handTuned: 0
+      - frame: mague_spellcast_2_e1
+        shapes:
+        - center: {x: 0.22352941, y: -0.6031128}
+          size: {x: 0.47058824, y: 0.39688715}
+        - center: {x: 0.34117648, y: -0.019455252}
+          size: {x: 0.4, y: 0.46692607}
+        - center: {x: 0.4, y: 0.57587546}
+          size: {x: 0.34117648, y: 0.4085603}
+        handTuned: 0
+      - frame: mague_spellcast_2_e2
+        shapes:
+        - center: {x: 0.09411765, y: -0.6031128}
+          size: {x: 0.45882353, y: 0.39688715}
+        - center: {x: 0.2, y: -0.019455252}
+          size: {x: 0.4, y: 0.46692607}
+        - center: {x: 0.34117648, y: 0.57587546}
+          size: {x: 0.4, y: 0.4085603}
+        handTuned: 0
+      - frame: mague_spellcast_2_e3
+        shapes:
+        - center: {x: 0.03529412, y: -0.42801556}
+          size: {x: 0.44705883, y: 0.5719844}
+        - center: {x: 0.25882354, y: 0.3540856}
+          size: {x: 0.4117647, y: 0.58365756}
+        handTuned: 0
+      - frame: mague_spellcast_2_e4
+        shapes:
+        - center: {x: -0.07058824, y: -0.4396887}
+          size: {x: 0.5058824, y: 0.56031126}
+        - center: {x: 0.24705882, y: 0.31906614}
+          size: {x: 0.4, y: 0.5719844}
+        handTuned: 0
+      - frame: mague_spellcast_2_e5
+        shapes:
+        - center: {x: -0.28235295, y: -0.4396887}
+          size: {x: 0.45882353, y: 0.56031126}
+        - center: {x: -0.011764706, y: 0.30739298}
+          size: {x: 0.4, y: 0.56031126}
+        handTuned: 0
+      - frame: mague_spellcast_2_e6
+        shapes:
+        - center: {x: -0.05882353, y: -0.6031128}
+          size: {x: 0.4, y: 0.39688715}
+        - center: {x: 0.03529412, y: -0.019455252}
+          size: {x: 0.3529412, y: 0.46692607}
+        - center: {x: 0.05882353, y: 0.57587546}
+          size: {x: 0.25882354, y: 0.4085603}
+        handTuned: 0
+      - frame: mague_spellcast_2_e7
+        shapes:
+        - center: {x: -0.03529412, y: -0.27626458}
+          size: {x: 0.4, y: 0.7237354}
+        - center: {x: 0.047058824, y: 0.57587546}
+          size: {x: 0.27058825, y: 0.4085603}
+        handTuned: 0
+      - frame: mague_spellcast_2_w0
+        shapes:
+        - center: {x: 0.24705882, y: -0.6031128}
+          size: {x: 0.42352942, y: 0.39688715}
+        - center: {x: 0.30588236, y: -0.007782101}
+          size: {x: 0.34117648, y: 0.47859922}
+        - center: {x: 0.3647059, y: 0.5953307}
+          size: {x: 0.25882354, y: 0.40466926}
+        handTuned: 0
+      - frame: mague_spellcast_2_w1
+        shapes:
+        - center: {x: 0.22352941, y: -0.6031128}
+          size: {x: 0.47058824, y: 0.39688715}
+        - center: {x: 0.34117648, y: -0.019455252}
+          size: {x: 0.4, y: 0.46692607}
+        - center: {x: 0.4, y: 0.57587546}
+          size: {x: 0.34117648, y: 0.4085603}
+        handTuned: 0
+      - frame: mague_spellcast_2_w2
+        shapes:
+        - center: {x: 0.09411765, y: -0.6031128}
+          size: {x: 0.45882353, y: 0.39688715}
+        - center: {x: 0.2, y: -0.019455252}
+          size: {x: 0.4, y: 0.46692607}
+        - center: {x: 0.34117648, y: 0.57587546}
+          size: {x: 0.4, y: 0.4085603}
+        handTuned: 0
+      - frame: mague_spellcast_2_w3
+        shapes:
+        - center: {x: 0.03529412, y: -0.42801556}
+          size: {x: 0.44705883, y: 0.5719844}
+        - center: {x: 0.25882354, y: 0.3540856}
+          size: {x: 0.4117647, y: 0.58365756}
+        handTuned: 0
+      - frame: mague_spellcast_2_w4
+        shapes:
+        - center: {x: -0.07058824, y: -0.4396887}
+          size: {x: 0.5058824, y: 0.56031126}
+        - center: {x: 0.24705882, y: 0.31906614}
+          size: {x: 0.4, y: 0.5719844}
+        handTuned: 0
+      - frame: mague_spellcast_2_w5
+        shapes:
+        - center: {x: -0.28235295, y: -0.4396887}
+          size: {x: 0.45882353, y: 0.56031126}
+        - center: {x: -0.011764706, y: 0.30739298}
+          size: {x: 0.4, y: 0.56031126}
+        handTuned: 0
+      - frame: mague_spellcast_2_w6
+        shapes:
+        - center: {x: -0.05882353, y: -0.6031128}
+          size: {x: 0.4, y: 0.39688715}
+        - center: {x: 0.03529412, y: -0.019455252}
+          size: {x: 0.3529412, y: 0.46692607}
+        - center: {x: 0.05882353, y: 0.57587546}
+          size: {x: 0.25882354, y: 0.4085603}
+        handTuned: 0
+      - frame: mague_spellcast_2_w7
+        shapes:
+        - center: {x: -0.03529412, y: -0.27626458}
+          size: {x: 0.4, y: 0.7237354}
+        - center: {x: 0.047058824, y: 0.57587546}
+          size: {x: 0.27058825, y: 0.4085603}
+        handTuned: 0
+      - frame: mague_spellcast_3_e0
+        shapes:
+        - center: {x: 0.43820226, y: -0.6031128}
+          size: {x: 0.35955057, y: 0.39688715}
+        - center: {x: 0.48314607, y: -0.007782101}
+          size: {x: 0.29213482, y: 0.47859922}
+        - center: {x: 0.505618, y: 0.5953307}
+          size: {x: 0.24719101, y: 0.40466926}
+        handTuned: 0
+      - frame: mague_spellcast_3_e1
+        shapes:
+        - center: {x: 0.26966292, y: -0.6031128}
+          size: {x: 0.43820226, y: 0.39688715}
+        - center: {x: 0.43820226, y: -0.019455252}
+          size: {x: 0.35955057, y: 0.46692607}
+        - center: {x: 0.40449437, y: 0.5642023}
+          size: {x: 0.25842696, y: 0.39688715}
+        handTuned: 0
+      - frame: mague_spellcast_3_e2
+        shapes:
+        - center: {x: 0.056179777, y: -0.4396887}
+          size: {x: 0.42696628, y: 0.56031126}
+        - center: {x: 0.3483146, y: 0.31906614}
+          size: {x: 0.31460676, y: 0.5719844}
+        handTuned: 0
+      - frame: mague_spellcast_3_e3
+        shapes:
+        - center: {x: -0.20224719, y: -0.42801556}
+          size: {x: 0.43820226, y: 0.5719844}
+        - center: {x: 0.123595506, y: 0.34241244}
+          size: {x: 0.35955057, y: 0.5719844}
+        handTuned: 0
+      - frame: mague_spellcast_3_e4
+        shapes:
+        - center: {x: -0.35955057, y: -0.46303502}
+          size: {x: 0.43820226, y: 0.53696495}
+        - center: {x: -0.07865169, y: 0.24902724}
+          size: {x: 0.33707866, y: 0.5486381}
+        handTuned: 0
+      - frame: mague_spellcast_3_e5
+        shapes:
+        - center: {x: -0.3258427, y: -0.6264591}
+          size: {x: 0.35955057, y: 0.37354085}
+        - center: {x: -0.17977528, y: -0.054474708}
+          size: {x: 0.30337077, y: 0.4319066}
+        - center: {x: -0.16853933, y: 0.52918285}
+          size: {x: 0.24719101, y: 0.385214}
+        handTuned: 0
+      - frame: mague_spellcast_3_e6
+        shapes:
+        - center: {x: -0.08988764, y: -0.6264591}
+          size: {x: 0.3483146, y: 0.37354085}
+        - center: {x: 0, y: -0.054474708}
+          size: {x: 0.3258427, y: 0.4319066}
+        - center: {x: -0.011235955, y: 0.52918285}
+          size: {x: 0.24719101, y: 0.385214}
+        handTuned: 0
+      - frame: mague_spellcast_3_e7
+        shapes:
+        - center: {x: 0.21348314, y: -0.27626458}
+          size: {x: 0.33707866, y: 0.7237354}
+        - center: {x: 0.24719101, y: 0.5642023}
+          size: {x: 0.23595506, y: 0.39688715}
+        handTuned: 0
+      - frame: mague_spellcast_3_w0
+        shapes:
+        - center: {x: 0.43820226, y: -0.6031128}
+          size: {x: 0.35955057, y: 0.39688715}
+        - center: {x: 0.48314607, y: -0.007782101}
+          size: {x: 0.29213482, y: 0.47859922}
+        - center: {x: 0.505618, y: 0.5953307}
+          size: {x: 0.24719101, y: 0.40466926}
+        handTuned: 0
+      - frame: mague_spellcast_3_w1
+        shapes:
+        - center: {x: 0.26966292, y: -0.6031128}
+          size: {x: 0.43820226, y: 0.39688715}
+        - center: {x: 0.43820226, y: -0.019455252}
+          size: {x: 0.35955057, y: 0.46692607}
+        - center: {x: 0.40449437, y: 0.5642023}
+          size: {x: 0.25842696, y: 0.39688715}
+        handTuned: 0
+      - frame: mague_spellcast_3_w2
+        shapes:
+        - center: {x: 0.056179777, y: -0.4396887}
+          size: {x: 0.42696628, y: 0.56031126}
+        - center: {x: 0.3483146, y: 0.31906614}
+          size: {x: 0.31460676, y: 0.5719844}
+        handTuned: 0
+      - frame: mague_spellcast_3_w3
+        shapes:
+        - center: {x: -0.20224719, y: -0.42801556}
+          size: {x: 0.43820226, y: 0.5719844}
+        - center: {x: 0.123595506, y: 0.34241244}
+          size: {x: 0.35955057, y: 0.5719844}
+        handTuned: 0
+      - frame: mague_spellcast_3_w4
+        shapes:
+        - center: {x: -0.35955057, y: -0.46303502}
+          size: {x: 0.43820226, y: 0.53696495}
+        - center: {x: -0.07865169, y: 0.24902724}
+          size: {x: 0.33707866, y: 0.5486381}
+        handTuned: 0
+      - frame: mague_spellcast_3_w5
+        shapes:
+        - center: {x: -0.3258427, y: -0.6264591}
+          size: {x: 0.35955057, y: 0.37354085}
+        - center: {x: -0.17977528, y: -0.054474708}
+          size: {x: 0.30337077, y: 0.4319066}
+        - center: {x: -0.16853933, y: 0.52918285}
+          size: {x: 0.24719101, y: 0.385214}
+        handTuned: 0
+      - frame: mague_spellcast_3_w6
+        shapes:
+        - center: {x: -0.08988764, y: -0.6264591}
+          size: {x: 0.3483146, y: 0.37354085}
+        - center: {x: -0, y: -0.054474708}
+          size: {x: 0.3258427, y: 0.4319066}
+        - center: {x: -0.011235955, y: 0.52918285}
+          size: {x: 0.24719101, y: 0.385214}
+        handTuned: 0
+      - frame: mague_spellcast_3_w7
+        shapes:
+        - center: {x: 0.21348314, y: -0.27626458}
+          size: {x: 0.33707866, y: 0.7237354}
+        - center: {x: 0.24719101, y: 0.5642023}
+          size: {x: 0.23595506, y: 0.39688715}
+        handTuned: 0
+      - frame: mague_spellcast_4_e0
+        shapes:
+        - center: {x: 0.12773722, y: -0.6031128}
+          size: {x: 0.4051095, y: 0.39688715}
+        - center: {x: 0.16058394, y: -0.007782101}
+          size: {x: 0.30656934, y: 0.47859922}
+        - center: {x: 0.18248175, y: 0.5953307}
+          size: {x: 0.24087591, y: 0.40466926}
+        handTuned: 0
+      - frame: mague_spellcast_4_e1
+        shapes:
+        - center: {x: 0.14963503, y: -0.6031128}
+          size: {x: 0.4051095, y: 0.39688715}
+        - center: {x: 0.2810219, y: -0.007782101}
+          size: {x: 0.38321167, y: 0.47859922}
+        - center: {x: 0.20437956, y: 0.5953307}
+          size: {x: 0.26277372, y: 0.40466926}
+        handTuned: 0
+      - frame: mague_spellcast_4_e2
+        shapes:
+        - center: {x: 0.14963503, y: -0.6381323}
+          size: {x: 0.4051095, y: 0.3618677}
+        - center: {x: 0.34671533, y: -0.08949416}
+          size: {x: 0.36131388, y: 0.42023346}
+        - center: {x: 0.3138686, y: 0.47081712}
+          size: {x: 0.24087591, y: 0.37354085}
+        handTuned: 0
+      - frame: mague_spellcast_4_e3
+        shapes:
+        - center: {x: 0.3248175, y: -0.49805447}
+          size: {x: 0.47080293, y: 0.5019455}
+        - center: {x: 0.46715328, y: 0.17898832}
+          size: {x: 0.28467155, y: 0.5019455}
+        handTuned: 0
+      - frame: mague_spellcast_4_e4
+        shapes:
+        - center: {x: -0.025547445, y: -0.46303502}
+          size: {x: 0.49270073, y: 0.53696495}
+        - center: {x: 0.2591241, y: 0.23735408}
+          size: {x: 0.4051095, y: 0.53696495}
+        handTuned: 0
+      - frame: mague_spellcast_4_e5
+        shapes:
+        - center: {x: -0.29927006, y: -0.48638132}
+          size: {x: 0.4379562, y: 0.51361865}
+        - center: {x: -0.10218978, y: 0.21400778}
+          size: {x: 0.3941606, y: 0.51361865}
+        handTuned: 0
+      - frame: mague_spellcast_4_e6
+        shapes:
+        - center: {x: -0.22262774, y: -0.61478597}
+          size: {x: 0.36131388, y: 0.385214}
+        - center: {x: -0.1459854, y: -0.042801555}
+          size: {x: 0.32846716, y: 0.46692607}
+        - center: {x: -0.10218978, y: 0.540856}
+          size: {x: 0.26277372, y: 0.39688715}
+        handTuned: 0
+      - frame: mague_spellcast_4_e7
+        shapes:
+        - center: {x: -0.03649635, y: -0.6031128}
+          size: {x: 0.37226278, y: 0.39688715}
+        - center: {x: -0.003649635, y: -0.019455252}
+          size: {x: 0.29562044, y: 0.46692607}
+        - center: {x: 0.040145986, y: 0.57587546}
+          size: {x: 0.25182483, y: 0.4085603}
+        handTuned: 0
+      - frame: mague_spellcast_4_w0
+        shapes:
+        - center: {x: 0.124087594, y: -0.6031128}
+          size: {x: 0.4160584, y: 0.39688715}
+        - center: {x: 0.16788322, y: -0.007782101}
+          size: {x: 0.30656934, y: 0.47859922}
+        - center: {x: 0.18978103, y: 0.5953307}
+          size: {x: 0.24087591, y: 0.40466926}
+        handTuned: 0
+      - frame: mague_spellcast_4_w1
+        shapes:
+        - center: {x: 0.1569343, y: -0.6031128}
+          size: {x: 0.4051095, y: 0.39688715}
+        - center: {x: 0.27737227, y: -0.007782101}
+          size: {x: 0.3941606, y: 0.47859922}
+        - center: {x: 0.20072992, y: 0.5953307}
+          size: {x: 0.27372262, y: 0.40466926}
+        handTuned: 0
+      - frame: mague_spellcast_4_w2
+        shapes:
+        - center: {x: 0.1569343, y: -0.6381323}
+          size: {x: 0.4051095, y: 0.3618677}
+        - center: {x: 0.3540146, y: -0.08949416}
+          size: {x: 0.36131388, y: 0.42023346}
+        - center: {x: 0.29927006, y: 0.47081712}
+          size: {x: 0.24087591, y: 0.37354085}
+        handTuned: 0
+      - frame: mague_spellcast_4_w3
+        shapes:
+        - center: {x: 0.310219, y: -0.49805447}
+          size: {x: 0.47080293, y: 0.5019455}
+        - center: {x: 0.46350366, y: 0.17898832}
+          size: {x: 0.29562044, y: 0.5019455}
+        handTuned: 0
+      - frame: mague_spellcast_4_w4
+        shapes:
+        - center: {x: -0.02919708, y: -0.46303502}
+          size: {x: 0.50364965, y: 0.53696495}
+        - center: {x: 0.26642334, y: 0.23735408}
+          size: {x: 0.4051095, y: 0.53696495}
+        handTuned: 0
+      - frame: mague_spellcast_4_w5
+        shapes:
+        - center: {x: -0.3138686, y: -0.48638132}
+          size: {x: 0.4379562, y: 0.51361865}
+        - center: {x: -0.10583942, y: 0.21400778}
+          size: {x: 0.4051095, y: 0.51361865}
+        handTuned: 0
+      - frame: mague_spellcast_4_w6
+        shapes:
+        - center: {x: -0.22627737, y: -0.61478597}
+          size: {x: 0.35036495, y: 0.385214}
+        - center: {x: -0.14963503, y: -0.042801555}
+          size: {x: 0.33941606, y: 0.46692607}
+        - center: {x: -0.10583942, y: 0.540856}
+          size: {x: 0.25182483, y: 0.39688715}
+        handTuned: 0
+      - frame: mague_spellcast_4_w7
+        shapes:
+        - center: {x: -0.05109489, y: -0.6031128}
+          size: {x: 0.37226278, y: 0.39688715}
+        - center: {x: -0.00729927, y: -0.019455252}
+          size: {x: 0.30656934, y: 0.46692607}
+        - center: {x: 0.03649635, y: 0.57587546}
+          size: {x: 0.24087591, y: 0.4085603}
+        handTuned: 0
+      - frame: mague_spellcast_5_e0
+        shapes:
+        - center: {x: -0.033175357, y: -0.5862069}
+          size: {x: 0.54028434, y: 0.3908046}
+        - center: {x: 0.06635071, y: 0}
+          size: {x: 0.41232228, y: 0.47126436}
+        - center: {x: 0.09478673, y: 0.59770113}
+          size: {x: 0.2985782, y: 0.40229884}
+        handTuned: 0
+      - frame: mague_spellcast_5_e1
+        shapes:
+        - center: {x: -0.0047393367, y: -0.4827586}
+          size: {x: 0.51184833, y: 0.49425286}
+        - center: {x: 0.06635071, y: 0.1954023}
+          size: {x: 0.35545024, y: 0.50574714}
+        handTuned: 0
+      - frame: mague_spellcast_5_e2
+        shapes:
+        - center: {x: 0.09478673, y: -0.55172414}
+          size: {x: 0.52606636, y: 0.42528737}
+        - center: {x: 0.1943128, y: 0.03448276}
+          size: {x: 0.4265403, y: 0.43678162}
+        handTuned: 0
+      - frame: mague_spellcast_5_e3
+        shapes:
+        - center: {x: -0.47393364, y: -0.55172414}
+          size: {x: 0.3270142, y: 0.33333334}
+        - center: {x: 0.25118482, y: -0.4597701}
+          size: {x: 0.6255924, y: 0.40229884}
+        handTuned: 0
+      - frame: mague_spellcast_5_e4
+        shapes:
+        - center: {x: -0.061611373, y: -0.47126436}
+          size: {x: 0.93838865, y: 0.43678162}
+        handTuned: 0
+      - frame: mague_spellcast_5_e5
+        shapes:
+        - center: {x: -0.07582939, y: -0.49425286}
+          size: {x: 0.55450237, y: 0.4827586}
+        - center: {x: -0.0047393367, y: 0.14942528}
+          size: {x: 0.4265403, y: 0.4827586}
+        handTuned: 0
+      - frame: mague_spellcast_5_e6
+        shapes:
+        - center: {x: -0.018957347, y: -0.6091954}
+          size: {x: 0.52606636, y: 0.3908046}
+        - center: {x: 0.13744076, y: -0.022988506}
+          size: {x: 0.4549763, y: 0.47126436}
+        - center: {x: 0.27962086, y: 0.57471263}
+          size: {x: 0.2843602, y: 0.40229884}
+        handTuned: 0
+      - frame: mague_spellcast_5_e7
+        shapes:
+        - center: {x: 0.25118482, y: -0.5862069}
+          size: {x: 0.48341233, y: 0.3908046}
+        - center: {x: 0.3364929, y: 0}
+          size: {x: 0.4265403, y: 0.47126436}
+        - center: {x: 0.39336494, y: 0.59770113}
+          size: {x: 0.3127962, y: 0.40229884}
+        handTuned: 0
+      - frame: mague_spellcast_5_w0
+        shapes:
+        - center: {x: -0.023696683, y: -0.5862069}
+          size: {x: 0.54028434, y: 0.3908046}
+        - center: {x: 0.047393367, y: 0}
+          size: {x: 0.41232228, y: 0.47126436}
+        - center: {x: 0.1042654, y: 0.59770113}
+          size: {x: 0.2985782, y: 0.40229884}
+        handTuned: 0
+      - frame: mague_spellcast_5_w1
+        shapes:
+        - center: {x: 0.0047393367, y: -0.4827586}
+          size: {x: 0.51184833, y: 0.49425286}
+        - center: {x: 0.07582939, y: 0.1954023}
+          size: {x: 0.35545024, y: 0.50574714}
+        handTuned: 0
+      - frame: mague_spellcast_5_w2
+        shapes:
+        - center: {x: 0.0900474, y: -0.55172414}
+          size: {x: 0.54028434, y: 0.42528737}
+        - center: {x: 0.20379147, y: 0.03448276}
+          size: {x: 0.4265403, y: 0.43678162}
+        handTuned: 0
+      - frame: mague_spellcast_5_w3
+        shapes:
+        - center: {x: 0.2606635, y: -0.4597701}
+          size: {x: 0.6255924, y: 0.40229884}
+        - center: {x: -0.47867298, y: -0.55172414}
+          size: {x: 0.34123224, y: 0.33333334}
+        handTuned: 0
+      - frame: mague_spellcast_5_w4
+        shapes:
+        - center: {x: 0.20379147, y: -0.44827586}
+          size: {x: 0.6824645, y: 0.41379312}
+        - center: {x: -0.6255924, y: -0.50574714}
+          size: {x: 0.3744076, y: 0.40229884}
+        handTuned: 0
+      - frame: mague_spellcast_5_w5
+        shapes:
+        - center: {x: -0.06635071, y: -0.49425286}
+          size: {x: 0.55450237, y: 0.4827586}
+        - center: {x: -0.009478673, y: 0.14942528}
+          size: {x: 0.4407583, y: 0.4827586}
+        handTuned: 0
+      - frame: mague_spellcast_5_w6
+        shapes:
+        - center: {x: -0.037914693, y: -0.6091954}
+          size: {x: 0.52606636, y: 0.3908046}
+        - center: {x: 0.14691943, y: -0.022988506}
+          size: {x: 0.4549763, y: 0.47126436}
+        - center: {x: 0.2748815, y: 0.57471263}
+          size: {x: 0.2985782, y: 0.40229884}
+        handTuned: 0
+      - frame: mague_spellcast_5_w7
+        shapes:
+        - center: {x: 0.24644549, y: -0.5862069}
+          size: {x: 0.46919432, y: 0.3908046}
+        - center: {x: 0.33175355, y: 0}
+          size: {x: 0.41232228, y: 0.47126436}
+        - center: {x: 0.4028436, y: 0.59770113}
+          size: {x: 0.3127962, y: 0.40229884}
+        handTuned: 0
+      - frame: mague_staff_attack_e0
+        shapes:
+        - center: {x: 0.29153606, y: -0.6666667}
+          size: {x: 0.31347963, y: 0.33333334}
+        - center: {x: 0.35423198, y: -0.16}
+          size: {x: 0.27586207, y: 0.38666666}
+        - center: {x: 0.44200626, y: 0.36}
+          size: {x: 0.31347963, y: 0.34666666}
+        handTuned: 0
+      - frame: mague_staff_attack_e1
+        shapes:
+        - center: {x: 0.34169278, y: -0.6}
+          size: {x: 0.338558, y: 0.4}
+        - center: {x: 0.5047022, y: 0}
+          size: {x: 0.27586207, y: 0.46666667}
+        - center: {x: 0.26645768, y: 0.6}
+          size: {x: 0.338558, y: 0.4}
+        handTuned: 0
+      - frame: mague_staff_attack_e2
+        shapes:
+        - center: {x: 0.36677116, y: -0.5466667}
+          size: {x: 0.36363637, y: 0.45333335}
+        - center: {x: 0.22884013, y: 0.053333335}
+          size: {x: 0.4263323, y: 0.46666667}
+        handTuned: 0
+      - frame: mague_staff_attack_e3
+        shapes:
+        - center: {x: 0.14106584, y: -0.6}
+          size: {x: 0.41379312, y: 0.4}
+        - center: {x: 0.07836991, y: -0.06666667}
+          size: {x: 0.22570533, y: 0.4}
+        handTuned: 0
+      - frame: mague_staff_attack_e4
+        shapes:
+        - center: {x: -0.6238245, y: -0.52}
+          size: {x: 0.35109717, y: 0.34666666}
+        - center: {x: -0.0846395, y: -0.4}
+          size: {x: 0.43887147, y: 0.41333333}
+        - center: {x: 0.47962382, y: -0.24}
+          size: {x: 0.37617555, y: 0.093333334}
+        handTuned: 0
+      - frame: mague_staff_attack_e5
+        shapes:
+        - center: {x: -0.44827586, y: -0.58666664}
+          size: {x: 0.37617555, y: 0.41333333}
+        - center: {x: -0.19749217, y: -0.026666667}
+          size: {x: 0.3260188, y: 0.41333333}
+        handTuned: 0
+      - frame: mague_staff_attack_e6
+        shapes:
+        - center: {x: -0.39811912, y: -0.6666667}
+          size: {x: 0.3260188, y: 0.33333334}
+        - center: {x: -0.3354232, y: -0.14666666}
+          size: {x: 0.28840125, y: 0.4}
+        - center: {x: -0.14733543, y: 0.38666666}
+          size: {x: 0.4012539, y: 0.34666666}
+        handTuned: 0
+      - frame: mague_staff_attack_e7
+        shapes:
+        - center: {x: -0.021943573, y: -0.6666667}
+          size: {x: 0.27586207, y: 0.33333334}
+        - center: {x: 0.06583072, y: -0.16}
+          size: {x: 0.2633229, y: 0.38666666}
+        - center: {x: 0.14106584, y: 0.34666666}
+          size: {x: 0.28840125, y: 0.33333334}
+        handTuned: 0
+      - frame: mague_staff_attack_w0
+        shapes:
+        - center: {x: 0.28526646, y: -0.6666667}
+          size: {x: 0.31347963, y: 0.33333334}
+        - center: {x: 0.36050156, y: -0.16}
+          size: {x: 0.2633229, y: 0.38666666}
+        - center: {x: 0.44827586, y: 0.36}
+          size: {x: 0.30094042, y: 0.34666666}
+        handTuned: 0
+      - frame: mague_staff_attack_w1
+        shapes:
+        - center: {x: 0.3354232, y: -0.6}
+          size: {x: 0.338558, y: 0.4}
+        - center: {x: 0.4984326, y: 0}
+          size: {x: 0.27586207, y: 0.46666667}
+        - center: {x: 0.27272728, y: 0.6}
+          size: {x: 0.3260188, y: 0.4}
+        handTuned: 0
+      - frame: mague_staff_attack_w2
+        shapes:
+        - center: {x: 0.36050156, y: -0.5466667}
+          size: {x: 0.36363637, y: 0.45333335}
+        - center: {x: 0.22257054, y: 0.053333335}
+          size: {x: 0.4263323, y: 0.46666667}
+        handTuned: 0
+      - frame: mague_staff_attack_w3
+        shapes:
+        - center: {x: 0.13479623, y: -0.6}
+          size: {x: 0.41379312, y: 0.4}
+        - center: {x: 0.07210031, y: -0.06666667}
+          size: {x: 0.22570533, y: 0.4}
+        handTuned: 0
+      - frame: mague_staff_attack_w4
+        shapes:
+        - center: {x: 0.48589343, y: -0.24}
+          size: {x: 0.36363637, y: 0.093333334}
+        - center: {x: -0.06583072, y: -0.4}
+          size: {x: 0.43887147, y: 0.41333333}
+        - center: {x: -0.61755484, y: -0.50666666}
+          size: {x: 0.36363637, y: 0.36}
+        handTuned: 0
+      - frame: mague_staff_attack_w5
+        shapes:
+        - center: {x: -0.45454547, y: -0.58666664}
+          size: {x: 0.37617555, y: 0.41333333}
+        - center: {x: -0.19122256, y: -0.026666667}
+          size: {x: 0.31347963, y: 0.41333333}
+        handTuned: 0
+      - frame: mague_staff_attack_w6
+        shapes:
+        - center: {x: -0.40438873, y: -0.6666667}
+          size: {x: 0.3260188, y: 0.33333334}
+        - center: {x: -0.34169278, y: -0.14666666}
+          size: {x: 0.28840125, y: 0.4}
+        - center: {x: -0.15360501, y: 0.38666666}
+          size: {x: 0.4012539, y: 0.34666666}
+        handTuned: 0
+      - frame: mague_staff_attack_w7
+        shapes:
+        - center: {x: -0.015673982, y: -0.6666667}
+          size: {x: 0.28840125, y: 0.33333334}
+        - center: {x: 0.05956113, y: -0.16}
+          size: {x: 0.2633229, y: 0.38666666}
+        - center: {x: 0.14733543, y: 0.34666666}
+          size: {x: 0.27586207, y: 0.33333334}
+        handTuned: 0
+      - frame: mague_staff_equip_e0
+        shapes:
+        - center: {x: -0.040650405, y: -0.67741936}
+          size: {x: 0.50406504, y: 0.32258064}
+        - center: {x: 0.040650405, y: -0.18709677}
+          size: {x: 0.42276424, y: 0.37419355}
+        - center: {x: 0.008130081, y: 0.31612903}
+          size: {x: 0.29268292, y: 0.33548388}
+        handTuned: 0
+      - frame: mague_staff_equip_e1
+        shapes:
+        - center: {x: -0.008130081, y: -0.5225806}
+          size: {x: 0.50406504, y: 0.47741935}
+        - center: {x: 0.008130081, y: 0.12258065}
+          size: {x: 0.3902439, y: 0.47741935}
+        handTuned: 0
+      - frame: mague_staff_equip_e2
+        shapes:
+        - center: {x: -0.040650405, y: -0.18709677}
+          size: {x: 0.4715447, y: 0.8129032}
+        handTuned: 0
+      - frame: mague_staff_equip_e3
+        shapes:
+        - center: {x: -0.15447155, y: -0.6903226}
+          size: {x: 0.5203252, y: 0.30967742}
+        - center: {x: -0.008130081, y: -0.22580644}
+          size: {x: 0.37398374, y: 0.36129034}
+        - center: {x: 0.2195122, y: 0.23870967}
+          size: {x: 0.4715447, y: 0.30967742}
+        handTuned: 0
+      - frame: mague_staff_equip_e4
+        shapes:
+        - center: {x: -0.25203252, y: -0.6}
+          size: {x: 0.4878049, y: 0.4}
+        - center: {x: -0.07317073, y: 0.006451613}
+          size: {x: 0.40650406, y: 0.46451613}
+        - center: {x: -0.17073171, y: 0.60645163}
+          size: {x: 0.27642277, y: 0.3935484}
+        handTuned: 0
+      - frame: mague_staff_equip_e5
+        shapes:
+        - center: {x: -0.18699187, y: -0.61290324}
+          size: {x: 0.45528457, y: 0.38709676}
+        - center: {x: -0.008130081, y: -0.032258064}
+          size: {x: 0.40650406, y: 0.4516129}
+        - center: {x: 0.05691057, y: 0.5483871}
+          size: {x: 0.40650406, y: 0.38709676}
+        handTuned: 0
+      - frame: mague_staff_equip_e6
+        shapes:
+        - center: {x: 0.05691057, y: -0.63870966}
+          size: {x: 0.5691057, y: 0.36129034}
+        - center: {x: 0.08943089, y: -0.10967742}
+          size: {x: 0.4715447, y: 0.42580646}
+        - center: {x: 0.2195122, y: 0.41935483}
+          size: {x: 0.40650406, y: 0.36129034}
+        handTuned: 0
+      - frame: mague_staff_equip_e7
+        shapes:
+        - center: {x: 0.25203252, y: -0.3419355}
+          size: {x: 0.50406504, y: 0.65806454}
+        - center: {x: 0.43089432, y: 0.43225807}
+          size: {x: 0.42276424, y: 0.37419355}
+        handTuned: 0
+      - frame: mague_staff_equip_w0
+        shapes:
+        - center: {x: -0.040650405, y: -0.67741936}
+          size: {x: 0.4878049, y: 0.32258064}
+        - center: {x: 0.040650405, y: -0.18709677}
+          size: {x: 0.4390244, y: 0.37419355}
+        - center: {x: 0.024390243, y: 0.31612903}
+          size: {x: 0.29268292, y: 0.33548388}
+        handTuned: 0
+      - frame: mague_staff_equip_w1
+        shapes:
+        - center: {x: -0.008130081, y: -0.5225806}
+          size: {x: 0.5203252, y: 0.47741935}
+        - center: {x: 0.008130081, y: 0.12258065}
+          size: {x: 0.37398374, y: 0.47741935}
+        handTuned: 0
+      - frame: mague_staff_equip_w2
+        shapes:
+        - center: {x: -0.040650405, y: -0.67741936}
+          size: {x: 0.4878049, y: 0.32258064}
+        - center: {x: -0.05691057, y: 0.032258064}
+          size: {x: 0.40650406, y: 0.59354836}
+        handTuned: 0
+      - frame: mague_staff_equip_w3
+        shapes:
+        - center: {x: -0.12195122, y: -0.5354839}
+          size: {x: 0.50406504, y: 0.46451613}
+        - center: {x: 0.13821138, y: 0.07096774}
+          size: {x: 0.4390244, y: 0.4516129}
+        handTuned: 0
+      - frame: mague_staff_equip_w4
+        shapes:
+        - center: {x: -0.23577236, y: -0.6}
+          size: {x: 0.4878049, y: 0.4}
+        - center: {x: -0.07317073, y: 0.006451613}
+          size: {x: 0.42276424, y: 0.46451613}
+        - center: {x: -0.17073171, y: 0.60645163}
+          size: {x: 0.2601626, y: 0.3935484}
+        handTuned: 0
+      - frame: mague_staff_equip_w5
+        shapes:
+        - center: {x: -0.18699187, y: -0.62580645}
+          size: {x: 0.4715447, y: 0.37419355}
+        - center: {x: 0.024390243, y: 0.2}
+          size: {x: 0.42276424, y: 0.7096774}
+        handTuned: 0
+      - frame: mague_staff_equip_w6
+        shapes:
+        - center: {x: 0.05691057, y: -0.3419355}
+          size: {x: 0.55284554, y: 0.65806454}
+        - center: {x: 0.2195122, y: 0.41935483}
+          size: {x: 0.3902439, y: 0.36129034}
+        handTuned: 0
+      - frame: mague_staff_equip_w7
+        shapes:
+        - center: {x: 0.23577236, y: -0.3419355}
+          size: {x: 0.50406504, y: 0.65806454}
+        - center: {x: 0.44715446, y: 0.43225807}
+          size: {x: 0.42276424, y: 0.37419355}
+        handTuned: 0
+      - frame: mague_staff_idle_e0
+        shapes:
+        - center: {x: -0.109375, y: -0.610687}
+          size: {x: 0.609375, y: 0.38931298}
+        - center: {x: 0, y: -0.03816794}
+          size: {x: 0.5625, y: 0.45801526}
+        - center: {x: 0.09375, y: 0.5458015}
+          size: {x: 0.5625, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_staff_idle_e1
+        shapes:
+        - center: {x: -0.109375, y: -0.610687}
+          size: {x: 0.609375, y: 0.38931298}
+        - center: {x: -0.015625, y: -0.026717557}
+          size: {x: 0.578125, y: 0.46946564}
+        - center: {x: 0.109375, y: 0.5687023}
+          size: {x: 0.578125, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_staff_idle_e2
+        shapes:
+        - center: {x: -0.09375, y: -0.610687}
+          size: {x: 0.5625, y: 0.38931298}
+        - center: {x: 0, y: -0.03816794}
+          size: {x: 0.59375, y: 0.45801526}
+        - center: {x: 0.234375, y: 0.53435117}
+          size: {x: 0.578125, y: 0.38931298}
+        handTuned: 0
+      - frame: mague_staff_idle_e3
+        shapes:
+        - center: {x: -0.125, y: -0.59923667}
+          size: {x: 0.625, y: 0.40076336}
+        - center: {x: -0.015625, y: -0.003816794}
+          size: {x: 0.578125, y: 0.46946564}
+        - center: {x: 0.1875, y: 0.59160304}
+          size: {x: 0.59375, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_staff_idle_e4
+        shapes:
+        - center: {x: -0.140625, y: -0.59923667}
+          size: {x: 0.578125, y: 0.40076336}
+        - center: {x: -0.046875, y: -0.003816794}
+          size: {x: 0.578125, y: 0.46946564}
+        - center: {x: 0.171875, y: 0.59160304}
+          size: {x: 0.578125, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_staff_idle_e5
+        shapes:
+        - center: {x: -0.03125, y: -0.29007635}
+          size: {x: 0.59375, y: 0.7099237}
+        - center: {x: 0.140625, y: 0.5458015}
+          size: {x: 0.609375, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_staff_idle_w0
+        shapes:
+        - center: {x: -0.109375, y: -0.610687}
+          size: {x: 0.609375, y: 0.38931298}
+        - center: {x: -0, y: -0.03816794}
+          size: {x: 0.5625, y: 0.45801526}
+        - center: {x: 0.09375, y: 0.5458015}
+          size: {x: 0.5625, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_staff_idle_w1
+        shapes:
+        - center: {x: -0.109375, y: -0.610687}
+          size: {x: 0.609375, y: 0.38931298}
+        - center: {x: -0.015625, y: -0.026717557}
+          size: {x: 0.578125, y: 0.46946564}
+        - center: {x: 0.109375, y: 0.5687023}
+          size: {x: 0.578125, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_staff_idle_w2
+        shapes:
+        - center: {x: -0.09375, y: -0.610687}
+          size: {x: 0.5625, y: 0.38931298}
+        - center: {x: -0, y: -0.03816794}
+          size: {x: 0.59375, y: 0.45801526}
+        - center: {x: 0.234375, y: 0.53435117}
+          size: {x: 0.578125, y: 0.38931298}
+        handTuned: 0
+      - frame: mague_staff_idle_w3
+        shapes:
+        - center: {x: -0.125, y: -0.59923667}
+          size: {x: 0.625, y: 0.40076336}
+        - center: {x: -0.015625, y: -0.003816794}
+          size: {x: 0.578125, y: 0.46946564}
+        - center: {x: 0.1875, y: 0.59160304}
+          size: {x: 0.59375, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_staff_idle_w4
+        shapes:
+        - center: {x: -0.140625, y: -0.59923667}
+          size: {x: 0.578125, y: 0.40076336}
+        - center: {x: -0.046875, y: -0.003816794}
+          size: {x: 0.578125, y: 0.46946564}
+        - center: {x: 0.171875, y: 0.59160304}
+          size: {x: 0.578125, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_staff_idle_w5
+        shapes:
+        - center: {x: -0.03125, y: -0.29007635}
+          size: {x: 0.59375, y: 0.7099237}
+        - center: {x: 0.140625, y: 0.5458015}
+          size: {x: 0.609375, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_staff_run_e0
+        shapes:
+        - center: {x: 0.11578947, y: -0.36842105}
+          size: {x: 0.44210526, y: 0.5864662}
+        - center: {x: 0.44210526, y: 0.40601504}
+          size: {x: 0.38947368, y: 0.59398496}
+        handTuned: 0
+      - frame: mague_staff_run_e1
+        shapes:
+        - center: {x: 0.010526316, y: -0.4699248}
+          size: {x: 0.4, y: 0.4849624}
+        - center: {x: 0.34736842, y: 0.18421052}
+          size: {x: 0.42105263, y: 0.4849624}
+        handTuned: 0
+      - frame: mague_staff_run_e2
+        shapes:
+        - center: {x: -0.38947368, y: -0.4699248}
+          size: {x: 0.42105263, y: 0.4849624}
+        - center: {x: 0.07368421, y: 0.19548872}
+          size: {x: 0.50526315, y: 0.49624062}
+        handTuned: 0
+      - frame: mague_staff_run_e3
+        shapes:
+        - center: {x: -0.35789475, y: -0.39097744}
+          size: {x: 0.4105263, y: 0.5413534}
+        - center: {x: 0.042105265, y: 0.33082706}
+          size: {x: 0.38947368, y: 0.5413534}
+        handTuned: 0
+      - frame: mague_staff_run_e4
+        shapes:
+        - center: {x: -0.12631579, y: -0.4473684}
+          size: {x: 0.38947368, y: 0.55263156}
+        - center: {x: 0.16842106, y: 0.2857143}
+          size: {x: 0.38947368, y: 0.5413534}
+        handTuned: 0
+      - frame: mague_staff_run_e5
+        shapes:
+        - center: {x: -0.06315789, y: -0.4699248}
+          size: {x: 0.4105263, y: 0.4849624}
+        - center: {x: 0.28421053, y: 0.19548872}
+          size: {x: 0.44210526, y: 0.49624062}
+        handTuned: 0
+      - frame: mague_staff_run_e6
+        shapes:
+        - center: {x: -0.05263158, y: -0.4699248}
+          size: {x: 0.42105263, y: 0.5300752}
+        - center: {x: 0.29473683, y: 0.22932331}
+          size: {x: 0.43157893, y: 0.5300752}
+        handTuned: 0
+      - frame: mague_staff_run_e7
+        shapes:
+        - center: {x: 0.010526316, y: -0.4699248}
+          size: {x: 0.37894738, y: 0.5300752}
+        - center: {x: 0.35789475, y: 0.21804512}
+          size: {x: 0.36842105, y: 0.518797}
+        handTuned: 0
+      - frame: mague_staff_run_w0
+        shapes:
+        - center: {x: 0.11578947, y: -0.36842105}
+          size: {x: 0.44210526, y: 0.5864662}
+        - center: {x: 0.44210526, y: 0.40601504}
+          size: {x: 0.38947368, y: 0.59398496}
+        handTuned: 0
+      - frame: mague_staff_run_w1
+        shapes:
+        - center: {x: 0.010526316, y: -0.4699248}
+          size: {x: 0.4, y: 0.4849624}
+        - center: {x: 0.34736842, y: 0.18421052}
+          size: {x: 0.42105263, y: 0.4849624}
+        handTuned: 0
+      - frame: mague_staff_run_w2
+        shapes:
+        - center: {x: -0.38947368, y: -0.4699248}
+          size: {x: 0.42105263, y: 0.4849624}
+        - center: {x: 0.07368421, y: 0.19548872}
+          size: {x: 0.50526315, y: 0.49624062}
+        handTuned: 0
+      - frame: mague_staff_run_w3
+        shapes:
+        - center: {x: -0.35789475, y: -0.39097744}
+          size: {x: 0.4105263, y: 0.5413534}
+        - center: {x: 0.042105265, y: 0.33082706}
+          size: {x: 0.38947368, y: 0.5413534}
+        handTuned: 0
+      - frame: mague_staff_run_w4
+        shapes:
+        - center: {x: -0.12631579, y: -0.4473684}
+          size: {x: 0.38947368, y: 0.55263156}
+        - center: {x: 0.16842106, y: 0.2857143}
+          size: {x: 0.38947368, y: 0.5413534}
+        handTuned: 0
+      - frame: mague_staff_run_w5
+        shapes:
+        - center: {x: -0.06315789, y: -0.4699248}
+          size: {x: 0.4105263, y: 0.4849624}
+        - center: {x: 0.28421053, y: 0.19548872}
+          size: {x: 0.44210526, y: 0.49624062}
+        handTuned: 0
+      - frame: mague_staff_run_w6
+        shapes:
+        - center: {x: -0.05263158, y: -0.4699248}
+          size: {x: 0.42105263, y: 0.5300752}
+        - center: {x: 0.29473683, y: 0.22932331}
+          size: {x: 0.43157893, y: 0.5300752}
+        handTuned: 0
+      - frame: mague_staff_run_w7
+        shapes:
+        - center: {x: 0.010526316, y: -0.4699248}
+          size: {x: 0.37894738, y: 0.5300752}
+        - center: {x: 0.35789475, y: 0.21804512}
+          size: {x: 0.36842105, y: 0.518797}
+        handTuned: 0
+      - frame: mague_staff_spellcast_2_e0
+        shapes:
+        - center: {x: 0.14285715, y: -0.3762712}
+          size: {x: 0.34042552, y: 0.6237288}
+        - center: {x: 0.26443768, y: 0.38305086}
+          size: {x: 0.29179332, y: 0.35254237}
+        handTuned: 0
+      - frame: mague_staff_spellcast_2_e1
+        shapes:
+        - center: {x: 0.25227964, y: -0.53898305}
+          size: {x: 0.32826748, y: 0.46101695}
+        - center: {x: 0.45896655, y: 0.07118644}
+          size: {x: 0.34042552, y: 0.47457626}
+        handTuned: 0
+      - frame: mague_staff_spellcast_2_e2
+        shapes:
+        - center: {x: 0.19148937, y: -0.60677963}
+          size: {x: 0.34042552, y: 0.39322034}
+        - center: {x: 0.41033435, y: -0.010169491}
+          size: {x: 0.29179332, y: 0.47457626}
+        - center: {x: 0.337386, y: 0.5966102}
+          size: {x: 0.21884498, y: 0.40338984}
+        handTuned: 0
+      - frame: mague_staff_spellcast_2_e3
+        shapes:
+        - center: {x: -0.051671732, y: -0.5661017}
+          size: {x: 0.36474165, y: 0.4338983}
+        - center: {x: 0.26443768, y: 0.030508475}
+          size: {x: 0.38905776, y: 0.4338983}
+        handTuned: 0
+      - frame: mague_staff_spellcast_2_e4
+        shapes:
+        - center: {x: -0.42857143, y: -0.579661}
+          size: {x: 0.4012158, y: 0.420339}
+        - center: {x: 0.06990881, y: -0.010169491}
+          size: {x: 0.4863222, y: 0.420339}
+        handTuned: 0
+      - frame: mague_staff_spellcast_2_e5
+        shapes:
+        - center: {x: -0.4893617, y: -0.579661}
+          size: {x: 0.31610942, y: 0.420339}
+        - center: {x: -0.3069909, y: 0.0033898305}
+          size: {x: 0.4012158, y: 0.4338983}
+        handTuned: 0
+      - frame: mague_staff_spellcast_2_e6
+        shapes:
+        - center: {x: -0.36778116, y: -0.6474576}
+          size: {x: 0.29179332, y: 0.35254237}
+        - center: {x: -0.28267476, y: -0.10508475}
+          size: {x: 0.30395138, y: 0.40677965}
+        - center: {x: -0.039513677, y: 0.45084745}
+          size: {x: 0.30395138, y: 0.36610168}
+        handTuned: 0
+      - frame: mague_staff_spellcast_2_e7
+        shapes:
+        - center: {x: -0.17325228, y: -0.66101694}
+          size: {x: 0.31610942, y: 0.33898306}
+        - center: {x: -0.11246201, y: -0.14576271}
+          size: {x: 0.30395138, y: 0.39322034}
+        - center: {x: -0.0030395137, y: 0.38305086}
+          size: {x: 0.31610942, y: 0.35254237}
+        handTuned: 0
+      - frame: mague_staff_spellcast_2_w0
+        shapes:
+        - center: {x: 0.14893617, y: -0.3762712}
+          size: {x: 0.34042552, y: 0.6237288}
+        - center: {x: 0.25835866, y: 0.38305086}
+          size: {x: 0.27963525, y: 0.35254237}
+        handTuned: 0
+      - frame: mague_staff_spellcast_2_w1
+        shapes:
+        - center: {x: 0.25835866, y: -0.68813556}
+          size: {x: 0.3525836, y: 0.3118644}
+        - center: {x: 0.31914893, y: -0.22711864}
+          size: {x: 0.2674772, y: 0.36610168}
+        - center: {x: 0.51367784, y: 0.23389831}
+          size: {x: 0.36474165, y: 0.3118644}
+        handTuned: 0
+      - frame: mague_staff_spellcast_2_w2
+        shapes:
+        - center: {x: 0.19756839, y: -0.60677963}
+          size: {x: 0.34042552, y: 0.39322034}
+        - center: {x: 0.41641337, y: -0.010169491}
+          size: {x: 0.29179332, y: 0.47457626}
+        - center: {x: 0.34346506, y: 0.5966102}
+          size: {x: 0.21884498, y: 0.40338984}
+        handTuned: 0
+      - frame: mague_staff_spellcast_2_w3
+        shapes:
+        - center: {x: -0.045592707, y: -0.5661017}
+          size: {x: 0.36474165, y: 0.4338983}
+        - center: {x: 0.27051672, y: 0.030508475}
+          size: {x: 0.38905776, y: 0.4338983}
+        handTuned: 0
+      - frame: mague_staff_spellcast_2_w4
+        shapes:
+        - center: {x: -0.4224924, y: -0.579661}
+          size: {x: 0.4012158, y: 0.420339}
+        - center: {x: 0.06382979, y: -0.010169491}
+          size: {x: 0.49848023, y: 0.420339}
+        handTuned: 0
+      - frame: mague_staff_spellcast_2_w5
+        shapes:
+        - center: {x: -0.50759876, y: -0.579661}
+          size: {x: 0.31610942, y: 0.420339}
+        - center: {x: -0.30091184, y: 0.0033898305}
+          size: {x: 0.4012158, y: 0.4338983}
+        handTuned: 0
+      - frame: mague_staff_spellcast_2_w6
+        shapes:
+        - center: {x: -0.37386018, y: -0.6474576}
+          size: {x: 0.27963525, y: 0.35254237}
+        - center: {x: -0.27659574, y: -0.10508475}
+          size: {x: 0.30395138, y: 0.40677965}
+        - center: {x: -0.045592707, y: 0.45084745}
+          size: {x: 0.31610942, y: 0.36610168}
+        handTuned: 0
+      - frame: mague_staff_spellcast_2_w7
+        shapes:
+        - center: {x: -0.1793313, y: -0.66101694}
+          size: {x: 0.32826748, y: 0.33898306}
+        - center: {x: -0.11854103, y: -0.14576271}
+          size: {x: 0.31610942, y: 0.39322034}
+        - center: {x: -0.009118541, y: 0.38305086}
+          size: {x: 0.30395138, y: 0.35254237}
+        handTuned: 0
+      - frame: mague_staff_spellcast_5_e0
+        shapes:
+        - center: {x: 0.2260062, y: -0.6969697}
+          size: {x: 0.38390094, y: 0.3030303}
+        - center: {x: 0.2012384, y: -0.23636363}
+          size: {x: 0.26006192, y: 0.35151514}
+        - center: {x: 0.3622291, y: 0.22424242}
+          size: {x: 0.34674922, y: 0.3030303}
+        handTuned: 0
+      - frame: mague_staff_spellcast_5_e1
+        shapes:
+        - center: {x: 0.18885449, y: -0.6484848}
+          size: {x: 0.34674922, y: 0.35151514}
+        - center: {x: 0.11455108, y: -0.12727273}
+          size: {x: 0.2972136, y: 0.4121212}
+        - center: {x: 0.21362229, y: 0.4060606}
+          size: {x: 0.24767801, y: 0.36363637}
+        handTuned: 0
+      - frame: mague_staff_spellcast_5_e2
+        shapes:
+        - center: {x: 0.23839009, y: -0.6}
+          size: {x: 0.37151703, y: 0.4}
+        - center: {x: 0.3003096, y: -0.006060606}
+          size: {x: 0.26006192, y: 0.4848485}
+        - center: {x: 0.0030959751, y: 0.5939394}
+          size: {x: 0.30959752, y: 0.4060606}
+        handTuned: 0
+      - frame: mague_staff_spellcast_5_e3
+        shapes:
+        - center: {x: -0.59133124, y: -0.5030303}
+          size: {x: 0.38390094, y: 0.35151514}
+        - center: {x: 0.0030959751, y: -0.4060606}
+          size: {x: 0.45820433, y: 0.42424244}
+        - center: {x: 0.60681117, y: -0.3090909}
+          size: {x: 0.39318886, y: 0.084848486}
+        handTuned: 0
+      - frame: mague_staff_spellcast_5_e4
+        shapes:
+        - center: {x: -0.21981424, y: -0.56363636}
+          size: {x: 0.35913312, y: 0.4121212}
+        - center: {x: -0.095975235, y: -0.030303031}
+          size: {x: 0.23529412, y: 0.4121212}
+        handTuned: 0
+      - frame: mague_staff_spellcast_5_e5
+        shapes:
+        - center: {x: -0.083591335, y: -0.56363636}
+          size: {x: 0.44582042, y: 0.4121212}
+        - center: {x: 0.07739938, y: -0.030303031}
+          size: {x: 0.26006192, y: 0.4121212}
+        handTuned: 0
+      - frame: mague_staff_spellcast_5_e6
+        shapes:
+        - center: {x: -0.15789473, y: -0.6242424}
+          size: {x: 0.44582042, y: 0.37575758}
+        - center: {x: 0.16408668, y: -0.11515152}
+          size: {x: 0.24767801, y: 0.37575758}
+        handTuned: 0
+      - frame: mague_staff_spellcast_5_e7
+        shapes:
+        - center: {x: -0.083591335, y: -0.6969697}
+          size: {x: 0.37151703, y: 0.3030303}
+        - center: {x: -0.083591335, y: -0.23636363}
+          size: {x: 0.27244583, y: 0.35151514}
+        - center: {x: 0.06501548, y: 0.22424242}
+          size: {x: 0.34674922, y: 0.3030303}
+        handTuned: 0
+      - frame: mague_staff_spellcast_5_w0
+        shapes:
+        - center: {x: 0.21981424, y: -0.6969697}
+          size: {x: 0.38390094, y: 0.3030303}
+        - center: {x: 0.21981424, y: -0.23636363}
+          size: {x: 0.26006192, y: 0.35151514}
+        - center: {x: 0.36842105, y: 0.22424242}
+          size: {x: 0.35913312, y: 0.3030303}
+        handTuned: 0
+      - frame: mague_staff_spellcast_5_w1
+        shapes:
+        - center: {x: 0.19504644, y: -0.6484848}
+          size: {x: 0.33436534, y: 0.35151514}
+        - center: {x: 0.108359136, y: -0.12727273}
+          size: {x: 0.2972136, y: 0.4121212}
+        - center: {x: 0.20743035, y: 0.4060606}
+          size: {x: 0.24767801, y: 0.36363637}
+        handTuned: 0
+      - frame: mague_staff_spellcast_5_w2
+        shapes:
+        - center: {x: 0.24458204, y: -0.6}
+          size: {x: 0.35913312, y: 0.4}
+        - center: {x: 0.30650154, y: -0.006060606}
+          size: {x: 0.24767801, y: 0.4848485}
+        - center: {x: -0.0030959751, y: 0.5939394}
+          size: {x: 0.30959752, y: 0.4060606}
+        handTuned: 0
+      - frame: mague_staff_spellcast_5_w3
+        shapes:
+        - center: {x: 0.6037152, y: -0.3090909}
+          size: {x: 0.39628482, y: 0.084848486}
+        - center: {x: -0.0030959751, y: -0.4181818}
+          size: {x: 0.45820433, y: 0.4121212}
+        - center: {x: -0.58513933, y: -0.5030303}
+          size: {x: 0.37151703, y: 0.35151514}
+        handTuned: 0
+      - frame: mague_staff_spellcast_5_w4
+        shapes:
+        - center: {x: -0.2260062, y: -0.56363636}
+          size: {x: 0.35913312, y: 0.4121212}
+        - center: {x: -0.10216718, y: -0.030303031}
+          size: {x: 0.23529412, y: 0.4121212}
+        handTuned: 0
+      - frame: mague_staff_spellcast_5_w5
+        shapes:
+        - center: {x: -0.07739938, y: -0.56363636}
+          size: {x: 0.45820433, y: 0.4121212}
+        - center: {x: 0.071207434, y: -0.030303031}
+          size: {x: 0.26006192, y: 0.4121212}
+        handTuned: 0
+      - frame: mague_staff_spellcast_5_w6
+        shapes:
+        - center: {x: -0.15170279, y: -0.6242424}
+          size: {x: 0.45820433, y: 0.37575758}
+        - center: {x: 0.15789473, y: -0.11515152}
+          size: {x: 0.24767801, y: 0.37575758}
+        handTuned: 0
+      - frame: mague_staff_spellcast_5_w7
+        shapes:
+        - center: {x: -0.08978328, y: -0.6969697}
+          size: {x: 0.37151703, y: 0.3030303}
+        - center: {x: -0.08978328, y: -0.23636363}
+          size: {x: 0.27244583, y: 0.35151514}
+        - center: {x: 0.083591335, y: 0.22424242}
+          size: {x: 0.34674922, y: 0.3030303}
+        handTuned: 0
+      - frame: mague_staff_spellcast_e0
+        shapes:
+        - center: {x: 0.1638796, y: -0.6441281}
+          size: {x: 0.38795987, y: 0.3558719}
+        - center: {x: 0.23076923, y: -0.08896797}
+          size: {x: 0.3478261, y: 0.42704627}
+        - center: {x: 0.32441473, y: 0.48042706}
+          size: {x: 0.33444816, y: 0.37010676}
+        handTuned: 0
+      - frame: mague_staff_spellcast_e1
+        shapes:
+        - center: {x: 0.15050167, y: -0.658363}
+          size: {x: 0.37458193, y: 0.34163702}
+        - center: {x: 0.32441473, y: -0.14590748}
+          size: {x: 0.28093645, y: 0.3985765}
+        - center: {x: 0.1638796, y: 0.38078293}
+          size: {x: 0.28093645, y: 0.3558719}
+        handTuned: 0
+      - frame: mague_staff_spellcast_e2
+        shapes:
+        - center: {x: 0.04347826, y: -0.6014235}
+          size: {x: 0.37458193, y: 0.3985765}
+        - center: {x: 0.24414715, y: -0.0035587188}
+          size: {x: 0.33444816, y: 0.48398575}
+        - center: {x: 0.23076923, y: 0.59786475}
+          size: {x: 0.24080268, y: 0.40213522}
+        handTuned: 0
+      - frame: mague_staff_spellcast_e3
+        shapes:
+        - center: {x: 0.1638796, y: -0.45907474}
+          size: {x: 0.4147157, y: 0.54092526}
+        - center: {x: 0.43143812, y: 0.28113878}
+          size: {x: 0.36120403, y: 0.54092526}
+        handTuned: 0
+      - frame: mague_staff_spellcast_e4
+        shapes:
+        - center: {x: -0.26421404, y: -0.38790035}
+          size: {x: 0.73578596, y: 0.46975088}
+        - center: {x: 0.6020067, y: -0.17437722}
+          size: {x: 0.3979933, y: 0.085409254}
+        handTuned: 0
+      - frame: mague_staff_spellcast_e5
+        shapes:
+        - center: {x: -0.09030101, y: -0.55871886}
+          size: {x: 0.42809364, y: 0.44128114}
+        - center: {x: 0.07023411, y: 0.053380784}
+          size: {x: 0.24080268, y: 0.455516}
+        handTuned: 0
+      - frame: mague_staff_spellcast_e6
+        shapes:
+        - center: {x: -0.14381272, y: -0.5160142}
+          size: {x: 0.53511703, y: 0.48398575}
+        - center: {x: -0.22408026, y: 0.12455516}
+          size: {x: 0.26755852, y: 0.49822065}
+        handTuned: 0
+      - frame: mague_staff_spellcast_e7
+        shapes:
+        - center: {x: -0.02341137, y: -0.6441281}
+          size: {x: 0.38795987, y: 0.3558719}
+        - center: {x: 0.05685619, y: -0.10320285}
+          size: {x: 0.33444816, y: 0.4128114}
+        - center: {x: 0.1638796, y: 0.4519573}
+          size: {x: 0.33444816, y: 0.37010676}
+        handTuned: 0
+      - frame: mague_staff_spellcast_w0
+        shapes:
+        - center: {x: 0.15719064, y: -0.6441281}
+          size: {x: 0.38795987, y: 0.3558719}
+        - center: {x: 0.2374582, y: -0.10320285}
+          size: {x: 0.33444816, y: 0.4128114}
+        - center: {x: 0.31772575, y: 0.4519573}
+          size: {x: 0.33444816, y: 0.37010676}
+        handTuned: 0
+      - frame: mague_staff_spellcast_w1
+        shapes:
+        - center: {x: 0.14381272, y: -0.658363}
+          size: {x: 0.37458193, y: 0.34163702}
+        - center: {x: 0.31772575, y: -0.14590748}
+          size: {x: 0.28093645, y: 0.3985765}
+        - center: {x: 0.15719064, y: 0.36654803}
+          size: {x: 0.28093645, y: 0.34163702}
+        handTuned: 0
+      - frame: mague_staff_spellcast_w2
+        shapes:
+        - center: {x: 0.050167225, y: -0.6014235}
+          size: {x: 0.38795987, y: 0.3985765}
+        - center: {x: 0.2374582, y: -0.0035587188}
+          size: {x: 0.33444816, y: 0.48398575}
+        - center: {x: 0.22408026, y: 0.59786475}
+          size: {x: 0.24080268, y: 0.40213522}
+        handTuned: 0
+      - frame: mague_staff_spellcast_w3
+        shapes:
+        - center: {x: 0.15719064, y: -0.45907474}
+          size: {x: 0.4147157, y: 0.54092526}
+        - center: {x: 0.42474917, y: 0.28113878}
+          size: {x: 0.36120403, y: 0.54092526}
+        handTuned: 0
+      - frame: mague_staff_spellcast_w4
+        shapes:
+        - center: {x: 0.5986622, y: -0.17437722}
+          size: {x: 0.4013378, y: 0.085409254}
+        - center: {x: -0.26755852, y: -0.38790035}
+          size: {x: 0.7324415, y: 0.46975088}
+        handTuned: 0
+      - frame: mague_staff_spellcast_w5
+        shapes:
+        - center: {x: -0.09698997, y: -0.55871886}
+          size: {x: 0.42809364, y: 0.44128114}
+        - center: {x: 0.09030101, y: 0.053380784}
+          size: {x: 0.24080268, y: 0.455516}
+        handTuned: 0
+      - frame: mague_staff_spellcast_w6
+        shapes:
+        - center: {x: -0.15050167, y: -0.5160142}
+          size: {x: 0.53511703, y: 0.48398575}
+        - center: {x: -0.23076923, y: 0.12455516}
+          size: {x: 0.26755852, y: 0.49822065}
+        handTuned: 0
+      - frame: mague_staff_spellcast_w7
+        shapes:
+        - center: {x: -0.0033444816, y: -0.6441281}
+          size: {x: 0.38795987, y: 0.3558719}
+        - center: {x: 0.06354515, y: -0.10320285}
+          size: {x: 0.3478261, y: 0.4128114}
+        - center: {x: 0.15719064, y: 0.4519573}
+          size: {x: 0.33444816, y: 0.37010676}
+        handTuned: 0
+      - frame: mague_staff_walk_2_e0
+        shapes:
+        - center: {x: 0.04, y: -0.6236162}
+          size: {x: 0.53333336, y: 0.37638375}
+        - center: {x: 0.18666667, y: -0.0701107}
+          size: {x: 0.46666667, y: 0.44280443}
+        - center: {x: 0.28, y: 0.49446493}
+          size: {x: 0.45333335, y: 0.38745388}
+        handTuned: 0
+      - frame: mague_staff_walk_2_e1
+        shapes:
+        - center: {x: 0.013333334, y: -0.44649446}
+          size: {x: 0.53333336, y: 0.55350554}
+        - center: {x: 0.28, y: 0.31734318}
+          size: {x: 0.48, y: 0.5645757}
+        handTuned: 0
+      - frame: mague_staff_walk_2_e2
+        shapes:
+        - center: {x: -0.13333334, y: -0.601476}
+          size: {x: 0.5466667, y: 0.398524}
+        - center: {x: -0.013333334, y: -0.003690037}
+          size: {x: 0.53333336, y: 0.46494466}
+        - center: {x: 0.21333334, y: 0.59778595}
+          size: {x: 0.49333334, y: 0.40221402}
+        handTuned: 0
+      - frame: mague_staff_walk_2_e3
+        shapes:
+        - center: {x: -0.25333333, y: -0.61254615}
+          size: {x: 0.48, y: 0.38745388}
+        - center: {x: -0.093333334, y: -0.036900368}
+          size: {x: 0.42666668, y: 0.45387453}
+        - center: {x: 0.08, y: 0.5387454}
+          size: {x: 0.41333333, y: 0.38745388}
+        handTuned: 0
+      - frame: mague_staff_walk_2_e4
+        shapes:
+        - center: {x: -0.32, y: -0.6236162}
+          size: {x: 0.49333334, y: 0.37638375}
+        - center: {x: -0.16, y: -0.05904059}
+          size: {x: 0.44, y: 0.45387453}
+        - center: {x: 0.10666667, y: 0.51660514}
+          size: {x: 0.49333334, y: 0.38745388}
+        handTuned: 0
+      - frame: mague_staff_walk_2_e5
+        shapes:
+        - center: {x: -0.17333333, y: -0.44649446}
+          size: {x: 0.53333336, y: 0.55350554}
+        - center: {x: 0.093333334, y: 0.30627307}
+          size: {x: 0.48, y: 0.55350554}
+        handTuned: 0
+      - frame: mague_staff_walk_2_e6
+        shapes:
+        - center: {x: -0.093333334, y: -0.31365314}
+          size: {x: 0.50666666, y: 0.6863469}
+        - center: {x: 0.13333334, y: 0.49446493}
+          size: {x: 0.44, y: 0.38745388}
+        handTuned: 0
+      - frame: mague_staff_walk_2_e7
+        shapes:
+        - center: {x: 0.10666667, y: -0.6236162}
+          size: {x: 0.49333334, y: 0.37638375}
+        - center: {x: 0.21333334, y: -0.05904059}
+          size: {x: 0.44, y: 0.45387453}
+        - center: {x: 0.32, y: 0.51660514}
+          size: {x: 0.44, y: 0.38745388}
+        handTuned: 0
+      - frame: mague_staff_walk_2_w0
+        shapes:
+        - center: {x: 0.04, y: -0.6236162}
+          size: {x: 0.53333336, y: 0.37638375}
+        - center: {x: 0.18666667, y: -0.0701107}
+          size: {x: 0.46666667, y: 0.44280443}
+        - center: {x: 0.28, y: 0.49446493}
+          size: {x: 0.45333335, y: 0.38745388}
+        handTuned: 0
+      - frame: mague_staff_walk_2_w1
+        shapes:
+        - center: {x: 0.013333334, y: -0.44649446}
+          size: {x: 0.53333336, y: 0.55350554}
+        - center: {x: 0.28, y: 0.31734318}
+          size: {x: 0.48, y: 0.5645757}
+        handTuned: 0
+      - frame: mague_staff_walk_2_w2
+        shapes:
+        - center: {x: -0.13333334, y: -0.601476}
+          size: {x: 0.5466667, y: 0.398524}
+        - center: {x: -0.013333334, y: -0.003690037}
+          size: {x: 0.53333336, y: 0.46494466}
+        - center: {x: 0.21333334, y: 0.59778595}
+          size: {x: 0.49333334, y: 0.40221402}
+        handTuned: 0
+      - frame: mague_staff_walk_2_w3
+        shapes:
+        - center: {x: -0.25333333, y: -0.61254615}
+          size: {x: 0.48, y: 0.38745388}
+        - center: {x: -0.093333334, y: -0.036900368}
+          size: {x: 0.42666668, y: 0.45387453}
+        - center: {x: 0.08, y: 0.5387454}
+          size: {x: 0.41333333, y: 0.38745388}
+        handTuned: 0
+      - frame: mague_staff_walk_2_w4
+        shapes:
+        - center: {x: -0.32, y: -0.6236162}
+          size: {x: 0.49333334, y: 0.37638375}
+        - center: {x: -0.16, y: -0.05904059}
+          size: {x: 0.44, y: 0.45387453}
+        - center: {x: 0.10666667, y: 0.51660514}
+          size: {x: 0.49333334, y: 0.38745388}
+        handTuned: 0
+      - frame: mague_staff_walk_2_w5
+        shapes:
+        - center: {x: -0.17333333, y: -0.44649446}
+          size: {x: 0.53333336, y: 0.55350554}
+        - center: {x: 0.093333334, y: 0.30627307}
+          size: {x: 0.48, y: 0.55350554}
+        handTuned: 0
+      - frame: mague_staff_walk_2_w6
+        shapes:
+        - center: {x: -0.093333334, y: -0.31365314}
+          size: {x: 0.50666666, y: 0.6863469}
+        - center: {x: 0.13333334, y: 0.49446493}
+          size: {x: 0.44, y: 0.38745388}
+        handTuned: 0
+      - frame: mague_staff_walk_2_w7
+        shapes:
+        - center: {x: 0.10666667, y: -0.6236162}
+          size: {x: 0.49333334, y: 0.37638375}
+        - center: {x: 0.21333334, y: -0.05904059}
+          size: {x: 0.44, y: 0.45387453}
+        - center: {x: 0.32, y: 0.51660514}
+          size: {x: 0.44, y: 0.38745388}
+        handTuned: 0
+      - frame: mague_staff_walk_4_e0
+        shapes:
+        - center: {x: -0.08755761, y: -0.6031128}
+          size: {x: 0.5253456, y: 0.39688715}
+        - center: {x: 0.06451613, y: -0.007782101}
+          size: {x: 0.51152074, y: 0.47859922}
+        - center: {x: 0.20276497, y: 0.5953307}
+          size: {x: 0.51152074, y: 0.40466926}
+        handTuned: 0
+      - frame: mague_staff_walk_4_e1
+        shapes:
+        - center: {x: -0.059907835, y: -0.6031128}
+          size: {x: 0.47004607, y: 0.39688715}
+        - center: {x: 0.06451613, y: -0.007782101}
+          size: {x: 0.48387095, y: 0.47859922}
+        - center: {x: 0.2580645, y: 0.5953307}
+          size: {x: 0.51152074, y: 0.40466926}
+        handTuned: 0
+      - frame: mague_staff_walk_4_e2
+        shapes:
+        - center: {x: -0.10138249, y: -0.6031128}
+          size: {x: 0.4562212, y: 0.39688715}
+        - center: {x: 0.078341015, y: -0.007782101}
+          size: {x: 0.49769586, y: 0.47859922}
+        - center: {x: 0.32718894, y: 0.5953307}
+          size: {x: 0.49769586, y: 0.40466926}
+        handTuned: 0
+      - frame: mague_staff_walk_4_e3
+        shapes:
+        - center: {x: 0.00921659, y: -0.42801556}
+          size: {x: 0.5391705, y: 0.5719844}
+        - center: {x: 0.24423963, y: 0.34241244}
+          size: {x: 0.5253456, y: 0.5719844}
+        handTuned: 0
+      - frame: mague_staff_walk_4_e4
+        shapes:
+        - center: {x: 0.023041476, y: -0.6031128}
+          size: {x: 0.58064514, y: 0.39688715}
+        - center: {x: 0.13364056, y: -0.019455252}
+          size: {x: 0.49769586, y: 0.46692607}
+        - center: {x: 0.2857143, y: 0.57587546}
+          size: {x: 0.42857143, y: 0.4085603}
+        handTuned: 0
+      - frame: mague_staff_walk_4_e5
+        shapes:
+        - center: {x: -0.10138249, y: -0.42801556}
+          size: {x: 0.56682026, y: 0.5719844}
+        - center: {x: 0.21658987, y: 0.3540856}
+          size: {x: 0.49769586, y: 0.58365756}
+        handTuned: 0
+      - frame: mague_staff_walk_4_e6
+        shapes:
+        - center: {x: -0.3778802, y: -0.6031128}
+          size: {x: 0.42857143, y: 0.39688715}
+        - center: {x: -0.1843318, y: -0.007782101}
+          size: {x: 0.42857143, y: 0.47859922}
+        - center: {x: 0.06451613, y: 0.5953307}
+          size: {x: 0.48387095, y: 0.40466926}
+        handTuned: 0
+      - frame: mague_staff_walk_4_e7
+        shapes:
+        - center: {x: -0.032258064, y: -0.27626458}
+          size: {x: 0.47004607, y: 0.7237354}
+        - center: {x: 0.11981567, y: 0.5642023}
+          size: {x: 0.4562212, y: 0.39688715}
+        handTuned: 0
+      - frame: mague_staff_walk_4_w0
+        shapes:
+        - center: {x: -0.0921659, y: -0.6031128}
+          size: {x: 0.5391705, y: 0.39688715}
+        - center: {x: 0.059907835, y: -0.007782101}
+          size: {x: 0.49769586, y: 0.47859922}
+        - center: {x: 0.21198156, y: 0.5953307}
+          size: {x: 0.51152074, y: 0.40466926}
+        handTuned: 0
+      - frame: mague_staff_walk_4_w1
+        shapes:
+        - center: {x: -0.050691243, y: -0.6031128}
+          size: {x: 0.47004607, y: 0.39688715}
+        - center: {x: 0.059907835, y: -0.007782101}
+          size: {x: 0.47004607, y: 0.47859922}
+        - center: {x: 0.26728112, y: 0.5953307}
+          size: {x: 0.51152074, y: 0.40466926}
+        handTuned: 0
+      - frame: mague_staff_walk_4_w2
+        shapes:
+        - center: {x: -0.0921659, y: -0.6031128}
+          size: {x: 0.4562212, y: 0.39688715}
+        - center: {x: 0.07373272, y: -0.007782101}
+          size: {x: 0.48387095, y: 0.47859922}
+        - center: {x: 0.32258064, y: 0.5953307}
+          size: {x: 0.48387095, y: 0.40466926}
+        handTuned: 0
+      - frame: mague_staff_walk_4_w3
+        shapes:
+        - center: {x: 0.004608295, y: -0.42801556}
+          size: {x: 0.5529954, y: 0.5719844}
+        - center: {x: 0.25345623, y: 0.34241244}
+          size: {x: 0.5253456, y: 0.5719844}
+        handTuned: 0
+      - frame: mague_staff_walk_4_w4
+        shapes:
+        - center: {x: 0.01843318, y: -0.6031128}
+          size: {x: 0.56682026, y: 0.39688715}
+        - center: {x: 0.14285715, y: -0.019455252}
+          size: {x: 0.49769586, y: 0.46692607}
+        - center: {x: 0.26728112, y: 0.5642023}
+          size: {x: 0.42857143, y: 0.39688715}
+        handTuned: 0
+      - frame: mague_staff_walk_4_w5
+        shapes:
+        - center: {x: -0.0921659, y: -0.42801556}
+          size: {x: 0.56682026, y: 0.5719844}
+        - center: {x: 0.21198156, y: 0.3540856}
+          size: {x: 0.48387095, y: 0.58365756}
+        handTuned: 0
+      - frame: mague_staff_walk_4_w6
+        shapes:
+        - center: {x: -0.3824885, y: -0.6031128}
+          size: {x: 0.4423963, y: 0.39688715}
+        - center: {x: -0.17511521, y: -0.007782101}
+          size: {x: 0.42857143, y: 0.47859922}
+        - center: {x: 0.04608295, y: 0.5953307}
+          size: {x: 0.48387095, y: 0.40466926}
+        handTuned: 0
+      - frame: mague_staff_walk_4_w7
+        shapes:
+        - center: {x: -0.03686636, y: -0.27626458}
+          size: {x: 0.4562212, y: 0.7237354}
+        - center: {x: 0.12903225, y: 0.5642023}
+          size: {x: 0.4562212, y: 0.39688715}
+        handTuned: 0
+      - frame: mague_staff_walk_5_e0
+        shapes:
+        - center: {x: -0.20289855, y: -0.6061776}
+          size: {x: 0.5942029, y: 0.3938224}
+        - center: {x: -0.10144927, y: -0.015444015}
+          size: {x: 0.49275362, y: 0.47490346}
+        - center: {x: 0, y: 0.5868726}
+          size: {x: 0.47826087, y: 0.4054054}
+        handTuned: 0
+      - frame: mague_staff_walk_5_e1
+        shapes:
+        - center: {x: -0.1884058, y: -0.6061776}
+          size: {x: 0.5797101, y: 0.3938224}
+        - center: {x: -0.028985508, y: -0.027027028}
+          size: {x: 0.47826087, y: 0.46332046}
+        - center: {x: 0.08695652, y: 0.5637066}
+          size: {x: 0.47826087, y: 0.4054054}
+        handTuned: 0
+      - frame: mague_staff_walk_5_e2
+        shapes:
+        - center: {x: -0.072463766, y: -0.25868726}
+          size: {x: 0.5507246, y: 0.71814674}
+        - center: {x: 0.11594203, y: 0.57528955}
+          size: {x: 0.44927537, y: 0.3938224}
+        handTuned: 0
+      - frame: mague_staff_walk_5_e3
+        shapes:
+        - center: {x: -0.028985508, y: -0.58301157}
+          size: {x: 0.5652174, y: 0.3938224}
+        - center: {x: 0.08695652, y: -0.0038610038}
+          size: {x: 0.44927537, y: 0.46332046}
+        - center: {x: 0.1594203, y: 0.5868726}
+          size: {x: 0.46376812, y: 0.4054054}
+        handTuned: 0
+      - frame: mague_staff_walk_5_e4
+        shapes:
+        - center: {x: -0.057971016, y: -0.6061776}
+          size: {x: 0.5072464, y: 0.3938224}
+        - center: {x: 0.11594203, y: -0.027027028}
+          size: {x: 0.47826087, y: 0.46332046}
+        - center: {x: 0.26086956, y: 0.55212355}
+          size: {x: 0.47826087, y: 0.3938224}
+        handTuned: 0
+      - frame: mague_staff_walk_5_e5
+        shapes:
+        - center: {x: 0.028985508, y: -0.5945946}
+          size: {x: 0.5362319, y: 0.4054054}
+        - center: {x: 0.14492753, y: 0.0077220076}
+          size: {x: 0.47826087, y: 0.47490346}
+        - center: {x: 0.28985506, y: 0.6023166}
+          size: {x: 0.47826087, y: 0.3976834}
+        handTuned: 0
+      - frame: mague_staff_walk_5_e6
+        shapes:
+        - center: {x: 0.057971016, y: -0.58301157}
+          size: {x: 0.5652174, y: 0.3938224}
+        - center: {x: 0.17391305, y: 0.0077220076}
+          size: {x: 0.5072464, y: 0.47490346}
+        - center: {x: 0.3188406, y: 0.6023166}
+          size: {x: 0.5072464, y: 0.3976834}
+        handTuned: 0
+      - frame: mague_staff_walk_5_e7
+        shapes:
+        - center: {x: 0.13043478, y: -0.27027026}
+          size: {x: 0.5507246, y: 0.7297297}
+        - center: {x: 0.3478261, y: 0.5868726}
+          size: {x: 0.47826087, y: 0.4054054}
+        handTuned: 0
+      - frame: mague_staff_walk_5_w0
+        shapes:
+        - center: {x: -0.20289855, y: -0.6061776}
+          size: {x: 0.5942029, y: 0.3938224}
+        - center: {x: -0.10144927, y: -0.015444015}
+          size: {x: 0.49275362, y: 0.47490346}
+        - center: {x: -0, y: 0.5868726}
+          size: {x: 0.47826087, y: 0.4054054}
+        handTuned: 0
+      - frame: mague_staff_walk_5_w1
+        shapes:
+        - center: {x: -0.1884058, y: -0.6061776}
+          size: {x: 0.5797101, y: 0.3938224}
+        - center: {x: -0.028985508, y: -0.027027028}
+          size: {x: 0.47826087, y: 0.46332046}
+        - center: {x: 0.08695652, y: 0.5637066}
+          size: {x: 0.47826087, y: 0.4054054}
+        handTuned: 0
+      - frame: mague_staff_walk_5_w2
+        shapes:
+        - center: {x: -0.072463766, y: -0.25868726}
+          size: {x: 0.5507246, y: 0.71814674}
+        - center: {x: 0.11594203, y: 0.57528955}
+          size: {x: 0.44927537, y: 0.3938224}
+        handTuned: 0
+      - frame: mague_staff_walk_5_w3
+        shapes:
+        - center: {x: -0.028985508, y: -0.58301157}
+          size: {x: 0.5652174, y: 0.3938224}
+        - center: {x: 0.08695652, y: -0.0038610038}
+          size: {x: 0.44927537, y: 0.46332046}
+        - center: {x: 0.1594203, y: 0.5868726}
+          size: {x: 0.46376812, y: 0.4054054}
+        handTuned: 0
+      - frame: mague_staff_walk_5_w4
+        shapes:
+        - center: {x: -0.057971016, y: -0.6061776}
+          size: {x: 0.5072464, y: 0.3938224}
+        - center: {x: 0.11594203, y: -0.027027028}
+          size: {x: 0.47826087, y: 0.46332046}
+        - center: {x: 0.26086956, y: 0.55212355}
+          size: {x: 0.47826087, y: 0.3938224}
+        handTuned: 0
+      - frame: mague_staff_walk_5_w5
+        shapes:
+        - center: {x: 0.028985508, y: -0.5945946}
+          size: {x: 0.5362319, y: 0.4054054}
+        - center: {x: 0.14492753, y: 0.0077220076}
+          size: {x: 0.47826087, y: 0.47490346}
+        - center: {x: 0.28985506, y: 0.6023166}
+          size: {x: 0.47826087, y: 0.3976834}
+        handTuned: 0
+      - frame: mague_staff_walk_5_w6
+        shapes:
+        - center: {x: 0.057971016, y: -0.58301157}
+          size: {x: 0.5652174, y: 0.3938224}
+        - center: {x: 0.17391305, y: 0.0077220076}
+          size: {x: 0.5072464, y: 0.47490346}
+        - center: {x: 0.3188406, y: 0.6023166}
+          size: {x: 0.5072464, y: 0.3976834}
+        handTuned: 0
+      - frame: mague_staff_walk_5_w7
+        shapes:
+        - center: {x: 0.13043478, y: -0.27027026}
+          size: {x: 0.5507246, y: 0.7297297}
+        - center: {x: 0.3478261, y: 0.5868726}
+          size: {x: 0.47826087, y: 0.4054054}
+        handTuned: 0
+      - frame: mague_staff_walk_e0
+        shapes:
+        - center: {x: -0.1553398, y: -0.59090906}
+          size: {x: 0.5533981, y: 0.38636363}
+        - center: {x: -0.009708738, y: -0.011363637}
+          size: {x: 0.46601942, y: 0.4659091}
+        - center: {x: 0.13592233, y: 0.57954544}
+          size: {x: 0.46601942, y: 0.39772728}
+        handTuned: 0
+      - frame: mague_staff_walk_e1
+        shapes:
+        - center: {x: -0.22815534, y: -0.57954544}
+          size: {x: 0.5388349, y: 0.39772728}
+        - center: {x: 0.048543688, y: 0.011363637}
+          size: {x: 0.46601942, y: 0.4659091}
+        - center: {x: 0.2669903, y: 0.60227275}
+          size: {x: 0.50970876, y: 0.39772728}
+        handTuned: 0
+      - frame: mague_staff_walk_e2
+        shapes:
+        - center: {x: -0.18446602, y: -0.59090906}
+          size: {x: 0.49514562, y: 0.38636363}
+        - center: {x: 0.004854369, y: -0.022727273}
+          size: {x: 0.4514563, y: 0.45454547}
+        - center: {x: 0.2669903, y: 0.5568182}
+          size: {x: 0.48058254, y: 0.39772728}
+        handTuned: 0
+      - frame: mague_staff_walk_e3
+        shapes:
+        - center: {x: -0.1407767, y: -0.57954544}
+          size: {x: 0.5388349, y: 0.39772728}
+        - center: {x: 0.12135922, y: 0.011363637}
+          size: {x: 0.4514563, y: 0.4659091}
+        - center: {x: 0.3398058, y: 0.60227275}
+          size: {x: 0.49514562, y: 0.39772728}
+        handTuned: 0
+      - frame: mague_staff_walk_e4
+        shapes:
+        - center: {x: -0.18446602, y: -0.60227275}
+          size: {x: 0.5533981, y: 0.39772728}
+        - center: {x: 0.048543688, y: -0.011363637}
+          size: {x: 0.46601942, y: 0.4659091}
+        - center: {x: 0.2524272, y: 0.57954544}
+          size: {x: 0.46601942, y: 0.39772728}
+        handTuned: 0
+      - frame: mague_staff_walk_e5
+        shapes:
+        - center: {x: -0.21359223, y: -0.59090906}
+          size: {x: 0.5825243, y: 0.38636363}
+        - center: {x: 0.09223301, y: -0.011363637}
+          size: {x: 0.4514563, y: 0.4659091}
+        - center: {x: 0.2815534, y: 0.57954544}
+          size: {x: 0.46601942, y: 0.39772728}
+        handTuned: 0
+      - frame: mague_staff_walk_e6
+        shapes:
+        - center: {x: -0.24271844, y: -0.59090906}
+          size: {x: 0.5533981, y: 0.38636363}
+        - center: {x: 0.004854369, y: -0.022727273}
+          size: {x: 0.4514563, y: 0.45454547}
+        - center: {x: 0.22330096, y: 0.5568182}
+          size: {x: 0.49514562, y: 0.39772728}
+        handTuned: 0
+      - frame: mague_staff_walk_e7
+        shapes:
+        - center: {x: -0.1407767, y: -0.59090906}
+          size: {x: 0.56796116, y: 0.38636363}
+        - center: {x: 0.019417476, y: -0.022727273}
+          size: {x: 0.46601942, y: 0.45454547}
+        - center: {x: 0.15048544, y: 0.5568182}
+          size: {x: 0.48058254, y: 0.39772728}
+        handTuned: 0
+      - frame: mague_staff_walk_w0
+        shapes:
+        - center: {x: -0.15048544, y: -0.59090906}
+          size: {x: 0.5388349, y: 0.38636363}
+        - center: {x: -0.019417476, y: -0.011363637}
+          size: {x: 0.46601942, y: 0.4659091}
+        - center: {x: 0.1407767, y: 0.57954544}
+          size: {x: 0.48058254, y: 0.39772728}
+        handTuned: 0
+      - frame: mague_staff_walk_w1
+        shapes:
+        - center: {x: -0.23786408, y: -0.59090906}
+          size: {x: 0.5388349, y: 0.38636363}
+        - center: {x: 0.03883495, y: -0.011363637}
+          size: {x: 0.46601942, y: 0.4659091}
+        - center: {x: 0.27184466, y: 0.57954544}
+          size: {x: 0.49514562, y: 0.39772728}
+        handTuned: 0
+      - frame: mague_staff_walk_w2
+        shapes:
+        - center: {x: -0.19417475, y: -0.59090906}
+          size: {x: 0.49514562, y: 0.38636363}
+        - center: {x: 0.009708738, y: -0.022727273}
+          size: {x: 0.46601942, y: 0.45454547}
+        - center: {x: 0.28640777, y: 0.5568182}
+          size: {x: 0.48058254, y: 0.39772728}
+        handTuned: 0
+      - frame: mague_staff_walk_w3
+        shapes:
+        - center: {x: -0.15048544, y: -0.57954544}
+          size: {x: 0.5388349, y: 0.39772728}
+        - center: {x: 0.1262136, y: 0.011363637}
+          size: {x: 0.4368932, y: 0.4659091}
+        - center: {x: 0.3446602, y: 0.60227275}
+          size: {x: 0.48058254, y: 0.39772728}
+        handTuned: 0
+      - frame: mague_staff_walk_w4
+        shapes:
+        - center: {x: -0.19417475, y: -0.60227275}
+          size: {x: 0.5533981, y: 0.39772728}
+        - center: {x: 0.053398058, y: -0.011363637}
+          size: {x: 0.4514563, y: 0.4659091}
+        - center: {x: 0.27184466, y: 0.57954544}
+          size: {x: 0.46601942, y: 0.39772728}
+        handTuned: 0
+      - frame: mague_staff_walk_w5
+        shapes:
+        - center: {x: -0.20873787, y: -0.59090906}
+          size: {x: 0.56796116, y: 0.38636363}
+        - center: {x: 0.097087376, y: -0.011363637}
+          size: {x: 0.46601942, y: 0.4659091}
+        - center: {x: 0.28640777, y: 0.57954544}
+          size: {x: 0.48058254, y: 0.39772728}
+        handTuned: 0
+      - frame: mague_staff_walk_w6
+        shapes:
+        - center: {x: -0.22330096, y: -0.59090906}
+          size: {x: 0.5533981, y: 0.38636363}
+        - center: {x: 0.009708738, y: -0.022727273}
+          size: {x: 0.4368932, y: 0.45454547}
+        - center: {x: 0.22815534, y: 0.5568182}
+          size: {x: 0.48058254, y: 0.39772728}
+        handTuned: 0
+      - frame: mague_staff_walk_w7
+        shapes:
+        - center: {x: -0.13592233, y: -0.59090906}
+          size: {x: 0.5825243, y: 0.38636363}
+        - center: {x: 0.009708738, y: -0.011363637}
+          size: {x: 0.46601942, y: 0.4659091}
+        - center: {x: 0.1553398, y: 0.57954544}
+          size: {x: 0.46601942, y: 0.39772728}
+        handTuned: 0
+      - frame: mague_walk_2_e0
+        shapes:
+        - center: {x: 0.15384616, y: -0.6076923}
+          size: {x: 0.53846157, y: 0.3923077}
+        - center: {x: 0.115384616, y: -0.01923077}
+          size: {x: 0.34615386, y: 0.4730769}
+        - center: {x: 0.17307693, y: 0.58076924}
+          size: {x: 0.3653846, y: 0.40384614}
+        handTuned: 0
+      - frame: mague_walk_2_e1
+        shapes:
+        - center: {x: 0.01923077, y: -0.6076923}
+          size: {x: 0.48076922, y: 0.3923077}
+        - center: {x: 0.057692308, y: -0.03076923}
+          size: {x: 0.40384614, y: 0.46153846}
+        - center: {x: 0.21153846, y: 0.54615384}
+          size: {x: 0.3653846, y: 0.3923077}
+        handTuned: 0
+      - frame: mague_walk_2_e2
+        shapes:
+        - center: {x: -0.115384616, y: -0.6076923}
+          size: {x: 0.5769231, y: 0.3923077}
+        - center: {x: -0.057692308, y: -0.03076923}
+          size: {x: 0.44230768, y: 0.46153846}
+        - center: {x: 0.15384616, y: 0.54615384}
+          size: {x: 0.34615386, y: 0.3923077}
+        handTuned: 0
+      - frame: mague_walk_2_e3
+        shapes:
+        - center: {x: -0.15384616, y: -0.59615386}
+          size: {x: 0.53846157, y: 0.40384614}
+        - center: {x: -0.17307693, y: 0.0038461538}
+          size: {x: 0.3653846, y: 0.4730769}
+        - center: {x: -0.01923077, y: 0.6}
+          size: {x: 0.3653846, y: 0.4}
+        handTuned: 0
+      - frame: mague_walk_2_e4
+        shapes:
+        - center: {x: -0.13461539, y: -0.61923075}
+          size: {x: 0.5576923, y: 0.38076922}
+        - center: {x: -0.03846154, y: -0.053846154}
+          size: {x: 0.34615386, y: 0.46153846}
+        - center: {x: 0.07692308, y: 0.52307695}
+          size: {x: 0.34615386, y: 0.3923077}
+        handTuned: 0
+      - frame: mague_walk_2_e5
+        shapes:
+        - center: {x: -0.21153846, y: -0.6076923}
+          size: {x: 0.5576923, y: 0.3923077}
+        - center: {x: -0.07692308, y: -0.03076923}
+          size: {x: 0.46153846, y: 0.46153846}
+        - center: {x: 0.07692308, y: 0.5576923}
+          size: {x: 0.34615386, y: 0.40384614}
+        handTuned: 0
+      - frame: mague_walk_2_e6
+        shapes:
+        - center: {x: -0.1923077, y: -0.6076923}
+          size: {x: 0.5, y: 0.3923077}
+        - center: {x: -0.17307693, y: -0.03076923}
+          size: {x: 0.3653846, y: 0.46153846}
+        - center: {x: 0, y: 0.54615384}
+          size: {x: 0.34615386, y: 0.3923077}
+        handTuned: 0
+      - frame: mague_walk_2_e7
+        shapes:
+        - center: {x: 0.03846154, y: -0.6076923}
+          size: {x: 0.46153846, y: 0.3923077}
+        - center: {x: 0.03846154, y: -0.03076923}
+          size: {x: 0.30769232, y: 0.46153846}
+        - center: {x: 0.115384616, y: 0.54615384}
+          size: {x: 0.34615386, y: 0.3923077}
+        handTuned: 0
+      - frame: mague_walk_2_w0
+        shapes:
+        - center: {x: 0.15384616, y: -0.6076923}
+          size: {x: 0.53846157, y: 0.3923077}
+        - center: {x: 0.115384616, y: -0.01923077}
+          size: {x: 0.34615386, y: 0.4730769}
+        - center: {x: 0.17307693, y: 0.58076924}
+          size: {x: 0.3653846, y: 0.40384614}
+        handTuned: 0
+      - frame: mague_walk_2_w1
+        shapes:
+        - center: {x: 0.01923077, y: -0.6076923}
+          size: {x: 0.48076922, y: 0.3923077}
+        - center: {x: 0.057692308, y: -0.03076923}
+          size: {x: 0.40384614, y: 0.46153846}
+        - center: {x: 0.21153846, y: 0.54615384}
+          size: {x: 0.3653846, y: 0.3923077}
+        handTuned: 0
+      - frame: mague_walk_2_w2
+        shapes:
+        - center: {x: -0.115384616, y: -0.6076923}
+          size: {x: 0.5769231, y: 0.3923077}
+        - center: {x: -0.057692308, y: -0.03076923}
+          size: {x: 0.44230768, y: 0.46153846}
+        - center: {x: 0.15384616, y: 0.54615384}
+          size: {x: 0.34615386, y: 0.3923077}
+        handTuned: 0
+      - frame: mague_walk_2_w3
+        shapes:
+        - center: {x: -0.15384616, y: -0.59615386}
+          size: {x: 0.53846157, y: 0.40384614}
+        - center: {x: -0.17307693, y: 0.0038461538}
+          size: {x: 0.3653846, y: 0.4730769}
+        - center: {x: -0.01923077, y: 0.6}
+          size: {x: 0.3653846, y: 0.4}
+        handTuned: 0
+      - frame: mague_walk_2_w4
+        shapes:
+        - center: {x: -0.13461539, y: -0.61923075}
+          size: {x: 0.5576923, y: 0.38076922}
+        - center: {x: -0.03846154, y: -0.053846154}
+          size: {x: 0.34615386, y: 0.46153846}
+        - center: {x: 0.07692308, y: 0.52307695}
+          size: {x: 0.34615386, y: 0.3923077}
+        handTuned: 0
+      - frame: mague_walk_2_w5
+        shapes:
+        - center: {x: -0.21153846, y: -0.6076923}
+          size: {x: 0.5576923, y: 0.3923077}
+        - center: {x: -0.07692308, y: -0.03076923}
+          size: {x: 0.46153846, y: 0.46153846}
+        - center: {x: 0.07692308, y: 0.5576923}
+          size: {x: 0.34615386, y: 0.40384614}
+        handTuned: 0
+      - frame: mague_walk_2_w6
+        shapes:
+        - center: {x: -0.1923077, y: -0.6076923}
+          size: {x: 0.5, y: 0.3923077}
+        - center: {x: -0.17307693, y: -0.03076923}
+          size: {x: 0.3653846, y: 0.46153846}
+        - center: {x: -0, y: 0.54615384}
+          size: {x: 0.34615386, y: 0.3923077}
+        handTuned: 0
+      - frame: mague_walk_2_w7
+        shapes:
+        - center: {x: 0.03846154, y: -0.6076923}
+          size: {x: 0.46153846, y: 0.3923077}
+        - center: {x: 0.03846154, y: -0.03076923}
+          size: {x: 0.30769232, y: 0.46153846}
+        - center: {x: 0.115384616, y: 0.54615384}
+          size: {x: 0.34615386, y: 0.3923077}
+        handTuned: 0
+      - frame: mague_walk_3_e0
+        shapes:
+        - center: {x: -0.084415585, y: -0.60465115}
+          size: {x: 0.52597404, y: 0.39534885}
+        - center: {x: -0.084415585, y: -0.011627907}
+          size: {x: 0.37012988, y: 0.47674417}
+        - center: {x: -0.0064935065, y: 0.59302324}
+          size: {x: 0.37012988, y: 0.40697673}
+        handTuned: 0
+      - frame: mague_walk_3_e1
+        shapes:
+        - center: {x: -0.064935066, y: -0.60465115}
+          size: {x: 0.5064935, y: 0.39534885}
+        - center: {x: 0.012987013, y: -0.023255814}
+          size: {x: 0.38961038, y: 0.4651163}
+        - center: {x: 0.09090909, y: 0.55813956}
+          size: {x: 0.35064936, y: 0.39534885}
+        handTuned: 0
+      - frame: mague_walk_3_e2
+        shapes:
+        - center: {x: -0.045454547, y: -0.60465115}
+          size: {x: 0.48701298, y: 0.39534885}
+        - center: {x: 0.09090909, y: -0.023255814}
+          size: {x: 0.38961038, y: 0.4651163}
+        - center: {x: 0.18831168, y: 0.55813956}
+          size: {x: 0.33116883, y: 0.39534885}
+        handTuned: 0
+      - frame: mague_walk_3_e3
+        shapes:
+        - center: {x: -0.0064935065, y: -0.60465115}
+          size: {x: 0.52597404, y: 0.39534885}
+        - center: {x: 0.071428575, y: -0.023255814}
+          size: {x: 0.44805196, y: 0.4651163}
+        - center: {x: 0.24675325, y: 0.55813956}
+          size: {x: 0.35064936, y: 0.39534885}
+        handTuned: 0
+      - frame: mague_walk_3_e4
+        shapes:
+        - center: {x: 0.012987013, y: -0.27906978}
+          size: {x: 0.5064935, y: 0.7209302}
+        - center: {x: 0.20779221, y: 0.55813956}
+          size: {x: 0.35064936, y: 0.39534885}
+        handTuned: 0
+      - frame: mague_walk_3_e5
+        shapes:
+        - center: {x: -0.045454547, y: -0.627907}
+          size: {x: 0.52597404, y: 0.37209302}
+        - center: {x: 0.012987013, y: -0.058139537}
+          size: {x: 0.42857143, y: 0.43023255}
+        - center: {x: 0.16883117, y: 0.5232558}
+          size: {x: 0.35064936, y: 0.38372093}
+        handTuned: 0
+      - frame: mague_walk_3_e6
+        shapes:
+        - center: {x: -0.12337662, y: -0.60465115}
+          size: {x: 0.5649351, y: 0.39534885}
+        - center: {x: -0.064935066, y: -0.023255814}
+          size: {x: 0.46753246, y: 0.4651163}
+        - center: {x: 0.12987013, y: 0.55813956}
+          size: {x: 0.35064936, y: 0.39534885}
+        handTuned: 0
+      - frame: mague_walk_3_e7
+        shapes:
+        - center: {x: -0.14285715, y: -0.60465115}
+          size: {x: 0.46753246, y: 0.39534885}
+        - center: {x: -0.084415585, y: -0.011627907}
+          size: {x: 0.37012988, y: 0.47674417}
+        - center: {x: 0.032467533, y: 0.59302324}
+          size: {x: 0.37012988, y: 0.40697673}
+        handTuned: 0
+      - frame: mague_walk_3_w0
+        shapes:
+        - center: {x: -0.09090909, y: -0.60465115}
+          size: {x: 0.5064935, y: 0.39534885}
+        - center: {x: -0.09090909, y: -0.011627907}
+          size: {x: 0.35064936, y: 0.47674417}
+        - center: {x: -0.012987013, y: 0.59302324}
+          size: {x: 0.35064936, y: 0.40697673}
+        handTuned: 0
+      - frame: mague_walk_3_w1
+        shapes:
+        - center: {x: -0.051948052, y: -0.60465115}
+          size: {x: 0.5064935, y: 0.39534885}
+        - center: {x: 0.025974026, y: -0.023255814}
+          size: {x: 0.38961038, y: 0.4651163}
+        - center: {x: 0.103896104, y: 0.55813956}
+          size: {x: 0.35064936, y: 0.39534885}
+        handTuned: 0
+      - frame: mague_walk_3_w2
+        shapes:
+        - center: {x: -0.051948052, y: -0.60465115}
+          size: {x: 0.46753246, y: 0.39534885}
+        - center: {x: 0.084415585, y: -0.023255814}
+          size: {x: 0.37012988, y: 0.4651163}
+        - center: {x: 0.18181819, y: 0.55813956}
+          size: {x: 0.35064936, y: 0.39534885}
+        handTuned: 0
+      - frame: mague_walk_3_w3
+        shapes:
+        - center: {x: 0.0064935065, y: -0.60465115}
+          size: {x: 0.52597404, y: 0.39534885}
+        - center: {x: 0.084415585, y: -0.023255814}
+          size: {x: 0.44805196, y: 0.4651163}
+        - center: {x: 0.24025974, y: 0.55813956}
+          size: {x: 0.37012988, y: 0.39534885}
+        handTuned: 0
+      - frame: mague_walk_3_w4
+        shapes:
+        - center: {x: 0.025974026, y: -0.27906978}
+          size: {x: 0.5064935, y: 0.7209302}
+        - center: {x: 0.2012987, y: 0.55813956}
+          size: {x: 0.37012988, y: 0.39534885}
+        handTuned: 0
+      - frame: mague_walk_3_w5
+        shapes:
+        - center: {x: -0.071428575, y: -0.627907}
+          size: {x: 0.52597404, y: 0.37209302}
+        - center: {x: 0.025974026, y: -0.058139537}
+          size: {x: 0.42857143, y: 0.43023255}
+        - center: {x: 0.18181819, y: 0.5232558}
+          size: {x: 0.35064936, y: 0.38372093}
+        handTuned: 0
+      - frame: mague_walk_3_w6
+        shapes:
+        - center: {x: -0.11038961, y: -0.60465115}
+          size: {x: 0.5649351, y: 0.39534885}
+        - center: {x: -0.051948052, y: -0.023255814}
+          size: {x: 0.46753246, y: 0.4651163}
+        - center: {x: 0.12337662, y: 0.55813956}
+          size: {x: 0.37012988, y: 0.39534885}
+        handTuned: 0
+      - frame: mague_walk_3_w7
+        shapes:
+        - center: {x: -0.16883117, y: -0.60465115}
+          size: {x: 0.46753246, y: 0.39534885}
+        - center: {x: -0.09090909, y: -0.011627907}
+          size: {x: 0.35064936, y: 0.47674417}
+        - center: {x: 0.025974026, y: 0.59302324}
+          size: {x: 0.35064936, y: 0.40697673}
+        handTuned: 0
+      - frame: mague_walk_e0
+        shapes:
+        - center: {x: 0.3220339, y: -0.58778626}
+          size: {x: 0.40677965, y: 0.38931298}
+        - center: {x: 0.2542373, y: -0.003816794}
+          size: {x: 0.37288135, y: 0.46946564}
+        - center: {x: 0.3220339, y: 0.59160304}
+          size: {x: 0.30508474, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_walk_e1
+        shapes:
+        - center: {x: 0.084745765, y: -0.26717559}
+          size: {x: 0.44067797, y: 0.7099237}
+        - center: {x: 0.18644068, y: 0.5687023}
+          size: {x: 0.30508474, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_walk_e2
+        shapes:
+        - center: {x: -0.23728813, y: -0.58778626}
+          size: {x: 0.5254237, y: 0.38931298}
+        - center: {x: -0.13559322, y: -0.015267176}
+          size: {x: 0.3559322, y: 0.45801526}
+        - center: {x: 0, y: 0.5687023}
+          size: {x: 0.3220339, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_walk_e3
+        shapes:
+        - center: {x: -0.20338982, y: -0.58778626}
+          size: {x: 0.4915254, y: 0.38931298}
+        - center: {x: -0.20338982, y: -0.015267176}
+          size: {x: 0.3559322, y: 0.45801526}
+        - center: {x: -0.084745765, y: 0.5687023}
+          size: {x: 0.30508474, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_walk_e4
+        shapes:
+        - center: {x: -0.20338982, y: -0.58778626}
+          size: {x: 0.4915254, y: 0.38931298}
+        - center: {x: -0.118644066, y: -0.015267176}
+          size: {x: 0.30508474, y: 0.45801526}
+        - center: {x: -0.016949153, y: 0.5687023}
+          size: {x: 0.30508474, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_walk_e5
+        shapes:
+        - center: {x: -0.033898305, y: -0.24427481}
+          size: {x: 0.3898305, y: 0.73282444}
+        - center: {x: 0.13559322, y: 0.60687023}
+          size: {x: 0.3220339, y: 0.39312977}
+        handTuned: 0
+      - frame: mague_walk_e6
+        shapes:
+        - center: {x: -0.06779661, y: -0.58778626}
+          size: {x: 0.5254237, y: 0.38931298}
+        - center: {x: -0.050847456, y: -0.003816794}
+          size: {x: 0.44067797, y: 0.46946564}
+        - center: {x: 0.06779661, y: 0.59160304}
+          size: {x: 0.3220339, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_walk_e7
+        shapes:
+        - center: {x: 0.016949153, y: -0.26717559}
+          size: {x: 0.33898306, y: 0.73282444}
+        - center: {x: 0.10169491, y: 0.59160304}
+          size: {x: 0.2881356, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_walk_w0
+        shapes:
+        - center: {x: 0.3220339, y: -0.58778626}
+          size: {x: 0.40677965, y: 0.38931298}
+        - center: {x: 0.2542373, y: -0.003816794}
+          size: {x: 0.37288135, y: 0.46946564}
+        - center: {x: 0.3220339, y: 0.59160304}
+          size: {x: 0.30508474, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_walk_w1
+        shapes:
+        - center: {x: 0.084745765, y: -0.26717559}
+          size: {x: 0.44067797, y: 0.7099237}
+        - center: {x: 0.18644068, y: 0.5687023}
+          size: {x: 0.30508474, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_walk_w2
+        shapes:
+        - center: {x: -0.23728813, y: -0.58778626}
+          size: {x: 0.5254237, y: 0.38931298}
+        - center: {x: -0.13559322, y: -0.015267176}
+          size: {x: 0.3559322, y: 0.45801526}
+        - center: {x: -0, y: 0.5687023}
+          size: {x: 0.3220339, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_walk_w3
+        shapes:
+        - center: {x: -0.20338982, y: -0.58778626}
+          size: {x: 0.4915254, y: 0.38931298}
+        - center: {x: -0.20338982, y: -0.015267176}
+          size: {x: 0.3559322, y: 0.45801526}
+        - center: {x: -0.084745765, y: 0.5687023}
+          size: {x: 0.30508474, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_walk_w4
+        shapes:
+        - center: {x: -0.20338982, y: -0.58778626}
+          size: {x: 0.4915254, y: 0.38931298}
+        - center: {x: -0.118644066, y: -0.015267176}
+          size: {x: 0.30508474, y: 0.45801526}
+        - center: {x: -0.016949153, y: 0.5687023}
+          size: {x: 0.30508474, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_walk_w5
+        shapes:
+        - center: {x: -0.033898305, y: -0.24427481}
+          size: {x: 0.3898305, y: 0.73282444}
+        - center: {x: 0.13559322, y: 0.60687023}
+          size: {x: 0.3220339, y: 0.39312977}
+        handTuned: 0
+      - frame: mague_walk_w6
+        shapes:
+        - center: {x: -0.06779661, y: -0.58778626}
+          size: {x: 0.5254237, y: 0.38931298}
+        - center: {x: -0.050847456, y: -0.003816794}
+          size: {x: 0.44067797, y: 0.46946564}
+        - center: {x: 0.06779661, y: 0.59160304}
+          size: {x: 0.3220339, y: 0.40076336}
+        handTuned: 0
+      - frame: mague_walk_w7
+        shapes:
+        - center: {x: 0.016949153, y: -0.26717559}
+          size: {x: 0.33898306, y: 0.73282444}
+        - center: {x: 0.10169491, y: 0.59160304}
+          size: {x: 0.2881356, y: 0.40076336}
+        handTuned: 0
     scaleConfig:
       scaleIdle: 0
       tint: {r: 0, g: 0, b: 0, a: 0}

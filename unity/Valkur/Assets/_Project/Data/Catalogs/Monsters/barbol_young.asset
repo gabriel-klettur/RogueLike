@@ -600,6 +600,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 0.85
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: kick
       damageMultiplier: 0.8
       rangeMultiplier: 0.75
@@ -684,6 +691,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1.25
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: lunge
       damageMultiplier: 1.15
       rangeMultiplier: 1.25
@@ -768,6 +782,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1.2
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     castVariants:
     - key: sap_bolt
       directional:
@@ -848,6 +869,15 @@ MonoBehaviour:
       - entangle
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 0
+      repeatFrameCount: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: roar
       directional:
         south: {fileID: 0}
@@ -911,9 +941,1350 @@ MonoBehaviour:
       - spore_cloud
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 0
+      repeatFrameCount: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     stateVariants: []
     statePacing: []
+    walkReferenceSpeed: 0
+    runReferenceSpeed: 0
     loadouts: []
+    castMuzzle: {x: 0, y: 0}
+    castMuzzleFrames: []
+    castMuzzlePoints: []
+    collision:
+      footprintSize: {x: 1.0500001, y: 0.47250003}
+      footprintOffset: {x: 0, y: 0}
+      footprintHandTuned: 0
+      hurtScale: 1
+      hurtShapes: []
+      hurtShapeFrames:
+      - frame: barbol_young_attack_e0
+        shapes:
+        - center: {x: -0.15428571, y: -0.42352942}
+          size: {x: 0.48, y: 0.5764706}
+        - center: {x: 0.08571429, y: 0.3647059}
+          size: {x: 0.37714285, y: 0.5882353}
+        handTuned: 0
+      - frame: barbol_young_attack_e1
+        shapes:
+        - center: {x: 0.05142857, y: -0.24705882}
+          size: {x: 0.41142857, y: 0.7294118}
+        - center: {x: 0.12, y: 0.6}
+          size: {x: 0.25142857, y: 0.4}
+        handTuned: 0
+      - frame: barbol_young_attack_e2
+        shapes:
+        - center: {x: 0.0057142857, y: -0.31764707}
+          size: {x: 0.4342857, y: 0.65882355}
+        - center: {x: 0.31428573, y: 0.47058824}
+          size: {x: 0.2857143, y: 0.3647059}
+        handTuned: 0
+      - frame: barbol_young_attack_e3
+        shapes:
+        - center: {x: -0.5885714, y: -0.3529412}
+          size: {x: 0.38857144, y: 0.45882353}
+        - center: {x: -0.0057142857, y: -0.23529412}
+          size: {x: 0.46857142, y: 0.3882353}
+        - center: {x: 0.5942857, y: 0}
+          size: {x: 0.40571427, y: 0.24705882}
+        handTuned: 0
+      - frame: barbol_young_attack_e4
+        shapes:
+        - center: {x: -0.108571425, y: -0.3882353}
+          size: {x: 0.48, y: 0.5411765}
+        - center: {x: 0.06285714, y: 0.31764707}
+          size: {x: 0.35428572, y: 0.5411765}
+        handTuned: 0
+      - frame: barbol_young_attack_e5
+        shapes:
+        - center: {x: -0.16571428, y: -0.30588236}
+          size: {x: 0.4457143, y: 0.69411767}
+        - center: {x: 0.17714286, y: 0.5411765}
+          size: {x: 0.30857143, y: 0.3882353}
+        handTuned: 0
+      - frame: barbol_young_attack_kick_e0
+        shapes:
+        - center: {x: -0.3469388, y: -0.63095236}
+          size: {x: 0.40816328, y: 0.3690476}
+        - center: {x: -0.2244898, y: -0.071428575}
+          size: {x: 0.4217687, y: 0.42857143}
+        - center: {x: 0.006802721, y: 0.48809522}
+          size: {x: 0.2993197, y: 0.3690476}
+        handTuned: 0
+      - frame: barbol_young_attack_kick_e1
+        shapes:
+        - center: {x: -0.11564626, y: -0.63095236}
+          size: {x: 0.12244898, y: 0.3690476}
+        - center: {x: 0.006802721, y: 0.1904762}
+          size: {x: 0.2993197, y: 0.6904762}
+        handTuned: 0
+      - frame: barbol_young_attack_kick_e2
+        shapes:
+        - center: {x: 0.07482993, y: -0.5952381}
+          size: {x: 0.20408164, y: 0.4047619}
+        - center: {x: 0.1292517, y: 0}
+          size: {x: 0.34013605, y: 0.47619048}
+        - center: {x: -0.006802721, y: 0.5952381}
+          size: {x: 0.2857143, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_attack_kick_e3
+        shapes:
+        - center: {x: -0.2244898, y: -0.5952381}
+          size: {x: 0.12244898, y: 0.4047619}
+        - center: {x: 0.1292517, y: 0}
+          size: {x: 0.53061223, y: 0.47619048}
+        - center: {x: -0.292517, y: 0.5952381}
+          size: {x: 0.27210885, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_attack_kick_e4
+        shapes:
+        - center: {x: -0.10204082, y: -0.44047618}
+          size: {x: 0.3809524, y: 0.5595238}
+        - center: {x: -0.21088435, y: 0.30952382}
+          size: {x: 0.5714286, y: 0.5714286}
+        handTuned: 0
+      - frame: barbol_young_attack_kick_e5
+        shapes:
+        - center: {x: -0.30612245, y: -0.63095236}
+          size: {x: 0.23129252, y: 0.3690476}
+        - center: {x: -0.27891156, y: -0.071428575}
+          size: {x: 0.34013605, y: 0.42857143}
+        - center: {x: -0.30612245, y: 0.5}
+          size: {x: 0.2857143, y: 0.3809524}
+        handTuned: 0
+      - frame: barbol_young_attack_kick_e6
+        shapes:
+        - center: {x: -0.37414965, y: -0.33333334}
+          size: {x: 0.46258503, y: 0.6666667}
+        - center: {x: -0.1292517, y: 0.4642857}
+          size: {x: 0.2993197, y: 0.3690476}
+        handTuned: 0
+      - frame: barbol_young_attack_kick_e7
+        shapes:
+        - center: {x: -0.21088435, y: -0.63095236}
+          size: {x: 0.46258503, y: 0.3690476}
+        - center: {x: -0.2244898, y: -0.071428575}
+          size: {x: 0.39455783, y: 0.42857143}
+        - center: {x: 0.020408163, y: 0.48809522}
+          size: {x: 0.2857143, y: 0.3690476}
+        handTuned: 0
+      - frame: barbol_young_attack_kick_w0
+        shapes:
+        - center: {x: -0.33333334, y: -0.63095236}
+          size: {x: 0.40816328, y: 0.3690476}
+        - center: {x: -0.23809524, y: -0.071428575}
+          size: {x: 0.4217687, y: 0.42857143}
+        - center: {x: 0.006802721, y: 0.5}
+          size: {x: 0.31292516, y: 0.3809524}
+        handTuned: 0
+      - frame: barbol_young_attack_kick_w1
+        shapes:
+        - center: {x: -0.11564626, y: -0.63095236}
+          size: {x: 0.13605443, y: 0.3690476}
+        - center: {x: 0.020408163, y: 0.1904762}
+          size: {x: 0.2993197, y: 0.6904762}
+        handTuned: 0
+      - frame: barbol_young_attack_kick_w2
+        shapes:
+        - center: {x: 0.088435374, y: -0.5952381}
+          size: {x: 0.20408164, y: 0.4047619}
+        - center: {x: 0.1292517, y: 0}
+          size: {x: 0.3537415, y: 0.47619048}
+        - center: {x: -0.006802721, y: 0.5952381}
+          size: {x: 0.2993197, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_attack_kick_w3
+        shapes:
+        - center: {x: -0.2244898, y: -0.5952381}
+          size: {x: 0.13605443, y: 0.4047619}
+        - center: {x: 0.14285715, y: 0}
+          size: {x: 0.53061223, y: 0.47619048}
+        - center: {x: -0.292517, y: 0.5952381}
+          size: {x: 0.2857143, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_attack_kick_w4
+        shapes:
+        - center: {x: -0.11564626, y: -0.44047618}
+          size: {x: 0.3809524, y: 0.5595238}
+        - center: {x: -0.21088435, y: 0.30952382}
+          size: {x: 0.585034, y: 0.5714286}
+        handTuned: 0
+      - frame: barbol_young_attack_kick_w5
+        shapes:
+        - center: {x: -0.30612245, y: -0.63095236}
+          size: {x: 0.21768707, y: 0.3690476}
+        - center: {x: -0.27891156, y: -0.071428575}
+          size: {x: 0.3537415, y: 0.42857143}
+        - center: {x: -0.3197279, y: 0.5}
+          size: {x: 0.2857143, y: 0.3809524}
+        handTuned: 0
+      - frame: barbol_young_attack_kick_w6
+        shapes:
+        - center: {x: -0.37414965, y: -0.33333334}
+          size: {x: 0.47619048, y: 0.6666667}
+        - center: {x: -0.1292517, y: 0.4642857}
+          size: {x: 0.2857143, y: 0.3690476}
+        handTuned: 0
+      - frame: barbol_young_attack_kick_w7
+        shapes:
+        - center: {x: -0.2244898, y: -0.32142857}
+          size: {x: 0.46258503, y: 0.6785714}
+        - center: {x: 0.020408163, y: 0.48809522}
+          size: {x: 0.2993197, y: 0.3690476}
+        handTuned: 0
+      - frame: barbol_young_attack_lunge_e0
+        shapes:
+        - center: {x: -0.27727273, y: -0.44642857}
+          size: {x: 0.50454545, y: 0.5535714}
+        - center: {x: -0.11363637, y: 0.32142857}
+          size: {x: 0.3409091, y: 0.5714286}
+        handTuned: 0
+      - frame: barbol_young_attack_lunge_e1
+        shapes:
+        - center: {x: -0.4409091, y: -0.39285713}
+          size: {x: 0.39545456, y: 0.4642857}
+        - center: {x: -0.12727273, y: 0.25}
+          size: {x: 0.3272727, y: 0.53571427}
+        handTuned: 0
+      - frame: barbol_young_attack_lunge_e2
+        shapes:
+        - center: {x: -0.23636363, y: -0.5}
+          size: {x: 0.3, y: 0.5}
+        - center: {x: 0.09090909, y: 0.16071428}
+          size: {x: 0.3272727, y: 0.51785713}
+        handTuned: 0
+      - frame: barbol_young_attack_lunge_e3
+        shapes:
+        - center: {x: -0.12727273, y: -0.5535714}
+          size: {x: 0.3272727, y: 0.44642857}
+        - center: {x: 0.37727273, y: 0.071428575}
+          size: {x: 0.23181818, y: 0.4642857}
+        handTuned: 0
+      - frame: barbol_young_attack_lunge_e4
+        shapes:
+        - center: {x: -0.45454547, y: -0.51785713}
+          size: {x: 0.24545455, y: 0.16071428}
+        - center: {x: -0.07272727, y: -0.32142857}
+          size: {x: 0.3, y: 0.17857143}
+        - center: {x: 0.36363637, y: 0.035714287}
+          size: {x: 0.3, y: 0.32142857}
+        - center: {x: 0.75, y: 0.08928572}
+          size: {x: 0.25, y: 0.30357143}
+        handTuned: 0
+      - frame: barbol_young_attack_lunge_e5
+        shapes:
+        - center: {x: -0.46818182, y: -0.53571427}
+          size: {x: 0.28636363, y: 0.4642857}
+        - center: {x: -0.0045454544, y: 0.125}
+          size: {x: 0.36818182, y: 0.48214287}
+        handTuned: 0
+      - frame: barbol_young_attack_lunge_e6
+        shapes:
+        - center: {x: -0.16818182, y: 0}
+          size: {x: 0.39545456, y: 1}
+        handTuned: 0
+      - frame: barbol_young_attack_lunge_e7
+        shapes:
+        - center: {x: -0.29090908, y: -0.39285713}
+          size: {x: 0.46363637, y: 0.5}
+        - center: {x: -0.11363637, y: 0.32142857}
+          size: {x: 0.31363636, y: 0.5714286}
+        handTuned: 0
+      - frame: barbol_young_attack_lunge_w0
+        shapes:
+        - center: {x: -0.26818183, y: -0.44642857}
+          size: {x: 0.50454545, y: 0.5535714}
+        - center: {x: -0.13181818, y: 0.32142857}
+          size: {x: 0.3409091, y: 0.5714286}
+        handTuned: 0
+      - frame: barbol_young_attack_lunge_w1
+        shapes:
+        - center: {x: -0.4318182, y: -0.39285713}
+          size: {x: 0.39545456, y: 0.4642857}
+        - center: {x: -0.13181818, y: 0.25}
+          size: {x: 0.3409091, y: 0.53571427}
+        handTuned: 0
+      - frame: barbol_young_attack_lunge_w2
+        shapes:
+        - center: {x: -0.25454545, y: -0.5}
+          size: {x: 0.3, y: 0.5}
+        - center: {x: 0.086363636, y: 0.16071428}
+          size: {x: 0.3409091, y: 0.51785713}
+        handTuned: 0
+      - frame: barbol_young_attack_lunge_w3
+        shapes:
+        - center: {x: -0.11818182, y: -0.5535714}
+          size: {x: 0.3272727, y: 0.44642857}
+        - center: {x: 0.38636363, y: 0.071428575}
+          size: {x: 0.23181818, y: 0.4642857}
+        handTuned: 0
+      - frame: barbol_young_attack_lunge_w4
+        shapes:
+        - center: {x: 0.75454545, y: 0.08928572}
+          size: {x: 0.24545455, y: 0.30357143}
+        - center: {x: 0.37272727, y: 0.035714287}
+          size: {x: 0.3, y: 0.32142857}
+        - center: {x: -0.06363636, y: -0.30357143}
+          size: {x: 0.3, y: 0.16071428}
+        - center: {x: -0.45909092, y: -0.51785713}
+          size: {x: 0.2590909, y: 0.16071428}
+        handTuned: 0
+      - frame: barbol_young_attack_lunge_w5
+        shapes:
+        - center: {x: -0.48636365, y: -0.53571427}
+          size: {x: 0.28636363, y: 0.4642857}
+        - center: {x: 0.0045454544, y: 0.125}
+          size: {x: 0.36818182, y: 0.48214287}
+        handTuned: 0
+      - frame: barbol_young_attack_lunge_w6
+        shapes:
+        - center: {x: -0.18636364, y: 0}
+          size: {x: 0.39545456, y: 1}
+        handTuned: 0
+      - frame: barbol_young_attack_lunge_w7
+        shapes:
+        - center: {x: -0.28181818, y: -0.39285713}
+          size: {x: 0.46363637, y: 0.5}
+        - center: {x: -0.13181818, y: 0.32142857}
+          size: {x: 0.31363636, y: 0.5714286}
+        handTuned: 0
+      - frame: barbol_young_attack_overhead_e0
+        shapes:
+        - center: {x: -0.00729927, y: -0.63529414}
+          size: {x: 0.49635038, y: 0.34117648}
+        - center: {x: -0.02189781, y: -0.12941177}
+          size: {x: 0.3941606, y: 0.4}
+        - center: {x: 0.24087591, y: 0.3764706}
+          size: {x: 0.30656934, y: 0.34117648}
+        handTuned: 0
+      - frame: barbol_young_attack_overhead_e1
+        shapes:
+        - center: {x: -0.1970803, y: -0.63529414}
+          size: {x: 0.3941606, y: 0.34117648}
+        - center: {x: 0.15328467, y: -0.12941177}
+          size: {x: 0.45255473, y: 0.4}
+        - center: {x: 0.09489051, y: 0.3882353}
+          size: {x: 0.3649635, y: 0.3529412}
+        handTuned: 0
+      - frame: barbol_young_attack_overhead_e2
+        shapes:
+        - center: {x: -0.16788322, y: -0.6}
+          size: {x: 0.3649635, y: 0.3764706}
+        - center: {x: -0.08029197, y: -0.023529412}
+          size: {x: 0.24817519, y: 0.43529412}
+        - center: {x: 0.10948905, y: 0.5529412}
+          size: {x: 0.35036495, y: 0.3764706}
+        handTuned: 0
+      - frame: barbol_young_attack_overhead_e3
+        shapes:
+        - center: {x: -0.10948905, y: -0.5764706}
+          size: {x: 0.3649635, y: 0.4}
+        - center: {x: 0.00729927, y: 0.011764706}
+          size: {x: 0.27737227, y: 0.47058824}
+        - center: {x: 0.08029197, y: 0.6}
+          size: {x: 0.35036495, y: 0.4}
+        handTuned: 0
+      - frame: barbol_young_attack_overhead_e4
+        shapes:
+        - center: {x: 0.06569343, y: -0.5529412}
+          size: {x: 0.6277372, y: 0.42352942}
+        - center: {x: 0.28467155, y: 0.011764706}
+          size: {x: 0.3211679, y: 0.42352942}
+        handTuned: 0
+      - frame: barbol_young_attack_overhead_e5
+        shapes:
+        - center: {x: -0.09489051, y: -0.62352943}
+          size: {x: 0.6423358, y: 0.3529412}
+        - center: {x: 0.05109489, y: -0.14117648}
+          size: {x: 0.35036495, y: 0.3647059}
+        handTuned: 0
+      - frame: barbol_young_attack_overhead_e6
+        shapes:
+        - center: {x: -0.15328467, y: -0.7058824}
+          size: {x: 0.4379562, y: 0.29411766}
+        - center: {x: -0.18248175, y: -0.25882354}
+          size: {x: 0.35036495, y: 0.34117648}
+        - center: {x: 0.06569343, y: 0.2}
+          size: {x: 0.27737227, y: 0.30588236}
+        handTuned: 0
+      - frame: barbol_young_attack_overhead_e7
+        shapes:
+        - center: {x: 0.02189781, y: -0.69411767}
+          size: {x: 0.46715328, y: 0.30588236}
+        - center: {x: -0.02189781, y: -0.22352941}
+          size: {x: 0.3649635, y: 0.3529412}
+        - center: {x: 0.24087591, y: 0.25882354}
+          size: {x: 0.27737227, y: 0.31764707}
+        handTuned: 0
+      - frame: barbol_young_attack_overhead_w0
+        shapes:
+        - center: {x: 0.00729927, y: -0.63529414}
+          size: {x: 0.49635038, y: 0.34117648}
+        - center: {x: -0.00729927, y: -0.12941177}
+          size: {x: 0.3941606, y: 0.4}
+        - center: {x: 0.25547445, y: 0.3764706}
+          size: {x: 0.30656934, y: 0.34117648}
+        handTuned: 0
+      - frame: barbol_young_attack_overhead_w1
+        shapes:
+        - center: {x: -0.21167883, y: -0.63529414}
+          size: {x: 0.3941606, y: 0.34117648}
+        - center: {x: 0.13868614, y: -0.12941177}
+          size: {x: 0.45255473, y: 0.4}
+        - center: {x: 0.09489051, y: 0.3882353}
+          size: {x: 0.35036495, y: 0.3529412}
+        handTuned: 0
+      - frame: barbol_young_attack_overhead_w2
+        shapes:
+        - center: {x: -0.18248175, y: -0.6}
+          size: {x: 0.3649635, y: 0.3764706}
+        - center: {x: -0.08029197, y: -0.023529412}
+          size: {x: 0.26277372, y: 0.43529412}
+        - center: {x: 0.09489051, y: 0.5529412}
+          size: {x: 0.35036495, y: 0.3764706}
+        handTuned: 0
+      - frame: barbol_young_attack_overhead_w3
+        shapes:
+        - center: {x: -0.10948905, y: -0.5764706}
+          size: {x: 0.35036495, y: 0.4}
+        - center: {x: 0.02189781, y: 0.011764706}
+          size: {x: 0.27737227, y: 0.47058824}
+        - center: {x: 0.08029197, y: 0.6}
+          size: {x: 0.33576643, y: 0.4}
+        handTuned: 0
+      - frame: barbol_young_attack_overhead_w4
+        shapes:
+        - center: {x: 0.06569343, y: -0.5529412}
+          size: {x: 0.6423358, y: 0.42352942}
+        - center: {x: 0.270073, y: 0.011764706}
+          size: {x: 0.3211679, y: 0.42352942}
+        handTuned: 0
+      - frame: barbol_young_attack_overhead_w5
+        shapes:
+        - center: {x: -0.09489051, y: -0.62352943}
+          size: {x: 0.6277372, y: 0.3529412}
+        - center: {x: 0.06569343, y: -0.14117648}
+          size: {x: 0.35036495, y: 0.3647059}
+        handTuned: 0
+      - frame: barbol_young_attack_overhead_w6
+        shapes:
+        - center: {x: -0.13868614, y: -0.7058824}
+          size: {x: 0.4379562, y: 0.29411766}
+        - center: {x: -0.1970803, y: -0.25882354}
+          size: {x: 0.35036495, y: 0.34117648}
+        - center: {x: 0.08029197, y: 0.2}
+          size: {x: 0.27737227, y: 0.30588236}
+        handTuned: 0
+      - frame: barbol_young_attack_overhead_w7
+        shapes:
+        - center: {x: 0.02189781, y: -0.69411767}
+          size: {x: 0.45255473, y: 0.30588236}
+        - center: {x: -0.02189781, y: -0.22352941}
+          size: {x: 0.35036495, y: 0.3529412}
+        - center: {x: 0.22627737, y: 0.24705882}
+          size: {x: 0.27737227, y: 0.30588236}
+        handTuned: 0
+      - frame: barbol_young_attack_w0
+        shapes:
+        - center: {x: -0.14285715, y: -0.42352942}
+          size: {x: 0.48, y: 0.5764706}
+        - center: {x: 0.08571429, y: 0.3647059}
+          size: {x: 0.36571428, y: 0.5882353}
+        handTuned: 0
+      - frame: barbol_young_attack_w1
+        shapes:
+        - center: {x: 0.04, y: -0.24705882}
+          size: {x: 0.41142857, y: 0.7294118}
+        - center: {x: 0.108571425, y: 0.6}
+          size: {x: 0.25142857, y: 0.4}
+        handTuned: 0
+      - frame: barbol_young_attack_w2
+        shapes:
+        - center: {x: 0.028571429, y: -0.43529412}
+          size: {x: 0.42285714, y: 0.5411765}
+        - center: {x: 0.15428571, y: 0.28235295}
+          size: {x: 0.38857144, y: 0.5529412}
+        handTuned: 0
+      - frame: barbol_young_attack_w3
+        shapes:
+        - center: {x: 0.6, y: 0}
+          size: {x: 0.4, y: 0.24705882}
+        - center: {x: 0.0057142857, y: -0.23529412}
+          size: {x: 0.46857142, y: 0.3882353}
+        - center: {x: -0.5885714, y: -0.3529412}
+          size: {x: 0.4, y: 0.45882353}
+        handTuned: 0
+      - frame: barbol_young_attack_w4
+        shapes:
+        - center: {x: -0.108571425, y: -0.3882353}
+          size: {x: 0.46857142, y: 0.5411765}
+        - center: {x: 0.05142857, y: 0.31764707}
+          size: {x: 0.35428572, y: 0.5411765}
+        handTuned: 0
+      - frame: barbol_young_attack_w5
+        shapes:
+        - center: {x: -0.14285715, y: -0.42352942}
+          size: {x: 0.45714286, y: 0.5764706}
+        - center: {x: 0.074285716, y: 0.3529412}
+          size: {x: 0.35428572, y: 0.5764706}
+        handTuned: 0
+      - frame: barbol_young_cast_e0
+        shapes:
+        - center: {x: -0.27319586, y: -0.6117647}
+          size: {x: 0.38659793, y: 0.3882353}
+        - center: {x: -0.19587629, y: -0.029411765}
+          size: {x: 0.371134, y: 0.4764706}
+        - center: {x: 0.036082473, y: 0.57058823}
+          size: {x: 0.29381442, y: 0.40588236}
+        handTuned: 0
+      - frame: barbol_young_cast_e1
+        shapes:
+        - center: {x: -0.010309278, y: -0.3647059}
+          size: {x: 0.4329897, y: 0.6}
+        - center: {x: 0.15979381, y: 0.40588236}
+          size: {x: 0.41752577, y: 0.59411764}
+        handTuned: 0
+      - frame: barbol_young_cast_e2
+        shapes:
+        - center: {x: -0.1185567, y: -0.5764706}
+          size: {x: 0.38659793, y: 0.3882353}
+        - center: {x: -0.05670103, y: 0.005882353}
+          size: {x: 0.23195876, y: 0.4764706}
+        - center: {x: 0.082474224, y: 0.6}
+          size: {x: 0.34020618, y: 0.4}
+        handTuned: 0
+      - frame: barbol_young_cast_e3
+        shapes:
+        - center: {x: -0.3814433, y: -0.43529412}
+          size: {x: 0.371134, y: 0.5294118}
+        - center: {x: 0.067010306, y: 0.2882353}
+          size: {x: 0.6030928, y: 0.5470588}
+        handTuned: 0
+      - frame: barbol_young_cast_e4
+        shapes:
+        - center: {x: -0.3814433, y: -0.43529412}
+          size: {x: 0.371134, y: 0.5294118}
+        - center: {x: -0.05670103, y: 0.27058825}
+          size: {x: 0.5103093, y: 0.5294118}
+        handTuned: 0
+      - frame: barbol_young_cast_e5
+        shapes:
+        - center: {x: -0.27319586, y: -0.6117647}
+          size: {x: 0.3556701, y: 0.3882353}
+        - center: {x: -0.19587629, y: -0.029411765}
+          size: {x: 0.34020618, y: 0.4764706}
+        - center: {x: 0.067010306, y: 0.57058823}
+          size: {x: 0.26288658, y: 0.40588236}
+        handTuned: 0
+      - frame: barbol_young_cast_roar_e0
+        shapes:
+        - center: {x: -0.11949685, y: -0.3452381}
+          size: {x: 0.42767295, y: 0.6547619}
+        - center: {x: 0.20754717, y: 0.44047618}
+          size: {x: 0.3018868, y: 0.3690476}
+        handTuned: 0
+      - frame: barbol_young_cast_roar_e1
+        shapes:
+        - center: {x: -0.018867925, y: -0.60714287}
+          size: {x: 0.3773585, y: 0.39285713}
+        - center: {x: 0.044025157, y: -0.023809524}
+          size: {x: 0.49056605, y: 0.47619048}
+        - center: {x: 0.13207547, y: 0.5714286}
+          size: {x: 0.25157234, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_cast_roar_e2
+        shapes:
+        - center: {x: 0.094339624, y: -0.61904764}
+          size: {x: 0.36477986, y: 0.3809524}
+        - center: {x: 0.06918239, y: -0.035714287}
+          size: {x: 0.5408805, y: 0.44047618}
+        - center: {x: 0.20754717, y: 0.5595238}
+          size: {x: 0.25157234, y: 0.39285713}
+        handTuned: 0
+      - frame: barbol_young_cast_roar_e3
+        shapes:
+        - center: {x: 0.056603774, y: -0.5952381}
+          size: {x: 0.3773585, y: 0.4047619}
+        - center: {x: -0.006289308, y: 0}
+          size: {x: 0.6163522, y: 0.47619048}
+        - center: {x: 0.031446543, y: 0.5952381}
+          size: {x: 0.3018868, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_cast_roar_e4
+        shapes:
+        - center: {x: -0.13207547, y: -0.61904764}
+          size: {x: 0.3899371, y: 0.3809524}
+        - center: {x: -0.044025157, y: -0.035714287}
+          size: {x: 0.4779874, y: 0.44047618}
+        - center: {x: 0.006289308, y: 0.5595238}
+          size: {x: 0.25157234, y: 0.39285713}
+        handTuned: 0
+      - frame: barbol_young_cast_roar_e5
+        shapes:
+        - center: {x: -0.11949685, y: -0.3452381}
+          size: {x: 0.42767295, y: 0.6547619}
+        - center: {x: 0.20754717, y: 0.44047618}
+          size: {x: 0.27672955, y: 0.3690476}
+        handTuned: 0
+      - frame: barbol_young_cast_roar_w0
+        shapes:
+        - center: {x: -0.13207547, y: -0.3452381}
+          size: {x: 0.42767295, y: 0.6547619}
+        - center: {x: 0.20754717, y: 0.44047618}
+          size: {x: 0.2893082, y: 0.3690476}
+        handTuned: 0
+      - frame: barbol_young_cast_roar_w1
+        shapes:
+        - center: {x: -0.006289308, y: -0.60714287}
+          size: {x: 0.3773585, y: 0.39285713}
+        - center: {x: 0.044025157, y: -0.023809524}
+          size: {x: 0.4779874, y: 0.47619048}
+        - center: {x: 0.13207547, y: 0.5714286}
+          size: {x: 0.26415095, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_cast_roar_w2
+        shapes:
+        - center: {x: 0.08176101, y: -0.61904764}
+          size: {x: 0.36477986, y: 0.3809524}
+        - center: {x: 0.056603774, y: -0.035714287}
+          size: {x: 0.5408805, y: 0.44047618}
+        - center: {x: 0.19496855, y: 0.5595238}
+          size: {x: 0.25157234, y: 0.39285713}
+        handTuned: 0
+      - frame: barbol_young_cast_roar_w3
+        shapes:
+        - center: {x: 0.056603774, y: -0.5952381}
+          size: {x: 0.36477986, y: 0.4047619}
+        - center: {x: -0.018867925, y: 0}
+          size: {x: 0.6163522, y: 0.47619048}
+        - center: {x: 0.018867925, y: 0.5952381}
+          size: {x: 0.3018868, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_cast_roar_w4
+        shapes:
+        - center: {x: -0.13207547, y: -0.61904764}
+          size: {x: 0.3773585, y: 0.3809524}
+        - center: {x: -0.056603774, y: -0.035714287}
+          size: {x: 0.4779874, y: 0.44047618}
+        - center: {x: 0.006289308, y: 0.5595238}
+          size: {x: 0.26415095, y: 0.39285713}
+        handTuned: 0
+      - frame: barbol_young_cast_roar_w5
+        shapes:
+        - center: {x: -0.11949685, y: -0.3452381}
+          size: {x: 0.41509435, y: 0.6547619}
+        - center: {x: 0.20754717, y: 0.44047618}
+          size: {x: 0.2893082, y: 0.3690476}
+        handTuned: 0
+      - frame: barbol_young_cast_sap_bolt_e0
+        shapes:
+        - center: {x: -0.17525773, y: -0.68421054}
+          size: {x: 0.6185567, y: 0.29239765}
+        - center: {x: -0.21649484, y: -0.23976608}
+          size: {x: 0.49484536, y: 0.33918127}
+        - center: {x: 0.11340206, y: 0.21637426}
+          size: {x: 0.371134, y: 0.30409357}
+        handTuned: 0
+      - frame: barbol_young_cast_sap_bolt_e1
+        shapes:
+        - center: {x: -0.34020618, y: -0.64912283}
+          size: {x: 0.3298969, y: 0.32748538}
+        - center: {x: -0.21649484, y: -0.16959064}
+          size: {x: 0.3298969, y: 0.3859649}
+        - center: {x: 0.05154639, y: 0.30994153}
+          size: {x: 0.4742268, y: 0.32748538}
+        handTuned: 0
+      - frame: barbol_young_cast_sap_bolt_e2
+        shapes:
+        - center: {x: -0.0927835, y: -0.57894737}
+          size: {x: 0.3298969, y: 0.39766082}
+        - center: {x: -0.19587629, y: 0.0058479533}
+          size: {x: 0.26804122, y: 0.46783626}
+        - center: {x: -0.13402061, y: 0.5964912}
+          size: {x: 0.371134, y: 0.40350878}
+        handTuned: 0
+      - frame: barbol_young_cast_sap_bolt_e3
+        shapes:
+        - center: {x: -0.2783505, y: -0.5204678}
+          size: {x: 0.30927834, y: 0.3625731}
+        - center: {x: -0.05154639, y: 0.029239766}
+          size: {x: 0.371134, y: 0.42105263}
+        - center: {x: -0.010309278, y: 0.5906433}
+          size: {x: 0.45360824, y: 0.374269}
+        handTuned: 0
+      - frame: barbol_young_cast_sap_bolt_e4
+        shapes:
+        - center: {x: -0.05154639, y: -0.61403507}
+          size: {x: 0.6597938, y: 0.3625731}
+        - center: {x: 0.11340206, y: -0.12280702}
+          size: {x: 0.49484536, y: 0.3625731}
+        handTuned: 0
+      - frame: barbol_young_cast_sap_bolt_e5
+        shapes:
+        - center: {x: -0.62886596, y: -0.7426901}
+          size: {x: 0.371134, y: 0.1871345}
+        - center: {x: 0.19587629, y: -0.6608187}
+          size: {x: 0.7010309, y: 0.26900584}
+        handTuned: 0
+      - frame: barbol_young_cast_sap_bolt_e6
+        shapes:
+        - center: {x: -0.5463917, y: -0.7426901}
+          size: {x: 0.371134, y: 0.1871345}
+        - center: {x: 0.28865978, y: -0.6608187}
+          size: {x: 0.7113402, y: 0.26900584}
+        handTuned: 0
+      - frame: barbol_young_cast_sap_bolt_e7
+        shapes:
+        - center: {x: -0.15463917, y: -0.68421054}
+          size: {x: 0.5979381, y: 0.29239765}
+        - center: {x: -0.19587629, y: -0.23976608}
+          size: {x: 0.4742268, y: 0.33918127}
+        - center: {x: 0.11340206, y: 0.20467836}
+          size: {x: 0.371134, y: 0.29239765}
+        handTuned: 0
+      - frame: barbol_young_cast_sap_bolt_w0
+        shapes:
+        - center: {x: -0.17525773, y: -0.68421054}
+          size: {x: 0.63917524, y: 0.29239765}
+        - center: {x: -0.21649484, y: -0.23976608}
+          size: {x: 0.5154639, y: 0.33918127}
+        - center: {x: 0.11340206, y: 0.20467836}
+          size: {x: 0.39175257, y: 0.29239765}
+        handTuned: 0
+      - frame: barbol_young_cast_sap_bolt_w1
+        shapes:
+        - center: {x: -0.31958762, y: -0.64912283}
+          size: {x: 0.3298969, y: 0.32748538}
+        - center: {x: -0.2371134, y: -0.16959064}
+          size: {x: 0.3298969, y: 0.3859649}
+        - center: {x: 0.05154639, y: 0.30994153}
+          size: {x: 0.45360824, y: 0.32748538}
+        handTuned: 0
+      - frame: barbol_young_cast_sap_bolt_w2
+        shapes:
+        - center: {x: -0.11340206, y: -0.57894737}
+          size: {x: 0.3298969, y: 0.39766082}
+        - center: {x: -0.19587629, y: 0.0058479533}
+          size: {x: 0.24742268, y: 0.46783626}
+        - center: {x: -0.15463917, y: 0.5964912}
+          size: {x: 0.371134, y: 0.40350878}
+        handTuned: 0
+      - frame: barbol_young_cast_sap_bolt_w3
+        shapes:
+        - center: {x: -0.2783505, y: -0.5204678}
+          size: {x: 0.28865978, y: 0.3625731}
+        - center: {x: -0.072164945, y: 0.029239766}
+          size: {x: 0.371134, y: 0.42105263}
+        - center: {x: 0.010309278, y: 0.5906433}
+          size: {x: 0.45360824, y: 0.374269}
+        handTuned: 0
+      - frame: barbol_young_cast_sap_bolt_w4
+        shapes:
+        - center: {x: -0.030927835, y: -0.61403507}
+          size: {x: 0.6597938, y: 0.3625731}
+        - center: {x: 0.11340206, y: -0.12280702}
+          size: {x: 0.5154639, y: 0.3625731}
+        handTuned: 0
+      - frame: barbol_young_cast_sap_bolt_w5
+        shapes:
+        - center: {x: 0.2371134, y: -0.6608187}
+          size: {x: 0.68041235, y: 0.26900584}
+        - center: {x: -0.58762884, y: -0.71929824}
+          size: {x: 0.39175257, y: 0.1871345}
+        handTuned: 0
+      - frame: barbol_young_cast_sap_bolt_w6
+        shapes:
+        - center: {x: 0.31958762, y: -0.6608187}
+          size: {x: 0.68041235, y: 0.26900584}
+        - center: {x: -0.5051546, y: -0.71929824}
+          size: {x: 0.39175257, y: 0.1871345}
+        handTuned: 0
+      - frame: barbol_young_cast_sap_bolt_w7
+        shapes:
+        - center: {x: -0.17525773, y: -0.68421054}
+          size: {x: 0.5979381, y: 0.29239765}
+        - center: {x: -0.21649484, y: -0.23976608}
+          size: {x: 0.4742268, y: 0.33918127}
+        - center: {x: 0.0927835, y: 0.20467836}
+          size: {x: 0.371134, y: 0.29239765}
+        handTuned: 0
+      - frame: barbol_young_cast_w0
+        shapes:
+        - center: {x: -0.26804122, y: -0.6117647}
+          size: {x: 0.371134, y: 0.3882353}
+        - center: {x: -0.19072165, y: -0.029411765}
+          size: {x: 0.38659793, y: 0.4764706}
+        - center: {x: 0.041237112, y: 0.57058823}
+          size: {x: 0.2783505, y: 0.40588236}
+        handTuned: 0
+      - frame: barbol_young_cast_w1
+        shapes:
+        - center: {x: -0.005154639, y: -0.3647059}
+          size: {x: 0.41752577, y: 0.6}
+        - center: {x: 0.16494845, y: 0.40588236}
+          size: {x: 0.4329897, y: 0.59411764}
+        handTuned: 0
+      - frame: barbol_young_cast_w2
+        shapes:
+        - center: {x: -0.11340206, y: -0.5764706}
+          size: {x: 0.371134, y: 0.3882353}
+        - center: {x: -0.067010306, y: -0.011764706}
+          size: {x: 0.23195876, y: 0.45882353}
+        - center: {x: 0.072164945, y: 0.57058823}
+          size: {x: 0.34020618, y: 0.40588236}
+        handTuned: 0
+      - frame: barbol_young_cast_w3
+        shapes:
+        - center: {x: -0.37628865, y: -0.43529412}
+          size: {x: 0.38659793, y: 0.5294118}
+        - center: {x: 0.05670103, y: 0.2882353}
+          size: {x: 0.6030928, y: 0.5470588}
+        handTuned: 0
+      - frame: barbol_young_cast_w4
+        shapes:
+        - center: {x: -0.36082473, y: -0.43529412}
+          size: {x: 0.371134, y: 0.5294118}
+        - center: {x: -0.05154639, y: 0.27058825}
+          size: {x: 0.52577317, y: 0.5294118}
+        handTuned: 0
+      - frame: barbol_young_cast_w5
+        shapes:
+        - center: {x: -0.2525773, y: -0.6117647}
+          size: {x: 0.3556701, y: 0.3882353}
+        - center: {x: -0.19072165, y: -0.029411765}
+          size: {x: 0.3556701, y: 0.4764706}
+        - center: {x: 0.072164945, y: 0.57058823}
+          size: {x: 0.2783505, y: 0.40588236}
+        handTuned: 0
+      - frame: barbol_young_chase_e0
+        shapes:
+        - center: {x: 0.05263158, y: -0.45054945}
+          size: {x: 0.6105263, y: 0.5494506}
+        - center: {x: 0.2, y: 0.30769232}
+          size: {x: 0.4, y: 0.5604396}
+        handTuned: 0
+      - frame: barbol_young_chase_e1
+        shapes:
+        - center: {x: -0.2, y: -0.52747256}
+          size: {x: 0.33684212, y: 0.47252747}
+        - center: {x: 0.06315789, y: 0.10989011}
+          size: {x: 0.30526316, y: 0.47252747}
+        handTuned: 0
+      - frame: barbol_young_chase_e2
+        shapes:
+        - center: {x: -0.14736842, y: -0.31868133}
+          size: {x: 0.5368421, y: 0.46153846}
+        - center: {x: 0.07368421, y: 0.32967034}
+          size: {x: 0.35789475, y: 0.53846157}
+        handTuned: 0
+      - frame: barbol_young_chase_e3
+        shapes:
+        - center: {x: -0.2631579, y: -0.13186814}
+          size: {x: 0.58947366, y: 0.45054945}
+        - center: {x: -0.12631579, y: 0.48351648}
+          size: {x: 0.36842105, y: 0.51648355}
+        handTuned: 0
+      - frame: barbol_young_chase_e4
+        shapes:
+        - center: {x: -0.2631579, y: -0.47252747}
+          size: {x: 0.5263158, y: 0.52747256}
+        - center: {x: -0.1368421, y: 0.24175824}
+          size: {x: 0.2736842, y: 0.53846157}
+        handTuned: 0
+      - frame: barbol_young_chase_e5
+        shapes:
+        - center: {x: -0.2, y: -0.6703297}
+          size: {x: 0.21052632, y: 0.32967034}
+        - center: {x: -0.12631579, y: -0.16483517}
+          size: {x: 0.2631579, y: 0.3956044}
+        - center: {x: 0.094736844, y: 0.35164836}
+          size: {x: 0.2736842, y: 0.34065935}
+        handTuned: 0
+      - frame: barbol_young_chase_e6
+        shapes:
+        - center: {x: 0.05263158, y: -0.3846154}
+          size: {x: 0.6105263, y: 0.52747256}
+        - center: {x: 0.18947369, y: 0.32967034}
+          size: {x: 0.3263158, y: 0.53846157}
+        handTuned: 0
+      - frame: barbol_young_chase_e7
+        shapes:
+        - center: {x: -0.08421053, y: -0.26373628}
+          size: {x: 0.43157893, y: 0.53846157}
+        - center: {x: 0.18947369, y: 0.46153846}
+          size: {x: 0.36842105, y: 0.53846157}
+        handTuned: 0
+      - frame: barbol_young_chase_w0
+        shapes:
+        - center: {x: 0.05263158, y: -0.45054945}
+          size: {x: 0.6105263, y: 0.5494506}
+        - center: {x: 0.2, y: 0.30769232}
+          size: {x: 0.4, y: 0.5604396}
+        handTuned: 0
+      - frame: barbol_young_chase_w1
+        shapes:
+        - center: {x: -0.2, y: -0.52747256}
+          size: {x: 0.33684212, y: 0.47252747}
+        - center: {x: 0.06315789, y: 0.10989011}
+          size: {x: 0.30526316, y: 0.47252747}
+        handTuned: 0
+      - frame: barbol_young_chase_w2
+        shapes:
+        - center: {x: -0.14736842, y: -0.31868133}
+          size: {x: 0.5368421, y: 0.46153846}
+        - center: {x: 0.07368421, y: 0.32967034}
+          size: {x: 0.35789475, y: 0.53846157}
+        handTuned: 0
+      - frame: barbol_young_chase_w3
+        shapes:
+        - center: {x: -0.2631579, y: -0.13186814}
+          size: {x: 0.58947366, y: 0.45054945}
+        - center: {x: -0.12631579, y: 0.48351648}
+          size: {x: 0.36842105, y: 0.51648355}
+        handTuned: 0
+      - frame: barbol_young_chase_w4
+        shapes:
+        - center: {x: -0.2631579, y: -0.47252747}
+          size: {x: 0.5263158, y: 0.52747256}
+        - center: {x: -0.1368421, y: 0.24175824}
+          size: {x: 0.2736842, y: 0.53846157}
+        handTuned: 0
+      - frame: barbol_young_chase_w5
+        shapes:
+        - center: {x: -0.2, y: -0.6703297}
+          size: {x: 0.21052632, y: 0.32967034}
+        - center: {x: -0.12631579, y: -0.16483517}
+          size: {x: 0.2631579, y: 0.3956044}
+        - center: {x: 0.094736844, y: 0.35164836}
+          size: {x: 0.2736842, y: 0.34065935}
+        handTuned: 0
+      - frame: barbol_young_chase_w6
+        shapes:
+        - center: {x: 0.05263158, y: -0.3846154}
+          size: {x: 0.6105263, y: 0.52747256}
+        - center: {x: 0.18947369, y: 0.32967034}
+          size: {x: 0.3263158, y: 0.53846157}
+        handTuned: 0
+      - frame: barbol_young_chase_w7
+        shapes:
+        - center: {x: -0.08421053, y: -0.26373628}
+          size: {x: 0.43157893, y: 0.53846157}
+        - center: {x: 0.18947369, y: 0.46153846}
+          size: {x: 0.36842105, y: 0.53846157}
+        handTuned: 0
+      - frame: barbol_young_damage_e0
+        shapes:
+        - center: {x: -0.3026316, y: -0.25146198}
+          size: {x: 0.5131579, y: 0.7251462}
+        - center: {x: 0.09210526, y: 0.5906433}
+          size: {x: 0.35526314, y: 0.39766082}
+        handTuned: 0
+      - frame: barbol_young_damage_e1
+        shapes:
+        - center: {x: 0.10526316, y: -0.57894737}
+          size: {x: 0.4473684, y: 0.39766082}
+        - center: {x: 0.013157895, y: 0.0058479533}
+          size: {x: 0.43421054, y: 0.46783626}
+        - center: {x: -0.28947368, y: 0.5964912}
+          size: {x: 0.34210527, y: 0.40350878}
+        handTuned: 0
+      - frame: barbol_young_damage_e2
+        shapes:
+        - center: {x: 0.14473684, y: -0.39181286}
+          size: {x: 0.46052632, y: 0.5847953}
+        - center: {x: -0.32894737, y: 0.40350878}
+          size: {x: 0.46052632, y: 0.5847953}
+        handTuned: 0
+      - frame: barbol_young_damage_e3
+        shapes:
+        - center: {x: -0.27631578, y: -0.4385965}
+          size: {x: 0.5131579, y: 0.5614035}
+        - center: {x: -0.039473683, y: 0.32163742}
+          size: {x: 0.40789473, y: 0.57309943}
+        handTuned: 0
+      - frame: barbol_young_damage_w0
+        shapes:
+        - center: {x: -0.3026316, y: -0.25146198}
+          size: {x: 0.5131579, y: 0.7251462}
+        - center: {x: 0.09210526, y: 0.5906433}
+          size: {x: 0.35526314, y: 0.39766082}
+        handTuned: 0
+      - frame: barbol_young_damage_w1
+        shapes:
+        - center: {x: 0.10526316, y: -0.57894737}
+          size: {x: 0.4473684, y: 0.39766082}
+        - center: {x: 0.013157895, y: 0.0058479533}
+          size: {x: 0.43421054, y: 0.46783626}
+        - center: {x: -0.28947368, y: 0.5964912}
+          size: {x: 0.34210527, y: 0.40350878}
+        handTuned: 0
+      - frame: barbol_young_damage_w2
+        shapes:
+        - center: {x: 0.14473684, y: -0.39181286}
+          size: {x: 0.46052632, y: 0.5847953}
+        - center: {x: -0.32894737, y: 0.40350878}
+          size: {x: 0.46052632, y: 0.5847953}
+        handTuned: 0
+      - frame: barbol_young_damage_w3
+        shapes:
+        - center: {x: -0.27631578, y: -0.4385965}
+          size: {x: 0.5131579, y: 0.5614035}
+        - center: {x: -0.039473683, y: 0.32163742}
+          size: {x: 0.40789473, y: 0.57309943}
+        handTuned: 0
+      - frame: barbol_young_death_e0
+        shapes:
+        - center: {x: 0.14482759, y: -0.57894737}
+          size: {x: 0.4827586, y: 0.39766082}
+        - center: {x: -0.0068965517, y: 0.0058479533}
+          size: {x: 0.46896553, y: 0.46783626}
+        - center: {x: 0.020689655, y: 0.5964912}
+          size: {x: 0.3862069, y: 0.40350878}
+        handTuned: 0
+      - frame: barbol_young_death_e1
+        shapes:
+        - center: {x: -0.089655176, y: -0.4619883}
+          size: {x: 0.55172414, y: 0.5146199}
+        - center: {x: 0.10344828, y: 0.23976608}
+          size: {x: 0.41379312, y: 0.5146199}
+        handTuned: 0
+      - frame: barbol_young_death_e2
+        shapes:
+        - center: {x: -0.13103448, y: -0.7076023}
+          size: {x: 0.4275862, y: 0.29239765}
+        - center: {x: -0.048275862, y: -0.2631579}
+          size: {x: 0.3448276, y: 0.33918127}
+        - center: {x: 0.2137931, y: 0.19298245}
+          size: {x: 0.33103448, y: 0.30409357}
+        handTuned: 0
+      - frame: barbol_young_death_e3
+        shapes:
+        - center: {x: -0.062068965, y: -0.6023392}
+          size: {x: 0.5241379, y: 0.39766082}
+        - center: {x: 0.29655173, y: -0.0877193}
+          size: {x: 0.3862069, y: 0.39766082}
+        handTuned: 0
+      - frame: barbol_young_death_e4
+        shapes:
+        - center: {x: -0.6, y: -0.7777778}
+          size: {x: 0.4, y: 0.15204678}
+        - center: {x: -0.0068965517, y: -0.6023392}
+          size: {x: 0.46896553, y: 0.25730994}
+        - center: {x: 0.59310347, y: -0.5204678}
+          size: {x: 0.40689656, y: 0.29239765}
+        handTuned: 0
+      - frame: barbol_young_death_e5
+        shapes:
+        - center: {x: -0.6137931, y: -0.75438595}
+          size: {x: 0.24827586, y: 0.15204678}
+        - center: {x: -0.2137931, y: -0.69590646}
+          size: {x: 0.31724137, y: 0.21052632}
+        - center: {x: 0.43448275, y: -0.625731}
+          size: {x: 0.49655172, y: 0.28070176}
+        handTuned: 0
+      - frame: barbol_young_death_e6
+        shapes:
+        - center: {x: -0.71034485, y: -0.8596491}
+          size: {x: 0.23448277, y: 0.09356725}
+        - center: {x: -0.1724138, y: -0.75438595}
+          size: {x: 0.46896553, y: 0.1754386}
+        - center: {x: 0.56551725, y: -0.68421054}
+          size: {x: 0.43448275, y: 0.24561404}
+        handTuned: 0
+      - frame: barbol_young_death_e7
+        shapes:
+        - center: {x: -0.69655174, y: -0.8596491}
+          size: {x: 0.22068965, y: 0.09356725}
+        - center: {x: -0.18620689, y: -0.7777778}
+          size: {x: 0.45517242, y: 0.1754386}
+        - center: {x: 0.51724136, y: -0.73099416}
+          size: {x: 0.41379312, y: 0.22222222}
+        handTuned: 0
+      - frame: barbol_young_death_w0
+        shapes:
+        - center: {x: 0.14482759, y: -0.57894737}
+          size: {x: 0.46896553, y: 0.39766082}
+        - center: {x: -0.0068965517, y: 0.0058479533}
+          size: {x: 0.4827586, y: 0.46783626}
+        - center: {x: 0.020689655, y: 0.5964912}
+          size: {x: 0.4, y: 0.40350878}
+        handTuned: 0
+      - frame: barbol_young_death_w1
+        shapes:
+        - center: {x: -0.10344828, y: -0.4619883}
+          size: {x: 0.55172414, y: 0.5146199}
+        - center: {x: 0.10344828, y: 0.23976608}
+          size: {x: 0.4, y: 0.5146199}
+        handTuned: 0
+      - frame: barbol_young_death_w2
+        shapes:
+        - center: {x: -0.13103448, y: -0.7076023}
+          size: {x: 0.4413793, y: 0.29239765}
+        - center: {x: -0.062068965, y: -0.2631579}
+          size: {x: 0.3448276, y: 0.33918127}
+        - center: {x: 0.2137931, y: 0.19298245}
+          size: {x: 0.3448276, y: 0.30409357}
+        handTuned: 0
+      - frame: barbol_young_death_w3
+        shapes:
+        - center: {x: -0.07586207, y: -0.6023392}
+          size: {x: 0.5241379, y: 0.39766082}
+        - center: {x: 0.28275862, y: -0.0877193}
+          size: {x: 0.3862069, y: 0.39766082}
+        handTuned: 0
+      - frame: barbol_young_death_w4
+        shapes:
+        - center: {x: 0.6, y: -0.50877196}
+          size: {x: 0.4, y: 0.28070176}
+        - center: {x: 0.0068965517, y: -0.6023392}
+          size: {x: 0.46896553, y: 0.25730994}
+        - center: {x: -0.59310347, y: -0.7777778}
+          size: {x: 0.40689656, y: 0.15204678}
+        handTuned: 0
+      - frame: barbol_young_death_w5
+        shapes:
+        - center: {x: 0.6551724, y: -0.6023392}
+          size: {x: 0.26206896, y: 0.23391813}
+        - center: {x: 0.2551724, y: -0.625731}
+          size: {x: 0.3034483, y: 0.28070176}
+        - center: {x: -0.18620689, y: -0.69590646}
+          size: {x: 0.3034483, y: 0.21052632}
+        - center: {x: -0.6, y: -0.7426901}
+          size: {x: 0.27586207, y: 0.16374269}
+        handTuned: 0
+      - frame: barbol_young_death_w6
+        shapes:
+        - center: {x: 0.5724138, y: -0.68421054}
+          size: {x: 0.4275862, y: 0.24561404}
+        - center: {x: -0.15862069, y: -0.75438595}
+          size: {x: 0.46896553, y: 0.1754386}
+        - center: {x: -0.71034485, y: -0.8596491}
+          size: {x: 0.24827586, y: 0.09356725}
+        handTuned: 0
+      - frame: barbol_young_death_w7
+        shapes:
+        - center: {x: 0.51724136, y: -0.73099416}
+          size: {x: 0.4, y: 0.22222222}
+        - center: {x: 0.0068965517, y: -0.76608187}
+          size: {x: 0.27586207, y: 0.1871345}
+        - center: {x: -0.36551723, y: -0.7777778}
+          size: {x: 0.26206896, y: 0.15204678}
+        - center: {x: -0.69655174, y: -0.8596491}
+          size: {x: 0.23448277, y: 0.09356725}
+        handTuned: 0
+      - frame: barbol_young_idle_e0
+        shapes:
+        - center: {x: -0.19354838, y: -0.26190478}
+          size: {x: 0.58064514, y: 0.7380952}
+        - center: {x: 0.30645162, y: 0.5952381}
+          size: {x: 0.4032258, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_idle_e1
+        shapes:
+        - center: {x: -0.09677419, y: -0.26190478}
+          size: {x: 0.58064514, y: 0.7380952}
+        - center: {x: 0.37096775, y: 0.5952381}
+          size: {x: 0.4032258, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_idle_e2
+        shapes:
+        - center: {x: -0.08064516, y: -0.27380952}
+          size: {x: 0.5322581, y: 0.72619045}
+        - center: {x: 0.24193548, y: 0.5714286}
+          size: {x: 0.4032258, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_idle_e3
+        shapes:
+        - center: {x: -0.06451613, y: -0.5952381}
+          size: {x: 0.516129, y: 0.4047619}
+        - center: {x: 0.016129032, y: 0}
+          size: {x: 0.62903225, y: 0.47619048}
+        - center: {x: 0.37096775, y: 0.5952381}
+          size: {x: 0.4032258, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_idle_e4
+        shapes:
+        - center: {x: -0.08064516, y: -0.5952381}
+          size: {x: 0.5645161, y: 0.4047619}
+        - center: {x: -0.032258064, y: 0}
+          size: {x: 0.48387095, y: 0.47619048}
+        - center: {x: 0.3548387, y: 0.5952381}
+          size: {x: 0.38709676, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_idle_e5
+        shapes:
+        - center: {x: -0.09677419, y: -0.60714287}
+          size: {x: 0.5483871, y: 0.39285713}
+        - center: {x: -0.016129032, y: -0.023809524}
+          size: {x: 0.46774194, y: 0.47619048}
+        - center: {x: 0.22580644, y: 0.5714286}
+          size: {x: 0.38709676, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_idle_w0
+        shapes:
+        - center: {x: -0.19354838, y: -0.26190478}
+          size: {x: 0.58064514, y: 0.7380952}
+        - center: {x: 0.30645162, y: 0.5952381}
+          size: {x: 0.4032258, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_idle_w1
+        shapes:
+        - center: {x: -0.09677419, y: -0.26190478}
+          size: {x: 0.58064514, y: 0.7380952}
+        - center: {x: 0.37096775, y: 0.5952381}
+          size: {x: 0.4032258, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_idle_w2
+        shapes:
+        - center: {x: -0.08064516, y: -0.27380952}
+          size: {x: 0.5322581, y: 0.72619045}
+        - center: {x: 0.24193548, y: 0.5714286}
+          size: {x: 0.4032258, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_idle_w3
+        shapes:
+        - center: {x: -0.06451613, y: -0.5952381}
+          size: {x: 0.516129, y: 0.4047619}
+        - center: {x: 0.016129032, y: 0}
+          size: {x: 0.62903225, y: 0.47619048}
+        - center: {x: 0.37096775, y: 0.5952381}
+          size: {x: 0.4032258, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_idle_w4
+        shapes:
+        - center: {x: -0.08064516, y: -0.5952381}
+          size: {x: 0.5645161, y: 0.4047619}
+        - center: {x: -0.032258064, y: 0}
+          size: {x: 0.48387095, y: 0.47619048}
+        - center: {x: 0.3548387, y: 0.5952381}
+          size: {x: 0.38709676, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_idle_w5
+        shapes:
+        - center: {x: -0.09677419, y: -0.60714287}
+          size: {x: 0.5483871, y: 0.39285713}
+        - center: {x: -0.016129032, y: -0.023809524}
+          size: {x: 0.46774194, y: 0.47619048}
+        - center: {x: 0.22580644, y: 0.5714286}
+          size: {x: 0.38709676, y: 0.4047619}
+        handTuned: 0
+      - frame: barbol_young_walk_e0
+        shapes:
+        - center: {x: -0.18796992, y: -0.2662722}
+          size: {x: 0.5112782, y: 0.7337278}
+        - center: {x: 0.21804512, y: 0.5857988}
+          size: {x: 0.37593985, y: 0.40236688}
+        handTuned: 0
+      - frame: barbol_young_walk_e1
+        shapes:
+        - center: {x: -0.35338345, y: -0.6331361}
+          size: {x: 0.37593985, y: 0.3668639}
+        - center: {x: -0.24812031, y: -0.06508876}
+          size: {x: 0.5112782, y: 0.43786982}
+        - center: {x: 0.11278196, y: 0.5147929}
+          size: {x: 0.39097744, y: 0.37869823}
+        handTuned: 0
+      - frame: barbol_young_walk_e2
+        shapes:
+        - center: {x: -0.2932331, y: -0.2781065}
+          size: {x: 0.40601504, y: 0.69822484}
+        - center: {x: 0.082706764, y: 0.56213015}
+          size: {x: 0.36090225, y: 0.37869823}
+        handTuned: 0
+      - frame: barbol_young_walk_e3
+        shapes:
+        - center: {x: -0.17293233, y: -0.5976331}
+          size: {x: 0.37593985, y: 0.40236688}
+        - center: {x: -0.09774436, y: -0.00591716}
+          size: {x: 0.48120302, y: 0.4733728}
+        - center: {x: 0.2781955, y: 0.591716}
+          size: {x: 0.37593985, y: 0.40828404}
+        handTuned: 0
+      - frame: barbol_young_walk_e4
+        shapes:
+        - center: {x: -0.05263158, y: -0.6213018}
+          size: {x: 0.5263158, y: 0.37869823}
+        - center: {x: -0.007518797, y: -0.041420117}
+          size: {x: 0.45112783, y: 0.43786982}
+        - center: {x: 0.42857143, y: 0.5502958}
+          size: {x: 0.37593985, y: 0.39053255}
+        handTuned: 0
+      - frame: barbol_young_walk_e5
+        shapes:
+        - center: {x: -0.037593983, y: -0.32544377}
+          size: {x: 0.5413534, y: 0.6745562}
+        - center: {x: 0.36842105, y: 0.49112427}
+          size: {x: 0.37593985, y: 0.37869823}
+        handTuned: 0
+      - frame: barbol_young_walk_e6
+        shapes:
+        - center: {x: -0.20300752, y: -0.43195266}
+          size: {x: 0.556391, y: 0.56804734}
+        - center: {x: 0.082706764, y: 0.3372781}
+          size: {x: 0.45112783, y: 0.57988167}
+        handTuned: 0
+      - frame: barbol_young_walk_w0
+        shapes:
+        - center: {x: -0.18796992, y: -0.2662722}
+          size: {x: 0.5263158, y: 0.7337278}
+        - center: {x: 0.20300752, y: 0.5857988}
+          size: {x: 0.37593985, y: 0.40236688}
+        handTuned: 0
+      - frame: barbol_young_walk_w1
+        shapes:
+        - center: {x: -0.32330826, y: -0.6331361}
+          size: {x: 0.39097744, y: 0.3668639}
+        - center: {x: -0.2631579, y: -0.06508876}
+          size: {x: 0.5112782, y: 0.43786982}
+        - center: {x: 0.11278196, y: 0.5147929}
+          size: {x: 0.37593985, y: 0.37869823}
+        handTuned: 0
+      - frame: barbol_young_walk_w2
+        shapes:
+        - center: {x: -0.2932331, y: -0.5976331}
+          size: {x: 0.42105263, y: 0.37869823}
+        - center: {x: -0.2932331, y: -0.01775148}
+          size: {x: 0.36090225, y: 0.43786982}
+        - center: {x: 0.082706764, y: 0.56213015}
+          size: {x: 0.37593985, y: 0.37869823}
+        handTuned: 0
+      - frame: barbol_young_walk_w3
+        shapes:
+        - center: {x: -0.11278196, y: -0.2662722}
+          size: {x: 0.48120302, y: 0.7337278}
+        - center: {x: 0.2781955, y: 0.591716}
+          size: {x: 0.39097744, y: 0.40828404}
+        handTuned: 0
+      - frame: barbol_young_walk_w4
+        shapes:
+        - center: {x: -0.037593983, y: -0.6213018}
+          size: {x: 0.5263158, y: 0.37869823}
+        - center: {x: -0.02255639, y: -0.041420117}
+          size: {x: 0.45112783, y: 0.43786982}
+        - center: {x: 0.44360903, y: 0.5502958}
+          size: {x: 0.37593985, y: 0.39053255}
+        handTuned: 0
+      - frame: barbol_young_walk_w5
+        shapes:
+        - center: {x: -0.037593983, y: -0.43195266}
+          size: {x: 0.556391, y: 0.56804734}
+        - center: {x: 0.21804512, y: 0.32544377}
+          size: {x: 0.45112783, y: 0.56804734}
+        handTuned: 0
+      - frame: barbol_young_walk_w6
+        shapes:
+        - center: {x: -0.18796992, y: -0.43195266}
+          size: {x: 0.556391, y: 0.56804734}
+        - center: {x: 0.082706764, y: 0.3372781}
+          size: {x: 0.43609023, y: 0.57988167}
+        handTuned: 0
     scaleConfig:
       scaleIdle: 0
       tint: {r: 0, g: 0, b: 0, a: 0}

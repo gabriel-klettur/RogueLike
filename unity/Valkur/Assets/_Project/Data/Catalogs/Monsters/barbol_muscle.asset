@@ -584,6 +584,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 0.95
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: hook
       damageMultiplier: 1
       rangeMultiplier: 1.05
@@ -652,6 +659,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1.05
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: kick
       damageMultiplier: 0.85
       rangeMultiplier: 0.8
@@ -736,6 +750,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1.15
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: charge_slam
       damageMultiplier: 1.6
       rangeMultiplier: 1.3
@@ -820,6 +841,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1.1
       holdLastFrame: 1
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     castVariants:
     - key: root_surge
       directional:
@@ -900,6 +928,15 @@ MonoBehaviour:
       - thorn_burst
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 0
+      repeatFrameCount: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: roar
       directional:
         south: {fileID: 0}
@@ -963,9 +1000,1376 @@ MonoBehaviour:
       - war_cry
       animationSpeedMultiplier: 0.9
       holdLastFrame: 0
+      repeatFrom: 0
+      repeatFrameCount: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     stateVariants: []
     statePacing: []
+    walkReferenceSpeed: 0
+    runReferenceSpeed: 0
     loadouts: []
+    castMuzzle: {x: 0, y: 0}
+    castMuzzleFrames: []
+    castMuzzlePoints: []
+    collision:
+      footprintSize: {x: 1.51125, y: 0.6800625}
+      footprintOffset: {x: 0, y: 0}
+      footprintHandTuned: 0
+      hurtScale: 1
+      hurtShapes: []
+      hurtShapeFrames:
+      - frame: barbol_muscle_attack_charge_slam_e0
+        shapes:
+        - center: {x: 0.031914894, y: -0.39256197}
+          size: {x: 0.43617022, y: 0.58264464}
+        - center: {x: 0.12765957, y: 0.37603307}
+          size: {x: 0.40425533, y: 0.58264464}
+        handTuned: 0
+      - frame: barbol_muscle_attack_charge_slam_e1
+        shapes:
+        - center: {x: 0.04255319, y: -0.3305785}
+          size: {x: 0.40425533, y: 0.57024795}
+        - center: {x: 0.26595744, y: 0.4214876}
+          size: {x: 0.32978722, y: 0.5785124}
+        handTuned: 0
+      - frame: barbol_muscle_attack_charge_slam_e2
+        shapes:
+        - center: {x: 0.17021276, y: -0.46694216}
+          size: {x: 0.38297874, y: 0.53305787}
+        - center: {x: 0.38297874, y: 0.2520661}
+          size: {x: 0.40425533, y: 0.53305787}
+        handTuned: 0
+      - frame: barbol_muscle_attack_charge_slam_e3
+        shapes:
+        - center: {x: -0.39361703, y: -0.71487606}
+          size: {x: 0.32978722, y: 0.2107438}
+        - center: {x: 0.11702128, y: -0.40495867}
+          size: {x: 0.39361703, y: 0.3966942}
+        - center: {x: 0.64893615, y: -0.19421488}
+          size: {x: 0.35106382, y: 0.38429752}
+        handTuned: 0
+      - frame: barbol_muscle_attack_charge_slam_e4
+        shapes:
+        - center: {x: -0.60638297, y: -0.71487606}
+          size: {x: 0.3723404, y: 0.18595041}
+        - center: {x: -0.04255319, y: -0.44214877}
+          size: {x: 0.44680852, y: 0.35950413}
+        - center: {x: 0.5319149, y: -0.25619835}
+          size: {x: 0.38297874, y: 0.34710744}
+        handTuned: 0
+      - frame: barbol_muscle_attack_charge_slam_e5
+        shapes:
+        - center: {x: -0.20212767, y: -0.41735536}
+          size: {x: 0.39361703, y: 0.55785125}
+        - center: {x: 0.08510638, y: 0.3140496}
+          size: {x: 0.38297874, y: 0.57024795}
+        handTuned: 0
+      - frame: barbol_muscle_attack_charge_slam_e6
+        shapes:
+        - center: {x: 0, y: -0.46694216}
+          size: {x: 0.34042552, y: 0.53305787}
+        - center: {x: 0.11702128, y: 0.2520661}
+          size: {x: 0.35106382, y: 0.53305787}
+        handTuned: 0
+      - frame: barbol_muscle_attack_charge_slam_e7
+        shapes:
+        - center: {x: 0.031914894, y: -0.40495867}
+          size: {x: 0.39361703, y: 0.59504133}
+        - center: {x: 0.14893617, y: 0.38842976}
+          size: {x: 0.38297874, y: 0.59504133}
+        handTuned: 0
+      - frame: barbol_muscle_attack_charge_slam_w0
+        shapes:
+        - center: {x: 0.031914894, y: -0.39256197}
+          size: {x: 0.43617022, y: 0.58264464}
+        - center: {x: 0.12765957, y: 0.37603307}
+          size: {x: 0.40425533, y: 0.58264464}
+        handTuned: 0
+      - frame: barbol_muscle_attack_charge_slam_w1
+        shapes:
+        - center: {x: 0.04255319, y: -0.3305785}
+          size: {x: 0.40425533, y: 0.57024795}
+        - center: {x: 0.26595744, y: 0.4214876}
+          size: {x: 0.32978722, y: 0.5785124}
+        handTuned: 0
+      - frame: barbol_muscle_attack_charge_slam_w2
+        shapes:
+        - center: {x: 0.17021276, y: -0.46694216}
+          size: {x: 0.38297874, y: 0.53305787}
+        - center: {x: 0.38297874, y: 0.2520661}
+          size: {x: 0.40425533, y: 0.53305787}
+        handTuned: 0
+      - frame: barbol_muscle_attack_charge_slam_w3
+        shapes:
+        - center: {x: 0.65957445, y: -0.19421488}
+          size: {x: 0.34042552, y: 0.38429752}
+        - center: {x: 0.13829787, y: -0.40495867}
+          size: {x: 0.39361703, y: 0.3966942}
+        - center: {x: -0.38297874, y: -0.70247936}
+          size: {x: 0.34042552, y: 0.1983471}
+        handTuned: 0
+      - frame: barbol_muscle_attack_charge_slam_w4
+        shapes:
+        - center: {x: 0.5319149, y: -0.25619835}
+          size: {x: 0.38297874, y: 0.34710744}
+        - center: {x: -0.04255319, y: -0.44214877}
+          size: {x: 0.44680852, y: 0.35950413}
+        - center: {x: -0.60638297, y: -0.71487606}
+          size: {x: 0.3723404, y: 0.18595041}
+        handTuned: 0
+      - frame: barbol_muscle_attack_charge_slam_w5
+        shapes:
+        - center: {x: -0.20212767, y: -0.41735536}
+          size: {x: 0.39361703, y: 0.55785125}
+        - center: {x: 0.08510638, y: 0.3140496}
+          size: {x: 0.38297874, y: 0.57024795}
+        handTuned: 0
+      - frame: barbol_muscle_attack_charge_slam_w6
+        shapes:
+        - center: {x: -0, y: -0.46694216}
+          size: {x: 0.34042552, y: 0.53305787}
+        - center: {x: 0.11702128, y: 0.2520661}
+          size: {x: 0.35106382, y: 0.53305787}
+        handTuned: 0
+      - frame: barbol_muscle_attack_charge_slam_w7
+        shapes:
+        - center: {x: 0.031914894, y: -0.40495867}
+          size: {x: 0.39361703, y: 0.59504133}
+        - center: {x: 0.14893617, y: 0.38842976}
+          size: {x: 0.38297874, y: 0.59504133}
+        handTuned: 0
+      - frame: barbol_muscle_attack_e0
+        shapes:
+        - center: {x: 0.0038022813, y: -0.41735536}
+          size: {x: 0.5247148, y: 0.58264464}
+        - center: {x: 0.04942966, y: 0.36363637}
+          size: {x: 0.4334601, y: 0.59504133}
+        handTuned: 0
+      - frame: barbol_muscle_attack_e1
+        shapes:
+        - center: {x: 0.15209125, y: -0.59090906}
+          size: {x: 0.3079848, y: 0.38429752}
+        - center: {x: 0.15209125, y: 0.004132231}
+          size: {x: 0.42205322, y: 0.45867768}
+        - center: {x: 0.1634981, y: 0.607438}
+          size: {x: 0.22813688, y: 0.39256197}
+        handTuned: 0
+      - frame: barbol_muscle_attack_e2
+        shapes:
+        - center: {x: -0.33840305, y: -0.3677686}
+          size: {x: 0.31939164, y: 0.45867768}
+        - center: {x: 0.15209125, y: -0.23140496}
+          size: {x: 0.39923954, y: 0.47107437}
+        - center: {x: 0.66159695, y: -0.09504132}
+          size: {x: 0.33840305, y: 0.45867768}
+        handTuned: 0
+      - frame: barbol_muscle_attack_e3
+        shapes:
+        - center: {x: -0.6463878, y: -0.40495867}
+          size: {x: 0.35361215, y: 0.446281}
+        - center: {x: -0.11026616, y: -0.30578512}
+          size: {x: 0.41064638, y: 0.32231405}
+        - center: {x: 0.43726236, y: -0.21900827}
+          size: {x: 0.36501902, y: 0.2603306}
+        handTuned: 0
+      - frame: barbol_muscle_attack_e4
+        shapes:
+        - center: {x: -0.1444867, y: -0.42975205}
+          size: {x: 0.39923954, y: 0.57024795}
+        - center: {x: 0.14068441, y: 0.3140496}
+          size: {x: 0.47908744, y: 0.57024795}
+        handTuned: 0
+      - frame: barbol_muscle_attack_e5
+        shapes:
+        - center: {x: 0.0038022813, y: -0.41735536}
+          size: {x: 0.5247148, y: 0.58264464}
+        - center: {x: 0.07224335, y: 0.36363637}
+          size: {x: 0.41064638, y: 0.59504133}
+        handTuned: 0
+      - frame: barbol_muscle_attack_hook_e0
+        shapes:
+        - center: {x: 0.0038022813, y: -0.41735536}
+          size: {x: 0.5247148, y: 0.58264464}
+        - center: {x: 0.04942966, y: 0.36363637}
+          size: {x: 0.4334601, y: 0.59504133}
+        handTuned: 0
+      - frame: barbol_muscle_attack_hook_e1
+        shapes:
+        - center: {x: 0.15209125, y: -0.59090906}
+          size: {x: 0.3079848, y: 0.38429752}
+        - center: {x: 0.15209125, y: 0.004132231}
+          size: {x: 0.42205322, y: 0.45867768}
+        - center: {x: 0.1634981, y: 0.607438}
+          size: {x: 0.22813688, y: 0.39256197}
+        handTuned: 0
+      - frame: barbol_muscle_attack_hook_e2
+        shapes:
+        - center: {x: -0.33840305, y: -0.3677686}
+          size: {x: 0.31939164, y: 0.45867768}
+        - center: {x: 0.15209125, y: -0.23140496}
+          size: {x: 0.39923954, y: 0.47107437}
+        - center: {x: 0.66159695, y: -0.09504132}
+          size: {x: 0.33840305, y: 0.45867768}
+        handTuned: 0
+      - frame: barbol_muscle_attack_hook_e3
+        shapes:
+        - center: {x: -0.6463878, y: -0.40495867}
+          size: {x: 0.35361215, y: 0.446281}
+        - center: {x: -0.11026616, y: -0.30578512}
+          size: {x: 0.41064638, y: 0.32231405}
+        - center: {x: 0.43726236, y: -0.21900827}
+          size: {x: 0.36501902, y: 0.2603306}
+        handTuned: 0
+      - frame: barbol_muscle_attack_hook_e4
+        shapes:
+        - center: {x: -0.1444867, y: -0.42975205}
+          size: {x: 0.39923954, y: 0.57024795}
+        - center: {x: 0.14068441, y: 0.3140496}
+          size: {x: 0.47908744, y: 0.57024795}
+        handTuned: 0
+      - frame: barbol_muscle_attack_hook_e5
+        shapes:
+        - center: {x: 0.0038022813, y: -0.41735536}
+          size: {x: 0.5247148, y: 0.58264464}
+        - center: {x: 0.07224335, y: 0.36363637}
+          size: {x: 0.41064638, y: 0.59504133}
+        handTuned: 0
+      - frame: barbol_muscle_attack_hook_w0
+        shapes:
+        - center: {x: 0.0076045627, y: -0.41735536}
+          size: {x: 0.53612167, y: 0.58264464}
+        - center: {x: 0.041825093, y: 0.36363637}
+          size: {x: 0.4334601, y: 0.59504133}
+        handTuned: 0
+      - frame: barbol_muscle_attack_hook_w1
+        shapes:
+        - center: {x: 0.16730037, y: -0.59090906}
+          size: {x: 0.3079848, y: 0.38429752}
+        - center: {x: 0.15589353, y: 0.004132231}
+          size: {x: 0.4334601, y: 0.45867768}
+        - center: {x: 0.16730037, y: 0.607438}
+          size: {x: 0.23954372, y: 0.39256197}
+        handTuned: 0
+      - frame: barbol_muscle_attack_hook_w2
+        shapes:
+        - center: {x: 0.6692015, y: -0.08264463}
+          size: {x: 0.33079848, y: 0.446281}
+        - center: {x: 0.16730037, y: -0.23140496}
+          size: {x: 0.39923954, y: 0.47107437}
+        - center: {x: -0.33460075, y: -0.3677686}
+          size: {x: 0.33079848, y: 0.45867768}
+        handTuned: 0
+      - frame: barbol_muscle_attack_hook_w3
+        shapes:
+        - center: {x: 0.44106463, y: -0.21900827}
+          size: {x: 0.35361215, y: 0.2603306}
+        - center: {x: -0.09505703, y: -0.30578512}
+          size: {x: 0.41064638, y: 0.32231405}
+        - center: {x: -0.6387833, y: -0.40495867}
+          size: {x: 0.36121672, y: 0.446281}
+        handTuned: 0
+      - frame: barbol_muscle_attack_hook_w4
+        shapes:
+        - center: {x: -0.12927757, y: -0.42975205}
+          size: {x: 0.39923954, y: 0.57024795}
+        - center: {x: 0.1444867, y: 0.3140496}
+          size: {x: 0.4904943, y: 0.57024795}
+        handTuned: 0
+      - frame: barbol_muscle_attack_hook_w5
+        shapes:
+        - center: {x: 0.0076045627, y: -0.41735536}
+          size: {x: 0.513308, y: 0.58264464}
+        - center: {x: 0.064638786, y: 0.36363637}
+          size: {x: 0.41064638, y: 0.59504133}
+        handTuned: 0
+      - frame: barbol_muscle_attack_kick_e0
+        shapes:
+        - center: {x: -0.004048583, y: -0.29045644}
+          size: {x: 0.43724698, y: 0.7095436}
+        - center: {x: 0.10526316, y: 0.5560166}
+          size: {x: 0.27935222, y: 0.38589212}
+        handTuned: 0
+      - frame: barbol_muscle_attack_kick_e1
+        shapes:
+        - center: {x: 0.032388665, y: -0.29045644}
+          size: {x: 0.4493927, y: 0.7095436}
+        - center: {x: 0.12955466, y: 0.5560166}
+          size: {x: 0.27935222, y: 0.38589212}
+        handTuned: 0
+      - frame: barbol_muscle_attack_kick_e2
+        shapes:
+        - center: {x: 0.05668016, y: -0.26556018}
+          size: {x: 0.37651822, y: 0.73443985}
+        - center: {x: 0.04453441, y: 0.6099585}
+          size: {x: 0.2672065, y: 0.3900415}
+        handTuned: 0
+      - frame: barbol_muscle_attack_kick_e3
+        shapes:
+        - center: {x: -0.07692308, y: -0.6141079}
+          size: {x: 0.14574899, y: 0.38589212}
+        - center: {x: 0.22672065, y: -0.029045643}
+          size: {x: 0.4493927, y: 0.44813278}
+        - center: {x: 0.15384616, y: 0.5560166}
+          size: {x: 0.27935222, y: 0.38589212}
+        handTuned: 0
+      - frame: barbol_muscle_attack_kick_e4
+        shapes:
+        - center: {x: -0.19838056, y: -0.41493776}
+          size: {x: 0.43724698, y: 0.58506227}
+        - center: {x: -0.23481782, y: 0.35684648}
+          size: {x: 0.5465587, y: 0.58506227}
+        handTuned: 0
+      - frame: barbol_muscle_attack_kick_e5
+        shapes:
+        - center: {x: -0.2834008, y: -0.6141079}
+          size: {x: 0.27935222, y: 0.38589212}
+        - center: {x: -0.29554656, y: -0.029045643}
+          size: {x: 0.36437246, y: 0.44813278}
+        - center: {x: -0.27125505, y: 0.5560166}
+          size: {x: 0.2672065, y: 0.38589212}
+        handTuned: 0
+      - frame: barbol_muscle_attack_kick_e6
+        shapes:
+        - center: {x: -0.12550607, y: -0.6141079}
+          size: {x: 0.36437246, y: 0.38589212}
+        - center: {x: -0.18623482, y: -0.029045643}
+          size: {x: 0.37651822, y: 0.44813278}
+        - center: {x: -0.12550607, y: 0.5560166}
+          size: {x: 0.2672065, y: 0.38589212}
+        handTuned: 0
+      - frame: barbol_muscle_attack_kick_e7
+        shapes:
+        - center: {x: 0.008097166, y: -0.29045644}
+          size: {x: 0.4008097, y: 0.7095436}
+        - center: {x: 0.05668016, y: 0.5560166}
+          size: {x: 0.27935222, y: 0.38589212}
+        handTuned: 0
+      - frame: barbol_muscle_attack_kick_w0
+        shapes:
+        - center: {x: -0.008097166, y: -0.30290458}
+          size: {x: 0.4493927, y: 0.69709545}
+        - center: {x: 0.07692308, y: 0.53112036}
+          size: {x: 0.29149798, y: 0.38589212}
+        handTuned: 0
+      - frame: barbol_muscle_attack_kick_w1
+        shapes:
+        - center: {x: 0.04048583, y: -0.29045644}
+          size: {x: 0.4493927, y: 0.7095436}
+        - center: {x: 0.11336032, y: 0.5560166}
+          size: {x: 0.27935222, y: 0.38589212}
+        handTuned: 0
+      - frame: barbol_muscle_attack_kick_w2
+        shapes:
+        - center: {x: 0.06477733, y: -0.26556018}
+          size: {x: 0.37651822, y: 0.73443985}
+        - center: {x: 0.04048583, y: 0.6099585}
+          size: {x: 0.27935222, y: 0.3900415}
+        handTuned: 0
+      - frame: barbol_muscle_attack_kick_w3
+        shapes:
+        - center: {x: 0.25910932, y: -0.41493776}
+          size: {x: 0.4493927, y: 0.58506227}
+        - center: {x: 0.10121457, y: 0.35684648}
+          size: {x: 0.34008098, y: 0.58506227}
+        handTuned: 0
+      - frame: barbol_muscle_attack_kick_w4
+        shapes:
+        - center: {x: -0.1902834, y: -0.41493776}
+          size: {x: 0.43724698, y: 0.58506227}
+        - center: {x: -0.22672065, y: 0.35684648}
+          size: {x: 0.5465587, y: 0.58506227}
+        handTuned: 0
+      - frame: barbol_muscle_attack_kick_w5
+        shapes:
+        - center: {x: -0.27530363, y: -0.6141079}
+          size: {x: 0.27935222, y: 0.38589212}
+        - center: {x: -0.2874494, y: -0.029045643}
+          size: {x: 0.36437246, y: 0.44813278}
+        - center: {x: -0.27530363, y: 0.5560166}
+          size: {x: 0.27935222, y: 0.38589212}
+        handTuned: 0
+      - frame: barbol_muscle_attack_kick_w6
+        shapes:
+        - center: {x: -0.12955466, y: -0.6141079}
+          size: {x: 0.37651822, y: 0.38589212}
+        - center: {x: -0.1902834, y: -0.029045643}
+          size: {x: 0.36437246, y: 0.44813278}
+        - center: {x: -0.11740891, y: 0.5560166}
+          size: {x: 0.2672065, y: 0.38589212}
+        handTuned: 0
+      - frame: barbol_muscle_attack_kick_w7
+        shapes:
+        - center: {x: -0.008097166, y: -0.29045644}
+          size: {x: 0.4008097, y: 0.7095436}
+        - center: {x: 0.06477733, y: 0.5560166}
+          size: {x: 0.27935222, y: 0.38589212}
+        handTuned: 0
+      - frame: barbol_muscle_attack_smash_e0
+        shapes:
+        - center: {x: 0.0038022813, y: -0.41735536}
+          size: {x: 0.5247148, y: 0.58264464}
+        - center: {x: 0.04942966, y: 0.36363637}
+          size: {x: 0.4334601, y: 0.59504133}
+        handTuned: 0
+      - frame: barbol_muscle_attack_smash_e1
+        shapes:
+        - center: {x: 0.15209125, y: -0.59090906}
+          size: {x: 0.3079848, y: 0.38429752}
+        - center: {x: 0.15209125, y: 0.004132231}
+          size: {x: 0.42205322, y: 0.45867768}
+        - center: {x: 0.1634981, y: 0.607438}
+          size: {x: 0.22813688, y: 0.39256197}
+        handTuned: 0
+      - frame: barbol_muscle_attack_smash_e2
+        shapes:
+        - center: {x: -0.33840305, y: -0.3677686}
+          size: {x: 0.31939164, y: 0.45867768}
+        - center: {x: 0.15209125, y: -0.23140496}
+          size: {x: 0.39923954, y: 0.47107437}
+        - center: {x: 0.66159695, y: -0.09504132}
+          size: {x: 0.33840305, y: 0.45867768}
+        handTuned: 0
+      - frame: barbol_muscle_attack_smash_e3
+        shapes:
+        - center: {x: -0.6463878, y: -0.40495867}
+          size: {x: 0.35361215, y: 0.446281}
+        - center: {x: -0.11026616, y: -0.30578512}
+          size: {x: 0.41064638, y: 0.32231405}
+        - center: {x: 0.43726236, y: -0.21900827}
+          size: {x: 0.36501902, y: 0.2603306}
+        handTuned: 0
+      - frame: barbol_muscle_attack_smash_e4
+        shapes:
+        - center: {x: -0.1444867, y: -0.42975205}
+          size: {x: 0.39923954, y: 0.57024795}
+        - center: {x: 0.14068441, y: 0.3140496}
+          size: {x: 0.47908744, y: 0.57024795}
+        handTuned: 0
+      - frame: barbol_muscle_attack_smash_e5
+        shapes:
+        - center: {x: 0.0038022813, y: -0.41735536}
+          size: {x: 0.5247148, y: 0.58264464}
+        - center: {x: 0.07224335, y: 0.36363637}
+          size: {x: 0.41064638, y: 0.59504133}
+        handTuned: 0
+      - frame: barbol_muscle_attack_smash_w0
+        shapes:
+        - center: {x: 0.0076045627, y: -0.41735536}
+          size: {x: 0.53612167, y: 0.58264464}
+        - center: {x: 0.041825093, y: 0.36363637}
+          size: {x: 0.4334601, y: 0.59504133}
+        handTuned: 0
+      - frame: barbol_muscle_attack_smash_w1
+        shapes:
+        - center: {x: 0.16730037, y: -0.59090906}
+          size: {x: 0.3079848, y: 0.38429752}
+        - center: {x: 0.15589353, y: 0.004132231}
+          size: {x: 0.4334601, y: 0.45867768}
+        - center: {x: 0.16730037, y: 0.607438}
+          size: {x: 0.23954372, y: 0.39256197}
+        handTuned: 0
+      - frame: barbol_muscle_attack_smash_w2
+        shapes:
+        - center: {x: 0.6692015, y: -0.08264463}
+          size: {x: 0.33079848, y: 0.446281}
+        - center: {x: 0.16730037, y: -0.23140496}
+          size: {x: 0.39923954, y: 0.47107437}
+        - center: {x: -0.33460075, y: -0.3677686}
+          size: {x: 0.33079848, y: 0.45867768}
+        handTuned: 0
+      - frame: barbol_muscle_attack_smash_w3
+        shapes:
+        - center: {x: 0.44106463, y: -0.21900827}
+          size: {x: 0.35361215, y: 0.2603306}
+        - center: {x: -0.09505703, y: -0.30578512}
+          size: {x: 0.41064638, y: 0.32231405}
+        - center: {x: -0.6387833, y: -0.40495867}
+          size: {x: 0.36121672, y: 0.446281}
+        handTuned: 0
+      - frame: barbol_muscle_attack_smash_w4
+        shapes:
+        - center: {x: -0.12927757, y: -0.42975205}
+          size: {x: 0.39923954, y: 0.57024795}
+        - center: {x: 0.1444867, y: 0.3140496}
+          size: {x: 0.4904943, y: 0.57024795}
+        handTuned: 0
+      - frame: barbol_muscle_attack_smash_w5
+        shapes:
+        - center: {x: 0.0076045627, y: -0.41735536}
+          size: {x: 0.513308, y: 0.58264464}
+        - center: {x: 0.064638786, y: 0.36363637}
+          size: {x: 0.41064638, y: 0.59504133}
+        handTuned: 0
+      - frame: barbol_muscle_attack_w0
+        shapes:
+        - center: {x: 0.0076045627, y: -0.41735536}
+          size: {x: 0.53612167, y: 0.58264464}
+        - center: {x: 0.041825093, y: 0.36363637}
+          size: {x: 0.4334601, y: 0.59504133}
+        handTuned: 0
+      - frame: barbol_muscle_attack_w1
+        shapes:
+        - center: {x: 0.16730037, y: -0.59090906}
+          size: {x: 0.3079848, y: 0.38429752}
+        - center: {x: 0.15589353, y: 0.004132231}
+          size: {x: 0.4334601, y: 0.45867768}
+        - center: {x: 0.16730037, y: 0.607438}
+          size: {x: 0.23954372, y: 0.39256197}
+        handTuned: 0
+      - frame: barbol_muscle_attack_w2
+        shapes:
+        - center: {x: 0.6692015, y: -0.08264463}
+          size: {x: 0.33079848, y: 0.446281}
+        - center: {x: 0.16730037, y: -0.23140496}
+          size: {x: 0.39923954, y: 0.47107437}
+        - center: {x: -0.33460075, y: -0.3677686}
+          size: {x: 0.33079848, y: 0.45867768}
+        handTuned: 0
+      - frame: barbol_muscle_attack_w3
+        shapes:
+        - center: {x: 0.44106463, y: -0.21900827}
+          size: {x: 0.35361215, y: 0.2603306}
+        - center: {x: -0.09505703, y: -0.30578512}
+          size: {x: 0.41064638, y: 0.32231405}
+        - center: {x: -0.6387833, y: -0.40495867}
+          size: {x: 0.36121672, y: 0.446281}
+        handTuned: 0
+      - frame: barbol_muscle_attack_w4
+        shapes:
+        - center: {x: -0.12927757, y: -0.42975205}
+          size: {x: 0.39923954, y: 0.57024795}
+        - center: {x: 0.1444867, y: 0.3140496}
+          size: {x: 0.4904943, y: 0.57024795}
+        handTuned: 0
+      - frame: barbol_muscle_attack_w5
+        shapes:
+        - center: {x: 0.0076045627, y: -0.41735536}
+          size: {x: 0.513308, y: 0.58264464}
+        - center: {x: 0.064638786, y: 0.36363637}
+          size: {x: 0.41064638, y: 0.59504133}
+        handTuned: 0
+      - frame: barbol_muscle_cast_e0
+        shapes:
+        - center: {x: -0.3442623, y: -0.6}
+          size: {x: 0.39344263, y: 0.4}
+        - center: {x: -0.25245902, y: 0}
+          size: {x: 0.27540985, y: 0.46666667}
+        - center: {x: -0.17377049, y: 0.6}
+          size: {x: 0.22295082, y: 0.4}
+        handTuned: 0
+      - frame: barbol_muscle_cast_e1
+        shapes:
+        - center: {x: -0.3180328, y: -0.41666666}
+          size: {x: 0.39344263, y: 0.5833333}
+        - center: {x: -0.25245902, y: 0.35}
+          size: {x: 0.40655738, y: 0.5833333}
+        handTuned: 0
+      - frame: barbol_muscle_cast_e2
+        shapes:
+        - center: {x: -0.25245902, y: -0.41666666}
+          size: {x: 0.40655738, y: 0.5833333}
+        - center: {x: -0.10819672, y: 0.35}
+          size: {x: 0.2885246, y: 0.5833333}
+        handTuned: 0
+      - frame: barbol_muscle_cast_e3
+        shapes:
+        - center: {x: -0.16065574, y: -0.41666666}
+          size: {x: 0.39344263, y: 0.5833333}
+        - center: {x: 0.15409836, y: 0.36666667}
+          size: {x: 0.3409836, y: 0.6}
+        handTuned: 0
+      - frame: barbol_muscle_cast_e4
+        shapes:
+        - center: {x: -0.3704918, y: -0.4}
+          size: {x: 0.39344263, y: 0.6}
+        - center: {x: 0.14098361, y: 0.4}
+          size: {x: 0.5114754, y: 0.6}
+        handTuned: 0
+      - frame: barbol_muscle_cast_e5
+        shapes:
+        - center: {x: -0.33114755, y: -0.6166667}
+          size: {x: 0.38032788, y: 0.38333333}
+        - center: {x: -0.25245902, y: -0.05}
+          size: {x: 0.27540985, y: 0.45}
+        - center: {x: -0.17377049, y: 0.53333336}
+          size: {x: 0.22295082, y: 0.4}
+        handTuned: 0
+      - frame: barbol_muscle_cast_roar_e0
+        shapes:
+        - center: {x: -0.032258064, y: -0.425}
+          size: {x: 0.43010753, y: 0.525}
+        - center: {x: 0.032258064, y: 0.275}
+          size: {x: 0.32258064, y: 0.525}
+        handTuned: 0
+      - frame: barbol_muscle_cast_roar_e1
+        shapes:
+        - center: {x: 0.13978495, y: -0.2875}
+          size: {x: 0.3655914, y: 0.7125}
+        - center: {x: 0.086021505, y: 0.5625}
+          size: {x: 0.20430107, y: 0.3875}
+        handTuned: 0
+      - frame: barbol_muscle_cast_roar_e2
+        shapes:
+        - center: {x: 0.21505377, y: -0.0375}
+          size: {x: 0.41935483, y: 0.9625}
+        handTuned: 0
+      - frame: barbol_muscle_cast_roar_e3
+        shapes:
+        - center: {x: -0.06451613, y: 0}
+          size: {x: 0.4623656, y: 1}
+        handTuned: 0
+      - frame: barbol_muscle_cast_roar_e4
+        shapes:
+        - center: {x: -0.30107528, y: -0.45}
+          size: {x: 0.41935483, y: 0.525}
+        - center: {x: -0.2580645, y: 0.25}
+          size: {x: 0.31182796, y: 0.525}
+        handTuned: 0
+      - frame: barbol_muscle_cast_roar_e5
+        shapes:
+        - center: {x: -0.032258064, y: -0.4375}
+          size: {x: 0.40860215, y: 0.5125}
+        - center: {x: 0.021505376, y: 0.25}
+          size: {x: 0.31182796, y: 0.525}
+        handTuned: 0
+      - frame: barbol_muscle_cast_roar_w0
+        shapes:
+        - center: {x: -0.032258064, y: -0.425}
+          size: {x: 0.43010753, y: 0.525}
+        - center: {x: 0.032258064, y: 0.275}
+          size: {x: 0.32258064, y: 0.525}
+        handTuned: 0
+      - frame: barbol_muscle_cast_roar_w1
+        shapes:
+        - center: {x: 0.13978495, y: -0.2875}
+          size: {x: 0.3655914, y: 0.7125}
+        - center: {x: 0.086021505, y: 0.5625}
+          size: {x: 0.20430107, y: 0.3875}
+        handTuned: 0
+      - frame: barbol_muscle_cast_roar_w2
+        shapes:
+        - center: {x: 0.21505377, y: -0.0375}
+          size: {x: 0.41935483, y: 0.9625}
+        handTuned: 0
+      - frame: barbol_muscle_cast_roar_w3
+        shapes:
+        - center: {x: -0.06451613, y: 0}
+          size: {x: 0.4623656, y: 1}
+        handTuned: 0
+      - frame: barbol_muscle_cast_roar_w4
+        shapes:
+        - center: {x: -0.30107528, y: -0.45}
+          size: {x: 0.41935483, y: 0.525}
+        - center: {x: -0.2580645, y: 0.25}
+          size: {x: 0.31182796, y: 0.525}
+        handTuned: 0
+      - frame: barbol_muscle_cast_roar_w5
+        shapes:
+        - center: {x: -0.032258064, y: -0.4375}
+          size: {x: 0.40860215, y: 0.5125}
+        - center: {x: 0.021505376, y: 0.25}
+          size: {x: 0.31182796, y: 0.525}
+        handTuned: 0
+      - frame: barbol_muscle_cast_root_surge_e0
+        shapes:
+        - center: {x: 0.053658538, y: -0.62025315}
+          size: {x: 0.4292683, y: 0.30379745}
+        - center: {x: 0.014634146, y: -0.16455697}
+          size: {x: 0.62439024, y: 0.35443038}
+        - center: {x: 0.1902439, y: 0.29113925}
+          size: {x: 0.3707317, y: 0.30379745}
+        handTuned: 0
+      - frame: barbol_muscle_cast_root_surge_e1
+        shapes:
+        - center: {x: -0.1609756, y: -0.62025315}
+          size: {x: 0.4097561, y: 0.30379745}
+        - center: {x: -0.004878049, y: -0.16455697}
+          size: {x: 0.4097561, y: 0.35443038}
+        - center: {x: 0.17073171, y: 0.30379745}
+          size: {x: 0.58536583, y: 0.3164557}
+        handTuned: 0
+      - frame: barbol_muscle_cast_root_surge_e2
+        shapes:
+        - center: {x: -0.27804878, y: -0.556962}
+          size: {x: 0.4878049, y: 0.36708862}
+        - center: {x: -0.14146341, y: 0}
+          size: {x: 0.3902439, y: 0.443038}
+        - center: {x: -0.004878049, y: 0.56962025}
+          size: {x: 0.4878049, y: 0.37974682}
+        handTuned: 0
+      - frame: barbol_muscle_cast_root_surge_e3
+        shapes:
+        - center: {x: -0.2195122, y: -0.5443038}
+          size: {x: 0.46829268, y: 0.37974682}
+        - center: {x: -0.14146341, y: 0.025316456}
+          size: {x: 0.3512195, y: 0.443038}
+        - center: {x: -0.043902438, y: 0.6075949}
+          size: {x: 0.4878049, y: 0.39240506}
+        handTuned: 0
+      - frame: barbol_muscle_cast_root_surge_e4
+        shapes:
+        - center: {x: -0.024390243, y: -0.5822785}
+          size: {x: 0.58536583, y: 0.36708862}
+        - center: {x: 0.07317073, y: -0.088607594}
+          size: {x: 0.44878048, y: 0.37974682}
+        handTuned: 0
+      - frame: barbol_muscle_cast_root_surge_e5
+        shapes:
+        - center: {x: -0.004878049, y: -0.73417723}
+          size: {x: 0.56585366, y: 0.2658228}
+        - center: {x: 0.014634146, y: -0.39240506}
+          size: {x: 0.4292683, y: 0.278481}
+        handTuned: 0
+      - frame: barbol_muscle_cast_root_surge_e6
+        shapes:
+        - center: {x: 0.053658538, y: -0.70886075}
+          size: {x: 0.5463415, y: 0.29113925}
+        - center: {x: 0.11219512, y: -0.3164557}
+          size: {x: 0.4097561, y: 0.30379745}
+        handTuned: 0
+      - frame: barbol_muscle_cast_root_surge_e7
+        shapes:
+        - center: {x: 0.034146342, y: -0.6329114}
+          size: {x: 0.4097561, y: 0.29113925}
+        - center: {x: 0.034146342, y: -0.18987341}
+          size: {x: 0.60487807, y: 0.35443038}
+        - center: {x: 0.17073171, y: 0.2658228}
+          size: {x: 0.3512195, y: 0.30379745}
+        handTuned: 0
+      - frame: barbol_muscle_cast_root_surge_w0
+        shapes:
+        - center: {x: 0.06341463, y: -0.62025315}
+          size: {x: 0.4292683, y: 0.30379745}
+        - center: {x: 0.004878049, y: -0.16455697}
+          size: {x: 0.60487807, y: 0.35443038}
+        - center: {x: 0.18048781, y: 0.29113925}
+          size: {x: 0.3512195, y: 0.30379745}
+        handTuned: 0
+      - frame: barbol_muscle_cast_root_surge_w1
+        shapes:
+        - center: {x: -0.15121952, y: -0.62025315}
+          size: {x: 0.4097561, y: 0.30379745}
+        - center: {x: -0.014634146, y: -0.16455697}
+          size: {x: 0.4292683, y: 0.35443038}
+        - center: {x: 0.1609756, y: 0.30379745}
+          size: {x: 0.60487807, y: 0.3164557}
+        handTuned: 0
+      - frame: barbol_muscle_cast_root_surge_w2
+        shapes:
+        - center: {x: -0.2682927, y: -0.556962}
+          size: {x: 0.4878049, y: 0.36708862}
+        - center: {x: -0.13170731, y: 0}
+          size: {x: 0.3902439, y: 0.443038}
+        - center: {x: -0.014634146, y: 0.56962025}
+          size: {x: 0.46829268, y: 0.37974682}
+        handTuned: 0
+      - frame: barbol_muscle_cast_root_surge_w3
+        shapes:
+        - center: {x: -0.20975609, y: -0.5443038}
+          size: {x: 0.46829268, y: 0.37974682}
+        - center: {x: -0.15121952, y: 0.025316456}
+          size: {x: 0.3707317, y: 0.443038}
+        - center: {x: -0.034146342, y: 0.6075949}
+          size: {x: 0.4878049, y: 0.39240506}
+        handTuned: 0
+      - frame: barbol_muscle_cast_root_surge_w4
+        shapes:
+        - center: {x: -0.014634146, y: -0.5822785}
+          size: {x: 0.58536583, y: 0.36708862}
+        - center: {x: 0.08292683, y: -0.088607594}
+          size: {x: 0.44878048, y: 0.37974682}
+        handTuned: 0
+      - frame: barbol_muscle_cast_root_surge_w5
+        shapes:
+        - center: {x: 0.004878049, y: -0.73417723}
+          size: {x: 0.56585366, y: 0.2658228}
+        - center: {x: 0.024390243, y: -0.39240506}
+          size: {x: 0.4292683, y: 0.278481}
+        handTuned: 0
+      - frame: barbol_muscle_cast_root_surge_w6
+        shapes:
+        - center: {x: 0.06341463, y: -0.70886075}
+          size: {x: 0.5463415, y: 0.29113925}
+        - center: {x: 0.12195122, y: -0.3164557}
+          size: {x: 0.4097561, y: 0.30379745}
+        handTuned: 0
+      - frame: barbol_muscle_cast_root_surge_w7
+        shapes:
+        - center: {x: 0.043902438, y: -0.6329114}
+          size: {x: 0.4097561, y: 0.29113925}
+        - center: {x: 0.024390243, y: -0.18987341}
+          size: {x: 0.62439024, y: 0.35443038}
+        - center: {x: 0.18048781, y: 0.2658228}
+          size: {x: 0.3512195, y: 0.30379745}
+        handTuned: 0
+      - frame: barbol_muscle_cast_w0
+        shapes:
+        - center: {x: -0.33770493, y: -0.6}
+          size: {x: 0.39344263, y: 0.4}
+        - center: {x: -0.24590164, y: 0}
+          size: {x: 0.27540985, y: 0.46666667}
+        - center: {x: -0.16721311, y: 0.6}
+          size: {x: 0.22295082, y: 0.4}
+        handTuned: 0
+      - frame: barbol_muscle_cast_w1
+        shapes:
+        - center: {x: -0.2852459, y: -0.033333335}
+          size: {x: 0.41967213, y: 0.96666664}
+        handTuned: 0
+      - frame: barbol_muscle_cast_w2
+        shapes:
+        - center: {x: -0.2590164, y: -0.41666666}
+          size: {x: 0.41967213, y: 0.5833333}
+        - center: {x: -0.114754096, y: 0.35}
+          size: {x: 0.30163935, y: 0.5833333}
+        handTuned: 0
+      - frame: barbol_muscle_cast_w3
+        shapes:
+        - center: {x: -0.15409836, y: -0.4}
+          size: {x: 0.39344263, y: 0.6}
+        - center: {x: 0.16065574, y: 0.4}
+          size: {x: 0.3409836, y: 0.6}
+        handTuned: 0
+      - frame: barbol_muscle_cast_w4
+        shapes:
+        - center: {x: -0.36393443, y: -0.41666666}
+          size: {x: 0.39344263, y: 0.5833333}
+        - center: {x: 0.13442624, y: 0.36666667}
+          size: {x: 0.49836066, y: 0.6}
+        handTuned: 0
+      - frame: barbol_muscle_cast_w5
+        shapes:
+        - center: {x: -0.33770493, y: -0.6166667}
+          size: {x: 0.39344263, y: 0.38333333}
+        - center: {x: -0.24590164, y: -0.05}
+          size: {x: 0.27540985, y: 0.45}
+        - center: {x: -0.16721311, y: 0.53333336}
+          size: {x: 0.22295082, y: 0.4}
+        handTuned: 0
+      - frame: barbol_muscle_chase_e0
+        shapes:
+        - center: {x: 0.008510638, y: -0.4375}
+          size: {x: 0.5744681, y: 0.5625}
+        - center: {x: 0.21276596, y: 0.3125}
+          size: {x: 0.44680852, y: 0.5625}
+        handTuned: 0
+      - frame: barbol_muscle_chase_e1
+        shapes:
+        - center: {x: 0.07234043, y: -0.40234375}
+          size: {x: 0.38297874, y: 0.59765625}
+        - center: {x: 0.3531915, y: 0.2890625}
+          size: {x: 0.28085107, y: 0.328125}
+        handTuned: 0
+      - frame: barbol_muscle_chase_e2
+        shapes:
+        - center: {x: 0.008510638, y: -0.4375}
+          size: {x: 0.4212766, y: 0.5625}
+        - center: {x: 0.2638298, y: 0.3125}
+          size: {x: 0.4212766, y: 0.5625}
+        handTuned: 0
+      - frame: barbol_muscle_chase_e3
+        shapes:
+        - center: {x: 0.07234043, y: -0.16796875}
+          size: {x: 0.587234, y: 0.50390625}
+        - center: {x: 0.13617021, y: 0.50390625}
+          size: {x: 0.39574468, y: 0.49609375}
+        handTuned: 0
+      - frame: barbol_muscle_chase_e4
+        shapes:
+        - center: {x: -0.029787235, y: -0.47265625}
+          size: {x: 0.587234, y: 0.52734375}
+        - center: {x: 0.08510638, y: 0.21875}
+          size: {x: 0.39574468, y: 0.5390625}
+        handTuned: 0
+      - frame: barbol_muscle_chase_e5
+        shapes:
+        - center: {x: -0.09361702, y: -0.671875}
+          size: {x: 0.37021276, y: 0.328125}
+        - center: {x: -0.029787235, y: -0.19140625}
+          size: {x: 0.3319149, y: 0.38671875}
+        - center: {x: 0.2, y: 0.2890625}
+          size: {x: 0.28085107, y: 0.328125}
+        handTuned: 0
+      - frame: barbol_muscle_chase_e6
+        shapes:
+        - center: {x: -0.11914894, y: -0.4375}
+          size: {x: 0.4212766, y: 0.5625}
+        - center: {x: 0.13617021, y: 0.3125}
+          size: {x: 0.4212766, y: 0.5625}
+        handTuned: 0
+      - frame: barbol_muscle_chase_e7
+        shapes:
+        - center: {x: -0.004255319, y: -0.16796875}
+          size: {x: 0.587234, y: 0.50390625}
+        - center: {x: 0.07234043, y: 0.50390625}
+          size: {x: 0.38297874, y: 0.49609375}
+        handTuned: 0
+      - frame: barbol_muscle_chase_w0
+        shapes:
+        - center: {x: 0.017021276, y: -0.4375}
+          size: {x: 0.5744681, y: 0.5625}
+        - center: {x: 0.20851064, y: 0.3125}
+          size: {x: 0.45957446, y: 0.5625}
+        handTuned: 0
+      - frame: barbol_muscle_chase_w1
+        shapes:
+        - center: {x: 0.04255319, y: -0.671875}
+          size: {x: 0.37021276, y: 0.328125}
+        - center: {x: 0.10638298, y: -0.19140625}
+          size: {x: 0.3319149, y: 0.38671875}
+        - center: {x: 0.3617021, y: 0.2890625}
+          size: {x: 0.28085107, y: 0.328125}
+        handTuned: 0
+      - frame: barbol_muscle_chase_w2
+        shapes:
+        - center: {x: -0.008510638, y: -0.4375}
+          size: {x: 0.4212766, y: 0.5625}
+        - center: {x: 0.25957447, y: 0.3125}
+          size: {x: 0.43404254, y: 0.5625}
+        handTuned: 0
+      - frame: barbol_muscle_chase_w3
+        shapes:
+        - center: {x: 0.068085104, y: -0.15625}
+          size: {x: 0.5744681, y: 0.4921875}
+        - center: {x: 0.14468086, y: 0.50390625}
+          size: {x: 0.39574468, y: 0.49609375}
+        handTuned: 0
+      - frame: barbol_muscle_chase_w4
+        shapes:
+        - center: {x: -0.034042552, y: -0.47265625}
+          size: {x: 0.5744681, y: 0.52734375}
+        - center: {x: 0.068085104, y: 0.21875}
+          size: {x: 0.39574468, y: 0.5390625}
+        handTuned: 0
+      - frame: barbol_muscle_chase_w5
+        shapes:
+        - center: {x: -0.08510638, y: -0.671875}
+          size: {x: 0.37021276, y: 0.328125}
+        - center: {x: -0.021276595, y: -0.19140625}
+          size: {x: 0.3319149, y: 0.38671875}
+        - center: {x: 0.20851064, y: 0.2890625}
+          size: {x: 0.28085107, y: 0.328125}
+        handTuned: 0
+      - frame: barbol_muscle_chase_w6
+        shapes:
+        - center: {x: -0.12340426, y: -0.4375}
+          size: {x: 0.40851063, y: 0.5625}
+        - center: {x: 0.14468086, y: 0.3125}
+          size: {x: 0.4212766, y: 0.5625}
+        handTuned: 0
+      - frame: barbol_muscle_chase_w7
+        shapes:
+        - center: {x: -0.008510638, y: -0.15625}
+          size: {x: 0.5744681, y: 0.4921875}
+        - center: {x: 0.068085104, y: 0.50390625}
+          size: {x: 0.39574468, y: 0.49609375}
+        handTuned: 0
+      - frame: barbol_muscle_damage_e0
+        shapes:
+        - center: {x: -0.025773196, y: -0.3900415}
+          size: {x: 0.6340206, y: 0.53526974}
+        - center: {x: 0.05154639, y: 0.34439835}
+          size: {x: 0.49484536, y: 0.54771787}
+        handTuned: 0
+      - frame: barbol_muscle_damage_e1
+        shapes:
+        - center: {x: 0.09793814, y: -0.6016598}
+          size: {x: 0.57216495, y: 0.39834026}
+        - center: {x: -0.072164945, y: 0.008298756}
+          size: {x: 0.58762884, y: 0.46058092}
+        - center: {x: -0.025773196, y: 0.6099585}
+          size: {x: 0.3556701, y: 0.3900415}
+        handTuned: 0
+      - frame: barbol_muscle_damage_e2
+        shapes:
+        - center: {x: 0.020618556, y: -0.41493776}
+          size: {x: 0.6494845, y: 0.560166}
+        - center: {x: -0.18041237, y: 0.3195021}
+          size: {x: 0.6030928, y: 0.57261413}
+        handTuned: 0
+      - frame: barbol_muscle_damage_e3
+        shapes:
+        - center: {x: -0.041237112, y: -0.41493776}
+          size: {x: 0.6185567, y: 0.53526974}
+        - center: {x: 0.005154639, y: 0.3195021}
+          size: {x: 0.47938144, y: 0.54771787}
+        handTuned: 0
+      - frame: barbol_muscle_damage_w0
+        shapes:
+        - center: {x: -0.036082473, y: -0.3900415}
+          size: {x: 0.6340206, y: 0.53526974}
+        - center: {x: 0.041237112, y: 0.34439835}
+          size: {x: 0.49484536, y: 0.54771787}
+        handTuned: 0
+      - frame: barbol_muscle_damage_w1
+        shapes:
+        - center: {x: 0.087628864, y: -0.6016598}
+          size: {x: 0.57216495, y: 0.39834026}
+        - center: {x: -0.082474224, y: 0.008298756}
+          size: {x: 0.58762884, y: 0.46058092}
+        - center: {x: -0.036082473, y: 0.6099585}
+          size: {x: 0.3556701, y: 0.3900415}
+        handTuned: 0
+      - frame: barbol_muscle_damage_w2
+        shapes:
+        - center: {x: 0.010309278, y: -0.41493776}
+          size: {x: 0.6494845, y: 0.560166}
+        - center: {x: -0.17525773, y: 0.3195021}
+          size: {x: 0.58762884, y: 0.57261413}
+        handTuned: 0
+      - frame: barbol_muscle_damage_w3
+        shapes:
+        - center: {x: -0.05154639, y: -0.41493776}
+          size: {x: 0.6185567, y: 0.53526974}
+        - center: {x: 0.025773196, y: 0.3195021}
+          size: {x: 0.47938144, y: 0.54771787}
+        handTuned: 0
+      - frame: barbol_muscle_death_e0
+        shapes:
+        - center: {x: 0.008298756, y: -0.40248963}
+          size: {x: 0.5103735, y: 0.5975104}
+        - center: {x: -0.2033195, y: 0.39834026}
+          size: {x: 0.4979253, y: 0.6016598}
+        handTuned: 0
+      - frame: barbol_muscle_death_e1
+        shapes:
+        - center: {x: 0.10788382, y: -0.40248963}
+          size: {x: 0.48547718, y: 0.57261413}
+        - center: {x: -0.16597511, y: 0.34439835}
+          size: {x: 0.46058092, y: 0.57261413}
+        handTuned: 0
+      - frame: barbol_muscle_death_e2
+        shapes:
+        - center: {x: -0.041493777, y: -0.5394191}
+          size: {x: 0.58506227, y: 0.46058092}
+        - center: {x: -0.21576764, y: 0.09543569}
+          size: {x: 0.48547718, y: 0.47302905}
+        handTuned: 0
+      - frame: barbol_muscle_death_e3
+        shapes:
+        - center: {x: -0.40248963, y: -0.32780084}
+          size: {x: 0.32365146, y: 0.47302905}
+        - center: {x: 0.09543569, y: -0.4273859}
+          size: {x: 0.373444, y: 0.39834026}
+        - center: {x: 0.60580915, y: -0.70124483}
+          size: {x: 0.3360996, y: 0.19917013}
+        handTuned: 0
+      - frame: barbol_muscle_death_e4
+        shapes:
+        - center: {x: -0.70124483, y: -0.6141079}
+          size: {x: 0.2987552, y: 0.23651452}
+        - center: {x: -0.25311205, y: -0.526971}
+          size: {x: 0.34854773, y: 0.32365146}
+        - center: {x: 0.24481328, y: -0.5767635}
+          size: {x: 0.34854773, y: 0.2987552}
+        - center: {x: 0.69709545, y: -0.71369296}
+          size: {x: 0.30290458, y: 0.21161826}
+        handTuned: 0
+      - frame: barbol_muscle_death_e5
+        shapes:
+        - center: {x: -0.55186725, y: -0.5767635}
+          size: {x: 0.32365146, y: 0.24896266}
+        - center: {x: -0.05394191, y: -0.5643154}
+          size: {x: 0.373444, y: 0.31120333}
+        - center: {x: 0.45643154, y: -0.66390043}
+          size: {x: 0.3360996, y: 0.21161826}
+        handTuned: 0
+      - frame: barbol_muscle_death_e6
+        shapes:
+        - center: {x: -0.6141079, y: -0.7385892}
+          size: {x: 0.23651452, y: 0.186722}
+        - center: {x: -0.029045643, y: -0.62655604}
+          size: {x: 0.4979253, y: 0.27385893}
+        - center: {x: 0.56846476, y: -0.70124483}
+          size: {x: 0.24896266, y: 0.19917013}
+        handTuned: 0
+      - frame: barbol_muscle_death_e7
+        shapes:
+        - center: {x: -0.67634857, y: -0.7261411}
+          size: {x: 0.27385893, y: 0.1493776}
+        - center: {x: -0.2780083, y: -0.67634857}
+          size: {x: 0.32365146, y: 0.22406639}
+        - center: {x: 0.17012449, y: -0.6514523}
+          size: {x: 0.32365146, y: 0.27385893}
+        - center: {x: 0.56846476, y: -0.66390043}
+          size: {x: 0.27385893, y: 0.21161826}
+        handTuned: 0
+      - frame: barbol_muscle_death_w0
+        shapes:
+        - center: {x: 0.016597511, y: -0.40248963}
+          size: {x: 0.5103735, y: 0.5975104}
+        - center: {x: -0.20746888, y: 0.39834026}
+          size: {x: 0.48547718, y: 0.6016598}
+        handTuned: 0
+      - frame: barbol_muscle_death_w1
+        shapes:
+        - center: {x: 0.11618257, y: -0.40248963}
+          size: {x: 0.48547718, y: 0.57261413}
+        - center: {x: -0.15767635, y: 0.34439835}
+          size: {x: 0.46058092, y: 0.57261413}
+        handTuned: 0
+      - frame: barbol_muscle_death_w2
+        shapes:
+        - center: {x: -0.058091287, y: -0.5394191}
+          size: {x: 0.58506227, y: 0.46058092}
+        - center: {x: -0.21991701, y: 0.09543569}
+          size: {x: 0.47302905, y: 0.47302905}
+        handTuned: 0
+      - frame: barbol_muscle_death_w3
+        shapes:
+        - center: {x: 0.6141079, y: -0.70124483}
+          size: {x: 0.3360996, y: 0.19917013}
+        - center: {x: 0.11618257, y: -0.43983403}
+          size: {x: 0.4107884, y: 0.38589212}
+        - center: {x: -0.38174275, y: -0.32780084}
+          size: {x: 0.3360996, y: 0.47302905}
+        handTuned: 0
+      - frame: barbol_muscle_death_w4
+        shapes:
+        - center: {x: 0.70124483, y: -0.71369296}
+          size: {x: 0.2987552, y: 0.21161826}
+        - center: {x: 0.25311205, y: -0.5767635}
+          size: {x: 0.34854773, y: 0.2987552}
+        - center: {x: -0.24481328, y: -0.526971}
+          size: {x: 0.34854773, y: 0.32365146}
+        - center: {x: -0.6929461, y: -0.6141079}
+          size: {x: 0.2987552, y: 0.23651452}
+        handTuned: 0
+      - frame: barbol_muscle_death_w5
+        shapes:
+        - center: {x: 0.55186725, y: -0.70124483}
+          size: {x: 0.24896266, y: 0.17427386}
+        - center: {x: 0.16597511, y: -0.6016598}
+          size: {x: 0.28630707, y: 0.27385893}
+        - center: {x: -0.25726143, y: -0.5394191}
+          size: {x: 0.28630707, y: 0.31120333}
+        - center: {x: -0.64315355, y: -0.6016598}
+          size: {x: 0.24896266, y: 0.22406639}
+        handTuned: 0
+      - frame: barbol_muscle_death_w6
+        shapes:
+        - center: {x: 0.58921164, y: -0.70124483}
+          size: {x: 0.23651452, y: 0.19917013}
+        - center: {x: 0.004149378, y: -0.62655604}
+          size: {x: 0.4979253, y: 0.27385893}
+        - center: {x: -0.593361, y: -0.7261411}
+          size: {x: 0.24896266, y: 0.19917013}
+        handTuned: 0
+      - frame: barbol_muscle_death_w7
+        shapes:
+        - center: {x: 0.5767635, y: -0.66390043}
+          size: {x: 0.27385893, y: 0.21161826}
+        - center: {x: 0.17842324, y: -0.6514523}
+          size: {x: 0.32365146, y: 0.27385893}
+        - center: {x: -0.26970956, y: -0.67634857}
+          size: {x: 0.32365146, y: 0.22406639}
+        - center: {x: -0.6680498, y: -0.7261411}
+          size: {x: 0.27385893, y: 0.1493776}
+        handTuned: 0
+      - frame: barbol_muscle_idle_e0
+        shapes:
+        - center: {x: -0.04, y: -0.4}
+          size: {x: 0.69, y: 0.6}
+        - center: {x: 0.08, y: 0.4}
+          size: {x: 0.51, y: 0.6}
+        handTuned: 0
+      - frame: barbol_muscle_idle_e1
+        shapes:
+        - center: {x: 0.005, y: -0.4125}
+          size: {x: 0.585, y: 0.5875}
+        - center: {x: 0.125, y: 0.3625}
+          size: {x: 0.465, y: 0.5875}
+        handTuned: 0
+      - frame: barbol_muscle_idle_e2
+        shapes:
+        - center: {x: -0.04, y: -0.4125}
+          size: {x: 0.66, y: 0.5875}
+        - center: {x: 0.065, y: 0.375}
+          size: {x: 0.495, y: 0.6}
+        handTuned: 0
+      - frame: barbol_muscle_idle_e3
+        shapes:
+        - center: {x: 0.005, y: -0.4125}
+          size: {x: 0.615, y: 0.5875}
+        - center: {x: 0.11, y: 0.3625}
+          size: {x: 0.48, y: 0.5875}
+        handTuned: 0
+      - frame: barbol_muscle_idle_e4
+        shapes:
+        - center: {x: -0.1, y: -0.425}
+          size: {x: 0.63, y: 0.575}
+        - center: {x: -0.025, y: 0.325}
+          size: {x: 0.465, y: 0.575}
+        handTuned: 0
+      - frame: barbol_muscle_idle_e5
+        shapes:
+        - center: {x: -0.07, y: -0.4125}
+          size: {x: 0.63, y: 0.5875}
+        - center: {x: 0.02, y: 0.3625}
+          size: {x: 0.48, y: 0.5875}
+        handTuned: 0
+      - frame: barbol_muscle_idle_w0
+        shapes:
+        - center: {x: -0.035, y: -0.4}
+          size: {x: 0.675, y: 0.6}
+        - center: {x: 0.085, y: 0.4}
+          size: {x: 0.525, y: 0.6}
+        handTuned: 0
+      - frame: barbol_muscle_idle_w1
+        shapes:
+        - center: {x: 0.01, y: -0.4125}
+          size: {x: 0.6, y: 0.5875}
+        - center: {x: 0.145, y: 0.3625}
+          size: {x: 0.465, y: 0.5875}
+        handTuned: 0
+      - frame: barbol_muscle_idle_w2
+        shapes:
+        - center: {x: -0.02, y: -0.4125}
+          size: {x: 0.66, y: 0.5875}
+        - center: {x: 0.055, y: 0.375}
+          size: {x: 0.495, y: 0.6}
+        handTuned: 0
+      - frame: barbol_muscle_idle_w3
+        shapes:
+        - center: {x: 0.025, y: -0.4125}
+          size: {x: 0.615, y: 0.5875}
+        - center: {x: 0.115, y: 0.3625}
+          size: {x: 0.495, y: 0.5875}
+        handTuned: 0
+      - frame: barbol_muscle_idle_w4
+        shapes:
+        - center: {x: -0.11, y: -0.425}
+          size: {x: 0.63, y: 0.575}
+        - center: {x: -0.035, y: 0.325}
+          size: {x: 0.465, y: 0.575}
+        handTuned: 0
+      - frame: barbol_muscle_idle_w5
+        shapes:
+        - center: {x: -0.05, y: -0.4125}
+          size: {x: 0.63, y: 0.5875}
+        - center: {x: 0.04, y: 0.3625}
+          size: {x: 0.48, y: 0.5875}
+        handTuned: 0
+      - frame: barbol_muscle_walk_e0
+        shapes:
+        - center: {x: -0.28, y: -0.6016598}
+          size: {x: 0.4457143, y: 0.39834026}
+        - center: {x: -0.21142857, y: 0.008298756}
+          size: {x: 0.58285713, y: 0.46058092}
+        - center: {x: -0.022857143, y: 0.6099585}
+          size: {x: 0.3942857, y: 0.3900415}
+        handTuned: 0
+      - frame: barbol_muscle_walk_e1
+        shapes:
+        - center: {x: -0.14285715, y: -0.3153527}
+          size: {x: 0.51428574, y: 0.6846473}
+        - center: {x: 0.16571428, y: 0.49377593}
+          size: {x: 0.37714285, y: 0.373444}
+        handTuned: 0
+      - frame: barbol_muscle_walk_e2
+        shapes:
+        - center: {x: -0.04, y: -0.6016598}
+          size: {x: 0.5485714, y: 0.373444}
+        - center: {x: -0.0057142857, y: -0.029045643}
+          size: {x: 0.4457143, y: 0.44813278}
+        - center: {x: 0.30285713, y: 0.5560166}
+          size: {x: 0.41142857, y: 0.38589212}
+        handTuned: 0
+      - frame: barbol_muscle_walk_e3
+        shapes:
+        - center: {x: 0.09714286, y: -0.45228216}
+          size: {x: 0.58285713, y: 0.54771787}
+        - center: {x: 0.2, y: 0.29460582}
+          size: {x: 0.51428574, y: 0.54771787}
+        handTuned: 0
+      - frame: barbol_muscle_walk_e4
+        shapes:
+        - center: {x: -0.17714286, y: -0.3153527}
+          size: {x: 0.58285713, y: 0.6846473}
+        - center: {x: 0.028571429, y: 0.5062241}
+          size: {x: 0.37714285, y: 0.38589212}
+        handTuned: 0
+      - frame: barbol_muscle_walk_e5
+        shapes:
+        - center: {x: -0.22857143, y: -0.29045644}
+          size: {x: 0.5314286, y: 0.6846473}
+        - center: {x: -0.09142857, y: 0.5186722}
+          size: {x: 0.36, y: 0.373444}
+        handTuned: 0
+      - frame: barbol_muscle_walk_e6
+        shapes:
+        - center: {x: -0.21142857, y: -0.62655604}
+          size: {x: 0.51428574, y: 0.373444}
+        - center: {x: -0.12571429, y: -0.066390045}
+          size: {x: 0.42857143, y: 0.43568465}
+        - center: {x: 0.09714286, y: 0.5062241}
+          size: {x: 0.37714285, y: 0.38589212}
+        handTuned: 0
+      - frame: barbol_muscle_walk_w0
+        shapes:
+        - center: {x: -0.30285713, y: -0.6016598}
+          size: {x: 0.4457143, y: 0.39834026}
+        - center: {x: -0.2, y: 0.008298756}
+          size: {x: 0.58285713, y: 0.46058092}
+        - center: {x: -0.011428571, y: 0.6099585}
+          size: {x: 0.3942857, y: 0.3900415}
+        handTuned: 0
+      - frame: barbol_muscle_walk_w1
+        shapes:
+        - center: {x: -0.16571428, y: -0.62655604}
+          size: {x: 0.51428574, y: 0.373444}
+        - center: {x: -0.08, y: -0.066390045}
+          size: {x: 0.46285716, y: 0.43568465}
+        - center: {x: 0.17714286, y: 0.49377593}
+          size: {x: 0.37714285, y: 0.373444}
+        handTuned: 0
+      - frame: barbol_muscle_walk_w2
+        shapes:
+        - center: {x: -0.045714285, y: -0.6141079}
+          size: {x: 0.5657143, y: 0.38589212}
+        - center: {x: -0.011428571, y: -0.029045643}
+          size: {x: 0.42857143, y: 0.44813278}
+        - center: {x: 0.29714286, y: 0.5560166}
+          size: {x: 0.42857143, y: 0.38589212}
+        handTuned: 0
+      - frame: barbol_muscle_walk_w3
+        shapes:
+        - center: {x: 0.09142857, y: -0.45228216}
+          size: {x: 0.5657143, y: 0.54771787}
+        - center: {x: 0.21142857, y: 0.29460582}
+          size: {x: 0.51428574, y: 0.54771787}
+        handTuned: 0
+      - frame: barbol_muscle_walk_w4
+        shapes:
+        - center: {x: -0.18285714, y: -0.3153527}
+          size: {x: 0.6, y: 0.6846473}
+        - center: {x: 0.022857143, y: 0.5062241}
+          size: {x: 0.3942857, y: 0.38589212}
+        handTuned: 0
+      - frame: barbol_muscle_walk_w5
+        shapes:
+        - center: {x: -0.30285713, y: -0.6016598}
+          size: {x: 0.4457143, y: 0.373444}
+        - center: {x: -0.21714285, y: -0.041493777}
+          size: {x: 0.5314286, y: 0.43568465}
+        - center: {x: -0.09714286, y: 0.5186722}
+          size: {x: 0.37714285, y: 0.373444}
+        handTuned: 0
+      - frame: barbol_muscle_walk_w6
+        shapes:
+        - center: {x: -0.21714285, y: -0.62655604}
+          size: {x: 0.5314286, y: 0.373444}
+        - center: {x: -0.114285715, y: -0.066390045}
+          size: {x: 0.42857143, y: 0.43568465}
+        - center: {x: 0.09142857, y: 0.5062241}
+          size: {x: 0.3942857, y: 0.38589212}
+        handTuned: 0
     scaleConfig:
       scaleIdle: 0
       tint: {r: 0, g: 0, b: 0, a: 0}

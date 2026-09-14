@@ -110,23 +110,24 @@ namespace Valkur.Gameplay.Combat
             Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, _radius, _targetLayers);
             if (hits.Length == 0) return;
 
-            // Track already-hit objects to avoid double-damage from compound colliders
+            // Track already-hit ENTITIES to avoid double-damage from compound colliders: a body
+            // is a footprint plus hurtbox capsules on a child, so the GameObject a collider sits
+            // on is not the thing being damaged.
             var seen = new HashSet<GameObject>();
 
             foreach (var col in hits)
             {
-                GameObject target = col.gameObject;
+                var health = col.GetComponentInParent<Health>();
+                GameObject target = health != null ? health.gameObject : col.gameObject;
                 if (!seen.Add(target)) continue;
                 if (target == _instigator) continue;
 
-                // Distance falloff: damage * (1 - dist/radius), clamped to 1 minimum
-                float dist    = Vector2.Distance(transform.position, col.transform.position);
+                // Distance falloff from the nearest point of the BODY, so a large creature half
+                // inside the blast is not treated as if it stood at its feet.
+                Vector2 nearest = Combat.EntityBody.ClosestPoint(target, transform.position);
+                float dist    = Vector2.Distance(transform.position, nearest);
                 float falloff = 1f - Mathf.Clamp01(dist / _radius);
                 int   dealt   = Mathf.Max(1, Mathf.RoundToInt(_damage * falloff));
-
-                var health = target.GetComponent<Health>();
-                if (health == null)
-                    health = target.GetComponentInParent<Health>();
 
                 if (health != null && !health.IsDead)
                 {
@@ -134,7 +135,7 @@ namespace Valkur.Gameplay.Combat
                     // Raising it again here made every explosion report each victim twice.
                     health.TakeDamage(dealt, _instigator);
                     GameEvents.FireHitDealt(_instigator, target, dealt);
-                    VFXManager.Instance?.SpawnImpact(col.transform.position, _color, 0.2f, 0.5f);
+                    VFXManager.Instance?.SpawnImpact(nearest, _color, 0.2f, 0.5f);
                 }
             }
         }

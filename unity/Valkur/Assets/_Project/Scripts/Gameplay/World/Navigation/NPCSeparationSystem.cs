@@ -199,6 +199,14 @@ namespace Valkur.Gameplay.World
                 return Mathf.Min(s.x, s.y);
             }
 
+            // A footprint capsule: most of its half WIDTH, the across-the-ground extent two
+            // bodies standing side by side really share. Its depth would pack a crowd into a line.
+            if (col is CapsuleCollider2D cap)
+            {
+                Vector2 s = Vector2.Scale(cap.size, Abs(col.transform.lossyScale)) * 0.5f;
+                return Mathf.Max(s.x, s.y) * 0.8f;
+            }
+
             return 0.4f; // fallback
         }
 

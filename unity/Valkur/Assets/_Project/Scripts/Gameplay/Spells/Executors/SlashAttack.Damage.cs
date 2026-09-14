@@ -85,13 +85,13 @@ namespace Valkur.Gameplay.Spells
                 Health health = ResolveTarget(hit);
                 if (health == null) continue;
 
-                Vector2 point = ResolveBodyPoint(health);
-                if (!IsInsideSector(transform.position, _direction, point,
-                                    _profile.Radius, _profile.ArcDegrees)) continue;
-
-                float signedAngle = SignedAngleTo(point);
-                if (signedAngle < _previousHeadAngle - 0.01f || signedAngle > headAngle + 0.01f)
-                    continue;
+                // The BODY is sampled, not its centre: a creature wider than the sliver the edge
+                // swept this frame is struck when the blade reaches its near side.
+                bool struck = SweptBodyTest.TryAngular(health.gameObject, transform.position, _direction,
+                    _profile.Radius, _profile.ArcDegrees, _previousHeadAngle, headAngle,
+                    out Vector2 point, out Vector2 reported, out bool inside);
+                Debugging.EntityCollisionDebug.TestPoint(health.gameObject, reported, inside, "cuerpo (hurtbox)");
+                if (!struck) continue;
 
                 Strike(health, point);
             }
@@ -115,12 +115,10 @@ namespace Valkur.Gameplay.Spells
                 Health health = ResolveTarget(hit);
                 if (health == null) continue;
 
-                Vector2 point = ResolveBodyPoint(health);
-                if (!IsInsideSector(transform.position, _direction, point,
-                                    reach, _profile.ArcDegrees)) continue;
-
-                float distance = Vector2.Distance(point, transform.position);
-                if (distance < _previousReach - 0.01f) continue;
+                bool struck = SweptBodyTest.TryRadial(health.gameObject, transform.position, _direction,
+                    reach, _profile.ArcDegrees, _previousReach, out Vector2 point, out bool inside);
+                Debugging.EntityCollisionDebug.TestPoint(health.gameObject, point, inside, "cuerpo (hurtbox)");
+                if (!struck) continue;
 
                 Strike(health, point);
             }
@@ -148,38 +146,6 @@ namespace Valkur.Gameplay.Spells
             return health;
         }
 
-        /// <summary>
-        /// Where a victim's body actually is.
-        ///
-        /// The overlap query returns whatever collider of theirs happens to sit on the
-        /// target layer, and on an NPC that includes the large, off-centre trigger it uses
-        /// to notice the player. Measuring the hit — and drawing the impact — against that
-        /// trigger put the contact flash somewhere between the two characters instead of on
-        /// the one that was struck. The body box the entity bootstrap builds is centred on
-        /// the sprite, so it is the honest answer.
-        /// </summary>
-        private static Vector2 ResolveBodyPoint(Health health)
-        {
-            Collider2D body = ResolveBodyCollider(health);
-            if (body != null) return body.bounds.center;
-
-            var sr = health.GetComponentInChildren<SpriteRenderer>();
-            if (sr != null && sr.sprite != null) return sr.bounds.center;
-
-            return health.transform.position;
-        }
-
-        private static Collider2D ResolveBodyCollider(Health health)
-            => EntityColliderConfigurator.GetBodyCollider(health.gameObject);
-
-        private float SignedAngleTo(Vector2 point)
-        {
-            Vector2 toTarget = point - (Vector2)transform.position;
-            return toTarget.sqrMagnitude <= 0.0001f
-                ? 0f
-                : Vector2.SignedAngle(_direction, toTarget.normalized);
-        }
-
         private void Strike(Health health, Vector2 bodyPoint)
         {
             int before = health.CurrentHp;
@@ -201,8 +167,7 @@ namespace Valkur.Gameplay.Spells
             // On the face of the body turned towards the swing, so the burst lands where
             // the blade meets them. ClosestPoint returns the query point itself when the
             // origin is inside the collider, which is the one case it cannot answer.
-            Collider2D body = ResolveBodyCollider(health);
-            Vector2 impactPoint = body != null ? body.ClosestPoint(transform.position) : bodyPoint;
+            Vector2 impactPoint = EntityBody.ClosestPoint(health.gameObject, transform.position);
             if ((impactPoint - (Vector2)transform.position).sqrMagnitude < 0.01f)
                 impactPoint = bodyPoint;
 

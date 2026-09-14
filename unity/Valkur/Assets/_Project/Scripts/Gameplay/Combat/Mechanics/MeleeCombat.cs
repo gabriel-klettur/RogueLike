@@ -140,6 +140,30 @@ namespace Valkur.Gameplay
             FSM.NoiseEvents.EmitAt(gameObject, FSM.NoiseEvents.LoudnessSwing);
         }
 
+        private static readonly System.Collections.Generic.List<Vector2> ArcProbe =
+            new System.Collections.Generic.List<Vector2>(16);
+
+        private bool BodyInsideArc(GameObject victim, Vector2 origin, Vector2 direction, float reach)
+        {
+            ArcProbe.Clear();
+            Combat.EntityBody.ProbePoints(victim, origin, ArcProbe);
+            ArcProbe.Add(victim.transform.position);
+            Vector2 forward = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector2.right;
+            bool inside = false;
+            for (int i = 0; i < ArcProbe.Count && !inside; i++)
+            {
+                Vector2 to = ArcProbe[i] - origin;
+                if (to.sqrMagnitude > reach * reach) continue;
+                inside = to.sqrMagnitude <= 0.0001f ||
+                         Vector2.Angle(forward, to.normalized) <= arcDegrees * 0.5f;
+            }
+            ArcProbe.Clear();
+            return inside;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetArcProbe() => ArcProbe.Clear();
+
         private void PerformAttack(Vector2 direction, int swingDamage, float swingRange)
         {
             // The damage query is centred on the entity with radius `swingRange` — exactly
@@ -149,7 +173,8 @@ namespace Valkur.Gameplay
             // damaged point was range * 1.5: you were hit a tile and a half outside
             // the visible arc, and three and a half tiles outside it on barbol_boss.
             Vector2 origin = (Vector2)transform.position;
-            var hits = Physics2D.OverlapCircleAll(origin, swingRange, targetLayers);
+            var hits = Combat.EntityHitFilter.Collapse(
+                Physics2D.OverlapCircleAll(origin, swingRange, targetLayers), origin);
 
             int hitCount = 0;
             _damagedThisSwing.Clear();
@@ -171,12 +196,12 @@ namespace Valkur.Gameplay
                 // collider and a perception trigger on the same entity both land here.
                 if (!_damagedThisSwing.Add(victim.GetInstanceID())) continue;
 
-                // Arc check, measured against the entity we are actually damaging
-                // rather than whichever of its colliders the query happened to return.
+                // Arc check against the BODY: the victim is in the swing when any sample of its
+                // hurtbox is inside the arc, so a blow aimed at a player's shoulder lands although
+                // their feet are a few degrees to the side. Line of sight stays on the feet,
+                // which is where a wall stands between two creatures.
                 Vector2 victimPos = victim.transform.position;
-                Vector2 toTarget = (victimPos - origin).normalized;
-                float angle = Vector2.Angle(direction.normalized, toTarget);
-                if (angle > arcDegrees * 0.5f) continue;
+                if (!BodyInsideArc(victim, origin, direction, swingRange)) continue;
 
                 // A swing does not pass through world geometry. barbol_boss reaches
                 // 7 units, which is most of a building — without this it hit players
@@ -192,7 +217,11 @@ namespace Valkur.Gameplay
                     feedback.ApplyKnockback(origin);
 
                 OnHitTarget?.Invoke(victim, swingDamage);
-                GameEvents.FireHitDealt(gameObject, victim, swingDamage);
+                // Bracketed so the entity-collision overlay, which listens for spell hits on
+                // this same event, is not overwritten by a monster's swing every second.
+                Spells.Debugging.EntityCollisionDebug.BeginMeleeScope();
+                try { GameEvents.FireHitDealt(gameObject, victim, swingDamage); }
+                finally { Spells.Debugging.EntityCollisionDebug.EndMeleeScope(); }
             }
 
             // Destructible obstacles are not on any target layer — they sit on Building so

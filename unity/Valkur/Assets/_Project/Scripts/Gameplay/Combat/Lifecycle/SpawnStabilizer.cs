@@ -47,6 +47,10 @@ namespace Valkur.Gameplay
                 var other = _overlapBuffer[i];
                 if (other == null || other.gameObject == gameObject) continue;
                 if (other.isTrigger) continue;
+                // Hurtbox capsules touch nothing and must push nothing: our own sit on a child at
+                // our own position, and a neighbour's describe its drawing, not where it stands.
+                if (other.transform.IsChildOf(transform)) continue;
+                if (Combat.EntityColliderRig.IsHurtbox(other)) continue;
 
                 Vector2 diff = (Vector2)transform.position - (Vector2)other.transform.position;
                 float dist = diff.magnitude;

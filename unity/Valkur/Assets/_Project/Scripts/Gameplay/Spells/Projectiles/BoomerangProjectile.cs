@@ -456,7 +456,7 @@ namespace Valkur.Gameplay.Spells
                 health.TakeDamage(dealt, casterGo, _element);
                 Valkur.Core.GameEvents.FireHitDealt(casterGo, health.gameObject, dealt);
                 StatusApplicationFactory.ApplyAll(_statusApplications, health.gameObject, casterGo);
-                SpawnHitFeedback(collider.transform.position);
+                SpawnHitFeedback(Combat.EntityBody.ClosestPoint(health.gameObject, pos));
                 hitSomething = true;
             }
 

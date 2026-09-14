@@ -41,6 +41,10 @@ namespace Valkur.Gameplay.Entities
             public Image            AddRemoveMenuBtnImg;   public TextMeshProUGUI AddRemoveMenuBtnTmp;
             public Image            PropsMenuBtnImg;       public TextMeshProUGUI PropsMenuBtnTmp;
 
+            // Debug overlay switches (shared with the 'colisiones' / 'areas' console commands)
+            public Image            CollisionsToggleImg;   public TextMeshProUGUI CollisionsToggleTmp;
+            public Image            AreasToggleImg;        public TextMeshProUGUI AreasToggleTmp;
+
             // Panel roots + drag components
             public GameObject       ToolsDropdown;       public DraggablePanel ToolsPanelDrag;
             public GameObject       CategoriesDropdown;  public DraggablePanel CategoriesPanelDrag;
@@ -131,6 +135,16 @@ namespace Valkur.Gameplay.Entities
             public TextMeshProUGUI  AnimMuzzleReadout;
             public Image            AnimMuzzleClearImg;  public TextMeshProUGUI AnimMuzzleClearTmp;
 
+            // Collision layers (footprint + per-frame hurtbox) of the frame on stage.
+            public Image            AnimCollViewImg;     public TextMeshProUGUI AnimCollViewTmp;
+            public Image            AnimCollEditImg;     public TextMeshProUGUI AnimCollEditTmp;
+            public TMP_Dropdown     AnimCollShapeDd;
+            public TMP_Dropdown     AnimCollGestureDd;
+            public TMP_InputField   AnimCollFootWInput;
+            public TMP_InputField   AnimCollFootDInput;
+            public TMP_InputField   AnimCollHurtScaleInput;
+            public TextMeshProUGUI  AnimCollReadout;
+
             // Cast timeline — the spell's phases and the animation's steps on one axis.
             public Image            TimelineMenuBtnImg;  public TextMeshProUGUI TimelineMenuBtnTmp;
             public GameObject       TimelineDropdown;    public DraggablePanel  TimelinePanelDrag;
@@ -179,6 +193,8 @@ namespace Valkur.Gameplay.Entities
         private const float ANIM_BTN_W       = 96f;
         private const float TIMELINE_BTN_W   = 88f;
         private const float TUTORIAL_BTN_W   = 40f;
+        private const float COLLISIONS_BTN_W = 118f;
+        private const float AREAS_BTN_W      = 88f;
 
         // ── BuildAll ──────────────────────────────────────────────────────────────
 
@@ -196,14 +212,17 @@ namespace Valkur.Gameplay.Entities
             Action<string> onNewKeyChanged,
             Action         onDuplicate,   Action onRename,
             Action         onToggleTutorial,
-            Action<Transform> onSectionFold = null)
+            Action<Transform> onSectionFold = null,
+            Action         onToggleCollisions = null,
+            Action         onToggleAreas = null)
         {
             // Reserve space below the menu bar so draggable panels cannot occlude it.
             DraggablePanel.TopReservedPx = MENUBAR_HEIGHT;
 
             var refs = new UIRefs();
 
-            BuildMenuBar(canvasT, ref refs, onDropdownToggle, onToggleTutorial);
+            BuildMenuBar(canvasT, ref refs, onDropdownToggle, onToggleTutorial,
+                onToggleCollisions, onToggleAreas);
             BuildToolsPanel(canvasT, ref refs, onUndo, onRedo, onSave, onReload);
             BuildCategoriesPanel(canvasT, ref refs,
                 onCatAll, onCatHostiles, onCatNeutrals, onCatSpecials, onCatPlayers);
@@ -231,7 +250,8 @@ namespace Valkur.Gameplay.Entities
         // ── Menu Bar ──────────────────────────────────────────────────────────────
 
         private static void BuildMenuBar(Transform canvasT, ref UIRefs refs,
-            Action<string> onToggle, Action onTutorial)
+            Action<string> onToggle, Action onTutorial,
+            Action onToggleCollisions, Action onToggleAreas)
         {
             var go = CreateUI("EntitiesMenuBar", canvasT);
             var r  = go.GetComponent<RectTransform>();
@@ -292,6 +312,14 @@ namespace Valkur.Gameplay.Entities
                 () => onToggle?.Invoke("animation"),   out refs.AnimMenuBtnTmp);
             refs.TimelineMenuBtnImg   = AddMenuBtn(t, "Timeline v",    TIMELINE_BTN_W,
                 () => onToggle?.Invoke("timeline"),    out refs.TimelineMenuBtnTmp);
+
+            // Debug overlays. Not dropdowns: each is a switch on a shared static, and the label
+            // says its state because the console can flip it behind the button's back.
+            AddMenuDivider(t);
+            refs.CollisionsToggleImg  = AddMenuBtn(t, "Colisiones: OFF", COLLISIONS_BTN_W,
+                () => onToggleCollisions?.Invoke(), out refs.CollisionsToggleTmp);
+            refs.AreasToggleImg       = AddMenuBtn(t, "Areas: OFF",      AREAS_BTN_W,
+                () => onToggleAreas?.Invoke(),      out refs.AreasToggleTmp);
 
             // Flexible spacer
             CreateUI("Spacer", t).AddComponent<LayoutElement>().flexibleWidth = 1f;

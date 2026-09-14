@@ -73,6 +73,7 @@ namespace Valkur.Gameplay.Entities
                 // on the stage: the stage is hidden but still live, and its RawImage sits
                 // over the world the other panels click into.
                 DisarmMuzzlePlacement();
+                DisarmCollisionEditing();
                 _animPreview.Close();
                 return;
             }
@@ -90,7 +91,13 @@ namespace Valkur.Gameplay.Entities
             // frame: a colour write per cell per frame would dirty the canvas sixty times a
             // second for a panel that is mostly still.
             int shown = _animPreview.DisplayedFrame;
-            if (shown != _animHighlightedFrame) HighlightAnimationFrame(shown);
+            if (shown != _animHighlightedFrame)
+            {
+                HighlightAnimationFrame(shown);
+                // The capsule list and its readout describe the FRAME; while the layers are on
+                // they follow it, or the panel names capsules of a frame no longer drawn.
+                if (_collisionView) RefreshCollisionEditor();
+            }
         }
 
         private void ShutdownAnimationPreview()
@@ -113,6 +120,7 @@ namespace Valkur.Gameplay.Entities
             // new one without meaning to -- and the only sign would be a crosshair they
             // assumed was already there.
             DisarmMuzzlePlacement();
+            DisarmCollisionEditing();
             _animSubjectDirty = true;
             if (_animPanelOpen) StageSelectedEntityForAnimation();
         }
@@ -247,6 +255,7 @@ namespace Valkur.Gameplay.Entities
             // refresh the panel has -- a separate call site is how a panel comes to show a
             // measurement about a pose it stopped drawing.
             RefreshMuzzleEditor();
+            RefreshCollisionEditor();
         }
 
         private void RefreshAnimationInfo()

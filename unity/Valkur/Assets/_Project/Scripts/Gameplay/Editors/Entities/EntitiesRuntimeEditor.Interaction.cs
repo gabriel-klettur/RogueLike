@@ -943,21 +943,25 @@ namespace Valkur.Gameplay.Entities
             var hit = Physics2D.OverlapCircle(worldPos, 0.5f, LayerMask.GetMask("NPC"));
             if (hit != null)
             {
+                // The collider under the cursor is often a hurtbox capsule on a CHILD of the
+                // entity; deleting that GameObject would take the hurtbox and leave the monster.
+                GameObject entity = EntityRootOf(hit);
+
                 // Recorded BEFORE the destroy: afterwards there is no object left to read the
                 // key and the position off, and those two are the whole of what a restore needs.
-                var placement = hit.GetComponent<PersistedEntityInstance>();
+                var placement = entity.GetComponent<PersistedEntityInstance>();
                 if (placement != null && placement.IsDefeated) placement = null;   // a corpse
                 if (placement != null) RecordPlacementDeleted(placement);
 
                 SetStatus(placement != null
-                    ? $"Deleted {hit.gameObject.name} — Ctrl+Z to bring it back."
-                    : $"Deleted {hit.gameObject.name}");
+                    ? $"Deleted {entity.name} — Ctrl+Z to bring it back."
+                    : $"Deleted {entity.name}");
 
                 // A placement goes through the service, which takes it out of the saved file
                 // too; otherwise it would come back on the next Play. Anything else (a spawner's
                 // monster, a corpse) is just a GameObject.
                 if (placement != null) { PlacedEntities.Remove(placement.PlacementId); RefreshPicker(); }
-                else                   Destroy(hit.gameObject);
+                else                   Destroy(entity);
             }
             else
             {
@@ -965,15 +969,27 @@ namespace Valkur.Gameplay.Entities
             }
         }
 
+        /// <summary>
+        /// The entity a collider belongs to: its rig's root, else the object carrying its
+        /// Health, else the collider's own object.
+        /// </summary>
+        private static GameObject EntityRootOf(Collider2D hit)
+        {
+            if (Combat.EntityColliderRig.TryGetOwner(hit, out var rig)) return rig.gameObject;
+            var health = hit.GetComponentInParent<Health>();
+            return health != null ? health.gameObject : hit.gameObject;
+        }
+
         private void SelectEntityAtPosition(Vector3 worldPos)
         {
             var hit = Physics2D.OverlapCircle(worldPos, 0.5f, LayerMask.GetMask("NPC"));
             if (hit != null)
             {
-                var brain = hit.GetComponent<Valkur.Gameplay.FSM.FSMMonsterBrain>();
+                GameObject entity = EntityRootOf(hit);
+                var brain = entity.GetComponent<Valkur.Gameplay.FSM.FSMMonsterBrain>();
                 SetStatus(brain != null
-                    ? $"Selected: {hit.gameObject.name}"
-                    : $"Hit: {hit.gameObject.name} (no brain)");
+                    ? $"Selected: {entity.name}"
+                    : $"Hit: {entity.name} (no brain)");
             }
             else
             {

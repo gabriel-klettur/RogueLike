@@ -71,6 +71,8 @@ namespace Valkur.Gameplay.Entities
             }
 
             _muzzlePlacing = !_muzzlePlacing;
+            // One drag on one stage writes ONE thing: placing a muzzle ends shaping capsules.
+            if (_muzzlePlacing) DisarmCollisionEditing();
             ApplyStageProbeState();
             if (_muzzlePlacing) RaiseAnimationPanel();
             RefreshMuzzleEditor();
@@ -422,19 +424,27 @@ namespace Valkur.Gameplay.Entities
             _ui.AnimDropdown.transform.SetAsLastSibling();
         }
 
+        /// <summary>The stage's one pointer, handed to whichever gesture is armed.</summary>
+        private void OnStagePointer(Vector2 viewport)
+        {
+            if (_muzzlePlacing) OnStageMuzzlePoint(viewport);
+            else if (_collisionEditing) OnStageCollisionPoint(viewport);
+        }
+
         private void ApplyStageProbeState()
         {
             if (_ui.AnimStage == null) return;
 
-            _ui.AnimStage.raycastTarget = _muzzlePlacing;
+            bool armed = _muzzlePlacing || _collisionEditing;
+            _ui.AnimStage.raycastTarget = armed;
 
-            if (!_muzzlePlacing) return;
+            if (!armed) return;
             if (_stageProbe == null)
             {
                 _stageProbe = _ui.AnimStage.gameObject.GetComponent<EntityStagePointerProbe>();
                 if (_stageProbe == null)
                     _stageProbe = _ui.AnimStage.gameObject.AddComponent<EntityStagePointerProbe>();
-                _stageProbe.Bind(OnStageMuzzlePoint);
+                _stageProbe.Bind(OnStagePointer);
             }
         }
     }

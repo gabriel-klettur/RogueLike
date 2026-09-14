@@ -494,6 +494,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: shieldbash
       damageMultiplier: 0.7
       rangeMultiplier: 0.8
@@ -578,6 +585,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: punch
       damageMultiplier: 0.6
       rangeMultiplier: 0.7
@@ -662,6 +676,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: kick
       damageMultiplier: 1.1
       rangeMultiplier: 1
@@ -746,6 +767,13 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     - key: jumpkick
       damageMultiplier: 1.6
       rangeMultiplier: 1.6
@@ -830,9 +858,875 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      timeline:
+        steps: []
+        releaseStep: 0
+        recoverStep: 2147483647
+        prepareMode: 0
+        channelMode: 0
+        recoverMode: 2
     castVariants: []
+    stateVariants: []
     statePacing: []
+    walkReferenceSpeed: 0
+    runReferenceSpeed: 0
     loadouts: []
+    castMuzzle: {x: 0, y: 0}
+    castMuzzleFrames: []
+    castMuzzlePoints: []
+    collision:
+      footprintSize: {x: 0, y: 0}
+      footprintOffset: {x: 0, y: 0}
+      footprintHandTuned: 0
+      hurtScale: 1
+      hurtShapes: []
+      hurtShapeFrames:
+      - frame: knight_red_jumpkick_e0
+        shapes:
+        - center: {x: 0.15853658, y: -0.49579832}
+          size: {x: 0.35365853, y: 0.5042017}
+        - center: {x: 0.29268292, y: 0.1764706}
+          size: {x: 0.2195122, y: 0.5042017}
+        handTuned: 0
+      - frame: knight_red_jumpkick_e1
+        shapes:
+        - center: {x: -0.25609756, y: -0.29411766}
+          size: {x: 0.25609756, y: 0.30252102}
+        - center: {x: 0.12195122, y: -0.42857143}
+          size: {x: 0.31707317, y: 0.3697479}
+        - center: {x: 0.5, y: -0.36134455}
+          size: {x: 0.25609756, y: 0.4369748}
+        handTuned: 0
+      - frame: knight_red_jumpkick_e2
+        shapes:
+        - center: {x: 0.24390244, y: -0.22689076}
+          size: {x: 0.34146342, y: 0.5042017}
+        - center: {x: 0.15853658, y: 0.4369748}
+          size: {x: 0.40243903, y: 0.56302524}
+        handTuned: 0
+      - frame: knight_red_jumpkick_e3
+        shapes:
+        - center: {x: 0.29268292, y: -0.4117647}
+          size: {x: 0.31707317, y: 0.5546219}
+        - center: {x: 0.2195122, y: 0.31092438}
+          size: {x: 0.41463414, y: 0.5714286}
+        handTuned: 0
+      - frame: knight_red_jumpkick_e4
+        shapes:
+        - center: {x: -0.70731705, y: 0.075630255}
+          size: {x: 0.29268292, y: 0.30252102}
+        - center: {x: -0.2682927, y: 0.075630255}
+          size: {x: 0.34146342, y: 0.5714286}
+        - center: {x: 0.2195122, y: 0.075630255}
+          size: {x: 0.34146342, y: 0.30252102}
+        - center: {x: 0.6707317, y: 0.1092437}
+          size: {x: 0.30487806, y: 0.23529412}
+        handTuned: 0
+      - frame: knight_red_jumpkick_e5
+        shapes:
+        - center: {x: -0.64634144, y: 0.025210084}
+          size: {x: 0.2804878, y: 0.2857143}
+        - center: {x: -0.23170732, y: 0.075630255}
+          size: {x: 0.3292683, y: 0.53781515}
+        - center: {x: 0.17073171, y: 0.075630255}
+          size: {x: 0.2682927, y: 0.30252102}
+        handTuned: 0
+      - frame: knight_red_jumpkick_e6
+        shapes:
+        - center: {x: -0.23170732, y: -0.42857143}
+          size: {x: 0.5, y: 0.40336135}
+        - center: {x: 0.3292683, y: -0.44537815}
+          size: {x: 0.25609756, y: 0.45378152}
+        handTuned: 0
+      - frame: knight_red_jumpkick_e7
+        shapes:
+        - center: {x: 0.14634146, y: -0.4789916}
+          size: {x: 0.36585367, y: 0.52100843}
+        - center: {x: 0.25609756, y: 0.22689076}
+          size: {x: 0.23170732, y: 0.52100843}
+        handTuned: 0
+      - frame: knight_red_jumpkick_w0
+        shapes:
+        - center: {x: 0.15853658, y: -0.49579832}
+          size: {x: 0.35365853, y: 0.5042017}
+        - center: {x: 0.29268292, y: 0.1764706}
+          size: {x: 0.2195122, y: 0.5042017}
+        handTuned: 0
+      - frame: knight_red_jumpkick_w1
+        shapes:
+        - center: {x: 0.12195122, y: -0.36134455}
+          size: {x: 0.63414633, y: 0.4369748}
+        handTuned: 0
+      - frame: knight_red_jumpkick_w2
+        shapes:
+        - center: {x: 0.24390244, y: -0.22689076}
+          size: {x: 0.34146342, y: 0.5042017}
+        - center: {x: 0.15853658, y: 0.4369748}
+          size: {x: 0.40243903, y: 0.56302524}
+        handTuned: 0
+      - frame: knight_red_jumpkick_w3
+        shapes:
+        - center: {x: 0.29268292, y: -0.4117647}
+          size: {x: 0.31707317, y: 0.5546219}
+        - center: {x: 0.2195122, y: 0.31092438}
+          size: {x: 0.41463414, y: 0.5714286}
+        handTuned: 0
+      - frame: knight_red_jumpkick_w4
+        shapes:
+        - center: {x: 0.68292683, y: 0.1092437}
+          size: {x: 0.29268292, y: 0.23529412}
+        - center: {x: 0.24390244, y: 0.09243698}
+          size: {x: 0.34146342, y: 0.2857143}
+        - center: {x: -0.24390244, y: 0.09243698}
+          size: {x: 0.34146342, y: 0.5546219}
+        - center: {x: -0.69512194, y: -0.1092437}
+          size: {x: 0.30487806, y: 0.48739496}
+        handTuned: 0
+      - frame: knight_red_jumpkick_w5
+        shapes:
+        - center: {x: 0.18292683, y: 0.075630255}
+          size: {x: 0.25609756, y: 0.30252102}
+        - center: {x: -0.20731707, y: 0.075630255}
+          size: {x: 0.3292683, y: 0.53781515}
+        - center: {x: -0.63414633, y: 0.042016808}
+          size: {x: 0.29268292, y: 0.26890758}
+        handTuned: 0
+      - frame: knight_red_jumpkick_w6
+        shapes:
+        - center: {x: -0.07317073, y: -0.44537815}
+          size: {x: 0.6585366, y: 0.45378152}
+        handTuned: 0
+      - frame: knight_red_jumpkick_w7
+        shapes:
+        - center: {x: 0.14634146, y: -0.4789916}
+          size: {x: 0.36585367, y: 0.52100843}
+        - center: {x: 0.25609756, y: 0.22689076}
+          size: {x: 0.23170732, y: 0.52100843}
+        handTuned: 0
+      - frame: knight_red_kick_e0
+        shapes:
+        - center: {x: 0.013513514, y: -0.39823008}
+          size: {x: 0.4189189, y: 0.5663717}
+        - center: {x: 0.13513513, y: 0.38053098}
+          size: {x: 0.24324325, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_kick_e1
+        shapes:
+        - center: {x: 0.04054054, y: -0.4159292}
+          size: {x: 0.36486486, y: 0.5840708}
+        - center: {x: 0.16216215, y: 0.34513274}
+          size: {x: 0.27027026, y: 0.6017699}
+        handTuned: 0
+      - frame: knight_red_kick_e2
+        shapes:
+        - center: {x: 0.067567565, y: -0.43362832}
+          size: {x: 0.44594595, y: 0.5663717}
+        - center: {x: 0.04054054, y: 0.34513274}
+          size: {x: 0.3108108, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_kick_e3
+        shapes:
+        - center: {x: -0.13513513, y: -0.43362832}
+          size: {x: 0.3783784, y: 0.5663717}
+        - center: {x: 0.13513513, y: 0.34513274}
+          size: {x: 0.45945945, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_kick_e4
+        shapes:
+        - center: {x: -0.35135135, y: 0.061946902}
+          size: {x: 0.6486486, y: 0.6017699}
+        - center: {x: 0.44594595, y: 0.34513274}
+          size: {x: 0.36486486, y: 0.24778761}
+        handTuned: 0
+      - frame: knight_red_kick_e5
+        shapes:
+        - center: {x: -0.22972973, y: -0.39823008}
+          size: {x: 0.36486486, y: 0.6017699}
+        - center: {x: -0.08108108, y: 0.38938054}
+          size: {x: 0.3243243, y: 0.6106195}
+        handTuned: 0
+      - frame: knight_red_kick_e6
+        shapes:
+        - center: {x: -0.10810811, y: -0.39823008}
+          size: {x: 0.45945945, y: 0.6017699}
+        - center: {x: -0.067567565, y: 0.38938054}
+          size: {x: 0.25675675, y: 0.6106195}
+        handTuned: 0
+      - frame: knight_red_kick_e7
+        shapes:
+        - center: {x: 0, y: -0.39823008}
+          size: {x: 0.43243244, y: 0.6017699}
+        - center: {x: 0.10810811, y: 0.38938054}
+          size: {x: 0.27027026, y: 0.6106195}
+        handTuned: 0
+      - frame: knight_red_kick_w0
+        shapes:
+        - center: {x: 0.013513514, y: -0.39823008}
+          size: {x: 0.4189189, y: 0.5663717}
+        - center: {x: 0.13513513, y: 0.38053098}
+          size: {x: 0.24324325, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_kick_w1
+        shapes:
+        - center: {x: 0.04054054, y: -0.4159292}
+          size: {x: 0.36486486, y: 0.5840708}
+        - center: {x: 0.16216215, y: 0.34513274}
+          size: {x: 0.27027026, y: 0.6017699}
+        handTuned: 0
+      - frame: knight_red_kick_w2
+        shapes:
+        - center: {x: 0.067567565, y: -0.43362832}
+          size: {x: 0.44594595, y: 0.5663717}
+        - center: {x: 0.04054054, y: 0.34513274}
+          size: {x: 0.3108108, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_kick_w3
+        shapes:
+        - center: {x: -0.13513513, y: -0.43362832}
+          size: {x: 0.3783784, y: 0.5663717}
+        - center: {x: 0.13513513, y: 0.34513274}
+          size: {x: 0.45945945, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_kick_w4
+        shapes:
+        - center: {x: 0.45945945, y: 0.34513274}
+          size: {x: 0.35135135, y: 0.24778761}
+        - center: {x: -0.08108108, y: 0.061946902}
+          size: {x: 0.4054054, y: 0.49557522}
+        - center: {x: -0.6351351, y: 0.044247787}
+          size: {x: 0.36486486, y: 0.61946905}
+        handTuned: 0
+      - frame: knight_red_kick_w5
+        shapes:
+        - center: {x: -0.22972973, y: -0.39823008}
+          size: {x: 0.36486486, y: 0.6017699}
+        - center: {x: -0.08108108, y: 0.38938054}
+          size: {x: 0.3243243, y: 0.6106195}
+        handTuned: 0
+      - frame: knight_red_kick_w6
+        shapes:
+        - center: {x: -0.10810811, y: -0.39823008}
+          size: {x: 0.45945945, y: 0.6017699}
+        - center: {x: -0.067567565, y: 0.38938054}
+          size: {x: 0.25675675, y: 0.6106195}
+        handTuned: 0
+      - frame: knight_red_kick_w7
+        shapes:
+        - center: {x: -0, y: -0.39823008}
+          size: {x: 0.43243244, y: 0.6017699}
+        - center: {x: 0.10810811, y: 0.38938054}
+          size: {x: 0.27027026, y: 0.6106195}
+        handTuned: 0
+      - frame: knight_red_punch_e0
+        shapes:
+        - center: {x: -0.02189781, y: -0.39823008}
+          size: {x: 0.45255473, y: 0.6017699}
+        - center: {x: 0.124087594, y: 0.38938054}
+          size: {x: 0.27737227, y: 0.6106195}
+        handTuned: 0
+      - frame: knight_red_punch_e1
+        shapes:
+        - center: {x: -0.00729927, y: -0.4159292}
+          size: {x: 0.52554744, y: 0.5840708}
+        - center: {x: 0.13868614, y: 0.34513274}
+          size: {x: 0.3211679, y: 0.6017699}
+        handTuned: 0
+      - frame: knight_red_punch_e2
+        shapes:
+        - center: {x: -0.08029197, y: -0.39823008}
+          size: {x: 0.540146, y: 0.6017699}
+        - center: {x: 0.06569343, y: 0.38053098}
+          size: {x: 0.42335767, y: 0.6017699}
+        handTuned: 0
+      - frame: knight_red_punch_e3
+        shapes:
+        - center: {x: -0.5912409, y: -0.2920354}
+          size: {x: 0.40875912, y: 0.460177}
+        - center: {x: 0.00729927, y: 0.097345136}
+          size: {x: 0.48175183, y: 0.63716817}
+        - center: {x: 0.5985401, y: -0.22123894}
+          size: {x: 0.40145984, y: 0.63716817}
+        handTuned: 0
+      - frame: knight_red_punch_e4
+        shapes:
+        - center: {x: -0.60583943, y: -0.23893805}
+          size: {x: 0.3649635, y: 0.5132743}
+        - center: {x: -0.03649635, y: 0.11504425}
+          size: {x: 0.4379562, y: 0.5840708}
+        - center: {x: 0.54744524, y: -0.18584071}
+          size: {x: 0.37956205, y: 0.67256635}
+        handTuned: 0
+      - frame: knight_red_punch_e5
+        shapes:
+        - center: {x: -0.60583943, y: -0.22123894}
+          size: {x: 0.3649635, y: 0.49557522}
+        - center: {x: -0.05109489, y: 0.097345136}
+          size: {x: 0.42335767, y: 0.6017699}
+        - center: {x: 0.50364965, y: -0.18584071}
+          size: {x: 0.3649635, y: 0.67256635}
+        handTuned: 0
+      - frame: knight_red_punch_e6
+        shapes:
+        - center: {x: -0.18248175, y: -0.39823008}
+          size: {x: 0.49635038, y: 0.6017699}
+        - center: {x: 0.09489051, y: 0.38053098}
+          size: {x: 0.33576643, y: 0.6017699}
+        handTuned: 0
+      - frame: knight_red_punch_e7
+        shapes:
+        - center: {x: -0.09489051, y: -0.39823008}
+          size: {x: 0.49635038, y: 0.6017699}
+        - center: {x: 0.09489051, y: 0.38938054}
+          size: {x: 0.30656934, y: 0.6106195}
+        handTuned: 0
+      - frame: knight_red_punch_w0
+        shapes:
+        - center: {x: -0.02189781, y: -0.39823008}
+          size: {x: 0.4379562, y: 0.6017699}
+        - center: {x: 0.13868614, y: 0.38938054}
+          size: {x: 0.27737227, y: 0.6106195}
+        handTuned: 0
+      - frame: knight_red_punch_w1
+        shapes:
+        - center: {x: -0.02189781, y: -0.4159292}
+          size: {x: 0.52554744, y: 0.5840708}
+        - center: {x: 0.15328467, y: 0.34513274}
+          size: {x: 0.3211679, y: 0.6017699}
+        handTuned: 0
+      - frame: knight_red_punch_w2
+        shapes:
+        - center: {x: -0.08029197, y: -0.39823008}
+          size: {x: 0.55474454, y: 0.6017699}
+        - center: {x: 0.06569343, y: 0.38053098}
+          size: {x: 0.40875912, y: 0.6017699}
+        handTuned: 0
+      - frame: knight_red_punch_w3
+        shapes:
+        - center: {x: 0.5912409, y: -0.22123894}
+          size: {x: 0.40875912, y: 0.63716817}
+        - center: {x: -0.00729927, y: 0.11504425}
+          size: {x: 0.48175183, y: 0.61946905}
+        - center: {x: -0.5985401, y: -0.2920354}
+          size: {x: 0.40145984, y: 0.460177}
+        handTuned: 0
+      - frame: knight_red_punch_w4
+        shapes:
+        - center: {x: 0.57664233, y: -0.18584071}
+          size: {x: 0.3649635, y: 0.67256635}
+        - center: {x: 0.00729927, y: 0.097345136}
+          size: {x: 0.4379562, y: 0.6017699}
+        - center: {x: -0.57664233, y: -0.22123894}
+          size: {x: 0.37956205, y: 0.49557522}
+        handTuned: 0
+      - frame: knight_red_punch_w5
+        shapes:
+        - center: {x: 0.5182482, y: -0.20353982}
+          size: {x: 0.3649635, y: 0.65486723}
+        - center: {x: -0.03649635, y: 0.097345136}
+          size: {x: 0.42335767, y: 0.6017699}
+        - center: {x: -0.5912409, y: -0.22123894}
+          size: {x: 0.3649635, y: 0.49557522}
+        handTuned: 0
+      - frame: knight_red_punch_w6
+        shapes:
+        - center: {x: -0.16788322, y: -0.39823008}
+          size: {x: 0.49635038, y: 0.6017699}
+        - center: {x: 0.09489051, y: 0.38053098}
+          size: {x: 0.35036495, y: 0.6017699}
+        handTuned: 0
+      - frame: knight_red_punch_w7
+        shapes:
+        - center: {x: -0.10948905, y: -0.39823008}
+          size: {x: 0.49635038, y: 0.6017699}
+        - center: {x: 0.09489051, y: 0.38938054}
+          size: {x: 0.3211679, y: 0.6106195}
+        handTuned: 0
+      - frame: knight_red_run_e0
+        shapes:
+        - center: {x: -0.23076923, y: -0.39823008}
+          size: {x: 0.46153846, y: 0.6017699}
+        - center: {x: -0.09615385, y: 0.38938054}
+          size: {x: 0.40384614, y: 0.6106195}
+        handTuned: 0
+      - frame: knight_red_run_e1
+        shapes:
+        - center: {x: -0.25, y: -0.45132744}
+          size: {x: 0.48076922, y: 0.54867256}
+        - center: {x: -0.115384616, y: 0.30973452}
+          size: {x: 0.5, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_run_e2
+        shapes:
+        - center: {x: -0.1923077, y: -0.38053098}
+          size: {x: 0.5769231, y: 0.5840708}
+        - center: {x: 0.01923077, y: 0.38938054}
+          size: {x: 0.5576923, y: 0.6106195}
+        handTuned: 0
+      - frame: knight_red_run_e3
+        shapes:
+        - center: {x: -0.30769232, y: -0.39823008}
+          size: {x: 0.5, y: 0.6017699}
+        - center: {x: -0.07692308, y: 0.38053098}
+          size: {x: 0.46153846, y: 0.6017699}
+        handTuned: 0
+      - frame: knight_red_run_e4
+        shapes:
+        - center: {x: -0.09615385, y: -0.45132744}
+          size: {x: 0.32692307, y: 0.54867256}
+        - center: {x: 0, y: 0.30973452}
+          size: {x: 0.5, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_run_e5
+        shapes:
+        - center: {x: -0.09615385, y: -0.43362832}
+          size: {x: 0.48076922, y: 0.5663717}
+        - center: {x: 0.01923077, y: 0.34513274}
+          size: {x: 0.48076922, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_run_e6
+        shapes:
+        - center: {x: -0.13461539, y: -0.43362832}
+          size: {x: 0.40384614, y: 0.5663717}
+        - center: {x: 0.115384616, y: 0.34513274}
+          size: {x: 0.42307693, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_run_e7
+        shapes:
+        - center: {x: -0.01923077, y: -0.45132744}
+          size: {x: 0.40384614, y: 0.54867256}
+        - center: {x: 0.057692308, y: 0.30973452}
+          size: {x: 0.48076922, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_run_w0
+        shapes:
+        - center: {x: -0.23076923, y: -0.39823008}
+          size: {x: 0.46153846, y: 0.6017699}
+        - center: {x: -0.09615385, y: 0.38938054}
+          size: {x: 0.40384614, y: 0.6106195}
+        handTuned: 0
+      - frame: knight_red_run_w1
+        shapes:
+        - center: {x: -0.25, y: -0.45132744}
+          size: {x: 0.48076922, y: 0.54867256}
+        - center: {x: -0.115384616, y: 0.30973452}
+          size: {x: 0.5, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_run_w2
+        shapes:
+        - center: {x: -0.1923077, y: -0.38053098}
+          size: {x: 0.5769231, y: 0.5840708}
+        - center: {x: 0.01923077, y: 0.38938054}
+          size: {x: 0.5576923, y: 0.6106195}
+        handTuned: 0
+      - frame: knight_red_run_w3
+        shapes:
+        - center: {x: -0.30769232, y: -0.39823008}
+          size: {x: 0.5, y: 0.6017699}
+        - center: {x: -0.07692308, y: 0.38053098}
+          size: {x: 0.46153846, y: 0.6017699}
+        handTuned: 0
+      - frame: knight_red_run_w4
+        shapes:
+        - center: {x: -0.09615385, y: -0.45132744}
+          size: {x: 0.32692307, y: 0.54867256}
+        - center: {x: -0, y: 0.30973452}
+          size: {x: 0.5, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_run_w5
+        shapes:
+        - center: {x: -0.09615385, y: -0.43362832}
+          size: {x: 0.48076922, y: 0.5663717}
+        - center: {x: 0.01923077, y: 0.34513274}
+          size: {x: 0.48076922, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_run_w6
+        shapes:
+        - center: {x: -0.13461539, y: -0.43362832}
+          size: {x: 0.40384614, y: 0.5663717}
+        - center: {x: 0.115384616, y: 0.34513274}
+          size: {x: 0.42307693, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_run_w7
+        shapes:
+        - center: {x: -0.01923077, y: -0.45132744}
+          size: {x: 0.40384614, y: 0.54867256}
+        - center: {x: 0.057692308, y: 0.30973452}
+          size: {x: 0.48076922, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_shieldbash_e0
+        shapes:
+        - center: {x: -0.25925925, y: -0.4159292}
+          size: {x: 0.5185185, y: 0.5840708}
+        - center: {x: -0.18518518, y: 0.34513274}
+          size: {x: 0.2962963, y: 0.6017699}
+        handTuned: 0
+      - frame: knight_red_shieldbash_e1
+        shapes:
+        - center: {x: -0.18518518, y: -0.6106195}
+          size: {x: 0.5185185, y: 0.38938054}
+        - center: {x: -0.14814815, y: -0.044247787}
+          size: {x: 0.44444445, y: 0.460177}
+        - center: {x: 0.018518519, y: 0.539823}
+          size: {x: 0.2777778, y: 0.40707964}
+        handTuned: 0
+      - frame: knight_red_shieldbash_e2
+        shapes:
+        - center: {x: -0.12962963, y: -0.43362832}
+          size: {x: 0.5, y: 0.5663717}
+        - center: {x: 0.09259259, y: 0.34513274}
+          size: {x: 0.35185185, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_shieldbash_e3
+        shapes:
+        - center: {x: -0.018518519, y: -0.39823008}
+          size: {x: 0.537037, y: 0.6017699}
+        - center: {x: 0.074074075, y: 0.38938054}
+          size: {x: 0.2962963, y: 0.6106195}
+        handTuned: 0
+      - frame: knight_red_shieldbash_e4
+        shapes:
+        - center: {x: 0.018518519, y: -0.39823008}
+          size: {x: 0.537037, y: 0.6017699}
+        - center: {x: 0.18518518, y: 0.38053098}
+          size: {x: 0.37037036, y: 0.6017699}
+        handTuned: 0
+      - frame: knight_red_shieldbash_e5
+        shapes:
+        - center: {x: -0.09259259, y: -0.39823008}
+          size: {x: 0.537037, y: 0.6017699}
+        - center: {x: 0.09259259, y: 0.38053098}
+          size: {x: 0.35185185, y: 0.6017699}
+        handTuned: 0
+      - frame: knight_red_shieldbash_e6
+        shapes:
+        - center: {x: -0.14814815, y: -0.43362832}
+          size: {x: 0.44444445, y: 0.5663717}
+        - center: {x: 0.12962963, y: 0.34513274}
+          size: {x: 0.35185185, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_shieldbash_e7
+        shapes:
+        - center: {x: 0.018518519, y: -0.59292036}
+          size: {x: 0.537037, y: 0.40707964}
+        - center: {x: 0.018518519, y: 0.0088495575}
+          size: {x: 0.42592594, y: 0.4778761}
+        - center: {x: 0.11111111, y: 0.6017699}
+          size: {x: 0.22222222, y: 0.39823008}
+        handTuned: 0
+      - frame: knight_red_shieldbash_w0
+        shapes:
+        - center: {x: -0.25925925, y: -0.4159292}
+          size: {x: 0.5185185, y: 0.5840708}
+        - center: {x: -0.18518518, y: 0.34513274}
+          size: {x: 0.2962963, y: 0.6017699}
+        handTuned: 0
+      - frame: knight_red_shieldbash_w1
+        shapes:
+        - center: {x: -0.18518518, y: -0.6106195}
+          size: {x: 0.5185185, y: 0.38938054}
+        - center: {x: -0.14814815, y: -0.044247787}
+          size: {x: 0.44444445, y: 0.460177}
+        - center: {x: 0.018518519, y: 0.539823}
+          size: {x: 0.2777778, y: 0.40707964}
+        handTuned: 0
+      - frame: knight_red_shieldbash_w2
+        shapes:
+        - center: {x: -0.12962963, y: -0.43362832}
+          size: {x: 0.5, y: 0.5663717}
+        - center: {x: 0.09259259, y: 0.34513274}
+          size: {x: 0.35185185, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_shieldbash_w3
+        shapes:
+        - center: {x: -0.018518519, y: -0.39823008}
+          size: {x: 0.537037, y: 0.6017699}
+        - center: {x: 0.074074075, y: 0.38938054}
+          size: {x: 0.2962963, y: 0.6106195}
+        handTuned: 0
+      - frame: knight_red_shieldbash_w4
+        shapes:
+        - center: {x: 0.018518519, y: -0.39823008}
+          size: {x: 0.537037, y: 0.6017699}
+        - center: {x: 0.18518518, y: 0.38053098}
+          size: {x: 0.37037036, y: 0.6017699}
+        handTuned: 0
+      - frame: knight_red_shieldbash_w5
+        shapes:
+        - center: {x: -0.09259259, y: -0.39823008}
+          size: {x: 0.537037, y: 0.6017699}
+        - center: {x: 0.09259259, y: 0.38053098}
+          size: {x: 0.35185185, y: 0.6017699}
+        handTuned: 0
+      - frame: knight_red_shieldbash_w6
+        shapes:
+        - center: {x: -0.14814815, y: -0.43362832}
+          size: {x: 0.44444445, y: 0.5663717}
+        - center: {x: 0.12962963, y: 0.34513274}
+          size: {x: 0.35185185, y: 0.5663717}
+        handTuned: 0
+      - frame: knight_red_shieldbash_w7
+        shapes:
+        - center: {x: 0.018518519, y: -0.59292036}
+          size: {x: 0.537037, y: 0.40707964}
+        - center: {x: 0.018518519, y: 0.0088495575}
+          size: {x: 0.42592594, y: 0.4778761}
+        - center: {x: 0.11111111, y: 0.6017699}
+          size: {x: 0.22222222, y: 0.39823008}
+        handTuned: 0
+      - frame: knight_red_slash_e0
+        shapes:
+        - center: {x: -0.09411765, y: -0.6814159}
+          size: {x: 0.29411766, y: 0.31858408}
+        - center: {x: -0.12941177, y: -0.20353982}
+          size: {x: 0.21176471, y: 0.37168142}
+        - center: {x: -0.047058824, y: 0.2920354}
+          size: {x: 0.12941177, y: 0.33628318}
+        handTuned: 0
+      - frame: knight_red_slash_e1
+        shapes:
+        - center: {x: -0.011764706, y: -0.45132744}
+          size: {x: 0.28235295, y: 0.54867256}
+        - center: {x: 0.03529412, y: 0.22123894}
+          size: {x: 0.21176471, y: 0.4778761}
+        handTuned: 0
+      - frame: knight_red_slash_e2
+        shapes:
+        - center: {x: 0.105882354, y: -0.59292036}
+          size: {x: 0.28235295, y: 0.40707964}
+        - center: {x: 0.22352941, y: 0.0088495575}
+          size: {x: 0.1882353, y: 0.4778761}
+        - center: {x: 0.09411765, y: 0.6017699}
+          size: {x: 0.24705882, y: 0.39823008}
+        handTuned: 0
+      - frame: knight_red_slash_e3
+        shapes:
+        - center: {x: 0.12941177, y: -0.539823}
+          size: {x: 0.30588236, y: 0.460177}
+        - center: {x: 0.3882353, y: 0.11504425}
+          size: {x: 0.28235295, y: 0.4778761}
+        handTuned: 0
+      - frame: knight_red_slash_e4
+        shapes:
+        - center: {x: -0.3529412, y: -0.39823008}
+          size: {x: 0.22352941, y: 0.38938054}
+        - center: {x: 0, y: -0.20353982}
+          size: {x: 0.27058825, y: 0.44247788}
+        - center: {x: 0.5647059, y: -0.34513274}
+          size: {x: 0.43529412, y: 0.54867256}
+        handTuned: 0
+      - frame: knight_red_slash_e5
+        shapes:
+        - center: {x: -0.7176471, y: -0.48672566}
+          size: {x: 0.28235295, y: 0.37168142}
+        - center: {x: -0.29411766, y: -0.18584071}
+          size: {x: 0.32941177, y: 0.460177}
+        - center: {x: 0.12941177, y: -0.34513274}
+          size: {x: 0.28235295, y: 0.4778761}
+        handTuned: 0
+      - frame: knight_red_slash_e6
+        shapes:
+        - center: {x: -0.34117648, y: -0.539823}
+          size: {x: 0.25882354, y: 0.460177}
+        - center: {x: -0.29411766, y: 0.097345136}
+          size: {x: 0.16470589, y: 0.460177}
+        handTuned: 0
+      - frame: knight_red_slash_e7
+        shapes:
+        - center: {x: -0.11764706, y: -0.6814159}
+          size: {x: 0.27058825, y: 0.31858408}
+        - center: {x: -0.14117648, y: -0.20353982}
+          size: {x: 0.22352941, y: 0.37168142}
+        - center: {x: -0.07058824, y: 0.2920354}
+          size: {x: 0.12941177, y: 0.33628318}
+        handTuned: 0
+      - frame: knight_red_slash_w0
+        shapes:
+        - center: {x: -0.09411765, y: -0.6814159}
+          size: {x: 0.29411766, y: 0.31858408}
+        - center: {x: -0.12941177, y: -0.20353982}
+          size: {x: 0.21176471, y: 0.37168142}
+        - center: {x: -0.047058824, y: 0.2920354}
+          size: {x: 0.12941177, y: 0.33628318}
+        handTuned: 0
+      - frame: knight_red_slash_w1
+        shapes:
+        - center: {x: -0.011764706, y: -0.45132744}
+          size: {x: 0.28235295, y: 0.54867256}
+        - center: {x: 0.03529412, y: 0.22123894}
+          size: {x: 0.21176471, y: 0.4778761}
+        handTuned: 0
+      - frame: knight_red_slash_w2
+        shapes:
+        - center: {x: 0.105882354, y: -0.59292036}
+          size: {x: 0.28235295, y: 0.40707964}
+        - center: {x: 0.22352941, y: 0.0088495575}
+          size: {x: 0.1882353, y: 0.4778761}
+        - center: {x: 0.09411765, y: 0.6017699}
+          size: {x: 0.24705882, y: 0.39823008}
+        handTuned: 0
+      - frame: knight_red_slash_w3
+        shapes:
+        - center: {x: 0.12941177, y: -0.539823}
+          size: {x: 0.30588236, y: 0.460177}
+        - center: {x: 0.3882353, y: 0.11504425}
+          size: {x: 0.28235295, y: 0.4778761}
+        handTuned: 0
+      - frame: knight_red_slash_w4
+        shapes:
+        - center: {x: 0.7764706, y: -0.30973452}
+          size: {x: 0.22352941, y: 0.4778761}
+        - center: {x: 0.42352942, y: -0.32743362}
+          size: {x: 0.27058825, y: 0.5663717}
+        - center: {x: 0.023529412, y: -0.22123894}
+          size: {x: 0.27058825, y: 0.42477876}
+        - center: {x: -0.34117648, y: -0.39823008}
+          size: {x: 0.23529412, y: 0.38938054}
+        handTuned: 0
+      - frame: knight_red_slash_w5
+        shapes:
+        - center: {x: 0.12941177, y: -0.34513274}
+          size: {x: 0.28235295, y: 0.4778761}
+        - center: {x: -0.29411766, y: -0.18584071}
+          size: {x: 0.32941177, y: 0.460177}
+        - center: {x: -0.7176471, y: -0.48672566}
+          size: {x: 0.28235295, y: 0.37168142}
+        handTuned: 0
+      - frame: knight_red_slash_w6
+        shapes:
+        - center: {x: -0.34117648, y: -0.539823}
+          size: {x: 0.25882354, y: 0.460177}
+        - center: {x: -0.29411766, y: 0.097345136}
+          size: {x: 0.16470589, y: 0.460177}
+        handTuned: 0
+      - frame: knight_red_slash_w7
+        shapes:
+        - center: {x: -0.11764706, y: -0.6814159}
+          size: {x: 0.27058825, y: 0.31858408}
+        - center: {x: -0.14117648, y: -0.20353982}
+          size: {x: 0.22352941, y: 0.37168142}
+        - center: {x: -0.07058824, y: 0.2920354}
+          size: {x: 0.12941177, y: 0.33628318}
+        handTuned: 0
+      - frame: knight_red_walk_e0
+        shapes:
+        - center: {x: -0.19512194, y: -0.28070176}
+          size: {x: 0.5121951, y: 0.71929824}
+        - center: {x: 0, y: 0.5614035}
+          size: {x: 0.2682927, y: 0.40350878}
+        handTuned: 0
+      - frame: knight_red_walk_e1
+        shapes:
+        - center: {x: -0.09756097, y: -0.28070176}
+          size: {x: 0.5121951, y: 0.71929824}
+        - center: {x: 0.12195122, y: 0.5614035}
+          size: {x: 0.24390244, y: 0.40350878}
+        handTuned: 0
+      - frame: knight_red_walk_e2
+        shapes:
+        - center: {x: -0.2682927, y: -0.5964912}
+          size: {x: 0.3902439, y: 0.40350878}
+        - center: {x: -0.09756097, y: 0}
+          size: {x: 0.5121951, y: 0.47368422}
+        - center: {x: 0.12195122, y: 0.5964912}
+          size: {x: 0.29268292, y: 0.40350878}
+        handTuned: 0
+      - frame: knight_red_walk_e3
+        shapes:
+        - center: {x: -0.12195122, y: -0.2631579}
+          size: {x: 0.4878049, y: 0.7368421}
+        - center: {x: 0.09756097, y: 0.5964912}
+          size: {x: 0.2682927, y: 0.40350878}
+        handTuned: 0
+      - frame: knight_red_walk_e4
+        shapes:
+        - center: {x: -0.12195122, y: -0.2631579}
+          size: {x: 0.5365854, y: 0.7368421}
+        - center: {x: 0.14634146, y: 0.5964912}
+          size: {x: 0.2682927, y: 0.40350878}
+        handTuned: 0
+      - frame: knight_red_walk_e5
+        shapes:
+        - center: {x: -0.2195122, y: -0.5964912}
+          size: {x: 0.5365854, y: 0.40350878}
+        - center: {x: -0.12195122, y: 0}
+          size: {x: 0.5365854, y: 0.47368422}
+        - center: {x: 0.12195122, y: 0.5964912}
+          size: {x: 0.24390244, y: 0.40350878}
+        handTuned: 0
+      - frame: knight_red_walk_e6
+        shapes:
+        - center: {x: -0.17073171, y: -0.2631579}
+          size: {x: 0.5365854, y: 0.7368421}
+        - center: {x: 0.14634146, y: 0.5964912}
+          size: {x: 0.2682927, y: 0.40350878}
+        handTuned: 0
+      - frame: knight_red_walk_e7
+        shapes:
+        - center: {x: -0.12195122, y: -0.2631579}
+          size: {x: 0.5365854, y: 0.7368421}
+        - center: {x: 0.09756097, y: 0.5964912}
+          size: {x: 0.2682927, y: 0.40350878}
+        handTuned: 0
+      - frame: knight_red_walk_w0
+        shapes:
+        - center: {x: -0.19512194, y: -0.28070176}
+          size: {x: 0.5121951, y: 0.71929824}
+        - center: {x: -0, y: 0.5614035}
+          size: {x: 0.2682927, y: 0.40350878}
+        handTuned: 0
+      - frame: knight_red_walk_w1
+        shapes:
+        - center: {x: -0.09756097, y: -0.28070176}
+          size: {x: 0.5121951, y: 0.71929824}
+        - center: {x: 0.12195122, y: 0.5614035}
+          size: {x: 0.24390244, y: 0.40350878}
+        handTuned: 0
+      - frame: knight_red_walk_w2
+        shapes:
+        - center: {x: -0.2682927, y: -0.5964912}
+          size: {x: 0.3902439, y: 0.40350878}
+        - center: {x: -0.09756097, y: 0}
+          size: {x: 0.5121951, y: 0.47368422}
+        - center: {x: 0.12195122, y: 0.5964912}
+          size: {x: 0.29268292, y: 0.40350878}
+        handTuned: 0
+      - frame: knight_red_walk_w3
+        shapes:
+        - center: {x: -0.12195122, y: -0.2631579}
+          size: {x: 0.4878049, y: 0.7368421}
+        - center: {x: 0.09756097, y: 0.5964912}
+          size: {x: 0.2682927, y: 0.40350878}
+        handTuned: 0
+      - frame: knight_red_walk_w4
+        shapes:
+        - center: {x: -0.12195122, y: -0.2631579}
+          size: {x: 0.5365854, y: 0.7368421}
+        - center: {x: 0.14634146, y: 0.5964912}
+          size: {x: 0.2682927, y: 0.40350878}
+        handTuned: 0
+      - frame: knight_red_walk_w5
+        shapes:
+        - center: {x: -0.2195122, y: -0.5964912}
+          size: {x: 0.5365854, y: 0.40350878}
+        - center: {x: -0.12195122, y: 0}
+          size: {x: 0.5365854, y: 0.47368422}
+        - center: {x: 0.12195122, y: 0.5964912}
+          size: {x: 0.24390244, y: 0.40350878}
+        handTuned: 0
+      - frame: knight_red_walk_w6
+        shapes:
+        - center: {x: -0.17073171, y: -0.2631579}
+          size: {x: 0.5365854, y: 0.7368421}
+        - center: {x: 0.14634146, y: 0.5964912}
+          size: {x: 0.2682927, y: 0.40350878}
+        handTuned: 0
+      - frame: knight_red_walk_w7
+        shapes:
+        - center: {x: -0.12195122, y: -0.2631579}
+          size: {x: 0.5365854, y: 0.7368421}
+        - center: {x: 0.09756097, y: 0.5964912}
+          size: {x: 0.2682927, y: 0.40350878}
+        handTuned: 0
     scaleConfig:
       scaleIdle: 0
       tint: {r: 1, g: 1, b: 1, a: 1}

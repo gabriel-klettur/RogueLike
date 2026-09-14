@@ -355,7 +355,7 @@ namespace Valkur.Gameplay.Spells
                     // A corpse must not consume the budget, and must not stop the shot
                     // either — otherwise a piercing lance is cancelled by whatever died
                     // in front of it a moment ago.
-                    _pierced.Add(other);
+                    MarkPierced(other);
                     _impactVfxPos = null;
                     return;
                 }
@@ -389,7 +389,7 @@ namespace Valkur.Gameplay.Spells
         /// </summary>
         private void ContinueThrough(Collider2D victim)
         {
-            _pierced.Add(victim);
+            MarkPierced(victim);
             _pierceRemaining--;
 
             if (_pierceFalloff > 0f)
@@ -667,6 +667,22 @@ namespace Valkur.Gameplay.Spells
         /// hierarchy (the caster itself or any descendant). Cheap — at most one
         /// IsChildOf walk through Transform parents.
         /// </summary>
+        /// <summary>
+        /// Remember a body this shot has gone through — ALL of it. A body is a footprint plus
+        /// hurtbox capsules, and remembering only the collider the sweep met would let the next
+        /// step's sweep meet the same creature's next capsule and pierce it a second time.
+        /// </summary>
+        private void MarkPierced(Collider2D collider)
+        {
+            if (collider == null) return;
+            if (Combat.EntityColliderRig.TryGetOwner(collider, out var rig))
+            {
+                rig.CollectColliders(_pierced);
+                return;
+            }
+            _pierced.Add(collider);
+        }
+
         private bool IsCasterCollider(Collider2D other)
         {
             if (_caster == null || other == null) return false;

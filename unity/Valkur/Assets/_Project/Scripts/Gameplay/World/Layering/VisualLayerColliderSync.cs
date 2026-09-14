@@ -68,6 +68,9 @@ namespace Valkur.Gameplay.World.Layering
             for (int i = 0; i < _colliders.Length; i++)
             {
                 if (_colliders[i] == null) continue;
+                // Hurtbox capsules exclude every layer and must keep doing so: an include mask
+                // here would hand them contacts with this visual layer's walls.
+                if (Combat.EntityColliderRig.IsHurtbox(_colliders[i])) continue;
                 _colliders[i].includeLayers = mask;
             }
         }
