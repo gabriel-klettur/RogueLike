@@ -176,6 +176,91 @@ The **only legitimate exceptions** to the rule are:
 
 If you need a key the existing helpers don't expose (e.g. `KeyboardInputManager.WasF2PressedThisFrame()` for F2-rename), add the helper rather than a new direct read.
 
+### The War keyboard: every grimoire spell on a key, with a Shift layer
+
+Built 2026-09-14. Seventy spells (71 grimoire nodes minus the three on the mouse, plus both
+weapon draws) against **68 free single keys, 25 of them numpad/navigation** that a laptop or
+TKL board lacks, so the layout is two layers under the same fingers.
+
+```text
+tools/input/build_war_keyboard.py   THE DESIGN: a table -> bindings in ValkurInputActions (--check, --catalog)
+InputChord            Core/Input/   "Shift+1" as ONE slot: the OneModifier composite, chord paths "mod&key"
+InputBindingResolver                chords resolve to one binding; bare 1 is refused while Shift+1's Shift is held
+InputConflictScanner                chords keyed by chord path, so Shift is never "30 actions on one key"
+Controls editor / board             a chord is one row; capture skips modifiers; each cap shows "X | Shift: Y"
+HudAbilitySlot                      a chord prints "S1"
+InputChordTests                     the walk, the resolver, and the shipped layout (every grimoire spell on a key)
+```
+
+- **One row, one job; Shift is always "the same idea, heavier or rarer".** Digits = damage at
+  range (bare = a school's staple, Shift = its stronger spell; 9/0/- /= are beams), Q R T =
+  movement, Y U = martial melee, O [ ] = summons and rare, F..L = protection and healing,
+  ; ' \ = ki charges, Z..'/' = area control, B / Shift+B = the two weapon draws. Mouse stays
+  fireball / slash / laser_beam and those three carry NO slot (`SpellSlash` was retired from
+  the asset so nothing competes with the right click). Free Shift slots on purpose: R T U L = / ].
+- **The dash is the Dash action, not a spell slot — and it is INNATE.** Space, right Shift and
+  both Ctrls call `TryCastByKey("dash")`, which answers false for a spell outside the book, and
+  `dash` was a level-3 martial node missing from `alwaysKnownSpellKeys` — so on a fresh
+  character all four dash keys did nothing, measured live. It is in the always-known kit now
+  (cap raised to 7, reason in `ShippedProgressionContentTests`) and pinned by
+  `InputChordTests.TheDash_IsKnownFromLevelZero`. Any verb that casts a spell by key through
+  its own action has the same trap: the key works only if the spell is in the book.
+- **Only LEFT Shift is a modifier.** Right Shift, both Ctrls and Space are the dash — a chord on
+  any of them would dash and cast from one press. `InputChordTests.TheOnlyModifier_IsLeftShift`.
+- **A chord is data, never a modifier test in C#.** The `RequiresCtrl` precedent lives in code
+  and no audit can see it; this one is an InputSystem composite in the asset, so the Controls
+  editor can move its key, the store persists it by binding id, and the scanner reads it.
+- **Every composite-walking reader had to learn chords, and each failure is silent.** Walked as
+  parts, the legacy OR-gate casts the spell on Shift alone, the scanner paints Shift red, the
+  Controls editor offers the Shift as a rebindable slot, the HUD prints only "1" (telling the
+  player bare 1 casts it), and `NoTwoGameplayActions_ShareAKeyboardBinding` reports every
+  chord as sharing leftShift. `InputChord.Slots` is the ONE walk; use it, never
+  `bindings[i].isComposite` loops, anywhere a composite could be a chord.
+- **The InputSystem does not arbitrate bare-vs-chord on its own** (shortcut consumption is off
+  by default and only covers the new backend), so `WasPerformedThisFrame` refuses a bare key a
+  held chord owns, and overrules a native "performed" explained only by that key.
+- **A charge held on Shift+key survives releasing Shift**: `IsPressed` on a chord reads the key.
+- **Edit the layout in the script, then paste `--catalog` into `InputActionCatalog`.** The
+  catalog and the asset must agree (closed table), and binding ids are uuid5-stable so a
+  re-run is a no-op diff.
+
+### The War bar: two pages, and a size EARNED in the "Barra de Guerra" talent branch
+
+```text
+SpellBarHUD.Faces       UI/HUD/SpellBar/   two War PAGES (bare keys / Shift chords), the earned grid
+SpellBarModel.Fit       UI/HUD/SpellBar/   capacity -> spells, then Empty sockets; overflow counted
+StatKind.WarBarColumns/WarBarRows (14/15)  base 5 x 1, max 10 x 6 (StatCatalog constants)
+LearnedSkills.SetBranches / TryFindNode    shared branches beside the class tree, ONE lookup
+ProgressionCatalog.sharedSkillTrees        today one: Data/Progression/SharedBranches/war_bar/
+SkillTreeHUD.Branches   UI/HUD/Trees/      the branch TABS in the title bar
+SharedBranchSeeds       Editor/Progression Valkur > Progression > Seed Shared Talent Branches
+WarBarBranchTests                          composition, the shipped numbers, the 1080p fit
+```
+
+- **Pages, not one wall of slots.** Holding left Shift turns the War face to the Shift layer
+  (a 0.11 s page turn, silent but for the gem); releasing turns it back. Showing both layers
+  at once was up to seventy slots and a key cap could not say which layer a spell sat on.
+- **The size is a STAT, bought with skill points.** Five "Columna de guerra" talents (+1 socket
+  per row each, levels 2-20) and five "Fila de guerra" (+1 row each, levels 4-24), 20 points in
+  all, competing with the class path for the same purse. Respec takes it back exactly, because
+  it rides the Skill layer like every other talent. Nothing is pushed: `SpellBarHUD` (Valkur.UI)
+  asks `PlayerStats.WarBarColumns/Rows`, since Gameplay may not reference UI.
+- **Empty sockets are DRAWN.** A talent whose reward is room nobody sees reads as a talent that
+  did nothing; the new sockets flash when a size is bought. Spells past the capacity are left
+  off the bar (still castable by key) and counted as a dim "+N" on the bar's shoulder.
+- **The earned bar is a real GRID**: every row shares column positions, a group opens every
+  `warGroupSize` COLUMNS, the number row is the bottom row, and the posture switch stands outside
+  the grid to the right. Laid out like the Peace face (rows centred separately, groups by list
+  index) three rows drifted half a slot apart — measured on the first live capture.
+- **A branch is a TAB, and its two trees are TRACKS.** The talents window must fit 640x360 texels
+  (1080p at 3 px/texel), which caps a board at 5 columns x 4 rows; a crown over two chains of five
+  needed six rows or an elbow through the first chain's sockets. `SkillTreeLayout` now draws a
+  same-row prerequisite as a horizontal track. Shared branches live OUTSIDE `SkillTrees/`, because
+  `ShippedSkillTreeDataTests` counts that folder as exactly the five class trees.
+- **Every rank-to-node resolution goes through `LearnedSkills.TryFindNode`** (modifiers, save
+  load, auras, the `learn` command). A branch rank resolved only against `Tree` is a rank the
+  character holds that nothing reads — and a save load would prune it as an unknown id.
+
 ### War / Peace stance
 
 `Valkur.Core.PlayerStance` decides whether a combat binding does anything at all. **Peace is a
@@ -424,6 +509,7 @@ Use the right agent for the right job. Each agent has a constrained scope and pr
 | `/unity-test-new <System>` | Scaffold a test in correct folder/namespace |
 | `/unity-status` | Console + last test summary at a glance |
 | `/unity-profile` | Capture Profiler/Recorder snapshot — CPU/GPU axis breakdown + GC baseline |
+| `/menu-loading-style [elemento]` | Extend the loading bar's look (bevelled frame, gems, flow, event particles) to the pre-game menus |
 
 ## Live reload (no Stop/Play)
 
@@ -3807,16 +3893,16 @@ Audited 2026-09-13 at **5.2/10** and rebuilt the same day. Findings, measurement
 open: `.github/TREE_CHOPPING_AUDIT_2026-09-13.md`.
 
 ```text
-GatheringSkillDefinition  Data/World/Gathering/   the curve: gain chance, efficiency, bonus — pure, in TENTHS
+SkillDefinition           Data/Skills/            the curve: gain chance, efficiency, bonus — pure, in TENTHS
 GatheringYieldTable       Data/World/Gathering/   wood tiers: min skill, ramp, fade-out, tag gate
-GatheringSkillCatalog     Resources/Gathering/    the index (AddComponent-ed readers have no slot)
+SkillCatalog              Resources/Skills/       the index (AddComponent-ed readers have no slot)
 TreeFamilyClassifier      Data/World/Gathering/   asset path -> family, one rule for seeder and tests
-PlayerGatheringSkills     Gameplay/World/Gathering/ per-player tenths; get-or-add on the PLAYER only
-GatheringSkillFeedback    Gameplay/World/Gathering/ coalesced "+0.3% Tala", milestone and unlock toasts
+PlayerSkills              Gameplay/Skills/        per-player tenths; get-or-add on the PLAYER only
+SkillFeedback             Gameplay/Skills/        coalesced "+0.3% Tala", milestone and unlock toasts
 HarvestFx / HarvestFxRig  Gameplay/World/Gathering/ ONE shared rig: chips, leaves, dust, flash pool
 TreeFellFX / BuildingHitShake / BuildingRegrowFX   the fall, the shudder, the regrowth
 HarvestNode.Yield.cs      Gameplay/World/Harvesting/ what work pays and teaches, from ANY route
-GatheringSkillsHUD        UI/HUD/Sheet/           character sheet tab OFICIOS
+SkillsHUD(.Detail)        UI/HUD/Sheet/           character sheet tab SKILLS — see "Skills and talents" below
 WoodcuttingContentSeeder  Editor/Gathering/       Valkur > Gathering > Seed Woodcutting Content
 skill / talar / regrow / fell                     DevConsole, category "gathering"
 ```
@@ -3831,7 +3917,7 @@ skill / talar / regrow / fell                     DevConsole, category "gatherin
   and fires for the interact key, a sword, a slash spell and a projectile alike. Before it a tree
   chopped with the attack button showed no chips, no bar and paid only its end drop.
 - **Only a PLAYER's PHYSICAL work pays or teaches.** A fireball fells a tree and leaves ash; a
-  monster's slash fells it and scatters nothing. `PlayerGatheringSkills.For` refuses anything not
+  monster's slash fells it and scatters nothing. `PlayerSkills.For` refuses anything not
   tagged `Player`, so no creature grows a skill.
 - **Skill is 0.0-100.0 % stored as INT TENTHS.** A float climbing by 0.1 drifts. The gain
   chance falls as `(1 - s/110)^2`, is full on a node within +15 of the skill, fades to a 0.25
@@ -3861,6 +3947,21 @@ skill / talar / regrow / fell                     DevConsole, category "gatherin
   at the split line, angles it as t² (gravity, not a lerp), bounces once, throws dust and leaves.
   It is spawned BEFORE the remains swap hides the canopy. `DestructionKind.Fell` and
   `noiseRadius` had zero readers before this; both are live (`NoiseEvents.Emit`).
+- **A tree is hit on its TRUNK, and the trunk is DRAWN, not measured.**
+  `BuildingTemplateData.trunkNormalized` (full-sprite fraction, bottom-left origin, like the
+  door) comes from `tools/atlas/generated/tree_trunks.json`: 428 boxes, one per tree sprite,
+  drawn by hand and reviewed on contact sheets, applied to all 553 tree templates by
+  `Valkur > Buildings > Apply Tree Trunk Boxes`. An automatic proposal (widest run near the
+  base, climb until it doubles) was tried first and missed palms, swamp roots and trees on
+  rocks, which is why the data is a manifest. `BuildingObject.TryGetTrunkBounds` (through the
+  pure `BuildingTrunkGeometry`) feeds `HarvestNode.InteractionBounds` and
+  `BuildingDurability.DamageableBounds`, so the prompt range, melee/slash contact, the trunk X
+  and its foot ring all agree. It answers false while the STUMP shows (a different sprite) and
+  for art with no box, and both fall back to the footprint. Walking collision (the painted
+  grid) and projectile blocking (painted cells) are deliberately unchanged. `tronco` reports
+  the nearest box, `tronco ver` outlines every nearby impact area (green trunk, orange
+  footprint), `tronco x0 y0 x1 y1` retunes one template — copy it back into the manifest or the
+  next apply reverts it. `ShippedTreeTrunkDataTests` fails a fellable tree with no box.
 - **Particles need a TEXTURE.** `Texture2D.whiteTexture` on a particle renderer draws hard
   squares — the first live capture showed the fall's dust as beige tiles. `HarvestFxTextures`
   generates a puff, a leaf and a splinter.
@@ -3895,12 +3996,35 @@ skill / talar / regrow / fell                     DevConsole, category "gatherin
   `IRhythmInteractable`). Pressing interact during a rhythm-capable session is a TAP, not "stop";
   stopping is HOLDING interact 0.55 s (`PlayerInteractionController.TickHoldToStop`, counted only
   from a press made during the session) or walking away. Sessions without a beat (mines,
-  stations) keep press-to-stop. All numbers are data on `GatheringSkillDefinition`: top tempo
+  stations) keep press-to-stop. All numbers are data on `SkillDefinition`: top tempo
   1.35x (0 %) to 2x (100 %) the automatic rate, hit window ±55 ms to ±150 ms capped at 38 % of
-  the beat, perfect within 35 % of the window.
-  - **A miss is NO blow plus a stagger** (70 % of a beat); 3 misses or 3 untouched beats hand back
-    to the automatic swing, so stopping tapping never stops the work.
-  - **The beat is a grid**: a hit advances from the beat, not the tap; a miss re-anchors on the tap.
+  the beat.
+  - **SIX GRADES OF CUT, NOT HIT-OR-MISS** (`CutGrade`, `SkillDefinition.GradeCut`). Distance from
+    the beat in half-widths of the window: PERFECTO ≤0.35, BUENO ≤0.65, OK ≤1 (the window), MALO
+    ≤`badWindows` 1.35, PÉSIMO ≤`nearMissWindows` 1.8, SOQUETE beyond. Worth is data
+    (`cutWorth*`: 1.2 / 1 / 0.75 / 0.45 / 0.2, soquete 0) and multiplies the tool multiplier inside
+    `BuildingDurability.ApplyWorkedDamage`, so the never-round-to-zero floor applies once. OK or
+    better keeps the combo; MALO/PÉSIMO land a weak blow and break it; a SOQUETE is no blow, beat
+    lost. `ASloppyCut_AtAMastersTempo_PaysLessThanLettingTheAxeFall` pins tempo x worth(Bad) < 1,
+    and skill gains on a weak cut roll with probability = its worth, or careless tapping out-learns
+    careful tapping.
+  - **The soquete is humiliated** (`SoquetePhrases`, 20 lines, a shuffle bag: every line once per
+    round, never twice in a row). The taunt holds 2.3 s above the judgement.
+  - **Chances per blow, earned by skill** (`rhythmTriesAtZero/AtMax`: 1 at 0 %, 2 at 50 %, 3 at
+    100 %). An EARLY MALO/PÉSIMO with chances left is held back (`RhythmTapOutcome.Retry`): no blow,
+    combo kept, try again; with none left it lands as it is. A LATE weak cut always lands. A
+    `tapCooldownSeconds` debounce means one press never spends two chances. 3 lost/untouched beats
+    hand back to the automatic swing, so stopping tapping never stops the work.
+  - **`Tap` returns `RhythmTap` = grade + outcome** (Ignored/Started/Landed/Retry/Lost), because they
+    come apart: an early MALO with chances is graded MALO and does nothing.
+  - **The beat is a grid**: a landed cut advances from the beat, not the tap; retries and soquetes
+    move nothing.
+  - **Mash-proofing is ARITHMETIC now, not a stagger**: `(1 + nearMissWindows) x hitWindowMaxOfBeat
+    < 1` (0.25 cap, pinned by `TheGapBetweenBeats_LeavesNoRoomToMashIntoTheNextOne`) leaves a gap
+    between one beat's late grace and the next beat's near zone, so a masher's first tap after a
+    beat resolves is always FAR early. The window cap came DOWN from 0.38 to make room for extra
+    chances: with a window covering 76 % of a beat, any per-beat retry lets evenly spaced taps hit
+    every beat. The orbiting motes on the cross show the chances left.
   - **Mashing must never beat waiting, and the first cut let it.** A striking first tap let
     enter-miss-exit-reenter chop every re-entry faster than auto. Three guards, all needed: the
     entering tap only STARTS the metronome; exiting through misses LOCKS re-entry until the next
@@ -3908,30 +4032,198 @@ skill / talar / regrow / fell                     DevConsole, category "gatherin
     (`Mathf.Max`). `WoodcuttingRhythmTests.Mashing_IsNeverFasterThanLettingTheAxeFall` races them
     on a synthetic clock (`HarvestNode.ClockForTests`, `StepSessionForTests`) at 0/50/100 %,
     beside the master ~2x and beginner "only a little faster" races.
-  - Visuals: the trunk cross turns cyan-white while the window is open, gold and bigger on a
-    PERFECT, red with a jolt on a miss; the bar draws the window as a target zone at the end of
-    the cadence sweep (`IWorkSegments.HitWindow01`). The badge reads "Pulsa al ritmo · hasta x1.6 ·
-    mantén para parar" / "Al ritmo x1.6 · racha N".
+  - **The impact area is a TARGET** (`HarvestCutTarget`, geometry `CutTargetGeometry`, painted by
+    `CutTargetTextures`): five flat bands with crisp rims — gold centre with a white bull, cyan,
+    green, orange, red edge — over a dark disc on the ALPHA material (additive bands wash out on
+    pale bark). Time is drawn as distance: the band radii ARE the grading reaches, pinned by
+    `TheTarget_IsDrawnFromTheGrading_WhatLooksLikeTheCentreIsTheCentre`. An approach ring closes on
+    the bull in the colour of the grade a tap now would get (`GradeIfTappedNow`), the bull flares
+    while PERFECT is live, and every cut leaves a mark where it landed — early LEFT, late RIGHT —
+    so a player who is always a hair late sees the cluster. The blades dim to 40 % under it. The
+    bar draws the same bands nested at the end of the cadence sweep (`IWorkSegments.CutBandReach01`)
+    with a white tick on the beat and the live band lit; each band keeps one texel more than the
+    one inside it, so a beginner's narrow centre is never swallowed. One palette for word, target
+    and bar: `RhythmCallouts.CutColour`. The badge reads "Pulsa al ritmo · hasta x1.6 · mantén
+    para parar" / "Al ritmo x1.6 · racha N".
   - Tapping doubles skill gain per minute too (gains are per productive blow) — deliberate: the
     reward for keeping time is throughput of everything.
+  - **A dance-game judgement line** (`HarvestRhythmCallout`, words in `RhythmCallouts`): one
+    callout over the trunk mark per tap, REPLACING the last — "¡CORTE PERFECTO!", "¡CORTE BUENO!",
+    "CORTE OK", "« CORTE MALO" / "CORTE MALO »" and PÉSIMO likewise (a weak cut points the way it
+    missed), "¡CORTE SOQUETE!", and "« PRONTO (otra)" for a retry. Good cuts rise, weak ones sag,
+    retries and soquetes shake (`RhythmCalloutMotion`). "COMBO xN" under it from 2, growing and
+    recolouring at 5/10/25; milestones (5, 10, 25, 50, 100, then every 100) read "¡RACHA xN!" with
+    sparks; a broken streak of 3+ is "COMBO ROTO". The streak passed to it is read BEFORE
+    `LandBlow`, because the felling blow ends the session and resets it — the last hit of a tree
+    lost its combo on the first cut (`TheFellingHit_StillShowsItsCombo`).
 - **Hit-stop resets `Time.timeScale`.** To photograph the fall, disable `TreeFellFX` and set the
   hinge angle by hand; a slow-motion set in the call that fells the tree is undone at once.
-- **Professions were never saved.** `PlayerProfessions.WriteTo/ReadFrom` had no caller; they ride
-  `PlayerProgression` now, beside the gathering skills (`gatheringSkillKeys` / `gatheringSkillTenths`).
+- **Skills ride `PlayerProgression`** (`gatheringSkillKeys` / `gatheringSkillTenths` — the
+  "gathering" in the field name predates crafting skills and is kept because saves use it).
 - **Quests:** `ObjectiveKind.FellTrees` (event, optional family filter, located on the minimap
   at the nearest STANDING tree) and `ReachSkill` (polled). `q_lena_invierno` (Pavel) uses both
   plus a Collect of birch, which only drops past 18 %.
 - **Still open:** harvest sounds (deferred by request), chop art for the five non-dwarf
   classes, groves of the high families placed in the world, a wood consumer in crafting, and
-  mining/fishing moved onto the same skill layer (the definition is generic; only woodcutting
-  is seeded).
+  mining/fishing CONTENT (their skills are seeded and shown locked; no nodes train them yet).
+
+## Walking into a run: the Carrera skill
+
+Built 2026-09-14. Design, audit and what was deferred: `.github/LOCOMOTION_RUN_SKILL_DESIGN.md`.
+
+```text
+LocomotionTuning        Data/Player/        Resources/Skills/LocomotionTuning.asset — every number at 0 % and 100 %
+LocomotionGait          Gameplay/Player/    PURE state machine: Idle/Walk/Run, momentum, blend, winded, energy delta
+AthleticsTrainer        Gameplay/Player/    one gain roll per 4 u really run, capped 20/min
+PlayerController.Locomotion.cs              the seam: measure, step, energy, skill, events, anim rate
+DirectionalAnimator.Locomotion.cs           4th pacing dial (walk/chase only) + SetLocomotionState (keeps stride phase)
+Energy                  Gameplay/Player/    the pool; StatKind.MaxEnergy = 60 + 0.4 x class maxDexterity
+GS_athletics            Data/Catalogs/Skills  SkillCategory.Physical ("Físico"), always trainable
+run [skill n|energy n|reset]                DevConsole probe
+tools/atlas/measure_stride.py               stride reference probe (measured, NOT applied — see its docstring)
+```
+
+- **The run art existed for every character and the player never played it.** All six classes
+  (and the dwarf's/mague's/valkyrie's loadouts) bind a run sheet to `chase`, and the controller
+  chose only Walk or Idle in the two places it resolves locomotion. Both now ask
+  `ResolveLocomotionAnimState()`; `LocomotionAnimationTests` pins that neither reverts.
+- **Automatic momentum, no key.** Left Shift is the chord modifier and right Shift/Ctrls/Space are
+  the dash, so there was no key to spend. Sustained walking fills momentum over
+  `StartSeconds(skill)` (0.9 s → 0.3 s, ~3 steps → 1) and breaks into a run.
+- **Walking is 60 % of the class speed; running is the class speed (x1.0 → x1.3 with skill).**
+  Measured on the shipped frames, the art draws steps of 0.25-1.8 u and at the full stat speed a
+  walk skated x3-x10 (`.github/LOCOMOTION_FOOT_SYNC_AUDIT_2026-09-14.md`). `MoveSpeed` is still the
+  stat every talent and item moves; the gait's `SpeedMultiplier` is a fraction of it
+  (`walkSpeedFraction`, `RunMultiplier`, `backpedalSpeedFraction`).
+- **Momentum is earned by DISPLACEMENT, never by input.** `IsMoving` is "a key is held", true
+  against a wall. The controller measures `_rb.position` delta per physics step and the gait only
+  builds while it keeps up with `minRealSpeedFraction` (0.65 — low enough that the void clamp's
+  diagonal edge slide at 0.707 still counts). So a wall neither runs nor trains the skill.
+- **Seven breaks, one enum** (`GaitBreak`): stopped past a 0.12 s grace, a turn past the skill's
+  tolerance (25° → 70°, full loss at 150°), blocked, hit (`Health.OnDamaged`), a cast that plants
+  the feet, winded, disabled (stun/root/dead/ghost). **The dash is not one**: the step is skipped
+  and the measured position forgotten, so a dash out of a run lands running and is not read as a
+  sprint.
+- **Winded has hysteresis** (recover at 35 %) or an empty bar flickers between gaits.
+- **`Energy` was inert for the life of the project** — its doc said "consumed by sprinting" and
+  nothing added it, so `ItemConsumer`'s cached `GetComponent<Energy>()` was null and every item card
+  promising "+N de energía" did nothing. `EntitySetup.InitPlayerProgression` adds it BEFORE
+  `PlayerStats`, `ItemConsumer` resolves it lazily, and `SetExternallyRegulated(true)` switches off
+  its own trickle (two regenerators on one pool is the SetInvincible shape). Drain is continuous, so
+  the pool keeps a sub-unit fraction: without it 0.15 per frame floors to nothing and running is free.
+  `SetMax` is idempotent and keeps a FULL pool full, or a class seeded at 104 boots at 100/104.
+- **`maxDexterity` is finally read**: authored on every class, labelled "Resistencia" in the class
+  selector, consumed by nothing. It is the base of `StatKind.MaxEnergy`.
+- **The 4th pacing dial is a measurement, not tuning.** `FrameIntervalFor` divides by
+  `LocomotionRate` for Walk and Chase only, composing with entity × state × variant (an authored
+  idle is untouched). Rate = speed / reference, clamped 0.7..1.5. With no measured reference the
+  walk reference IS the class speed (rate 1 at a walk, nothing changes) and the run reference is
+  class speed × 1.5. Monsters get the same dial from `FSMMonsterBrain` against `speed` /
+  `chasingSpeed`, so a flee strides faster and a search slower.
+- **`SetLocomotionState` keeps the place in the stride** when walk becomes run: `SetState` resets
+  the cursor on any state change, which would snap the lead foot back to frame 1 on every
+  transition. Phase is measured over frames 1..end (both cycles skip frame 0).
+- **The feet are MEASURED per sheet: `LocomotionCycleCatalog`** (`Resources/Skills/`, from
+  `tools/atlas/locomotion_cycles.py` → `Valkur > Players > Import Locomotion Cycles`). Keyed by the
+  frames' name prefix (`dwarf_armed_running`), so base, variant, loadout and Dark twin share one
+  entry. Per cycle: `loopStart` (the old animator skipped frame 0 of EVERY walk/run — a Python rule —
+  and in 7 of 12 cycles frame 0 is part of the loop; in the elf's run it is a foot contact, so he
+  limped), two `contactFrames` (widest grounded stride, forced half a cycle apart, reviewed on the
+  contact sheets it writes), and `strideUnits`. An unmeasured sheet (all monsters) keeps the old
+  behaviour exactly.
+- **Rate from the stride, capped in fps.** `PlayerController.ResolveLocomotionRate`: a loop of N
+  frames covers `contacts x stride` in `N x frameInterval`; rate = speed over that, capped at 14 fps
+  walking / 18 running (legs blur past it; what the cap does not absorb is residual skate).
+  Backpedal: moving more than 100° from the facing (the cursor owns facing) plays the cycle
+  REVERSED at 70 % of the walk and never builds momentum — before, it was a moonwalk at full speed.
+- **Footfalls come from the drawing.** `DirectionalAnimator.FootContact(foot)` fires the frame a
+  contact is SHOWN; `FootstepEmitter` emits dust, noise and `StrideCompleted` from it while a
+  measured cycle is on screen and keeps the distance rule otherwise. Walk↔run maps by the SAME
+  foot's progress between contacts; starting from a stand lands on a contact; releasing mid-stride
+  lets the legs finish to the next contact (≤ 2 frames). Provisional frames drawn inside
+  `SetLocomotionState` are suppressed so no footfall is announced twice.
+- **`measure_stride.py` was the first attempt and failed** (dwarf walk 0.34 u/s against a class
+  speed of 4). `EntityAssetConfig.walkReferenceSpeed/runReferenceSpeed` remain as an override for
+  unmeasured art and are 0 everywhere.
+- **Training**: one roll per 4 world units really run, max 20 rolls per rolling minute, excess
+  dropped not banked. The difficulty passed to `TryGain` is the current skill, so only the decay
+  curve shapes the climb. `gainBaseChance 0.9`, `gainTenths 2`: ~0.4 h of running to 50 %,
+  ~5 h to 100 %, simulated by `AthleticsTrainerTests` on the shipped asset.
+- **Walking is silent, running is loud.** `NoiseEvents.LoudnessFootstep` had no emitter anywhere;
+  a running stride now emits it × `runLoudnessMultiplier`, so walking is the stealth lever.
+- **The shipped cycles are drawn IN PLACE, so no timing can lock a foot to the ground.**
+  Tracking the lowest foot cluster frame to frame on all 25 cycles: the "planted" foot does not
+  slide backwards across the canvas, it jitters around the cell centre (the builder anchors every
+  frame on it). Slip speed therefore equals body speed whatever the rate — what reads as correct is
+  CADENCE (steps per second agreeing with the speed, which the stride-derived rate gives) and
+  WEIGHT. Do not chase foot-lock through frame timing again; it needs redrawn art.
+- **Weight, from the animator's toolbox**: `contactHold` 1.3 (a contact frame holds longer, the
+  rest of the loop shares out the difference so the rate's maths is unchanged —
+  `DirectionalAnimator.LocomotionHoldWeight`), and a body with a little mass
+  (`startEaseSeconds` 0.06, `stopEaseSeconds` 0.10 in `EaseBodyVelocity`) so the legs finishing
+  their step do not move under a frozen body — which is exactly what sliding looks like. A break
+  (stun, root, planting cast, hit) zeroes the envelope: those stop dead.
+- **The contact shadow breathes**: `LocomotionCycle.groundLiftPx` (lift above the cycle's own
+  lowest frame) → `DirectionalAnimator.CurrentGroundLiftUnits` → `SunShadowCaster` shrinks the
+  blob 30 % and fades it 55 % at a sixth of the body height in the air. The dwarf's run lifts 23 px.
+- **Energy is ORANGE** in both bars. Green was shipped first and read as a second health bar in
+  the first live capture.
+- **How to LOOK at it**: `autowalk <x> <y> <seconds>` (`PlayerController.SetDebugMove`) walks the
+  player without a keyboard. Two capture recipes that work: a zoom camera created in the probe,
+  `CopyFrom(Camera.main)`, rendered to a RenderTexture around the feet (shows dust, blob, sorting);
+  and a deterministic strip in ONE call — `Time.timeScale = 0`, move the transform by `v x dt`,
+  invoke `AdvanceFrame` by reflection on the `FrameIntervalFor` clock, render each step. Traps met:
+  slowing `Time.timeScale` while the boot is still running makes the loading screen's watchdog
+  declare the boot dead; other sessions' recompiles drop the editor out of Play Mode repeatedly;
+  `SceneManager.LoadScene` from the menu can be ignored — `SceneTransitionManager.LoadScene` works.
+- Events for visuals (`RunStarted`, `MomentumBroken`, `BecameWinded`, `WindRecovered`) are C#
+  events raised from FixedUpdate: the gait's flags live one physics step and a reader polling from
+  Update would miss or double them.
+
+## Skills and talents: two words, two tabs, one skill model
+
+Split 2026-09-14. **TALENTOS** (sheet tab 1, `SkillTreeHUD`) is the class tree bought with points
+earned by levelling. **SKILLS** (tab 3, `SkillsHUD`) is everything learned BY DOING, each
+0.0-100.0 %: woodcutting, mining and fishing (Recolección), cooking, blacksmithing and crafting
+(Fabricación). The tree used to be the tab called SKILLS while the trades hid behind OFICIOS.
+
+```text
+SkillDefinition.category        Gathering | Crafting — which group of the table the row sits in
+SkillCatalog.InCategory         the one ordering (sortOrder, then catalog order, stable)
+SkillAvailability               "is this row live or 'pronto'" — DERIVED from nodes / recipes
+ProfessionDefinition.skill      a trade POINTS at the skill it trains; it has no levels of its own
+RecipeDefinition.requiredSkill  whole percent 0-100; also the recipe's DIFFICULTY for the gain roll
+RecipeDefinition.skillGainRolls gain rolls per successful craft (1-3, derived from recipe cost)
+LegacyProfessionMigration       old saves: level 1..20 -> 0..100 %, lumberjack -> woodcutting
+SkillContentSeeder              Valkur > Skills > Seed Skill Content (run BEFORE the crafting import)
+```
+
+- **Trades used to be a second progression** — levels 1..20 on `ProfessionDefinition`, raised only
+  by crafting, stored by `PlayerProfessions` — beside woodcutting's 0-100 %. Two models for one
+  idea meant a skills screen mixing "12.3 %" with "Nv 4". `PlayerProfessions` is deleted; a craft
+  rolls `skillGainRolls` gains on `profession.skill` through the same `PlayerSkills.TryGain` a
+  blow on a tree uses, AFTER the result is in the bag.
+- **The lumberjack trade is gone.** Felling trees IS the woodcutting skill; a trade beside it was
+  the duplicate the table would show twice. The importer retires professions the manifest no
+  longer declares (`RecipeCatalog.RetireProfessionsNotIn`).
+- **Locked is derived, never a flag.** A gathering skill is live when a node teaches it, a
+  crafting skill when a well-formed recipe of a trade pointing at it exists. A "coming soon"
+  checkbox outlives the day fishing ships. Mining and fishing are seeded assets shown "pronto".
+- **A recipe's requirement is spread by RANK in raw cost** (cheapest 0 %, dearest 50 %, rounded to
+  5) in `build_crafting_manifest.py`, so a fresh cook always has something to learn on and the
+  ladder is even whatever the price table does. Crafting skills gain 0.5 % a success (seeded
+  `gainTenths = 5`, base chance 0.55): 100 % is roughly five hundred crafts, against thousands
+  at the gathering 0.1 %.
+- **Old saves keep their trade progress.** `SaveData.professionKeys/Levels/Xp` are LEGACY,
+  read-only fields kept because JsonUtility drops undeclared fields before a migration could read
+  them; `RestoreTrades` reads skills FIRST (the reader clears) and then migrates, raising only.
 
 ## Crafting and professions
 
-Five trades — cooking, blacksmith, mining, lumberjack and a generic `crafting` bucket — share
-ONE recipe type, ONE service and ONE panel. Only cooking has recipes today; the other four are
-declared so the tab, the level curve and the station vocabulary exist the moment their recipes
-are written, and so that adding one is a data edit rather than a code change.
+Four trades — cooking, blacksmith, mining and a generic `crafting` bucket — share ONE recipe
+type, ONE service and ONE panel. Only cooking has recipes today; the other three are declared so
+the tab and the station vocabulary exist the moment their recipes are written. A trade's
+progression is the 0-100 % SKILL it points at — see "Skills and talents" above.
 
 ```text
 tools/crafting/recipes/cooking.json        the authored recipe source
@@ -3942,7 +4234,7 @@ Valkur > Crafting > Import Crafting Content -> Data/Catalogs/Crafting/{Professio
 ProfessionDefinition / RecipeDefinition    the data (Valkur.Data)
 RecipeCatalog                              professions + recipes, one asset, under Resources/
 CraftingService                            Evaluate / TryCraft / MaxBatches — pure, no MonoBehaviour
-PlayerProfessions                          per-trade level + xp, saved in ProgressionSaveData
+PlayerSkills (Gameplay/Skills)             every skill's tenths, trades included, saved in ProgressionSaveData
 CraftingStation                            IPlayerInteractable, per trade; empty profession = workbench
 CraftingPanelUI                            the player's screen — HUD tray, or a station's badge
 SkillsRuntimeEditor                        the 17th runtime editor (ESC -> Skills)
@@ -3968,16 +4260,16 @@ SkillsRuntimeEditor                        the 17th runtime editor (ESC -> Skill
   then fails to place the result has destroyed the player's materials. It cannot be avoided by
   checking for room FIRST — the removal is what frees the slots, so a pre-check refuses most
   legitimate crafts on a fullish bag. The order is remove, place, ROLL BACK on the remainder,
-  and experience is granted LAST so a full bag cannot farm levels off a button that yields
+  and the skill is rolled LAST so a full bag cannot farm skill off a button that yields
   nothing. `CraftingServiceTests.FullBag_RollsBackEveryIngredient_AndYieldsNothing` reaches it
   with deep stacks, because taking 2 off a stack of 20 frees no slot.
-- **An unknown trade reads as level 1, never 0.** Zero would refuse every recipe carrying the
-  default `requiredLevel = 1` and make the whole system inert on a fresh character, silently —
-  the authored-and-inert shape this file already records a dozen times.
+- **A missing `PlayerSkills` reads as 0 %, never as a refusal**, and every trade with recipes
+  ships at least one at 0 % (`ShippedCraftingDataTests` pins it) — or a fresh character could
+  never start a trade, silently.
 - **Refusals carry a REASON and every shortfall, not a bool and not the first one.** Same
   argument `InteractionPromptInfo` makes: "you cannot make this" is not useful, and naming one
   missing ingredient at a time makes the player walk back after each trip. The order the reasons
-  are tested in is a design decision — LEVEL first (the only refusal the player cannot fix by
+  are tested in is a design decision — SKILL first (the only refusal the player cannot fix by
   walking or gathering), then ingredients, then the station, then room.
 - **A station belongs to ONE trade, and a station with NO profession serves every trade.** That
   second case is a deliberate general workbench, not an unconfigured asset. Stations join TWO
@@ -4600,7 +4892,46 @@ MenuAssetPreloader     UI/Loading/           pages the world's sprites while the
 MenuPreloadManifest    Core/Boot/            which folders, as data, with a two-way test
 LoadFrameBudget        Core/Boot/            "have I held this frame long enough?"
 boot / boot all / boot fallos / boot weights / boot recalibrar   DevConsole, category "boot"
+BootSequenceBuilder / BootPlan / BootScreenPlan   Core/Boot/  etapas: phases of the sequence, bar segments
+BootRunLog / BootRunRecord / BootTrend            Core/Boot/  the per-boot log and its trend analysis
+LoadingBarFX (+FrameGraphic, SegmentsGraphic)     UI/Loading/ the rectangular bar, its geometry and particles
+boot etapas / boot tendencia [n] / boot logs [abrir]            the plan, the trend, the folder
+persistentDataPath/Diagnostics/Boot/               boot_runs.csv, boot_phases.csv, boot_steps.csv,
+                                                   boot_history.jsonl, runs/boot_<id>.txt, latest.txt
 ```
+
+- **The bar is divided into ETAPAS, and a divider is where the fill really stops.** The
+  sequence declares `s.Phase("Mundo")` etc. through `BootSequenceBuilder`; each phase is one
+  segment, sized by the SUM OF ITS STEPS' WEIGHTS — the same numbers `BootProgress` advances
+  by — so a notch is exactly where the bar stands when that etapa's last step finishes. A
+  phase must be ONE contiguous run and every step must have one (`BootSequenceTests`); its
+  name is a CSV key, so renaming it starts a new series in the trend.
+- **The prediction is an EMA of WALL time, not the last boot's body time.** Wall = a step's
+  start to the next step's start (body plus the frames it yielded). Body time alone described
+  a boot where three quarters of the clock happened between steps, so the bar filled at CPU
+  speed and waited at frame speed. The first Editor boot of a session pages every asset and
+  runs seconds slower; `PredictionAlpha` 0.35 shrugs off one such outlier. CPU and wall are
+  both logged: a step with 8 ms of CPU and 1.7 s of wall is WAITING (measured:
+  "Inicializando el editor de tiles", the frame after scene activation), not slow.
+- **The scene no longer owns a flat 40 %.** Its share is predicted (load + activation) over
+  the whole predicted load; 40 % is only the answer for a machine with no history. The share is
+  FIXED for one screen (`BootScreenPlan.WithBoot`): the live boot plan replaces the predicted
+  one when the sequence is built, and moving the scene share then would move the filled part.
+- **Between reports the CLOCK moves the bar** (`BootTimeline.LiveFraction`): through a step's
+  share by its predicted wall time, capped at 92 % of the share, so an overrunning step holds
+  just short of its notch instead of borrowing from the next etapa. ETA is shown only when the
+  plan `IsTimed` (all but a new step or two measured); otherwise "calibrando tiempos...".
+- **The log is written only in Play Mode and never fails a boot**; `BootTrend` compares the
+  last boot to the MEDIAN of the previous ten, needs both +/-10 % and 25 ms to call SUBE/BAJA,
+  and keeps Editor and build boots as separate series.
+- **`BootTimelineTests` stashes and restores the machine's calibration.** It must clear it per
+  test, and before the stash the boot after every test run logged `calibrated=0`.
+- **The bar is geometry, not sprites** (`LoadingBarMesh`): a 960-unit-wide rectangle has no
+  sprite that is exact at every resolution. Its glow texture is baked with alpha reaching
+  EXACTLY zero at the rim — the menu's `TitleMote` keeps a few percent there, invisible on an
+  ember and a hard-edged square once a flash is blown up to the width of the bar (first capture
+  of the finale). The right-hand gem lights on READY (`LoadingBarFX.Complete`), never on the
+  fill reaching its end, which happens at 99 % with the last step still running.
 
 - **THE BAR CANNOT REACH 100 % BY COUNTING.** `SetupStepTotal = 53` described a sequence that
   had grown to **70**, so the bar filled at 75.7 % of the work and the last seventeen stages —
@@ -6109,6 +6440,68 @@ ESC -> Entidades -> Animation -> ORIGEN DEL HECHIZO         la forma de colocarl
   resuelve es comparar la fecha de CADA DLL contra el `.cs` mas nuevo de su carpeta y leer
   `error CS` del `Editor.log`; la consola no los estaba dando.
 
+## Capas de colision de una entidad: pisada y cuerpo
+
+Construido 2026-09-14. Antes, UN cuadrado centrado, de medio lado menor del sprite, hacia
+todos los trabajos a la vez: el enano chocaba con los muros a la altura del pecho y el dragon
+rojo (8.23 x 4.55 u) solo se podia golpear dentro de un cuadrado de 2.28 u en el lomo.
+
+```text
+EntityCollisionProfile   Data/Player/            pisada + capsulas por frame (EntityAssetConfig.collision)
+HurtShapeFitter          Data/Player/            silueta -> cadena de capsulas. Puro
+SpriteAlphaReader        Data/Player/ (Editor)   alfa de un sprite leida del PNG, no del atlas
+EntityColliderRig        Gameplay/Combat/Collision/  la pisada y las capsulas vivas, frame a frame
+EntityHitFilter          Gameplay/Combat/Collision/  una consulta -> un collider por entidad
+EntityBody / HurtShapeSpace                      "donde esta este cuerpo" y la conversion fraccion <-> mundo
+SweptBodyTest            Gameplay/Spells/Executors/  el tajo prueba el CUERPO, no su centro
+EntityCollisionBaker     Editor/Monsters/        Valkur > Entities > Bake Collision Shapes (+ Dry Run)
+ESC -> Entidades -> Animation -> COLISIONES       ver, editar, re-medir, copiar a la animacion
+```
+
+- **Tres trabajos, tres capas.** La PISADA (capsula horizontal en el pivote, que son los pies)
+  choca con muros y cuerpos y NO cambia con la animacion, o una criatura creceria dentro del
+  muro en cada golpe. El CUERPO (hurtbox, 1-5 capsulas) es lo que se puede golpear y SIGUE al
+  frame dibujado. La SELECCION (raton) sigue leyendo el sprite. El jugador conserva la caja
+  0.5 x 0.3 del prefab como pisada (movimiento, void clamp y puertas estan afinados contra
+  ella) y gana cuerpo; los monstruos pasan a la misma convencion de pies.
+- **Las capsulas no tocan NADA y las consultas si las ven.** Viven en un HIJO `Hurtbox`, en la
+  capa de la entidad, con `Collider2D.excludeLayers = ~0`: ningun contacto (muros, portales,
+  pickups), pero toda consulta por mascara las devuelve — medido: `OverlapCircleAll` y
+  `CircleCastAll` las encuentran. Asi ningun camino de dano tuvo que aprender una capa nueva, y
+  las 32 capas de fisica ya estan gastadas. En un HIJO y no en la raiz porque
+  `GetComponent<Collider2D>()` en la raiz es como movimiento, puertas y muerte encuentran el
+  cuerpo, y debe seguir respondiendo "los pies".
+- **Una entidad vuelve de una consulta como VARIOS colliders**, y casi ningun ejecutor
+  deduplica. `SpellProbe` pliega cada resultado a uno por entidad (`EntityHitFilter`), y el
+  superviviente es la capsula MAS CERCANA a la consulta, nunca la pisada salvo que sea lo unico
+  tocado. Los caminos que consultan `Physics2D` a mano (`MeleeCombat`, `DashAbility`,
+  `ExplosionEffect`, `MouseTargetDetector`) resuelven la entidad con `GetComponentInParent`.
+  `ShippedCollisionShapeTests` fija ambas cosas leyendo el codigo.
+- **Todo lo que compare el GameObject del collider con el lanzador o la victima estaba mal**:
+  `AreaExecutor`, el cono y el laser comparaban `hit.gameObject`, que ahora es el hijo `Hurtbox`
+  (un lanzador podia darse a si mismo) y emitian `FireHitDealt` con ese hijo como victima. Se
+  compara `health.gameObject`. El perforado del proyectil recuerda TODOS los colliders del
+  cuerpo atravesado, o el siguiente paso de barrido perforaba la siguiente capsula.
+- **Un tajo y un cono prueban MUESTRAS del cuerpo** (`EntityBody.ProbePoints`: punto mas
+  cercano, centro y ambos extremos de cada capsula). Una prueba de un solo punto dejaba inmune a
+  una criatura grande cuando su centro caia un grado fuera de un arco que la cortaba por la mitad.
+- **Formato: el del muzzle.** X hacia DELANTE segun la mitad dibujada (`CastMuzzle.FacingSignFor`),
+  Y sobre el centro vertical, fracciones del RECT del frame (tamano: fraccion del rect entero).
+  Contra el rect y el pivote, nunca contra `SpriteRenderer.bounds`, que es la malla.
+- **El horneado lee el PNG pidiendo el rect al IMPORTADOR**, nunca `sprite.texture`: en Play
+  Mode esa textura es la pagina del ATLAS, y la primera pasada midio 403 frames con 4309 "sin
+  resolver" por exactamente eso. Solo mide frames con sufijo `_e/_w`; el arte de 8 direcciones
+  real conserva la capsula automatica, simetrica. Guarda filas y pisada marcadas `handTuned`.
+- **Un cadaver no se puede golpear**: la muerte, `UnconsciousState` y `SummonRiseFX` apagan los
+  colliders desde fuera; el rig sigue a la PISADA y apaga sus capsulas, o el siguiente cambio de
+  frame las volveria a encender.
+- **`VisualLayerColliderSync` y `SpawnStabilizer` saltan las capsulas**: el primero les daria un
+  `includeLayers` con contactos contra muros; el segundo empujaba a la entidad lejos de su propio
+  hijo, que esta en su misma posicion.
+- **En el editor se edita un frame Y SU ESPEJO**: son el mismo dibujo y la misma fraccion.
+  "A la animacion" copia al resto de frames del estado visto; "Re-medir" corre el ajustador sobre
+  el PNG (solo Editor); "Automatico" quita la fila. Pisada a 0 = automatica.
+
 ## El Entities Editor, despues de la auditoria
 
 Auditado 2026-09-12 en **5.7/10** y subido a **8.8** el mismo dia. Hallazgos, medidas y lo que
@@ -6437,9 +6830,15 @@ related symptom reappears.
 | Spawners drift by their zone's origin on every restart (save wrote absolute world coords into a zone-relative field) | 2026-08-19 (fixed) | `.github/incidents/SPAWNER_COORDINATE_SPACE_DRIFT.md` |
 | 216 building templates (ids 4–313) deleted from the working tree; catalog rewritten without them | 2026-09-04 (recovered, root cause TBD) | `.github/incidents/BUILDING_TEMPLATES_MASS_DELETION.md` |
 | Every placed particle wiped by an EditMode fixture — 188 emitters → 1, suite green | 2026-09-10 (fixed) | `.github/incidents/PARTICLE_INSTANCES_TEST_POLLUTION.md` |
+| Play Mode entered mid test run reset the write guard; buildings 323→1, particles, zones wiped | 2026-09-14 (fixed, restored) | `.github/incidents/PLAY_MODE_MID_TEST_RUN_WORLD_WIPE.md` |
 
 ## Open work
 
+- **Vídeos de gameplay para YouTube hechos por IA** — diseñado 2026-09-14, nada construido.
+  Una petición produce el vídeo entero: guion desde los docs, `VideoDirector` + `VideoPuppet`
+  que juegan en tiempo real, Unity Recorder, autorrevisión por fotogramas, TTS, montaje con
+  ffmpeg y subida tras aprobación. Se retoma por la Fase 1 (primer vídeo: Seed World).
+  Plan, costes y decisiones pendientes: `.github/VIDEO_PIPELINE_ROADMAP.md`.
 - **Seed World (generacion procedural del mundo)** — fases 1-5 hechas (2026-09-13/14): el
   editor **ESC -> Seed World** configura semilla, tamano, continentes, clima, biomas, rios,
   pueblos y poblacion, previsualiza el mundo y lo **construye en un map slot aparte** (nunca el
