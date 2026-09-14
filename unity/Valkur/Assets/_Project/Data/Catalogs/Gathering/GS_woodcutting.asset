@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6fd1ecbc9387fa647bd60e87393f738d, type: 3}
+  m_Name: GS_woodcutting
+  m_EditorClassIdentifier: 
+  skillKey: woodcutting
+  displayName: Tala
+  yieldTable: {fileID: 11400000, guid: 7e509c8bb2260014eae125465f60b894, type: 2}
+  trainingNodes:
+  - {fileID: 11400000, guid: 995b98f63ae72674c94c5b0a131e448f, type: 2}
+  - {fileID: 11400000, guid: 2a861c4d7ddb6904cb9b0f9af29df5b0, type: 2}
+  - {fileID: 11400000, guid: 64d0e2d2f7197b04e8795a12faad3f06, type: 2}
+  - {fileID: 11400000, guid: 5d7b5433a19a6b847abd2333eb8d5933, type: 2}
+  - {fileID: 11400000, guid: b6f93f670d0462e4ba6419029b5d507d, type: 2}
+  - {fileID: 11400000, guid: 5559eba11a105bc44ba365d1ed119392, type: 2}
+  - {fileID: 11400000, guid: 9e10079309a466848b1358341b7772dc, type: 2}
+  - {fileID: 11400000, guid: 649cbf8bdb87c8444b75783f75b128ad, type: 2}
+  - {fileID: 11400000, guid: 2f61214b93f5b7a4aa388bffa65d16c6, type: 2}
+  - {fileID: 11400000, guid: 20aa39999ba3d5f45aa12805314493d2, type: 2}
+  gainBaseChance: 0.4
+  gainDecayDivisor: 110
+  gainDecayExponent: 2
+  gainTenths: 1
+  trivialMargin: 15
+  trivialFade: 25
+  trivialFloor: 0.25
+  hardMargin: 40
+  hardFactor: 0.6
+  wrongToolGainFactor: 0.3
+  efficiencyMin: 0.5
+  efficiencyMax: 1.6
+  efficiencyLowGap: 40
+  efficiencyHighGap: 40
+  bonusYieldEverySkill: 34
+  milestonePercent: 10

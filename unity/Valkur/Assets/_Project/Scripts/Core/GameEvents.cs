@@ -227,6 +227,36 @@ namespace Valkur.Core
             OnRoomEnemiesDefeated?.Invoke(roomId);
         }
 
+        // ── Gathering Events ──
+
+        /// <summary>
+        /// A gatherer produced goods from a world node. Args: (gatherer, skillKey, itemId, quantity).
+        /// Raised when the stack is actually on the ground, so a listener never counts a yield the
+        /// drop system refused. skillKey is empty for nodes that train no skill.
+        /// </summary>
+        public static event Action<GameObject, string, string, int> OnResourceGathered;
+
+        /// <summary>A node was finished — a tree felled. Args: (worker, profileName, position).</summary>
+        public static event Action<GameObject, string, Vector2> OnNodeFelled;
+
+        /// <summary>A gathering skill moved. Args: (owner, skillKey, newTenths).</summary>
+        public static event Action<GameObject, string, int> OnGatheringSkillChanged;
+
+        public static void FireResourceGathered(GameObject gatherer, string skillKey, string itemId, int quantity)
+        {
+            OnResourceGathered?.Invoke(gatherer, skillKey ?? string.Empty, itemId, quantity);
+        }
+
+        public static void FireNodeFelled(GameObject worker, string profileName, Vector2 position)
+        {
+            OnNodeFelled?.Invoke(worker, profileName, position);
+        }
+
+        public static void FireGatheringSkillChanged(GameObject owner, string skillKey, int tenths)
+        {
+            OnGatheringSkillChanged?.Invoke(owner, skillKey, tenths);
+        }
+
         /// <summary>
         /// Clear all subscribers. Call on scene unload or domain reload to prevent leaks.
         /// </summary>
@@ -251,6 +281,9 @@ namespace Valkur.Core
             OnSpellCast = null;
             OnRoomChanged = null;
             OnRoomEnemiesDefeated = null;
+            OnResourceGathered = null;
+            OnNodeFelled = null;
+            OnGatheringSkillChanged = null;
         }
 
         // ── Domain Reload OFF reset ─────────────────────────────────────────

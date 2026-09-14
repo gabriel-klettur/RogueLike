@@ -87,6 +87,13 @@ namespace Valkur.Tests.EditMode.Game.Data
                            // reach them, and that is half of why the subsystem shipped
                            // unconfigurable. One small asset, no references outward.
             "Dungeon",     // autotile sample tilesheets + catacombs blob assets
+            "Gathering",   // GatheringSkillCatalog, loaded by GatheringSkillCatalog.Shared via
+                           // Resources.Load("Gathering/GatheringSkillCatalog"). Same reason as
+                           // Chat and Progression: PlayerGatheringSkills is AddComponent-ed onto
+                           // the player the first time they work a node, and the skills panel is
+                           // built procedurally, so neither has an inspector slot. One index
+                           // asset — the skills and their wood tables live in
+                           // Data/Catalogs/Gathering/ and are pulled in by reference.
             "Input",
             "Placeholders",
             "Progression", // ProgressionCatalog, loaded by PlayerProgression.LoadCatalog via

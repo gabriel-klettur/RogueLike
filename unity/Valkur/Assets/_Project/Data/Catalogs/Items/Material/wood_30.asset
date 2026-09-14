@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: wood_30
   m_EditorClassIdentifier: 
   itemId: wood_30
-  displayName: Madera
-  description: Madera obtenida talando.
+  displayName: Madera de mangle
+  description: Madera oscura que no se pudre en el agua.
   itemType: lumberjack
   stackable: 1
   maxStack: 99
@@ -28,10 +28,11 @@ MonoBehaviour:
   critChance: 0
   critMultiplier: 1
   durability: 0
+  statModifiers: []
   value: 2
-  buyPrice: 2
-  sellPrice: 1
-  rarity: 0
+  buyPrice: 9
+  sellPrice: 4
+  rarity: 1
   levelRequirement: 1
   weight: 0.5
   threshold: 0
@@ -50,5 +51,6 @@ MonoBehaviour:
   buffStat: 
   buffValue: 0
   duration: 0
+  buffModifiers: []
   toolClass: 0
   toolTier: 0

@@ -24,13 +24,33 @@ namespace Valkur.Gameplay.World
         /// </summary>
         public readonly bool WrongTool;
 
+        /// <summary>
+        /// What the worker's gathering skill did to the blow, already folded into
+        /// <see cref="Multiplier"/>. 1 when the node trains no skill or the blow was cast.
+        /// </summary>
+        public readonly float SkillMultiplier;
+
+        /// <summary>The worker's skill in tenths at the moment of the blow. -1 when not judged by one.</summary>
+        public readonly int SkillTenths;
+
         public HarvestBlow(DamageClass damageClass, float multiplier, int toolTier, bool wrongTool)
+            : this(damageClass, multiplier, toolTier, wrongTool, 1f, -1)
+        {
+        }
+
+        public HarvestBlow(DamageClass damageClass, float multiplier, int toolTier, bool wrongTool,
+            float skillMultiplier, int skillTenths)
         {
             DamageClass = damageClass;
             Multiplier = multiplier;
             ToolTier = toolTier;
             WrongTool = wrongTool;
+            SkillMultiplier = skillMultiplier;
+            SkillTenths = skillTenths;
         }
+
+        /// <summary>Swung rather than cast. Only a physical blow yields goods and teaches a skill.</summary>
+        public bool Physical => DamageClassResolver.IsPhysical(DamageClass);
 
         /// <summary>
         /// A multiplier of exactly zero is a deliberate immunity: the blow does nothing at
@@ -130,7 +150,40 @@ namespace Valkur.Gameplay.World
 
             if (wrongTool) multiplier *= profile.chipDamageFraction;
 
-            return new HarvestBlow(damageClass, multiplier, toolTier, wrongTool);
+            // The worker's skill scales what a real blow is worth, and ONLY a real one: a zero
+            // is an immunity no amount of skill talks its way through, and a cast is judged by
+            // the matrix alone for the same reason the tier gate is physical-only.
+            float skillMultiplier = 1f;
+            int skillTenths = -1;
+            if (profile.gatheringSkill != null && multiplier > 0f &&
+                DamageClassResolver.IsPhysical(damageClass) && TryReadSkill(profile, attacker, out skillTenths))
+            {
+                skillMultiplier = profile.gatheringSkill.EfficiencyMultiplier(skillTenths, profile.skillDifficulty);
+                multiplier *= skillMultiplier;
+            }
+
+            return new HarvestBlow(damageClass, multiplier, toolTier, wrongTool, skillMultiplier, skillTenths);
+        }
+
+        /// <summary>
+        /// The attacker's tenths in the node's skill. A PLAYER who has never gathered reads as 0 —
+        /// a beginner — rather than as "unskilled, full damage", or the first swing of every run
+        /// would be the strongest one. Anything that is not the player is not judged by a skill.
+        /// </summary>
+        private static bool TryReadSkill(DestructionProfile profile, GameObject attacker, out int tenths)
+        {
+            tenths = 0;
+            if (attacker == null) return false;
+
+            var skills = PlayerGatheringSkills.Peek(attacker);
+            if (skills != null)
+            {
+                tenths = skills.GetTenths(profile.gatheringSkill.skillKey);
+                return true;
+            }
+
+            var root = attacker.transform.root.gameObject;
+            return attacker.CompareTag("Player") || root.CompareTag("Player");
         }
 
         /// <summary>

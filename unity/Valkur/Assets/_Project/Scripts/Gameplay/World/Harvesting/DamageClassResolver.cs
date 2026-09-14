@@ -14,13 +14,14 @@ namespace Valkur.Gameplay.World
         /// A magical blow is classified by its element and a physical one by the attacker's
         /// best equipped tool.
         ///
-        /// <para>BEST EQUIPPED, not "the weapon in hand", because the game has no weapon
-        /// slot: <c>Inventory.EquipmentSlots</c> is a flat 3x3 grid the player drags items
-        /// into, and the armed loadout is art rather than data. Picking whichever equipped
-        /// item scores highest against THIS material is both the honest reading of that
-        /// model and the one a player expects — carrying an axe and a pick means trees fall
-        /// to the axe and rock to the pick without anyone swapping anything. When a real
-        /// weapon slot exists this narrows to it and nothing else here changes.</para>
+        /// <para>BEST EQUIPPED — OR CARRIED, FOR A TRUE TOOL. The equipment is typed and has ONE
+        /// weapon slot, which axes, picks and swords all claim. Requiring the axe to be IN that
+        /// slot would make every tree a trip to the inventory to swap a sword out and back in,
+        /// which is friction with no decision behind it. So a real tool (Axe, Pick) counts from
+        /// the bag as well — the woodcutter carries the axe on the belt — while a WEAPON class
+        /// (Blade, Blunt) counts only when equipped: a spare sword in the bag is not a hatchet.
+        /// Whichever item scores highest against THIS material wins, so carrying an axe and a
+        /// pick means trees fall to the axe and rock to the pick without anyone swapping.</para>
         /// </summary>
         public static DamageClass Resolve(GameObject attacker, SpellElement? element,
             MaterialClass material, DestructionResistanceTable table, out int toolTier)
@@ -36,7 +37,21 @@ namespace Valkur.Gameplay.World
             var best = DamageClass.None;
             float bestMultiplier = table != null ? table.Multiplier(material, DamageClass.None) : 0f;
 
-            var slots = inventory.EquipmentSlots;
+            Consider(inventory.EquipmentSlots, carriedOnly: false, material, table,
+                     ref best, ref bestMultiplier, ref toolTier);
+            Consider(inventory.Slots, carriedOnly: true, material, table,
+                     ref best, ref bestMultiplier, ref toolTier);
+
+            return best;
+        }
+
+        private static void Consider(
+            System.Collections.Generic.IReadOnlyList<Valkur.Gameplay.Inventory.InventorySlot> slots,
+            bool carriedOnly, MaterialClass material, DestructionResistanceTable table,
+            ref DamageClass best, ref float bestMultiplier, ref int toolTier)
+        {
+            if (slots == null) return;
+
             for (int i = 0; i < slots.Count; i++)
             {
                 // InventorySlot is a struct — IsEmpty, never a null comparison.
@@ -44,17 +59,21 @@ namespace Valkur.Gameplay.World
 
                 var item = slots[i].Item;
                 if (item == null || item.toolClass == DamageClass.None) continue;
+                if (carriedOnly && !IsTool(item.toolClass)) continue;
 
                 float multiplier = table != null ? table.Multiplier(material, item.toolClass) : 1f;
-                if (multiplier <= bestMultiplier) continue;
+                if (multiplier < bestMultiplier) continue;
+                if (multiplier == bestMultiplier && item.toolTier <= toolTier) continue;
 
                 bestMultiplier = multiplier;
                 best = item.toolClass;
                 toolTier = item.toolTier;
             }
-
-            return best;
         }
+
+        /// <summary>A class that is a working tool rather than a weapon, and so counts from the bag.</summary>
+        public static bool IsTool(DamageClass damageClass) =>
+            damageClass == DamageClass.Axe || damageClass == DamageClass.Pick;
 
         /// <summary>
         /// Elements map one-to-one onto the magical half of <see cref="DamageClass"/>, with

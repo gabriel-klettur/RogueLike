@@ -27,7 +27,9 @@ namespace Valkur.Gameplay.Interaction
         float Progress01 { get; }
 
         /// <summary>
-        /// The world point the bar sits above — the top-centre of whatever is being worked.
+        /// The world point the bar hangs from: it is drawn just BELOW this point. For a harvest
+        /// node that is the bottom-centre of the footprint, because the space above the trunk
+        /// already belongs to the interaction badge, and the two drawn in one place hid each other.
         /// A point rather than a Bounds because that is all the bar uses, and because a
         /// fishing spot's "thing" is a patch of water with no meaningful box.
         /// </summary>

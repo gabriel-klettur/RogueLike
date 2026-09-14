@@ -1,13 +1,15 @@
 using System;
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Core;
 using Valkur.Gameplay.Combat;
+using Valkur.Gameplay.FSM;
 
 namespace Valkur.Gameplay.World
 {
     /// <summary>
     /// Makes one placed building breakable. Attached by <c>BuildingLoader</c> only to
-    /// templates that declare a <see cref="DestructionProfile"/>, so the 969 templates that
+    /// templates that declare a <see cref="DestructionProfile"/>, so the templates that
     /// declare none cost nothing at all — no component, no registry entry, no per-swing work.
     ///
     /// <para>WHY THIS AND NOT A <c>Health</c>. Every damage path in the game finds its
@@ -51,6 +53,22 @@ namespace Valkur.Gameplay.World
         /// </summary>
         public event Action Regrown;
 
+        /// <summary>
+        /// A blow reached this building, with WHO threw it. Raised on every blow from every source,
+        /// immediately after <see cref="Struck"/> and before any destruction, so a listener that
+        /// pays yields or trains a skill sees the finishing blow before the building dies.
+        /// </summary>
+        public event Action<HarvestWork> Worked;
+
+        /// <summary>Whoever landed the most recent blow. What the fall direction and the fell bonus read.</summary>
+        public GameObject LastAttacker { get; private set; }
+
+        /// <summary>The most recent blow, already judged.</summary>
+        public HarvestBlow LastBlow { get; private set; }
+
+        private Color _remainsBaseColor = Color.white;
+        private bool _remainsTinted;
+
         public DestructionProfile Profile => _profile;
         public BuildingObject Building => _building;
         public int CurrentDurability => _currentDurability;
@@ -74,6 +92,10 @@ namespace Valkur.Gameplay.World
             _profile = profile;
             _building = building;
             _currentDurability = MaxDurability;
+
+            // Nothing to tick until a felling arms a regrow. Hundreds of trees each paying a
+            // native Update call to run one early return is the cost HarvestNode already removed.
+            enabled = false;
 
             if (_profile == null || _registered) return;
             DestructibleObstacleRegistry.Register(this);
@@ -108,6 +130,7 @@ namespace Valkur.Gameplay.World
             _destroyed = true;
             _currentDurability = 0;
             _regrowAtUnix = regrowAtUnix;
+            enabled = _regrowAtUnix > 0d;
 
             if (_registered)
             {
@@ -119,6 +142,7 @@ namespace Valkur.Gameplay.World
                 BuildingCollisionLoader.ClearColliders(_building);
 
             ApplyRemains();
+            ApplyRemainsTint();
         }
 
         private void Update()
@@ -160,8 +184,11 @@ namespace Valkur.Gameplay.World
             _destroyed = false;
             _currentDurability = MaxDurability;
             _regrowAtUnix = 0d;
+            enabled = false;
 
             _building.RestorePristine();
+            UndoRemainsTint();
+            BuildingRegrowFX.Play(_building, _profile);
 
             if (!_registered)
             {
@@ -205,8 +232,14 @@ namespace Valkur.Gameplay.World
             var blow = HarvestBlowResolver.Resolve(_profile, attacker, element);
             int dealt = HarvestBlowResolver.Scale(amount, blow.Multiplier);
 
+            LastAttacker = attacker;
+            LastBlow = blow;
+
             _currentDurability -= dealt;
             Struck?.Invoke(dealt, contactPoint, blow.DamageClass);
+            Worked?.Invoke(new HarvestWork(attacker, dealt, blow, contactPoint, _currentDurability <= 0));
+
+            React(attacker, contactPoint, blow, dealt);
 
             if (_currentDurability > 0) return;
 
@@ -237,15 +270,86 @@ namespace Valkur.Gameplay.World
             _regrowAtUnix = _profile.regrowSeconds > 0f
                 ? WorldDamageService.UnixNow() + _profile.regrowSeconds
                 : 0d;
+            enabled = _regrowAtUnix > 0d;
 
             Destroyed?.Invoke(contactPoint, damageClass);
 
-            HarvestDropResolver.SpawnDrops(_profile.drops, DamageableBounds.center);
+            HarvestDropResolver.SpawnDrops(_profile.drops, DropPoint());
 
             if (_profile.remainsWalkable)
                 BuildingCollisionLoader.ClearColliders(_building);
 
+            // Before the remains swap: the fall copies the canopy, which the swap hides.
+            if (_profile.kind == DestructionKind.Fell)
+                TreeFellFX.Spawn(_building, _profile, FallDirection());
+
+            if (_profile.noiseRadius > 0f)
+                NoiseEvents.Emit(LastAttacker, DamageableBounds.center, _profile.noiseRadius);
+
+            GameEvents.FireNodeFelled(LastAttacker, _profile.name, DamageableBounds.center);
+
             ApplyRemains();
+            ApplyRemainsTint();
+        }
+
+        // ── Reaction ───────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// What every blow does to the building itself, whatever threw it: the trunk shudders and
+        /// the blow is heard. Kept here rather than in the harvest feedback so a combat swing and a
+        /// hand-chop cannot react differently.
+        /// </summary>
+        private void React(GameObject attacker, Vector2 contactPoint, HarvestBlow blow, int dealt)
+        {
+            if (_building == null) return;
+
+            float sign = FallDirection();
+            float strength = blow.Immune ? 0.35f : Mathf.Clamp(dealt / 10f, 0.5f, 1.5f);
+            BuildingHitShake.Kick(_building, sign, strength);
+
+            if (_profile.blowNoiseRadius > 0f && attacker != null && !blow.Immune)
+                NoiseEvents.Emit(attacker, contactPoint, _profile.blowNoiseRadius);
+        }
+
+        /// <summary>+1 falls toward +X. Away from whoever struck last; a sourceless blow falls right.</summary>
+        private float FallDirection()
+        {
+            if (LastAttacker == null || _building == null) return 1f;
+            float dx = _building.transform.position.x - LastAttacker.transform.position.x;
+            return dx >= 0f ? 1f : -1f;
+        }
+
+        /// <summary>
+        /// Where the end-of-life drops land: at the feet of whoever felled the building when they
+        /// are close enough to have done it by hand, otherwise at the building. Dropping inside the
+        /// trunk put stacks on cells a solid remains still blocks.
+        /// </summary>
+        private Vector3 DropPoint()
+        {
+            Vector3 center = DamageableBounds.center;
+            if (LastAttacker == null) return center;
+
+            Vector3 feet = LastAttacker.transform.position;
+            return ((Vector2)(feet - center)).sqrMagnitude <= 9f ? feet : center;
+        }
+
+        private void ApplyRemainsTint()
+        {
+            var footprint = _building != null ? _building.FootprintRenderer : null;
+            if (footprint == null || !footprint.enabled) return;
+            if (_profile.remainsTint == Color.white) return;
+
+            if (!_remainsTinted) _remainsBaseColor = footprint.color;
+            footprint.color = _remainsBaseColor * _profile.remainsTint;
+            _remainsTinted = true;
+        }
+
+        private void UndoRemainsTint()
+        {
+            if (!_remainsTinted) return;
+            var footprint = _building != null ? _building.FootprintRenderer : null;
+            if (footprint != null) footprint.color = _remainsBaseColor;
+            _remainsTinted = false;
         }
 
         /// <summary>

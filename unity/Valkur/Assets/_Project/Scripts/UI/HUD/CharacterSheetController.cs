@@ -145,6 +145,16 @@ namespace Valkur.UI.HUD
             // deliberately not called "stats" any more: it never described the character,
             // and while it was the only tab with that name nothing on screen said how much
             // damage the player dealt.
+            // Gathering skills: what the player has learned to DO with their hands, 0-100 %,
+            // and where to go to keep learning it. Before RECORDS because it describes the
+            // character in this run; RECORDS describes the profile across all of them.
+            _tabs.Add(new SheetTab
+            {
+                Label = "OFICIOS",
+                Show  = () => EnsurePanel<GatheringSkillsHUD>("GatheringSkillsHUD").Open(),
+                Hide  = () => EnsurePanel<GatheringSkillsHUD>("GatheringSkillsHUD").Close(),
+            });
+
             _tabs.Add(new SheetTab
             {
                 Label = "RECORDS",

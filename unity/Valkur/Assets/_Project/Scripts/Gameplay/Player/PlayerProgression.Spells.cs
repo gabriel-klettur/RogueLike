@@ -112,6 +112,7 @@ namespace Valkur.Gameplay
                 // the only migration that leaves a level-30 legacy character able to open
                 // either tree at all.
                 BackfillCurrenciesForLevel(level);
+                RestoreTrades(data);
                 RebuildLevelLayer(level);
                 RebuildSkillLayer();
                 RebuildGrimoireLayer();
@@ -121,6 +122,7 @@ namespace Valkur.Gameplay
 
             if (_skills != null) _skills.ReadFrom(data);
             if (_spells != null) _spells.ReadFrom(data);
+            RestoreTrades(data);
 
             RebuildLevelLayer(level);
             RebuildSkillLayer();
@@ -134,6 +136,37 @@ namespace Valkur.Gameplay
             if (data == null) return;
             if (_skills != null) _skills.WriteTo(data);
             if (_spells != null) _spells.WriteTo(data);
+
+            var professions = GetComponent<Valkur.Gameplay.Crafting.PlayerProfessions>();
+            if (professions != null) professions.WriteTo(data);
+
+            var gathering = GetComponent<Valkur.Gameplay.World.PlayerGatheringSkills>();
+            if (gathering != null) gathering.WriteTo(data);
+        }
+
+        /// <summary>
+        /// Crafting professions and gathering skills ride the same progression document. Neither
+        /// was ever read or written before — <c>PlayerProfessions.WriteTo</c> had no caller — so a
+        /// trade levelled for an hour came back at level 1 on the next load. Restored silently,
+        /// through the components' own clamping readers; a character with no entries simply has
+        /// no component until they first gather or craft.
+        /// </summary>
+        private void RestoreTrades(ProgressionSaveData data)
+        {
+            if (data == null) return;
+
+            if (data.professionKeys != null && data.professionKeys.Count > 0)
+            {
+                var professions = GetComponent<Valkur.Gameplay.Crafting.PlayerProfessions>();
+                if (professions == null) professions = gameObject.AddComponent<Valkur.Gameplay.Crafting.PlayerProfessions>();
+                professions.ReadFrom(data);
+            }
+
+            if (data.gatheringSkillKeys != null && data.gatheringSkillKeys.Count > 0)
+            {
+                var gathering = Valkur.Gameplay.World.PlayerGatheringSkills.For(gameObject);
+                if (gathering != null) gathering.ReadFrom(data);
+            }
         }
     }
 }

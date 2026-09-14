@@ -52,6 +52,18 @@ namespace Valkur.Gameplay.Combat
         /// </summary>
         internal void Pulse() => _pulseAge = 0f;
 
+        private bool _steppedAside;
+
+        /// <summary>
+        /// Hide the chevron while another marker owns the player's attention — the cross on a
+        /// trunk being chopped. PUSHED IN, exactly like <see cref="Pulse"/>: the rig is not told
+        /// what the other marker is and never asks, so it keeps its one job. Hiding is not a
+        /// second meaning; a shape that is not drawn says nothing.
+        /// </summary>
+        internal void SetSteppedAside(bool aside) => _steppedAside = aside;
+
+        internal bool IsSteppedAside => _steppedAside;
+
         internal Transform RootTransform => _root;
         internal Transform AimTransform => _aim;
         internal bool IsShowing => _tipSr != null && _tipSr.enabled;
@@ -200,6 +212,7 @@ namespace Valkur.Gameplay.Combat
         private bool ResolveVisible()
         {
             if (_health != null && _health.IsDead) return false;
+            if (_steppedAside) return false;
             // Chat, the console and every runtime editor: the player is not playing, so an aim
             // that goes on tracking the cursor under a panel is a pointer with nothing to point.
             if (InputBlocker.IsGameplayBlocked) return false;

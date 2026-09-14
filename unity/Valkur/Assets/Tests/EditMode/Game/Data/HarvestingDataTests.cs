@@ -314,8 +314,9 @@ namespace Valkur.Tests.EditMode.Game.Data
             Assert.That(tree.harvestMode, Is.EqualTo(HarvestMode.Destroy),
                 "A tree is consumed by chopping; Deplete would leave it standing forever.");
             Assert.That(tree.harvestVerb, Is.Not.Empty);
-            Assert.That(tree.drops, Is.Not.Null,
-                "A Destroy node pays out when it falls, so it needs the death table.");
+            Assert.That(tree.UsesSkillYield, Is.True,
+                "A tree pays by work through the woodcutting skill's table.");
+            Assert.That(tree.workPerYield, Is.GreaterThan(0));
         }
 
         [Test]

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: wood_20
   m_EditorClassIdentifier: 
   itemId: wood_20
-  displayName: Madera
-  description: Madera obtenida talando.
+  displayName: "Le\xF1a"
+  description: "Un haz de le\xF1a atado a mano."
   itemType: lumberjack
   stackable: 1
   maxStack: 99
@@ -28,6 +28,7 @@ MonoBehaviour:
   critChance: 0
   critMultiplier: 1
   durability: 0
+  statModifiers: []
   value: 2
   buyPrice: 2
   sellPrice: 1
@@ -50,5 +51,6 @@ MonoBehaviour:
   buffStat: 
   buffValue: 0
   duration: 0
+  buffModifiers: []
   toolClass: 0
   toolTier: 0

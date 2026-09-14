@@ -160,8 +160,11 @@ namespace Valkur.Tests.EditMode.Game.Data
             Assert.That(profile.material, Is.EqualTo(MaterialClass.Wood));
             Assert.That(profile.kind, Is.EqualTo(DestructionKind.Fell));
             Assert.That(profile.durability, Is.GreaterThan(0));
-            Assert.That(profile.drops, Is.Not.Null, "A felled tree that drops nothing is scenery.");
-            Assert.That(profile.drops.entries, Is.Not.Empty);
+
+            // A tree pays through the woodcutting skill's wood table now, not through a flat
+            // drop table — a felled tree with neither would be scenery.
+            Assert.That(profile.UsesSkillYield || (profile.drops != null && profile.drops.entries.Count > 0),
+                Is.True, "A felled tree that pays nothing is scenery.");
         }
 
         [Test]

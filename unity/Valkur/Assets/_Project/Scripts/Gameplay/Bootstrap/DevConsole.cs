@@ -578,6 +578,8 @@ namespace Valkur.Gameplay
             // registered last, for the same one-header rule as the two blocks above.
             RegisterDebugHudCommands();
             RegisterSpellAreaCommands();
+            // Gathering skills and woodcutting — see DevConsole.Commands.Harvest.cs.
+            RegisterHarvestCommands();
         }
 
         // ------------------------------------------------------------------

@@ -45,6 +45,15 @@ namespace Valkur.Gameplay.Interaction
         /// </summary>
         private const float CANCEL_LEASH_WORLD = 0.35f;
 
+        /// <summary>
+        /// Holding interact this long during a rhythm-capable session stops it. A TAP is a strike
+        /// there, so stopping had to move to a gesture a tap can never be mistaken for — and walking
+        /// away still ends any session, as it always did.
+        /// </summary>
+        private const float HOLD_TO_STOP_SECONDS = 0.55f;
+
+        private float _holdStartedAt = -1f;
+
         private InteractionPromptView _prompt;
 
         /// <summary>
@@ -114,9 +123,23 @@ namespace Valkur.Gameplay.Interaction
                       ?? _pointedTarget
                       ?? InteractableRegistry.FindBest(gameObject, position));
 
+            if (TickHoldToStop()) return;
+
             if (!WasInteractPressed()) return;
 
-            if (_session != null) { EndSession(); return; }
+            if (_session != null)
+            {
+                // A session with a beat takes the press as a TAP; one without keeps press-to-stop.
+                if (_session is IRhythmInteractable rhythm && rhythm.AcceptsRhythmTaps)
+                {
+                    rhythm.Tap(gameObject);
+                    _holdStartedAt = Time.unscaledTime;
+                    return;
+                }
+
+                EndSession();
+                return;
+            }
 
             // A target may be VISIBLE and still refuse the key — a spent seam is showing its
             // countdown, not offering itself. Pressing there falls through to the conversation
@@ -212,6 +235,28 @@ namespace Valkur.Gameplay.Interaction
 
         // Session --------------------------------------------------------------------
 
+        /// <summary>
+        /// Stop a rhythm session when the key that tapped it is HELD. Only a hold that began with a
+        /// press DURING the session counts, so the press that started the session cannot stop it by
+        /// being held a moment too long. Unscaled time: a hit-stop must not stretch the hold.
+        /// </summary>
+        private bool TickHoldToStop()
+        {
+            if (_holdStartedAt < 0f) return false;
+
+            if (_session == null || !IsInteractHeld())
+            {
+                _holdStartedAt = -1f;
+                return false;
+            }
+
+            if (Time.unscaledTime - _holdStartedAt < HOLD_TO_STOP_SECONDS) return false;
+
+            _holdStartedAt = -1f;
+            EndSession();
+            return true;
+        }
+
         private bool SessionStillValid(Vector2 position)
         {
             if (_session == null) return false;
@@ -287,6 +332,13 @@ namespace Valkur.Gameplay.Interaction
         /// shipped, and a player may narrow it. It carries no damage, so
         /// <see cref="InputContextPolicy"/> lets them.</para>
         /// </summary>
+        private static bool IsInteractHeld()
+        {
+            var descriptor = InputActionCatalog.Find(InputActionCatalog.MapGameplay, "Interact");
+            if (!InputContextPolicy.IsLive(descriptor)) return false;
+            return InputBindingResolver.IsPressed(InputService.Instance?.Gameplay?.Interact);
+        }
+
         private static bool WasInteractPressed()
         {
             var descriptor = InputActionCatalog.Find(InputActionCatalog.MapGameplay, "Interact");

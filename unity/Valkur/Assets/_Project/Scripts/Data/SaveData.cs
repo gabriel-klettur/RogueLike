@@ -168,6 +168,12 @@ namespace Valkur.Data
         public List<int> professionLevels = new List<int>();
         public List<int> professionXp = new List<int>();
 
+        // Gathering skills (woodcutting, ...), in TENTHS of a percent: 345 = 34.5 %. Integers, for
+        // the reason GatheringSkillDefinition records — a float that climbs by 0.1 a gain drifts.
+        // Absent in older saves, where both deserialize empty and read as "never practised".
+        public List<string> gatheringSkillKeys = new List<string>();
+        public List<int> gatheringSkillTenths = new List<int>();
+
         /// <summary>True when this document says nothing — a legacy save, or a character
         /// who has genuinely spent nothing. The two are indistinguishable and should be
         /// treated the same way.</summary>
@@ -175,6 +181,7 @@ namespace Valkur.Data
             (skillIds == null || skillIds.Count == 0) &&
             (grimoireNodeIds == null || grimoireNodeIds.Count == 0) &&
             (professionKeys == null || professionKeys.Count == 0) &&
+            (gatheringSkillKeys == null || gatheringSkillKeys.Count == 0) &&
             skillPoints == 0 && arcanePoints == 0 &&
             skillPointsSpent == 0 && arcanePointsSpent == 0;
     }

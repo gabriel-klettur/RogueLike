@@ -5,7 +5,7 @@ namespace Valkur.Data
     /// <summary>
     /// Everything about how one kind of building can be broken. Referenced from
     /// <see cref="BuildingTemplateData.destruction"/>; a template with none is
-    /// indestructible, which is the default for all 969 shipped templates.
+    /// indestructible, which is the default for most of the catalogue.
     ///
     /// <para>WHY A PROFILE RATHER THAN FIELDS ON THE TEMPLATE. Durability is a dozen
     /// numbers, and the templates that share them share ALL of them — every common tree in
@@ -105,9 +105,9 @@ namespace Valkur.Data
         [Min(0.05f)] public float secondsPerBlow = 0.65f;
 
         [Tooltip("Damage one blow is worth BEFORE the resistance matrix and the tool tier " +
-                 "gate. In Destroy mode this divides `durability` into the number of blows; " +
-                 "in Deplete mode a landed blow always costs exactly one charge, so this " +
-                 "only feeds the matrix.\n\n" +
+                 "gate, then scaled by the worker's skill. In Destroy mode this divides " +
+                 "`durability` into the number of blows; in Deplete mode it is banked toward " +
+                 "`charges`, one charge per blowDamage of work.\n\n" +
                  "It separates GOOD tools from mediocre ones and does nothing for bad ones: " +
                  "HarvestBlowResolver.Scale never lets a real multiplier round away to zero, " +
                  "so a bare-handed blow lands 1 damage whatever this says. Raising it to make " +
@@ -139,5 +139,53 @@ namespace Valkur.Data
                  "until it regrows. Desaturated and slightly darker reads as exhausted " +
                  "without the node vanishing, which is the whole point of the mode.")]
         public Color spentTint = new Color(0.52f, 0.52f, 0.58f, 1f);
+
+        // ── Gathering skill ─────────────────────────────────────────────────────
+        // A node that teaches a skill. What a blow is worth, what it yields and whether the
+        // worker learns from it all read the worker's skill against this node's difficulty.
+
+        [Header("Gathering skill")]
+        [Tooltip("The skill this node trains and is judged by. None = no skill involvement: " +
+                 "blows are worth what the matrix says and yields come from yieldPool.")]
+        public GatheringSkillDefinition gatheringSkill;
+
+        [Tooltip("What the player calls this kind of node: 'Árbol ancestral'. Shown by the prompt " +
+                 "and the skills panel. Empty = no name.")]
+        public string nodeDisplayName = "";
+
+        [Tooltip("How hard the node is, in skill points (0..100). Sets the efficiency of a blow, " +
+                 "which goods can appear and how much working it teaches.")]
+        [Range(0, 100)] public int skillDifficulty = 15;
+
+        [Tooltip("What kind of node this is, for the yield table's tag-gated tiers — e.g. " +
+                 "'volcanic' is what lets ember wood appear.")]
+        public string[] yieldTags = System.Array.Empty<string>();
+
+        [Tooltip("Destroy mode with a skill: one yield per this much durability actually removed. " +
+                 "Paid by WORK, never per blow: a bare-handed blow that removes 1 point must not " +
+                 "earn what an axe blow that removes 10 earns.")]
+        [Min(1)] public int workPerYield = 10;
+
+        [Tooltip("Yields granted when the node is finished by a physical blow, before the skill bonus.")]
+        [Min(0)] public int fellBonusYields = 1;
+
+        [Tooltip("World-unit radius a single blow is heard in. 0 = silent. The fall uses noiseRadius.")]
+        [Min(0f)] public float blowNoiseRadius = 5f;
+
+        [Header("Look")]
+        [Tooltip("Colour of the leaves shaken loose by a blow and thrown up by the fall.")]
+        public Color leafColor = new Color(0.36f, 0.58f, 0.25f, 1f);
+
+        [Tooltip("Colour multiplied over the remains, so a charred trunk leaves a charred stump.")]
+        public Color remainsTint = Color.white;
+
+        [Tooltip("Seconds the felled crown takes to reach the ground.")]
+        [Range(0.2f, 3f)] public float fallSeconds = 0.9f;
+
+        /// <summary>
+        /// Whether blows here are judged and paid by a skill with a yield table. The single
+        /// question every reader asks, so "is this a skilled node" has one spelling.
+        /// </summary>
+        public bool UsesSkillYield => gatheringSkill != null && gatheringSkill.yieldTable != null;
     }
 }

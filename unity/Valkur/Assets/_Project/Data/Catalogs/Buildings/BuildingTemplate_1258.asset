@@ -33,4 +33,4 @@ MonoBehaviour:
   isResurrectionAltar: 0
   resurrectionAnchor: 0
   resurrectionRadius: 1.5
-  destruction: {fileID: 11400000, guid: 2a861c4d7ddb6904cb9b0f9af29df5b0, type: 2}
+  destruction: {fileID: 11400000, guid: b6f93f670d0462e4ba6419029b5d507d, type: 2}
