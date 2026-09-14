@@ -47,6 +47,12 @@ namespace Valkur.Data.WorldGen
         /// <summary>The towns of this world — the same plan the build fills with buildings.</summary>
         public IReadOnlyList<WorldTown> Towns { get; private set; } = new List<WorldTown>();
 
+        /// <summary>The roads between the towns, in TILE space — the same plan the build paints.</summary>
+        public IReadOnlyList<WorldRoad> Roads { get; private set; } = new List<WorldRoad>();
+
+        /// <summary>Every tile a road paints. Shared with the ground and the tree planner, like <see cref="RiverTiles"/>.</summary>
+        public HashSet<Vector2Int> RoadTiles { get; private set; } = new HashSet<Vector2Int>();
+
         /// <summary>The hostile encounters — the same plan the build turns into spawners.</summary>
         public IReadOnlyList<WorldEncounterSite> Encounters { get; private set; } = new List<WorldEncounterSite>();
 
@@ -97,6 +103,7 @@ namespace Valkur.Data.WorldGen
             map.PaintRivers();
             map.FindSpawn();
             map.PlanTowns();
+            map.PlanRoads();
             map.Encounters = WorldEncounters.Plan(climate, map.RiverTiles, map.Towns, map.SpawnTile);
             return map;
         }
@@ -208,6 +215,18 @@ namespace Valkur.Data.WorldGen
                     HasSpawn = true;
                 }
             }
+        }
+
+        /// <summary>
+        /// Roads after towns and before anything placed around them: road tiles near a town join its
+        /// streets, which is what keeps lots, trees and the preview's street colour in agreement.
+        /// Drawn as street in the town mask, since on the map a road and a street are one thing.
+        /// </summary>
+        private void PlanRoads()
+        {
+            Roads = WorldRoads.Plan(Climate, RiverTiles, Towns, out var tiles);
+            RoadTiles = tiles;
+            foreach (var t in tiles) MarkTown(t, 2);
         }
 
         private void MarkTown(Vector2Int tile, byte value)

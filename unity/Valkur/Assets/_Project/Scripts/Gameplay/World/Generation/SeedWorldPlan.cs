@@ -74,11 +74,11 @@ namespace Valkur.Gameplay.World.Generation
         /// <summary>The ground of a tile rectangle, identical to the same tiles of a whole-world build.</summary>
         public WorldTerrainGrid BuildRegion(int x0, int y0, int tilesW, int tilesH, Func<string, string, bool> compatible)
             => WorldTerrainGrid.BuildRegion(Climate, Map.RiverTiles, Map.Towns, BuiltTilesW, BuiltTilesH,
-                                            x0, y0, tilesW, tilesH, WorldTerrainGrid.RegionMargin, compatible);
+                                            x0, y0, tilesW, tilesH, WorldTerrainGrid.RegionMargin, compatible, Map.RoadTiles);
 
         /// <summary>The ground of the whole built area.</summary>
         public WorldTerrainGrid BuildAll(Func<string, string, bool> compatible)
-            => WorldTerrainGrid.Build(Climate, Map.Rivers, Map.Towns, BuiltTilesW, BuiltTilesH, compatible);
+            => WorldTerrainGrid.Build(Climate, Map.Rivers, Map.Towns, Map.RoadTiles, BuiltTilesW, BuiltTilesH, compatible);
 
         /// <summary>The zone holding a plan tile, or false outside the built area.</summary>
         public bool TryZoneOfTile(Vector2Int tile, out Vector2Int zone)

@@ -131,6 +131,7 @@ namespace Valkur.Gameplay.World.Generation
                 Tiles = plan.BuiltTilesW * plan.BuiltTilesH,
                 Rivers = preview.Rivers.Count,
                 Towns = preview.Towns.Count,
+                Roads = preview.Roads.Count,
                 Buildings = townBuildings,
                 Trees = placements.Count - townBuildings,
                 RepairedVertices = grid != null ? grid.RepairedVertices : 0,

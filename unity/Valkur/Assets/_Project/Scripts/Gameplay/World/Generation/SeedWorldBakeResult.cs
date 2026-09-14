@@ -17,6 +17,7 @@ namespace Valkur.Gameplay.World.Generation
         public int BlockedTiles;
         public int Rivers;
         public int Towns;
+        public int Roads;
         public int Buildings;
         public int Trees;
         public int Spawners;

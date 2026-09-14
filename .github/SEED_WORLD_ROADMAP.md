@@ -348,7 +348,40 @@ ESC -> Seed World -> Modo EN VIVO / HORNEADO
 - Edificios, arboles y spawners se cargan todos al entrar (bien a 400x400; un mundo de 2048x600 serian ~5000
   arboles instanciados de golpe). Streaming por zona de esas capas = siguiente paso si se hacen mundos grandes.
 - ~~El auto-brush del Tile editor no tiene la matriz `terrains` de una zona generada que nunca se guardo~~: hecho.
-- Caminos entre pueblos, puentes, arte de nieve/desierto/pantano, habitantes fuera del pueblo inicial.
+- ~~Caminos entre pueblos~~: hechos, ver "Caminos" abajo. Puentes, arte de nieve/desierto/pantano y habitantes fuera
+  del pueblo inicial siguen abiertos.
+
+## Caminos entre pueblos (2026-09-14)
+
+```text
+Data/WorldGen/
+  WorldRoads / WorldRoad     arbol de caminos entre pueblos, busqueda en rejilla gruesa, trazado a tiles
+  WorldGenMap.Roads / RoadTiles   el mismo plan para la vista previa, el suelo, los arboles y la construccion
+ESC -> Seed World -> Pueblos -> Caminos SI/NO
+```
+
+- **Que pueblos:** arbol de expansion minima desde el pueblo inicial (Prim, empates por indice): une todos los pueblos
+  sin dos caminos paralelos al mismo sitio. Un tramo sin paso por tierra (un lago, un rio sin puente) se omite y el
+  pueblo de ese lado queda sin camino; no se busca otra conexion.
+- **Por donde:** A* sobre celdas de 4x4 tiles (una muestra de clima por celda), enderezado por linea de vista y
+  dibujado de vuelta a tiles con Bresenham, 2 tiles de ancho. Cada tile se comprueba otra vez a resolucion completa:
+  agua y montana nunca se pavimentan, y donde una celda dejo pasar la esquina de un rio el camino se corta (no hay
+  arte de puentes). Otros pueblos se rodean a distancia; los dos extremos solo se cruzan fuera de su interior.
+- **Sale por una calle principal, en sus propias filas:** del final del brazo que mira al otro pueblo, recto durante
+  `LotReach` (5) tiles antes de que empiece la busqueda. Asi el camino se une a la calle sin cortar un solar.
+- **Los solares no pisan caminos:** los tiles de camino a menos de radio + 5 de un pueblo pasan a ser calles suyas
+  ANTES de repartir solares (los solares llegan a radio + 4). Los arboles tampoco nacen en un camino ni al lado.
+- **El suelo es tierra**, como las calles: `WorldTerrainGrid.StampRoads` pone en `dirt` las cuatro esquinas de cada
+  tile. Donde ningun pack dibuja tierra contra el terreno de al lado (arena, roca) la reparacion de transiciones le
+  crece un borde de hierba.
+- **Un mundo en vivo escrito antes de los caminos sigue sin ellos.** Regenera su suelo desde los ajustes cada vez, y
+  sus casas y arboles se colocaron sobre un plan sin caminos: el marcador pasa a formato 2 y un formato 1 planifica con
+  `roadsBetweenTowns = false`.
+- **Medido:** 400x400 por defecto (4 pueblos) = 3 caminos en las semillas 1337, 42, 99999 y 7, 494-908 tiles de
+  camino, planificar entre -1 y +2 ms respecto a sin caminos (ruido). 2048x600 con 12 pueblos: 6 de los 11 caminos del
+  arbol (los otros no encontraron paso por tierra dentro de su caja de busqueda), +20 ms. `WorldRoadTests` (8): arbol de brazo a brazo, sin tiles en agua/montana ni bajo un solar, independiente de
+  la resolucion de la vista previa, suelo de tierra, sin arboles encima, apagable, coste acotado, y el mundo en vivo
+  de formato 1. `SeedWorldLiveTests` sigue comparando cada vertice de cada zona en vivo con el mundo entero.
 
 ## Separacion del juego: laboratorio y billete de vuelta (2026-09-14)
 

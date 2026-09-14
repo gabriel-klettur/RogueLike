@@ -96,6 +96,16 @@ namespace Valkur.Gameplay.Editors.SeedWorld
             UIButton.SetTint(startToggle, start ? EditorUIHelpers.ACCENT_BG : EditorUIHelpers.BTN_NORMAL);
             AddHint(body, "Con el pueblo inicial la partida empieza en su calle principal, no en mitad del campo.");
 
+            var roadsRow = MakeRow(body, "RoadsRow", ROW_H + 4f);
+            AddCaption(roadsRow.transform, "Caminos");
+            bool roads = _settings.roadsBetweenTowns;
+            var roadsToggle = EditorUIHelpers.MakeButton(roadsRow.transform, roads ? "SI" : "NO",
+                () => { Commit($"Caminos entre pueblos: {(roads ? "no" : "si")}", s => s.roadsBetweenTowns = !roads); RebuildBody(); },
+                ROW_H, 11f);
+            roadsToggle.gameObject.name = "RoadsToggle";
+            UIButton.SetTint(roadsToggle, roads ? EditorUIHelpers.ACCENT_BG : EditorUIHelpers.BTN_NORMAL);
+            AddHint(body, "Caminos de tierra que unen los pueblos, salen por sus calles principales y no cruzan rios (no hay puentes).");
+
             EditorUIHelpers.BuildSeparator(body);
             EditorUIHelpers.BuildSectionHeader(body, "Poblacion");
 

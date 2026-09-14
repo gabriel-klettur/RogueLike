@@ -120,7 +120,7 @@ namespace Valkur.Gameplay.World.Generation
                 ? "suelo en vivo"
                 : $"{r.BlockedTiles} tiles bloqueados, {r.HardCuts} cortes sin transicion";
             return $"'{r.Slot}' ({(r.Live ? "en vivo" : "horneado")}): {r.ZonesX}x{r.ZonesY} zonas, {r.Rivers} rios, " +
-                   $"{r.Towns} pueblos con {r.Buildings} edificios, {r.Trees} arboles, {r.Spawners} spawners, {ground}. " +
+                   $"{r.Towns} pueblos con {r.Buildings} edificios, {r.Roads} caminos, {r.Trees} arboles, {r.Spawners} spawners, {ground}. " +
                    $"Generado {r.GenerateMs} ms, escrito {r.WriteMs} ms ({r.Bytes / 1024f:0} KB), " +
                    $"cargado {o.LoadMs} ms." + (o.Loaded ? string.Empty : " NO SE PUDO CARGAR.");
         }

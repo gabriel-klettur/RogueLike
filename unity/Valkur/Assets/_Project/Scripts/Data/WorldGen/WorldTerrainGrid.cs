@@ -110,12 +110,19 @@ namespace Valkur.Data.WorldGen
                                              IReadOnlyList<WorldTown> towns,
                                              int widthTiles, int heightTiles,
                                              Func<string, string, bool> compatible)
+            => Build(climate, rivers, towns, null, widthTiles, heightTiles, compatible);
+
+        /// <summary>As above, with the plan's road raster painted as dirt between the towns.</summary>
+        public static WorldTerrainGrid Build(WorldClimate climate, IReadOnlyList<WorldRiver> rivers,
+                                             IReadOnlyList<WorldTown> towns, HashSet<Vector2Int> roadTiles,
+                                             int widthTiles, int heightTiles,
+                                             Func<string, string, bool> compatible)
         {
             if (climate == null) throw new ArgumentNullException(nameof(climate));
             var s = climate.Settings;
             var riverTiles = WorldRiverRaster.Tiles(rivers, s.riverWidth, s.widthTiles, s.heightTiles);
             return BuildRegion(climate, riverTiles, towns, widthTiles, heightTiles,
-                               0, 0, widthTiles, heightTiles, 0, compatible);
+                               0, 0, widthTiles, heightTiles, 0, compatible, roadTiles);
         }
 
         /// <summary>
@@ -131,7 +138,8 @@ namespace Valkur.Data.WorldGen
                                                    IReadOnlyList<WorldTown> towns,
                                                    int worldTilesW, int worldTilesH,
                                                    int x0, int y0, int tilesW, int tilesH, int margin,
-                                                   Func<string, string, bool> compatible)
+                                                   Func<string, string, bool> compatible,
+                                                   HashSet<Vector2Int> roadTiles = null)
         {
             if (climate == null) throw new ArgumentNullException(nameof(climate));
             if (compatible == null) throw new ArgumentNullException(nameof(compatible));
@@ -178,6 +186,7 @@ namespace Valkur.Data.WorldGen
                 }
 
             if (towns != null) grid.StampTowns(towns);
+            if (roadTiles != null) grid.StampRoads(roadTiles);
 
             grid.RepairTransitions();
             return grid;
@@ -222,6 +231,28 @@ namespace Valkur.Data.WorldGen
                             if (_terrain[i] == Water || _terrain[i] == WaterDeep) continue;
                             _terrain[i] = StreetGround;
                         }
+            }
+        }
+
+        /// <summary>
+        /// A road TILE makes its four corners dirt, exactly as a street tile does, so a road meeting a
+        /// street is one surface. The plan keeps roads off water; the check here is for the corner a
+        /// road tile shares with a river bank, which stays water and gives the road its bank.
+        /// </summary>
+        private void StampRoads(HashSet<Vector2Int> roadTiles)
+        {
+            int x0 = OriginX - 1, y0 = OriginY - 1, x1 = OriginX + Width, y1 = OriginY + Height;
+            foreach (var t in roadTiles)
+            {
+                if (t.x < x0 || t.y < y0 || t.x >= x1 || t.y >= y1) continue;
+                for (int dy = 0; dy <= 1; dy++)
+                    for (int dx = 0; dx <= 1; dx++)
+                    {
+                        int i = LocalIndex(t.x + dx, t.y + dy);
+                        if (i < 0 || _terrain[i] == null) continue;
+                        if (_terrain[i] == Water || _terrain[i] == WaterDeep) continue;
+                        _terrain[i] = StreetGround;
+                    }
             }
         }
 

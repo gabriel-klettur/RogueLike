@@ -159,7 +159,7 @@ namespace Valkur.Gameplay.World.Generation
                             occupied.Add(new Vector2Int(x, y));
 
             var rng = new System.Random(WorldSeed.Derive(map.Climate.Settings.seed, TreePickSalt));
-            var sites = WorldTrees.Plan(map.Climate, map.RiverTiles, map.Towns);
+            var sites = WorldTrees.Plan(map.Climate, map.RiverTiles, map.Towns, map.RoadTiles);
             foreach (var site in sites)
             {
                 double ancientRoll = rng.NextDouble();

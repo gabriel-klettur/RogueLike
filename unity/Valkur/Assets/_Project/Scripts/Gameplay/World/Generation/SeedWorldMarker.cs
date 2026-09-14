@@ -10,7 +10,15 @@ namespace Valkur.Gameplay.World.Generation
     [Serializable]
     public sealed class SeedWorldMarker
     {
-        public const int CurrentFormat = 1;
+        /// <summary>
+        /// 2: the plan has roads between towns. A live world regenerates its ground from the settings
+        /// every time, so a world written by format 1 must keep planning WITHOUT them — its buildings
+        /// and trees were placed on a plan that had none.
+        /// </summary>
+        public const int CurrentFormat = 2;
+
+        /// <summary>The first format whose plan includes roads.</summary>
+        public const int RoadsFormat = 2;
 
         public int format = CurrentFormat;
         public int seed;

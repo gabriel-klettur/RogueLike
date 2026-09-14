@@ -52,6 +52,9 @@ namespace Valkur.Gameplay.World.Generation
             if (marker == null || !marker.live) { error = "mundo horneado"; return null; }
             var settings = WorldGenSettings.FromJson(marker.settingsJson);
             if (settings == null) { error = "ajustes ilegibles"; return null; }
+            // Settings written before roads existed read the new field's default (on); the world's
+            // buildings and trees were placed on a plan without roads, so its ground must stay so.
+            if (marker.format < SeedWorldMarker.RoadsFormat) settings.roadsBetweenTowns = false;
 
             int zoneSize = marker.zoneSize > 0 ? marker.zoneSize : request.ZoneSize;
             return new SeedWorldLiveWorld(request.Slot, settings, zoneSize, request.OverridesDirectory, palette);

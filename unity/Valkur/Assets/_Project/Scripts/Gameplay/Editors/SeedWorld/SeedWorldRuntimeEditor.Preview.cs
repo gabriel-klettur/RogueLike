@@ -208,7 +208,7 @@ namespace Valkur.Gameplay.Editors.SeedWorld
             _statsLabel.text =
                 $"Semilla {s.seed}   {s.widthTiles}x{s.heightTiles} tiles   " +
                 $"tierra {Pct(land)}  agua {Pct(water)}   {spawn}   " +
-                $"{_map.Towns.Count} pueblos  {_map.Encounters.Count} encuentros  {_map.Rivers.Count} rios\n" +
+                $"{_map.Towns.Count} pueblos  {_map.Roads.Count} caminos  {_map.Encounters.Count} encuentros  {_map.Rivers.Count} rios\n" +
                 $"Vista previa {_map.Columns}x{_map.Rows} celdas " +
                 $"({_map.TilesPerCell.ToString("0.##", CultureInfo.InvariantCulture)} tiles/celda) " +
                 $"generada en {_lastGenerateMs} ms";

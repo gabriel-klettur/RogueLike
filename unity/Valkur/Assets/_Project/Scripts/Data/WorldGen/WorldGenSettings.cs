@@ -91,6 +91,9 @@ namespace Valkur.Data.WorldGen
         [Tooltip("Found the first town where the run begins, so the player starts somewhere people live.")]
         public bool startingTown = true;
 
+        [Tooltip("Join the towns with dirt roads (a tree of them, grown from the starting town).")]
+        public bool roadsBetweenTowns = true;
+
         [Tooltip("How many hostile encounters the generator places outside the towns.")]
         public int encounterCount = 12;
 

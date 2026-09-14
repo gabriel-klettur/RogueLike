@@ -26,6 +26,11 @@ namespace Valkur.Data.WorldGen
 
         public static List<WorldTreeSite> Plan(WorldClimate climate, HashSet<Vector2Int> riverTiles,
                                                 IReadOnlyList<WorldTown> towns)
+            => Plan(climate, riverTiles, towns, null);
+
+        /// <summary>As above, keeping the roads clear: no trunk on a road tile or beside one.</summary>
+        public static List<WorldTreeSite> Plan(WorldClimate climate, HashSet<Vector2Int> riverTiles,
+                                                IReadOnlyList<WorldTown> towns, HashSet<Vector2Int> roadTiles)
         {
             var sites = new List<WorldTreeSite>();
             var s = climate.Settings;
@@ -48,6 +53,7 @@ namespace Valkur.Data.WorldGen
                     if (chance <= 0f || roll >= chance) continue;
                     if (riverTiles != null && riverTiles.Contains(t)) continue;
                     if (NearTown(t, towns)) continue;
+                    if (NearRoad(t, roadTiles)) continue;
                     if (!WorldTowns.IsBuildable(climate, riverTiles, t)) continue;
 
                     sites.Add(new WorldTreeSite(t, FamilyFor(biome)));
@@ -88,6 +94,16 @@ namespace Valkur.Data.WorldGen
                 case WorldBiome.Corrupted: return TreeFamily.Corrupted;
                 default: return TreeFamily.Common;
             }
+        }
+
+        /// <summary>A trunk carries a one-tile collider: on a road, or right beside it, it blocks the road.</summary>
+        private static bool NearRoad(Vector2Int t, HashSet<Vector2Int> roadTiles)
+        {
+            if (roadTiles == null || roadTiles.Count == 0) return false;
+            for (int dy = -1; dy <= 1; dy++)
+                for (int dx = -1; dx <= 1; dx++)
+                    if (roadTiles.Contains(new Vector2Int(t.x + dx, t.y + dy))) return true;
+            return false;
         }
 
         private static bool NearTown(Vector2Int t, IReadOnlyList<WorldTown> towns)
