@@ -222,15 +222,24 @@ namespace Valkur.Gameplay.World
         public bool AcceptsDamage => !_destroyed && _profile != null && _currentDurability > 0;
 
         public void ApplyObstacleDamage(int amount, GameObject attacker, Vector2 contactPoint,
+            SpellElement? element) =>
+            ApplyWorkedDamage(amount, 1f, attacker, contactPoint, element);
+
+        /// <summary>
+        /// A blow whose worth is scaled by how well it was struck — a tapped cut's grade. The worth
+        /// multiplies the tool and material multiplier rather than the raw amount, so the
+        /// never-round-to-zero floor applies once, to the finished number.
+        /// </summary>
+        public void ApplyWorkedDamage(int amount, float worth, GameObject attacker, Vector2 contactPoint,
             SpellElement? element)
         {
-            if (!AcceptsDamage || amount <= 0) return;
+            if (!AcceptsDamage || amount <= 0 || worth <= 0f) return;
 
             // The matrix, the tier gate and the never-round-to-zero rule all live in
             // HarvestBlowResolver, because a harvest session asks the identical question and
             // two implementations of it would drift the first time either was tuned.
             var blow = HarvestBlowResolver.Resolve(_profile, attacker, element);
-            int dealt = HarvestBlowResolver.Scale(amount, blow.Multiplier);
+            int dealt = HarvestBlowResolver.Scale(amount, blow.Multiplier * worth);
 
             LastAttacker = attacker;
             LastBlow = blow;
@@ -391,6 +400,10 @@ namespace Valkur.Gameplay.World
         {
             get
             {
+                // A tree is hit on its TRUNK (the box drawn on the art), not anywhere on the
+                // footprint half, which on a wide tree spans its roots and the air between them.
+                if (_building != null && _building.TryGetTrunkBounds(out var trunk)) return trunk;
+
                 var footprint = _building != null ? _building.FootprintRenderer : null;
                 if (footprint != null && footprint.sprite != null) return footprint.bounds;
 

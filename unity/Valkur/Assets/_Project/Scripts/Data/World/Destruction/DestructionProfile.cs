@@ -147,7 +147,7 @@ namespace Valkur.Data
         [Header("Gathering skill")]
         [Tooltip("The skill this node trains and is judged by. None = no skill involvement: " +
                  "blows are worth what the matrix says and yields come from yieldPool.")]
-        public GatheringSkillDefinition gatheringSkill;
+        public SkillDefinition gatheringSkill;
 
         [Tooltip("What the player calls this kind of node: 'Árbol ancestral'. Shown by the prompt " +
                  "and the skills panel. Empty = no name.")]

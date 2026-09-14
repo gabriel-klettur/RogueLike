@@ -44,7 +44,7 @@ namespace Valkur.Gameplay.World
 
             // The first blow lands immediately: waiting out an interval first reads as the press
             // having been missed, and the player presses again.
-            LandBlow(RhythmVerdict.None);
+            LandBlow(CutGrade.None);
         }
 
         public void CancelInteraction()
@@ -67,17 +67,30 @@ namespace Valkur.Gameplay.World
             if (Now < _nextBlowAt) return;
 
             NoteAutoBlow();
-            LandBlow(RhythmVerdict.None);
+            LandBlow(CutGrade.None);
         }
 
         /// <summary>
-        /// One blow, from the automatic clock (<paramref name="verdict"/> None) or from a tap that
-        /// landed on the beat. The tool is resolved PER BLOW, not latched when the session begins:
-        /// equipping an axe halfway through a chop takes effect on the very next swing.
+        /// The grade of the blow being landed right now, so the work it does and what it teaches can
+        /// follow it. None for the automatic swing and for every blow from outside the session.
         /// </summary>
-        private void LandBlow(RhythmVerdict verdict)
+        private CutGrade _landingCut = CutGrade.None;
+
+        /// <summary>
+        /// One blow, from the automatic clock (<paramref name="cut"/> None) or from a tapped cut. The
+        /// tool is resolved PER BLOW, not latched when the session begins: equipping an axe halfway
+        /// through a chop takes effect on the very next swing.
+        /// </summary>
+        private void LandBlow(CutGrade cut)
         {
             if (_profile == null) return;
+            _landingCut = cut;
+            try { LandBlowCore(); }
+            finally { _landingCut = CutGrade.None; }
+        }
+
+        private void LandBlowCore()
+        {
 
             _lastBlowAt = Now;
             PlayWorkerSwing();
@@ -121,7 +134,10 @@ namespace Valkur.Gameplay.World
                 : (Vector2)transform.position;
 
             Vector2 contact = WorkableBounds.ClosestPoint(workerPosition);
-            _durability.ApplyObstacleDamage(_profile.blowDamage, _worker, contact, element: null);
+            // A tapped cut scales the blow AFTER the tool and the skill (inside durability), so a
+            // perfect cut with an axe is worth more than a perfect cut bare-handed, never less.
+            float worth = _profile.gatheringSkill != null ? _profile.gatheringSkill.CutWorth(_landingCut) : 1f;
+            _durability.ApplyWorkedDamage(_profile.blowDamage, worth, _worker, contact, element: null);
         }
 
         /// <summary>

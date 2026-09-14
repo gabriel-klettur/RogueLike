@@ -19,7 +19,7 @@ namespace Valkur.Tests.EditMode.Game.Data
     [TestFixture]
     public class WoodcuttingDataTests
     {
-        private const string SkillPath = "Assets/_Project/Data/Catalogs/Gathering/GS_woodcutting.asset";
+        private const string SkillPath = "Assets/_Project/Data/Catalogs/Skills/GS_woodcutting.asset";
         private const float SecondsPerBlow = 0.6f;
 
         private static T Load<T>(string path) where T : Object
@@ -29,7 +29,7 @@ namespace Valkur.Tests.EditMode.Game.Data
             return asset;
         }
 
-        private static GatheringSkillDefinition Skill => Load<GatheringSkillDefinition>(SkillPath);
+        private static SkillDefinition Skill => Load<SkillDefinition>(SkillPath);
 
         private static List<DestructionProfile> TreeProfiles()
         {
@@ -88,7 +88,7 @@ namespace Valkur.Tests.EditMode.Game.Data
             Assert.That(skill.GainChance(0, 15, false), Is.GreaterThan(skill.GainChance(500, 50, false)));
             Assert.That(skill.GainChance(500, 50, false), Is.GreaterThan(skill.GainChance(900, 80, false)));
             Assert.That(skill.GainChance(200, 20, true), Is.LessThan(skill.GainChance(200, 20, false)));
-            Assert.That(skill.GainChance(GatheringSkillDefinition.MaxTenths, 100, false), Is.Zero);
+            Assert.That(skill.GainChance(SkillDefinition.MaxTenths, 100, false), Is.Zero);
         }
 
         [Test]

@@ -86,6 +86,21 @@ namespace Valkur.Data
                   "-1 = never. The contact blob is unaffected.")]
         public int projectedShadow = 0;
 
+        // ── Trunk ────────────────────────────────────────────────────────────
+        // Where the TRUNK of a tree is drawn: the part a blow lands on. A property of the art,
+        // like the door, and stored the same way — normalized to the full sprite, origin at the
+        // bottom-left — so it survives scale overrides and splitRatio changes by construction.
+        // Drawn by hand for every tree sprite (tools/atlas/generated/tree_trunks.json) and
+        // applied by `Valkur > Buildings > Apply Tree Trunk Boxes`.
+
+        [Tooltip("Trunk box as a fraction of the full sprite (x, y from the bottom-left, width, " +
+                  "height). Zero size = no trunk drawn: the impact and interaction area fall back " +
+                  "to the footprint half. Walking collision is unaffected.")]
+        public Rect trunkNormalized = new Rect(0f, 0f, 0f, 0f);
+
+        /// <summary>A trunk box with a real area has been authored for this art.</summary>
+        public bool HasTrunk => trunkNormalized.width > 0.001f && trunkNormalized.height > 0.001f;
+
         // ── Door ─────────────────────────────────────────────────────────────
         // WHERE the doorway sits is a property of the ART, so it belongs to the template:
         // every placement of house_a has its door on the same pixels. WHERE it LEADS is a

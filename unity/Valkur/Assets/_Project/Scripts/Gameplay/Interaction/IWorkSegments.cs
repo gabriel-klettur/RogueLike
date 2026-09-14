@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Valkur.Data;
 
 namespace Valkur.Gameplay.Interaction
 {
@@ -30,9 +31,16 @@ namespace Valkur.Gameplay.Interaction
         float BlowCadence01 { get; }
 
         /// <summary>
-        /// The width of the tap window as a fraction of a beat, drawn as a target zone at the end
-        /// of the cadence sweep. Negative when the job is not being tapped.
+        /// How far out one grade's band of the cut target reaches, as a fraction of a beat — drawn
+        /// as nested bands at the end of the cadence sweep, the centre (Perfect) narrowest.
+        /// Negative when the job is not being tapped.
         /// </summary>
-        float HitWindow01 { get; }
+        float CutBandReach01(CutGrade grade);
+
+        /// <summary>
+        /// The grade a tap made right now would get, or <see cref="CutGrade.None"/> when the job is
+        /// not being tapped. What lights the band the sweep is in.
+        /// </summary>
+        CutGrade GradeIfTappedNow { get; }
     }
 }

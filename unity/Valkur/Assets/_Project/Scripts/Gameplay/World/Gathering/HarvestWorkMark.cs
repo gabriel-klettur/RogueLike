@@ -70,6 +70,9 @@ namespace Valkur.Gameplay.World
 
         private const float MISS_SECONDS = 0.32f;
 
+        /// <summary>The beat is lost: the cross goes dull and taps are ignored until the next one.</summary>
+        private static readonly Color LostTone = new Color(0.45f, 0.42f, 0.46f, 1f);
+
         private static Sprite _strokeSprite;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -80,6 +83,7 @@ namespace Valkur.Gameplay.World
         private FacingIndicator _chevron;
 
         private Transform _root;
+        private HarvestCutTarget _target;
         private SpriteRenderer _strokeA, _strokeB, _edgeA, _edgeB, _halo, _shock, _groundRing;
         private readonly SpriteRenderer[] _motes = new SpriteRenderer[MOTES];
         private float _alpha;
@@ -88,10 +92,13 @@ namespace Valkur.Gameplay.World
         private float _ringLeft;
         private float _lastCadence;
         private float _missLeft;
-        private bool _lastStrikePerfect;
+        private Valkur.Data.CutGrade _lastStrikeGrade;
 
         /// <summary>Whether the mark is on screen. A test seam.</summary>
         public bool IsShowing => _root != null && _root.gameObject.activeSelf;
+
+        /// <summary>Where the cross sits on the trunk. What the rhythm callout hangs above.</summary>
+        public Vector3 MarkPosition => _root != null ? _root.position : transform.position;
 
         /// <summary>The node the mark is on. A test seam.</summary>
         public HarvestNode Node => _node;
@@ -124,20 +131,51 @@ namespace Valkur.Gameplay.World
             StepAsideChevron(true);
         }
 
-        /// <summary>A blow landed: flash, punch, ring, sparks.</summary>
+        /// <summary>
+        /// A blow landed: flash, punch, ring, sparks — sized by the cut's grade while tapping, so a
+        /// perfect cut bursts gold and a pésimo barely scuffs the bark.
+        /// </summary>
         public void Strike(HarvestNode node)
         {
             Engage(node);
-            _strikeLeft = STRIKE_SECONDS;
-            _ringLeft = RING_SECONDS;
             _missLeft = 0f;
-            _lastStrikePerfect = node != null && node.LastVerdict == Valkur.Data.RhythmVerdict.Perfect;
+            var tap = node != null ? node.LastTap : default;
+            _lastStrikeGrade = node != null && node.InRhythmMode && tap.Landed ? tap.Grade : Valkur.Data.CutGrade.None;
+
+            float weight = StrikeWeight(_lastStrikeGrade);
+            _strikeLeft = STRIKE_SECONDS * Mathf.Lerp(0.55f, 1f, Mathf.Clamp01(weight));
+            _ringLeft = RING_SECONDS;
 
             if (_root == null) return;
             Vector3 p = _root.position;
-            HarvestFx.Flash(p, _lastStrikePerfect ? PerfectTone : new Color(1f, 0.9f, 0.62f, 0.9f),
-                _lastStrikePerfect ? 1.15f : 0.75f);
-            HarvestFx.Chips(p, new Color(1f, 0.82f, 0.45f, 1f), _lastStrikePerfect ? 9 : 4, Vector2.up);
+            bool graded = _lastStrikeGrade != Valkur.Data.CutGrade.None;
+            Color flash = !graded ? new Color(1f, 0.9f, 0.62f, 0.9f)
+                : _lastStrikeGrade == Valkur.Data.CutGrade.Perfect ? PerfectTone
+                : RhythmCallouts.CutColour(_lastStrikeGrade);
+            HarvestFx.Flash(p, flash, 0.45f + 0.7f * weight);
+            HarvestFx.Chips(p, new Color(1f, 0.82f, 0.45f, 1f), Mathf.RoundToInt(2f + 7f * weight), Vector2.up);
+        }
+
+        /// <summary>How loud a strike is: 1 for a perfect cut, 0.6 for the automatic swing, fading to a scuff.</summary>
+        private static float StrikeWeight(Valkur.Data.CutGrade grade)
+        {
+            switch (grade)
+            {
+                case Valkur.Data.CutGrade.Perfect: return 1f;
+                case Valkur.Data.CutGrade.Good:    return 0.72f;
+                case Valkur.Data.CutGrade.Ok:      return 0.5f;
+                case Valkur.Data.CutGrade.Bad:     return 0.28f;
+                case Valkur.Data.CutGrade.Awful:   return 0.12f;
+                default:                           return 0.6f;
+            }
+        }
+
+        /// <summary>A tap was judged: the target keeps a mark of where it landed.</summary>
+        public void Judged(HarvestNode node, Valkur.Gameplay.Interaction.RhythmTap tap)
+        {
+            if (node == null || !tap.Counted) return;
+            Engage(node);
+            _target?.Mark(node, tap);
         }
 
         /// <summary>
@@ -178,6 +216,9 @@ namespace Valkur.Gameplay.World
             if (container != null) _root.SetParent(container.transform, false);
 
             _halo = Layer("Halo", ElementalSprites.Glow, 0);
+            // The target sits under the blades and the shock ring: the cross still says WHEN, the
+            // target says HOW WELL, and the blades dim over it while tapping so its centre shows.
+            _target = new HarvestCutTarget(_root);
             _shock = Layer("Shock", ElementalSprites.Ring, 1);
             _strokeA = Layer("StrokeA", _strokeSprite, 2);
             _strokeB = Layer("StrokeB", _strokeSprite, 3);
@@ -236,8 +277,13 @@ namespace Valkur.Gameplay.World
         {
             var b = _node.InteractionBounds;
             Vector3 worker = _worker != null ? _worker.transform.position : b.center;
-            float lean = Mathf.Clamp(worker.x - b.center.x, -TRUNK_LEAN, TRUNK_LEAN);
-            _root.position = new Vector3(b.center.x + lean, b.min.y + CHEST_HEIGHT, 0f);
+            // The bounds are the drawn TRUNK when the art has one, so the cross must stay on it:
+            // a short trunk under a low canopy is shorter than chest height, and a lean wider
+            // than half the trunk puts the cross on the bark's edge.
+            float leanCap = b.size.x > 0f ? Mathf.Min(TRUNK_LEAN, b.size.x * 0.25f) : TRUNK_LEAN;
+            float lean = Mathf.Clamp(worker.x - b.center.x, -leanCap, leanCap);
+            float height = b.size.y > 0f ? Mathf.Min(CHEST_HEIGHT, b.size.y * 0.6f) : CHEST_HEIGHT;
+            _root.position = new Vector3(b.center.x + lean, b.min.y + height, 0f);
 
             var canopy = _node.Building != null ? _node.Building.CanopyRenderer : null;
             var footprint = _node.Building != null ? _node.Building.FootprintRenderer : null;
@@ -246,12 +292,14 @@ namespace Valkur.Gameplay.World
             int order = host != null ? host.sortingOrder + 2 : 10;
 
             SetDepth(_halo, layer, order);
-            SetDepth(_shock, layer, order + 1);
-            SetDepth(_strokeA, layer, order + 2);
-            SetDepth(_strokeB, layer, order + 3);
-            SetDepth(_edgeA, layer, order + 4);
-            SetDepth(_edgeB, layer, order + 5);
-            for (int i = 0; i < MOTES; i++) SetDepth(_motes[i], layer, order + 6);
+            _target.SetDepth(layer, order + 1);
+            int above = order + 1 + HarvestCutTarget.SLOT_COUNT;
+            SetDepth(_shock, layer, above);
+            SetDepth(_strokeA, layer, above + 1);
+            SetDepth(_strokeB, layer, above + 2);
+            SetDepth(_edgeA, layer, above + 3);
+            SetDepth(_edgeB, layer, above + 4);
+            for (int i = 0; i < MOTES; i++) SetDepth(_motes[i], layer, above + 5);
             // The foot ring lies on the GROUND, so it takes the footprint's layer, under everything.
             int groundLayer = footprint != null ? footprint.sortingLayerID : layer;
             int groundOrder = footprint != null ? footprint.sortingOrder + 1 : order - 1;
@@ -269,9 +317,17 @@ namespace Valkur.Gameplay.World
 
             float miss = _missLeft / MISS_SECONDS;
             bool window = _node.InHitWindow;
+            bool lost = _node.RhythmBeatLost;
+            bool gradedStrike = _lastStrikeGrade != Valkur.Data.CutGrade.None && _strikeLeft > 0f;
             Color blade = miss > 0f
                 ? Color.Lerp(Core, MissTone, miss)
-                : window ? WindowTone : (_lastStrikePerfect && _strikeLeft > 0f ? PerfectTone : Core);
+                : lost ? LostTone
+                : gradedStrike ? RhythmCallouts.CutColour(_lastStrikeGrade)
+                : window ? WindowTone : Core;
+
+            _target.Tick(_node, dt, _alpha);
+            // While the target is up the blades step back, so its centre is what the eye finds.
+            float bladeAlpha = Mathf.Lerp(1f, 0.4f, _target.Presence);
 
             // A miss jolts the whole cross sideways, decaying: the same "the blow did not land"
             // language the camera whiff cue speaks.
@@ -289,13 +345,15 @@ namespace Valkur.Gameplay.World
             float gain = 1f + strike * 1.6f + (window ? 0.7f : 0f);
 
             // The two blades, ±45°, pushed apart along their own normals while open.
-            PlaceStroke(_strokeA, 45f, open, punch, gain, 1f, blade);
-            PlaceStroke(_strokeB, -45f, open, punch, gain, 1f, blade);
-            PlaceStroke(_edgeA, 45f, open, punch, gain * 1.3f, 0.32f, Color.white);
-            PlaceStroke(_edgeB, -45f, open, punch, gain * 1.3f, 0.32f, Color.white);
+            PlaceStroke(_strokeA, 45f, open, punch, gain, 1f, blade, bladeAlpha);
+            PlaceStroke(_strokeB, -45f, open, punch, gain, 1f, blade, bladeAlpha);
+            PlaceStroke(_edgeA, 45f, open, punch, gain * 1.3f, 0.32f, Color.white, bladeAlpha);
+            PlaceStroke(_edgeB, -45f, open, punch, gain * 1.3f, 0.32f, Color.white, bladeAlpha);
 
             // Four sparks orbit the cross and draw in with the swing: wide and slow straight after
             // a blow, tight and fast as the next one comes, scattering outward on the strike.
+            // While tapping, only as many are lit as there are CHANCES left on this beat — the life
+            // counter of a rhythm game, read off the trunk the player is already watching.
             float radius = Mathf.Lerp(MOTE_RADIUS_CLOSED, MOTE_RADIUS_OPEN, open) * (1f + strike * 0.9f);
             float spin = Time.time * Mathf.Lerp(7f, 2.2f, open);
             for (int i = 0; i < MOTES; i++)
@@ -303,7 +361,10 @@ namespace Valkur.Gameplay.World
                 float a = spin + i * Mathf.PI * 0.5f;
                 _motes[i].transform.localPosition = new Vector3(Mathf.Cos(a) * radius, Mathf.Sin(a) * radius * 0.8f, 0f);
                 _motes[i].transform.localScale = Vector3.one * (0.16f + strike * 0.12f);
-                _motes[i].color = Tint(Core, 1.2f + strike, (0.5f + (1f - open) * 0.5f) * _alpha);
+                bool litMote = !_node.InRhythmMode || i < _node.RhythmTriesLeft;
+                _motes[i].color = litMote
+                    ? Tint(Core, 1.2f + strike, (0.5f + (1f - open) * 0.5f) * _alpha)
+                    : Tint(LostTone, 0.6f, 0.18f * _alpha);
             }
 
             // A warm halo that swells with the strike and breathes gently while waiting.
@@ -326,13 +387,15 @@ namespace Valkur.Gameplay.World
             var b = _node.InteractionBounds;
             // Sized to a TRUNK, not to the footprint: a big tree's footprint is several units wide
             // with its roots, and a ring that wide read as a spell circle rather than "this tree".
-            float span = Mathf.Clamp(b.size.x * 0.55f, 0.9f, 1.8f) * (1f + footPulse * 0.15f);
+            // The bounds are the trunk box now (footprint only for art with no trunk drawn), so
+            // a ring a little wider than the bark hugs its foot.
+            float span = Mathf.Clamp(b.size.x * 1.3f, 0.9f, 1.8f) * (1f + footPulse * 0.15f);
             _groundRing.transform.localScale = new Vector3(span, span * 0.38f, 1f);
             _groundRing.color = Tint(HaloTone, 1.0f + footPulse, (0.6f + footPulse * 0.4f) * _alpha);
         }
 
         private void PlaceStroke(SpriteRenderer sr, float angleDeg, float open, float punch, float gain,
-            float thickness, Color tone)
+            float thickness, Color tone, float alphaScale)
         {
             float rad = (angleDeg + 90f) * Mathf.Deg2Rad;
             var normal = new Vector3(Mathf.Cos(rad), Mathf.Sin(rad), 0f);
@@ -343,7 +406,7 @@ namespace Valkur.Gameplay.World
             // The sprite is 1 unit long and 0.25 tall, so height 4x the wanted width.
             sr.transform.localScale = new Vector3(STROKE_LENGTH * punch * (0.85f + 0.15f * thickness),
                 STROKE_WIDTH * 4f * punch * thickness, 1f);
-            sr.color = Tint(tone, gain, Mathf.Lerp(0.95f, 0.6f, open) * _alpha);
+            sr.color = Tint(tone, gain, Mathf.Lerp(0.95f, 0.6f, open) * _alpha * alphaScale);
         }
 
         private static float Smooth(float t) => t * t * (3f - 2f * t);

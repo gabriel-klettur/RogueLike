@@ -4,6 +4,7 @@ using System.Text;
 using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay.World;
+using Valkur.Gameplay.Skills;
 
 namespace Valkur.Gameplay
 {
@@ -61,15 +62,72 @@ namespace Valkur.Gameplay
                 Category = "gathering",
                 Handler  = args => Log(CmdFell())
             });
+
+            RegisterCommand(new ConsoleCommand
+            {
+                Name     = "tronco",
+                Aliases  = new[] { "trunk" },
+                Usage    = "tronco | tronco ver [on|off] | tronco <x0> <y0> <x1> <y1>",
+                Help     = "caja del tronco del arbol mas cercano: informe, dibujarla en el mundo o fijarla (fracciones del sprite)",
+                Category = "gathering",
+                Handler  = args => Log(CmdTrunk(args))
+            });
+        }
+
+        private string CmdTrunk(string[] args)
+        {
+            string sub = args != null && args.Length > 1 ? args[1].ToLowerInvariant() : string.Empty;
+
+            if (sub == "ver" || sub == "show")
+            {
+                bool on = args.Length > 2
+                    ? args[2].ToLowerInvariant() != "off"
+                    : Object.FindObjectOfType<TrunkBoxOverlay>() == null;
+                return TrunkBoxOverlay.SetVisible(on)
+                    ? "Cajas de impacto visibles (verde = tronco dibujado, naranja = huella sin tronco)."
+                    : "Cajas de impacto ocultas.";
+            }
+
+            var player = HarvestPlayer();
+            var node = NearestNode(player, includeSpent: true);
+            if (node == null || node.Building == null) return "No hay árbol cercano.";
+            var t = node.Building.Template;
+            if (t == null) return "El árbol más cercano no tiene plantilla.";
+
+            if (args != null && args.Length >= 5)
+            {
+                var v = new float[4];
+                for (int i = 0; i < 4; i++)
+                    if (!float.TryParse(args[1 + i], NumberStyles.Float, CultureInfo.InvariantCulture, out v[i]))
+                        return $"'{args[1 + i]}' no es un número. Fracciones del sprite, p. ej. tronco 0.4 0.05 0.6 0.45";
+                if (v[2] <= v[0] || v[3] <= v[1]) return "La esquina superior derecha tiene que quedar por encima y a la derecha.";
+
+                t.trunkNormalized = Rect.MinMaxRect(Mathf.Clamp01(v[0]), Mathf.Clamp01(v[1]), Mathf.Clamp01(v[2]), Mathf.Clamp01(v[3]));
+#if UNITY_EDITOR
+                UnityEditor.EditorUtility.SetDirty(t);
+#endif
+                return $"Tronco de '{t.assetPath}' (plantilla {t.templateId}) fijado. Copialo a tools/atlas/generated/tree_trunks.json " +
+                       "o el próximo 'Apply Tree Trunk Boxes' lo devolverá al valor dibujado.";
+            }
+
+            var r = t.trunkNormalized;
+            var b = node.InteractionBounds;
+            bool drawn = node.Building.TryGetTrunkBounds(out _);
+            return $"{t.assetPath} (plantilla {t.templateId})\n" +
+                   (t.HasTrunk
+                       ? $"  tronco {r.xMin:0.00} {r.yMin:0.00} {r.xMax:0.00} {r.yMax:0.00}"
+                       : "  sin tronco dibujado") +
+                   $"\n  area de impacto ({(drawn ? "tronco" : "huella")}): " +
+                   $"x {b.min.x:0.00}..{b.max.x:0.00}  y {b.min.y:0.00}..{b.max.y:0.00}";
         }
 
         private static GameObject HarvestPlayer() => GameObject.FindWithTag("Player");
 
         private string CmdSkill(string[] args)
         {
-            var catalog = GatheringSkillCatalog.Shared;
+            var catalog = SkillCatalog.Shared;
             var player = HarvestPlayer();
-            if (catalog == null) return "No hay GatheringSkillCatalog en Resources/Gathering.";
+            if (catalog == null) return "No hay SkillCatalog en Resources/Skills.";
 
             string sub = args != null && args.Length > 1 ? args[1].ToLowerInvariant() : string.Empty;
 
@@ -85,32 +143,32 @@ namespace Valkur.Gameplay
             if (string.IsNullOrEmpty(sub))
             {
                 var sb = new StringBuilder("Habilidades de recolección:\n");
-                var skills = PlayerGatheringSkills.Peek(player);
+                var skills = PlayerSkills.Peek(player);
                 foreach (var def in catalog.skills)
                 {
                     if (def == null) continue;
                     int t = skills != null ? skills.GetTenths(def.skillKey) : 0;
                     sb.Append("  ").Append(def.skillKey).Append("  ").Append(def.displayName).Append("  ")
-                      .Append(GatheringSkillDefinition.FormatPercent(t)).Append('\n');
+                      .Append(SkillDefinition.FormatPercent(t)).Append('\n');
                 }
                 return sb.ToString();
             }
 
             var target = catalog.Find(sub);
             if (target == null) return $"Habilidad '{sub}' desconocida.";
-            if (args.Length < 3) return $"{target.displayName}: {GatheringSkillDefinition.FormatPercent(PlayerGatheringSkills.Peek(player)?.GetTenths(target.skillKey) ?? 0)}";
+            if (args.Length < 3) return $"{target.displayName}: {SkillDefinition.FormatPercent(PlayerSkills.Peek(player)?.GetTenths(target.skillKey) ?? 0)}";
 
             if (!float.TryParse(args[2].TrimEnd('%'), NumberStyles.Float, CultureInfo.InvariantCulture, out float pct))
                 return "Porcentaje no válido.";
 
-            var comp = PlayerGatheringSkills.For(player);
+            var comp = PlayerSkills.For(player);
             if (comp == null) return "El jugador no admite habilidades.";
             comp.SetTenths(target.skillKey, Mathf.RoundToInt(Mathf.Clamp(pct, 0f, 100f) * 10f));
-            return $"{target.displayName} = {GatheringSkillDefinition.FormatPercent(comp.GetTenths(target.skillKey))}";
+            return $"{target.displayName} = {SkillDefinition.FormatPercent(comp.GetTenths(target.skillKey))}";
         }
 
         /// <summary>Expected hours to 100 % from the definition's pure gain maths.</summary>
-        private static string SimulateSkill(GatheringSkillDefinition def)
+        private static string SimulateSkill(SkillDefinition def)
         {
             const float secondsPerBlow = 0.6f;
             var sb = new StringBuilder();
@@ -167,12 +225,12 @@ namespace Valkur.Gameplay
 
             if (p.gatheringSkill != null)
             {
-                var skills = PlayerGatheringSkills.Peek(player);
+                var skills = PlayerSkills.Peek(player);
                 int t = skills != null ? skills.GetTenths(p.gatheringSkill.skillKey) : 0;
                 var def = p.gatheringSkill;
-                sb.Append("  ").Append(def.displayName).Append(' ').Append(GatheringSkillDefinition.FormatPercent(t))
+                sb.Append("  ").Append(def.displayName).Append(' ').Append(SkillDefinition.FormatPercent(t))
                   .Append(" vs dificultad ").Append(p.skillDifficulty)
-                  .Append(" (").Append(GatheringSkillDefinition.EaseLabel(def.Ease(t, p.skillDifficulty))).Append(")\n");
+                  .Append(" (").Append(SkillDefinition.EaseLabel(def.Ease(t, p.skillDifficulty))).Append(")\n");
                 sb.Append("  eficiencia x").Append(def.EfficiencyMultiplier(t, p.skillDifficulty).ToString("0.00", CultureInfo.InvariantCulture))
                   .Append("  prob. ganancia ").Append((def.GainChance(t, p.skillDifficulty, blow.WrongTool) * 100f).ToString("0.00", CultureInfo.InvariantCulture)).Append("%")
                   .Append("  bonus al talar +").Append(p.fellBonusYields + def.BonusYields(t)).Append('\n');
@@ -180,7 +238,7 @@ namespace Valkur.Gameplay
                 if (def.yieldTable != null)
                 {
                     var shares = new List<float>();
-                    def.yieldTable.Shares(GatheringSkillDefinition.ToPercent(t), p.yieldTags, shares);
+                    def.yieldTable.Shares(SkillDefinition.ToPercent(t), p.yieldTags, shares);
                     sb.Append("  maderas posibles aquí:\n");
                     for (int i = 0; i < shares.Count; i++)
                     {

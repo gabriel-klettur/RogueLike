@@ -1,5 +1,4 @@
 using UnityEngine;
-using Valkur.Data;
 
 namespace Valkur.Gameplay.Interaction
 {
@@ -19,7 +18,7 @@ namespace Valkur.Gameplay.Interaction
         /// <summary>Whether a tap right now would be judged. False outside a session.</summary>
         bool AcceptsRhythmTaps { get; }
 
-        /// <summary>The player tapped the interact key. Returns how the tap landed.</summary>
-        RhythmVerdict Tap(GameObject player);
+        /// <summary>The player tapped the interact key. Returns how the cut was graded and what it did.</summary>
+        RhythmTap Tap(GameObject player);
     }
 }

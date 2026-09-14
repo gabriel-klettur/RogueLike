@@ -2,6 +2,7 @@ using System.Text;
 using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay.Interaction;
+using Valkur.Gameplay.Skills;
 
 namespace Valkur.Gameplay.World
 {
@@ -76,8 +77,8 @@ namespace Valkur.Gameplay.World
                 var ease = _profile.gatheringSkill.Ease(tenths, _profile.skillDifficulty);
                 Separator(detail);
                 detail.Append(_profile.gatheringSkill.displayName).Append(' ')
-                      .Append(GatheringSkillDefinition.FormatPercent(tenths))
-                      .Append(" (").Append(GatheringSkillDefinition.EaseLabel(ease)).Append(')');
+                      .Append(SkillDefinition.FormatPercent(tenths))
+                      .Append(" (").Append(SkillDefinition.EaseLabel(ease)).Append(')');
             }
 
             // Bare-handed work is not refused — the floor in HarvestBlowResolver.Scale keeps it at
@@ -135,7 +136,7 @@ namespace Valkur.Gameplay.World
         private int SkillTenthsOf(GameObject player)
         {
             if (_profile == null || _profile.gatheringSkill == null) return 0;
-            var skills = PlayerGatheringSkills.Peek(player);
+            var skills = PlayerSkills.Peek(player);
             return skills != null ? skills.GetTenths(_profile.gatheringSkill.skillKey) : 0;
         }
 

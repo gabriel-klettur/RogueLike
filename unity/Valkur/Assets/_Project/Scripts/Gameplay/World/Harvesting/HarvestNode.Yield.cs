@@ -3,6 +3,7 @@ using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Inventory;
+using Valkur.Gameplay.Skills;
 
 namespace Valkur.Gameplay.World
 {
@@ -123,7 +124,7 @@ namespace Valkur.Gameplay.World
         {
             if (_profile.UsesSkillYield)
             {
-                float percent = GatheringSkillDefinition.ToPercent(SkillTenthsOf(worker));
+                float percent = SkillDefinition.ToPercent(SkillTenthsOf(worker));
                 var item = _profile.gatheringSkill.yieldTable.Roll(_yieldRng, percent, _profile.yieldTags, out _);
                 if (item == null) return 0;
 
@@ -170,8 +171,14 @@ namespace Valkur.Gameplay.World
             if (_profile == null || _profile.gatheringSkill == null) return;
             if (!blow.Physical || blow.Immune) return;
 
-            var skills = PlayerGatheringSkills.For(worker);
+            var skills = PlayerSkills.For(worker);
             if (skills == null) return;
+
+            // A weak tapped cut teaches in proportion to its worth. Gains are rolled per blow and
+            // tapping multiplies blows, so without this a player could tap Awful at a master's
+            // tempo and out-learn a careful one.
+            float worth = _profile.gatheringSkill.CutWorth(_landingCut);
+            if (worth < 1f && _yieldRng.NextDouble() >= worth) return;
 
             skills.TryGain(_profile.gatheringSkill, _profile.skillDifficulty, blow.WrongTool);
         }

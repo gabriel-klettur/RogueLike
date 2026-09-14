@@ -192,9 +192,10 @@ namespace Valkur.Gameplay.World
         public Vector2 InteractionPosition => WorkableBounds.center;
 
         /// <summary>
-        /// The FOOTPRINT, not the whole sprite: a tree canopy is drawn several units above the
-        /// ground, so measuring range from it would offer the prompt to someone nowhere near
-        /// the trunk.
+        /// The TRUNK when the art has one drawn, else the FOOTPRINT — never the whole sprite: a
+        /// tree canopy is drawn several units above the ground, and even the footprint half of
+        /// a wide tree spans its roots, so measuring range from either offers the prompt to
+        /// someone nowhere near the trunk.
         /// </summary>
         public Bounds InteractionBounds => WorkableBounds;
 
@@ -226,6 +227,8 @@ namespace Valkur.Gameplay.World
         {
             get
             {
+                if (_building != null && _building.TryGetTrunkBounds(out var trunk)) return trunk;
+
                 var footprint = _building != null ? _building.FootprintRenderer : null;
                 if (footprint != null && footprint.sprite != null) return footprint.bounds;
 

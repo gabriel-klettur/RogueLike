@@ -7,6 +7,7 @@ using Valkur.Data;
 using Valkur.Gameplay.Interaction;
 using Valkur.Gameplay.World;
 using Valkur.Gameplay.Inventory;
+using Valkur.Gameplay.Skills;
 
 namespace Valkur.Tests.EditMode.Game.World
 {
@@ -62,7 +63,7 @@ namespace Valkur.Tests.EditMode.Game.World
 
         // ── Builders ───────────────────────────────────────────────────────────────
 
-        private GatheringSkillDefinition Skill(float gainChance = 0f)
+        private SkillDefinition Skill(float gainChance = 0f)
         {
             var wood = ScriptableObject.CreateInstance<ItemDefinition>();
             wood.itemId = "probe_wood";
@@ -73,7 +74,7 @@ namespace Valkur.Tests.EditMode.Game.World
             table.tiers.Add(new GatheringYieldTable.Tier { key = "probe", displayName = "Prueba", items = new[] { wood } });
             _cleanup.Add(table);
 
-            var skill = ScriptableObject.CreateInstance<GatheringSkillDefinition>();
+            var skill = ScriptableObject.CreateInstance<SkillDefinition>();
             skill.skillKey = "woodcutting_probe";
             skill.gainBaseChance = gainChance;
             skill.yieldTable = table;
@@ -81,7 +82,7 @@ namespace Valkur.Tests.EditMode.Game.World
             return skill;
         }
 
-        private DestructionProfile Profile(GatheringSkillDefinition skill, int durability = 40, int difficulty = 15)
+        private DestructionProfile Profile(SkillDefinition skill, int durability = 40, int difficulty = 15)
         {
             var p = ScriptableObject.CreateInstance<DestructionProfile>();
             p.material = MaterialClass.Wood;
@@ -134,7 +135,7 @@ namespace Valkur.Tests.EditMode.Game.World
 
             if (skillTenths >= 0)
             {
-                var skills = PlayerGatheringSkills.For(go);
+                var skills = PlayerSkills.For(go);
                 skills.SetTenths(skillKey, skillTenths);
             }
             return go;
@@ -218,7 +219,7 @@ namespace Valkur.Tests.EditMode.Game.World
 
             Assert.That(tree.IsDestroyed, Is.True);
             Assert.That(_gathered, Is.Zero, "A monster clipping a trunk must not scatter logs.");
-            Assert.That(monster.GetComponent<PlayerGatheringSkills>(), Is.Null,
+            Assert.That(monster.GetComponent<PlayerSkills>(), Is.Null,
                 "Only the player grows a gathering skill.");
         }
 
@@ -257,10 +258,10 @@ namespace Valkur.Tests.EditMode.Game.World
 
             Fell(Tree(Profile(skill)), player);
 
-            var skills = player.GetComponent<PlayerGatheringSkills>();
+            var skills = player.GetComponent<PlayerSkills>();
             Assert.That(skills, Is.Not.Null);
             Assert.That(skills.GetTenths(skill.skillKey), Is.GreaterThan(0));
-            Assert.That(skills.GetTenths(skill.skillKey), Is.LessThanOrEqualTo(GatheringSkillDefinition.MaxTenths));
+            Assert.That(skills.GetTenths(skill.skillKey), Is.LessThanOrEqualTo(SkillDefinition.MaxTenths));
         }
 
         [Test]
@@ -417,12 +418,12 @@ namespace Valkur.Tests.EditMode.Game.World
         {
             var a = Player(skillTenths: 347);
             var data = new ProgressionSaveData();
-            a.GetComponent<PlayerGatheringSkills>().WriteTo(data);
+            a.GetComponent<PlayerSkills>().WriteTo(data);
 
             Assert.That(data.IsEmpty, Is.False, "A document holding only a gathering skill is not empty.");
 
             var b = Player();
-            var restored = PlayerGatheringSkills.For(b);
+            var restored = PlayerSkills.For(b);
             int changes = 0;
             restored.SkillChanged += (k, o, n) => changes++;
             restored.ReadFrom(data);
@@ -438,10 +439,10 @@ namespace Valkur.Tests.EditMode.Game.World
             data.gatheringSkillKeys.Add("woodcutting_probe");
             data.gatheringSkillTenths.Add(99999);
 
-            var skills = PlayerGatheringSkills.For(Player());
+            var skills = PlayerSkills.For(Player());
             skills.ReadFrom(data);
 
-            Assert.That(skills.GetTenths("woodcutting_probe"), Is.EqualTo(GatheringSkillDefinition.MaxTenths));
+            Assert.That(skills.GetTenths("woodcutting_probe"), Is.EqualTo(SkillDefinition.MaxTenths));
         }
     }
 }

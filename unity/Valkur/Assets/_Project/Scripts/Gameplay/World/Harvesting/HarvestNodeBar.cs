@@ -61,7 +61,10 @@ namespace Valkur.Gameplay.World
         private Transform _root;
         private WorldBarLine _line;
         private SpriteRenderer _cadence;
-        private SpriteRenderer _window;
+
+        /// <summary>The cut target's bands at the end of the sweep, outermost (Awful) first.</summary>
+        private readonly SpriteRenderer[] _bands = new SpriteRenderer[5];
+        private SpriteRenderer _beatTick;
         private TextMeshPro _eta;
         private readonly List<SpriteRenderer> _notches = new List<SpriteRenderer>();
         private readonly List<float> _marks = new List<float>();
@@ -124,7 +127,8 @@ namespace Valkur.Gameplay.World
             _line.SetRatio(0f, instant: true, leaveChip: false, style);
 
             _cadence = MakeSolid("Cadence", CadenceColour);
-            _window = MakeSolid("HitWindow", new Color(0.72f, 0.98f, 1f, 0.9f));
+            for (int i = 0; i < _bands.Length; i++) _bands[i] = MakeSolid("CutBand" + i, Color.clear);
+            _beatTick = MakeSolid("BeatTick", Color.white);
             BuildEta();
             RebuildNotches();
 
@@ -259,7 +263,9 @@ namespace Valkur.Gameplay.World
             _sortingBase = order;
             _line.SetSortingBase(order);
             _cadence.sortingOrder = order + WorldBarLine.SLOT_COUNT;
-            _window.sortingOrder = order + WorldBarLine.SLOT_COUNT + 1;
+            // Nested bands: the outermost draws first and each narrower one over it, centre on top.
+            for (int i = 0; i < _bands.Length; i++) _bands[i].sortingOrder = order + WorldBarLine.SLOT_COUNT + 1 + i;
+            _beatTick.sortingOrder = order + WorldBarLine.SLOT_COUNT + 1 + _bands.Length;
             for (int i = 0; i < _notches.Count; i++) _notches[i].sortingOrder = order + WorldBarLine.SLOT_COUNT;
             _eta.sortingOrder = order + WorldBarLine.SLOT_COUNT + 1;
         }
@@ -359,28 +365,50 @@ namespace Valkur.Gameplay.World
         }
 
         /// <summary>
-        /// While tapping, the last stretch of the cadence track is the TARGET: a bright segment as
-        /// wide as the hit window, which the sweep reaches exactly on the beat. It is the bar's half
-        /// of the cue the cross gives on the trunk, and it visibly WIDENS as the skill does.
+        /// While tapping, the last stretch of the cadence track is the cut TARGET laid flat: nested
+        /// bands in the grades' colours — red edge, orange, green, cyan, gold centre — ending in a
+        /// white tick where the beat is, which the sweep reaches exactly on the beat. The band the
+        /// sweep is crossing lights up (it is the grade a tap now would get); the others sit dim. It
+        /// is the bar's half of the target on the trunk, and every band visibly WIDENS with skill.
+        /// Each band keeps at least one texel, one wider than the band inside it, so the centre is
+        /// never swallowed by its neighbours on a beginner's narrow window.
         /// </summary>
         private void ApplyWindowZone(float cadence)
         {
-            float w01 = _segments != null ? _segments.HitWindow01 : -1f;
-            bool show = w01 > 0f && cadence >= 0f && !_completed;
-            if (_window.gameObject.activeSelf != show) _window.gameObject.SetActive(show);
+            bool show = _segments != null && _segments.CutBandReach01(CutGrade.Ok) > 0f && cadence >= 0f && !_completed;
+            for (int i = 0; i < _bands.Length; i++)
+                if (_bands[i].gameObject.activeSelf != show) _bands[i].gameObject.SetActive(show);
+            if (_beatTick.gameObject.activeSelf != show) _beatTick.gameObject.SetActive(show);
             if (!show) return;
 
             float t = WorldBarGeometry.TEXEL;
-            float width = Mathf.Max(2f * t, WorldBarGeometry.SnapToTexel(_line.InnerWidth * w01));
             float right = _line.FillLeftX + _line.InnerWidth;
-            _window.size = new Vector2(width, t);
-            _window.transform.localPosition = new Vector3(right - width * 0.5f,
-                -WorldBarGeometry.Texels(ROW_TEXELS) * 0.5f - 2f * t, 0f);
+            float y = -WorldBarGeometry.Texels(ROW_TEXELS) * 0.5f - 2f * t;
+            var live = _segments.GradeIfTappedNow;
 
-            bool inside = cadence >= 1f - w01;
-            var c = inside ? Color.white : new Color(0.72f, 0.98f, 1f, 0.55f);
-            c.a *= _alpha;
-            _window.color = c;
+            float inner = 0f;
+            for (int k = 0; k < _bands.Length; k++)
+            {
+                // k = 0 is the centre (Perfect), drawn LAST; _bands[0] is the outermost (Awful).
+                var grade = CutGrade.Perfect + k;
+                float width = Mathf.Max(inner + t, WorldBarGeometry.SnapToTexel(_line.InnerWidth * _segments.CutBandReach01(grade)));
+                width = Mathf.Min(width, _line.InnerWidth);
+                inner = width;
+
+                var sr = _bands[_bands.Length - 1 - k];
+                sr.size = new Vector2(width, t);
+                sr.transform.localPosition = new Vector3(right - width * 0.5f, y, 0f);
+
+                var c = RhythmCallouts.CutColour(grade);
+                c.a = (grade == live ? 1f : 0.42f) * _alpha;
+                sr.color = grade == live ? Color.Lerp(c, Color.white, 0.25f) : c;
+            }
+
+            _beatTick.size = new Vector2(t, 3f * t);
+            _beatTick.transform.localPosition = new Vector3(right - t * 0.5f, y, 0f);
+            var tick = Color.white;
+            tick.a = _alpha * (live == CutGrade.Perfect ? 1f : 0.7f);
+            _beatTick.color = tick;
         }
 
         private void ApplyEta()

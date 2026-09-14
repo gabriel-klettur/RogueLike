@@ -23,8 +23,20 @@ MonoBehaviour:
   lightPresetKey: 
   lightOffsetNormalized: {x: 0.5, y: 0.75}
   litAssetPath: 
+  windSway: 0
+  inkBottomNormalized: 0
+  projectedShadow: 0
+  trunkNormalized:
+    serializedVersion: 2
+    x: 0.44
+    y: 0.06
+    width: 0.16000003
+    height: 0.39
   hasDoor: 0
   doorOffsetNormalized: {x: 0.5, y: 0.06}
   doorSizeNormalized: {x: 0.18, y: 0.12}
   sourceImagePath: assets/buildings/nature/tree_conifer_pixel_1.png
+  isResurrectionAltar: 0
+  resurrectionAnchor: 0
+  resurrectionRadius: 1.5
   destruction: {fileID: 11400000, guid: 2a861c4d7ddb6904cb9b0f9af29df5b0, type: 2}

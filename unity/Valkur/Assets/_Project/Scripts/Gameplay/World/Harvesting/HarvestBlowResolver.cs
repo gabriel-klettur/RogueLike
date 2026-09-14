@@ -1,5 +1,6 @@
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Gameplay.Skills;
 
 namespace Valkur.Gameplay.World
 {
@@ -175,7 +176,7 @@ namespace Valkur.Gameplay.World
             tenths = 0;
             if (attacker == null) return false;
 
-            var skills = PlayerGatheringSkills.Peek(attacker);
+            var skills = PlayerSkills.Peek(attacker);
             if (skills != null)
             {
                 tenths = skills.GetTenths(profile.gatheringSkill.skillKey);
