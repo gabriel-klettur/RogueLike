@@ -126,16 +126,22 @@ namespace Valkur.Tests.EditMode.Game.Spells
         }
 
         [Test]
-        public void TheAudioCatalogStillHasNoSpellIds()
+        public void TheRecordedLaunch_IsPreferred_AndTheSynthesisedOneIsTheFallback()
         {
-            // If this ever fails, someone authored real spell audio — which is good news, and
-            // the reason FireworkAudio's doc comment says the catalog is the better answer.
+            // A recorded spell_firework_launch now ships in the catalog, so the controller asks
+            // for it first — gated on HasSfx, never blind — and FireworkAudio.Launch() is only
+            // what plays when the id does not resolve.
             string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", AudioCatalogPath));
             if (!File.Exists(path)) Assert.Ignore("AudioCatalog.asset not found at " + path);
+            bool recorded = File.ReadAllText(path).Contains("id: spell_firework_launch");
 
-            Assert.IsFalse(File.ReadAllText(path).Contains("spell_firework_launch"),
-                "A recorded firework one-shot now exists. Point the controller at the catalog " +
-                "and demote FireworkAudio to the fallback its doc comment already describes.");
+            string controller = File.ReadAllText(Path.Combine(Application.dataPath, "_Project", "Scripts",
+                "Gameplay", "Spells", "Controllers", "FireworkShellController.cs"));
+            Assert.IsTrue(HasExecutableText(controller, "HasSfx(LaunchSfxId)"),
+                "The recorded launch must be asked for through HasSfx, or a catalog without it warns.");
+            Assert.IsTrue(HasExecutableText(controller, "FireworkAudio.Launch()"),
+                "The synthesised launch must stay as the fallback for a catalog without the id.");
+            if (!recorded) Assert.Pass("No recorded launch in the catalog; the fallback plays.");
         }
 
         // ── Element and swatch ─────────────────────────────────────────────────

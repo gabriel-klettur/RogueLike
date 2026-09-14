@@ -1,0 +1,384 @@
+{
+  "rows": [
+    {
+      "id": "charge_tone",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/charge_tone.ogg"
+    },
+    {
+      "id": "grimoire_capstone",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/grimoire/grimoire_capstone.ogg"
+    },
+    {
+      "id": "grimoire_learn",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/grimoire/grimoire_learn.ogg"
+    },
+    {
+      "id": "grimoire_open",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/grimoire/grimoire_open.ogg"
+    },
+    {
+      "id": "grimoire_refuse",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/grimoire/grimoire_refuse.ogg"
+    },
+    {
+      "id": "grimoire_school",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/grimoire/grimoire_school.ogg"
+    },
+    {
+      "id": "grimoire_select",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/grimoire/grimoire_select.ogg"
+    },
+    {
+      "id": "harvest_cloth_bounce",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/harvest/harvest_cloth_bounce.ogg"
+    },
+    {
+      "id": "harvest_cloth_hit",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/harvest/harvest_cloth_hit.ogg"
+    },
+    {
+      "id": "harvest_foliage_bounce",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/harvest/harvest_foliage_bounce.ogg"
+    },
+    {
+      "id": "harvest_foliage_hit",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/harvest/harvest_foliage_hit.ogg"
+    },
+    {
+      "id": "harvest_glass_bounce",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/harvest/harvest_glass_bounce.ogg"
+    },
+    {
+      "id": "harvest_glass_hit",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/harvest/harvest_glass_hit.ogg"
+    },
+    {
+      "id": "harvest_metal_bounce",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/harvest/harvest_metal_bounce.ogg"
+    },
+    {
+      "id": "harvest_metal_hit",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/harvest/harvest_metal_hit.ogg"
+    },
+    {
+      "id": "harvest_stone_bounce",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/harvest/harvest_stone_bounce.ogg"
+    },
+    {
+      "id": "harvest_stone_hit",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/harvest/harvest_stone_hit.ogg"
+    },
+    {
+      "id": "harvest_wood_bounce",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/harvest/harvest_wood_bounce.ogg"
+    },
+    {
+      "id": "harvest_wood_hit",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/harvest/harvest_wood_hit.ogg"
+    },
+    {
+      "id": "inv_coin",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/inventory/inv_coin.ogg"
+    },
+    {
+      "id": "inv_consume",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/inventory/inv_consume.ogg"
+    },
+    {
+      "id": "inv_drop",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/inventory/inv_drop.ogg"
+    },
+    {
+      "id": "inv_equip",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/inventory/inv_equip.ogg"
+    },
+    {
+      "id": "inv_pickup",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/inventory/inv_pickup.ogg"
+    },
+    {
+      "id": "inv_pickup_rare",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/inventory/inv_pickup_rare.ogg"
+    },
+    {
+      "id": "inv_refuse",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/inventory/inv_refuse.ogg"
+    },
+    {
+      "id": "inv_settle",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/inventory/inv_settle.ogg"
+    },
+    {
+      "id": "inv_sort",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/inventory/inv_sort.ogg"
+    },
+    {
+      "id": "inv_unequip",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/inventory/inv_unequip.ogg"
+    },
+    {
+      "id": "level_up",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/player/level_up.ogg"
+    },
+    {
+      "id": "npc_death_1",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/npc/npc_death_1.ogg"
+    },
+    {
+      "id": "npc_death_2",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/npc/npc_death_2.ogg"
+    },
+    {
+      "id": "player_death",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/player/player_death.ogg"
+    },
+    {
+      "id": "player_revive",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/player/player_revive.ogg"
+    },
+    {
+      "id": "root_lash",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/root_lash.ogg"
+    },
+    {
+      "id": "root_sprout",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/root_sprout.ogg"
+    },
+    {
+      "id": "spell_arcane_flame_cast",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_arcane_flame_cast.ogg"
+    },
+    {
+      "id": "spell_arcane_flame_tick",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_arcane_flame_tick.ogg"
+    },
+    {
+      "id": "spell_arcane_impact",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_arcane_impact.ogg"
+    },
+    {
+      "id": "spell_boomerang_catch",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_boomerang_catch.ogg"
+    },
+    {
+      "id": "spell_boomerang_impact",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_boomerang_impact.ogg"
+    },
+    {
+      "id": "spell_boomerang_throw",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_boomerang_throw.ogg"
+    },
+    {
+      "id": "spell_dark_impact",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_dark_impact.ogg"
+    },
+    {
+      "id": "spell_dash_whoosh",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_dash_whoosh.ogg"
+    },
+    {
+      "id": "spell_fire_impact",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_fire_impact.ogg"
+    },
+    {
+      "id": "spell_firework_launch",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_firework_launch.ogg"
+    },
+    {
+      "id": "spell_flame_breath_loop",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_flame_breath_loop.ogg"
+    },
+    {
+      "id": "spell_frost_breath_loop",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_frost_breath_loop.ogg"
+    },
+    {
+      "id": "spell_ice_impact",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_ice_impact.ogg"
+    },
+    {
+      "id": "spell_light_impact",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_light_impact.ogg"
+    },
+    {
+      "id": "spell_lightning_arc",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_lightning_arc.ogg"
+    },
+    {
+      "id": "spell_lightning_impact",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_lightning_impact.ogg"
+    },
+    {
+      "id": "spell_meteor_fall",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_meteor_fall.ogg"
+    },
+    {
+      "id": "spell_meteor_impact",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_meteor_impact.ogg"
+    },
+    {
+      "id": "spell_mine_arm",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_mine_arm.ogg"
+    },
+    {
+      "id": "spell_mine_armed",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_mine_armed.ogg"
+    },
+    {
+      "id": "spell_mine_explode",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_mine_explode.ogg"
+    },
+    {
+      "id": "spell_puddle_cast",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_puddle_cast.ogg"
+    },
+    {
+      "id": "spell_puddle_lava_cast",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_puddle_lava_cast.ogg"
+    },
+    {
+      "id": "spell_slash_hit",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_slash_hit.ogg"
+    },
+    {
+      "id": "spell_slash_swing",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_slash_swing.ogg"
+    },
+    {
+      "id": "spell_summon_create",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_summon_create.ogg"
+    },
+    {
+      "id": "spell_teleport_arrive",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_teleport_arrive.ogg"
+    },
+    {
+      "id": "spell_teleport_depart",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_teleport_depart.ogg"
+    },
+    {
+      "id": "spell_totem_create",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_totem_create.ogg"
+    },
+    {
+      "id": "spell_totem_heal_tick",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_totem_heal_tick.ogg"
+    },
+    {
+      "id": "spell_vortex_pull",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_vortex_pull.ogg"
+    },
+    {
+      "id": "spell_vortex_push",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/spell_vortex_push.ogg"
+    },
+    {
+      "id": "spirit_enter",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/player/spirit_enter.ogg"
+    },
+    {
+      "id": "thrall_raise",
+      "group": "sfx",
+      "assetPath": "Assets/_Project/Audio/SFX/spells/thrall_raise.ogg"
+    },
+    {
+      "id": "ui_cancel",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/menu/ui_cancel.ogg"
+    },
+    {
+      "id": "ui_confirm",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/menu/ui_confirm.ogg"
+    },
+    {
+      "id": "ui_move",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/menu/ui_move.ogg"
+    },
+    {
+      "id": "ui_refuse",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/menu/ui_refuse.ogg"
+    },
+    {
+      "id": "ui_start",
+      "group": "ui",
+      "assetPath": "Assets/_Project/Audio/SFX/menu/ui_start.ogg"
+    }
+  ],
+  "npcDeathIds": [
+    "npc_death_1",
+    "npc_death_2"
+  ],
+  "levelUpId": "level_up"
+}

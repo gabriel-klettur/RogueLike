@@ -546,6 +546,7 @@ namespace Valkur.Gameplay
 
             // The seven energy-charge auras — see DevConsole.Commands.Charge.cs.
             RegisterChargeCommands();
+            RegisterRunCommands();
 
             // Stats, talents, grimoire — see DevConsole.Commands.Progression.cs.
             RegisterProgressionCommands();
@@ -579,6 +580,11 @@ namespace Valkur.Gameplay
             // registered last, for the same one-header rule as the two blocks above.
             RegisterDebugHudCommands();
             RegisterSpellAreaCommands();
+            // Beside 'areas', same "spells" category: see DevConsole.Commands.EntityCollisions.cs.
+            RegisterEntityCollisionCommands();
+
+            // Hear any catalog sound on demand — see DevConsole.Commands.Sfx.cs. Own category.
+            RegisterSfxCommands();
             // Gathering skills and woodcutting — see DevConsole.Commands.Harvest.cs.
             RegisterHarvestCommands();
         }

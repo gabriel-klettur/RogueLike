@@ -140,7 +140,7 @@ namespace Valkur.Gameplay.Spells
             shell._endAt = shell._climbSeconds + lastCompanion + FireworkBurstFX.STAR_LIFETIME + 1.6f;
 
             shell.Build();
-            shell.PlayAt(FireworkAudio.Launch(), origin, 0.85f);
+            shell.PlayLaunch(origin);
             shell.PlayAt(FireworkAudio.Whistle(), origin, 0.45f);
             return shell;
         }
@@ -206,6 +206,21 @@ namespace Valkur.Gameplay.Spells
                 PlayAt(FireworkAudio.Companion(), at, 0.55f);
                 _companionsFired++;
             }
+        }
+
+        /// <summary>Catalog id of the recorded launch. Gated on <c>HasSfx</c>: an explicit id that
+        /// fails to resolve is a warning by design, and the synthesised one is the fallback.</summary>
+        public const string LaunchSfxId = "spell_firework_launch";
+
+        private void PlayLaunch(Vector3 origin)
+        {
+            var audio = ServiceLocator.Get<IAudioService>();
+            if (audio != null && audio.HasSfx(LaunchSfxId))
+            {
+                audio.PlaySfxById(LaunchSfxId, 0.85f);
+                return;
+            }
+            PlayAt(FireworkAudio.Launch(), origin, 0.85f);
         }
 
         private void PlayAt(AudioClip clip, Vector3 position, float volume)
