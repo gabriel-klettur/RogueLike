@@ -40,7 +40,7 @@ namespace Valkur.EditorTools.Progression
         /// for a class that owns no greatsword.</para>
         /// </summary>
         public static readonly string[] InnateSpellKeys =
-            { "slash_regular", "weapon_toggle", "weapon_toggle_greatsword" };
+            { "slash_regular", "weapon_toggle", "weapon_toggle_greatsword", "dash" };
 
         private sealed class Entry
         {

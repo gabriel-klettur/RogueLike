@@ -108,9 +108,10 @@ namespace Valkur.Tests.EditMode.Game.Input
                 }
             }
 
-            Assert.Greater(checkedBindings, 20,
-                "The project ships 24 spell bindings; finding almost none means the map or " +
-                "the naming changed and this test stopped looking at anything.");
+            Assert.Greater(checkedBindings, 60,
+                "The project ships a spell on every War key (seventy, half of them Shift " +
+                "chords); finding almost none means the map or the naming changed and this " +
+                "test stopped looking at anything.");
         }
 
         [Test]
@@ -119,11 +120,16 @@ namespace Valkur.Tests.EditMode.Game.Input
             var gameplay = LoadShippedActions()?.FindActionMap("Gameplay");
             Assert.IsNotNull(gameplay);
 
+            // Walked through InputChord.Slots, so a Shift+1 chord is ONE control keyed by its
+            // chord path. Walked part by part, thirty-odd chords would all "share" leftShift and
+            // every chord would "share" its key with the bare spell below it — two different
+            // presses the resolver keeps apart, reported as the defect this test exists for.
             var owners = new System.Collections.Generic.Dictionary<string, string>();
             foreach (var action in gameplay.actions)
             {
-                foreach (var binding in action.bindings)
+                foreach (var slot in InputChord.Slots(action))
                 {
+                    var binding = new { path = slot.KeyPath };
                     if (string.IsNullOrEmpty(binding.path) || !binding.path.StartsWith("<Keyboard>/")) continue;
 
                     if (owners.TryGetValue(binding.path, out string other))

@@ -263,7 +263,7 @@ namespace Valkur.Core.Input
             const InputContextMask both  = InputContextMask.Gameplay;
             const InputContextMask war   = InputContextMask.War;
 
-            var list = new List<InputActionDescriptor>(70);
+            var list = new List<InputActionDescriptor>(160);
 
             // ── Gameplay: movement and aim ───────────────────────────────────
             // Move and Look are live in every stance and are not a preference the stance
@@ -302,43 +302,102 @@ namespace Valkur.Core.Input
             list.Add(G("MusicNext",      "Música: siguiente",      InputActionCategory.Interface, both, false));
             list.Add(G("MusicPrevious",  "Música: anterior",       InputActionCategory.Interface, both, false));
 
-            // ── Gameplay: the 24 spell slots ─────────────────────────────────
+            // ── Gameplay: the War keyboard — every grimoire spell on a key ───
             // Every one reaches the damage path through SpellCaster, INCLUDING the ones that
             // heal or ward: the executor dispatch is shared and a spell's type is data, so a
             // slot whitelisted for Peace today becomes a damage slot the moment its
             // SpellDefinition is retuned. The slot is the unit of trust, not the spell.
-            AddSpell(list, "SpellDarkball",          "darkball",            "Bola oscura");
-            AddSpell(list, "SpellIceball",           "iceball",             "Bola de hielo");
-            AddSpell(list, "SpellLightball",         "lightball",           "Bola de luz");
-            AddSpell(list, "SpellPuddleLava",        "puddle_lava",         "Charco de lava");
-            AddSpell(list, "SpellMineBasic",         "mine_basic",          "Mina");
-            AddSpell(list, "SpellBoomerang",         "boomerang",           "Bumeran");
-            AddSpell(list, "SpellChainLightning",    "chain_lightning",     "Rayo en cadena");
-            AddSpell(list, "SpellVortexPull",        "vortex_pull",         "Vortice de atraccion");
-            AddSpell(list, "SpellVortexPush",        "vortex_push",         "Vortice de empuje");
-            AddSpell(list, "SpellFlameBreath",       "flame_breath",        "Aliento de fuego");
-            AddSpell(list, "SpellTeleport",          "teleport",            "Teleporte");
-            AddSpell(list, "SpellSlash",             "slash",               "Tajo");
-            AddSpell(list, "SpellLightning",         "lightning",           "Relampago");
-            AddSpell(list, "SpellSphereMagicShield", "sphere_magic_shield", "Escudo esferico");
-            AddSpell(list, "SpellSmoke",             "smoke",               "Humo");
-            AddSpell(list, "SpellSmokeEmitter",      "smoke_emitter",       "Emisor de humo");
-            AddSpell(list, "SpellArcaneFlame",       "arcane_flame",        "Llama arcana");
-            AddSpell(list, "SpellFireworkLaunch",    "firework_launch",     "Fuego artificial");
-            AddSpell(list, "SpellHealingAura",       "healing_aura",        "Aura curativa");
-            AddSpell(list, "SpellMeteorShower",      "meteor_shower",       "Lluvia de meteoros");
-            AddSpell(list, "SpellHealingTotem",      "healing_totem",       "Totem curativo");
-            AddSpell(list, "SpellSummonBarbol",      "summon_barbol",       "Invocar barbol");
-            AddSpell(list, "SpellWallIce",           "wall_ice",            "Muro de hielo");
-            AddSpell(list, "SpellWeaponToggle",      "weapon_toggle",       "Guardar / sacar arma");
+            //
+            // The LAYOUT is a design, and its source is tools/input/build_war_keyboard.py —
+            // which writes the bindings into ValkurInputActions and prints these lines. One
+            // row, one job; Shift (left) is always "the same idea, heavier or rarer":
+            //   digits  damage at range (bare = a school's staple, Shift = its stronger spell)
+            //   Q R T   movement          Y U   martial melee        O [ ]   summons, rare
+            //   F..L    protection, heal  ; ' \ the ki charges       Z../    area control
+            // The three on the mouse (fireball, slash, laser_beam) are PlayerController's and
+            // carry no slot, so no second key can compete with a click — and neither does
+            // `dash`, which is the Dash action (Space, right Shift, both Ctrls).
+
+            // Digits: damage at range
+            AddSpell(list, "SpellDarkball",        "darkball",          "Bola de oscuridad");     // 1
+            AddSpell(list, "SpellVoidLance",       "void_lance",        "Lanza del vacio");       // Shift+1
+            AddSpell(list, "SpellIceball",         "iceball",           "Bola de hielo");         // 2
+            AddSpell(list, "SpellIceLance",        "ice_lance",         "Lanza de hielo");        // Shift+2
+            AddSpell(list, "SpellLightball",       "lightball",         "Bola de luz");           // 3
+            AddSpell(list, "SpellRadiantBurst",    "radiant_burst",     "Estallido radiante");    // Shift+3
+            AddSpell(list, "SpellChargedBolt",     "charged_bolt",      "Dardo cargado");         // 4
+            AddSpell(list, "SpellFlameBreath",     "flame_breath",      "Aliento igneo");         // Shift+4
+            AddSpell(list, "SpellLightning",       "lightning",         "Relampago");             // 5
+            AddSpell(list, "SpellChainLightning",  "chain_lightning",   "Rayo en cadena");        // Shift+5
+            AddSpell(list, "SpellSeekingShard",    "seeking_shard",     "Esquirla rastreadora");  // 6
+            AddSpell(list, "SpellStaticField",     "static_field",      "Campo estatico");        // Shift+6
+            AddSpell(list, "SpellBoomerang",       "boomerang",         "Bumeran");               // 7
+            AddSpell(list, "SpellThornBurst",      "thorn_burst",       "Estallido de espinas");  // Shift+7
+            AddSpell(list, "SpellScatterVolley",   "scatter_volley",    "Andanada");              // 8
+            AddSpell(list, "SpellMeteorShower",    "meteor_shower",     "Lluvia de meteoros");    // Shift+8
+            AddSpell(list, "SpellLaserBeamRed",    "laser_beam_red",    "Laser rojo");            // 9
+            AddSpell(list, "SpellLaserBeamYellow", "laser_beam_yellow", "Laser amarillo");        // Shift+9
+            AddSpell(list, "SpellLightningBeam",   "lightning_beam",    "Haz de rayos");          // 0
+            AddSpell(list, "SpellLaserBeamBlue",   "laser_beam_blue",   "Laser azul");            // Shift+0
+            AddSpell(list, "SpellLaserBeamWhite",  "laser_beam_white",  "Laser blanco");          // -
+            AddSpell(list, "SpellLaserBeamBlack",  "laser_beam_black",  "Laser del vacio");       // Shift+-
+            AddSpell(list, "SpellLaserBeamGreen",  "laser_beam_green",  "Laser verde");           // =
+
+            // Top row: movement, martial melee, summons
+            AddSpell(list, "SpellTeleport",        "teleport",          "Teleportacion");         // Q
+            AddSpell(list, "SpellShadowStep",      "shadow_step",       "Paso sombrio");          // Shift+Q
+            // No slot for `dash`: it is the Dash action above (Space, right Shift, both Ctrls).
+            AddSpell(list, "SpellLeapSlam",        "leap_slam",         "Salto aplastante");      // R
+            AddSpell(list, "SpellGlacialStep",     "glacial_step",      "Paso glacial");          // T
+            AddSpell(list, "SpellSlashStab",       "slash_stab",        "Estocada");              // Y
+            AddSpell(list, "SpellSlashCleave",     "slash_cleave",      "Hendidura");             // Shift+Y
+            AddSpell(list, "SpellSlashCombo",      "slash_combo",       "Combo de tajos");        // U
+            AddSpell(list, "SpellSummonBarbol",    "summon_barbol",     "Invocar barbol");        // O
+            AddSpell(list, "SpellSummonWolf",      "summon_wolf",       "Invocar lobo");          // Shift+O
+            AddSpell(list, "SpellRaiseThrall",     "raise_thrall",      "Alzar siervo");          // [
+            AddSpell(list, "SpellFireworkLaunch",  "firework_launch",   "Fuego artificial");      // Shift+[
+            AddSpell(list, "SpellChargeKiVoid",    "charge_ki_void",    "Ki del vacio");          // ]
+
+            // Home row: protection and healing, then the ki charges
+            AddSpell(list, "SpellSphereMagicShield", "sphere_magic_shield", "Esfera de escudo");  // F
+            AddSpell(list, "SpellGuardianLight",   "guardian_light",    "Luz guardiana");         // Shift+F
+            AddSpell(list, "SpellHealingAura",     "healing_aura",      "Aura de curacion");      // G
+            AddSpell(list, "SpellHealingTotem",    "healing_totem",     "Totem sanador");         // Shift+G
+            AddSpell(list, "SpellBlessing",        "blessing",          "Bendicion");             // H
+            AddSpell(list, "SpellSanctuary",       "sanctuary",         "Santuario");             // Shift+H
+            AddSpell(list, "SpellBarkskin",        "barkskin",          "Piel de corteza");       // J
+            AddSpell(list, "SpellFrozenWard",      "frozen_ward",       "Egida helada");          // Shift+J
+            AddSpell(list, "SpellArcaneBarrier",   "arcane_barrier",    "Barrera arcana");        // K
+            AddSpell(list, "SpellWallIce",         "wall_ice",          "Muro de hielo");         // Shift+K
+            AddSpell(list, "SpellWarCry",          "war_cry",           "Grito de guerra");       // L
+            AddSpell(list, "SpellChargeKiSpirit",  "charge_ki_spirit",  "Ki espiritual");         // ;
+            AddSpell(list, "SpellChargeKiAzure",   "charge_ki_azure",   "Ki azur");               // Shift+;
+            AddSpell(list, "SpellChargeKiVerdant", "charge_ki_verdant", "Ki verde");              // '
+            AddSpell(list, "SpellChargeKiCrimson", "charge_ki_crimson", "Ki carmesi");            // Shift+'
+            AddSpell(list, "SpellChargeKiSolar",   "charge_ki_solar",   "Ki solar");              // \
+            AddSpell(list, "SpellChargeKiViolet",  "charge_ki_violet",  "Ki violeta");            // Shift+\
+
+            // Bottom row: area control, and the weapon on B
+            AddSpell(list, "SpellFrostNova",       "frost_nova",        "Nova de escarcha");      // Z
+            AddSpell(list, "SpellBlizzard",        "blizzard",          "Ventisca");              // Shift+Z
+            AddSpell(list, "SpellEntangle",        "entangle",          "Enmaranar");             // X
+            AddSpell(list, "SpellSporeCloud",      "spore_cloud",       "Nube de esporas");       // Shift+X
+            AddSpell(list, "SpellRootWhip",        "root_whip",         "Latigo de raices");      // C
+            AddSpell(list, "SpellThunderclap",     "thunderclap",       "Trueno");                // Shift+C
+            AddSpell(list, "SpellSmoke",           "smoke",             "Humo");                  // V
+            AddSpell(list, "SpellSmokeEmitter",    "smoke_emitter",     "Emisor de humo");        // Shift+V
+            AddSpell(list, "SpellWeaponToggle",    "weapon_toggle",     "Guardar / sacar arma");  // B
             // A SECOND weapon-draw verb, because a WeaponLoadout spell names exactly one
-            // loadout key and the valkyrie carries two weapon sets: `weapon_toggle` draws
-            // whatever a character keys `armed` (her sword and shield), this one draws her
-            // greatsword. It ships UNBOUND in the asset -- an empty binding slot, the same
-            // shape the retired editor toggles use -- so it is assignable in the Controls
-            // editor and steals no key from a player who will never own a greatsword.
-            AddSpell(list, "SpellWeaponToggleGreatsword", "weapon_toggle_greatsword",
-                     "Sacar mandoble");
+            // loadout key and the valkyrie carries two weapon sets. It sits on Shift+B, under
+            // the first: a character with no greatsword casts it and the executor refuses.
+            AddSpell(list, "SpellWeaponToggleGreatsword", "weapon_toggle_greatsword", "Sacar mandoble"); // Shift+B
+            AddSpell(list, "SpellArcaneFlame",     "arcane_flame",      "Llama arcana");          // M
+            AddSpell(list, "SpellCinderTrail",     "cinder_trail",      "Rastro de brasas");      // Shift+M
+            AddSpell(list, "SpellVortexPull",      "vortex_pull",       "Vortice atrayente");     // ,
+            AddSpell(list, "SpellVortexPush",      "vortex_push",       "Vortice repulsor");      // Shift+,
+            AddSpell(list, "SpellMineBasic",       "mine_basic",        "Mina");                  // .
+            AddSpell(list, "SpellPuddleLava",      "puddle_lava",       "Charco de lava");        // Shift+.
+            AddSpell(list, "SpellCurseOfFrailty",  "curse_of_frailty",  "Maldicion de fragilidad"); // /
 
             // ── UI ───────────────────────────────────────────────────────────
             // The UI map is always enabled and is what menus, the EventSystem and every panel

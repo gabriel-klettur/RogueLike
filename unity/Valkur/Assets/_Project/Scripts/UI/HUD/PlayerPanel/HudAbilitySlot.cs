@@ -466,7 +466,8 @@ namespace Valkur.UI.HUD
         {
             var action = _action != null ? _action() : null;
             var binding = action != null ? InputBindingResolver.Primary(action) : default;
-            string path = binding.Path ?? "";
+            // Keyed by the chord path for a chord, so moving a spell from 1 to Shift+1 repaints.
+            string path = binding.Path != null ? binding.KeyPath : "";
             if (path == _boundPath) return;
             _boundPath = path;
 
@@ -482,7 +483,11 @@ namespace Valkur.UI.HUD
 
             // A keyboard binding prints its cap when the small face can spell it; anything
             // longer than three letters would bury the icon, so it is left to the tooltip.
-            string label = glyph == null && !string.IsNullOrEmpty(path) ? InputControlPaths.LabelForPath(path) : "";
+            // A chord prints compactly ("S1"): printing only its key would tell the player that
+            // bare 1 casts it, which is the one thing the second layer exists to make untrue.
+            string label = glyph != null || string.IsNullOrEmpty(path) ? ""
+                         : binding.IsChord ? InputChord.CompactLabelFor(binding.ModifierPath, binding.Path)
+                         : InputControlPaths.LabelForPath(binding.Path);
             if (label.Length > 3 || !HudPixelFont.CanSpell(label, _art.Patterns(HudFontFace.Small))) label = "";
             _keyLabel.SetText(label.ToUpperInvariant());
         }

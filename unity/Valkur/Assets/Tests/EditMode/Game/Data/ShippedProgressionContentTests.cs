@@ -257,10 +257,16 @@ namespace Valkur.Tests.EditMode.Game.Data
             // The shape to keep: one innate verb per WEAPON-DRAW key, and nothing else joins on
             // that argument. A SEVENTH entry needs either a third weapon set or a reason of the
             // mouse buttons' weight.
-            Assert.LessOrEqual(_catalog.alwaysKnownSpellKeys.Length, 6,
+            //
+            // Raised 6 -> 7 for `dash`, and it has exactly that weight: Space, right Shift and
+            // both Ctrls cast it through PollTraversal, the Dash action is CONTEXT-LOCKED as the
+            // one recovery from being jumped, and a fresh character did not know the spell —
+            // so all four keys did nothing, measured live, until the martial node at level 3.
+            // A control that is locked on because losing it is a soft lock cannot be a purchase.
+            Assert.LessOrEqual(_catalog.alwaysKnownSpellKeys.Length, 7,
                 "The starting kit is the only content the grimoire cannot charge for. Keep " +
-                "it the size of a tutorial. Three of the six are the mouse buttons and two " +
-                "are weapon draws; a new entry needs a reason of that weight.");
+                "it the size of a tutorial. Three of the seven are the mouse buttons, two " +
+                "are weapon draws and one is the dash; a new entry needs a reason of that weight.");
         }
     }
 }

@@ -90,22 +90,66 @@ namespace Valkur.Gameplay.Editors.Controls
         private KeyCapVisual VisualForPath(string path, bool selected)
         {
             var live = LiveOn(path);
+            var chords = ChordLayersOn(path);
 
-            Color fill = live.Count == 0
+            // A key free on its own but carrying a Shift chord is NOT free — tint it as what the
+            // chord is, or the second layer is invisible on the one surface meant to show it.
+            InputActionDescriptor first = live.Count > 0 ? live[0]
+                                        : chords.Count > 0 && chords[0].live.Count > 0 ? chords[0].live[0]
+                                        : null;
+            Color fill = first == null
                 ? UITheme.INPUT_FREE
-                : ControlsEditorUIBuilder.TintForCategory(live[0].Category);
-            Color legend = live.Count == 0 ? UITheme.TEXT_MUTED : UITheme.TEXT_PRIMARY;
+                : ControlsEditorUIBuilder.TintForCategory(first.Category);
+            Color legend = first == null ? UITheme.TEXT_MUTED : UITheme.TEXT_PRIMARY;
 
             Color ring = Color.clear;
             if (selected) ring = RING_SELECTED;
             else
             {
+                // Each layer is its own press, so each is graded on its own; the cap shows the worse.
                 var severity = InputConflictScanner.Classify(live);
+                foreach (var c in chords)
+                {
+                    var s = InputConflictScanner.Classify(c.live);
+                    if (s > severity) severity = s;
+                }
                 if (severity == InputClashSeverity.Blocking) ring = RING_BLOCKING;
                 else if (severity == InputClashSeverity.Modifier) ring = RING_MODIFIER;
             }
 
-            return new KeyCapVisual(fill, legend, ring, SubtitleFor(live));
+            return new KeyCapVisual(fill, legend, ring, LayeredSubtitle(live, chords));
+        }
+
+        /// <summary>
+        /// Every chord whose KEY is <paramref name="buttonPath"/>, with what is live on it —
+        /// "Shift+1" for the cap of 1. A chord is keyed by its chord path in the live map, so
+        /// without this the second layer would never reach the board.
+        /// </summary>
+        private List<(string modifierPath, IReadOnlyList<InputActionDescriptor> live)> ChordLayersOn(string buttonPath)
+        {
+            var result = new List<(string, IReadOnlyList<InputActionDescriptor>)>(1);
+            if (buttonPath == null || _liveByPath == null) return result;
+            foreach (var kv in _liveByPath)
+            {
+                if (!InputChord.TrySplit(kv.Key, out var modifier, out var button)) continue;
+                if (!string.Equals(button, buttonPath, System.StringComparison.OrdinalIgnoreCase)) continue;
+                result.Add((modifier, kv.Value));
+            }
+            return result;
+        }
+
+        /// <summary>"Bola oscura | Shift: Lanza del vacio". The bare layer first, because that is
+        /// what the key does when pressed on its own.</summary>
+        private static string LayeredSubtitle(IReadOnlyList<InputActionDescriptor> live,
+            List<(string modifierPath, IReadOnlyList<InputActionDescriptor> live)> chords)
+        {
+            string text = SubtitleFor(live);
+            foreach (var c in chords)
+            {
+                string layer = InputChord.ShortModifier(c.modifierPath) + ": " + SubtitleFor(c.live);
+                text = string.IsNullOrEmpty(text) ? layer : text + " | " + layer;
+            }
+            return text;
         }
 
         /// <summary>
@@ -198,8 +242,14 @@ namespace Valkur.Gameplay.Editors.Controls
             }
 
             var live = LiveOn(path);
+            var chords = ChordLayersOn(path);
             string label = InputControlPaths.LabelForPath(path);
             var severity = InputConflictScanner.Classify(live);
+            foreach (var c in chords)
+            {
+                var s = InputConflictScanner.Classify(c.live);
+                if (s > severity) severity = s;
+            }
 
             _ui.Detail.color = severity switch
             {
@@ -207,9 +257,9 @@ namespace Valkur.Gameplay.Editors.Controls
                 InputClashSeverity.Modifier => UITheme.WARNING,
                 _                                                => UITheme.ACCENT,
             };
-            _ui.Detail.text = live.Count == 0
+            _ui.Detail.text = live.Count == 0 && chords.Count == 0
                 ? $"{label}: libre. Elige una accion de la lista y pulsa «...» para ponerla aqui."
-                : $"{label}: {SubtitleFor(live)}";
+                : $"{label}: {LayeredSubtitle(live, chords)}";
         }
 
         /// <summary>The selected control as a binding path, or null when nothing is

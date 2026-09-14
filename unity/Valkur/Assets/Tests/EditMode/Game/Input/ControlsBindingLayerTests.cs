@@ -390,10 +390,19 @@ namespace Valkur.Tests.EditMode.Game.Input
             var unreachable = new List<string>();
             foreach (var kv in InputConflictScanner.BindingsByPath(_svc.Asset))
             {
-                if (!InputControlPaths.IsKeyboardPath(kv.Key)) continue;
-                var control = InputControlPaths.ControlNameOf(kv.Key);
-                if (!drawn.Contains(control))
-                    unreachable.Add($"{control} ({string.Join(", ", kv.Value.Select(d => d.Id))})");
+                // A Shift chord is keyed by its chord path; BOTH halves have to be on the board —
+                // the key, so the chord can be read off its cap, and the Shift the player holds.
+                var paths = InputChord.TrySplit(kv.Key, out var modifier, out var button)
+                    ? new[] { modifier, button }
+                    : new[] { kv.Key };
+
+                foreach (var path in paths)
+                {
+                    if (!InputControlPaths.IsKeyboardPath(path)) continue;
+                    var control = InputControlPaths.ControlNameOf(path);
+                    if (!drawn.Contains(control))
+                        unreachable.Add($"{control} ({string.Join(", ", kv.Value.Select(d => d.Id))})");
+                }
             }
 
             Assert.IsEmpty(unreachable,

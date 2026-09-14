@@ -45,29 +45,74 @@ namespace Valkur.Core.Input
 
             /// <summary>Index into <c>action.bindings</c>. What
             /// <c>ApplyBindingOverride(int, string)</c> needs, so a rebind can move exactly
-            /// the control the author clicked and not the action's first one.</summary>
+            /// the control the author clicked and not the action's first one. For a chord it
+            /// is the KEY's index, so a rebind keeps the modifier.</summary>
             public readonly int Index;
+
+            /// <summary>For a chord (<see cref="InputChord"/>), the modifier that must be held.
+            /// Empty for every other binding.</summary>
+            public readonly string ModifierPath;
+            public readonly Key ModifierKey;
+            public readonly KeyCode ModifierLegacy;
 
             public Binding(string path, Key key, KeyCode legacy, MouseControl mouse,
                            string part, int index)
+                : this(path, key, legacy, mouse, part, index, "", Key.None, KeyCode.None) { }
+
+            public Binding(string path, Key key, KeyCode legacy, MouseControl mouse,
+                           string part, int index,
+                           string modifierPath, Key modifierKey, KeyCode modifierLegacy)
             {
                 Path = path; Key = key; Legacy = legacy; Mouse = mouse;
                 Part = part ?? ""; Index = index;
+                ModifierPath = modifierPath ?? ""; ModifierKey = modifierKey; ModifierLegacy = modifierLegacy;
             }
 
             public bool IsKeyboard        => Key != Key.None;
             public bool IsMouse           => Mouse != MouseControl.None;
             public bool IsCompositePart   => !string.IsNullOrEmpty(Part);
+            public bool IsChord           => !string.IsNullOrEmpty(ModifierPath);
+
+            /// <summary>The path readers key by — the chord path for a chord.</summary>
+            public string KeyPath => IsChord ? InputChord.Compose(ModifierPath, Path) : Path;
+
+            /// <summary>What to print for this binding: "Shift+1", "Q", "Click der.".</summary>
+            public string Label => IsChord ? InputChord.LabelFor(ModifierPath, Path)
+                                           : InputControlPaths.LabelForPath(Path);
+        }
+
+        /// <summary>A chord in some map: this key is "taken" while this modifier is held.</summary>
+        private readonly struct ChordShadow
+        {
+            public readonly Key Button;
+            public readonly Key Modifier;
+            public readonly KeyCode ModifierLegacy;
+
+            public ChordShadow(Key button, Key modifier, KeyCode modifierLegacy)
+            {
+                Button = button; Modifier = modifier; ModifierLegacy = modifierLegacy;
+            }
         }
 
         private static readonly Dictionary<InputAction, Binding[]> _cache =
             new Dictionary<InputAction, Binding[]>();
 
+        /// <summary>Per map, every chord in it. Dropped with <see cref="_cache"/>.</summary>
+        private static readonly Dictionary<InputActionMap, ChordShadow[]> _shadows =
+            new Dictionary<InputActionMap, ChordShadow[]>();
+
+        [SelfHealingStatic("Immutable empty sentinel; holds no Unity object and is never mutated.")]
+        private static readonly ChordShadow[] _noShadows = Array.Empty<ChordShadow>();
+
         [SelfHealingStatic("Immutable table built once in the static constructor from constants. Holds no Unity object and is never mutated after init, so it cannot carry a destroyed reference or a stale registration across a Play session.")]
         private static readonly Binding[] _empty = Array.Empty<Binding>();
 
         /// <summary>Drop every cached resolution. Called by anything that rebinds.</summary>
-        public static void Invalidate() => _cache.Clear();
+        public static void Invalidate()
+        {
+            _cache.Clear();
+            _shadows.Clear();
+        }
 
         // ── Resolution ───────────────────────────────────────────────────────
 
@@ -75,7 +120,9 @@ namespace Valkur.Core.Input
         /// Every control the action is bound to right now, overrides included. Composite
         /// HEADERS are skipped and composite PARTS are kept — a WASD Move resolves to four
         /// bindings, which is what a drawn keyboard has to highlight and what the movement
-        /// fallback has to poll.
+        /// fallback has to poll. A CHORD (<see cref="InputChord"/>) resolves to ONE binding
+        /// that carries its modifier, never to two independent keys: resolved as parts, the
+        /// legacy half would fire the spell on Shift alone.
         /// </summary>
         public static Binding[] Resolve(InputAction action)
         {
@@ -83,12 +130,9 @@ namespace Valkur.Core.Input
             if (_cache.TryGetValue(action, out var cached)) return cached;
 
             List<Binding> found = null;
-            var bindings = action.bindings;
-            for (int i = 0; i < bindings.Count; i++)
+            foreach (var slot in InputChord.Slots(action))
             {
-                var b = bindings[i];
-                if (b.isComposite) continue;                // the header names no control
-                var path = b.effectivePath;                  // override first, asset behind it
+                var path = slot.Path;                        // override first, asset behind it
                 if (string.IsNullOrEmpty(path)) continue;
 
                 InputControlPaths.ResolveLegacyPair(path, out var key, out var legacy);
@@ -96,8 +140,14 @@ namespace Valkur.Core.Input
                 if (key == Key.None && mouse == MouseControl.None && legacy == KeyCode.None)
                     continue;                                // a device this layer does not model
 
+                Key modKey = Key.None;
+                KeyCode modLegacy = KeyCode.None;
+                if (slot.IsChord)
+                    InputControlPaths.ResolveLegacyPair(slot.ModifierPath, out modKey, out modLegacy);
+
                 (found ??= new List<Binding>(4))
-                    .Add(new Binding(path, key, legacy, mouse, b.isPartOfComposite ? b.name : "", i));
+                    .Add(new Binding(path, key, legacy, mouse, slot.Part, slot.Index,
+                                     slot.ModifierPath, modKey, modLegacy));
             }
 
             var result = found == null ? _empty : found.ToArray();
@@ -118,16 +168,81 @@ namespace Valkur.Core.Input
         {
             var all = Resolve(action);
             if (all.Length == 0) return "";
-            if (all.Length == 1) return InputControlPaths.LabelForPath(all[0].Path);
+            if (all.Length == 1) return all[0].Label;
 
             // A composite reads as its parts joined, which is how "WASD" stays one chip.
             var sb = new System.Text.StringBuilder();
             for (int i = 0; i < all.Length; i++)
             {
                 if (i > 0) sb.Append(' ');
-                sb.Append(InputControlPaths.LabelForPath(all[i].Path));
+                sb.Append(all[i].Label);
             }
             return sb.ToString();
+        }
+
+        // ── Chords ───────────────────────────────────────────────────────────
+
+        // Key.None is guarded because Keyboard.current[Key.None] throws.
+        private static bool ModifierHeld(in Binding b) =>
+            b.ModifierKey != Key.None && KeyboardInputManager.IsKeyPressed(b.ModifierKey, b.ModifierLegacy);
+
+        /// <summary>
+        /// True when a bare key is "taken" right now by a chord on the same key in the same map
+        /// whose modifier is held — Shift+1 must not also fire the spell on bare 1.
+        ///
+        /// <para>The InputSystem does not arbitrate this on its own: its shortcut-consumption
+        /// setting is off by default, and even on it only speaks for the new backend, while
+        /// the legacy half of the OR-gate would go on firing bare 1. So the rule is enforced
+        /// HERE, at the one place both halves of every bare key are read.</para>
+        /// </summary>
+        public static bool IsShadowedByChord(InputAction action, Key key)
+        {
+            if (action == null || key == Key.None) return false;
+            var shadows = ShadowsOf(action.actionMap);
+            for (int i = 0; i < shadows.Length; i++)
+            {
+                if (shadows[i].Button != key) continue;
+                if (KeyboardInputManager.IsKeyPressed(shadows[i].Modifier, shadows[i].ModifierLegacy))
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Is the modifier of any chord in <paramref name="map"/> held right now? What a surface
+        /// that shows the keyboard's second layer asks — the action bar turns to its Shift page
+        /// while this is true. Derived from the chords themselves, so moving the layer to another
+        /// modifier in the asset moves the page with it.
+        /// </summary>
+        public static bool IsAnyChordModifierHeld(InputActionMap map)
+        {
+            var shadows = ShadowsOf(map);
+            for (int i = 0; i < shadows.Length; i++)
+                if (KeyboardInputManager.IsKeyPressed(shadows[i].Modifier, shadows[i].ModifierLegacy))
+                    return true;
+            return false;
+        }
+
+        private static ChordShadow[] ShadowsOf(InputActionMap map)
+        {
+            if (map == null) return _noShadows;
+            if (_shadows.TryGetValue(map, out var cached)) return cached;
+
+            List<ChordShadow> found = null;
+            var slots = new List<InputChord.Slot>(16);
+            InputChord.Slots(map.bindings, slots);
+            foreach (var slot in slots)
+            {
+                if (!slot.IsChord || !slot.IsBound) continue;
+                InputControlPaths.ResolveLegacyPair(slot.Path, out var button, out _);
+                InputControlPaths.ResolveLegacyPair(slot.ModifierPath, out var mod, out var modLegacy);
+                if (button == Key.None || mod == Key.None) continue;
+                (found ??= new List<ChordShadow>(16)).Add(new ChordShadow(button, mod, modLegacy));
+            }
+
+            var result = found == null ? _noShadows : found.ToArray();
+            _shadows[map] = result;
+            return result;
         }
 
         // ── OR-gated reads ───────────────────────────────────────────────────
@@ -144,7 +259,9 @@ namespace Valkur.Core.Input
         public static bool WasPerformedThisFrame(InputAction action)
         {
             if (action == null) return false;
-            if (action.WasPerformedThisFrame()) return true;
+
+            bool native = action.WasPerformedThisFrame();
+            bool shadowedFire = false;
 
             var all = Resolve(action);
             for (int i = 0; i < all.Length; i++)
@@ -155,13 +272,31 @@ namespace Valkur.Core.Input
                     if (MouseWasPressedThisFrame(b.Mouse)) return true;
                     continue;
                 }
-                if (b.Legacy != KeyCode.None &&
-                    KeyboardInputManager.WasKeyPressedThisFrame(b.Key, b.Legacy)) return true;
+                if (b.Key == Key.None) continue;   // Keyboard.current[Key.None] throws
+                if (!KeyboardInputManager.WasKeyPressedThisFrame(b.Key, b.Legacy)) continue;
+
+                if (b.IsChord)
+                {
+                    // The key alone is not the chord. Pressed without its modifier, a chord
+                    // did not fire — whatever the native backend reports about its parts.
+                    if (ModifierHeld(b)) return true;
+                    shadowedFire = true;
+                    continue;
+                }
+
+                if (IsShadowedByChord(action, b.Key)) { shadowedFire = true; continue; }
+                return true;
             }
-            return false;
+
+            // Native says performed and no binding we can read explains it: a device this layer
+            // does not model. Trust it — unless the only thing pressed was a key a chord owns
+            // right now, which is exactly the native report this layer exists to overrule.
+            return native && !shadowedFire;
         }
 
-        /// <summary>Is any of this action's controls held right now, in either backend?</summary>
+        /// <summary>Is any of this action's controls held right now, in either backend?
+        /// For a chord only the KEY counts once the press has started: a charge held on
+        /// Shift+1 does not end because the player let go of Shift.</summary>
         public static bool IsPressed(InputAction action)
         {
             if (action == null) return false;
@@ -275,8 +410,16 @@ namespace Valkur.Core.Input
         /// <summary>Domain Reload is OFF: a cache keyed by <see cref="InputAction"/> would
         /// otherwise carry references to the previous session's zombie actions.</summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState() => _cache.Clear();
+        private static void ResetStaticState()
+        {
+            _cache.Clear();
+            _shadows.Clear();
+        }
 
-        public static void ResetForTests() => _cache.Clear();
+        public static void ResetForTests()
+        {
+            _cache.Clear();
+            _shadows.Clear();
+        }
     }
 }

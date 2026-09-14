@@ -267,6 +267,9 @@ namespace Valkur.Core.Input
         public static string LabelForPath(string path)
         {
             if (string.IsNullOrWhiteSpace(path)) return "";
+            // A chord path ("modifier&key") comes from InputChord and reads as "Shift+1".
+            if (InputChord.TrySplit(path, out var modifier, out var button))
+                return InputChord.LabelFor(modifier, button);
             if (TryResolvePath(path, out var e)) return e.Label;
             var mouse = ResolveMouse(path);
             if (mouse != MouseControl.None) return _mouseLabels[mouse];

@@ -164,6 +164,10 @@ namespace Valkur.Gameplay.Editors.Controls
             {
                 if (!slot.IsBound) continue;
                 sb.Append(' ').Append(slot.Label).Append(' ').Append(slot.Path);
+                // "shift 1" and "shift+1" both find a chord, which is how an author asks "what
+                // is on the second layer of 1".
+                if (slot.IsChord) sb.Append(' ').Append(InputChord.ShortModifier(slot.ModifierPath))
+                                    .Append(' ').Append(InputControlPaths.LabelForPath(slot.Path));
             }
             return sb.ToString().ToLowerInvariant();
         }
@@ -181,20 +185,19 @@ namespace Valkur.Gameplay.Editors.Controls
             var slots = new List<InputBindingSlot>(4);
             if (action == null) return slots;
 
-            var bindings = action.bindings;
-            for (int i = 0; i < bindings.Count; i++)
-            {
-                var b = bindings[i];
-                if (b.isComposite) continue;
-                slots.Add(new InputBindingSlot(i, b.isPartOfComposite ? b.name : "", b.effectivePath));
-            }
+            // InputChord.Slots is the one walk that folds a Shift+key chord into a single slot.
+            // Walked part by part, "Shift+1" would offer to rebind its Shift as a slot of its
+            // own and print the chip as "Shift izq.  +1".
+            foreach (var s in InputChord.Slots(action))
+                slots.Add(new InputBindingSlot(s.Index, s.Part, s.Path, s.ModifierPath));
             return slots;
         }
 
         /// <summary>One rebindable control of one action.</summary>
         internal readonly struct InputBindingSlot
         {
-            /// <summary>Index into <c>action.bindings</c> — what ApplyBindingOverride needs.</summary>
+            /// <summary>Index into <c>action.bindings</c> — what ApplyBindingOverride needs.
+            /// For a chord, the KEY's index: a rebind moves the key and keeps the modifier.</summary>
             public readonly int Index;
 
             /// <summary>Composite part name ("up", "left"), or empty for a plain binding.</summary>
@@ -203,14 +206,20 @@ namespace Valkur.Gameplay.Editors.Controls
             /// <summary>The live path, override first. Empty means unassigned.</summary>
             public readonly string Path;
 
-            public InputBindingSlot(int index, string part, string path)
+            /// <summary>The chord's modifier path; empty for anything that is not a chord.</summary>
+            public readonly string ModifierPath;
+
+            public InputBindingSlot(int index, string part, string path, string modifierPath = "")
             {
-                Index = index; Part = part ?? ""; Path = path ?? "";
+                Index = index; Part = part ?? ""; Path = path ?? ""; ModifierPath = modifierPath ?? "";
             }
 
             public bool IsBound => !string.IsNullOrEmpty(Path);
+            public bool IsChord => !string.IsNullOrEmpty(ModifierPath);
 
-            public string Label => IsBound ? InputControlPaths.LabelForPath(Path) : "sin asignar";
+            public string Label => !IsBound ? "sin asignar"
+                                 : IsChord ? InputChord.LabelFor(ModifierPath, Path)
+                                           : InputControlPaths.LabelForPath(Path);
 
             /// <summary>What to call this slot in a per-slot row. The InputSystem fixes a
             /// 2DVector's part names, so they are the same four words on every composite.</summary>
@@ -532,9 +541,13 @@ namespace Valkur.Gameplay.Editors.Controls
                 return;
             }
 
+            bool chordSlot = CapturingChordModifier() != null;
             foreach (var entry in InputControlPaths.Entries)
             {
                 if (entry.Key == Key.Escape) continue;   // handled above, as the cancel
+                // On a chord slot the modifier is fixed, so the author naturally presses
+                // Shift first — capturing that would bind the chord's key to Shift itself.
+                if (chordSlot && IsModifierKey(entry.Key)) continue;
                 if (!KeyboardInputManager.WasKeyPressedThisFrame(entry.Key, entry.Legacy)) continue;
                 CompleteCaptureWithPath(entry.Path);
                 return;
@@ -553,6 +566,22 @@ namespace Valkur.Gameplay.Editors.Controls
 
         private void CompleteCaptureWithMouse(MouseControl control) =>
             CompleteCaptureWithPath(InputControlPaths.PathForMouse(control));
+
+        private static bool IsModifierKey(Key key) =>
+            key == Key.LeftShift || key == Key.RightShift ||
+            key == Key.LeftCtrl  || key == Key.RightCtrl  ||
+            key == Key.LeftAlt   || key == Key.RightAlt;
+
+        /// <summary>The modifier path of the slot being captured, or null when it is not a chord.</summary>
+        private string CapturingChordModifier()
+        {
+            if (_capturing == null) return null;
+            var action = ResolveAction(InputService.Instance, _capturing);
+            var slots = InputChord.Slots(action);
+            if (_captureBindingIndex < 0 || _captureBindingIndex >= slots.Count) return null;
+            var slot = slots[_captureBindingIndex];
+            return slot.IsChord ? slot.ModifierPath : null;
+        }
 
         private void CompleteCaptureWithPath(string path)
         {
@@ -575,13 +604,18 @@ namespace Valkur.Gameplay.Editors.Controls
                 return;
             }
 
-            ApplyOverride(d, action, index, path, $"{d.DisplayName} -> {InputControlPaths.LabelForPath(path)}");
+            // A chord keeps its modifier: the override lands on the KEY, and what the player
+            // now presses — and what may clash — is the chord, not the bare key.
+            string modifier = CapturingChordModifier();
+            string pressed = string.IsNullOrEmpty(modifier) ? path : InputChord.Compose(modifier, path);
+
+            ApplyOverride(d, action, index, path, $"{d.DisplayName} -> {InputControlPaths.LabelForPath(pressed)}");
             CancelCapture();
             RebuildActionList();
             RepaintAll();
 
-            string label = InputControlPaths.LabelForPath(path);
-            var live = LiveOn(path);
+            string label = InputControlPaths.LabelForPath(pressed);
+            var live = LiveOn(pressed);
             var severity = InputConflictScanner.Classify(live);
             SetStatus(severity >= InputClashSeverity.Modifier
                 ? $"{d.DisplayName} -> {label}. OJO: {SubtitleFor(live)} responden a esa tecla aqui."
@@ -650,15 +684,10 @@ namespace Valkur.Gameplay.Editors.Controls
         {
             if (action == null || ordinal < 0) return -1;
 
-            var bindings = action.bindings;
-            int seen = 0;
-            for (int i = 0; i < bindings.Count; i++)
-            {
-                if (bindings[i].isComposite) continue;
-                if (seen == ordinal) return i;
-                seen++;
-            }
-            return -1;
+            // The same walk SlotsOf uses, so ordinal N here is row N there — a chord is one slot
+            // in both, and an override lands on its KEY rather than on its modifier.
+            var slots = InputChord.Slots(action);
+            return ordinal < slots.Count ? slots[ordinal].Index : -1;
         }
 
         private static InputAction ResolveAction(InputService svc, InputActionDescriptor d)

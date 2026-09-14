@@ -277,23 +277,28 @@ namespace Valkur.Core.Input
         /// <para>Composite PARTS are included and composite headers are not: WASD really is
         /// four bindings on four keys, and a board that could not show that would leave the
         /// most-used control in the game blank.</para>
+        ///
+        /// <para>A CHORD is keyed by its chord path (<see cref="InputChord.Compose"/>), not by
+        /// its two parts. Shift+1 and bare 1 are two different presses — the resolver refuses
+        /// bare 1 while Shift is held — so they must not be reported as one key answering twice,
+        /// and thirty-five chords sharing a Shift must not paint Shift red.</para>
         /// </summary>
         public static Dictionary<string, List<InputActionDescriptor>> BindingsByPath(InputActionAsset asset)
         {
             var byPath = new Dictionary<string, List<InputActionDescriptor>>(StringComparer.OrdinalIgnoreCase);
             if (asset == null) return byPath;
 
+            var slots = new List<InputChord.Slot>(128);
             foreach (var map in asset.actionMaps)
             {
-                var bindings = map.bindings;
-                for (int i = 0; i < bindings.Count; i++)
+                slots.Clear();
+                InputChord.Slots(map.bindings, slots);
+                foreach (var slot in slots)
                 {
-                    var b = bindings[i];
-                    if (b.isComposite) continue;
-                    var path = b.effectivePath;
-                    if (string.IsNullOrEmpty(path)) continue;
+                    if (!slot.IsBound) continue;
+                    var path = slot.KeyPath;
 
-                    var descriptor = InputActionCatalog.Find(map.name, b.action);
+                    var descriptor = InputActionCatalog.Find(map.name, slot.Action);
                     if (descriptor == null) continue;   // reported by the catalog coverage test
 
                     if (!byPath.TryGetValue(path, out var list))
