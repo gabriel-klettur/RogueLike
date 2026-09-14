@@ -67,6 +67,7 @@ namespace Valkur.Gameplay.Combat
             // outline, so the two rows are one instrument instead of two strips with a slot of the
             // character's own pixels showing between them.
             float gap = WorldBarGeometry.Texels(style.rowGapTexels);
+            float t = WorldBarGeometry.TEXEL;
 
             // Health sits CLOSEST to the head. It is the value the player acts on, so it gets the
             // position the eye reaches first and the only row wide enough to carry quarter marks.
@@ -75,6 +76,31 @@ namespace Valkur.Gameplay.Combat
             _health.Layout(_barWidth, 0f, y + healthH * 0.5f, notches);
             y += healthH;
             float top = y;
+
+            // The energy row (Carrera stamina) sits BETWEEN health and the resource row, sharing
+            // health's top outline the same way the resource row used to be the only thing that
+            // did. It always carries its quarter notches — that is the shape distinction from
+            // mana a colour-blind player needs, not gated by showQuarterNotches, which is a
+            // health-only toggle.
+            bool energyOn = _wantsEnergy && _energy != null;
+            float energySeamWidth = 0f, energySeamY = 0f;
+            if (energyOn)
+            {
+                y += gap;
+                float energyH = style.EnergyRowHeight;
+                float centre = y + energyH * 0.5f;
+                if (style.rowGapTexels < 0)
+                {
+                    energySeamWidth = _barWidth;
+                    energySeamY = y + t * 0.5f;
+                }
+                bool energyNotches = widthTexels >= style.notchMinWidthTexels;
+                _energy.Layout(_barWidth, 0f, centre, energyNotches);
+                y += energyH;
+                top = Mathf.Max(top, y);
+            }
+            _energyJoints.Layout(energySeamWidth, energySeamY, float.NaN, 0f);
+
             float seamWidth = 0f, seamY = 0f;
             float cornerX = float.NaN, cornerY = 0f;
 
@@ -87,7 +113,6 @@ namespace Valkur.Gameplay.Combat
                 float centre = y + rowH * 0.5f;
 
                 float pipSide = dashOn ? _pip.Side : 0f;
-                float t = WorldBarGeometry.TEXEL;
                 if (style.rowGapTexels < 0)
                 {
                     seamWidth = _barWidth;
@@ -157,8 +182,10 @@ namespace Valkur.Gameplay.Combat
             _sortBase = SortingConfig.ComputeSortingOrder(SortingConfig.Z_UI, y);
             _health.SetSortingBase(_sortBase + SORT_HEALTH);
             _mana?.SetSortingBase(_sortBase + SORT_RESOURCE);
+            _energy?.SetSortingBase(_sortBase + SORT_ENERGY);
             _pip?.SetSortingBase(_sortBase + SORT_PIP);
             _joints.SetSortingBase(_sortBase + SORT_JOINT);
+            _energyJoints.SetSortingBase(_sortBase + SORT_ENERGY_JOINT);
             _status.SetSortingBase(_sortBase + SORT_STATUS);
             // The sparks too: left at their construction order they sat a thousand below the bars
             // they were thrown off, i.e. under every readout in the scene.
@@ -189,6 +216,17 @@ namespace Valkur.Gameplay.Combat
                               style.notch, 0f);
             _mana?.SetRankColours(cap, Color.clear, style.lowPulse);
             _mana?.SetPlateVisible(style.drawPlate);
+
+            // Same story as mana: energy never switches to a "low" hue on its own, since it is
+            // Player-only and its own heartbeat-style event (the row shake) already announces
+            // running out. Shape (the quarter notches) carries what colour cannot for a
+            // colour-blind player.
+            var energyFill = style.EnergyFillColour;
+            _energy?.SetColours(energyFill, energyFill, style.EnergySpentColour, style.outline,
+                                style.plate, style.notch, 0f);
+            _energy?.SetRankColours(cap, Color.clear, style.lowPulse);
+            _energy?.SetPlateVisible(style.drawPlate);
+            _energyJoints.SetColour(style.outline);
 
             _pip?.SetColours(style.dashReady, style.dashCharging, style.outline, style.plate);
             _joints.SetColour(style.outline);

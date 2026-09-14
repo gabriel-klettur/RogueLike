@@ -108,6 +108,13 @@ namespace Valkur.Gameplay
             if (go.GetComponent<WorldManaBar>() == null)
                 go.AddComponent<WorldManaBar>();
 
+            // The energy row (the Carrera skill's stamina), between health and the resource row.
+            // Player only: Energy itself is added later, by EntitySetup.InitPlayerProgression —
+            // see WorldEnergyBar's own doc for why the driver retries its bind instead of failing
+            // once at Awake the way the two drivers above can.
+            if (go.CompareTag("Player") && go.GetComponent<WorldEnergyBar>() == null)
+                go.AddComponent<WorldEnergyBar>();
+
             var ySort = go.GetComponent<YSortEntity>();
             if (ySort == null) ySort = go.AddComponent<YSortEntity>();
             ySort.ZLayerBase = SortingConfig.Z_ENTITY;
@@ -124,6 +131,17 @@ namespace Valkur.Gameplay
             // And the dust every stride kicks up, coloured by what the foot lands on.
             if (go.GetComponent<World.Ambience.FootstepEmitter>() == null)
                 go.AddComponent<World.Ambience.FootstepEmitter>();
+
+            // The impulse arc under the feet: fills one segment per stride while sustained
+            // walking builds momentum, closes into a ring on the break into a run. Player-only —
+            // momentum is a stat nothing else in the world tracks.
+            if (go.CompareTag("Player") && go.GetComponent<LocomotionGroundMark>() == null)
+                go.AddComponent<LocomotionGroundMark>();
+
+            // The event-driven half of running: the push-off fan, the skid on a hard turn, the
+            // breath at Winded, and the faint speed lines held at full sprint.
+            if (go.CompareTag("Player") && go.GetComponent<World.Ambience.RunFx>() == null)
+                go.AddComponent<World.Ambience.RunFx>();
 
             // No lantern. One hung off the player after dusk shipped and was removed on review:
             // at night it drew a grey disc over the body that turned the character into a blur,
@@ -197,6 +215,20 @@ namespace Valkur.Gameplay
             if (Valkur.Gameplay.Spells.Debugging.SpellDebugRenderer.Instance != null) return;
             var go = new GameObject("SpellDebugRenderer");
             go.AddComponent<Valkur.Gameplay.Spells.Debugging.SpellDebugRenderer>();
+            var container = GameObject.Find("[Debug]");
+            if (container != null) go.transform.SetParent(container.transform, false);
+        }
+
+        /// <summary>
+        /// The entity-collider overlay, the companion of the spell areas one. Built idle for the
+        /// same reason: <c>EntityCollisionDebug.Enabled</c> is a switch, and a switch that had to
+        /// build its own GameObject would depend on scene state.
+        /// </summary>
+        private static void EnsureEntityCollisionDebugRenderer()
+        {
+            if (Valkur.Gameplay.Spells.Debugging.EntityCollisionDebugRenderer.Instance != null) return;
+            var go = new GameObject("EntityCollisionDebugRenderer");
+            go.AddComponent<Valkur.Gameplay.Spells.Debugging.EntityCollisionDebugRenderer>();
             var container = GameObject.Find("[Debug]");
             if (container != null) go.transform.SetParent(container.transform, false);
         }

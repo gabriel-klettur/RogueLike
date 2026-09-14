@@ -94,6 +94,35 @@ namespace Valkur.Gameplay.FSM
             var rb = GetComponent<Rigidbody2D>();
             rb.gravityScale = 0f;
             rb.freezeRotation = true;
+            _rb = rb;
+        }
+
+        private Rigidbody2D _rb;
+
+        /// <summary>
+        /// Paces the walk and run cycles by the body's speed, the same fourth dial the player's
+        /// locomotion uses (DirectionalAnimator.Locomotion). The references are the speeds the FSM
+        /// was AUTHORED to move at — patrol at <c>speed</c>, chase at <c>chasingSpeed</c> — so a
+        /// monster doing exactly what its asset says plays at the authored frame rate, and only a
+        /// departure from it moves the cycle: a flee (x flee multiplier) strides faster, a search
+        /// (x search factor) slower, a boss phase's chase multiplier faster. A measured reference on
+        /// the art wins when an author has set one.
+        /// </summary>
+        private void PaceLocomotionAnimation()
+        {
+            if (_animator == null || _rb == null || definition == null) return;
+            var state = _animator.CurrentState;
+            bool run = state == DirectionalAnimator.AnimState.Chase;
+            if (!run && state != DirectionalAnimator.AnimState.Walk) return;
+
+            float reference = run
+                ? (_animator.RunReferenceSpeed > 0f ? _animator.RunReferenceSpeed : definition.stats.chasingSpeed)
+                : (_animator.WalkReferenceSpeed > 0f ? _animator.WalkReferenceSpeed : definition.stats.speed);
+            if (reference <= 0.01f) { _animator.SetLocomotionRate(1f); return; }
+
+            var tuning = Valkur.Data.LocomotionTuning.Active;
+            float rate = _rb.velocity.magnitude / reference;
+            _animator.SetLocomotionRate(Mathf.Clamp(rate, tuning.locomotionRateMin, tuning.locomotionRateMax));
         }
 
         private void Start()
@@ -357,6 +386,7 @@ namespace Valkur.Gameplay.FSM
             float dt = Mathf.Min(_pendingDt, MaxCatchUpSeconds);
             _pendingDt = 0f;
             _fsm?.Update(dt);
+            PaceLocomotionAnimation();
         }
 
         private void OnDeath()

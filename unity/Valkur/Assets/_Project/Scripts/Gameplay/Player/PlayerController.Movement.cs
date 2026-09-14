@@ -5,6 +5,7 @@ using Valkur.Core;
 using Valkur.Core.Input;
 using Valkur.Data;
 using Valkur.Gameplay.Combat;
+using Valkur.Gameplay.Player;
 using Valkur.Gameplay.Spells;
 
 namespace Valkur.Gameplay
@@ -146,6 +147,7 @@ namespace Valkur.Gameplay
             if (_health.IsDead && !isSpirit)
             {
                 _rb.velocity = Vector2.zero;
+                BreakLocomotion(GaitBreak.Disabled);
                 return;
             }
 
@@ -153,6 +155,7 @@ namespace Valkur.Gameplay
             if (_statusEffects != null && _statusEffects.IsStunned)
             {
                 _rb.velocity = Vector2.zero;
+                BreakLocomotion(GaitBreak.Disabled);
                 return;
             }
 
@@ -163,12 +166,18 @@ namespace Valkur.Gameplay
             if (_statusEffects != null && _statusEffects.IsRooted)
             {
                 _rb.velocity = Vector2.zero;
+                BreakLocomotion(GaitBreak.Disabled);
                 return;
             }
 
-            // Dash overrides normal movement
+            // Dash overrides normal movement. The gait is not stepped and not broken: a dash out
+            // of a run lands still running. The measured position is forgotten, though, or the
+            // next step would read the teleport as a sprint.
             if (_dashAbility != null && _dashAbility.IsDashing)
+            {
+                _hasLastFixedPosition = false;
                 return;
+            }
 
             // A spell that does not allow movement plants the caster for as long as it is
             // WINDING UP or CHANNELLING — never for its cooldown, which is when it may be cast
@@ -181,6 +190,7 @@ namespace Valkur.Gameplay
             if (IsPlantedByCast())
             {
                 _rb.velocity = Vector2.zero;
+                BreakLocomotion(GaitBreak.Cast);
                 return;
             }
 
@@ -191,7 +201,16 @@ namespace Valkur.Gameplay
             // on diagonal input.
             Vector2 clampedInput = ClampInputAgainstVoid(_moveInput);
 
-            _rb.velocity = clampedInput * CurrentMoveSpeed;
+            // A ghost walks; it does not run (DeathTuning owns its speed).
+            if (isSpirit)
+            {
+                BreakLocomotion(GaitBreak.Disabled);
+                _rb.velocity = clampedInput * CurrentMoveSpeed;
+                return;
+            }
+
+            // Walking into a run — see PlayerController.Locomotion.
+            _rb.velocity = StepLocomotion(clampedInput);
         }
 
         /// <summary>
@@ -265,6 +284,9 @@ namespace Valkur.Gameplay
             // Read from the canonical InputService.Gameplay.Move action.
             var move = MoveAction;
             if (move != null) _moveInput = move.ReadValue<Vector2>();
+
+            // The autowalk console verb (PlayerController.Locomotion): the keys are ignored while it runs.
+            if (HasDebugMove) { _moveInput = _debugMove; return; }
 
             // Legacy fallback: under Unity 2022.3 in the Editor the new InputSystem package
             // intermittently drops OS event delivery and _moveInput stays at (0,0) even while
@@ -591,8 +613,7 @@ namespace Valkur.Gameplay
                      currentState == DirectionalAnimator.AnimState.Walk ||
                      currentState == DirectionalAnimator.AnimState.Chase))
                 {
-                    var state = IsMoving ? DirectionalAnimator.AnimState.Walk : DirectionalAnimator.AnimState.Idle;
-                    _animator.SetState(state, dir);
+                    _animator.SetLocomotionState(ResolveLocomotionAnimState(), dir, LocomotionReversed);
                 }
                 else
                 {
@@ -1022,8 +1043,7 @@ namespace Valkur.Gameplay
                 _animator.CurrentState == DirectionalAnimator.AnimState.Recover)
             {
                 var dir = _animator.ResolveDirectionFromVector(_facingDirection);
-                var state = IsMoving ? DirectionalAnimator.AnimState.Walk : DirectionalAnimator.AnimState.Idle;
-                _animator.SetState(state, dir);
+                _animator.SetLocomotionState(ResolveLocomotionAnimState(), dir, LocomotionReversed);
             }
             _castAnimEndTime = 0f;
             _castAnimSpellKey = null;
@@ -1195,7 +1215,9 @@ namespace Valkur.Gameplay
                 if (beam != null) beam.Stop();
             }
 
-            // The 24 spell slots. The (action, descriptor) pairs come from
+            // The War keyboard's spell slots — every grimoire spell, half of them Shift chords
+            // that InputBindingResolver keeps apart from the bare key under them (see
+            // InputChord and tools/input/build_war_keyboard.py). The (action, descriptor) pairs come from
             // InputService.Gameplay.EnumerateSpellBindings, which reads InputActionCatalog —
             // single source of truth for the slot list, the spellKey each casts, and the
             // stance each is live in. The legacy KeyCode column that used to ride along here
@@ -1307,6 +1329,6 @@ namespace Valkur.Gameplay
         /// </summary>
         private float CurrentMoveSpeed =>
             IsSpirit ? moveSpeed * Mathf.Max(0.05f, Valkur.Data.DeathTuning.Active.spiritSpeedMultiplier)
-                     : moveSpeed;
+                     : moveSpeed * LocomotionSpeedMultiplier;
     }
 }

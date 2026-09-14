@@ -28,10 +28,10 @@ namespace Valkur.Gameplay.Combat
         private Color _colour = Color.black;
         private float _alpha = 1f;
 
-        public WorldBarJoints(Transform parent, int sortingBase)
+        public WorldBarJoints(Transform parent, int sortingBase, string namePrefix = "Joint")
         {
-            _seam = MakePart(parent, "JointSeam", sortingBase);
-            _corner = MakePart(parent, "JointCorner", sortingBase);
+            _seam = MakePart(parent, namePrefix + "Seam", sortingBase);
+            _corner = MakePart(parent, namePrefix + "Corner", sortingBase);
         }
 
         private static SpriteRenderer MakePart(Transform parent, string name, int order)

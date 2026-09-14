@@ -56,9 +56,11 @@ namespace Valkur.UI.HUD
         private HudMedallion _medallion;
         private HudBar _healthBar;
         private HudBar _manaBar;
+        private HudBar _energyBar;
         private HudBar _xpBar;
         private Image _heart;
         private Image _drop;
+        private Image _boot;
         private HudAbilitySlot[] _slots;
         private HudDashPip _pip;
         private HudStatusRow _status;
@@ -93,6 +95,7 @@ namespace Valkur.UI.HUD
 
         public HudBar HealthBar => _healthBar;
         public HudBar ManaBar => _manaBar;
+        public HudBar EnergyBar => _energyBar;
         public HudBar XpBar => _xpBar;
         public HudMedallion Medallion => _medallion;
         public HudPortrait Portrait => _portrait;
@@ -193,6 +196,14 @@ namespace Valkur.UI.HUD
             _manaBar = new HudBar(_content, "ManaBar", _art, barX, manaY, barW, s.manaBarTexels,
                                   HudFontFace.Small, withLabel: true, notchSegments: 0, _additive);
 
+            // Energy (the Carrera skill's stamina), under mana. Same notch count as the world bar's
+            // quarter marks — shape carries the distinction from mana, not colour alone.
+            int energyY = manaY - s.rowGapTexels - s.energyBarTexels;
+            _boot = HudRect.MakeImage("EnergyIcon", _content, _art.Boot, x0 + 1,
+                                      energyY + (s.energyBarTexels - 7) / 2, 7, 7);
+            _energyBar = new HudBar(_content, "EnergyBar", _art, barX, energyY, barW, s.energyBarTexels,
+                                    HudFontFace.Small, withLabel: true, notchSegments: 4, _additive);
+
             // The slot row is its own container so one double-click handler covers every slot
             // and the gaps between them.
             var row = HudRect.Make("SlotRow", _content, 0, 0, _widthTexels, _heightTexels);
@@ -241,7 +252,7 @@ namespace Valkur.UI.HUD
         {
             var s = _style;
             Color health = s.health, low = s.healthLow, chip = s.healthChip, mana = s.mana,
-                  manaChip = s.manaChip;
+                  manaChip = s.manaChip, energy = s.energy, energyChip = s.energyChip;
             if (s.followWorldBarPalette)
             {
                 var w = WorldBarStyle.Active;
@@ -251,6 +262,8 @@ namespace Valkur.UI.HUD
                     chip = w.healthChip;
                     mana = w.mana;
                     manaChip = w.manaSpent;
+                    energy = w.EnergyFillColour;
+                    energyChip = w.EnergySpentColour;
                 }
             }
             _healthBar.SetColours(health, low, s.lowThreshold, chip, s.heal, s.healthLow);
@@ -258,12 +271,18 @@ namespace Valkur.UI.HUD
             _healthBar.SetLabelColour(s.text);
             _manaBar.SetColours(mana, mana, -1f, manaChip, Color.Lerp(mana, Color.white, 0.55f), mana);
             _manaBar.SetLabelColour(s.text);
+            // Energy never switches to a "low" hue of its own — running out is announced by the
+            // row's shake, not a colour change — so its low threshold is -1 (never).
+            _energyBar.SetColours(energy, energy, -1f, energyChip, Color.Lerp(energy, Color.white, 0.55f), energy);
+            _energyBar.SetNotchColour(s.notch);
+            _energyBar.SetLabelColour(s.text);
             _xpBar.SetColours(s.xp, s.xp, -1f, s.xpChip, s.xpChip, s.xp);
             var xpNotch = s.notch;
             xpNotch.a *= 0.6f;
             _xpBar.SetNotchColour(xpNotch);
             _heart.color = health;
             _drop.color = mana;
+            _boot.color = energy;
             _medallion.SetColour(s.text);
         }
 
@@ -318,10 +337,15 @@ namespace Valkur.UI.HUD
 
             _healthBar.Tick(dt, s);
             _manaBar.Tick(dt, s);
+            // The row beats while the runner is Winded, so the one state the player cannot act on
+            // (they cannot start a new run) reads as urgently as low health does.
+            bool winded = _controller != null && _controller.Gait != null && _controller.Gait.IsWinded;
+            _energyBar.SetHeartbeat(winded, 1f);
+            _energyBar.Tick(dt, s);
             _xpBar.Tick(dt, s);
             _portrait.Tick(dt, hp, dead);
             for (int i = 0; i < _slots.Length; i++) _slots[i].Tick(dt, _caster, _mana, s, _pixelScale);
-            _pip.Tick(dt, _dash, s);
+            _pip.Tick(dt, _caster, _dash, s);
             _status.Tick(_statuses);
             _medallion.Tick(dt, s);
             _floats.Tick(dt);

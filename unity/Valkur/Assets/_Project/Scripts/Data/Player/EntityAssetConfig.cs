@@ -791,6 +791,18 @@ namespace Valkur.Data
             });
         }
 
+        [Header("Locomotion Reference")]
+        // The speed, in world units per second, each locomotion cycle was DRAWN for: the speed at
+        // which the feet neither skate nor stamp in place. 0 = not measured, and the mover derives
+        // one (walk = the class's walking speed, run = that x LocomotionTuning.runReferenceFactor),
+        // which keeps a plain walk at exactly the authored frame rate. Measured per character by
+        // tools/atlas/measure_stride.py; a loadout's walk shares the base value.
+        [Tooltip("World units per second the walk cycle was drawn for. 0 = derive from the class speed.")]
+        [Min(0f)] public float walkReferenceSpeed;
+
+        [Tooltip("World units per second the run (chase) cycle was drawn for. 0 = derive.")]
+        [Min(0f)] public float runReferenceSpeed;
+
         [Header("Loadouts")]
         // Alternative LOOKS for this same character, each overriding only the states it has
         // art for. Empty for every entity but the dwarf, who ships an `armed` loadout.
@@ -937,6 +949,12 @@ namespace Valkur.Data
             }
             return best;
         }
+
+        [Header("Collision")]
+        [Tooltip("Footprint (feet, walls) and hurtbox (body, per frame). Empty = automatic. " +
+                 "Baked by Valkur > Entities > Bake Collision Shapes; retouched in the " +
+                 "Entities editor's Animation panel.")]
+        public EntityCollisionProfile collision = new EntityCollisionProfile();
 
         [Header("Scale & Tint")]
         public AnimationScaleConfig scaleConfig;

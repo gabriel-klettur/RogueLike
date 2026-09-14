@@ -127,6 +127,7 @@ namespace Valkur.Tests.EditMode.Game.UI
             yield return ("healthLowPlayer", s.healthLowPlayer);
             yield return ("mana", s.mana);
             yield return ("dashReady", s.dashReady);
+            yield return ("energy", s.EnergyFillColour);
         }
 
         [Test]
@@ -427,6 +428,85 @@ namespace Valkur.Tests.EditMode.Game.UI
             }
             Assert.Less(max - min, WorldBarRig.SORT_SPAN,
                 "a part that claims more orders than its SLOT_COUNT lands on its neighbour's");
+        }
+
+        [Test]
+        public void EveryOrderTheRigClaims_FitsInsideItsDeclaredSpan_WithEnergyEnabled()
+        {
+            var (go, rig) = MakeFullRig(StatusEffectKind.Burn);
+            rig.EnableEnergy(true);
+            rig.SetEnergy(50, 100, WorldBarChange.Silent);
+            WorldBarTestHelper.InvokeLateUpdate(rig);
+            int min = int.MaxValue, max = int.MinValue;
+            foreach (var sr in WorldBarTestHelper.BarRenderers(go))
+            {
+                min = Mathf.Min(min, sr.sortingOrder);
+                max = Mathf.Max(max, sr.sortingOrder);
+            }
+            Assert.Less(max - min, WorldBarRig.SORT_SPAN,
+                "the energy row's own slots must fit the declared span too");
+        }
+
+        [Test]
+        public void TheEnergyRow_SitsBetweenHealthAndResource_SharingBothOutlines_WithQuarterNotches()
+        {
+            var (go, rig) = MakeFullRig();
+            rig.EnableEnergy(true);
+            rig.SetEnergy(70, 100, WorldBarChange.Silent);
+            WorldBarTestHelper.InvokeLateUpdate(rig);
+
+            var style = WorldBarStyle.Active;
+            var health = go.transform.Find("WorldBars/Shake/Health");
+            var energy = go.transform.Find("WorldBars/Shake/Energy");
+            var mana = go.transform.Find("WorldBars/Shake/Mana");
+            Assert.IsNotNull(energy, "the energy row must exist once enabled");
+
+            Assert.Greater(energy.localPosition.y, health.localPosition.y,
+                "energy sits further from the head than health");
+            Assert.Less(energy.localPosition.y, mana.localPosition.y,
+                "and closer to the head than the resource row");
+
+            if (style.rowGapTexels < 0)
+            {
+                float healthTop = health.localPosition.y + style.HealthRowHeight * 0.5f;
+                float energyBottom = energy.localPosition.y - style.EnergyRowHeight * 0.5f;
+                float energyTop = energy.localPosition.y + style.EnergyRowHeight * 0.5f;
+                float manaBottom = mana.localPosition.y - style.ResourceRowHeight * 0.5f;
+                Assert.AreEqual(healthTop - WorldBarGeometry.TEXEL, energyBottom, 1e-4f,
+                    "energy shares health's outline, the same way the resource row used to alone");
+                Assert.AreEqual(energyTop - WorldBarGeometry.TEXEL, manaBottom, 1e-4f,
+                    "the resource row shares energy's outline in turn");
+            }
+
+            for (int i = 0; i < 3; i++)
+                Assert.IsTrue(Part(go, "Energy/Notch" + i).gameObject.activeSelf,
+                    "the energy row always carries its quarter notches - shape, not only colour, " +
+                    "is what separates it from mana");
+            // The mana row is built with withNotches:false, so it has no Notch children at all -
+            // not merely inactive ones - which is what actually separates it from energy in shape.
+            for (int i = 0; i < 3; i++)
+                Assert.IsNull(go.transform.Find("WorldBars/Shake/Mana/Notch" + i),
+                    "mana itself still carries none");
+        }
+
+        [Test]
+        public void TheEnergyRow_IsAttachedToThePlayerOnly()
+        {
+            // WorldBarRig itself will draw energy for whoever calls EnableEnergy - "player only"
+            // is enforced by EntitySetup only ever attaching WorldEnergyBar behind the player tag.
+            // Pinned at the source rather than by building a monster and asserting a miss: a
+            // monster with no WorldEnergyBar never calls EnableEnergy at all, so there would be
+            // nothing on the rig to observe.
+            string path = Path.Combine(Application.dataPath,
+                "_Project/Scripts/Gameplay/Bootstrap/EntitySetup.Visuals.cs");
+            Assert.IsTrue(File.Exists(path), path);
+            string src = File.ReadAllText(path);
+            int idx = src.IndexOf("AddComponent<WorldEnergyBar>()");
+            Assert.Greater(idx, 0, "WorldEnergyBar must still be attached somewhere in EntitySetup");
+            int start = Mathf.Max(0, idx - 200);
+            string before = src.Substring(start, idx - start);
+            StringAssert.Contains("CompareTag(\"Player\")", before,
+                "the energy row driver must only ever be attached to the player");
         }
 
         [Test]

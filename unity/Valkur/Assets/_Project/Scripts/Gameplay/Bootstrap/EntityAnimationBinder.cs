@@ -148,6 +148,7 @@ namespace Valkur.Gameplay
             ApplyStateVariants(animator, assetConfig, loadout, layout);
             animator.SetAnimationSpeedMultiplier(assetConfig.scaleConfig.animationSpeedMultiplier);
             ApplyStatePacing(animator, assetConfig);
+            animator.SetLocomotionReference(assetConfig.walkReferenceSpeed, assetConfig.runReferenceSpeed);
             ApplyCastMuzzle(go, assetConfig, animator, renderer);
             var initialFrame = animator.PeekFirstFrame(idleSet);
             if (initialFrame != null)

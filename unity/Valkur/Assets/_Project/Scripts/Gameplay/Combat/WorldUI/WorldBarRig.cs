@@ -58,7 +58,18 @@ namespace Valkur.Gameplay.Combat
         // pulsing ring lost its whole top edge to their dark outlines and read as a bracket.
         private const int SORT_RESOURCE = 0;
         private const int SORT_PIP = SORT_RESOURCE + WorldBarLine.SLOT_COUNT;
-        private const int SORT_JOINT = SORT_PIP + WorldBarPip.SLOT_COUNT;
+        // The energy row (the Carrera skill's stamina) sits between health and the resource row
+        // on screen, but its SORTING slot lives here, beside mana and the pip: none of the three
+        // needs to draw over the shared outline the way health's heartbeat does, so they can all
+        // sit at the bottom of the stack's draw order without disturbing the health-must-draw-last
+        // rule the joint comment below explains.
+        private const int SORT_ENERGY = SORT_PIP + WorldBarPip.SLOT_COUNT;
+        // One joint for the seam directly below health (health-energy when energy is enabled,
+        // health-resource otherwise) and a second for the seam directly below the resource row
+        // when BOTH energy and resource are present (energy-resource). Both are no-ops (an
+        // inactive seam/corner) whenever the row on their far side does not exist.
+        private const int SORT_ENERGY_JOINT = SORT_ENERGY + WorldBarLine.SLOT_COUNT;
+        private const int SORT_JOINT = SORT_ENERGY_JOINT + WorldBarJoints.SLOT_COUNT;
         private const int SORT_HEALTH = SORT_JOINT + WorldBarJoints.SLOT_COUNT;
         private const int SORT_STATUS = SORT_HEALTH + WorldBarLine.SLOT_COUNT;
         private const int SORT_SPARKS = SORT_STATUS + WorldStatusIconRow.SLOT_COUNT;
@@ -80,8 +91,10 @@ namespace Valkur.Gameplay.Combat
 
         private WorldBarLine _health;
         private WorldBarLine _mana;
+        private WorldBarLine _energy;
         private WorldBarPip _pip;
         private WorldBarJoints _joints;
+        private WorldBarJoints _energyJoints;
         private WorldStatusIconRow _status;
         private WorldBarSparks _sparks;
 
@@ -93,6 +106,7 @@ namespace Valkur.Gameplay.Combat
 
         private bool _wantsMana;
         private bool _wantsDash;
+        private bool _wantsEnergy;
 
         private float _barWidth;
         private float _lastSortY = float.NaN;
@@ -100,6 +114,7 @@ namespace Valkur.Gameplay.Combat
 
         private float _healthRatio = 1f;
         private float _manaRatio = 1f;
+        private float _energyRatio = 1f;
         private float _dashCharge = 1f;
         private float _healBurstLeft;
         private bool _dead;
@@ -201,6 +216,7 @@ namespace Valkur.Gameplay.Combat
             _shaker = shakerGo.transform;
             _shaker.SetParent(_root, false);
 
+            _energyJoints = new WorldBarJoints(_shaker, SORT_ENERGY_JOINT, "EnergyJoint");
             _joints = new WorldBarJoints(_shaker, SORT_JOINT);
             _health = new WorldBarLine(_shaker, "Health", WorldBarRow.Health,
                                        style.healthRowTexels, SORT_HEALTH, withNotches: true);
@@ -369,6 +385,67 @@ namespace Valkur.Gameplay.Combat
             }
         }
 
+        /// <summary>Create or drop the energy row (the Carrera skill's stamina).</summary>
+        public void EnableEnergy(bool on)
+        {
+            EnsureBuilt();
+            if (_wantsEnergy == on) return;
+            _wantsEnergy = on;
+            if (on && _energy == null)
+            {
+                var style = WorldBarStyle.Active;
+                _energy = new WorldBarLine(_shaker, "Energy", WorldBarRow.Resource,
+                                           style.energyRowTexels, SORT_ENERGY, withNotches: true);
+                // Built after the rig has already sorted itself, so it must join the stack's base
+                // now: left at its construction order it sat a thousand below every other row.
+                _energy.SetSortingBase(_sortBase + SORT_ENERGY);
+                _energyJoints.SetSortingBase(_sortBase + SORT_ENERGY_JOINT);
+                ApplyColours();
+            }
+            _energy?.SetActive(on);
+            _layoutDirty = true;
+        }
+
+        /// <summary>
+        /// Report energy. A drain from running leaves the same delayed ghost a blow leaves on
+        /// health, the same way a mana spend does.
+        /// </summary>
+        public void SetEnergy(int current, int max, WorldBarChange change)
+        {
+            if (_energy == null) return;
+            var style = WorldBarStyle.Active;
+            float ratio = max > 0 ? Mathf.Clamp01((float)current / max) : 0f;
+            _energyRatio = ratio;
+            _energy.SetRatio(ratio, instant: false, leaveChip: change == WorldBarChange.Damage, style);
+            if (change != WorldBarChange.Silent) MarkActivity();
+        }
+
+        /// <summary>
+        /// The row flashes: the runner crossed the wind-recovery threshold going up. One of the
+        /// two events the energy row exists to announce — a STATE (how much stamina is left) is
+        /// read from the fill; this is the moment the player got their legs back.
+        /// </summary>
+        public void FlashEnergyRecovered()
+        {
+            if (_energy == null) return;
+            _energy.Flash(WorldBarStyle.Active.hitFlashSeconds);
+            MarkActivity();
+        }
+
+        /// <summary>
+        /// The stack takes its short blow-shake: energy just hit zero and the runner became
+        /// winded. Shakes the whole rig rather than only the energy row - the row has no
+        /// transform of its own to shake independently of its siblings, and a jolt through the
+        /// shared shaker is what the health row's own hit already uses for the same "something
+        /// just happened to you" read.
+        /// </summary>
+        public void ShakeEnergyWinded()
+        {
+            if (_energy == null) return;
+            Shake(WorldBarStyle.Active);
+            MarkActivity();
+        }
+
         /// <summary>
         /// Re-measure the body and rebuild the layout. Called after a loadout swap or a scale
         /// change: the old bars measured the sprite once in <c>Awake</c> and never again, so a
@@ -424,6 +501,7 @@ namespace Valkur.Gameplay.Combat
             // near death it would be a field of pulsing rings reporting good news as an alarm.
             _health.Tick(dt, ppu, style, heartbeat: !_dead && _rank == WorldBarRank.Player);
             _mana?.Tick(dt, ppu, style, heartbeat: false);
+            _energy?.Tick(dt, ppu, style, heartbeat: false);
             _pip?.Tick(dt, style);
             if (_status.Tick(dt, style)) MarkActivityIfFading();
             _sparks.Tick(dt, ppu, _alpha);
@@ -458,7 +536,8 @@ namespace Valkur.Gameplay.Combat
             // one answer the bars exist to give at the character.
             if (_rank == WorldBarRank.Player && style.playerShowsWhileRecovering &&
                 ((_mana != null && _wantsMana && _manaRatio < 0.999f) ||
-                 (_pip != null && _wantsDash && _dashCharge < 0.999f)))
+                 (_pip != null && _wantsDash && _dashCharge < 0.999f) ||
+                 (_energy != null && _wantsEnergy && _energyRatio < 0.999f)))
                 newsworthy = true;
 
             // Suppression wins over everything: it is UnconsciousState putting a downed NPC's
@@ -492,8 +571,10 @@ namespace Valkur.Gameplay.Combat
         {
             _health.SetAlpha(_alpha);
             _mana?.SetAlpha(_alpha);
+            _energy?.SetAlpha(_alpha);
             _pip?.SetAlpha(_alpha);
             _joints.SetAlpha(_alpha);
+            _energyJoints.SetAlpha(_alpha);
             _status.SetAlpha(_alpha);
 
             bool visible = _alpha > 0.001f;

@@ -61,6 +61,11 @@ namespace Valkur.Data
         [Tooltip("Total height of the resource row (mana + dash pip), frame included.")]
         [Range(3, 8)] public int resourceRowTexels = 4;
 
+        [Tooltip("Total height of the energy row (the Carrera skill's stamina), frame included. " +
+                 "Shares the resource row's generated art (WorldBarRow.Resource) rather than its " +
+                 "own sheet entries - the two rows are the same shape at a different height.")]
+        [Range(3, 8)] public int energyRowTexels = 4;
+
         [Tooltip("Texels between the health row and the resource row. MINUS ONE is the shipped " +
                  "value and means the two rows SHARE one outline row, so the stack reads as one " +
                  "instrument. Measured with a one-texel gap instead, the gap showed the character's " +
@@ -179,6 +184,16 @@ namespace Valkur.Data
 
         [Tooltip("The ghost of mana just spent. Same job as the health chip.")]
         public Color manaSpent = new Color(0.78f, 0.88f, 1f, 0.9f);
+
+        [Tooltip("The ORANGE fill of the energy row (Carrera skill). Green was tried first and read as a second health bar in the live capture. Distinct from mana in " +
+                 "SHAPE as well as colour - the row carries quarter notches mana does not - so a " +
+                 "colour-blind player does not depend on the hue. If the shipped asset predates " +
+                 "this field it deserializes to transparent black; EnergyFillColour falls back to " +
+                 "a built-in default rather than drawing an invisible row.")]
+        public Color energy = new Color(0.96f, 0.58f, 0.18f, 1f);
+
+        [Tooltip("The ghost of energy just drained by running. Same job as manaSpent.")]
+        public Color energySpent = new Color(1.00f, 0.84f, 0.58f, 0.9f);
 
         [Tooltip("The dash pip when a charge is ready: the gold of the sheet's gem. Gold rather " +
                  "than cyan, because cyan beside the blue mana bar is one channel away from it.")]
@@ -317,11 +332,29 @@ namespace Valkur.Data
 
         // -- Derived ---------------------------------------------------------
 
+        // Fallbacks for a shipped asset written before the energy fields existed: a genuinely
+        // new field takes its C# default on load, but this project has been burned before by
+        // assuming a ScriptableObject re-serializes cleanly (see the "asset keeps the defaults
+        // it was CREATED with" gotcha), so the alpha-0 sentinel is checked defensively rather
+        // than trusted.
+        private static readonly Color s_defaultEnergy = new Color(0.96f, 0.58f, 0.18f, 1f);
+        private static readonly Color s_defaultEnergySpent = new Color(1.00f, 0.84f, 0.58f, 0.9f);
+
         /// <summary>Health row height in world units, on the texel grid by construction.</summary>
         public float HealthRowHeight => WorldBarGeometry.Texels(healthRowTexels);
 
         /// <summary>Resource row height in world units.</summary>
         public float ResourceRowHeight => WorldBarGeometry.Texels(resourceRowTexels);
+
+        /// <summary>Energy row height in world units.</summary>
+        public float EnergyRowHeight => WorldBarGeometry.Texels(energyRowTexels);
+
+        /// <summary>The energy fill, falling back to a built-in default when the shipped asset
+        /// predates the field (an alpha-0 colour is never a deliberate authoring choice here).</summary>
+        public Color EnergyFillColour => energy.a > 0.001f ? energy : s_defaultEnergy;
+
+        /// <summary>The energy chip, same fallback rule.</summary>
+        public Color EnergySpentColour => energySpent.a > 0.001f ? energySpent : s_defaultEnergySpent;
 
         /// <summary>The end-cap metal for a rank, without a switch at every call site.</summary>
         public Color CapFor(WorldBarRank rank)

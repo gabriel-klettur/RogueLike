@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Valkur.Data;
 using Valkur.Gameplay.Combat;
+using Valkur.Gameplay.Spells;
 
 namespace Valkur.UI.HUD
 {
@@ -13,11 +14,17 @@ namespace Valkur.UI.HUD
     /// one-second cooldown (<c>CooldownRemaining / 1f</c>) against a component that exposes the
     /// real one, and was instantiated by nothing at all.</para>
     ///
-    /// <para>The pip reads EMPTY during the dash itself — <c>CanDash</c> is false while the lunge is
-    /// in flight — and flashes when the charge returns, the one moment it exists to report.</para>
+    /// <para><b>It reads the SPELL BOOK's cooldown for "dash", not <c>DashAbility</c>.</b>
+    /// <c>DashAbility.TryDash</c> has no callers — the dash is the spell "dash", cast through
+    /// <c>SpellCaster.TryCastByKey</c> — so <c>DashAbility.CanDash</c> answered true forever and
+    /// this pip never showed the real cooldown, same defect as <see cref="Valkur.Gameplay.Combat.WorldDashBar"/>
+    /// over the head. <c>DashAbility</c> is kept only as a fallback and for <c>IsDashing</c>'s
+    /// cosmetic "empty during the lunge" read, which is always false today and therefore harmless.</para>
     /// </summary>
     public sealed class HudDashPip
     {
+        private const string DashSpellKey = "dash";
+
         private const int FillSteps = 7;
 
         public RectTransform Root { get; }
@@ -46,17 +53,9 @@ namespace Valkur.UI.HUD
             _flash.enabled = false;
         }
 
-        public void Tick(float dt, DashAbility dash, PlayerHudStyle style)
+        public void Tick(float dt, SpellCaster caster, DashAbility dash, PlayerHudStyle style)
         {
-            float charge = 1f;
-            if (dash != null)
-            {
-                if (dash.IsDashing) charge = 0f;
-                else if (!dash.CanDash)
-                    charge = dash.CooldownTotal > 0f
-                        ? 1f - Mathf.Clamp01(dash.CooldownRemaining / dash.CooldownTotal)
-                        : 0f;
-            }
+            float charge = ResolveCharge(caster, dash);
 
             bool returned = _charge < 0.999f && charge >= 0.999f;
             _charge = charge;
@@ -82,5 +81,35 @@ namespace Valkur.UI.HUD
 
         /// <summary>Centre of the pip in the parent's space.</summary>
         public Vector2 Centre => Root.anchoredPosition + new Vector2(5.5f, 5.5f);
+
+        /// <summary>
+        /// 1 while the dash is available, otherwise how far through the "dash" spell's book
+        /// cooldown it is. Falls back to <paramref name="dash"/>'s own (currently always-ready)
+        /// reading when there is no caster or "dash" is not in the book, so the pip degrades to
+        /// its historical behaviour rather than to a blank one.
+        /// </summary>
+        private static float ResolveCharge(SpellCaster caster, DashAbility dash)
+        {
+            if (dash != null && dash.IsDashing) return 0f;
+
+            if (caster != null && caster.KnowsSpell(DashSpellKey))
+            {
+                var spell = caster.GetSpellByKey(DashSpellKey);
+                if (spell != null)
+                {
+                    float total = caster.ResolveCooldown(spell);
+                    if (total <= 0f) return 1f;
+                    float remaining = caster.GetBookCooldownRemaining(DashSpellKey);
+                    return Mathf.Clamp01(1f - remaining / total);
+                }
+            }
+
+            if (dash == null) return 1f;
+            if (!dash.CanDash)
+                return dash.CooldownTotal > 0f
+                    ? 1f - Mathf.Clamp01(dash.CooldownRemaining / dash.CooldownTotal)
+                    : 0f;
+            return 1f;
+        }
     }
 }

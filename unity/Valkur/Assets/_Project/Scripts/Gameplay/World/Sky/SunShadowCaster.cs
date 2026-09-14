@@ -46,6 +46,10 @@ namespace Valkur.Gameplay.World.Sky
         private SpriteRenderer _ground;
         private SpriteRenderer _shadow;
         private SpriteRenderer _blob;
+        private Valkur.Gameplay.DirectionalAnimator _bodyAnimator;
+        private bool _bodyAnimatorLooked;
+        private Vector3 _blobBaseScale = Vector3.one;
+        private float _blobLift01 = -1f;
         private MaterialPropertyBlock _mpb;
         private Sprite _lastSprite;
         private bool   _lastFlipX;
@@ -196,7 +200,13 @@ namespace Valkur.Gameplay.World.Sky
 
             if (_blob != null)
             {
-                float alpha = sourceVisible && sprite != null ? SunShadowState.BlobAlpha : 0f;
+                if (spriteChanged && sprite != null) PlaceBlob(sprite);
+
+                // A creature in the air casts a smaller, fainter contact shadow: the airborne frames
+                // of a run lift the body up to a fifth of its height, and a blob that stayed the
+                // same size said the feet never left the ground.
+                float lift01 = BodyLift01(sprite);
+                float alpha = sourceVisible && sprite != null ? SunShadowState.BlobAlpha * (1f - 0.55f * lift01) : 0f;
                 bool blobOn = alpha > 0.005f;
                 if (_blob.enabled != blobOn) _blob.enabled = blobOn;
                 if (blobOn && !Mathf.Approximately(alpha, _lastBlobAlpha))
@@ -204,7 +214,11 @@ namespace Valkur.Gameplay.World.Sky
                     _lastBlobAlpha = alpha;
                     _blob.color = new Color(0f, 0f, 0f, alpha);
                 }
-                if (spriteChanged && sprite != null) PlaceBlob(sprite);
+                if (spriteChanged || !Mathf.Approximately(lift01, _blobLift01))
+                {
+                    _blobLift01 = lift01;
+                    _blob.transform.localScale = _blobBaseScale * (1f - 0.3f * lift01);
+                }
             }
         }
 
@@ -276,13 +290,29 @@ namespace Valkur.Gameplay.World.Sky
         /// <summary>The foot line last written to the shear shader. Test seam.</summary>
         public float FootY => _footY;
 
+        /// <summary>0 on the ground, 1 when the body is a sixth of its height in the air.</summary>
+        private float BodyLift01(Sprite sprite)
+        {
+            if (sprite == null) return 0f;
+            if (!_bodyAnimatorLooked)
+            {
+                _bodyAnimatorLooked = true;
+                _bodyAnimator = _source != null ? _source.GetComponent<Valkur.Gameplay.DirectionalAnimator>() : null;
+            }
+            if (_bodyAnimator == null) return 0f;
+            float lift = _bodyAnimator.CurrentGroundLiftUnits;
+            if (lift <= 0f) return 0f;
+            return Mathf.Clamp01(lift / Mathf.Max(0.05f, sprite.bounds.size.y / 6f));
+        }
+
         private void PlaceBlob(Sprite sprite)
         {
             var style = SkyStyle.Active;
             float width  = Mathf.Max(0.2f, sprite.bounds.size.x * style.blobWidthFactor);
             float height = width * style.blobHeightFactor;
             var unit = ShadowSprites.BlobUnitSize;
-            _blob.transform.localScale    = new Vector3(width / unit.x, height / unit.y, 1f);
+            _blobBaseScale = new Vector3(width / unit.x, height / unit.y, 1f);
+            _blob.transform.localScale    = _blobBaseScale;
             _blob.transform.localPosition = new Vector3(sprite.bounds.center.x, sprite.bounds.min.y, 0f);
         }
 

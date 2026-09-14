@@ -80,6 +80,7 @@ namespace Valkur.UI.HUD
         public Sprite StatusTile { get; private set; }
         public Sprite Heart { get; private set; }
         public Sprite Drop { get; private set; }
+        public Sprite Boot { get; private set; }
         public Sprite Lock { get; private set; }
         public Sprite MouseLeft { get; private set; }
         public Sprite MouseRight { get; private set; }
@@ -200,6 +201,16 @@ namespace Valkur.UI.HUD
                 "####s",
                 " ##s ",
             }, IconShade, outline: true);
+            // 5x5 (7x7 outlined): the panel's third icon, shape distinct from Heart and Drop at a
+            // glance — a shaft rising from a sole that reaches right, read as a running boot.
+            AddPattern("boot", new[]
+            {
+                " ##  ",
+                " ##  ",
+                " ##  ",
+                " ##h#",
+                "#####",
+            }, IconShade, outline: true);
             AddPattern("lock", new[]
             {
                 " ### ",
@@ -285,6 +296,7 @@ namespace Valkur.UI.HUD
             StatusTile = SpriteOf("status_tile");
             Heart = SpriteOf("heart");
             Drop = SpriteOf("drop");
+            Boot = SpriteOf("boot");
             Lock = SpriteOf("lock");
             MouseLeft = SpriteOf("mouse_l");
             MouseRight = SpriteOf("mouse_r");

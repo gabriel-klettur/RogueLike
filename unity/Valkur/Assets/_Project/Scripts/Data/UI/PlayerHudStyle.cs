@@ -52,6 +52,7 @@ namespace Valkur.Data
         [Range(1, 10)] public int columnGapTexels = 4;
         [Range(9, 24)] public int healthBarTexels = 13;
         [Range(7, 16)] public int manaBarTexels = 9;
+        [Range(6, 14)] public int energyBarTexels = 8;
         [Range(14, 32)] public int slotTexels = 20;
         [Range(4, 9)] public int xpBarTexels = 5;
         [Range(0, 6)] public int rowGapTexels = 2;
@@ -78,6 +79,8 @@ namespace Valkur.Data
         public Color heal = new Color(0.78f, 1f, 0.72f, 1f);
         public Color mana = new Color(0.36f, 0.55f, 1f, 1f);
         public Color manaChip = new Color(0.75f, 0.86f, 1f, 0.9f);
+        public Color energy = new Color(0.96f, 0.58f, 0.18f, 1f);
+        public Color energyChip = new Color(1.00f, 0.84f, 0.58f, 0.9f);
         public Color xp = new Color(1f, 0.80f, 0.30f, 1f);
         public Color xpChip = new Color(1f, 0.97f, 0.80f, 1f);
         public Color dashReady = new Color(0.20f, 0.86f, 1f, 1f);
@@ -192,7 +195,8 @@ namespace Valkur.Data
 
         /// <summary>Height of the stack of bars and slots beside the portrait.</summary>
         public int StackHeightTexels =>
-            healthBarTexels + rowGapTexels + manaBarTexels + rowGapTexels + 1 + slotTexels;
+            healthBarTexels + rowGapTexels + manaBarTexels + rowGapTexels + energyBarTexels +
+            rowGapTexels + 1 + slotTexels;
 
         /// <summary>Height of the portrait row, which the stack must match.</summary>
         public int TopRowTexels => Mathf.Max(portraitTexels, StackHeightTexels);

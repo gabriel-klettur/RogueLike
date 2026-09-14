@@ -70,11 +70,21 @@ namespace Valkur.Gameplay.World.Ambience
         /// an error: dust that never appears is dust nobody misses.
         /// </summary>
         public static FootstepPuff Spawn(Vector3 position, GroundKind kind, int sortingLayerId, int sortingOrder)
+            => Spawn(position, kind, sortingLayerId, sortingOrder, 1f, 1f, Vector2.zero);
+
+        /// <summary>
+        /// Same, with a run's extra weight: <paramref name="scaleMul"/>/<paramref name="lifeMul"/>
+        /// grow the puff and hold it a little longer, and <paramref name="kickVelocity"/> drifts
+        /// it — a kicked-up puff thrown BACKWARD, opposite the travel, rather than one that just
+        /// sits where the foot landed the way a walking puff does.
+        /// </summary>
+        public static FootstepPuff Spawn(Vector3 position, GroundKind kind, int sortingLayerId, int sortingOrder,
+            float scaleMul, float lifeMul, Vector2 kickVelocity)
         {
             if (!WorldLookSettings.Footsteps) return null;
             var puff = Take();
             if (puff == null) return null;
-            puff.Begin(position, kind, sortingLayerId, sortingOrder, PuffLife);
+            puff.Begin(position, kind, sortingLayerId, sortingOrder, PuffLife * lifeMul, scaleMul, kickVelocity);
             return puff;
         }
 
@@ -165,6 +175,7 @@ namespace Valkur.Gameplay.World.Ambience
         private GroundKind _kind;
         private Vector3 _origin;
         private float   _scaleFrom, _scaleTo, _rise;
+        private Vector2 _kick;
 
         /// <summary>True while the puff is on screen.</summary>
         public bool IsLive { get; private set; }
@@ -175,19 +186,24 @@ namespace Valkur.Gameplay.World.Ambience
         /// <summary>The colour the puff was born with. Test seam.</summary>
         public Color BornColour => _colour;
 
-        internal void Begin(Vector3 position, GroundKind kind, int sortingLayerId, int sortingOrder, float life)
+        internal void Begin(Vector3 position, GroundKind kind, int sortingLayerId, int sortingOrder, float life,
+            float scaleMul, Vector2 kickVelocity)
         {
             if (_sr == null) _sr = GetComponent<SpriteRenderer>();
             _kind   = kind;
             _colour = FootstepDust.ColourFor(kind);
+            // A heavier footfall throws up MORE dust, not just a bigger ghost of the same faint puff:
+            // at the walking alpha a running puff was invisible in the live capture.
+            _colour.a = Mathf.Min(0.8f, _colour.a * Mathf.Lerp(1f, 1.8f, Mathf.InverseLerp(1f, 1.75f, scaleMul)));
             _origin = position;
             _life   = life;
             _t      = 0f;
+            _kick   = kickVelocity;
             IsLive  = true;
 
             bool splash = kind == GroundKind.Water;
-            _scaleFrom = splash ? 0.30f : 0.22f;
-            _scaleTo   = kind == GroundKind.Snow ? 0.70f : splash ? 0.55f : 0.50f;
+            _scaleFrom = (splash ? 0.30f : 0.22f) * scaleMul;
+            _scaleTo   = (kind == GroundKind.Snow ? 0.70f : splash ? 0.55f : 0.50f) * scaleMul;
             _rise      = splash ? 0f : kind == GroundKind.Snow ? 0.08f : 0.14f;
 
             _sr.sortingLayerID = sortingLayerId;
@@ -211,10 +227,14 @@ namespace Valkur.Gameplay.World.Ambience
             float scale = Mathf.Lerp(_scaleFrom, _scaleTo, 1f - (1f - u) * (1f - u));
             transform.localScale = Vector3.one * scale;
 
-            // Rises, thins, and is carried by the same wind the leaves lean with.
+            // Rises, thins, and is carried by the same wind the leaves lean with — plus a
+            // running stride's own backward kick, opposite the travel, so a run's dust is
+            // thrown behind the foot rather than sitting where it landed.
             var p = _origin;
             p.y += _rise * u;
             p.x += WeatherWind.VelocityX * 0.25f * _t;
+            p.x += _kick.x * _t;
+            p.y += _kick.y * _t;
             transform.position = p;
 
             var c = _colour;

@@ -1,8 +1,11 @@
 using System.Collections.Generic;
+using System.IO;
 using NUnit.Framework;
 using UnityEngine;
 using Valkur.Core;
 using Valkur.Core.Rendering;
+using Valkur.Gameplay;
+using Valkur.Gameplay.Player;
 using Valkur.Gameplay.World.Ambience;
 
 namespace Valkur.Tests.EditMode.Game.World.Ambience
@@ -129,6 +132,66 @@ namespace Valkur.Tests.EditMode.Game.World.Ambience
             e.Tick(2f, new Vector2(2f, 0f));
             Assert.That(e.Emitted, Is.EqualTo(0));
             Assert.That(FootstepDust.LiveCount, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void RunningStride_IsLongerThanWalking_SoFewerPuffsOverTheSameGround()
+        {
+            var walker = Walker();
+            walker.gameObject.AddComponent<PlayerController>();
+            // Never driven into Run: the gait stays Idle, so the stride is the ordinary walking one.
+            for (int i = 0; i < 60; i++) walker.Tick(1f / 60f, new Vector2(4f, 0f));
+            int walkingCount = walker.Emitted;
+            Assert.That(walkingCount, Is.EqualTo(Mathf.FloorToInt(4f / FootstepEmitter.Stride)));
+
+            var runner = Walker();
+            var pc = runner.gameObject.AddComponent<PlayerController>();
+            var gait = pc.Gait;   // lazily built; no MonoBehaviour lifecycle involved
+            // Drive it straight into Run at master skill — the same recipe LocomotionGaitTests
+            // uses to reach it in a single stride.
+            for (int i = 0; i < 200 && gait.State != GaitState.Run; i++)
+            {
+                gait.Step(new GaitInput
+                {
+                    DeltaTime = 0.02f,
+                    Desired = Vector2.right,
+                    WalkSpeed = 4f,
+                    RealSpeed = 4f * gait.SpeedMultiplier,
+                    Energy01 = 1f,
+                    Skill01 = 1f,
+                });
+            }
+            Assert.That(gait.State, Is.EqualTo(GaitState.Run), "setup: the gait must actually be running");
+            Assert.IsTrue(pc.IsRunning);
+
+            for (int i = 0; i < 60; i++) runner.Tick(1f / 60f, new Vector2(4f, 0f));
+            int runningCount = runner.Emitted;
+            Assert.That(runningCount, Is.EqualTo(Mathf.FloorToInt(4f / FootstepEmitter.RunStride)));
+
+            Assert.That(runningCount, Is.LessThan(walkingCount),
+                "a longer running stride means fewer puffs over the same ground covered");
+        }
+
+        [Test]
+        public void RunningNoise_OnlyFiresWhileTheGaitIsActuallyRunning()
+        {
+            // Walking must stay silent — it is the stealth layer's only tool — so the noise call
+            // is source-scanned for the guard rather than exercised through NoiseEvents itself,
+            // which needs a live EntityRegistry of monsters to say anything.
+            string path = Path.Combine(Application.dataPath,
+                "_Project/Scripts/Gameplay/World/Ambience/FootstepEmitter.cs");
+            string src = File.ReadAllText(path);
+            StringAssert.Contains("NoiseEvents.Emit", src);
+
+            int noiseIndex = src.IndexOf("NoiseEvents.Emit", System.StringComparison.Ordinal);
+            Assert.Greater(noiseIndex, -1);
+            string before = src.Substring(0, noiseIndex);
+            int guard = before.LastIndexOf("if (running", System.StringComparison.Ordinal);
+            Assert.Greater(guard, -1, "the noise call must sit inside an `if (running...)` guard");
+
+            // And nothing between the guard and the call may exit that block early.
+            string between = src.Substring(guard, noiseIndex - guard);
+            StringAssert.DoesNotContain("}", between, "the guard must still be open at the call");
         }
     }
 }

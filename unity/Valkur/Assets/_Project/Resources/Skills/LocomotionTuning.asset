@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2c59d635c5c23946af5cadea709209b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  startSecondsAtZero: 0.9
+  startSecondsAtMax: 0.3
+  minRealSpeedFraction: 0.65
+  stopGraceSeconds: 0.12
+  turnToleranceAtZero: 25
+  turnToleranceAtMax: 70
+  turnBreakDegrees: 150
+  runExitMomentum: 0.55
+  walkSpeedFraction: 0.6
+  runMultiplierAtZero: 1
+  runMultiplierAtMax: 1.3
+  backpedalSpeedFraction: 0.7
+  backpedalAngle: 100
+  blendSeconds: 0.25
+  drainPerSecondAtZero: 9
+  drainPerSecondAtMax: 4
+  regenWalkingAtZero: 6
+  regenWalkingAtMax: 10
+  regenIdleAtZero: 14
+  regenIdleAtMax: 22
+  regenDelayAtZero: 0.8
+  regenDelayAtMax: 0.4
+  windedRecoverFraction: 0.35
+  energyBaseOffset: 60
+  energyPerDexterity: 0.4
+  runReferenceFactor: 1
+  locomotionRateMin: 0.5
+  locomotionRateMax: 1.5
+  walkMaxFps: 14
+  runMaxFps: 18
+  settleMaxFrames: 2
+  gainEveryRunDistance: 4
+  maxGainRollsPerMinute: 20
+  runLoudnessMultiplier: 1.8
+  speedLinesAfterSeconds: 1.5

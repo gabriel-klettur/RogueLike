@@ -86,15 +86,13 @@ namespace Valkur.Gameplay
                 return;
             }
 
-            // Walk behavior: skip first frame, loop 1..end
-            // Matches Python's Animator.next_frame() walk logic
+            // Walk and run: a measured loop (formerly "skip first frame, loop 1..end", which
+            // matched Python's Animator.next_frame() and stays the rule for unmeasured sheets).
+            // Where the loop starts and which frames plant a foot is measured per sheet now (see
+            // DirectionalAnimator.Locomotion); an unmeasured sheet keeps the skip-frame-0 rule.
             if (_currentState == AnimState.Walk || _currentState == AnimState.Chase)
             {
-                if (_frameIndex < 1) _frameIndex = 1;
-                ApplyFrame(frames, _frameIndex);
-                _frameIndex++;
-                if (_frameIndex >= frames.Length)
-                    _frameIndex = 1;
+                AdvanceLocomotionFrame(frames);
                 return;
             }
 

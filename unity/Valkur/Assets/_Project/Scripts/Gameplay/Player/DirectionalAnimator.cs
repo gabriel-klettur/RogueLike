@@ -261,6 +261,7 @@ namespace Valkur.Gameplay
             damageSprites = damage;
             deathSprites = death;
             _preferCardinalDirectionSampling = preferCardinalDirectionSampling;
+            ClearCycleCache();
 
             _frameIndex = 0;
             _frameTimer = 0f;
@@ -656,7 +657,7 @@ namespace Valkur.Gameplay
         {
             float variantSpeed = PacingOf(state, variant).SpeedMultiplier;
             if (variantSpeed <= 0f) variantSpeed = 1f;
-            return EffectiveFrameInterval / (StateSpeedOf(state) * variantSpeed);
+            return EffectiveFrameInterval / (StateSpeedOf(state) * variantSpeed * LocomotionRateFor(state));
         }
 
         /// <summary>
@@ -762,7 +763,7 @@ namespace Valkur.Gameplay
             }
 
             _frameTimer += Time.deltaTime;
-            float interval = FrameIntervalFor(_currentState, _activeVariant);
+            float interval = FrameIntervalFor(_currentState, _activeVariant) * LocomotionHoldWeight();
             if (_frameTimer < interval) return;
             _frameTimer -= interval;
 

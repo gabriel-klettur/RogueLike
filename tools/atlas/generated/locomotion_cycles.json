@@ -1,0 +1,1332 @@
+{
+  "generator": "tools/atlas/locomotion_cycles.py",
+  "cycles": {
+    "dwarf_armed_running": {
+      "state": "chase",
+      "frames": 8,
+      "loopStart": 1,
+      "contactFrames": [
+        2,
+        5
+      ],
+      "strideUnits": 0.516,
+      "strideClamped": true,
+      "bodyUnits": 1.719,
+      "groundLiftPx": [
+        0,
+        5,
+        0,
+        25,
+        2,
+        0,
+        0,
+        23
+      ],
+      "legSpanPx": [
+        96,
+        60,
+        82,
+        74,
+        94,
+        84,
+        81,
+        76
+      ],
+      "player": "dwarf"
+    },
+    "dwarf_armed_walking": {
+      "state": "walk",
+      "frames": 8,
+      "loopStart": 1,
+      "contactFrames": [
+        4,
+        7
+      ],
+      "strideUnits": 0.321,
+      "strideClamped": true,
+      "bodyUnits": 1.781,
+      "groundLiftPx": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0
+      ],
+      "legSpanPx": [
+        89,
+        75,
+        80,
+        77,
+        89,
+        80,
+        68,
+        78
+      ],
+      "player": "dwarf"
+    },
+    "dwarf_running": {
+      "state": "chase",
+      "frames": 8,
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.605,
+      "strideClamped": false,
+      "bodyUnits": 1.766,
+      "groundLiftPx": [
+        0,
+        3,
+        0,
+        23,
+        0,
+        0,
+        0,
+        8
+      ],
+      "legSpanPx": [
+        83,
+        75,
+        69,
+        77,
+        94,
+        51,
+        92,
+        93
+      ],
+      "player": "dwarf"
+    },
+    "dwarf_walking": {
+      "state": "walk",
+      "frames": 8,
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.326,
+      "strideClamped": true,
+      "bodyUnits": 1.812,
+      "groundLiftPx": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "legSpanPx": [
+        63,
+        47,
+        57,
+        62,
+        64,
+        63,
+        54,
+        55
+      ],
+      "player": "dwarf"
+    },
+    "barbarian_armed_running_2": {
+      "state": "chase",
+      "frames": 8,
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.956,
+      "strideClamped": false,
+      "bodyUnits": 1.672,
+      "groundLiftPx": [
+        0,
+        0,
+        0,
+        18,
+        0,
+        0,
+        2,
+        15
+      ],
+      "legSpanPx": [
+        99,
+        33,
+        50,
+        64,
+        97,
+        57,
+        101,
+        52
+      ],
+      "player": "barbarian"
+    },
+    "barbarian_armed_walking_2": {
+      "state": "walk",
+      "frames": 8,
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.633,
+      "strideClamped": false,
+      "bodyUnits": 1.992,
+      "groundLiftPx": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "legSpanPx": [
+        87,
+        80,
+        44,
+        42,
+        84,
+        72,
+        73,
+        58
+      ],
+      "player": "barbarian"
+    },
+    "elven_run": {
+      "state": "chase",
+      "frames": 8,
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 1.791,
+      "strideClamped": false,
+      "bodyUnits": 2.609,
+      "groundLiftPx": [
+        1,
+        0,
+        0,
+        19,
+        1,
+        1,
+        0,
+        4
+      ],
+      "legSpanPx": [
+        69,
+        46,
+        52,
+        234,
+        74,
+        66,
+        43,
+        62
+      ],
+      "player": "elven"
+    },
+    "elven_walking": {
+      "state": "walk",
+      "frames": 8,
+      "loopStart": 0,
+      "contactFrames": [
+        2,
+        6
+      ],
+      "strideUnits": 0.713,
+      "strideClamped": false,
+      "bodyUnits": 2.562,
+      "groundLiftPx": [
+        3,
+        3,
+        2,
+        3,
+        0,
+        0,
+        0,
+        0
+      ],
+      "legSpanPx": [
+        86,
+        111,
+        73,
+        141,
+        149,
+        97,
+        133,
+        79
+      ],
+      "player": "elven"
+    },
+    "vampire_running": {
+      "state": "chase",
+      "frames": 8,
+      "loopStart": 1,
+      "contactFrames": [
+        4,
+        7
+      ],
+      "strideUnits": 0.844,
+      "strideClamped": false,
+      "bodyUnits": 2.484,
+      "groundLiftPx": [
+        0,
+        0,
+        1,
+        11,
+        0,
+        3,
+        6,
+        0
+      ],
+      "legSpanPx": [
+        163,
+        76,
+        83,
+        44,
+        98,
+        87,
+        42,
+        132
+      ],
+      "player": "vampire"
+    },
+    "vampire_walking": {
+      "state": "walk",
+      "frames": 8,
+      "loopStart": 1,
+      "contactFrames": [
+        2,
+        5
+      ],
+      "strideUnits": 0.544,
+      "strideClamped": false,
+      "bodyUnits": 2.703,
+      "groundLiftPx": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "legSpanPx": [
+        120,
+        136,
+        153,
+        143,
+        116,
+        143,
+        95,
+        128
+      ],
+      "player": "vampire"
+    },
+    "mague_run": {
+      "state": "chase",
+      "frames": 8,
+      "loopStart": 0,
+      "contactFrames": [
+        1,
+        5
+      ],
+      "strideUnits": 0.794,
+      "strideClamped": true,
+      "bodyUnits": 2.646,
+      "groundLiftPx": [
+        0,
+        0,
+        0,
+        0,
+        8,
+        0,
+        0,
+        0
+      ],
+      "legSpanPx": [
+        175,
+        157,
+        151,
+        123,
+        124,
+        166,
+        129,
+        110
+      ],
+      "player": "mague"
+    },
+    "mague_staff_run": {
+      "state": "chase",
+      "frames": 8,
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.728,
+      "strideClamped": true,
+      "bodyUnits": 2.427,
+      "groundLiftPx": [
+        7,
+        7,
+        7,
+        7,
+        0,
+        7,
+        0,
+        0
+      ],
+      "legSpanPx": [
+        175,
+        146,
+        131,
+        140,
+        138,
+        152,
+        151,
+        127
+      ],
+      "player": "mague"
+    },
+    "mague_staff_walk": {
+      "state": "walk",
+      "frames": 8,
+      "loopStart": 0,
+      "contactFrames": [
+        1,
+        5
+      ],
+      "strideUnits": 0.481,
+      "strideClamped": true,
+      "bodyUnits": 2.672,
+      "groundLiftPx": [
+        3,
+        3,
+        4,
+        3,
+        0,
+        2,
+        3,
+        3
+      ],
+      "legSpanPx": [
+        142,
+        147,
+        134,
+        147,
+        155,
+        155,
+        156,
+        153
+      ],
+      "player": "mague"
+    },
+    "mague_staff_walk_2": {
+      "state": "walk",
+      "frames": 8,
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.481,
+      "strideClamped": true,
+      "bodyUnits": 2.672,
+      "groundLiftPx": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "legSpanPx": [
+        172,
+        162,
+        155,
+        137,
+        145,
+        150,
+        148,
+        154
+      ],
+      "player": "mague"
+    },
+    "mague_staff_walk_4": {
+      "state": "walk",
+      "frames": 8,
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.475,
+      "strideClamped": true,
+      "bodyUnits": 2.641,
+      "groundLiftPx": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "legSpanPx": [
+        158,
+        138,
+        136,
+        162,
+        170,
+        161,
+        128,
+        123
+      ],
+      "player": "mague"
+    },
+    "mague_staff_walk_5": {
+      "state": "walk",
+      "frames": 8,
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.476,
+      "strideClamped": true,
+      "bodyUnits": 2.646,
+      "groundLiftPx": [
+        2,
+        1,
+        4,
+        3,
+        0,
+        1,
+        2,
+        1
+      ],
+      "legSpanPx": [
+        158,
+        155,
+        144,
+        149,
+        157,
+        145,
+        163,
+        148
+      ],
+      "player": "mague"
+    },
+    "mague_walk": {
+      "state": "walk",
+      "frames": 8,
+      "loopStart": 1,
+      "contactFrames": [
+        2,
+        6
+      ],
+      "strideUnits": 0.544,
+      "strideClamped": false,
+      "bodyUnits": 2.656,
+      "groundLiftPx": [
+        3,
+        4,
+        3,
+        3,
+        3,
+        3,
+        3,
+        0
+      ],
+      "legSpanPx": [
+        108,
+        130,
+        138,
+        125,
+        126,
+        96,
+        147,
+        89
+      ],
+      "player": "mague"
+    },
+    "mague_walk_2": {
+      "state": "walk",
+      "frames": 8,
+      "loopStart": 0,
+      "contactFrames": [
+        2,
+        6
+      ],
+      "strideUnits": 0.471,
+      "strideClamped": true,
+      "bodyUnits": 2.615,
+      "groundLiftPx": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "legSpanPx": [
+        128,
+        110,
+        142,
+        132,
+        123,
+        125,
+        115,
+        109
+      ],
+      "player": "mague"
+    },
+    "mague_walk_3": {
+      "state": "walk",
+      "frames": 8,
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.471,
+      "strideClamped": true,
+      "bodyUnits": 2.615,
+      "groundLiftPx": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        1
+      ],
+      "legSpanPx": [
+        126,
+        119,
+        108,
+        131,
+        134,
+        130,
+        136,
+        109
+      ],
+      "player": "mague"
+    },
+    "valkyrie_greatsword_run": {
+      "state": "chase",
+      "frames": 8,
+      "loopStart": 1,
+      "contactFrames": [
+        4,
+        7
+      ],
+      "strideUnits": 0.591,
+      "strideClamped": false,
+      "bodyUnits": 1.727,
+      "groundLiftPx": [
+        0,
+        0,
+        4,
+        3,
+        0,
+        2,
+        0,
+        1
+      ],
+      "legSpanPx": [
+        68,
+        32,
+        56,
+        45,
+        74,
+        40,
+        39,
+        69
+      ],
+      "player": "valkyrie"
+    },
+    "valkyrie_greatsword_walk": {
+      "state": "walk",
+      "frames": 8,
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.591,
+      "strideClamped": false,
+      "bodyUnits": 1.781,
+      "groundLiftPx": [
+        2,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0
+      ],
+      "legSpanPx": [
+        58,
+        49,
+        25,
+        25,
+        53,
+        53,
+        16,
+        51
+      ],
+      "player": "valkyrie"
+    },
+    "valkyrie_run": {
+      "state": "chase",
+      "frames": 8,
+      "loopStart": 0,
+      "contactFrames": [
+        2,
+        6
+      ],
+      "strideUnits": 0.565,
+      "strideClamped": true,
+      "bodyUnits": 1.883,
+      "groundLiftPx": [
+        4,
+        0,
+        0,
+        10,
+        3,
+        0,
+        0,
+        0
+      ],
+      "legSpanPx": [
+        24,
+        24,
+        30,
+        55,
+        52,
+        19,
+        28,
+        24
+      ],
+      "player": "valkyrie"
+    },
+    "valkyrie_shield_run": {
+      "state": "chase",
+      "frames": 8,
+      "loopStart": 1,
+      "contactFrames": [
+        3,
+        6
+      ],
+      "strideUnits": 0.956,
+      "strideClamped": false,
+      "bodyUnits": 1.812,
+      "groundLiftPx": [
+        6,
+        5,
+        7,
+        2,
+        1,
+        1,
+        0,
+        3
+      ],
+      "legSpanPx": [
+        105,
+        42,
+        35,
+        97,
+        89,
+        29,
+        85,
+        36
+      ],
+      "player": "valkyrie"
+    },
+    "valkyrie_shield_walk": {
+      "state": "walk",
+      "frames": 8,
+      "loopStart": 0,
+      "contactFrames": [
+        1,
+        5
+      ],
+      "strideUnits": 0.816,
+      "strideClamped": true,
+      "bodyUnits": 1.812,
+      "groundLiftPx": [
+        3,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "legSpanPx": [
+        83,
+        75,
+        18,
+        47,
+        78,
+        81,
+        70,
+        78
+      ],
+      "player": "valkyrie"
+    },
+    "valkyrie_walk": {
+      "state": "walk",
+      "frames": 8,
+      "loopStart": 0,
+      "contactFrames": [
+        2,
+        6
+      ],
+      "strideUnits": 0.605,
+      "strideClamped": false,
+      "bodyUnits": 1.812,
+      "groundLiftPx": [
+        1,
+        2,
+        1,
+        2,
+        0,
+        1,
+        1,
+        1
+      ],
+      "legSpanPx": [
+        42,
+        57,
+        57,
+        59,
+        56,
+        37,
+        64,
+        21
+      ],
+      "player": "valkyrie"
+    }
+  },
+  "list": [
+    {
+      "key": "dwarf_armed_running",
+      "state": "chase",
+      "loopStart": 1,
+      "contactFrames": [
+        2,
+        5
+      ],
+      "strideUnits": 0.516,
+      "groundLiftPx": [
+        0,
+        5,
+        0,
+        25,
+        2,
+        0,
+        0,
+        23
+      ]
+    },
+    {
+      "key": "dwarf_armed_walking",
+      "state": "walk",
+      "loopStart": 1,
+      "contactFrames": [
+        4,
+        7
+      ],
+      "strideUnits": 0.321,
+      "groundLiftPx": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0
+      ]
+    },
+    {
+      "key": "dwarf_running",
+      "state": "chase",
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.605,
+      "groundLiftPx": [
+        0,
+        3,
+        0,
+        23,
+        0,
+        0,
+        0,
+        8
+      ]
+    },
+    {
+      "key": "dwarf_walking",
+      "state": "walk",
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.326,
+      "groundLiftPx": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "key": "barbarian_armed_running_2",
+      "state": "chase",
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.956,
+      "groundLiftPx": [
+        0,
+        0,
+        0,
+        18,
+        0,
+        0,
+        2,
+        15
+      ]
+    },
+    {
+      "key": "barbarian_armed_walking_2",
+      "state": "walk",
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.633,
+      "groundLiftPx": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "key": "elven_run",
+      "state": "chase",
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 1.791,
+      "groundLiftPx": [
+        1,
+        0,
+        0,
+        19,
+        1,
+        1,
+        0,
+        4
+      ]
+    },
+    {
+      "key": "elven_walking",
+      "state": "walk",
+      "loopStart": 0,
+      "contactFrames": [
+        2,
+        6
+      ],
+      "strideUnits": 0.713,
+      "groundLiftPx": [
+        3,
+        3,
+        2,
+        3,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "key": "vampire_running",
+      "state": "chase",
+      "loopStart": 1,
+      "contactFrames": [
+        4,
+        7
+      ],
+      "strideUnits": 0.844,
+      "groundLiftPx": [
+        0,
+        0,
+        1,
+        11,
+        0,
+        3,
+        6,
+        0
+      ]
+    },
+    {
+      "key": "vampire_walking",
+      "state": "walk",
+      "loopStart": 1,
+      "contactFrames": [
+        2,
+        5
+      ],
+      "strideUnits": 0.544,
+      "groundLiftPx": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "key": "mague_run",
+      "state": "chase",
+      "loopStart": 0,
+      "contactFrames": [
+        1,
+        5
+      ],
+      "strideUnits": 0.794,
+      "groundLiftPx": [
+        0,
+        0,
+        0,
+        0,
+        8,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "key": "mague_staff_run",
+      "state": "chase",
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.728,
+      "groundLiftPx": [
+        7,
+        7,
+        7,
+        7,
+        0,
+        7,
+        0,
+        0
+      ]
+    },
+    {
+      "key": "mague_staff_walk",
+      "state": "walk",
+      "loopStart": 0,
+      "contactFrames": [
+        1,
+        5
+      ],
+      "strideUnits": 0.481,
+      "groundLiftPx": [
+        3,
+        3,
+        4,
+        3,
+        0,
+        2,
+        3,
+        3
+      ]
+    },
+    {
+      "key": "mague_staff_walk_2",
+      "state": "walk",
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.481,
+      "groundLiftPx": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "key": "mague_staff_walk_4",
+      "state": "walk",
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.475,
+      "groundLiftPx": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "key": "mague_staff_walk_5",
+      "state": "walk",
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.476,
+      "groundLiftPx": [
+        2,
+        1,
+        4,
+        3,
+        0,
+        1,
+        2,
+        1
+      ]
+    },
+    {
+      "key": "mague_walk",
+      "state": "walk",
+      "loopStart": 1,
+      "contactFrames": [
+        2,
+        6
+      ],
+      "strideUnits": 0.544,
+      "groundLiftPx": [
+        3,
+        4,
+        3,
+        3,
+        3,
+        3,
+        3,
+        0
+      ]
+    },
+    {
+      "key": "mague_walk_2",
+      "state": "walk",
+      "loopStart": 0,
+      "contactFrames": [
+        2,
+        6
+      ],
+      "strideUnits": 0.471,
+      "groundLiftPx": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "key": "mague_walk_3",
+      "state": "walk",
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.471,
+      "groundLiftPx": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        1
+      ]
+    },
+    {
+      "key": "valkyrie_greatsword_run",
+      "state": "chase",
+      "loopStart": 1,
+      "contactFrames": [
+        4,
+        7
+      ],
+      "strideUnits": 0.591,
+      "groundLiftPx": [
+        0,
+        0,
+        4,
+        3,
+        0,
+        2,
+        0,
+        1
+      ]
+    },
+    {
+      "key": "valkyrie_greatsword_walk",
+      "state": "walk",
+      "loopStart": 0,
+      "contactFrames": [
+        0,
+        4
+      ],
+      "strideUnits": 0.591,
+      "groundLiftPx": [
+        2,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "key": "valkyrie_run",
+      "state": "chase",
+      "loopStart": 0,
+      "contactFrames": [
+        2,
+        6
+      ],
+      "strideUnits": 0.565,
+      "groundLiftPx": [
+        4,
+        0,
+        0,
+        10,
+        3,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "key": "valkyrie_shield_run",
+      "state": "chase",
+      "loopStart": 1,
+      "contactFrames": [
+        3,
+        6
+      ],
+      "strideUnits": 0.956,
+      "groundLiftPx": [
+        6,
+        5,
+        7,
+        2,
+        1,
+        1,
+        0,
+        3
+      ]
+    },
+    {
+      "key": "valkyrie_shield_walk",
+      "state": "walk",
+      "loopStart": 0,
+      "contactFrames": [
+        1,
+        5
+      ],
+      "strideUnits": 0.816,
+      "groundLiftPx": [
+        3,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "key": "valkyrie_walk",
+      "state": "walk",
+      "loopStart": 0,
+      "contactFrames": [
+        2,
+        6
+      ],
+      "strideUnits": 0.605,
+      "groundLiftPx": [
+        1,
+        2,
+        1,
+        2,
+        0,
+        1,
+        1,
+        1
+      ]
+    }
+  ]
+}

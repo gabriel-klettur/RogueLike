@@ -2,6 +2,7 @@ using UnityEngine;
 using Valkur.Core;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Combat;
+using Valkur.Gameplay.Player;
 using Valkur.Gameplay.Spells;
 
 namespace Valkur.UI.HUD
@@ -11,6 +12,7 @@ namespace Valkur.UI.HUD
         private GameObject _player;
         private Health _health;
         private Mana _mana;
+        private Energy _energy;
         private Experience _xp;
         private SpellCaster _caster;
         private DashAbility _dash;
@@ -20,6 +22,7 @@ namespace Valkur.UI.HUD
 
         private int _lastHp = -1;
         private int _lastMana = -1;
+        private int _lastEnergy = -1;
         private int _pendingDamage;
         private float _healBurstCooldown;
         private float _refuseCooldown;
@@ -39,6 +42,7 @@ namespace Valkur.UI.HUD
             if (_player == null) return;
 
             _mana = mana != null ? mana : _player.GetComponent<Mana>();
+            _energy = _player.GetComponent<Energy>();
             _xp = _player.GetComponent<Experience>();
             _caster = _player.GetComponent<SpellCaster>();
             _dash = _player.GetComponent<DashAbility>();
@@ -52,6 +56,7 @@ namespace Valkur.UI.HUD
                 _mana.OnManaChanged += OnManaChanged;
                 _mana.OnManaConsumed += OnManaConsumed;
             }
+            if (_energy != null) _energy.Changed += OnEnergyChanged;
             if (_xp != null)
             {
                 _xp.OnXpGained += OnXpGained;
@@ -68,9 +73,12 @@ namespace Valkur.UI.HUD
             // Seed without animating: the first values are where the player already is.
             _lastHp = -1;
             _lastMana = -1;
+            _lastEnergy = -1;
             OnHpChanged(_health.CurrentHp, _health.MaxHp);
             if (_mana != null) OnManaChanged(_mana.CurrentMana, _mana.MaxMana);
             else _manaBar.SetValue(0, 0, HudBarChange.Silent);
+            if (_energy != null) OnEnergyChanged(_energy.Normalized);
+            else _energyBar.SetValue(0, 0, HudBarChange.Silent);
             OnXpStateChanged();
             _portrait.Bind(_player);
         }
@@ -87,6 +95,7 @@ namespace Valkur.UI.HUD
                 _mana.OnManaChanged -= OnManaChanged;
                 _mana.OnManaConsumed -= OnManaConsumed;
             }
+            if (_energy != null) _energy.Changed -= OnEnergyChanged;
             if (_xp != null)
             {
                 _xp.OnXpGained -= OnXpGained;
@@ -102,6 +111,7 @@ namespace Valkur.UI.HUD
             }
             _health = null;
             _mana = null;
+            _energy = null;
             _xp = null;
             _caster = null;
             _dash = null;
@@ -163,6 +173,22 @@ namespace Valkur.UI.HUD
         }
 
         private void OnManaConsumed(int amount) => BurstSpend();
+
+        // -- Energy -----------------------------------------------------------------------
+
+        /// <summary>
+        /// A drain from running chips, exactly like a mana spend; regeneration glides silently.
+        /// <c>Energy.Changed</c> carries only the normalized fill, so the current/max pair is
+        /// read straight off the component rather than from the event's own argument.
+        /// </summary>
+        private void OnEnergyChanged(float normalized)
+        {
+            if (_energy == null) return;
+            var change = _lastEnergy >= 0 && _energy.Current < _lastEnergy
+                ? HudBarChange.Damage : HudBarChange.Silent;
+            _energyBar.SetValue(_energy.Current, _energy.Max, change);
+            _lastEnergy = _energy.Current;
+        }
 
         private void OnCastRefused(string spellKey)
         {

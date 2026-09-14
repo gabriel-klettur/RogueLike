@@ -163,6 +163,8 @@ namespace Valkur.Gameplay
             // OnDamagedBy rather than OnHpChanged: a heal must not interrupt a cast, and a blow
             // armour reduced to nothing still counts as being hit.
             if (_health != null) _health.OnDamagedBy += HandleCastInterruption;
+            // A blow throws running momentum away (PlayerController.Locomotion).
+            if (_health != null) _health.OnDamaged += HandleLocomotionHit;
         }
 
         // The Gameplay map itself is owned by InputService and the player creates no
@@ -173,6 +175,7 @@ namespace Valkur.Gameplay
         {
             PlayerStance.OnChanged -= OnStanceChanged;
             if (_health != null) _health.OnDamagedBy -= HandleCastInterruption;
+            if (_health != null) _health.OnDamaged -= HandleLocomotionHit;
         }
     }
 }

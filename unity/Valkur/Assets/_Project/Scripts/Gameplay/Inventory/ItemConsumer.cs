@@ -99,6 +99,9 @@ namespace Valkur.Gameplay.Inventory
                 _mana.Restore(Mathf.RoundToInt(item.mana));
 
             // Energy
+            // Resolved lazily: the player's Energy is added by EntitySetup's progression pass,
+            // which can run after this component's Awake cached a null.
+            if (_energy == null) _energy = GetComponent<Energy>();
             if (item.energy != 0 && _energy != null)
                 _energy.Restore(Mathf.RoundToInt(item.energy));
 
