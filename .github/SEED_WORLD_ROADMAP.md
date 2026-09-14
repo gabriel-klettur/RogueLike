@@ -347,7 +347,7 @@ ESC -> Seed World -> Modo EN VIVO / HORNEADO
 - ~~Menu principal~~: hecho, "Partida con semilla" (solo con el laboratorio encendido), ver abajo.
 - Edificios, arboles y spawners se cargan todos al entrar (bien a 400x400; un mundo de 2048x600 serian ~5000
   arboles instanciados de golpe). Streaming por zona de esas capas = siguiente paso si se hacen mundos grandes.
-- El auto-brush del Tile editor no tiene la matriz `terrains` de una zona generada que nunca se guardo.
+- ~~El auto-brush del Tile editor no tiene la matriz `terrains` de una zona generada que nunca se guardo~~: hecho.
 - Caminos entre pueblos, puentes, arte de nieve/desierto/pantano, habitantes fuera del pueblo inicial.
 
 ## Separacion del juego: laboratorio y billete de vuelta (2026-09-14)
@@ -444,10 +444,32 @@ guarda, y los tres fixtures que ejercitan el directorio real a proposito lo apar
 
 ### Abierto
 
-- **Streaming por zona de edificios, arboles y spawners** para mundos grandes.
-- **Auto-brush** sobre zonas generadas nunca guardadas (la matriz `terrains` existe en memoria pero no llega al
-  `TerrainMap` del Tile editor).
+- **Streaming por zona de edificios, arboles y spawners** para mundos grandes. No es solo instanciar por zona: el
+  guardado del editor de Buildings enumera los edificios VIVOS de la escena (con guardas de recuento), asi que con
+  zonas sin cargar borraria o rechazaria sus filas; el altar del pueblo inicial dejaria de existir para el registro
+  de altares cuando su zona se suelta (y la muerte lejos de el pasaria al rescate corto); y los arboles talados se
+  restauran por id de instancia. Hace falta que ese guardado escriba una TABLA (como `PlacedEntityService`) antes.
+- ~~Auto-brush sobre zonas generadas nunca guardadas~~: hecho (`e2e14c40c`), el streamer vuelca y retira el terreno
+  por vertice de cada zona que pinta.
 - Caminos entre pueblos, puentes, arte de nieve/desierto/pantano, habitantes fuera del pueblo inicial.
 - Cada partida con semilla crea un slot `partida_<semilla>` que nadie borra.
-- La verificacion EN VIVO del billete (ida, guardado fuera, vuelta al punto exacto) esta cubierta por EditMode; el
-  recorrido completo en Play Mode queda por hacer en una sesion que no sea la del usuario jugando.
+- **Salir a otro slot guarda la lista de zonas VIVA del mundo base**, y eso incluye zonas de la base de datos que la
+  copia de trabajo no tenia: en la prueba en vivo entro `dungeon` (45 -> 46) y se reescribio
+  `Data/Backups/map_editor_zones.json.bak` (versionado). Es el comportamiento previo de cualquier cambio de slot del
+  Map editor, no de Seed World; se restauro a mano tras la prueba.
+
+### Verificado en vivo (2026-09-14, partida real del usuario, restaurada despues)
+
+- **Ida:** desde Pepitoria (142.15448, 66.79033, "Forest") a un mundo en vivo de semilla 1337 (8x8 zonas, 4 pueblos,
+  96 edificios, 631 arboles; generar 142 ms, escribir 11 ms, cargar 1368 ms). Billete en disco con esa posicion
+  exacta, puntero de slot movido, jugador en el pueblo inicial (25.5, 19.5).
+- **Fuera:** clave de niebla del minimapa `map:<slot>`; 9 zonas pintadas con su terreno en el mapa del auto-brush;
+  `SaveImmediately` escribio el autoguardado con la posicion y la zona de CASA, y el guardado de salida al parar Play
+  tambien.
+- **Sesion terminada fuera:** parar Play dejo puntero y billete en disco; la siguiente entrada en Play los retiro
+  antes de cargar ninguna escena.
+- **Menu:** con el laboratorio encendido la fila "Partida con semilla" aparece entre "Partida nueva" y "Opciones".
+- Despues: laboratorio apagado, slot de prueba y su backup borrados, copia de trabajo, espejo, carpeta de la partida y
+  el backup versionado devueltos byte a byte al estado previo. La vuelta a Pepitoria al punto exacto se cubre con
+  `MapEditorBaseWorldIsolationTests.ATripOutOfPepitoria_ComesBackToTheExactSpotItLeftFrom`: la sesion de Play la
+  tomo otra ejecucion de tests antes de probarla en vivo.
