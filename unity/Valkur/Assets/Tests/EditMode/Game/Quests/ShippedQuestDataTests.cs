@@ -32,7 +32,7 @@ namespace Valkur.Tests.EditMode.Game.Quests
     public class ShippedQuestDataTests
     {
         private const string CatalogPath = "Assets/_Project/Resources/Quests/QuestCatalog.asset";
-        private const int ExpectedQuestCount = 10;
+        private const int ExpectedQuestCount = 11;
 
         private QuestCatalog _catalog;
 
@@ -199,6 +199,14 @@ namespace Valkur.Tests.EditMode.Game.Quests
                         case ObjectiveKind.Talk:
                             if (!_personaIds.Contains(o.targetId))
                                 problems.Add($"{where}: no persona with id '{o.targetId}'");
+                            break;
+
+                        case ObjectiveKind.ReachSkill:
+                            if (Valkur.Data.GatheringSkillCatalog.Shared == null ||
+                                Valkur.Data.GatheringSkillCatalog.Shared.Find(o.targetId) == null)
+                                problems.Add($"{where}: no gathering skill with key '{o.targetId}'");
+                            if (o.count < 1 || o.count > 100)
+                                problems.Add($"{where}: a skill percent of {o.count} can never be reached");
                             break;
 
                         case ObjectiveKind.Reach:

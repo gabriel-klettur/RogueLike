@@ -45,6 +45,9 @@ namespace Valkur.Gameplay.Quests
                 case KillCountObjective kill:
                     return TryLocateNearestMonster(kill.MonsterKey, out position, out label);
 
+                case FellTreesObjective fell:
+                    return TryLocateNearestTree(fell.TreeFilter, out position, out label);
+
                 default:
                     // Collect, Craft, CastSpell, Survive, ReachLevel, EarnCoins.
                     return false;
@@ -129,6 +132,39 @@ namespace Valkur.Gameplay.Quests
                 best = d;
                 position = brains[i].transform.position;
                 label = ShortLabel(string.IsNullOrEmpty(def.displayName) ? def.monsterKey : def.displayName);
+                found = true;
+            }
+            return found;
+        }
+
+        /// <summary>
+        /// The nearest STANDING tree the objective counts — never a stump, for the same reason a
+        /// kill marker never points at a corpse.
+        /// </summary>
+        private static bool TryLocateNearestTree(string filter, out Vector2 position, out string label)
+        {
+            position = default;
+            label = string.Empty;
+
+            var player = EntityRegistry.PlayerTransform;
+            if (player == null) return false;
+
+            var nodes = UnityEngine.Object.FindObjectsOfType<HarvestNode>();
+            float best = float.MaxValue;
+            bool found = false;
+
+            for (int i = 0; i < nodes.Length; i++)
+            {
+                var node = nodes[i];
+                if (node.IsSpent || node.Mode != HarvestMode.Destroy) continue;
+                if (!FellTreesObjective.Matches(filter, node.Profile)) continue;
+
+                float d = (node.InteractionPosition - (Vector2)player.position).sqrMagnitude;
+                if (d >= best) continue;
+
+                best = d;
+                position = node.InteractionPosition;
+                label = ShortLabel("Árbol");
                 found = true;
             }
             return found;

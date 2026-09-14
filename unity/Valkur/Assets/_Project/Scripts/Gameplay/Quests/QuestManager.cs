@@ -377,6 +377,10 @@ namespace Valkur.Gameplay.Quests
                     return new ReachLevelObjective(id, desc, count);
                 case ObjectiveKind.EarnCoins:
                     return new EarnCoinsObjective(id, desc, count);
+                case ObjectiveKind.FellTrees:
+                    return new FellTreesObjective(id, desc, count, entry.targetId);
+                case ObjectiveKind.ReachSkill:
+                    return new ReachSkillObjective(id, desc, count, entry.targetId);
                 default:
                     Debug.LogWarning($"[QuestManager] Unsupported ObjectiveKind '{entry.kind}' " +
                                      $"on quest '{questId}'. Add a case to BuildObjective.");
@@ -423,6 +427,10 @@ namespace Valkur.Gameplay.Quests
                     return $"Alcanza el nivel {entry.count}";
                 case ObjectiveKind.EarnCoins:
                     return $"Reune {entry.count} monedas";
+                case ObjectiveKind.FellTrees:
+                    return entry.count == 1 ? "Tala 1 árbol" : $"Tala {entry.count} árboles";
+                case ObjectiveKind.ReachSkill:
+                    return $"Alcanza el {entry.count}% en {what}";
                 default:
                     return "Objetivo";
             }

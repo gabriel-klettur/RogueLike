@@ -409,6 +409,31 @@ namespace Valkur.EditorTools.Quests
                 xp: 5000, coins: 1500, skillPoints: 3, arcanePoints: 3,
                 items: new[] { "knight_longsword" }, itemCounts: new[] { 1 }));
 
+            // ── 11. S — la leña. El oficio: talar, aprender, traer lo que solo sabe quien aprendió.
+            // The one quest that teaches the woodcutting skill. Its last step is a wood that only
+            // appears past 18 % (birch), so the errand cannot be finished by felling six trees at
+            // 0 % — it is a quest about getting BETTER at something, which no other quest is.
+            list.Add(Make(
+                id: "q_lena_invierno",
+                name: "Leña para el invierno",
+                line: "pavel",
+                giver: "vendor_lumberjack_pavel", turnIn: "vendor_lumberjack_pavel",
+                reqLevel: 1, recLevel: 2,
+                desc: "Pavel se ha hecho mayor para el hacha y el invierno no espera. Necesita a " +
+                      "alguien que sepa talar, y si no sabe, que aprenda.",
+                hook: "Cualquiera tumba un árbol a golpes. Lo que quiero es alguien que sepa cuál " +
+                      "tumbar. Tala seis, aprende el oficio hasta que se te note, y tráeme tres " +
+                      "troncos de abedul: esos no te los da un árbol si no sabes pedírselos.",
+                done: "Abedul, y bien cortado. Tienes mano. Quédate con esto y vuelve cuando " +
+                      "encuentres roble.",
+                objectives: new[]
+                {
+                    Obj(ObjectiveKind.FellTrees, "", 6, "Tala 6 árboles"),
+                    Obj(ObjectiveKind.ReachSkill, "woodcutting", 20, "Alcanza el 20% en Tala"),
+                    Obj(ObjectiveKind.Collect, "wood_14", 3, "Lleva 3 troncos de abedul", consume: true),
+                },
+                xp: 320, coins: 180));
+
             return list;
         }
 

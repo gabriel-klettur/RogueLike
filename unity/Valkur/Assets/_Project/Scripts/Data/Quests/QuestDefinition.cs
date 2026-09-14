@@ -170,5 +170,12 @@ namespace Valkur.Data
 
         /// <summary>Hold N coins in the purse at once.</summary>
         EarnCoins = 8,
+
+        /// <summary>Fell N trees (or nodes). targetId narrows it to a tree family key such as
+        /// "ancient", or to a profile name; empty means any.</summary>
+        FellTrees = 9,
+
+        /// <summary>Reach N % in a gathering skill (targetId = skillKey). Polled.</summary>
+        ReachSkill = 10,
     }
 }
