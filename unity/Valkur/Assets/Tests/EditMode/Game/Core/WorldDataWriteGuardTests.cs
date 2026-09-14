@@ -52,6 +52,22 @@ namespace Valkur.Tests.EditMode.Game.Core
         }
 
         [Test]
+        public void EnteringPlayModeMidRun_DoesNotSwitchTheGuardOff()
+        {
+            // Play Mode runs every SubsystemRegistration hook. Another session pressing Play during
+            // a run used to clear the run flag through this hook, and the rest of the run wrote the
+            // shipped world: 323 buildings became 1 on 2026-09-14.
+            var reset = typeof(WorldDataWriteGuard).GetMethod("ResetWorldDataWriteGuardStatics",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            Assert.IsNotNull(reset, "The reset hook was renamed; re-point this test at it.");
+
+            reset.Invoke(null, null);
+
+            Assert.IsTrue(WorldDataWriteGuard.TestRunActive,
+                "A Play session starting mid-run must not end the run as far as the guard is concerned.");
+        }
+
+        [Test]
         public void RefusesAWriteToTheShippedPath()
         {
             LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex(

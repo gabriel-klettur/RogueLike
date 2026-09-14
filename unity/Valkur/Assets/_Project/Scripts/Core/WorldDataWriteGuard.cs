@@ -43,6 +43,18 @@ namespace Valkur.Core
     /// </summary>
     public static class WorldDataWriteGuard
     {
+        // NOT reset on SubsystemRegistration, and that is the fix for a real wipe. Entering Play
+        // Mode runs every SubsystemRegistration hook, so a reset here meant that ANOTHER session
+        // pressing Play in the middle of a test run switched the guard off for the rest of the
+        // run. Measured 2026-09-14: a run started at 18:15:38, a Play started during it, and at
+        // 18:15:46 buildings_instances.json went from 323 placements to 1 and
+        // particles_instances.json from 188 emitters to 476 bytes, with no refusal logged. The
+        // flag belongs to the test-framework hook, which ends it; a stale TRUE after an orphaned
+        // run only refuses writes until the next run or domain reload, which is the safe way
+        // for this flag to be wrong.
+        [SelfHealingStatic("Owned by WorldDataWriteGuardTestHook's run callbacks, which set and clear it. " +
+                           "Resetting it on SubsystemRegistration switched the guard off whenever Play Mode " +
+                           "was entered mid-run, which wiped the shipped buildings and particles on 2026-09-14.")]
         private static bool s_testRunActive;
         private static int s_allowDepth;
         private static int s_refusals;
@@ -54,7 +66,6 @@ namespace Valkur.Core
             // Domain Reload is OFF. Everything here would otherwise survive into the next Play
             // session, including an opt-in armed by a fixture that never tore down — which is the
             // precise failure this class exists to remove.
-            s_testRunActive = false;
             s_allowDepth = 0;
             s_refusals = 0;
             s_reported.Clear();
