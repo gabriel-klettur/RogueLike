@@ -56,8 +56,7 @@ namespace Valkur.UI.MainMenu
                 bool hasRun  = dataIdx < _mmLoadRuns.Count;
                 bool selRun  = dataIdx == _mmLoadRunSel;
 
-                _mmRunPills[i].color = selRun && hasRun ? PillColor  : Color.clear;
-                _mmRunBars[i].color  = selRun && hasRun ? AccentGold : Color.clear;
+                _mmRunPills[i].color = selRun && hasRun ? Color.white : Color.clear;
                 _mmRunTexts[i].color = selRun && hasRun ? TextSelected : TextNormal;
 
                 if (hasRun)
@@ -88,8 +87,7 @@ namespace Valkur.UI.MainMenu
                 bool hasSave = currentRun != null && i < currentRun.saves.Count;
                 bool selSave = i == _mmLoadSaveSel;
 
-                _mmSavePills[i].color = selSave && hasSave ? PillColor  : Color.clear;
-                _mmSaveBars[i].color  = selSave && hasSave ? AccentGold : Color.clear;
+                _mmSavePills[i].color = selSave && hasSave ? Color.white : Color.clear;
                 _mmSaveTexts[i].color = selSave && hasSave ? TextSelected : TextNormal;
 
                 if (hasSave)

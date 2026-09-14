@@ -56,6 +56,34 @@ namespace Valkur.Gameplay.Editors.General
             _confirmCancel  = cancel;
             _confirmOk.onClick.AddListener(AcceptConfirm);
             _confirmCancel.onClick.AddListener(CancelConfirm);
+            SkinConfirmDialog(root, _confirmOk, _confirmCancel);
+        }
+
+        /// <summary>
+        /// The dialog in the launcher's housing. <see cref="UIConfirmDialog"/> is shared by other
+        /// editors and stays as it is; this reskins the one instance the launcher owns, the same
+        /// way <see cref="SkinPanel"/> reskins what <c>MakeDropPanel</c> built.
+        /// </summary>
+        private static void SkinConfirmDialog(GameObject root, Button ok, Button cancel)
+        {
+            var panel = root.transform.Find("Panel");
+            if (panel != null)
+            {
+                var flat = panel.GetComponent<Image>();
+                if (flat != null) flat.color = Color.clear;
+                var outline = panel.GetComponent<Outline>();
+                if (outline != null) outline.enabled = false;
+                var frame = Valkur.UI.Frontend.BevelFrameGraphic.Create(panel, "Frame");
+                frame.Thickness = 4f;
+                frame.ShadowScale = 1.4f;
+                frame.Brackets = true;
+                frame.Tint = UITheme.DANGER;
+                frame.transform.SetAsFirstSibling();
+                var le = frame.gameObject.AddComponent<LayoutElement>();
+                le.ignoreLayout = true;
+            }
+            EditorFrontendSkin.SkinButton(ok, UITheme.DANGER_IDLE, UITheme.DANGER);
+            EditorFrontendSkin.SkinButton(cancel, UITheme.BTN_NORMAL, UITheme.BTN_HOVER);
         }
 
         private void AcceptConfirm()

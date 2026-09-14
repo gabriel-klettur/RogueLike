@@ -13,16 +13,19 @@ namespace Valkur.Gameplay.Editors.General
     public partial class GeneralEditorManager
     {
         // ── Layout constants (kept here so UI is self-describing) ──────────────
-        private const float PANEL_WIDTH       = 280f;
+        // Five talent-style tiles a row: 8 + 5 x 62 + 4 x 6 + 8. The width is what the tiles need,
+        // never the other way round — a tile narrower than its label wraps the name onto a third line.
+        internal const float PANEL_WIDTH      = 350f;
         private const float PANEL_X_OFFSET    = 8f;
         private const float PANEL_Y_OFFSET    = TileEditorUIHelpers.PANEL_TOP_OFFSET;
         internal const float SECTION_HDR_H    = 18f;
         internal const float SECTION_SPACING  = 6f;
-        internal const float BUTTON_HEIGHT    = 26f;
-        internal const float GRID_SPACING     = 4f;
-        internal const int   GRID_COLUMNS     = 3;
+        // A tile: 3 px margin, the 46 px socket, 4 px gap, two lines of label.
+        internal const float BUTTON_HEIGHT    = 76f;
+        internal const float GRID_SPACING     = 6f;
+        internal const int   GRID_COLUMNS     = 5;
         private const float CLOSE_BTN_WIDTH   = 20f;
-        internal const float TAB_HEIGHT       = 24f;
+        internal const float TAB_HEIGHT       = 26f;
 
         // MakeDropPanel's content layout — (8, 8, 6, 6) padding and 4 spacing. The live
         // values are read back from the built group in ApplyDerivedHeight; these are the
@@ -36,8 +39,8 @@ namespace Valkur.Gameplay.Editors.General
         private GameObject     _firstEntryGo;
 
         // (button, source entry) so RefreshActiveStates can repaint without rebuilding.
-        private readonly List<(Image bg, Button btn, GeneralEditorEntry entry)> _entryButtons =
-            new List<(Image, Button, GeneralEditorEntry)>();
+        private readonly List<(GeneralEditorTile tile, Button btn, GeneralEditorEntry entry)> _entryButtons =
+            new List<(GeneralEditorTile, Button, GeneralEditorEntry)>();
 
         // One container and one tab button per section. Sections are built ONCE and shown or
         // hidden after that — the same reason the Controls editor realises its rows per
@@ -91,6 +94,7 @@ namespace Valkur.Gameplay.Editors.General
             // launcher is never "closed" as a panel; it is deactivated as an editor, through
             // the button below, and its panel object stays active for its whole life.
             _drag.ShowCloseButton = false;
+            SkinPanel(_panelRoot);
             AddCloseButtonToHeader(_panelRoot);
 
             BuildTabStrip(contentRoot);
@@ -104,6 +108,8 @@ namespace Valkur.Gameplay.Editors.General
         partial void SetPanelVisible(bool visible)
         {
             if (_canvas == null) return;
+            // Motes of a launcher that was put away must not be waiting mid-flight when it reopens.
+            if (!visible) _motes?.Clear();
             _canvas.gameObject.SetActive(visible);
         }
 
@@ -111,8 +117,8 @@ namespace Valkur.Gameplay.Editors.General
         {
             for (int i = 0; i < _entryButtons.Count; i++)
             {
-                var (bg, btn, entry) = _entryButtons[i];
-                if (bg == null || entry?.IsActive == null) continue;
+                var (tile, _, entry) = _entryButtons[i];
+                if (tile == null || entry?.IsActive == null) continue;
                 // Only the open tab is on screen; repainting the other 24 buttons asks every
                 // one of their IsActive delegates a question nobody can see the answer to.
                 if (entry.Section != _activeTab) continue;
@@ -120,17 +126,9 @@ namespace Valkur.Gameplay.Editors.General
                 try { active = entry.IsActive(); }
                 catch { active = false; }
 
-                var tint = active ? UITheme.ACCENT_BG : UITheme.BTN_NORMAL;
-                bg.color = tint;
-                // The Button's own transition writes normalColor back onto the graphic
-                // whenever the pointer leaves, so an "active" tint set only on the Image
-                // survived exactly until the first hover.
-                if (btn != null)
-                {
-                    var c = btn.colors;
-                    c.normalColor = tint;
-                    btn.colors    = c;
-                }
+                // The socket's corner gem lights, the same for every entry; the icon keeps its
+                // own colour. Turning on is an event and the tile answers it with particles.
+                tile.SetActiveState(active);
             }
         }
 
@@ -220,6 +218,14 @@ namespace Valkur.Gameplay.Editors.General
             return tallest;
         }
 
+        /// <summary>
+        /// The width the tile grid needs: its padding, every column and the gaps between them.
+        /// Pinned against <see cref="PANEL_WIDTH"/> by the tests, so a constant tuned on one side
+        /// cannot quietly leave a column hanging outside the frame.
+        /// </summary>
+        internal static float GridWidth(float cellWidth)
+            => 8f + 8f + GRID_COLUMNS * cellWidth + (GRID_COLUMNS - 1) * GRID_SPACING;
+
         internal static float GridHeight(int entryCount)
         {
             int rows = (entryCount + GRID_COLUMNS - 1) / GRID_COLUMNS;
@@ -240,8 +246,13 @@ namespace Valkur.Gameplay.Editors.General
                 spacing = group.spacing;
             }
 
+            // BOTH axes are derived, never restored. The workspace hands back the size the panel
+            // HAD, and a document saved when the launcher was 280 wide put the fifth column of
+            // tiles and half of "HERRAMIENTAS" outside the frame (reported from Play, 2026-09-14):
+            // only the height was being re-derived. The grid's cell size is computed from
+            // PANEL_WIDTH, so any other width is a grid that does not fit its panel.
             var rt = (RectTransform)_panelRoot.transform;
-            rt.sizeDelta = new Vector2(rt.sizeDelta.x,
+            rt.sizeDelta = new Vector2(PANEL_WIDTH,
                 ComputePanelHeight(_entries, _activeTab, padV, spacing));
         }
 
@@ -320,12 +331,7 @@ namespace Valkur.Gameplay.Editors.General
             hlg.childForceExpandHeight = true;
 
             foreach (GeneralEditorSection section in System.Enum.GetValues(typeof(GeneralEditorSection)))
-            {
-                var captured = section;
-                var bg = EditorUIHelpers.AddActionBtn(rowGo.transform, TabLabel(section), TAB_HEIGHT,
-                    onClick: () => SelectTab(captured), tmp: out var tmp, fontSize: 9f);
-                _tabs[section] = (bg, bg.GetComponent<Button>(), tmp);
-            }
+                _tabs[section] = BuildTab(rowGo.transform, section);
         }
 
         /// <summary>Show one section, hide the others, and repaint the strip.</summary>
@@ -336,18 +342,9 @@ namespace Valkur.Gameplay.Editors.General
             foreach (var kv in _sectionRoots)
                 if (kv.Value != null) kv.Value.SetActive(kv.Key == section);
 
-            foreach (var kv in _tabs)
-            {
-                var (bg, btn, tmp) = kv.Value;
-                bool on = kv.Key == section;
-                // Through UIButton.SetTint rather than by writing the Image: a Button on the
-                // default ColorTint transition multiplies its ColorBlock into the graphic, so
-                // a raw write renders the product and the ACTIVE tab comes out darker than
-                // the inactive ones — measured at 3 vs 108 luminance in the Skills editor.
-                if (btn != null) UIButton.SetTint(btn, on ? UITheme.ACCENT_BG : UITheme.BTN_NORMAL);
-                else if (bg != null) bg.color = on ? UITheme.ACCENT_BG : UITheme.BTN_NORMAL;
-                if (tmp != null) tmp.color = on ? UITheme.ACCENT : UITheme.TEXT_SECONDARY;
-            }
+            // The chosen tab is the loading bar FILLED, the others its empty groove — geometry,
+            // so no ColorBlock multiplies into it (the Skills editor's 3-vs-108 luminance trap).
+            PaintTabs(section);
 
             // The keyboard focus was on a button that may now be hidden; pressing Enter on a
             // disabled object does nothing, which reads as the launcher having stopped
@@ -363,8 +360,8 @@ namespace Valkur.Gameplay.Editors.General
         {
             for (int i = 0; i < _entryButtons.Count; i++)
             {
-                var (bg, _, entry) = _entryButtons[i];
-                if (bg != null && entry != null && entry.Section == section) return bg.gameObject;
+                var (tile, _, entry) = _entryButtons[i];
+                if (tile != null && entry != null && entry.Section == section) return tile.gameObject;
             }
             return null;
         }
@@ -417,24 +414,14 @@ namespace Valkur.Gameplay.Editors.General
 
         private void AddEntryButton(Transform parent, GeneralEditorEntry entry)
         {
-            var bg = EditorUIHelpers.AddActionBtn(
-                parent, entry.Label, BUTTON_HEIGHT,
-                onClick: () => HandleEntryClicked(entry),
-                tmp: out _,
-                fontSize: 10f);
+            // A talent-style tile: socket, icon, name. Keyboard selection and hover are drawn by
+            // the tile (socket glow and brackets), so the Button carries no colour transition —
+            // uGUI's default selectedColor is near-white and read as a missing texture.
+            var tile = GeneralEditorTile.Build(parent, entry.Label, GeneralEditorIcons.GlyphFor(entry.Label), _motes,
+                                               () => HandleEntryClicked(entry), out var btn);
 
-            // uGUI's default selectedColor is near-white, so the keyboard-selected entry
-            // would light up like a missing texture. Selected reads as hovered.
-            var btn = bg.GetComponent<Button>();
-            if (btn != null)
-            {
-                var c = btn.colors;
-                c.selectedColor = UITheme.BTN_HOVER;
-                btn.colors      = c;
-            }
-
-            if (_firstEntryGo == null) _firstEntryGo = bg.gameObject;
-            _entryButtons.Add((bg, btn, entry));
+            if (_firstEntryGo == null) _firstEntryGo = tile.gameObject;
+            _entryButtons.Add((tile, btn, entry));
         }
 
         private void HandleEntryClicked(GeneralEditorEntry entry)
@@ -489,6 +476,7 @@ namespace Valkur.Gameplay.Editors.General
             var tmp           = UILabel.AddCenteredText(btnGo.transform, "X", 11f, FontStyles.Bold, UITheme.TEXT_PRIMARY);
             tmp.alignment     = TextAlignmentOptions.Center;
             tmp.raycastTarget = false;
+            SkinCloseButton(btnGo, btn);
         }
     }
 }

@@ -297,6 +297,8 @@ namespace Valkur.UI.MainMenu
             _title?.Tick(dt);
             _fx?.Tick(dt);
             _menuList?.Tick(dt);
+            if (_showingClassSelector) _classMotes?.Tick(dt);
+            TickPressToStartLine(dt);
             TickPanels(dt);
 
             if (!Mathf.Approximately(_scrimAlpha, _scrimTarget) && _scrim != null)

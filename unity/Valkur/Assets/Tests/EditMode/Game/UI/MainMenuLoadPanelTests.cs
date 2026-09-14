@@ -184,7 +184,7 @@ namespace Valkur.Tests.EditMode.Game.UI
             SetField("_mmLoadSaveSel", 1);
             InvokePrivate("UpdateMMLoadVisuals");
 
-            var pills = GetField<Image[]>("_mmSavePills");
+            var pills = GetField<Graphic[]>("_mmSavePills");
             Assert.IsNotNull(pills, "_mmSavePills must exist");
             Assert.Greater(pills.Length, 1, "Must have at least 2 save pill elements");
 
@@ -201,7 +201,7 @@ namespace Valkur.Tests.EditMode.Game.UI
             SetField("_mmLoadSaveSel", 1);
             InvokePrivate("UpdateMMLoadVisuals");
 
-            var pills = GetField<Image[]>("_mmSavePills");
+            var pills = GetField<Graphic[]>("_mmSavePills");
             Assert.IsNotNull(pills, "_mmSavePills must exist");
             Assert.Greater(pills.Length, 1, "Must have at least 2 save pill elements");
 

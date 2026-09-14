@@ -112,11 +112,14 @@ namespace Valkur.UI.MainMenu
             RefreshVideoRows();
         }
 
+        private static readonly Color ArrowRest = new Color(0.72f, 0.72f, 0.72f, 1f);
+        private static readonly Color ArrowPressed = new Color(0.55f, 0.55f, 0.55f, 1f);
+
         private void AddVideoArrow(MenuRow row, bool left, UnityEngine.Events.UnityAction onClick)
         {
-            var sprite = left ? _art.ArrowLeft : _art.ArrowRight;
-            var img = MenuUIKit.Sprite(left ? "Left" : "Right", row.Content, sprite,
-                                       Style.TextDim, UnityEngine.UI.Image.Type.Simple, raycast: true);
+            // Geometry in the bevel's metal (FrontendArrowGraphic), not a point-filtered sprite.
+            var img = Frontend.FrontendArrowGraphic.Create(row.Content, left ? "Left" : "Right", left);
+            img.raycastTarget = true;
             var rt = (RectTransform)img.transform;
             rt.anchorMin = rt.anchorMax = new Vector2(left ? 0.06f : 0.94f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
@@ -126,9 +129,10 @@ namespace Valkur.UI.MainMenu
             btn.targetGraphic = img;
             btn.transition = UnityEngine.UI.Selectable.Transition.ColorTint;
             var colours = btn.colors;
-            colours.normalColor = Color.white;
-            colours.highlightedColor = new Color(1.4f, 1.3f, 1f, 1f);
-            colours.pressedColor = new Color(0.7f, 0.7f, 0.7f, 1f);
+            // The metal is in the mesh; the block dims it at rest and lets it full on hover.
+            colours.normalColor = ArrowRest;
+            colours.highlightedColor = Color.white;
+            colours.pressedColor = ArrowPressed;
             btn.colors = colours;
             btn.onClick.AddListener(onClick);
         }

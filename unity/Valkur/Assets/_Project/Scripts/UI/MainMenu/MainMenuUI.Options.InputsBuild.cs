@@ -232,10 +232,11 @@ namespace Valkur.UI.MainMenu
 
         private static int FirstBindableSlot(InputAction action)
         {
-            var bindings = action.bindings;
-            for (int i = 0; i < bindings.Count; i++)
-                if (!bindings[i].isComposite) return i;
-            return bindings.Count > 0 ? 0 : -1;
+            // InputChord.Slots folds a Shift+key chord into one slot whose index is the KEY, so a
+            // rebind from the menu moves the key and keeps the modifier.
+            var slots = InputChord.Slots(action);
+            if (slots.Count > 0) return slots[0].Index;
+            return action.bindings.Count > 0 ? 0 : -1;
         }
 
         private void ResetControlsToDefaults()

@@ -120,8 +120,10 @@ namespace Valkur.UI.MainMenu
             for (int i = 0; i < _mmConfirmPills.Length; i++)
             {
                 bool sel = i == _mmConfirmSel;
-                _mmConfirmPills[i].color = sel ? PillColor    : new Color(1f, 1f, 1f, 0.04f);
-                _mmConfirmTexts[i].color = sel ? TextSelected : TextNormal;
+                var face = sel ? PillColor : Style.PanelBevel;
+                _mmConfirmPills[i].Face = face;
+                _mmConfirmPills[i].Glow = sel ? 1f : 0f;
+                _mmConfirmTexts[i].color = Kit.MenuUIKit.ReadableOn(face, Style);
                 _mmConfirmTexts[i].fontStyle = sel ? FontStyles.Bold : FontStyles.Normal;
             }
         }
@@ -143,12 +145,7 @@ namespace Valkur.UI.MainMenu
             StretchFull(_mmRenameOverlay);
             _mmRenameOverlay.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.55f);
 
-            var box = CreateUIObject("MMRenameBox", _mmRenameOverlay.transform);
-            var br = box.GetComponent<RectTransform>();
-            br.anchorMin = new Vector2(0.5f, 0.5f); br.anchorMax = new Vector2(0.5f, 0.5f);
-            br.pivot = new Vector2(0.5f, 0.5f); br.anchoredPosition = Vector2.zero;
-            br.sizeDelta = new Vector2(520f, 260f);
-            box.AddComponent<Image>().color = PanelBg;
+            var box = BuildModalBox("MMRenameBox", _mmRenameOverlay.transform, new Vector2(520f, 260f), 52f);
 
             var titleGo = CreateUIObject("Title", box.transform);
             var tr = titleGo.GetComponent<RectTransform>();
@@ -165,7 +162,12 @@ namespace Valkur.UI.MainMenu
             fr.anchorMin = new Vector2(0.5f, 0.5f); fr.anchorMax = new Vector2(0.5f, 0.5f);
             fr.pivot = new Vector2(0.5f, 0.5f); fr.anchoredPosition = new Vector2(0f, 30f);
             fr.sizeDelta = new Vector2(460f, 40f);
-            fieldGo.AddComponent<Image>().color = new Color(0.10f, 0.11f, 0.13f, 1f);
+            // A small bevelled channel, the bar's own groove, rather than a flat grey slab.
+            var fieldFrame = Frontend.BevelFrameGraphic.Create(fieldGo.transform, "FieldFrame");
+            fieldFrame.Thickness = 3f;
+            fieldFrame.ShadowScale = 0f;
+            fieldFrame.Brackets = false;
+            fieldFrame.Tint = AccentGold;
 
             var textArea = CreateUIObject("TextArea", fieldGo.transform);
             var taR = textArea.GetComponent<RectTransform>();
@@ -236,12 +238,7 @@ namespace Valkur.UI.MainMenu
             StretchFull(_mmConfirmOverlay);
             _mmConfirmOverlay.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.55f);
 
-            var box = CreateUIObject("MMConfirmBox", _mmConfirmOverlay.transform);
-            var br = box.GetComponent<RectTransform>();
-            br.anchorMin = new Vector2(0.5f, 0.5f); br.anchorMax = new Vector2(0.5f, 0.5f);
-            br.pivot = new Vector2(0.5f, 0.5f); br.anchoredPosition = Vector2.zero;
-            br.sizeDelta = new Vector2(540f, 220f);
-            box.AddComponent<Image>().color = PanelBg;
+            var box = BuildModalBox("MMConfirmBox", _mmConfirmOverlay.transform, new Vector2(540f, 220f), 0f);
 
             var msgGo = CreateUIObject("Msg", box.transform);
             var mr = msgGo.GetComponent<RectTransform>();
@@ -253,37 +250,28 @@ namespace Valkur.UI.MainMenu
             _mmConfirmText.color = TextNormal;
 
             // Two buttons: Cancel (0) / Delete (1)
-            _mmConfirmPills = new Image[2];
+            _mmConfirmPills = new Frontend.BevelFrameGraphic[2];
             _mmConfirmTexts = new TextMeshProUGUI[2];
             string[] labels = { "Cancel", "Delete" };
             float[]  xPos   = { 0.25f, 0.75f };
             for (int i = 0; i < 2; i++)
             {
                 int cap = i;
-                var btnGo = CreateUIObject($"BtnConfirm_{i}", box.transform);
-                var btnR  = btnGo.GetComponent<RectTransform>();
-                btnR.anchorMin = new Vector2(xPos[i], 0f); btnR.anchorMax = new Vector2(xPos[i], 0f);
-                btnR.pivot = new Vector2(0.5f, 0f); btnR.anchoredPosition = new Vector2(0f, 22f);
-                btnR.sizeDelta = new Vector2(180f, 40f);
-                _mmConfirmPills[i] = btnGo.AddComponent<Image>();
-                _mmConfirmPills[i].color = new Color(1f, 1f, 1f, 0.04f);
-                var btn = btnGo.AddComponent<Button>(); btn.targetGraphic = _mmConfirmPills[i];
-                btn.onClick.AddListener(() =>
+                // Both buttons start with the neutral face; UpdateConfirmVisuals lights the chosen
+                // one in gold, the same "selected" the lists use.
+                var btn = Kit.MenuUIKit.Button($"BtnConfirm_{i}", box.transform, _art, Style, labels[i],
+                                               Style.PanelBevel, () =>
                 {
                     _mmConfirmSel = cap; UpdateConfirmVisuals();
                     if (cap == 1) MMDeleteSelectedSave();
                     else SetLoadMode(LoadPanelMode.List);
                 });
-
-                var lblGo = CreateUIObject("Lbl", btnGo.transform);
-                var lblR = lblGo.GetComponent<RectTransform>();
-                lblR.anchorMin = Vector2.zero; lblR.anchorMax = Vector2.one;
-                lblR.sizeDelta = Vector2.zero;
-                var lblTMP = lblGo.AddComponent<TextMeshProUGUI>();
-                lblTMP.text = labels[i]; lblTMP.fontSize = 18f;
-                lblTMP.alignment = TextAlignmentOptions.Center;
-                lblTMP.color = TextNormal; lblTMP.raycastTarget = false;
-                _mmConfirmTexts[i] = lblTMP;
+                var btnR = (RectTransform)btn.transform;
+                btnR.anchorMin = new Vector2(xPos[i], 0f); btnR.anchorMax = new Vector2(xPos[i], 0f);
+                btnR.pivot = new Vector2(0.5f, 0f); btnR.anchoredPosition = new Vector2(0f, 26f);
+                btnR.sizeDelta = new Vector2(180f, 40f);
+                _mmConfirmPills[i] = (Frontend.BevelFrameGraphic)btn.targetGraphic;
+                _mmConfirmTexts[i] = btn.GetComponentInChildren<TextMeshProUGUI>(true);
             }
 
             var hintGo = CreateUIObject("Hint", box.transform);

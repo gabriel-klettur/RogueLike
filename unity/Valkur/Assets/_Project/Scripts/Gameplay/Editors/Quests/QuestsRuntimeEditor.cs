@@ -5,6 +5,8 @@ using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.HUD;
 using Valkur.Gameplay.Quests;
+using Valkur.UI.Frontend;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Editors.Quests
 {
@@ -121,6 +123,7 @@ namespace Valkur.Gameplay.Editors.Quests
         {
             _active = false;
             _armedDangerId = null;
+            ClearSkinMotes();
             if (_root != null) _root.SetActive(false);
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.NotifyDeactivated(this);
         }
@@ -199,9 +202,11 @@ namespace Valkur.Gameplay.Editors.Quests
 
         internal void SelectQuest(string questId)
         {
+            bool changed = !string.Equals(_selectedId, questId, StringComparison.OrdinalIgnoreCase);
             _selectedId = questId;
             _armedDangerId = null;
             RefreshAll();
+            if (changed) QueueBurst(false, "QuestRow_" + questId, EditorFrontendSkin.Gold, FrontendMoteStyle.Sparks, 10);
         }
 
         internal void SetTab(Tab tab)
@@ -227,9 +232,11 @@ namespace Valkur.Gameplay.Editors.Quests
             var mgr = Manager;
             if (def == null || mgr == null) return;
 
-            if (mgr.StartQuest(def)) SetStatus($"Aceptada '{def.displayName}'.");
+            bool started = mgr.StartQuest(def);
+            if (started) SetStatus($"Aceptada '{def.displayName}'.");
             else SetStatus($"No se pudo aceptar '{def.displayName}' (ya activa o completada).");
             RefreshAll();
+            if (started) QueueBurst(true, null, EditorFrontendSkin.Gold, FrontendMoteStyle.Glints, 22);
         }
 
         /// <summary>Drops the selected quest. Two clicks — see <see cref="_armedDangerId"/>.</summary>
@@ -251,6 +258,7 @@ namespace Valkur.Gameplay.Editors.Quests
             mgr.AbandonQuest(def.questId);
             SetStatus($"Soltada '{def.displayName}'.");
             RefreshAll();
+            QueueBurst(true, null, UITheme.DANGER, FrontendMoteStyle.Embers, 18);
         }
 
         /// <summary>
@@ -271,9 +279,11 @@ namespace Valkur.Gameplay.Editors.Quests
             }
 
             _armedDangerId = null;
-            if (mgr.ForgetCompleted(def.questId)) SetStatus($"Olvidada '{def.displayName}'. Vuelve a estar disponible.");
+            bool forgot = mgr.ForgetCompleted(def.questId);
+            if (forgot) SetStatus($"Olvidada '{def.displayName}'. Vuelve a estar disponible.");
             else SetStatus("No estaba completada.");
             RefreshAll();
+            if (forgot) QueueBurst(true, null, UITheme.DANGER, FrontendMoteStyle.Embers, 18);
         }
 
         /// <summary>
@@ -290,9 +300,13 @@ namespace Valkur.Gameplay.Editors.Quests
             var quest = mgr.GetActiveQuest(def.questId);
             if (quest == null || index < 0 || index >= quest.Objectives.Count) return;
 
+            bool moved = false, finished = false;
             if (quest.Objectives[index] is ObjectiveBase ob)
             {
+                int before = ob.Current;
                 ob.ForceProgress(value);
+                moved = ob.Current != before;
+                finished = moved && ob.IsComplete;
                 SetStatus($"'{ob.Description}' -> {ob.Current}/{ob.Target}.");
             }
             else
@@ -301,6 +315,10 @@ namespace Valkur.Gameplay.Editors.Quests
             }
 
             RefreshAll();
+            // Progress is an event on THAT objective's bar; finishing it is a bigger one. If the step
+            // completed the whole quest its row is gone and the burst lands on the panel instead.
+            if (finished) QueueBurst(true, "Objective_" + index, UITheme.SUCCESS, FrontendMoteStyle.Glints, 16);
+            else if (moved) QueueBurst(true, "Objective_" + index, EditorFrontendSkin.Gold, FrontendMoteStyle.Sparks, 8);
         }
 
         /// <summary>Fills every objective, which finishes the quest by the ordinary path.</summary>
@@ -321,6 +339,7 @@ namespace Valkur.Gameplay.Editors.Quests
 
             SetStatus($"Completada '{def.displayName}'.");
             RefreshAll();
+            QueueBurst(true, null, EditorFrontendSkin.Gold, FrontendMoteStyle.Sparks, 40);
         }
 
         // ── The tracker window ─────────────────────────────────────────────────

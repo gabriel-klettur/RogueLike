@@ -67,6 +67,8 @@ namespace Valkur.Gameplay.Editors.Quests
             // way back. That is not hypothetical: it is what shipped in the Controls editor.
             _listPanel.ShowCloseButton = false;
             _detailPanel.ShowCloseButton = false;
+            // Trial of the pre-game menus' language on an authoring editor (QuestsRuntimeEditor.Skin.cs).
+            SkinPanels();
 
             BuildListPanel();
             BuildDetailPanel();
@@ -105,6 +107,7 @@ namespace Valkur.Gameplay.Editors.Quests
             tabsHlg.childControlHeight = true;
 
             _tabButtons.Clear();
+            _tabSkins.Clear();
             AddTabButton(tabs.transform, "Activas",    Tab.Active);
             AddTabButton(tabs.transform, "Ofrecidas",  Tab.Available);
             AddTabButton(tabs.transform, "Bloqueadas", Tab.Locked);
@@ -113,31 +116,32 @@ namespace Valkur.Gameplay.Editors.Quests
             var built = EditorUIHelpers.MakeScrollView(_listContent, "QuestList", 1f);
             _listScrollContent = built.content;
             UIFactory.AddVerticalScrollbar(built.scroll);
+            ClearScrollSlab(built.scroll);
 
-            EditorUIHelpers.BuildSeparator(_listContent);
+            EditorFrontendSkin.Rule(_listContent);
 
             // The tracker controls live on the LIST panel rather than in the detail, because
             // they are about the window and not about any one quest — the same reason the
             // conversation panel's Reiniciar sits at the foot of the gutter.
-            EditorUIHelpers.MakeButton(_listContent, "Seguidor: mostrar / ocultar", ToggleTracker, 24f, 11f);
-            EditorUIHelpers.MakeButton(_listContent, "Seguidor: minimizar", ToggleTrackerMinimized, 24f, 11f);
+            EditorFrontendSkin.SkinButton(
+                EditorUIHelpers.MakeButton(_listContent, "Seguidor: mostrar / ocultar", ToggleTracker, 24f, 11f),
+                UITheme.BTN_NORMAL, UITheme.BTN_HOVER);
+            EditorFrontendSkin.SkinButton(
+                EditorUIHelpers.MakeButton(_listContent, "Seguidor: minimizar", ToggleTrackerMinimized, 24f, 11f),
+                UITheme.BTN_NORMAL, UITheme.BTN_HOVER);
 
             _status = EditorUIHelpers.AddLabel(_listContent, "", 11f);
             _status.color = EditorUIHelpers.TEXT_MUTED;
         }
 
-        private void AddTabButton(Transform parent, string label, Tab tab)
-        {
-            var btn = EditorUIHelpers.MakeButton(parent, label, () => SetTab(tab), 24f, 11f);
-            btn.gameObject.name = "Tab_" + tab;
-            _tabButtons.Add(btn);
-        }
+        private void AddTabButton(Transform parent, string label, Tab tab) => AddSkinnedTab(parent, label, tab);
 
         private void BuildDetailPanel()
         {
             var built = EditorUIHelpers.MakeScrollView(_detailContent, "QuestDetail", 1f);
             _detailScrollContent = built.content;
             UIFactory.AddVerticalScrollbar(built.scroll);
+            ClearScrollSlab(built.scroll);
         }
 
         // ── Refresh ────────────────────────────────────────────────────────────
@@ -152,16 +156,9 @@ namespace Valkur.Gameplay.Editors.Quests
 
         private void RefreshTabs()
         {
-            for (int i = 0; i < _tabButtons.Count; i++)
-            {
-                if (_tabButtons[i] == null) continue;
-                bool on = (int)_tab == i;
-                // UIButton.SetTint is the single correct path: writing targetGraphic.color
-                // renders colour x normalColor, which is darker than either and reads
-                // BACKWARDS — the chosen row looking like a gap.
-                UIButton.SetTint(_tabButtons[i],
-                    on ? EditorUIHelpers.ACCENT_BG : EditorUIHelpers.BTN_NORMAL);
-            }
+            // The chosen tab is the loading bar FILLED and the rest its empty groove: geometry,
+            // so no ColorBlock multiplies into it (the reason UIButton.SetTint existed here).
+            PaintSkinnedTabs();
         }
 
         private void RefreshList()
@@ -178,10 +175,12 @@ namespace Valkur.Gameplay.Editors.Quests
             }
 
             var mgr = Manager;
+            _selectedRowFill = null;
             for (int i = 0; i < quests.Count; i++)
             {
                 var def = quests[i];
                 string label = def.displayName;
+                float progress = -1f;
 
                 // The PROGRESS is on the row, not only in the detail: the question this list
                 // is opened to answer is usually "which of these is stuck", and an author
@@ -189,15 +188,13 @@ namespace Valkur.Gameplay.Editors.Quests
                 if (mgr != null && mgr.IsActive(def.questId))
                 {
                     var quest = mgr.GetActiveQuest(def.questId);
-                    if (quest != null) label += $"   {Mathf.RoundToInt(quest.OverallProgress * 100f)}%";
+                    // The row's bar says it; a "40%" beside it was the part the bold selected label
+                    // truncated first (first capture of the skinned list).
+                    if (quest != null) progress = quest.OverallProgress;
                 }
 
-                string id = def.questId;
-                var btn = EditorUIHelpers.MakeButton(_listScrollContent, label, () => SelectQuest(id), 26f, 11f);
-                btn.gameObject.name = "QuestRow_" + def.questId;
-
-                if (string.Equals(_selectedId, def.questId, System.StringComparison.OrdinalIgnoreCase))
-                    UIButton.SetTint(btn, EditorUIHelpers.SLOT_SELECTED);
+                bool selected = string.Equals(_selectedId, def.questId, System.StringComparison.OrdinalIgnoreCase);
+                BuildQuestRow(_listScrollContent, def.questId, label, progress, selected);
             }
         }
 
@@ -240,9 +237,9 @@ namespace Valkur.Gameplay.Editors.Quests
                 }
             }
 
-            EditorUIHelpers.BuildSeparator(_detailScrollContent);
+            EditorFrontendSkin.Rule(_detailScrollContent);
             BuildObjectiveRows(def, isActive);
-            EditorUIHelpers.BuildSeparator(_detailScrollContent);
+            EditorFrontendSkin.Rule(_detailScrollContent);
             BuildActionRow(def, isActive, isDone);
         }
 
@@ -298,6 +295,8 @@ namespace Valkur.Gameplay.Editors.Quests
                 text.color = obj.IsComplete ? EditorUIHelpers.SUCCESS : EditorUIHelpers.TEXT_PRIMARY;
                 text.raycastTarget = false;
 
+                AddObjectiveBar(row.transform, obj.Target > 0 ? (float)obj.Current / obj.Target : 0f);
+
                 if (!(obj is ObjectiveBase ob)) continue;
 
                 int index = i;
@@ -310,7 +309,8 @@ namespace Valkur.Gameplay.Editors.Quests
         private void AddStepButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)
         {
             var btn = EditorUIHelpers.MakeButton(parent, label, onClick, 20f, 10f);
-            var le = btn.gameObject.AddComponent<LayoutElement>();
+            SkinStepButton(btn);
+            var le = btn.gameObject.GetComponent<LayoutElement>() ?? btn.gameObject.AddComponent<LayoutElement>();
             le.preferredWidth = 34f;
             le.flexibleWidth = 0f;
         }
@@ -321,24 +321,29 @@ namespace Valkur.Gameplay.Editors.Quests
 
             if (isActive)
             {
-                EditorUIHelpers.MakeButton(_detailScrollContent, "Completar (paga recompensas)",
+                var complete = EditorUIHelpers.MakeButton(_detailScrollContent, "Completar (paga recompensas)",
                     CompleteSelected, 26f, 11f);
+                complete.gameObject.name = "QuestCompleteButton";
+                EditorFrontendSkin.SkinButton(complete, EditorFrontendSkin.Gold, UITheme.SUCCESS);
 
                 var drop = EditorUIHelpers.MakeDangerButton(_detailScrollContent,
                     armed ? "Seguro? Soltar" : "Soltar mision", DropSelected, 26f);
                 drop.gameObject.name = "QuestDropButton";
+                EditorFrontendSkin.SkinButton(drop, armed ? UITheme.DANGER : UITheme.DANGER_IDLE, UITheme.DANGER);
             }
             else if (isDone)
             {
                 var forget = EditorUIHelpers.MakeDangerButton(_detailScrollContent,
                     armed ? "Seguro? Olvidar" : "Olvidar (volver a ofrecerla)", ForgetSelected, 26f);
                 forget.gameObject.name = "QuestForgetButton";
+                EditorFrontendSkin.SkinButton(forget, armed ? UITheme.DANGER : UITheme.DANGER_IDLE, UITheme.DANGER);
             }
             else
             {
                 var accept = EditorUIHelpers.MakeButton(_detailScrollContent,
                     "Aceptar (sin hablar con nadie)", AcceptSelected, 26f, 11f);
                 accept.gameObject.name = "QuestAcceptButton";
+                EditorFrontendSkin.SkinButton(accept, EditorFrontendSkin.Gold, UITheme.SUCCESS);
             }
         }
 

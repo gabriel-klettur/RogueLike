@@ -275,8 +275,15 @@ namespace Valkur.Tests.EditMode.Editors.General
 
         // ── Keyboard ─────────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Rewritten when the entries became talent-style tiles. The old form pinned the
+        /// ColorBlock's selectedColor to the hover tint, because uGUI's near-white default read as
+        /// a missing texture. The tiles carry no colour transition at all now — selection is drawn
+        /// by the tile's socket — so the equivalent promise is: no transition that could paint the
+        /// default white, and keyboard selection lights the socket exactly as hover does.
+        /// </summary>
         [Test]
-        public void EntryButtons_SelectedColour_IsTheHoverTint_NotDefaultWhite()
+        public void EntryTiles_KeyboardSelection_LightsTheSocket_WithNoColourTransition()
         {
             var ed    = CreateLauncher();
             var panel = PanelOf(ed);
@@ -286,9 +293,16 @@ namespace Valkur.Tests.EditMode.Editors.General
             Assert.IsNotEmpty(buttons);
 
             foreach (var b in buttons)
-                Assert.AreEqual(UITheme.BTN_HOVER, b.colors.selectedColor,
-                    $"'{b.name}': the keyboard-selected entry must read as hovered. uGUI's default " +
-                    "selectedColor is near-white, which on this theme looks like a missing texture.");
+            {
+                Assert.AreEqual(Selectable.Transition.None, b.transition,
+                    $"'{b.name}': a colour transition would paint uGUI's near-white selectedColor over the tile.");
+                var tile = b.GetComponent<GeneralEditorTile>();
+                Assert.IsNotNull(tile, $"'{b.name}' is not a launcher tile.");
+                tile.OnSelect(null);
+                tile.Tick(0.5f);
+                Assert.IsTrue(tile.Socket.Brackets, $"'{b.name}': keyboard selection did not light its socket.");
+                tile.OnDeselect(null);
+            }
         }
 
         // ── Confirm dialog ───────────────────────────────────────────────────────

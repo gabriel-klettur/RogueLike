@@ -70,6 +70,8 @@ namespace Valkur.UI.MainMenu
                                                      TextAlignmentOptions.Center, bold: true);
             _pressToStartText.characterSpacing = 10f;
 
+            BuildPressToStartLine(_pressToStartOverlay.transform);
+
             _pressToStartActive = true;
             _breathTimer = 0f;
 
@@ -145,14 +147,10 @@ namespace Valkur.UI.MainMenu
 
             if (silent) return;
             _sfx?.Confirm();
-            // A ring out of the middle of the screen, once. It is the only thing that happens on
-            // this screen, so it is allowed to be the loudest beat in the menu.
-            if (_fx != null && !ReduceMotion)
-            {
-                var rect = ((RectTransform)_fx.transform).rect;
-                _fx.Burst(new Vector2(rect.width * 0.5f, rect.height * 0.5f - 92f), 22,
-                          Style.Gold, 210f, 0.7f, MenuMoteShape.Spark);
-            }
+            // The threshold line bursts along its whole length, once — the loading bar's READY
+            // finale. It is the only thing that happens on this screen, so it is allowed to be
+            // the loudest beat in the menu.
+            if (!ReduceMotion) BurstPressToStartLine();
             _title?.Sweep();
         }
     }

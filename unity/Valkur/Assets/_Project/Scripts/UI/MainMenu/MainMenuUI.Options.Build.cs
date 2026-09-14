@@ -117,7 +117,8 @@ namespace Valkur.UI.MainMenu
                 int captured = i;
                 var slider = new MenuSlider(row.Content, _art, style, spec.Min, spec.Max,
                                             spec.Get(), spec.Step,
-                                            v => OnAudioValueChanged(captured, v), spec.Notches);
+                                            v => OnAudioValueChanged(captured, v), spec.Notches,
+                                            _audioList.Motes);
                 _audioSliders.Add(slider);
                 // Touching row.Value is what CREATES the value column — it is built lazily, so a
                 // row with nothing to say costs no TMP component. The discard says the call is
@@ -190,8 +191,11 @@ namespace Valkur.UI.MainMenu
                 y += style.rowHeight + style.rowGap;
             }
             if (_audioAdvancedRowIndex >= 0 && _audioAdvancedRowIndex < _audioRows.Count)
+            {
                 _audioRows[_audioAdvancedRowIndex].Value.text =
                     _audioShowAdvanced ? MenuText.VideoOn : MenuText.VideoOff;
+                _audioRows[_audioAdvancedRowIndex].SetToggle(_audioShowAdvanced);
+            }
 
             float content = Mathf.Max(0f, y - style.rowGap);
             _audioPanel?.FitToContent(content);

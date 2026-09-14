@@ -18,11 +18,10 @@ namespace Valkur.UI.MainMenu
             rlR.pivot = new Vector2(0f, 1f); rlR.sizeDelta = Vector2.zero;
             rlR.anchoredPosition = Vector2.zero;
 
-            _mmRunPills        = new Image[MM_RUN_ROWS];
-            _mmRunBars         = new Image[MM_RUN_ROWS];
+            _mmRunPills        = new Graphic[MM_RUN_ROWS];
             _mmRunTexts        = new TextMeshProUGUI[MM_RUN_ROWS];
             _mmRunFaceImages   = new RawImage[MM_RUN_ROWS];
-            _mmRunHoverBorders = new Image[MM_RUN_ROWS][];
+            _mmRunHoverBorders = new Graphic[MM_RUN_ROWS][];
 
             // Two lines per row now — a name and, under it, the level and the date — so the row
             // is tall enough to hold them. The shipped row was 37 px because its entire content
@@ -34,27 +33,7 @@ namespace Valkur.UI.MainMenu
             {
                 float cy = -i * (runRowH + runGap);
 
-                var pillGo = CreateUIObject($"RnPill_{i}", runList.transform);
-                var pRt = pillGo.GetComponent<RectTransform>();
-                pRt.anchorMin = new Vector2(0f, 1f); pRt.anchorMax = new Vector2(1f, 1f);
-                pRt.pivot = new Vector2(0.5f, 1f);
-                pRt.anchoredPosition = new Vector2(0f, cy); pRt.sizeDelta = new Vector2(0f, runRowH);
-                _mmRunPills[i] = pillGo.AddComponent<Image>();
-                _mmRunPills[i].sprite = _art.Pill;
-                _mmRunPills[i].type = Image.Type.Sliced;
-                _mmRunPills[i].raycastTarget = false;
-                _mmRunPills[i].color = Color.clear;
-
-                var barGo = CreateUIObject($"RnBar_{i}", runList.transform);
-                var bRt = barGo.GetComponent<RectTransform>();
-                bRt.anchorMin = new Vector2(0f, 1f); bRt.anchorMax = new Vector2(0f, 1f);
-                bRt.pivot = new Vector2(0f, 1f);
-                bRt.anchoredPosition = new Vector2(0f, cy); bRt.sizeDelta = new Vector2(4f, runRowH);
-                _mmRunBars[i] = barGo.AddComponent<Image>();
-                _mmRunBars[i].sprite = _art.AccentBar;
-                _mmRunBars[i].type = Image.Type.Sliced;
-                _mmRunBars[i].raycastTarget = false;
-                _mmRunBars[i].color = Color.clear;
+                _mmRunPills[i] = BuildSlotFill($"RnPill_{i}", runList.transform, cy, runRowH);
 
                 // Character face thumbnail (crops portrait to face area via uvRect)
                 float faceSize = runRowH - 4f;
@@ -118,10 +97,9 @@ namespace Valkur.UI.MainMenu
             svR.pivot = new Vector2(0f, 1f); svR.sizeDelta = Vector2.zero;
             svR.anchoredPosition = Vector2.zero;
 
-            _mmSavePills        = new Image[MM_SAVE_ROWS];
-            _mmSaveBars         = new Image[MM_SAVE_ROWS];
+            _mmSavePills        = new Graphic[MM_SAVE_ROWS];
             _mmSaveTexts        = new TextMeshProUGUI[MM_SAVE_ROWS];
-            _mmSaveHoverBorders = new Image[MM_SAVE_ROWS][];
+            _mmSaveHoverBorders = new Graphic[MM_SAVE_ROWS][];
 
             const float svRowH = 31f;
             const float svGap  = 3f;
@@ -130,27 +108,7 @@ namespace Valkur.UI.MainMenu
             {
                 float cy = -i * (svRowH + svGap);
 
-                var pillGo = CreateUIObject($"SvPill_{i}", saveList.transform);
-                var pRt = pillGo.GetComponent<RectTransform>();
-                pRt.anchorMin = new Vector2(0f, 1f); pRt.anchorMax = new Vector2(1f, 1f);
-                pRt.pivot = new Vector2(0.5f, 1f);
-                pRt.anchoredPosition = new Vector2(0f, cy); pRt.sizeDelta = new Vector2(0f, svRowH);
-                _mmSavePills[i] = pillGo.AddComponent<Image>();
-                _mmSavePills[i].sprite = _art.Pill;
-                _mmSavePills[i].type = Image.Type.Sliced;
-                _mmSavePills[i].raycastTarget = false;
-                _mmSavePills[i].color = Color.clear;
-
-                var barGo = CreateUIObject($"SvBar_{i}", saveList.transform);
-                var bRt = barGo.GetComponent<RectTransform>();
-                bRt.anchorMin = new Vector2(0f, 1f); bRt.anchorMax = new Vector2(0f, 1f);
-                bRt.pivot = new Vector2(0f, 1f);
-                bRt.anchoredPosition = new Vector2(0f, cy); bRt.sizeDelta = new Vector2(4f, svRowH);
-                _mmSaveBars[i] = barGo.AddComponent<Image>();
-                _mmSaveBars[i].sprite = _art.AccentBar;
-                _mmSaveBars[i].type = Image.Type.Sliced;
-                _mmSaveBars[i].raycastTarget = false;
-                _mmSaveBars[i].color = Color.clear;
+                _mmSavePills[i] = BuildSlotFill($"SvPill_{i}", saveList.transform, cy, svRowH);
 
                 var txtGo = CreateUIObject($"SvTxt_{i}", saveList.transform);
                 var txtR = txtGo.GetComponent<RectTransform>();
@@ -215,38 +173,46 @@ namespace Valkur.UI.MainMenu
 
         // ── Hover border helpers ──────────────────────────────────────────────────
 
-        /// <summary>The hover outline. Dimmer than the selection fill on purpose: hovering says
-        /// "this is what you would pick", selecting says "this is what you picked".</summary>
-        private Color HoverBorderColor => new Color(Style.Gold.r, Style.Gold.g, Style.Gold.b, 0.55f);
+        /// <summary>What a shown hover outline is multiplied by. The gold lives in the graphic.</summary>
+        private static Color HoverBorderColor => Color.white;
 
-        /// <summary>Creates 4 thin strip Images around a row rect to form an outline.</summary>
-        private Image[] BuildHoverBorderStrips(Transform parent, float cy, float rowH)
+        /// <summary>
+        /// A slot's selection: the loading bar FILLED at row size (gold light profile, bright
+        /// border, accent core at its start). Shown by colour — white shows, clear hides — so the
+        /// visibility contract the fixtures pin is unchanged from the sprite it replaces.
+        /// </summary>
+        private Graphic BuildSlotFill(string name, Transform parent, float cy, float rowH)
         {
-            const float T = 2f;
-            var strips = new Image[4];
-            strips[0] = MakeBorderStrip("BT", parent, new Vector2(0f,1f), new Vector2(1f,1f),
-                new Vector2(0.5f,1f), new Vector2(0f, cy),        new Vector2(0f, T));
-            strips[1] = MakeBorderStrip("BB", parent, new Vector2(0f,1f), new Vector2(1f,1f),
-                new Vector2(0.5f,1f), new Vector2(0f, cy-rowH+T), new Vector2(0f, T));
-            strips[2] = MakeBorderStrip("BL", parent, new Vector2(0f,1f), new Vector2(0f,1f),
-                new Vector2(0f,1f),   new Vector2(0f, cy),        new Vector2(T, rowH));
-            strips[3] = MakeBorderStrip("BR", parent, new Vector2(1f,1f), new Vector2(1f,1f),
-                new Vector2(1f,1f),   new Vector2(0f, cy),        new Vector2(T, rowH));
-            return strips;
+            var fill = Frontend.FrontendFillGraphic.Create(parent, name);
+            fill.Profile = Frontend.FrontendFillProfile.Row;
+            fill.Border = true;
+            fill.StartCore = true;
+            fill.Tint = PillColor;
+            var rt = fill.rectTransform;
+            rt.anchorMin = new Vector2(0f, 1f); rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.anchoredPosition = new Vector2(0f, cy); rt.sizeDelta = new Vector2(0f, rowH);
+            fill.color = Color.clear;
+            return fill;
         }
 
-        private Image MakeBorderStrip(string name, Transform parent,
-            Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot,
-            Vector2 anchoredPos, Vector2 sizeDelta)
+        /// <summary>
+        /// The hover outline: the bar's groove, empty. Dimmer than the selection fill on purpose:
+        /// hovering says "this is what you would pick", selecting says "this is what you picked".
+        /// One graphic in an array, so the update loop that used to walk four strips still walks.
+        /// </summary>
+        private Graphic[] BuildHoverBorderStrips(Transform parent, float cy, float rowH)
         {
-            var go = CreateUIObject(name, parent);
-            var rt = go.GetComponent<RectTransform>();
-            rt.anchorMin = anchorMin; rt.anchorMax = anchorMax;
-            rt.pivot = pivot; rt.anchoredPosition = anchoredPos; rt.sizeDelta = sizeDelta;
-            var img = go.AddComponent<Image>();
-            img.color = Color.clear;
-            img.raycastTarget = false;
-            return img;
+            var hover = Frontend.FrontendHoverGraphic.Create(parent, "Hover");
+            hover.Tint = Style.Gold;
+            var rt = hover.rectTransform;
+            rt.anchorMin = new Vector2(0f, 1f); rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.anchoredPosition = new Vector2(0f, cy); rt.sizeDelta = new Vector2(0f, rowH);
+            hover.color = Color.clear;
+            // Under the row's text and face: its faint recess would otherwise dim the label.
+            rt.SetAsFirstSibling();
+            return new Graphic[] { hover };
         }
     }
 }

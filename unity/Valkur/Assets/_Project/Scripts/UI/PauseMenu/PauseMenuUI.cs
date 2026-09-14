@@ -60,7 +60,6 @@ namespace Valkur.UI.PauseMenu
         private static readonly Color TextNormal   = new Color(230/255f, 233/255f, 240/255f, 1f);
         private static readonly Color TextSelected = new Color(255/255f, 200/255f,   0/255f, 1f);
         private static readonly Color AccentGold   = new Color(255/255f, 200/255f,   0/255f, 1f);
-        private static readonly Color PillColor    = new Color(255/255f, 200/255f,   0/255f, 38/255f);
         private static readonly Color VersionCol   = new Color(0.5f, 0.5f, 0.5f, 0.7f);
 
         private const string MAIN_SCENE = "MainMenu";

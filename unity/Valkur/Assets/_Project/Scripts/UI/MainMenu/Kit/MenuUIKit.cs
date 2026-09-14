@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Valkur.Data;
+using Valkur.UI.Frontend;
 
 namespace Valkur.UI.MainMenu.Kit
 {
@@ -26,6 +27,11 @@ namespace Valkur.UI.MainMenu.Kit
     /// </summary>
     public static class MenuUIKit
     {
+        // What a button's ColorBlock multiplies its (already tinted) frame by, per state.
+        private static readonly Color ButtonRest = new Color(0.9f, 0.9f, 0.9f, 1f);
+        private static readonly Color ButtonPressed = new Color(0.72f, 0.72f, 0.72f, 1f);
+        private static readonly Color ButtonDisabled = new Color(0.6f, 0.6f, 0.6f, 0.4f);
+
         /// <summary>A bare RectTransform child. The root of everything else here.</summary>
         public static RectTransform Rect(string name, Transform parent)
         {
@@ -81,25 +87,48 @@ namespace Valkur.UI.MainMenu.Kit
             return img;
         }
 
+        /// <summary>Frame width of a panel, in canvas units. The loading bar's is 3-6; a panel is bigger.</summary>
+        public const float PanelFrameThickness = 5f;
+
         /// <summary>
-        /// The panel body: frame, bevel, chamfered corners and a recessed fill, as ONE 9-sliced
-        /// sprite. What it replaces is a bare <c>Image</c> with a flat colour and square corners.
+        /// The panel body: the loading bar's housing at panel size — soft shadow, bevelled gold
+        /// frame, recessed channel and corner brackets (<see cref="BevelFrameGraphic"/>). It used
+        /// to be a 9-sliced sprite from the point-filtered atlas, which is the one surface of the
+        /// menu that could never match the bar: a sprite's bevel is a few texels stretched to
+        /// whatever size the kit asks for.
         /// </summary>
-        public static Image Panel(string name, Transform parent, MenuArt art, MenuStyle style)
-            => Sprite(name, parent, art.Panel, Color.white);
+        public static BevelFrameGraphic Panel(string name, Transform parent, MenuArt art, MenuStyle style)
+        {
+            var frame = BevelFrameGraphic.Create(parent, name);
+            frame.Thickness = PanelFrameThickness;
+            frame.ShadowScale = 1.6f;
+            frame.Brackets = true;
+            frame.Tint = style.Gold;
+            return frame;
+        }
 
         /// <summary>The title band of a panel, with the gold rule under it.</summary>
         public static TextMeshProUGUI PanelHeader(Transform panel, MenuArt art, MenuStyle style, string text)
         {
-            var bar = Sprite("Header", panel, art.Header, Color.white);
-            var rt = (RectTransform)bar.transform;
+            // The band itself is drawn by the panel's frame, so it can never disagree with the
+            // bevel it sits inside; this rect only holds the title. Its rule, and the two gems
+            // where the rule meets the frame, are the loading bar's etapa divider laid flat.
+            var frameT = panel.Find("Frame");
+            var frame = frameT != null ? frameT.GetComponent<BevelFrameGraphic>() : null;
+            if (frame != null)
+            {
+                frame.HeaderHeight = Mathf.Max(0f, style.titleBarHeight - frame.Thickness);
+                frame.HeaderGemLit = 0.85f;
+            }
+
+            var rt = Rect("Header", panel);
             rt.anchorMin = new Vector2(0f, 1f);
             rt.anchorMax = new Vector2(1f, 1f);
             rt.pivot = new Vector2(0.5f, 1f);
             rt.offsetMin = new Vector2(0f, -style.titleBarHeight);
             rt.offsetMax = Vector2.zero;
 
-            var labelRt = Stretch("Label", bar.transform);
+            var labelRt = Stretch("Label", rt);
             labelRt.offsetMin = new Vector2(12f, 3f);
             labelRt.offsetMax = new Vector2(-12f, -2f);
             return MenuTypography.Label(labelRt.gameObject, style, text, style.titleFontSize,
@@ -123,43 +152,54 @@ namespace Valkur.UI.MainMenu.Kit
                                         style.TextMuted, TextAlignmentOptions.Center);
         }
 
-        /// <summary>A one-pixel rule across a panel.</summary>
-        public static Image Divider(Transform parent, MenuArt art, MenuStyle style, float y)
+        /// <summary>A notched rule across a panel, at <paramref name="y"/> below its top.</summary>
+        public static FrontendRuleGraphic Divider(Transform parent, MenuArt art, MenuStyle style, float y)
         {
-            var img = Sprite("Divider", parent, art.Divider, new Color(style.Gold.r, style.Gold.g,
-                                                                       style.Gold.b, 0.22f));
-            var rt = (RectTransform)img.transform;
+            var rule = FrontendRuleGraphic.Create(parent, "Divider", vertical: false, style.Gold);
+            var rt = rule.rectTransform;
             rt.anchorMin = new Vector2(0f, 1f);
             rt.anchorMax = new Vector2(1f, 1f);
             rt.pivot = new Vector2(0.5f, 1f);
             rt.anchoredPosition = new Vector2(0f, y);
-            rt.sizeDelta = new Vector2(-24f, 3f);
-            return img;
+            rt.sizeDelta = new Vector2(-24f, 8f);
+            return rule;
         }
 
         /// <summary>
-        /// A real button: a chamfered slab, a label, and a colour block that Unity will actually
-        /// render. <c>UIButton.SetTint</c>'s lesson applies — a ColorBlock assigned while the
-        /// Selectable sits idle is not pushed to the CanvasRenderer, so the graphic is held white
-        /// and the block does the tinting.
+        /// A real button: a small bevelled frame whose face carries the tint in the selected
+        /// row's light profile, and a label in the ink that reads on it.
+        ///
+        /// <para><b>The tint is in the MESH; the ColorBlock only brightens or dims it.</b>
+        /// <c>UIButton.SetTint</c>'s lesson still applies — a block assigned while the Selectable
+        /// sits idle is not pushed to the CanvasRenderer — so the block holds near-white values
+        /// and multiplies the whole frame, bevel included, which is what a lit button looks like.
+        /// Hovering also raises the bevel's glow, the bar's own "something happened" signal.</para>
         /// </summary>
         public static Button Button(string name, Transform parent, MenuArt art, MenuStyle style,
                                     string label, Color tint, UnityEngine.Events.UnityAction onClick)
         {
-            var img = Sprite(name, parent, art.Pill, Color.white, Image.Type.Sliced, raycast: true);
-            var btn = img.gameObject.AddComponent<Button>();
-            btn.targetGraphic = img;
+            var frame = BevelFrameGraphic.Create(parent, name);
+            frame.Thickness = 3f;
+            frame.ShadowScale = 0.45f;
+            frame.Brackets = false;
+            frame.Tint = style.Gold;
+            frame.Face = new Color(tint.r, tint.g, tint.b, 1f);
+            frame.raycastTarget = true;
+            var btn = frame.gameObject.AddComponent<Button>();
+            btn.targetGraphic = frame;
             var colours = btn.colors;
-            colours.normalColor = tint;
-            colours.highlightedColor = Brighten(tint, 1.28f);
-            colours.pressedColor = Brighten(tint, 0.82f);
-            colours.selectedColor = tint;
-            colours.disabledColor = new Color(tint.r, tint.g, tint.b, 0.35f);
+            colours.normalColor = ButtonRest;
+            colours.highlightedColor = Color.white;
+            colours.pressedColor = ButtonPressed;
+            colours.selectedColor = ButtonRest;
+            colours.disabledColor = ButtonDisabled;
             colours.fadeDuration = 0.08f;
             btn.colors = colours;
             if (onClick != null) btn.onClick.AddListener(onClick);
+            OnHover(frame.gameObject, _ => frame.Glow = 1f, EventTriggerType.PointerEnter);
+            OnHover(frame.gameObject, _ => frame.Glow = 0f, EventTriggerType.PointerExit);
 
-            var labelRt = Stretch("Label", img.transform);
+            var labelRt = Stretch("Label", frame.transform);
             labelRt.offsetMin = new Vector2(8f, 2f);
             labelRt.offsetMax = new Vector2(-8f, -2f);
             MenuTypography.Label(labelRt.gameObject, style, label, style.rowFontSize - 4f,

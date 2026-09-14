@@ -176,6 +176,7 @@ namespace Valkur.UI.PauseMenu
                     row.slider.SetValueWithoutNotify(snapped);
             }
             row.set(snapped);
+            OnSkinSliderMoved(row.slider, 2);
             _soundSel = i;
             UpdateSoundsPanel();
             RefreshSoundRowText(i);
@@ -208,6 +209,7 @@ namespace Valkur.UI.PauseMenu
             float v = Mathf.Clamp(row.get() + dir * row.step, row.min, row.max);
             row.set(v);
             if (row.slider != null) row.slider.SetValueWithoutNotify(v);
+            OnSkinSliderMoved(row.slider, 6);
             RefreshSoundRowText(i);
             ServiceLocator.Get<IAudioService>()?.ApplySettings();
             Valkur.Core.GameSettings.Instance?.Save();
@@ -225,11 +227,10 @@ namespace Valkur.UI.PauseMenu
             if (_soundPills == null || _soundBars == null) return;
             for (int i = 0; i < _soundPills.Length; i++)
             {
-                bool s = i == _soundSel;
-                if (i < _soundPills.Length) _soundPills[i].color         = s ? PillColor    : Color.clear;
-                if (i < _soundBars.Length)  _soundBars[i].color          = s ? AccentGold   : Color.clear;
-                if (_soundRowLabels != null && i < _soundRowLabels.Length)
-                    _soundRowLabels[i].color = s ? TextSelected : TextNormal;
+                PaintRow(_soundPills[i],
+                         _soundRowLabels != null && i < _soundRowLabels.Length ? _soundRowLabels[i] : null,
+                         i == _soundSel,
+                         i < _soundRows.Count ? _soundRows[i].valueText : null);
             }
         }
 

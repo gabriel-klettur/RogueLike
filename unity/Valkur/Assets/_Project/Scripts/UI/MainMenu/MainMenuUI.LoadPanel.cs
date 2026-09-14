@@ -28,18 +28,16 @@ namespace Valkur.UI.MainMenu
         private const int MM_SAVE_ROWS = 5;
 
         // Run list widgets (left column)
-        private Image[]            _mmRunPills;
-        private Image[]            _mmRunBars;
+        private Graphic[]          _mmRunPills;
         private TextMeshProUGUI[]  _mmRunTexts;
         private RawImage[]         _mmRunFaceImages;
-        private Image[][]          _mmRunHoverBorders;
+        private Graphic[][]        _mmRunHoverBorders;
         private int                _mmRunHover = -1;
 
         // Save list widgets (right column, top)
-        private Image[]            _mmSavePills;
-        private Image[]            _mmSaveBars;
+        private Graphic[]          _mmSavePills;
         private TextMeshProUGUI[]  _mmSaveTexts;
-        private Image[][]          _mmSaveHoverBorders;
+        private Graphic[][]        _mmSaveHoverBorders;
         private int                _mmSaveHover = -1;
 
         private TextMeshProUGUI    _mmLoadDetailText;
@@ -58,7 +56,7 @@ namespace Valkur.UI.MainMenu
         private GameObject       _mmConfirmOverlay;
         private TextMeshProUGUI  _mmConfirmText;
         private int              _mmConfirmSel;
-        private Image[]          _mmConfirmPills;
+        private Frontend.BevelFrameGraphic[] _mmConfirmPills;
         private TextMeshProUGUI[] _mmConfirmTexts;
 
         // ── Helpers ───────────────────────────────────────────────────────────────
@@ -110,15 +108,13 @@ namespace Valkur.UI.MainMenu
             Kit.MenuUIKit.PanelHint(panelRt, Style, MenuText.LoadHint);
 
             // Column separator
-            var sepRt = Kit.MenuUIKit.Rect("ColSep", panelRt);
+            // The etapa divider stood on end: a groove, a light line and a notch at each end.
+            var sep = Frontend.FrontendRuleGraphic.Create(panelRt, "ColSep", vertical: true, Style.Gold);
+            var sepRt = sep.rectTransform;
             sepRt.anchorMin = new Vector2(splitX + 0.005f, 0.10f);
             sepRt.anchorMax = new Vector2(splitX + 0.005f, 0.86f);
-            sepRt.pivot = new Vector2(0.5f, 0.5f); sepRt.sizeDelta = new Vector2(3f, 0f);
-            var sepImg = sepRt.gameObject.AddComponent<Image>();
-            sepImg.sprite = _art.Divider;
-            sepImg.type = Image.Type.Sliced;
-            sepImg.color = new Color(Style.Gold.r, Style.Gold.g, Style.Gold.b, 0.20f);
-            sepImg.raycastTarget = false;
+            sepRt.pivot = new Vector2(0.5f, 0.5f); sepRt.sizeDelta = new Vector2(8f, 0f);
+            sepRt.anchoredPosition = Vector2.zero;
 
             BuildMMColHeader(MenuText.LoadRuns,  panel.transform, 0.01f, splitX);
             BuildMMColHeader(MenuText.LoadSaves, panel.transform, splitX + 0.02f, 0.98f);
@@ -198,25 +194,31 @@ namespace Valkur.UI.MainMenu
             Vector2 anchor, Vector2 anchoredPos, Vector2 size, Color bg,
             UnityEngine.Events.UnityAction action)
         {
-            var go = CreateUIObject($"OverlayBtn_{label}", parent);
-            var rt = go.GetComponent<RectTransform>();
+            var btn = Kit.MenuUIKit.Button($"OverlayBtn_{label}", parent, _art, Style, label, bg, action);
+            var rt = (RectTransform)btn.transform;
             rt.anchorMin = anchor; rt.anchorMax = anchor;
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = anchoredPos;
             rt.sizeDelta = size;
-            var img = go.AddComponent<Image>(); img.color = bg;
-            var btn = go.AddComponent<Button>(); btn.targetGraphic = img;
-            btn.onClick.AddListener(action);
+        }
 
-            var lblGo = CreateUIObject("Label", go.transform);
-            var lblR  = lblGo.GetComponent<RectTransform>();
-            lblR.anchorMin = Vector2.zero; lblR.anchorMax = Vector2.one;
-            lblR.sizeDelta = Vector2.zero; lblR.anchoredPosition = Vector2.zero;
-            var tmp = lblGo.AddComponent<TextMeshProUGUI>();
-            tmp.text = label; tmp.fontSize = 16f;
-            tmp.alignment = TextAlignmentOptions.Center;
-            tmp.color = Color.white; tmp.fontStyle = FontStyles.Bold;
-            tmp.raycastTarget = false;
+        /// <summary>
+        /// A modal box in the kit's housing: the same frame as every panel, with a lit header rule.
+        /// Replaces a flat <c>Image</c> in the panel colour with square corners.
+        /// </summary>
+        private GameObject BuildModalBox(string name, Transform parent, Vector2 size, float headerHeight)
+        {
+            var box = CreateUIObject(name, parent);
+            var br = box.GetComponent<RectTransform>();
+            br.anchorMin = new Vector2(0.5f, 0.5f); br.anchorMax = new Vector2(0.5f, 0.5f);
+            br.pivot = new Vector2(0.5f, 0.5f); br.anchoredPosition = Vector2.zero;
+            br.sizeDelta = size;
+            var frame = Kit.MenuUIKit.Panel("Frame", box.transform, _art, Style);
+            frame.HeaderHeight = headerHeight;
+            frame.HeaderGemLit = headerHeight > 0f ? 0.85f : 0f;
+            // The frame is drawn but must still swallow clicks meant for the panel under the box.
+            frame.raycastTarget = true;
+            return box;
         }
     }
 }

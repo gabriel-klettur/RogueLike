@@ -151,6 +151,34 @@ namespace Valkur.UI.MainMenu
             _selectedClassIndex = index;
             _sfx?.Move();
             UpdateClassSelectionUI();
+            EmitClassChosenSparks(index);
+        }
+
+        /// <summary>What an unchosen card is multiplied by: still readable, visibly at rest.</summary>
+        private static readonly Color ClassCardRest = new Color(0.78f, 0.78f, 0.78f, 1f);
+
+        /// <summary>
+        /// The card that just became the choice throws sparks off its header rule and flashes —
+        /// the event, answered once. Nothing emits while the selection sits still.
+        /// </summary>
+        private void EmitClassChosenSparks(int index)
+        {
+            if (_classMotes == null || ReduceMotion || index < 0 || index >= _classCardFrames.Count) return;
+            var rt = _classCardFrames[index].rectTransform;
+            var r = rt.rect;
+            var tint = Style.Gold;
+            Color hot = Frontend.FrontendMotes.Hot(tint), warm = Frontend.FrontendMotes.Warm(tint);
+            float ruleY = r.yMax - ClassCardHeader;
+            for (int i = 0; i < 22; i++)
+            {
+                float a = Random.Range(30f, 150f) * Mathf.Deg2Rad;
+                float v = Random.Range(60f, 190f);
+                Frontend.FrontendMotes.EmitFrom(_classMotes, rt,
+                    new Vector2(Random.Range(r.xMin + 6f, r.xMax - 6f), ruleY),
+                    new Vector2(Mathf.Cos(a) * v, Mathf.Sin(a) * v), Color.Lerp(hot, warm, Random.value),
+                    Random.Range(0.35f, 0.8f), Random.value < 0.55f ? MenuMoteShape.Spark : MenuMoteShape.Dot,
+                    gravity: 240f, drag: 1.3f, size: Random.Range(0.14f, 0.36f));
+            }
         }
 
         private void OnClassCardClicked(int index)
@@ -171,7 +199,13 @@ namespace Valkur.UI.MainMenu
                 // with the class's own colour, so "chosen" was red on the barbarian, green on the
                 // elf and pink on the valkyrie — a state the player could never learn to read,
                 // and red in particular reads as an error.
-                _classCardFrames[i].color = selected ? style.Gold : new Color(1f, 1f, 1f, 0.55f);
+                // Chosen = the frame lit, its header gems burning and its corner brackets out —
+                // the loading bar's READY state. The rest stay a dim bronze, not a faded one.
+                var frame = _classCardFrames[i];
+                frame.Glow = selected ? 0.75f : 0f;
+                frame.HeaderGemLit = selected ? 1f : 0.12f;
+                frame.Brackets = selected;
+                frame.color = selected ? Color.white : ClassCardRest;
                 if (i < _classCardAccents.Count && _classCardAccents[i] != null)
                 {
                     var c = _classCardAccents[i].color;

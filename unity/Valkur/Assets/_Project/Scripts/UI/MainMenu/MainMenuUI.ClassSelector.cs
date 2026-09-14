@@ -79,7 +79,11 @@ namespace Valkur.UI.MainMenu
         /// </summary>
         private readonly HashSet<Sprite> _ownedPortraitSprites = new HashSet<Sprite>();
         private readonly List<Image> _classCardAccents = new List<Image>();
-        private readonly List<Image> _classCardFrames = new List<Image>();
+        private readonly List<Frontend.BevelFrameGraphic> _classCardFrames = new List<Frontend.BevelFrameGraphic>();
+        private MenuFxLayer _classMotes;
+
+        /// <summary>The height of a card's name band, which the frame draws as its header.</summary>
+        private const float ClassCardHeader = 38f;
         private readonly List<Button> _classButtons = new List<Button>();
         private Image _classHeaderPortrait;
         private TextMeshProUGUI _classDescription;
@@ -191,6 +195,12 @@ namespace Valkur.UI.MainMenu
             MenuTypography.Label(hintRt.gameObject, style, MenuText.ClassHint,
                                  style.hintFontSize, style.TextMuted, TextAlignmentOptions.Center);
 
+            // Over the cards, so a chosen card's sparks fly in front of it rather than behind the
+            // tavern. The shell's own layer sits under every screen.
+            _classMotes = MenuFxLayer.Create(overlay, _art, 96, Frontend.FrontendKit.Get(style).Additive);
+            _classMotes.name = "ClassMotes";
+            _classMotes.UseSoftMotes = true;
+
             _classSelectionPanel.SetActive(false);
             _selectedClassIndex = FindSelectedClassIndex();
             UpdateClassSelectionUI();
@@ -201,8 +211,15 @@ namespace Valkur.UI.MainMenu
             var style = Style;
             string key = preset.PlayerKey;
 
-            var card = MenuUIKit.Sprite($"Class_{key}", row, _art.CardFrame, Color.white,
-                                        Image.Type.Sliced, raycast: true);
+            // The panel housing at card size: a bevelled frame whose header band holds the name,
+            // with a gem where its rule meets each side. UpdateClassSelectionUI lights the chosen.
+            var card = Frontend.BevelFrameGraphic.Create(row, $"Class_{key}");
+            card.Thickness = 4f;
+            card.ShadowScale = 0.8f;
+            card.Brackets = false;
+            card.Tint = style.Gold;
+            card.HeaderHeight = ClassCardHeader - card.Thickness;
+            card.raycastTarget = true;
             card.gameObject.AddComponent<LayoutElement>();
             _classCardFrames.Add(card);
             // FOUR lists are index-parallel and all four are filled HERE, in the one method that
@@ -230,8 +247,8 @@ namespace Valkur.UI.MainMenu
             art.anchorMin = new Vector2(0f, 1f);
             art.anchorMax = new Vector2(1f, 1f);
             art.pivot = new Vector2(0.5f, 1f);
-            art.offsetMin = new Vector2(5f, -8f);
-            art.offsetMax = new Vector2(-5f, -5f);
+            art.offsetMin = new Vector2(4f, -7f);
+            art.offsetMax = new Vector2(-4f, -4f);
             _classCardAccents.Add(accent);
 
             var nameRt = MenuUIKit.Rect("Name", card.transform);
@@ -301,22 +318,25 @@ namespace Valkur.UI.MainMenu
             MenuTypography.Label(labelRt.gameObject, style, bar.Label, style.detailFontSize,
                                  style.TextDim);
 
+            // The loading bar at stat size: a thin bevelled housing and a molten fill. Static —
+            // a stat does not move, so nothing here flows, glows or emits.
             var trackRt = MenuUIKit.Rect("T", rt);
             trackRt.anchorMin = new Vector2(0.54f, 0.5f);
             trackRt.anchorMax = new Vector2(1f, 0.5f);
             trackRt.pivot = new Vector2(0.5f, 0.5f);
-            trackRt.sizeDelta = new Vector2(0f, 8f);
+            trackRt.sizeDelta = new Vector2(0f, 10f);
             trackRt.anchoredPosition = Vector2.zero;
-            MenuUIKit.Sprite("Bg", trackRt, _art.SliderTrack, Color.white).rectTransform
-                .SetAsFirstSibling();
+            var frame = Frontend.BevelFrameGraphic.Create(trackRt, "Bg");
+            frame.Thickness = 2f;
+            frame.ShadowScale = 0f;
+            frame.Brackets = false;
 
-            var fillHolder = MenuUIKit.Rect("F", trackRt);
-            fillHolder.anchorMin = new Vector2(0f, 0.5f);
-            fillHolder.anchorMax = new Vector2(Mathf.Clamp01(bar.Value / Mathf.Max(0.0001f, bar.Max)), 0.5f);
-            fillHolder.pivot = new Vector2(0f, 0.5f);
-            fillHolder.offsetMin = new Vector2(2f, -3f);
-            fillHolder.offsetMax = new Vector2(-2f, 3f);
-            MenuUIKit.Sprite("Fill", fillHolder, _art.SliderFill, style.Gold);
+            var fill = Frontend.FrontendFillGraphic.Create(trackRt, "Fill");
+            fill.Profile = Frontend.FrontendFillProfile.Bar;
+            fill.Tint = style.Gold;
+            fill.Amount = Mathf.Clamp01(bar.Value / Mathf.Max(0.0001f, bar.Max));
+            fill.rectTransform.offsetMin = new Vector2(2f, 2f);
+            fill.rectTransform.offsetMax = new Vector2(-2f, -2f);
         }
 
         private Sprite GetCachedPortraitSprite(string playerKey)

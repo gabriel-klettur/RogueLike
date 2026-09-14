@@ -54,6 +54,9 @@ namespace Valkur.Gameplay.Editors.General
 
         private void Update()
         {
+            // The launcher's tiles glow and its motes fly on unscaled time: it freezes the game.
+            if (_isActive) TickSkin(Time.unscaledDeltaTime);
+
             // The confirm dialog owns Escape for as long as it is up: the press cancels it
             // and must not also reach the toggle below.
             if (IsConfirmOpen)

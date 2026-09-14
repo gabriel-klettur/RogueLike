@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Valkur.Data;
+using Valkur.UI.Frontend;
 
 namespace Valkur.UI.MainMenu.Kit
 {
@@ -28,8 +29,8 @@ namespace Valkur.UI.MainMenu.Kit
         private readonly List<MenuRow> _rows = new List<MenuRow>();
         private readonly MenuStyle _style;
         private readonly RectTransform _body;
-        private readonly Image _pill;
-        private readonly Image _bar;
+        private readonly FrontendSelectionFx _pill;
+        private readonly MenuFxLayer _motes;
 
         private int _index;
         private float _pillY;          // where the pill is drawn now
@@ -88,22 +89,32 @@ namespace Valkur.UI.MainMenu.Kit
             _style = style;
             _reduceMotion = reduceMotion;
 
-            // Built FIRST so it sits under every row: the pill is the background of the selected
-            // row, and a highlight drawn over the label is a highlight that hides it.
-            _pill = MenuUIKit.Sprite("Selection", body, art.Pill, style.Gold);
-            var prt = (RectTransform)_pill.transform;
+            var kit = FrontendKit.Get(style);
+
+            // Built FIRST so it sits under every row: the highlight is the background of the
+            // selected row, and a highlight drawn over the label is a highlight that hides it.
+            // It is the loading bar FILLED — see FrontendSelectionFx — and its accent core is
+            // what used to be the separate accent bar.
+            _motes = MenuFxLayer.Create(body, art, MotesPerList, kit.Additive);
+            _motes.name = "SelectionMotes";
+            _motes.UseSoftMotes = true;
+            var mrt = _motes.rectTransform;
+            mrt.offsetMin = new Vector2(-MotePad, -MotePad);
+            mrt.offsetMax = new Vector2(MotePad, MotePad);
+
+            _pill = new FrontendSelectionFx(body, "Selection", style.Gold, kit, _motes, reduceMotion);
+            var prt = _pill.Root;
             prt.anchorMin = new Vector2(0f, 1f);
             prt.anchorMax = new Vector2(1f, 1f);
             prt.pivot = new Vector2(0.5f, 1f);
-            _pill.enabled = false;
-
-            _bar = MenuUIKit.Sprite("SelectionBar", body, art.AccentBar, style.Gold);
-            var brt = (RectTransform)_bar.transform;
-            brt.anchorMin = new Vector2(0f, 1f);
-            brt.anchorMax = new Vector2(0f, 1f);
-            brt.pivot = new Vector2(0f, 1f);
-            _bar.enabled = false;
+            prt.SetAsFirstSibling();
+            _pill.Visible = false;
         }
+
+        private const int MotesPerList = 72;
+
+        /// <summary>How far past the list the sparks may fly before the layer's rect ends.</summary>
+        private const float MotePad = 60f;
 
         /// <summary>Adds a row at the next slot down and wires its pointer to this list.</summary>
         public MenuRow Add(MenuArt art, string label, float indent = 22f, float heightOverride = 0f)
@@ -117,6 +128,8 @@ namespace Valkur.UI.MainMenu.Kit
                 onEnter: () => { Hover(index, true); Select(index, raise: true); },
                 onExit: () => Hover(index, false));
             _rows.Add(row);
+            // The motes fly OVER the rows; each new row would otherwise be drawn on top of them.
+            _motes.transform.SetAsLastSibling();
             _pillHeight = h;
             if (_rows.Count == 1) Select(0, raise: false, snap: true);
             return row;
@@ -129,7 +142,8 @@ namespace Valkur.UI.MainMenu.Kit
         public void SetReduceMotion(bool reduce)
         {
             _reduceMotion = reduce;
-            if (reduce) { _pillY = _pillTargetY; ApplyPill(); }
+            _pill.ReduceMotion = reduce;
+            if (reduce) { _motes.Clear(); _pillY = _pillTargetY; ApplyPill(); }
         }
 
         /// <summary>Moves the highlight by <paramref name="delta"/>, wrapping and skipping the dead rows.</summary>
@@ -150,6 +164,7 @@ namespace Valkur.UI.MainMenu.Kit
         {
             if (_index < 0 || _index >= _rows.Count) return false;
             if (!_rows[_index].Interactable) return false;
+            _pill.Confirm();
             Chosen?.Invoke(_index);
             return true;
         }
@@ -158,6 +173,7 @@ namespace Valkur.UI.MainMenu.Kit
         {
             if (index < 0 || index >= _rows.Count || !_rows[index].Interactable) return;
             Select(index, raise: true);
+            _pill.Confirm();
             Chosen?.Invoke(index);
         }
 
@@ -172,6 +188,7 @@ namespace Valkur.UI.MainMenu.Kit
             if (_rows.Count == 0) return;
             index = Mathf.Clamp(index, 0, _rows.Count - 1);
             bool moved = index != _index;
+            int direction = index > _index ? 1 : -1;
             for (int i = 0; i < _rows.Count; i++) _rows[i].Selected = i == index;
             _index = index;
 
@@ -181,6 +198,9 @@ namespace Valkur.UI.MainMenu.Kit
             if (snap || _reduceMotion) _pillY = _pillTargetY;
             ApplyPill();
 
+            // Sparks only for a move somebody made: the silent Index setter a screen uses to reset
+            // itself on open is not an event the player caused.
+            if (moved && raise && !snap) _pill.Moved(direction);
             if (moved && raise) Changed?.Invoke(index);
         }
 
@@ -190,6 +210,8 @@ namespace Valkur.UI.MainMenu.Kit
         /// </summary>
         public void Tick(float dt)
         {
+            // The highlight's own light (flow, sheen, motes) runs whether or not it is sliding.
+            if (_rows.Count > 0) _pill.Tick(dt);
             if (Mathf.Approximately(_pillY, _pillTargetY)) return;
             float span = Mathf.Max(0.01f, _style.selectionSlideSeconds);
             // Exponential rather than linear: the highlight leaves at once and arrives softly,
@@ -251,25 +273,25 @@ namespace Valkur.UI.MainMenu.Kit
         {
             if (_pill == null) return;
             bool show = _rows.Count > 0;
-            _pill.enabled = show;
-            _bar.enabled = show;
+            _pill.Visible = show;
             if (!show) return;
 
             // The highlight is hidden with the row it belongs to: a pill left drawn at the edge
             // of a scrolled window is a gold bar floating over the panel's own frame.
             bool inside = _viewportHeight <= 0f
                 || (-_pillY + _pillHeight > -0.01f && -_pillY < _viewportHeight + 0.01f);
-            _pill.enabled = inside;
-            _bar.enabled = inside;
+            _pill.Visible = inside;
 
-            var prt = (RectTransform)_pill.transform;
+            var prt = _pill.Root;
             prt.anchoredPosition = new Vector2(0f, _pillY);
             prt.sizeDelta = new Vector2(0f, _pillHeight);
-
-            var brt = (RectTransform)_bar.transform;
-            brt.anchoredPosition = new Vector2(0f, _pillY);
-            brt.sizeDelta = new Vector2(_style.accentBarWidth, _pillHeight);
         }
+
+        /// <summary>The highlight rig. For the tests and for a screen that wants to flash it.</summary>
+        public FrontendSelectionFx Highlight => _pill;
+
+        /// <summary>The mote layer drawn over this list's rows; widgets inside a row emit into it.</summary>
+        public MenuFxLayer Motes => _motes;
 
         /// <summary>The centre of the selected row in the body's space. Where a mote is born.</summary>
         public Vector2 SelectionCentre()

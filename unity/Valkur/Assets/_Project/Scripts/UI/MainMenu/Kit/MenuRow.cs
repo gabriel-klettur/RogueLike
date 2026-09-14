@@ -52,7 +52,7 @@ namespace Valkur.UI.MainMenu.Kit
         public readonly GameObject HitTarget;
 
         private readonly MenuStyle _style;
-        private readonly Image _hover;
+        private readonly Graphic _hover;
         private TextMeshProUGUI _value;
         private bool _selected;
         private bool _hovered;
@@ -122,8 +122,12 @@ namespace Valkur.UI.MainMenu.Kit
             Root.anchoredPosition = new Vector2(0f, y);
             Root.sizeDelta = new Vector2(0f, height);
 
-            _hover = MenuUIKit.Sprite("Hover", Root, art.Hover, Color.white);
-            var hoverRt = (RectTransform)_hover.transform;
+            // The bar's groove, empty: an outline and a thin gold border. The selection is the
+            // same groove FILLED, so the two states are the same object at two levels.
+            var hover = Valkur.UI.Frontend.FrontendHoverGraphic.Create(Root, "Hover");
+            hover.Tint = style.Gold;
+            _hover = hover;
+            var hoverRt = hover.rectTransform;
             hoverRt.anchorMin = Vector2.zero;
             hoverRt.anchorMax = Vector2.one;
             hoverRt.offsetMin = new Vector2(2f, 2f);
@@ -173,6 +177,32 @@ namespace Valkur.UI.MainMenu.Kit
                 rt.offsetMax = new Vector2(-4f, 0f);
             }
         }
+
+        private Valkur.UI.Frontend.FrontendGemGraphic _toggleGem;
+
+        /// <summary>
+        /// Marks the row as an on/off switch: a gem at the head of the value column that is LIT
+        /// when on and dim stone when off — the loading bar's end gem, which lights on "ready".
+        /// The word stays beside it, so the state is never carried by the colour alone.
+        /// </summary>
+        public void SetToggle(bool on)
+        {
+            if (_toggleGem == null)
+            {
+                _toggleGem = Valkur.UI.Frontend.FrontendGemGraphic.Create(Root, "ToggleGem", _style.Gold);
+                var rt = _toggleGem.rectTransform;
+                rt.anchorMin = rt.anchorMax = new Vector2(ToggleGemColumn, 0.5f);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.anchoredPosition = Vector2.zero;
+                rt.sizeDelta = new Vector2(26f, 26f);
+                // Under the hit target, which must stay the last child.
+                _toggleGem.transform.SetSiblingIndex(HitTarget.transform.GetSiblingIndex());
+            }
+            _toggleGem.Lit = on ? 1f : 0f;
+        }
+
+        /// <summary>Where a toggle's gem sits: past the label column, clear of a right-aligned value.</summary>
+        public const float ToggleGemColumn = 0.60f;
 
         /// <summary>Wires the pointer. The list does this so a row never has to know its index.</summary>
         public void Bind(System.Action onClick, System.Action onEnter, System.Action onExit,

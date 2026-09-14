@@ -96,29 +96,34 @@ namespace Valkur.UI.MainMenu
             for (int i = 0; i < GameplayRows.Length && i < rows.Count; i++)
             {
                 string text;
+                bool? toggle = null;
                 switch (GameplayRows[i])
                 {
                     case GameplayRow.Language:
                         text = GameLanguage.IsEnglish ? MenuText.LanguageEnglish : MenuText.LanguageSpanish;
                         break;
                     case GameplayRow.ReduceMotion:
-                        text = gs != null && gs.reduceMotion ? MenuText.VideoOn : MenuText.VideoOff;
+                        toggle = gs != null && gs.reduceMotion;
+                        text = toggle.Value ? MenuText.VideoOn : MenuText.VideoOff;
                         break;
                     case GameplayRow.ScreenShake:
-                        text = gs == null || gs.screenShake ? MenuText.VideoOn : MenuText.VideoOff;
+                        toggle = gs == null || gs.screenShake;
+                        text = toggle.Value ? MenuText.VideoOn : MenuText.VideoOff;
                         break;
                     case GameplayRow.TextSize:
                         text = gs == null || gs.textSize == 0 ? MenuText.TextSizeNormal
                              : gs.textSize < 0 ? MenuText.TextSizeSmall : MenuText.TextSizeLarge;
                         break;
                     case GameplayRow.ShowHints:
-                        text = gs == null || gs.showHints ? MenuText.VideoOn : MenuText.VideoOff;
+                        toggle = gs == null || gs.showHints;
+                        text = toggle.Value ? MenuText.VideoOn : MenuText.VideoOff;
                         break;
                     default:
                         text = string.Empty;
                         break;
                 }
                 rows[i].Value.text = text;
+                if (toggle.HasValue) rows[i].SetToggle(toggle.Value);
             }
             OnGameplaySelectionChanged(_gameplayList.Index);
         }

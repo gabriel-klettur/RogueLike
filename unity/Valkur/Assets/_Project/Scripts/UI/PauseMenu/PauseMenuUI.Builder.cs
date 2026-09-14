@@ -45,6 +45,7 @@ namespace Valkur.UI.PauseMenu
             _pausePanel.AddComponent<Image>().color = PanelBg;
             AddPanelTitle(_pausePanel.transform, "Paused", 52f, 0f);
 
+            SkinCanvas();
             UILayerHelper.SetUILayerRecursive(cGo);
         }
 
@@ -120,6 +121,8 @@ namespace Valkur.UI.PauseMenu
                 enter.callback.AddListener(_ => { _pauseSel = cap; UpdateListVisuals(_pauseSel, _pausePills, _pauseBars, _pauseTexts); });
                 trig.triggers.Add(enter);
             }
+
+            SkinPauseRows();
         }
 
         // ── Static list panel ────────────────────────────────────────────────

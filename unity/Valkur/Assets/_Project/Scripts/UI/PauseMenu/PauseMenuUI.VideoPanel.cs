@@ -260,11 +260,10 @@ namespace Valkur.UI.PauseMenu
             if (_videoPills == null || _videoBars == null) return;
             for (int i = 0; i < _videoPills.Length; i++)
             {
-                bool s = i == _videoSel;
-                _videoPills[i].color = s ? PillColor  : Color.clear;
-                _videoBars[i].color  = s ? AccentGold : Color.clear;
-                if (_videoLabels != null && i < _videoLabels.Length)
-                    _videoLabels[i].color = s ? TextSelected : TextNormal;
+                PaintRow(_videoPills[i],
+                         _videoLabels != null && i < _videoLabels.Length ? _videoLabels[i] : null,
+                         i == _videoSel,
+                         _videoValues != null && i < _videoValues.Length ? _videoValues[i] : null);
             }
         }
 

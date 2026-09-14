@@ -17,6 +17,8 @@ namespace Valkur.UI.PauseMenu
 
         private void Update()
         {
+            TickSkin(Time.unscaledDeltaTime);
+
             // ESC when menu is closed → open pause; don't fall through to
             // sub-screen input this frame (_cancel also binds ESC and would
             // immediately close the menu again).
@@ -196,10 +198,7 @@ namespace Valkur.UI.PauseMenu
             if (pills == null) return;
             for (int i = 0; i < pills.Length; i++)
             {
-                bool s = i == sel;
-                if (pills != null && i < pills.Length) pills[i].color = s ? PillColor  : Color.clear;
-                if (bars  != null && i < bars.Length)  bars[i].color  = s ? AccentGold : Color.clear;
-                if (texts != null && i < texts.Length) texts[i].color = s ? TextSelected : TextNormal;
+                PaintRow(pills[i], texts != null && i < texts.Length ? texts[i] : null, i == sel);
             }
         }
 

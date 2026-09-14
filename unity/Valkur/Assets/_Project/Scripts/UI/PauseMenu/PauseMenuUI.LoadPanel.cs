@@ -203,9 +203,7 @@ namespace Valkur.UI.PauseMenu
                 bool hasData = dataIdx < _loadSaves.Count;
                 bool selected = dataIdx == _loadSel;
 
-                _loadPills[i].color = selected && hasData ? PillColor  : Color.clear;
-                _loadBars[i].color  = selected && hasData ? AccentGold : Color.clear;
-                _loadTexts[i].color = selected && hasData ? TextSelected : TextNormal;
+                PaintRow(_loadPills[i], _loadTexts[i], selected && hasData);
                 if (hasData)
                 {
                     var sv = _loadSaves[dataIdx];

@@ -117,15 +117,9 @@ namespace Valkur.UI.MainMenu
         private void OnMenuSelectionChanged(int index)
         {
             _selectedIndex = index;
+            // The sparks off the moving highlight belong to the list (FrontendSelectionFx), which
+            // draws them OVER the panel; the shell's layer sits behind it.
             _sfx?.Move();
-            // Two motes off the leading edge of the highlight, in the direction it travelled.
-            // The cheapest possible acknowledgement that a key press did something.
-            if (_fx != null && !ReduceMotion && _menuList != null)
-            {
-                var centre = MoteSpaceOf(_menuList.Rows[index].Root);
-                _fx.Burst(centre + new Vector2(-Style.menuPanelWidth * 0.42f, 0f), 2,
-                          Style.Gold, 42f, 0.45f, MenuMoteShape.Dot, spreadDegrees: 70f, direction: 0f);
-            }
         }
 
         private void BuildFooter(Transform canvas)
@@ -193,6 +187,10 @@ namespace Valkur.UI.MainMenu
             _videoList?.Tick(dt);
             _gameplayList?.Tick(dt);
             _controlsList?.Tick(dt);
+            // Sliders emit from their leading edge while they MOVE; ticked only while their panel
+            // is the one on screen, so a closed panel costs nothing.
+            if (_menuScreen == MenuScreen.Audio)
+                foreach (var slider in _audioSliders) slider?.Tick(dt, ReduceMotion);
         }
 
         /// <summary>
