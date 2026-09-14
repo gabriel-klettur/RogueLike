@@ -147,7 +147,10 @@ namespace Valkur.Gameplay.World
 
         // ── Storage ─────────────────────────────────────────────────────────────
 
-        private static bool DiskIsOffLimits => WorldDataWriteGuard.TestRunActive && !WorldDataWriteGuard.IsAllowed;
+        // The whole test run, allow scope or not: that scope is opened by fixtures that PARK the
+        // Maps files they exercise, and none of them parks this one — a real ticket left by a
+        // session that ended away would be read, moved or deleted by a fixture's trip.
+        private static bool DiskIsOffLimits => WorldDataWriteGuard.TestRunActive;
 
         private static string TicketPath => Path.Combine(Application.persistentDataPath, "Maps", FileName);
 

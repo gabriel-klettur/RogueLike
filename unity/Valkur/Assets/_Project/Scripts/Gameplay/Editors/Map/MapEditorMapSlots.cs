@@ -173,6 +173,7 @@ namespace Valkur.Gameplay.MapEditor
         {
             string clean = Sanitize(slot);
             if (string.IsNullOrEmpty(clean) || json == null) return false;
+            if (RefuseDuringTestRun(SlotPath(clean))) return false;
             try
             {
                 EnsureDirectory();
@@ -190,6 +191,7 @@ namespace Valkur.Gameplay.MapEditor
         {
             string clean = Sanitize(slot);
             if (string.IsNullOrEmpty(clean)) return false;
+            if (RefuseDuringTestRun(SlotPath(clean))) return false;
             try
             {
                 string path = SlotPath(clean);
@@ -212,6 +214,7 @@ namespace Valkur.Gameplay.MapEditor
             string dstClean = Sanitize(newName);
             if (string.IsNullOrEmpty(srcClean) || string.IsNullOrEmpty(dstClean)) return false;
             if (string.Equals(srcClean, dstClean, StringComparison.OrdinalIgnoreCase)) return false;
+            if (RefuseDuringTestRun(SlotPath(srcClean))) return false;
             try
             {
                 string srcPath = SlotPath(srcClean);
@@ -242,11 +245,11 @@ namespace Valkur.Gameplay.MapEditor
         /// </summary>
         public static void ResetActiveSlotToDefaultOnDisk()
         {
+            string activePath = Path.Combine(Application.persistentDataPath, DIR_NAME, ACTIVE_FILE);
+            if (RefuseDuringTestRun(activePath)) return;
             try
             {
-                string dir = Path.Combine(Application.persistentDataPath, DIR_NAME);
-                string path = Path.Combine(dir, ACTIVE_FILE);
-                if (File.Exists(path)) File.Delete(path);
+                if (File.Exists(activePath)) File.Delete(activePath);
                 Debug.Log("[MapEditor.Slots] Active slot reset to default for new game.");
             }
             catch (Exception ex)
@@ -269,9 +272,10 @@ namespace Valkur.Gameplay.MapEditor
                 ResetActiveSlotToDefaultOnDisk();
                 return;
             }
+            string dir = Path.Combine(Application.persistentDataPath, DIR_NAME);
+            if (RefuseDuringTestRun(Path.Combine(dir, ACTIVE_FILE))) return;
             try
             {
-                string dir = Path.Combine(Application.persistentDataPath, DIR_NAME);
                 System.IO.Directory.CreateDirectory(dir);
                 File.WriteAllText(Path.Combine(dir, ACTIVE_FILE), clean);
             }
@@ -286,6 +290,7 @@ namespace Valkur.Gameplay.MapEditor
             string clean = Sanitize(slot);
             if (string.IsNullOrEmpty(clean)) return;
             _activeSlot = clean;
+            if (RefuseDuringTestRun(Path.Combine(Directory, ACTIVE_FILE))) return;
             try
             {
                 EnsureDirectory();
@@ -314,6 +319,20 @@ namespace Valkur.Gameplay.MapEditor
         }
 
         // ── Helpers ─────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Every mutation of the real <c>Maps</c> directory asks this first: inside a test run, with
+        /// no scope opened for it, the write is refused (<see cref="Valkur.Core.WorldDataWriteGuard"/>).
+        ///
+        /// <para>This class was the one Map-editor file writer the guard did not cover. The zone
+        /// repository refuses a fixture's working copy, and the persist then MIRRORED the same zones
+        /// into <c>Maps/default.zones.json</c> through here: a portal fixture that parks nothing left
+        /// its two zones and its test portal in the user's mirror on every suite run (measured
+        /// 2026-09-14, "zone_portals_A"/"zone_portals_B"). Fixtures that exercise the real directory
+        /// on purpose park its files and open <c>AllowRealPathWrites</c>.</para>
+        /// </summary>
+        private static bool RefuseDuringTestRun(string path)
+            => Valkur.Core.WorldDataWriteGuard.Refuse("map-slots", path);
 
         private void EnsureDirectory()
         {

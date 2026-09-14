@@ -89,6 +89,9 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             // live in the streamingAssets default to avoid touching user
             // persistentDataPath buildings.
             Valkur.Core.MapEditorActiveSlot.SetOverrideForTests(DEFAULT_SLOT_NAME);
+            // The pointer and the zzz_ slot are parked above, so the store may write them; a test run
+            // refuses every other Maps write.
+            Valkur.Core.WorldDataWriteGuard.AllowRealPathWritesFlag = true;
         }
 
         [TearDown]
@@ -123,6 +126,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             if (_zonesGo != null) UnityEngine.Object.DestroyImmediate(_zonesGo);
             if (_gridGo  != null) UnityEngine.Object.DestroyImmediate(_gridGo);
             ClearMapEditorSingleton();
+            Valkur.Core.WorldDataWriteGuard.AllowRealPathWritesFlag = false;
             LogAssert.ignoreFailingMessages = false;
         }
 

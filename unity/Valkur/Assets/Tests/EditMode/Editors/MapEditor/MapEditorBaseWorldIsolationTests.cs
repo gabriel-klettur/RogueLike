@@ -59,6 +59,9 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             _activeMarker.Park(Path.Combine(_mapsDir, "_active.txt"));
             _defaultMirror.Park(DefaultMirrorPath);
             _otherSlot.Park(OtherSlotPath);
+            // Parked above, so the slot store may write them: without the scope a test run refuses
+            // every Maps write, which is what keeps fixtures that park nothing out of the user's files.
+            Valkur.Core.WorldDataWriteGuard.AllowRealPathWritesFlag = true;
 
             Valkur.Core.MapEditorActiveSlot.SetOverrideForTests("default");
             WorldExcursion.ResetForTests();
@@ -75,6 +78,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
                 Object.DestroyImmediate(_player);
             }
             if (_previousPlayer != null) Valkur.Core.EntityRegistry.RegisterPlayer(_previousPlayer);
+            Valkur.Core.WorldDataWriteGuard.AllowRealPathWritesFlag = false;
             _otherSlot.Restore();
             _defaultMirror.Restore();
             _activeMarker.Restore();

@@ -191,6 +191,13 @@ namespace Valkur.Gameplay.MapEditor
             if (store == null) return;
             string active = store.ActiveSlot;
             if (string.IsNullOrEmpty(active)) return;
+            // Never the base world's mirror inside a test run, scope or not. Every base-world persist
+            // performs this write, so the store's loud refusal (it logs once per run) would redden
+            // whichever fixture persisted first; and a fixture that opened the scope for the WORKING
+            // COPY it parks (MapEditorPersistenceIntegrationTests) does not park this file — measured
+            // 2026-09-14, it left its "alpha" zone in the user's Maps/default.zones.json. Another
+            // slot's file still goes through the store's own guard.
+            if (Valkur.Core.WorldDataWriteGuard.TestRunActive && IsBaseSlot(active)) return;
             store.WriteSlot(active, json);
         }
 

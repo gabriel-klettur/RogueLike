@@ -80,11 +80,15 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             if (_hadExistingSlotB) File.Delete(_slotBPath);
 
             Valkur.Core.MapEditorActiveSlot.SetOverrideForTests("default");
+            // These slot files and the pointer are parked above, so the store may write them; a test
+            // run refuses every other Maps write.
+            Valkur.Core.WorldDataWriteGuard.AllowRealPathWritesFlag = true;
         }
 
         [TearDown]
         public void TearDown()
         {
+            Valkur.Core.WorldDataWriteGuard.AllowRealPathWritesFlag = false;
             try { if (!_hadExistingSlotA && File.Exists(_slotAPath)) File.Delete(_slotAPath); } catch { }
             try { if (!_hadExistingSlotB && File.Exists(_slotBPath)) File.Delete(_slotBPath); } catch { }
             try
