@@ -42,6 +42,13 @@ namespace Valkur.Core.UI
 
         public static string Continue => P("Continue", "Continuar");
         public static string NewGame => P("New game", "Partida nueva");
+
+        /// <summary>
+        /// A new run that walks out of Pepitoria into a generated world. Seed World lab only.
+        /// Kept close to "Partida nueva" beside it: a menu label overflows its row rather than
+        /// wrapping (MenuTypography), so a long phrase would run towards the panel's frame.
+        /// </summary>
+        public static string SeededNewGame => P("Seeded game", "Partida con semilla");
         public static string LoadGame => P("Load game", "Cargar partida");
         public static string Options => P("Options", "Opciones");
         public static string Credits => P("Credits", "Créditos");

@@ -41,7 +41,8 @@ namespace Valkur.UI.MainMenu
             {
                 case MainMenuItem.Continue: ContinueMostRecentRun(); break;
                 case MainMenuItem.LoadGame: ShowMenuScreen(MenuScreen.LoadGame); break;
-                case MainMenuItem.NewGame: OpenClassSelector(); break;
+                case MainMenuItem.NewGame: ChooseNewGame(seeded: false); break;
+                case MainMenuItem.SeededNewGame: ChooseNewGame(seeded: true); break;
                 case MainMenuItem.Options: ShowMenuScreen(MenuScreen.Options); break;
                 case MainMenuItem.Credits: ShowMenuScreen(MenuScreen.Credits); break;
                 case MainMenuItem.Exit: QuitGame(); break;
@@ -55,6 +56,7 @@ namespace Valkur.UI.MainMenu
         /// </summary>
         private void ContinueMostRecentRun()
         {
+            WithdrawSeededWorld();
             var runs = SaveFileManager.ListSavesByRun();
             foreach (var run in runs)
             {
@@ -82,6 +84,8 @@ namespace Valkur.UI.MainMenu
             // And reset the Map Editor's active-slot pointer, so a previous session's custom
             // slot does not leak into the fresh playthrough.
             Valkur.Gameplay.MapEditor.MapEditorManager.ResetActiveSlotToDefaultOnDisk();
+            // The seeded row's generated world, or nothing: the request waits for the next boot.
+            ArmOrWithdrawSeededWorld();
             BeginTransitionToGame();
         }
 

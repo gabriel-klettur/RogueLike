@@ -21,6 +21,7 @@ namespace Valkur.UI.MainMenu
             Debug.Log($"[MainMenu] Loading save: {info.path}");
             PendingSaveLoad.Path        = info.path;
             PendingSaveLoad.PlayerClass = info.playerClass;
+            WithdrawSeededWorld();
             TransitionAudioToGame();
             LoadingScreenController.Show(gameplaySceneName);
         }

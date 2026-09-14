@@ -11,9 +11,13 @@ namespace Valkur.Gameplay.World.Generation
     ///
     /// <para><b>The run still starts in Pepitoria.</b> A session never starts inside a generated
     /// world (<see cref="SeedWorldBootGuard"/>), so the request is carried across the scene load
-    /// and acted on at <see cref="LoadingReporter.OnGameplayReady"/> — the frame the boot is done
-    /// and the catalogues a build needs exist. From there it is an ordinary trip with a return
-    /// ticket: the new character's home is the spot they spawned on.</para>
+    /// and acted on at <see cref="LoadingReporter.OnGameplayReadyForSystems"/> — the frame the boot
+    /// is done and the catalogues a build needs exist. From there it is an ordinary trip with a
+    /// return ticket: the new character's home is the spot they spawned on.</para>
+    ///
+    /// <para><b>Not <see cref="LoadingReporter.OnGameplayReady"/>.</b> The loading screen ASSIGNS
+    /// that delegate when it starts, so a subscription made in the menu was erased before the boot
+    /// began and the request never fired, while <see cref="IsPending"/> went on saying it would.</para>
     ///
     /// <para><b>No boot step.</b> The subscription exists only between a request and the next
     /// ready signal, so a normal session carries nothing of Seed World.</para>
@@ -49,7 +53,7 @@ namespace Valkur.Gameplay.World.Generation
             s_seed = seed;
             if (!s_armed)
             {
-                LoadingReporter.OnGameplayReady += StartWhenTheGameIsReady;
+                LoadingReporter.OnGameplayReadyForSystems += StartWhenTheGameIsReady;
                 s_armed = true;
             }
             return true;
@@ -59,7 +63,7 @@ namespace Valkur.Gameplay.World.Generation
         public static void Cancel()
         {
             if (!s_armed) return;
-            LoadingReporter.OnGameplayReady -= StartWhenTheGameIsReady;
+            LoadingReporter.OnGameplayReadyForSystems -= StartWhenTheGameIsReady;
             s_armed = false;
         }
 

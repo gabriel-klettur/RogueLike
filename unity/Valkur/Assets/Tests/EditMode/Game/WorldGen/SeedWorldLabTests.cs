@@ -3,6 +3,8 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
+using Valkur.Core;
 using Valkur.Data.WorldGen;
 using Valkur.Gameplay;
 using Valkur.Gameplay.World.Generation;
@@ -48,6 +50,45 @@ namespace Valkur.Tests.EditMode.Game.WorldGen
 
             SeedWorldNewGame.Cancel();
             Assert.IsFalse(SeedWorldNewGame.IsPending);
+        }
+
+        [Test]
+        public void ASeededNewGame_SurvivesTheLoadingScreenTakingItsSignal()
+        {
+            SeedWorldLab.SetOverrideForTests(true);
+            Assert.IsTrue(SeedWorldNewGame.Request(1337));
+
+            // What LoadingScreenController does between the menu and the boot: it ASSIGNS the ready
+            // delegate in Start and clears it on teardown. A request subscribed to that delegate was
+            // erased right here, and the seeded new game never started.
+            System.Action screen = () => { };
+            try
+            {
+                LoadingReporter.OnGameplayReady = screen;
+                LoadingReporter.Clear();
+                LoadingReporter.OnGameplayReady = screen;
+                Assert.IsTrue(SeedWorldNewGame.IsPending);
+
+                // In Edit Mode the launcher stops at its Play Mode gate, which is the proof the ready
+                // signal reached the request.
+                LogAssert.Expect(LogType.Warning, new Regex("La nueva partida con semilla no pudo empezar"));
+                LoadingReporter.ReportGameplayReady();
+
+                Assert.IsFalse(SeedWorldNewGame.IsPending, "The ready signal spends the request; it must not fire twice.");
+            }
+            finally
+            {
+                LoadingReporter.Clear();
+            }
+        }
+
+        [Test]
+        public void DuringATestRun_TheLabReadsOff_UnlessAFixturePinsIt()
+        {
+            SeedWorldLab.SetOverrideForTests(null);
+            Assert.IsFalse(SeedWorldLab.Enabled,
+                "The switch is this machine's PlayerPrefs. A fixture that does not pin it must read it OFF, or the " +
+                "menu fixtures are red only on a machine where somebody once turned the lab on.");
         }
 
         [Test]

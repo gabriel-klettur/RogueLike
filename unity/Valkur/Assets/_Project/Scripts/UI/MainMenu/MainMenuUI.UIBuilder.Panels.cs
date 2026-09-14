@@ -27,6 +27,7 @@ namespace Valkur.UI.MainMenu
             Continue,
             LoadGame,
             NewGame,
+            SeededNewGame,
             Options,
             Credits,
             Exit,
@@ -52,6 +53,8 @@ namespace Valkur.UI.MainMenu
                 _menuItems.Add(MainMenuItem.LoadGame);
             }
             _menuItems.Add(MainMenuItem.NewGame);
+            // Seed World lab only (MainMenuUI.SeededNewGame.cs): with the lab off the row does not exist.
+            if (SeededNewGameOffered) _menuItems.Add(MainMenuItem.SeededNewGame);
             _menuItems.Add(MainMenuItem.Options);
             _menuItems.Add(MainMenuItem.Credits);
             _menuItems.Add(MainMenuItem.Exit);
@@ -67,6 +70,7 @@ namespace Valkur.UI.MainMenu
                 case MainMenuItem.Continue: return MenuText.Continue;
                 case MainMenuItem.LoadGame: return MenuText.LoadGame;
                 case MainMenuItem.NewGame: return MenuText.NewGame;
+                case MainMenuItem.SeededNewGame: return MenuText.SeededNewGame;
                 case MainMenuItem.Options: return MenuText.Options;
                 case MainMenuItem.Credits: return MenuText.Credits;
                 default: return MenuText.Exit;

@@ -15,6 +15,11 @@ namespace Valkur.Gameplay.World.Generation
     /// <para><b>Machine state, not project data</b>, like the debug HUD's level: whether one
     /// developer is experimenting with generated worlds says nothing about anyone else's game,
     /// so it lives in PlayerPrefs rather than in an asset every clone would inherit.</para>
+    ///
+    /// <para><b>And therefore invisible to a test run.</b> A fixture that does not pin the switch
+    /// reads it OFF, and nothing a fixture does writes the machine's value: the main menu's
+    /// fixtures count rows, and a developer who once turned the lab on would otherwise see them red
+    /// on their machine only, for a reason no test name mentions.</para>
     /// </summary>
     public static class SeedWorldLab
     {
@@ -35,6 +40,7 @@ namespace Valkur.Gameplay.World.Generation
             get
             {
                 if (s_overrideForTests.HasValue) return s_overrideForTests.Value;
+                if (Valkur.Core.WorldDataWriteGuard.TestRunActive) return false;
                 try { return PlayerPrefs.GetInt(PrefsKey, 0) == 1; }
                 catch (Exception) { return false; }
             }
@@ -43,6 +49,7 @@ namespace Valkur.Gameplay.World.Generation
         public static void SetEnabled(bool enabled)
         {
             if (s_overrideForTests.HasValue) { s_overrideForTests = enabled; return; }
+            if (Valkur.Core.WorldDataWriteGuard.TestRunActive) return;
             PlayerPrefs.SetInt(PrefsKey, enabled ? 1 : 0);
             PlayerPrefs.Save();
         }

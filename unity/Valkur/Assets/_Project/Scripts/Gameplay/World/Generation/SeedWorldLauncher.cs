@@ -102,9 +102,13 @@ namespace Valkur.Gameplay.World.Generation
             if (mgr == null) return "No hay MapEditorManager en esta escena.";
             if (!WorldExcursion.IsAway && MapEditorManager.IsBaseSlot(mgr.ActiveMapSlot))
                 return "Ya estas en Pepitoria.";
-            WorldExcursion.TryGetHome(out var home, out var zone);
+            // A session can stand on another map with no ticket (booted into an authored slot): it has
+            // no Pepitoria spot to name, and printing (0, 0) would claim one.
+            bool hadTicket = WorldExcursion.TryGetHome(out var home, out var zone);
             if (!mgr.LoadMapSlot(MapEditorMapSlots.DEFAULT_SLOT)) return "No se pudo volver a Pepitoria.";
-            return $"De vuelta en Pepitoria ({(string.IsNullOrEmpty(zone) ? "?" : zone)}, {home.x:0.#}, {home.y:0.#}).";
+            return hadTicket
+                ? $"De vuelta en Pepitoria ({(string.IsNullOrEmpty(zone) ? "?" : zone)}, {home.x:0.#}, {home.y:0.#})."
+                : "De vuelta en Pepitoria.";
         }
 
         public static string Describe(Outcome o)
