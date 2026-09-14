@@ -69,6 +69,15 @@ namespace Valkur.Gameplay.World.Generation
         /// </summary>
         public static SeedWorldBakeResult Bake(WorldGenSettings settings, SeedWorldBakeRequest request,
                                                SeedWorldTilePalette palette, BuildingCatalog buildings)
+            => Bake(settings, request, palette, buildings, null);
+
+        /// <summary>
+        /// As above, with the population: the starting town's vendors and the hostile camps, as
+        /// spawners from <paramref name="spawners"/>. Trees come from <paramref name="buildings"/>.
+        /// </summary>
+        public static SeedWorldBakeResult Bake(WorldGenSettings settings, SeedWorldBakeRequest request,
+                                               SeedWorldTilePalette palette, BuildingCatalog buildings,
+                                               SpawnerTemplateCatalog spawners)
         {
             if (settings == null) return SeedWorldBakeResult.Fail("Sin parametros.");
             if (request == null) return SeedWorldBakeResult.Fail("Nombre de mapa no valido (vacio o 'default').");
@@ -100,6 +109,8 @@ namespace Valkur.Gameplay.World.Generation
             var options = SeedWorldTownPalette.Options(buildings);
             foreach (var town in preview.Towns)
                 placements.AddRange(WorldTownLots.Place(town, climate, preview.RiverTiles, options));
+            int townBuildings = placements.Count;
+            placements.AddRange(SeedWorldPopulation.TreePlacements(preview, buildings, new List<WorldTownPlacement>(placements)));
 
             var result = new SeedWorldBakeResult
             {
@@ -109,7 +120,8 @@ namespace Valkur.Gameplay.World.Generation
                 Tiles = zonesX * z * zonesY * z,
                 Rivers = rivers.Count,
                 Towns = preview.Towns.Count,
-                Buildings = placements.Count,
+                Buildings = townBuildings,
+                Trees = placements.Count - townBuildings,
                 RepairedVertices = grid.RepairedVertices,
                 Origin = origin,
             };
@@ -167,6 +179,13 @@ namespace Valkur.Gameplay.World.Generation
                 string buildingsJson = BuildingsJson(placements, buildings, zoneNames, z);
                 File.WriteAllText(request.BuildingsFilePath, buildingsJson);
                 result.Bytes += buildingsJson.Length;
+
+                var records = SeedWorldPopulation.SpawnerRecords(preview, spawners, zoneNames, z);
+                Directory.CreateDirectory(request.SpawnersDirectory);
+                string spawnersJson = Valkur.Gameplay.Spawners.SpawnerInstanceSerializer.Serialize(records);
+                File.WriteAllText(request.SpawnersFilePath, spawnersJson);
+                result.Bytes += spawnersJson.Length;
+                result.Spawners = records.Count;
 
                 var marker = new SeedWorldMarker
                 {
@@ -252,7 +271,9 @@ namespace Valkur.Gameplay.World.Generation
                 int cols = Mathf.Max(1, Mathf.CeilToInt(effW / 32f));
                 int rows = Mathf.Max(1, Mathf.CeilToInt(effH / 32f));
                 int solidRows = SolidRows(p.Option.Kind, rows);
-                int solidCols = p.Option.Kind == WorldTownPieceKind.Lamp ? 1 : cols;
+                // A lamp or a tree blocks at its post or trunk, not across the whole width of its light
+                // or its canopy — a wood you cannot walk between is a wall.
+                int solidCols = p.Option.Kind == WorldTownPieceKind.Lamp || p.Option.Kind == WorldTownPieceKind.Tree ? 1 : cols;
                 int solidStart = (cols - solidCols) / 2;
 
                 if (id > 0) sb.Append(',');
@@ -288,6 +309,7 @@ namespace Valkur.Gameplay.World.Generation
             {
                 case WorldTownPieceKind.Lamp:
                 case WorldTownPieceKind.Stall:
+                case WorldTownPieceKind.Tree:
                     return 1;
                 case WorldTownPieceKind.Centerpiece:
                     return Mathf.Max(1, rows / 2);

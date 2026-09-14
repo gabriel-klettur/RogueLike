@@ -15,6 +15,8 @@ namespace Valkur.Gameplay.World.Generation
         public int Rivers;
         public int Towns;
         public int Buildings;
+        public int Trees;
+        public int Spawners;
 
         /// <summary>Cells drawn as their majority terrain because no pack could draw their corners.</summary>
         public int HardCuts;

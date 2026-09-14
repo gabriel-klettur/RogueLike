@@ -89,6 +89,36 @@ namespace Valkur.Data.WorldGen
         public static Vector2Int SpawnTileOf(WorldTown town)
             => new Vector2Int(town.Center.x, town.Plaza.yMin - 2);
 
+        /// <summary>
+        /// Street tiles for the town's residents to stand on, spread around the plaza: the tiles
+        /// between <paramref name="minDistance"/> and <paramref name="maxDistance"/> of the centre,
+        /// taken at even steps of angle so two vendors never share a corner of town.
+        /// </summary>
+        public static List<Vector2Int> ResidentTiles(WorldTown town, int count, int minDistance = 6, int maxDistance = 11)
+        {
+            var ring = new List<Vector2Int>();
+            foreach (var t in town.StreetTiles)
+            {
+                float d = Vector2Int.Distance(t, town.Center);
+                if (d >= minDistance && d <= maxDistance && !town.Plaza.Contains(t)) ring.Add(t);
+            }
+            ring.Sort((a, b) =>
+            {
+                int byAngle = Angle(a, town.Center).CompareTo(Angle(b, town.Center));
+                if (byAngle != 0) return byAngle;
+                int byX = a.x.CompareTo(b.x);
+                return byX != 0 ? byX : a.y.CompareTo(b.y);
+            });
+
+            var picked = new List<Vector2Int>();
+            if (ring.Count == 0 || count <= 0) return picked;
+            for (int i = 0; i < count && i < ring.Count; i++)
+                picked.Add(ring[(int)((long)i * ring.Count / Mathf.Min(count, ring.Count))]);
+            return picked;
+        }
+
+        private static float Angle(Vector2Int t, Vector2Int c) => Mathf.Atan2(t.y - c.y, t.x - c.x);
+
         /// <summary>True when the tile is ground a street or a house may stand on.</summary>
         public static bool IsBuildable(WorldClimate climate, HashSet<Vector2Int> riverTiles, Vector2Int tile)
         {

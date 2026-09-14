@@ -283,5 +283,37 @@ namespace Valkur.Gameplay
         }
 
         public int ActiveMonsterCount => _activeMonsters.Count;
+
+        /// <summary>
+        /// Destroys every monster this spawner produced, PERSISTENT ones included, for a world swap.
+        ///
+        /// <para>The distance despawn exempts persistent spawns on purpose (a vendor must not vanish
+        /// because the player walked away), and nothing else ever removed them — so switching map
+        /// slots carried the previous world's six vendors into the new one, measured on the first
+        /// Seed World build: twelve vendors, two of each, half of them standing where the lobby used
+        /// to be. The spawners that made them are destroyed by the swap; their monsters have to go
+        /// with them.</para>
+        ///
+        /// <para>Two kinds are left alone: allies (they follow the PLAYER, not the map) and entities
+        /// placed through the Entities editor, which <c>PlacedEntityService.ClearSpawned</c> owns.</para>
+        /// </summary>
+        public int DespawnAllForWorldSwap()
+        {
+            int removed = 0;
+            for (int i = _activeMonsters.Count - 1; i >= 0; i--)
+            {
+                var m = _activeMonsters[i];
+                if (m == null) { _activeMonsters.RemoveAt(i); continue; }
+                if (m.GetComponent<AlliedUnit>() != null) continue;
+                if (m.GetComponent<PersistedEntityInstance>() != null) continue;
+
+                _activeMonsters.RemoveAt(i);
+                if (Application.isPlaying) Destroy(m);
+                else DestroyImmediate(m);
+                removed++;
+            }
+            _spatialHash.Clear();
+            return removed;
+        }
     }
 }

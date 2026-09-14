@@ -126,6 +126,7 @@ namespace Valkur.Gameplay.Editors.SeedWorld
             for (int i = 0; i < _pixels.Length; i++)
                 _pixels[i] = ColourFor(i, s, rareThreshold);
 
+            if (_layer == PreviewLayer.Biome) MarkEncounters(cols, rows);
             if (_map.HasSpawn) MarkSpawn(cols, rows);
 
             _previewTexture.SetPixels32(_pixels);
@@ -154,6 +155,24 @@ namespace Valkur.Gameplay.Editors.SeedWorld
                     if (_map.TownMask[i] == 2) return WorldGenPalette.Street;
                     if (_map.TownMask[i] == 1) return Color32.Lerp(biome, WorldGenPalette.TownArea, 0.35f);
                     return biome;
+            }
+        }
+
+        /// <summary>A 3x3 dot per hostile camp, orange near the start and red at the far edge.</summary>
+        private void MarkEncounters(int cols, int rows)
+        {
+            foreach (var site in _map.Encounters)
+            {
+                int cx = Mathf.Clamp(Mathf.FloorToInt(site.Tile.x / _map.TilesPerCell), 0, cols - 1);
+                int cy = Mathf.Clamp(Mathf.FloorToInt(site.Tile.y / _map.TilesPerCell), 0, rows - 1);
+                var colour = Color32.Lerp(WorldGenPalette.EncounterNear, WorldGenPalette.EncounterFar, site.Difficulty);
+                for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = -1; dx <= 1; dx++)
+                    {
+                        int x = cx + dx, y = cy + dy;
+                        if (x < 0 || y < 0 || x >= cols || y >= rows) continue;
+                        _pixels[y * cols + x] = colour;
+                    }
             }
         }
 
@@ -188,7 +207,8 @@ namespace Valkur.Gameplay.Editors.SeedWorld
 
             _statsLabel.text =
                 $"Semilla {s.seed}   {s.widthTiles}x{s.heightTiles} tiles   " +
-                $"tierra {Pct(land)}  agua {Pct(water)}   {spawn}\n" +
+                $"tierra {Pct(land)}  agua {Pct(water)}   {spawn}   " +
+                $"{_map.Towns.Count} pueblos  {_map.Encounters.Count} encuentros  {_map.Rivers.Count} rios\n" +
                 $"Vista previa {_map.Columns}x{_map.Rows} celdas " +
                 $"({_map.TilesPerCell.ToString("0.##", CultureInfo.InvariantCulture)} tiles/celda) " +
                 $"generada en {_lastGenerateMs} ms";

@@ -26,6 +26,8 @@ namespace Valkur.Data.WorldGen
         public const int MaxTowns = 30;
         public const int MinTownRadius = 10;
         public const int MaxTownRadius = 40;
+        public const int MaxEncounters = 80;
+        public const float MaxTreeDensity = 1.3f;
 
         /// <summary>
         /// The tallest world the Y-sort can hold without an origin shift. Sorting orders are a
@@ -89,6 +91,12 @@ namespace Valkur.Data.WorldGen
         [Tooltip("Found the first town where the run begins, so the player starts somewhere people live.")]
         public bool startingTown = true;
 
+        [Tooltip("How many hostile encounters the generator places outside the towns.")]
+        public int encounterCount = 12;
+
+        [Tooltip("Multiplies every biome's tree density. 0 = no trees, 1 = dense woods.")]
+        public float treeDensity = 0.6f;
+
         [Tooltip("Which biomes may appear and how much of the climate plane each claims.")]
         public List<WorldBiomeWeight> biomes = new List<WorldBiomeWeight>();
 
@@ -151,6 +159,8 @@ namespace Valkur.Data.WorldGen
             riverWidth = Mathf.Clamp(riverWidth, 1, MaxRiverWidth);
             townCount = Mathf.Clamp(townCount, 0, MaxTowns);
             townRadius = Mathf.Clamp(townRadius, MinTownRadius, MaxTownRadius);
+            encounterCount = Mathf.Clamp(encounterCount, 0, MaxEncounters);
+            treeDensity = Mathf.Clamp(treeDensity, 0f, MaxTreeDensity);
 
             EnsureAllBiomes();
             foreach (var row in biomes)

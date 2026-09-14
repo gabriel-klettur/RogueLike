@@ -97,6 +97,15 @@ namespace Valkur.Gameplay.Editors.SeedWorld
             AddHint(body, "Con el pueblo inicial la partida empieza en su calle principal, no en mitad del campo.");
 
             EditorUIHelpers.BuildSeparator(body);
+            EditorUIHelpers.BuildSectionHeader(body, "Poblacion");
+
+            AddIntField(body, "Encuentros", "Campamentos hostiles fuera de los pueblos. Mas lejos del inicio, mas peligrosos.",
+                () => _settings.encounterCount, v => _settings.encounterCount = v, 0, WorldGenSettings.MaxEncounters);
+            AddFloatField(body, "Densidad de arboles", "0 = sin arboles. La familia la decide el bioma (taiga: invierno; selva: tropical).",
+                () => _settings.treeDensity, v => _settings.treeDensity = v, 0f, WorldGenSettings.MaxTreeDensity);
+            AddHint(body, "Los vendedores viven en el pueblo inicial: cada uno es un personaje unico.");
+
+            EditorUIHelpers.BuildSeparator(body);
             BuildBakeSection(body);
         }
 

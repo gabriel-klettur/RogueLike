@@ -73,6 +73,7 @@ namespace Valkur.Tests.EditMode.Editors.SeedWorld
                 {
                     int i = map.Index(col, row);
                     if (map.TownMask[i] != 0) continue; // towns are drawn over the biome
+                    if (NearEncounter(map, col, row)) continue; // so are the camp markers
                     var expected = WorldBiomeTable.GetAt(map.Biomes[i]).PreviewColor;
                     var actual = pixels[i];
                     if (actual.Equals(WorldGenPalette.Spawn)) continue; // the spawn marker
@@ -80,6 +81,17 @@ namespace Valkur.Tests.EditMode.Editors.SeedWorld
                     checkedCells++;
                 }
             Assert.Greater(checkedCells, 0);
+        }
+
+        private static bool NearEncounter(WorldGenMap map, int col, int row)
+        {
+            foreach (var site in map.Encounters)
+            {
+                int cx = Mathf.FloorToInt(site.Tile.x / map.TilesPerCell);
+                int cy = Mathf.FloorToInt(site.Tile.y / map.TilesPerCell);
+                if (Mathf.Abs(cx - col) <= 1 && Mathf.Abs(cy - row) <= 1) return true;
+            }
+            return false;
         }
 
         [Test]

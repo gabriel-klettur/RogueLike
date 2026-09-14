@@ -471,6 +471,11 @@ namespace Valkur.Gameplay.MapEditor
             var sl = FindObjectOfType<SpawnerInstanceLoader>();
             sl?.ClearInstances();
 
+            // The spawners are gone; the monsters they made are not unless someone removes them,
+            // and a persistent vendor is never removed by distance. See DespawnAllForWorldSwap.
+            var monsters = FindObjectOfType<Valkur.Gameplay.MonsterSpawner>();
+            if (monsters != null) monsters.DespawnAllForWorldSwap();
+
             FindObjectOfType<WorldLightLoader>()?.ClearSpawnedLights();
 
             FindObjectOfType<Valkur.Gameplay.VFX.ParticleInstancesLoader>()?.ClearAll();

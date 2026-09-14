@@ -67,6 +67,10 @@ namespace Valkur.Gameplay.World.Generation
         /// <summary>Where <c>MapEditorActiveSlot.BuildingsDir</c> resolves this slot's buildings.</summary>
         public string BuildingsDirectory => Path.Combine(MapsDirectory, Slot, "Buildings");
         public string BuildingsFilePath => Path.Combine(BuildingsDirectory, "buildings_instances.json");
+
+        /// <summary>Where <c>MapEditorActiveSlot.DirFor("Spawners")</c> resolves this slot's spawners.</summary>
+        public string SpawnersDirectory => Path.Combine(MapsDirectory, Slot, "Spawners");
+        public string SpawnersFilePath => Path.Combine(SpawnersDirectory, "spawners_instances.json");
         public string MarkerPath => Path.Combine(OverridesDirectory, MarkerFileName);
 
         private static string CleanSlot(string slotName)

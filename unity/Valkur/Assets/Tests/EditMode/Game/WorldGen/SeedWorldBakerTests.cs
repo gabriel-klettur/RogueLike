@@ -202,7 +202,7 @@ namespace Valkur.Tests.EditMode.Game.WorldGen
             Assert.IsTrue(File.Exists(request.BuildingsFilePath));
 
             var list = MiniJsonRuntime.Deserialize(File.ReadAllText(request.BuildingsFilePath)) as List<object>;
-            Assert.AreEqual(result.Buildings, list.Count);
+            Assert.AreEqual(result.Buildings + result.Trees, list.Count, "the file holds the towns AND the trees");
 
             var slot = Parse(request.SlotFilePath);
             var zoneNames = new HashSet<string>();

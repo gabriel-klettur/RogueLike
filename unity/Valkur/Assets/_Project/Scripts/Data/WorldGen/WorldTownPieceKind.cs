@@ -9,5 +9,8 @@ namespace Valkur.Data.WorldGen
         Centerpiece = 2,
         Lamp = 3,
         Stall = 4,
+
+        /// <summary>A tree in the wild. Placed by <see cref="WorldTrees"/>, never inside a town.</summary>
+        Tree = 5,
     }
 }

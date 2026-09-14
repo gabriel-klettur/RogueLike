@@ -34,6 +34,10 @@ namespace Valkur.Data.WorldGen
         /// <summary>Blended over the biome inside a town's radius.</summary>
         public static readonly Color32 TownArea = new Color32(214, 176, 120, 255);
 
+        /// <summary>A hostile encounter, brighter the further it is from the start.</summary>
+        public static readonly Color32 EncounterNear = new Color32(240, 150, 60, 255);
+        public static readonly Color32 EncounterFar = new Color32(200, 20, 40, 255);
+
         /// <summary>The marker drawn on the spawn point.</summary>
         public static readonly Color32 Spawn = new Color32(255, 216, 64, 255);
 

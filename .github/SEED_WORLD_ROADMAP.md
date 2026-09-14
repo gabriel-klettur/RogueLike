@@ -1,6 +1,6 @@
 # Seed World — generación procedural del mundo
 
-Fecha: 2026-09-13 / 2026-09-14. Estado: **Fases 1, 2 y 3 hechas** (vista previa, mundo jugable, pueblos); fase 4 en curso.
+Fecha: 2026-09-13 / 2026-09-14. Estado: **Fases 1 a 4 hechas** (vista previa, mundo jugable, pueblos, poblacion); fase 5 pendiente.
 
 ## Qué es
 
@@ -65,7 +65,7 @@ juego hace otra cosa — el fallo que el overlay de áreas de hechizos existe pa
 | 1 | `WorldGenSettings`, `WorldGenProfile`, `FractalNoise2D`, `WorldClimate` (4 ruidos + tabla de biomas), `WorldGenMap`, editor Seed World con vista previa por capas, estadísticas y punto de inicio | Mapas distintos por semilla, sin construir nada | Hecha |
 | 2 | Relieve (acantilados como capas), ríos, pintado de terreno autotile por bioma, **hornear a un mundo nuevo** (`Worlds/<slug>/`, nunca el base) | Caminar por un mundo generado | Hecha (sin acantilados, ver abajo) |
 | 3 | Rejilla de estructuras + ciudad jigsaw (plaza, calles, parcelas) con los ~50 edificios pixel-art; colisión automática; validación de solapes y conectividad | Ciudades generadas | Hecha (calles de tierra, sin murallas: no hay arte) |
-| 4 | Caminos entre estructuras, recursos por bioma, población, dificultad por distancia al inicio | Mundo jugable | Pendiente |
+| 4 | Caminos entre estructuras, recursos por bioma, población, dificultad por distancia al inicio | Mundo jugable | Hecha (sin caminos entre pueblos) |
 | 5 | Modo en vivo: la partida guarda semilla + perfil y genera chunks bajo demanda con deltas | Mundo nuevo en cada partida | Pendiente |
 
 ## Fase 1 — detalle
@@ -236,3 +236,41 @@ Gameplay/World/Generation/
 - Reconstruir un slot sobrescribe su `buildings_instances.json`: lo que un autor coloco a mano alli se pierde.
 - Cambiar de slot reescribe `Data/Backups/map_editor_zones.json.bak` (fichero versionado): comportamiento
   previo del Map editor, pero cada prueba de Seed World lo ensucia.
+
+## Fase 4 — poblacion (hecha, 2026-09-14)
+
+```text
+Data/WorldGen/
+  WorldEncounters / WorldEncounterSite   campamentos: fuera de pueblos, dificultad = distancia al inicio
+  WorldTrees / WorldTreeSite             arboles: rejilla con jitter, familia segun bioma
+  WorldTowns.ResidentTiles               casillas de calle alrededor de la plaza para los vendedores
+Gameplay/World/Generation/
+  SeedWorldPopulation                    presets de spawner (vendedores + escalera hostil) y plantillas de arbol
+```
+
+- **Vendedores solo en el pueblo inicial.** Cada uno es un personaje unico con persona y memoria; cuatro
+  Gatitas en cuatro pueblos seria un error de continuidad, no una poblacion.
+- **Encuentros con dificultad por distancia**: `dificultad = distancia al inicio / distancia maxima posible`,
+  asi que va de 0 a 1 en cualquier tamano de mundo. Elige el preset por su posicion en una escalera ordenada
+  por su propio `levelBonus` (+-1 paso), le suma hasta +3 niveles por distancia, y el cubil del dragon solo
+  aparece por encima de 0.8. Nunca a menos de 14 tiles del borde de un pueblo ni a menos de 30 del inicio.
+- **Spawners como filas v2 con SNAPSHOT del preset**, por `SpawnerInstanceSerializer`. Una fila que solo
+  nombrara el preset se congelaria contra el; y una config v2 con solo el `levelBonus` leeria el resto como
+  valores por defecto de clase y perderia el roster. Test: los tiles relativos a zona vuelven al sitio planeado.
+- **Arboles por bioma**: la taiga da arboles de invierno, la selva tropicales, el pantano de pantano, un
+  parche corrupto corruptos, y un 4 % de los comunes es antiguo. Son las plantillas de la tala (HarvestNode),
+  asi que el mundo generado ya es talable. Colision de 1 tile en el tronco: un bosque que no se puede cruzar
+  es un muro.
+- **Bug encontrado y arreglado de paso:** cambiar de map slot dejaba vivos los monstruos persistentes del
+  mundo anterior (los vendedores estan exentos del despawn por distancia). La primera prueba tuvo 12
+  vendedores: los 6 del lobby habian seguido al jugador. `MonsterSpawner.DespawnAllForWorldSwap` los retira en
+  `ClearAllSpawnedWorldContent` (salvo aliados y entidades colocadas, que tienen dueno propio).
+- Medido (400x400, semilla 1337): 97 edificios, 631 arboles, 18 spawners (6 vendedores + 12 campamentos),
+  cargar el slot 1.8 s. Consola limpia salvo un aviso previo del mundo base (instancia 214 en `zone_200_-50`).
+
+### Abierto tras la fase 4
+
+- Caminos entre pueblos, puentes sobre rios.
+- Misiones procedurales y personas nuevas (los pueblos que no son el inicial no tienen habitantes).
+- Monstruos por bioma (hoy el preset depende de la distancia, no del terreno).
+- Fase 5 (mundo en vivo por chunks) sigue pendiente: hoy un mundo de 2048x600 serian ~60 MB de overlays.

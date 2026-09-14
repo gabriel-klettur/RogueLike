@@ -47,6 +47,9 @@ namespace Valkur.Data.WorldGen
         /// <summary>The towns of this world — the same plan the build fills with buildings.</summary>
         public IReadOnlyList<WorldTown> Towns { get; private set; } = new List<WorldTown>();
 
+        /// <summary>The hostile encounters — the same plan the build turns into spawners.</summary>
+        public IReadOnlyList<WorldEncounterSite> Encounters { get; private set; } = new List<WorldEncounterSite>();
+
         /// <summary>Per cell: 0 nothing, 1 inside a town, 2 street or plaza. Drawn over the biome layer.</summary>
         public readonly byte[] TownMask;
 
@@ -94,6 +97,7 @@ namespace Valkur.Data.WorldGen
             map.PaintRivers();
             map.FindSpawn();
             map.PlanTowns();
+            map.Encounters = WorldEncounters.Plan(climate, map.RiverTiles, map.Towns, map.SpawnTile);
             return map;
         }
 

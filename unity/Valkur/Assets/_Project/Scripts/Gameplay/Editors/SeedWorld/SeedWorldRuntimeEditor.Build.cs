@@ -121,7 +121,8 @@ namespace Valkur.Gameplay.Editors.SeedWorld
             var palette = new SeedWorldTilePalette(TerrainCatalogLoader.Load());
             var loader = FindObjectOfType<BuildingLoader>();
             var catalog = loader != null ? loader.Catalog : null;
-            var result = SeedWorldBaker.Bake(_settings, request, palette, catalog);
+            Valkur.Core.ServiceLocator.TryGet<Valkur.Data.SpawnerTemplateCatalog>(out var spawners);
+            var result = SeedWorldBaker.Bake(_settings, request, palette, catalog, spawners);
             if (!result.Succeeded)
             {
                 SetStatus("No se construyo: " + result.Error);
@@ -135,7 +136,8 @@ namespace Valkur.Gameplay.Editors.SeedWorld
 
             string summary =
                 $"'{result.Slot}': {result.ZonesX}x{result.ZonesY} zonas, {result.Rivers} rios, " +
-                $"{result.Towns} pueblos con {result.Buildings} edificios, " +
+                $"{result.Towns} pueblos con {result.Buildings} edificios, {result.Trees} arboles, " +
+                $"{result.Spawners} spawners, " +
                 $"{result.BlockedTiles} tiles bloqueados, {result.HardCuts} cortes sin transicion. " +
                 $"Generado {result.GenerateMs} ms, escrito {result.WriteMs} ms " +
                 $"({result.Bytes / (1024 * 1024f):0.0} MB), cargado {loadWatch.ElapsedMilliseconds} ms.";
