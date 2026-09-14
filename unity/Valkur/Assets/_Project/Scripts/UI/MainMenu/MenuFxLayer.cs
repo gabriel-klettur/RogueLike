@@ -61,7 +61,34 @@ namespace Valkur.UI.MainMenu
         /// <summary>The most motes the layer will hold; an emit past it is dropped, never grown.</summary>
         public int Capacity => _motes.Length;
 
-        public override Texture mainTexture => _art != null && _art.Atlas != null ? _art.Atlas : s_WhiteTexture;
+        /// <summary>
+        /// Draw from the title's own small BILINEAR page instead of the menu atlas.
+        ///
+        /// <para>The menu atlas is filtered to POINT on purpose — it is what keeps the panels,
+        /// the pills and the chevrons crisp — and a 2x2 dot point-sampled up to a few units is a
+        /// hard square. A few dozen hard squares read as gravel, which is fine for a confirm
+        /// burst on a button and wrong for anything meant to be an EMBER. The title already
+        /// solved this by baking its dot and its glint onto one bilinear page; this borrows it
+        /// rather than baking a third.</para>
+        ///
+        /// <para>It is a property of the LAYER and not of a mote, because a <c>Graphic</c> binds
+        /// exactly one texture — a layer that mixed the two would silently draw every soft mote
+        /// from whichever page it happened to bind, which is the failure the title's own
+        /// one-page bake exists to avoid.</para>
+        /// </summary>
+        public bool UseSoftMotes { get; set; }
+
+        private bool SoftAvailable => UseSoftMotes && _art != null && _art.TitleMote != null
+                                      && _art.TitleMote.texture != null;
+
+        public override Texture mainTexture
+        {
+            get
+            {
+                if (SoftAvailable) return _art.TitleMote.texture;
+                return _art != null && _art.Atlas != null ? _art.Atlas : s_WhiteTexture;
+            }
+        }
 
         public static MenuFxLayer Create(Transform parent, MenuArt art, int capacity, Material material)
         {
@@ -153,8 +180,9 @@ namespace Valkur.UI.MainMenu
         protected override void OnPopulateMesh(VertexHelper vh)
         {
             vh.Clear();
-            if (_alive == 0 || _art == null || _art.Atlas == null) return;
-            var tex = _art.Atlas;
+            if (_alive == 0 || _art == null) return;
+            var tex = SoftAvailable ? _art.TitleMote.texture : _art.Atlas;
+            if (tex == null) return;
             var rect = GetPixelAdjustedRect();
 
             for (int i = 0; i < _alive; i++)
@@ -190,6 +218,16 @@ namespace Valkur.UI.MainMenu
 
         private Sprite SpriteFor(MenuMoteShape shape)
         {
+            if (SoftAvailable)
+            {
+                // Only two shapes exist on that page. Anything else falls back to the dot rather
+                // than to an atlas sprite, because a sprite from the OTHER texture would be read
+                // through this one's UVs and draw a slice of whatever happens to sit there.
+                return shape == MenuMoteShape.Spark && _art.TitleSpark != null
+                       && _art.TitleSpark.texture == _art.TitleMote.texture
+                    ? _art.TitleSpark
+                    : _art.TitleMote;
+            }
             switch (shape)
             {
                 case MenuMoteShape.Spark: return _art.MoteSpark;

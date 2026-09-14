@@ -179,6 +179,8 @@ namespace Valkur.UI.Loading
         private TextMeshProUGUI _feedText;
         private TextMeshProUGUI _tipText;
         private CanvasGroup     _cg;
+        private LoadingFireFX   _fire;
+        private RectTransform   _bgRect;
         private GameObject      _errorPanel;
         private TextMeshProUGUI _errorBody;
         private Transform       _canvasRoot;
@@ -234,6 +236,8 @@ namespace Valkur.UI.Loading
 
         private void OnDestroy()
         {
+            _fire?.Dispose();
+            _fire = null;
             if (_instance == this) _instance = null;
             LoadingReporter.Clear();
             BlockGameplayInput(false);
@@ -253,6 +257,11 @@ namespace Valkur.UI.Loading
 
         private void Update()
         {
+            // Ticked ABOVE the fading guard on purpose. The CanvasGroup is what fades the fire
+            // out, so freezing it here would stop the dragon breathing for the last quarter
+            // second of the screen — which reads as a hitch, not as a fade.
+            _fire?.Tick(Time.unscaledDeltaTime);
+
             if (_fadingOut) return;
 
             _displayedProgress = Mathf.Lerp(_displayedProgress, _targetProgress,
@@ -596,6 +605,9 @@ namespace Valkur.UI.Loading
             _cg = canvasGo.AddComponent<CanvasGroup>();
 
             BuildBackground(canvasGo);
+            // Only over a real painting: the black fallback leaves _bgRect null, and a jet of
+            // embers crossing an empty black screen is a bug that looks like a feature.
+            _fire = LoadingFireFX.Attach(_bgRect, BackgroundName, Valkur.Data.MenuStyle.Active);
 
             float refW = 1600f, refH = 800f;
             float barW = refW * BAR_WIDTH_RATIO;
@@ -615,6 +627,10 @@ namespace Valkur.UI.Loading
                 if (_barFill != null) _barFill.sprite = GetWhiteSprite();
             }
         }
+
+        /// <summary>Where the painting lives, and the key its measured anchors are filed under.</summary>
+        private const string BackgroundName = "background_ini";
+        private const string BackgroundPath = "UI/Loading/" + BackgroundName;
 
         private void BuildBackground(GameObject canvasGo)
         {
@@ -641,17 +657,18 @@ namespace Valkur.UI.Loading
             var fitter = bgGo.AddComponent<AspectRatioFitter>();
             fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
 
-            var bgSprite = Resources.Load<Sprite>("UI/Loading/background_ini");
+            var bgSprite = Resources.Load<Sprite>(BackgroundPath);
             if (bgSprite != null)
             {
                 bgImg.sprite = bgSprite;
                 fitter.aspectRatio = bgSprite.texture != null
                     ? (float)bgSprite.texture.width / Mathf.Max(1, bgSprite.texture.height)
                     : (float)bgSprite.rect.width / Mathf.Max(1f, bgSprite.rect.height);
+                _bgRect = bgRt;
                 return;
             }
 
-            var bgTex = Resources.Load<Texture2D>("UI/Loading/background_ini");
+            var bgTex = Resources.Load<Texture2D>(BackgroundPath);
             if (bgTex != null)
             {
                 // FullRect. The default is SpriteMeshType.Tight, which traces the alpha outline
@@ -660,6 +677,7 @@ namespace Valkur.UI.Loading
                 bgImg.sprite = Sprite.Create(bgTex, new Rect(0, 0, bgTex.width, bgTex.height),
                                              new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
                 fitter.aspectRatio = (float)bgTex.width / Mathf.Max(1, bgTex.height);
+                _bgRect = bgRt;
                 return;
             }
 
