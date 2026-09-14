@@ -6427,8 +6427,19 @@ related symptom reappears.
   generador). Eso exigio que la reparacion de transiciones fuera LOCAL (pasadas Jacobi): una region
   con margen 7 coincide con el mundo entero vertice a vertice, y un test lo comprueba en todos.
   `seedworld nueva [semilla]` empieza un mundo nuevo desde la consola. **Cambiar de slot retira los
-  monstruos del mundo anterior** (`MonsterSpawner.DespawnAllForWorldSwap`). Pendiente (menu principal,
-  caminos, arte): `.github/SEED_WORLD_ROADMAP.md`.
+  monstruos del mundo anterior** (`MonsterSpawner.DespawnAllForWorldSwap`).
+  **Separado del juego hasta que se integre (decision 2026-09-14):** `SeedWorldLab` (PlayerPrefs,
+  APAGADO por defecto, leido APAGADO en tests) es la primera puerta de `SeedWorldLauncher`, el
+  arranque no instala nada de Seed World salvo su editor, y `SeedWorldBootGuard` impide arrancar dentro
+  de un mundo generado. **Pepitoria es el hub**: salir a otro slot escribe un billete de vuelta
+  (`WorldExcursion`, casa = el PRIMER paso fuera), volver aterriza en el punto exacto, y un guardado
+  hecho fuera conserva lo ganado pero registra la posicion de casa. Una sesion que termina fuera arranca
+  en casa. "Partida con semilla" esta en el menu principal solo con el laboratorio encendido.
+  **`LoadingScreenController` ASIGNA `LoadingReporter.OnGameplayReady`**: un sistema que quiera
+  enterarse del final del arranque desde el menu usa `OnGameplayReadyForSystems`, o su `+=` se borra.
+  **`MapEditorMapSlots` pasa por `WorldDataWriteGuard`**: un fixture que usa el directorio `Maps` real
+  lo aparca y abre el scope. Pendiente (streaming de edificios/arboles/spawners, auto-brush en zonas no
+  guardadas, caminos, arte): `.github/SEED_WORLD_ROADMAP.md`.
 - **Editor UI/UX unification & persistence** — audited 2026-09-02, layer shipped 2026-09-03.
   The seventeen editors are 319 files / ~77.6k LOC and drifted: three (Camera, DungeonNodeGraph,
   General) carry NO chrome at all, `PanelChrome` is missing from six, the tutorial overlay from

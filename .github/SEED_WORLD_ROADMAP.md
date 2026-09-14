@@ -1,6 +1,8 @@
 # Seed World — generación procedural del mundo
 
-Fecha: 2026-09-13 / 2026-09-14. Estado: **Fases 1 a 5 hechas** (vista previa, mundo jugable, pueblos, poblacion, mundo en vivo).
+Fecha: 2026-09-13 / 2026-09-14. Estado: **Fases 1 a 5 hechas** (vista previa, mundo jugable, pueblos, poblacion, mundo en vivo)
+y **separado del juego**: es un laboratorio APAGADO por defecto hasta que se integre, y cada viaje fuera de Pepitoria
+lleva billete de vuelta (ver "Separacion del juego" al final).
 
 ## Qué es
 
@@ -66,7 +68,7 @@ juego hace otra cosa — el fallo que el overlay de áreas de hechizos existe pa
 | 2 | Relieve (acantilados como capas), ríos, pintado de terreno autotile por bioma, **hornear a un mundo nuevo** (`Worlds/<slug>/`, nunca el base) | Caminar por un mundo generado | Hecha (sin acantilados, ver abajo) |
 | 3 | Rejilla de estructuras + ciudad jigsaw (plaza, calles, parcelas) con los ~50 edificios pixel-art; colisión automática; validación de solapes y conectividad | Ciudades generadas | Hecha (calles de tierra, sin murallas: no hay arte) |
 | 4 | Caminos entre estructuras, recursos por bioma, población, dificultad por distancia al inicio | Mundo jugable | Hecha (sin caminos entre pueblos) |
-| 5 | Modo en vivo: la partida guarda semilla + perfil y genera chunks bajo demanda con deltas | Mundo nuevo en cada partida | Hecha (zona = chunk; menu principal pendiente) |
+| 5 | Modo en vivo: la partida guarda semilla + perfil y genera chunks bajo demanda con deltas | Mundo nuevo en cada partida | Hecha (zona = chunk; "Partida con semilla" en el menu, solo con el laboratorio) |
 
 ## Fase 1 — detalle
 
@@ -342,8 +344,110 @@ ESC -> Seed World -> Modo EN VIVO / HORNEADO
 
 ### Abierto tras la fase 5
 
-- **Menu principal**: "Nueva partida" con semilla. Hoy es `seedworld nueva [semilla]` o el editor.
+- ~~Menu principal~~: hecho, "Partida con semilla" (solo con el laboratorio encendido), ver abajo.
 - Edificios, arboles y spawners se cargan todos al entrar (bien a 400x400; un mundo de 2048x600 serian ~5000
   arboles instanciados de golpe). Streaming por zona de esas capas = siguiente paso si se hacen mundos grandes.
 - El auto-brush del Tile editor no tiene la matriz `terrains` de una zona generada que nunca se guardo.
 - Caminos entre pueblos, puentes, arte de nieve/desierto/pantano, habitantes fuera del pueblo inicial.
+
+## Separacion del juego: laboratorio y billete de vuelta (2026-09-14)
+
+**Decision del proyecto:** Seed World necesita bastante refinamiento antes de formar parte del juego, y
+**Pepitoria es la ciudad principal**: desde ella se llega a todos los demas sitios y a ella se vuelve. Hasta que se
+integre, nada del juego normal puede depender de Seed World, y mover al jugador fuera esta permitido solo si siempre
+vuelve exactamente a donde estaba.
+
+### El incidente que lo motivo
+
+Las pruebas de la fase 5 (cambios de slot a `partida_1337`) corrompieron el mundo base el mismo dia:
+
+- La copia de trabajo de zonas (`persistentDataPath/map_editor_zones.json`) paso de **45 a 126 zonas**: las 102
+  zonas generadas quedaron apiladas sobre los offsets de Pepitoria y se perdieron **8 zonas reales** con sus edificios
+  (la instancia 214 de `zone_200_-50` dejo de aparecer; la llame "aviso previo" y era dano propio).
+- Un autoguardado de la partida registro al jugador en **"Pueblo inicial"**, una zona que el mundo base no tiene.
+- `Maps/default.zones.json` contenia zonas de fixtures.
+
+Reparado a mano desde la copia de 45 zonas de HEAD (`Data/Backups/map_editor_zones.json.bak`) tras un snapshot del
+estado danado. La causa raiz (un persist escribia la copia de trabajo base con las zonas de OTRO mapa, y la fusion de
+zonas archivadas leia el fichero base dentro del otro mapa) esta arreglada en `8e43955af`: las zonas vivas tienen
+DUENO y un persist solo escribe el fichero de su dueno.
+
+### El laboratorio (`SeedWorldLab`, apagado por defecto)
+
+```text
+SeedWorldLab            Gameplay/World/Generation/   el interruptor (PlayerPrefs valkur.seedworld.lab, por maquina)
+SeedWorldBootGuard      Gameplay/World/Generation/   BeforeSceneLoad: una sesion nunca arranca dentro de un mundo generado
+SeedWorldNewGame        Gameplay/World/Generation/   "Partida con semilla": la peticion cruza la carga de escena
+WorldExcursion          Gameplay/World/Zones/        el billete de vuelta
+MainMenuUI.SeededNewGame.cs  UI/MainMenu/            la fila del menu (solo con el laboratorio)
+seedworld [lab on|off | nueva [semilla] | volver]    DevConsole
+ESC -> Seed World -> Laboratorio ENCENDIDO/APAGADO, "Volver a Pepitoria"
+```
+
+- **Una sola puerta:** `SeedWorldLauncher.BuildAndLoad` rechaza PRIMERO con el laboratorio apagado, asi que el boton
+  Construir, `seedworld nueva` y la partida con semilla se paran en el mismo sitio. El codigo sigue compilando con el
+  juego y el editor abre y previsualiza (una vista previa no escribe nada).
+- **El arranque no instala nada de Seed World.** El paso "Preparando los mundos en vivo" y
+  `GameplaySceneSetup.SeedWorld.cs` se borraron; el streamer se crea al entrar en un mundo
+  (`SeedWorldLiveStreamer.EnsureInstance`). `SeedWorldLabTests` lee las fuentes del arranque y solo admite el editor.
+- **Una sesion nunca arranca dentro de un mundo generado:** `SeedWorldBootGuard` devuelve el puntero de slot a
+  `default` si el slot activo tiene marcador `_seedworld.json`.
+- **Machine state:** el interruptor es PlayerPrefs, y durante una ejecucion de tests se lee APAGADO salvo que el
+  fixture lo fije. Los fixtures del menu cuentan filas; con el valor de la maquina estarian rojos solo en el ordenador
+  de quien encendio el laboratorio.
+
+### El billete de vuelta (`WorldExcursion`)
+
+- **Casa = el PRIMER paso fuera de Pepitoria.** Mover el slot activo fuera del mundo base apunta donde estaba el
+  jugador (posicion y zona). Saltar de otro mapa a otro mantiene la casa y solo cambia el destino.
+- **Volver aterriza en el billete y lo gasta**, lo traiga quien lo traiga (`LoadMapSlot("default")`, `seedworld
+  volver`, el boton del editor). `MapEditorBaseWorldIsolationTests.ATripOutOfPepitoria_ComesBackToTheExactSpotItLeftFrom`.
+- **En disco** (`persistentDataPath/Maps/_excursion.json`, escritura atomica con temporal GUID) para sobrevivir a un
+  cierre; **solo en memoria durante una ejecucion de tests**, con o sin scope de escritura: ningun fixture aparca ese
+  fichero.
+- **Una sesion que termina fuera arranca la siguiente en casa:** en `BeforeSceneLoad` el puntero vuelve a `default`
+  y el billete se gasta; el guardado ya tenia la posicion de casa.
+
+### Guardar fuera de Pepitoria (decision: "Guardar, posicion Pepitoria")
+
+- Todo lo ganado fuera (inventario, XP, monedas) se guarda. La **posicion y la zona** guardadas son SIEMPRE las de
+  casa: `SaveService.ResolvePersistablePlayerPosition` devuelve `PlayerPositionPersistence.AwayFromHome` antes que
+  cualquier otra regla, y el rastreador de la ultima posicion del mundo base deja de muestrear mientras se esta fuera.
+- El estado de muerte no se persiste fuera (`DeathStateSave.ShouldPersist`): un espiritu restaurado en casa
+  caminaria hacia un cadaver cuya posicion no significa nada en el mundo base. **Limitacion aceptada:** morir fuera y
+  cerrar el juego te deja vivo en casa.
+- El minimapa guarda la niebla de cada mapa visitado con su propia clave (`map:<slot>`): con la clave del mundo, andar
+  por un mundo generado exploraba la niebla de Pepitoria donde las coordenadas coinciden.
+
+### "Partida con semilla" en el menu principal
+
+- Fila justo despues de "Partida nueva", **solo si `SeedWorldNewGame.Available`** (laboratorio encendido). Abre el
+  mismo selector de clase y, al confirmar, arma la peticion con semilla aleatoria (el kit del menu no tiene campo de
+  texto; `seedworld nueva <semilla>` es la puerta para una elegida). La partida EMPIEZA en Pepitoria y, cuando el
+  arranque termina, sale al mundo generado con billete: la casa del personaje nuevo es su punto de aparicion.
+- **Continuar y Cargar retiran la peticion** antes de entregar la carga: una peticion espera al PROXIMO arranque, y
+  una que quedara armada por un selector abandonado convertiria un Continuar en un viaje.
+- **Defecto encontrado de paso:** `LoadingScreenController` ASIGNA `LoadingReporter.OnGameplayReady` al empezar (y lo
+  limpia al destruirse), asi que una suscripcion hecha en el menu con `+=` quedaba borrada antes del arranque y la
+  partida con semilla no habria salido nunca, con `IsPending` diciendo que si. Canal nuevo
+  `LoadingReporter.OnGameplayReadyForSystems`, que la pantalla no asigna ni limpia;
+  `SeedWorldLabTests.ASeededNewGame_SurvivesTheLoadingScreenTakingItsSignal` reproduce la asignacion.
+
+### Un test no puede escribir el directorio `Maps` del usuario
+
+`MapEditorMapSlots` era el unico escritor de ficheros del Map editor que `WorldDataWriteGuard` no cubria. El
+repositorio de zonas rechazaba la copia de trabajo de un fixture, y el persist la ESPEJABA a `Maps/default.zones.json`
+por esa clase: medido el 2026-09-14 a las 13:29 UTC, `MapEditorPortalsTests` (que no aparca nada) dejo sus dos zonas
+`zone_portals_A`/`zone_portals_B` y su portal de prueba en el espejo del usuario — el arreglo anterior solo aparcaba
+el fichero en dos fixtures. Ahora toda mutacion de `Maps/` (slots, `_active.txt`, borrar, renombrar) pasa por la
+guarda, y los tres fixtures que ejercitan el directorio real a proposito lo aparcan y abren el scope.
+
+### Abierto
+
+- **Streaming por zona de edificios, arboles y spawners** para mundos grandes.
+- **Auto-brush** sobre zonas generadas nunca guardadas (la matriz `terrains` existe en memoria pero no llega al
+  `TerrainMap` del Tile editor).
+- Caminos entre pueblos, puentes, arte de nieve/desierto/pantano, habitantes fuera del pueblo inicial.
+- Cada partida con semilla crea un slot `partida_<semilla>` que nadie borra.
+- La verificacion EN VIVO del billete (ida, guardado fuera, vuelta al punto exacto) esta cubierta por EditMode; el
+  recorrido completo en Play Mode queda por hacer en una sesion que no sea la del usuario jugando.
