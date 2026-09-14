@@ -74,6 +74,16 @@ namespace Valkur.Core.Boot
         /// </summary>
         public int SubStages { get; }
 
+        /// <summary>
+        /// The ETAPA this step belongs to — the unit the loading bar is divided into and the
+        /// unit the boot log is summarised by. Stamped by <see cref="BootSequenceBuilder"/>;
+        /// a step added to a plain list carries <see cref="BootPlan.DefaultPhase"/>.
+        /// </summary>
+        public string Phase { get; private set; } = BootPlan.DefaultPhase;
+
+        internal void AssignPhase(string phase)
+            => Phase = string.IsNullOrWhiteSpace(phase) ? BootPlan.DefaultPhase : phase;
+
         private BootStep(string label, float weight, bool barrier, Action run,
                          Func<IEnumerator> progressive, int subStages)
         {

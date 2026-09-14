@@ -61,6 +61,39 @@ namespace Valkur.Tests.EditMode.Game.Bootstrap
             Assert.Less(a, b, $"'{first}' debe ejecutarse ANTES que '{second}'.");
         }
 
+        // ── Etapas ───────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Each etapa is one segment of the loading bar and one series in
+        /// <c>Diagnostics/Boot/boot_phases.csv</c>. A name that appeared twice with other
+        /// etapas in between would draw two segments with one label and split one series
+        /// into two halves that the trend report would sum as if they were one.
+        /// </summary>
+        [Test]
+        public void EveryEtapaIsOneContiguousRun_AndNoStepIsLeftUnphased()
+        {
+            var seen = new HashSet<string>();
+            string previous = null;
+            foreach (var s in _steps)
+            {
+                Assert.AreNotEqual(BootPlan.DefaultPhase, s.Phase,
+                    $"El paso '{s.Label}' no pertenece a ninguna etapa declarada.");
+                if (s.Phase == previous) continue;
+                Assert.IsTrue(seen.Add(s.Phase),
+                    $"La etapa '{s.Phase}' aparece dos veces separada por otras: seria dos segmentos de la barra.");
+                previous = s.Phase;
+            }
+            Assert.GreaterOrEqual(seen.Count, 6, "La barra deberia dividirse en varias etapas.");
+        }
+
+        [Test]
+        public void EtapaNamesArePlainAscii()
+        {
+            foreach (var s in _steps)
+                foreach (char c in s.Phase)
+                    Assert.Less((int)c, 128, $"Caracter no ASCII en la etapa '{s.Phase}': es una clave de CSV.");
+        }
+
         // ── Shape ────────────────────────────────────────────────────────────
 
         [Test]

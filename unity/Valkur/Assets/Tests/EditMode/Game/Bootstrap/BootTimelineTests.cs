@@ -20,6 +20,24 @@ namespace Valkur.Tests.EditMode.Game.Bootstrap
     {
         private const string PrefsKey = "valkur.boot.weights.v1";
 
+        /// <summary>
+        /// The author's REAL calibration, put back after the fixture. Deleting it (as this fixture
+        /// used to, and still must per test) cost the next boot its prediction: measured, the boot
+        /// right after a test run logged calibrated=0 and drew its etapas with no time estimate.
+        /// </summary>
+        private string _machineProfile;
+
+        [OneTimeSetUp]
+        public void StashMachineProfile() => _machineProfile = PlayerPrefs.GetString(PrefsKey, string.Empty);
+
+        [OneTimeTearDown]
+        public void RestoreMachineProfile()
+        {
+            if (string.IsNullOrEmpty(_machineProfile)) PlayerPrefs.DeleteKey(PrefsKey);
+            else PlayerPrefs.SetString(PrefsKey, _machineProfile);
+            PlayerPrefs.Save();
+        }
+
         [SetUp]
         public void SetUp()
         {

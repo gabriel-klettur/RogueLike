@@ -41,7 +41,11 @@ namespace Valkur.Gameplay
         private List<BootStep> BuildBootSequence()
         {
             bool editors = RuntimeEditorPolicy.AuthoringEditorsAvailable;
-            var s = new List<BootStep>(80);
+            var s = new BootSequenceBuilder(80);
+
+            // Every etapa below is one segment of the loading bar and one series in the boot
+            // log (Diagnostics/Boot/boot_phases.csv). Renaming one starts a new series.
+            s.Phase("Mundo");
 
             // ── The two installs that must precede every editor ──────────────
             // Every runtime editor's OnEnable does `if (GameEditorManager.HasInstance)
@@ -84,6 +88,7 @@ namespace Valkur.Gameplay
             s.Add(BootStep.Of("Horneando las colisiones del terreno", RebakeTilemapColliders, 60f));
 
             // ── Light, weather, effects ──────────────────────────────────────
+            s.Phase("Luz y efectos");
             s.Add(BootStep.Of("Inicializando la luz global", EnsureGlobalLight2D, 1f, barrier: false));
             s.Add(BootStep.Of("Arrancando el ciclo de dia y noche", EnsureDayNightCycle, 1f, barrier: false));
             s.Add(BootStep.Of("Inicializando los efectos visuales", () =>
@@ -99,6 +104,7 @@ namespace Valkur.Gameplay
             s.Add(BootStep.Of("Inicializando el editor de mapas", EnsureMapEditor, 2f));
 
             // ── Save, navigation, services ───────────────────────────────────
+            s.Phase("Servicios");
             // Before the save service and before the chat: the restore path asks this
             // for the catalogue, and the service listens for conversations.
             s.Add(BootStep.Of("Inicializando las misiones", EnsureQuestService, 2f, barrier: false));
@@ -134,6 +140,7 @@ namespace Valkur.Gameplay
             // to a handful of frames on the runner's time budget.
             if (editors)
             {
+                s.Phase("Editores");
                 s.Add(BootStep.Of("Preparando el editor de generadores", EnsureSpawnerEditor, 1f, barrier: false));
                 s.Add(BootStep.Of("Preparando el editor de edificios", EnsureBuildingsRuntimeEditor, 1f, barrier: false));
                 s.Add(BootStep.Of("Preparando el editor de FSM", EnsureFSMRuntimeEditor, 1f, barrier: false));
@@ -148,6 +155,7 @@ namespace Valkur.Gameplay
             }
 
             // ── Atmosphere and weather ───────────────────────────────────────
+            s.Phase("Atmosfera y consola");
             s.Add(BootStep.Of("Inicializando la atmosfera", EnsureDayNightAtmosphere, 2f, barrier: false));
             s.Add(BootStep.Of("Inicializando el clima", EnsureWeatherManager, 3f));
             // The sky reads the weather it was created after, and every building and entity
@@ -177,6 +185,7 @@ namespace Valkur.Gameplay
             s.Add(BootStep.Of("Inicializando la consola", EnsureDevConsole, 2f, barrier: false));
 
             // ── Death, progression, feedback ─────────────────────────────────
+            s.Phase("Sistemas de juego");
             s.Add(BootStep.Of("Inicializando el botin de muerte", EnsureDeathDropSystem, 1f, barrier: false));
             s.Add(BootStep.Of("Inicializando el ciclo de muerte y resurreccion", EnsureDeathSequenceFlow, 2f, barrier: false));
             s.Add(BootStep.Of("Inicializando la restauracion al subir de nivel", EnsureLevelUpRestoreSystem, 1f, barrier: false));
@@ -188,6 +197,7 @@ namespace Valkur.Gameplay
             s.Add(BootStep.Of("Inicializando los avisos", EnsureToastSystem, 1f, barrier: false));
 
             // ── The player ───────────────────────────────────────────────────
+            s.Phase("Personaje");
             // Pre-apply the saved class BEFORE the spawn, so visuals and stats are
             // built for the right character. The full restore (position, HP) lands
             // later through SaveService.Load.
@@ -200,6 +210,7 @@ namespace Valkur.Gameplay
 
             s.Add(BootStep.Coroutine("Creando el personaje", SpawnPlayerProgressively, 200f, subStages: 7));
 
+            s.Phase("Poblacion y edificios");
             s.Add(BootStep.Of("Inicializando el streaming procedural", EnsureProceduralChunkStreamer, 2f, barrier: false));
             s.Add(BootStep.Of("Poblando el mundo", SpawnTestMonsters, 5f));
             s.Add(BootStep.Of("Inicializando los generadores de monstruos", EnsureMonsterSpawner, 3f));
@@ -219,6 +230,7 @@ namespace Valkur.Gameplay
             s.Add(BootStep.Of("Colocando las entidades del mapa", EnsurePlacedEntityService, 5f));
 
             // ── Audio ────────────────────────────────────────────────────────
+            s.Phase("Audio y shaders");
             s.Add(BootStep.Of("Inicializando el audio", EnsureAudioManager, 20f));
             s.Add(BootStep.Of("Inicializando el audio de combate", EnsureCombatAudioSystem, 3f, barrier: false));
             s.Add(BootStep.Of("Arrancando la musica", EnterGameAudio, 3f, barrier: false));
@@ -234,9 +246,10 @@ namespace Valkur.Gameplay
             s.Add(BootStep.Of("Precalentando los shaders", WarmupShaders, 40f));
 
             // ── Session restore ──────────────────────────────────────────────
+            s.Phase("Partida");
             s.Add(BootStep.Of("Restaurando la partida", RestoreSessionState, 25f));
 
-            return s;
+            return s.Steps;
         }
 
         /// <summary>

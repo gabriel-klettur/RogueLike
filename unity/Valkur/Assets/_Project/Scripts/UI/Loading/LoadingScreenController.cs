@@ -57,7 +57,8 @@ namespace Valkur.UI.Loading
         private const float BAR_Y_RATIO      = 0.80f;
         private const float BAR_BORDER       = 2f;
         private const float BAR_PADDING      = 3f;
-        private const float TEXT_OFFSET_Y    = 20f;
+        private const float TEXT_OFFSET_Y    = 30f;
+        private const float STAGE_ROW_H      = 18f;
 
         // ── Pacing ───────────────────────────────────────────────────────────
         private const float LERP_SPEED       = 3.5f;
@@ -159,8 +160,17 @@ namespace Valkur.UI.Loading
         private bool    _errorShown;
         private bool    _blockedInput;
 
+        // Etapas: the bar divided by the boot's phases and predicted from previous boots.
+        private BootScreenPlan _plan;
+        private bool   _livePlan;
+        private bool   _activating;
+        private float  _activationStart;
+        private readonly System.Collections.Generic.List<float> _segmentStarts =
+            new System.Collections.Generic.List<float>(16);
+        private int    _shownSegment = -1;
+        private float  _etaTimer;
+
         // Animated dots
-        private float  _lastSparkProgress;
         private float  _dotsTimer;
         private int    _dotsCount;
         private string _baseMessage = LoadingText.Preparing;
@@ -173,7 +183,9 @@ namespace Valkur.UI.Loading
 
         // UI references
         private Image           _barFill;
-        private Image           _barSpark;
+        private LoadingBarFX    _bar;
+        private TextMeshProUGUI _stageText;
+        private TextMeshProUGUI _etaText;
         private TextMeshProUGUI _statusText;
         private TextMeshProUGUI _pctText;
         private TextMeshProUGUI _feedText;
@@ -224,6 +236,7 @@ namespace Valkur.UI.Loading
             _startTime = Time.unscaledTime;
             _lastProgressTime = _startTime;
             BuildUI();
+            ApplyPlan(BootTimeline.PredictScreenPlan());
 
             // Subscribe via the Core relay — Gameplay reports without referencing UI.
             LoadingReporter.OnStageProgress = OnStageReport;
@@ -238,6 +251,8 @@ namespace Valkur.UI.Loading
         {
             _fire?.Dispose();
             _fire = null;
+            _bar?.Dispose();
+            _bar = null;
             if (_instance == this) _instance = null;
             LoadingReporter.Clear();
             BlockGameplayInput(false);
@@ -261,12 +276,15 @@ namespace Valkur.UI.Loading
             // out, so freezing it here would stop the dragon breathing for the last quarter
             // second of the screen — which reads as a hitch, not as a fade.
             _fire?.Tick(Time.unscaledDeltaTime);
+            _bar?.Tick(Time.unscaledDeltaTime);
 
             if (_fadingOut) return;
 
+            AdvanceByClock();
             _displayedProgress = Mathf.Lerp(_displayedProgress, _targetProgress,
                 Time.unscaledDeltaTime * LERP_SPEED);
             ApplyProgress(_displayedProgress);
+            RefreshStageLabels();
 
             _dotsTimer += Time.unscaledDeltaTime;
             if (_dotsTimer >= DOTS_INTERVAL)
@@ -315,7 +333,9 @@ namespace Valkur.UI.Loading
             }
 
             _baseMessage    = message;
-            float target    = 0.4f + Mathf.Clamp01(gamePhaseProgress) * 0.6f;
+            _activating     = false;
+            AdoptLivePlan();
+            float target    = Plan.MapBoot(gamePhaseProgress);
 
             // Monotonic by construction: a bar that goes backwards reads as a bug even
             // when the number behind it is right.
@@ -372,6 +392,8 @@ namespace Valkur.UI.Loading
                 yield break;
             }
 
+            // The scene is the bar's first etapa and the first row of the boot log.
+            BootTimeline.BeginSceneLoad();
             var asyncOp = SceneManager.LoadSceneAsync(_targetScene);
             if (asyncOp == null)
             {
@@ -384,13 +406,13 @@ namespace Valkur.UI.Loading
 
             while (asyncOp.progress < 0.9f)
             {
-                float p = (asyncOp.progress / 0.9f) * 0.4f;
+                float p = Plan.MapSceneLoad(asyncOp.progress / 0.9f);
                 if (p > _targetProgress) _targetProgress = p;
                 _lastProgressTime = Time.unscaledTime;
                 yield return null;
             }
 
-            _targetProgress = 0.4f;
+            _targetProgress = Mathf.Max(_targetProgress, Plan.MapSceneLoad(1f));
             _baseMessage    = LoadingText.BuildingWorld;
             yield return new WaitForSecondsRealtime(0.25f);
 
@@ -401,6 +423,9 @@ namespace Valkur.UI.Loading
             Valkur.Core.Input.PersistentEventSystem.Pause();
 
             asyncOp.allowSceneActivation = true;
+            BootTimeline.MarkSceneActivation();
+            _activating = true;
+            _activationStart = Time.unscaledTime;
 
             // Wait for the activation to COMPLETE, not merely to be permitted. Unity
             // runs the incoming scene's Awake / OnEnable / Start DURING activation and
@@ -525,7 +550,14 @@ namespace Valkur.UI.Loading
             _fadingOut         = true;
             _displayedProgress = 1f;
             ApplyProgress(1f);
+            _bar?.Complete();
+            if (_stageText != null) _stageText.text = LoadingText.Ready.ToUpperInvariant();
+            if (_etaText != null)
+                _etaText.text = BootTimeline.HasRun ? FormatSeconds(BootTimeline.TotalMilliseconds) : string.Empty;
             if (_statusText != null) _statusText.text = LoadingText.Ready;
+
+            // A beat for the finale: the end gem lights and the bar bursts before the curtain.
+            if (_bar != null) yield return new WaitForSecondsRealtime(0.35f);
 
             if (_cg != null)
             {
@@ -547,23 +579,117 @@ namespace Valkur.UI.Loading
         private void ApplyProgress(float p)
         {
             p = Mathf.Clamp01(p);
-            if (_barFill != null) _barFill.fillAmount = p;
+            if (_bar != null) _bar.SetProgress(p);
+            else if (_barFill != null) _barFill.fillAmount = p;
             if (_pctText  != null) _pctText.text = FormatPercent(p);
-            if (_barSpark != null)
-            {
-                var rt = (RectTransform)_barSpark.transform;
-                var area = (RectTransform)_barSpark.transform.parent;
-                rt.anchoredPosition = new Vector2(area.rect.width * p, 0f);
-                // Lit only while the fill is actually moving. A spark that sits on a stalled bar
-                // says the opposite of what it is for.
-                float delta = Mathf.Abs(p - _lastSparkProgress);
-                _lastSparkProgress = p;
-                float want = delta > 0.0008f ? 1f : 0f;
-                var c = _barSpark.color;
-                c.a = Mathf.MoveTowards(c.a, want, Time.unscaledDeltaTime * 4f);
-                _barSpark.color = c;
-            }
         }
+
+        // ── Etapas ───────────────────────────────────────────────────────────
+
+        private BootScreenPlan Plan => _plan ?? (_plan = BootScreenPlan.Compose(-1f, -1f, BootPlan.Empty));
+
+        private void ApplyPlan(BootScreenPlan plan)
+        {
+            _plan = plan ?? BootScreenPlan.Compose(-1f, -1f, BootPlan.Empty);
+            _plan.SegmentStarts(_segmentStarts);
+            _bar?.SetSegments(_segmentStarts);
+            _shownSegment = -1;
+        }
+
+        /// <summary>
+        /// The moment the boot sequence exists, its real etapas replace the predicted ones -
+        /// same scene share (see <see cref="BootScreenPlan.WithBoot"/>), so nothing already
+        /// filled moves.
+        /// </summary>
+        private void AdoptLivePlan()
+        {
+            if (_livePlan || !BootTimeline.IsRunning || BootTimeline.Plan.Count == 0) return;
+            _livePlan = true;
+            ApplyPlan(Plan.WithBoot(BootTimeline.Plan));
+        }
+
+        /// <summary>
+        /// Between stage reports the CLOCK moves the bar: through the activation by its predicted
+        /// length, and through each boot step by that step's predicted length. Without it a step
+        /// that takes a second is a bar standing still for a second, which is how a load reads as
+        /// frozen. Never past the running step's share, never backwards.
+        /// </summary>
+        private void AdvanceByClock()
+        {
+            if (_finished || _errorShown) return;
+            float target = _targetProgress;
+
+            if (_activating && !_sawPhase2 && Plan.PredictedActivationMs > 0f)
+            {
+                float t = (Time.unscaledTime - _activationStart) * 1000f / Plan.PredictedActivationMs;
+                target = Mathf.Max(target, Plan.MapActivation(Mathf.Min(t, 0.9f)));
+            }
+            else if (_sawPhase2 && BootTimeline.IsRunning)
+            {
+                AdoptLivePlan();
+                target = Mathf.Max(target, Plan.MapBoot(BootTimeline.LiveFraction));
+            }
+
+            if (target > _targetProgress) _targetProgress = target;
+        }
+
+        private void RefreshStageLabels()
+        {
+            if (_stageText == null) return;
+            int seg = Plan.SegmentIndexAt(_displayedProgress + 0.0005f);
+            if (seg != _shownSegment)
+            {
+                _shownSegment = seg;
+                _stageText.text = FormatStage(seg, Plan.SegmentCount, Plan.SegmentName(seg));
+            }
+
+            _etaTimer -= Time.unscaledDeltaTime;
+            if (_etaTimer > 0f || _etaText == null) return;
+            _etaTimer = 0.25f;
+            _etaText.text = FormatEta(PredictedRemainingMs());
+        }
+
+        /// <summary>
+        /// Milliseconds the prediction says are left, or -1 when there is no honest answer (a
+        /// machine that has never booted, or a boot whose steps were never measured).
+        /// </summary>
+        private float PredictedRemainingMs()
+        {
+            if (_sawPhase2) return BootTimeline.IsRunning ? BootTimeline.PredictedRemainingMs : -1f;
+            if (!Plan.IsTimed) return -1f;
+            float bootMs = Plan.Boot.TotalPredictedMs;
+            float sceneLeft;
+            if (_activating)
+            {
+                float into = (Time.unscaledTime - _activationStart) * 1000f;
+                sceneLeft = Mathf.Max(0f, Plan.PredictedActivationMs - into);
+            }
+            else
+            {
+                float loaded = Mathf.Clamp01(_targetProgress / Mathf.Max(0.0001f, Plan.SceneShare * Plan.LoadShare));
+                sceneLeft = Plan.PredictedSceneLoadMs * (1f - loaded) + Mathf.Max(0f, Plan.PredictedActivationMs);
+            }
+            return sceneLeft + bootMs;
+        }
+
+        /// <summary>"ETAPA 3/11  -  MUNDO". Plain ASCII, like every loading string.</summary>
+        public static string FormatStage(int index, int count, string name)
+        {
+            if (count <= 0 || string.IsNullOrEmpty(name)) return string.Empty;
+            int shown = Mathf.Clamp(index + 1, 1, count);
+            return "ETAPA " + shown + "/" + count + "  -  " + name.ToUpperInvariant();
+        }
+
+        /// <summary>The predicted time left, or an honest "still measuring" when there is none.</summary>
+        public static string FormatEta(float remainingMs)
+        {
+            if (remainingMs < 0f) return "calibrando tiempos...";
+            if (remainingMs < 150f) return "casi listo";
+            return "~" + (remainingMs / 1000f).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " s restantes";
+        }
+
+        private static string FormatSeconds(float ms)
+            => "arranque en " + (ms / 1000f).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) + " s";
 
         // 1x1 white sprite — Image.Type.Filled needs a sprite to honour fillAmount.
         private static Sprite _whiteSprite;
@@ -591,7 +717,11 @@ namespace Valkur.UI.Loading
 
         private void BuildUI()
         {
-            var canvasGo = new GameObject("LoadingCanvas");
+            // Born with a RectTransform. Created bare, the Transform captured on the next line is
+            // REPLACED the moment AddComponent<Canvas> converts it, and _canvasRoot is left
+            // pointing at a destroyed object — which reads as null, so ShowErrorPanel returned on
+            // its first line and a failed boot never showed its error panel at all.
+            var canvasGo = new GameObject("LoadingCanvas", typeof(RectTransform));
             canvasGo.transform.SetParent(transform);
             _canvasRoot = canvasGo.transform;
             var canvas = canvasGo.AddComponent<Canvas>();
@@ -693,6 +823,21 @@ namespace Valkur.UI.Loading
 
         private void BuildBar(GameObject canvasGo, float barW, float barY)
         {
+            // Rectangular, divided into the boot's etapas, and alive: see LoadingBarFX. What this
+            // replaces is a sliced slider track from the menu atlas with one glow riding its end.
+            _bar = LoadingBarFX.Build(canvasGo.transform, new Vector2(0f, barY), barW, BAR_HEIGHT_PX,
+                                      Style, BarFillColor);
+            if (_bar != null)
+            {
+                _barFill = _bar.Fill;
+                return;
+            }
+            BuildFallbackBar(canvasGo, barW, barY);
+        }
+
+        /// <summary>The plain bar, for the day the FX cannot be built. Keeps the fill contract.</summary>
+        private void BuildFallbackBar(GameObject canvasGo, float barW, float barY)
+        {
             var art = Valkur.UI.MainMenu.MenuArt.Get();
 
             // A grooved track and a filled bar from the menu's own atlas, with a chamfer and a
@@ -736,21 +881,6 @@ namespace Valkur.UI.Loading
             var fillRt = fillGo.GetComponent<RectTransform>();
             fillRt.anchorMin = Vector2.zero; fillRt.anchorMax = Vector2.one;
             fillRt.offsetMin = Vector2.zero; fillRt.offsetMax = Vector2.zero;
-
-            // A spark that rides the leading edge. It is the one thing on the screen that makes
-            // the number MOVING visible rather than merely different from a second ago.
-            var sparkGo = new GameObject("BarSpark", typeof(RectTransform));
-            sparkGo.transform.SetParent(fillArea.transform, false);
-            _barSpark = sparkGo.AddComponent<Image>();
-            _barSpark.sprite = art.MoteGlow;
-            _barSpark.type = Image.Type.Simple;
-            _barSpark.raycastTarget = false;
-            _barSpark.color = new Color(1f, 1f, 1f, 0f);
-            var sparkRt = sparkGo.GetComponent<RectTransform>();
-            sparkRt.anchorMin = new Vector2(0f, 0.5f);
-            sparkRt.anchorMax = new Vector2(0f, 0.5f);
-            sparkRt.pivot = new Vector2(0.5f, 0.5f);
-            sparkRt.sizeDelta = new Vector2(26f, BAR_HEIGHT_PX + 10f);
         }
 
         private void BuildLabels(GameObject canvasGo, float barW, float barY)
@@ -787,8 +917,16 @@ namespace Valkur.UI.Loading
             pctRt.anchorMin        = new Vector2(0.5f, 0f);
             pctRt.anchorMax        = new Vector2(0.5f, 0f);
             pctRt.pivot            = new Vector2(0f, 0f);
-            pctRt.anchoredPosition = new Vector2(barW * 0.5f + 12f, barY);
+            pctRt.anchoredPosition = new Vector2(barW * 0.5f + 40f, barY);
             pctRt.sizeDelta        = new Vector2(70f, BAR_HEIGHT_PX);
+
+            // The etapa and the predicted time left, a row between the bar and the status line.
+            _stageText = MakeRowLabel(canvasGo, "StageText", TextAlignmentOptions.Left, new Vector2(0f, 0f),
+                                      new Vector2(-barW * 0.5f, barY + BAR_HEIGHT_PX + 7f), barW * 0.6f);
+            _stageText.color = Style.Gold;
+            _etaText = MakeRowLabel(canvasGo, "EtaText", TextAlignmentOptions.Right, new Vector2(1f, 0f),
+                                    new Vector2(barW * 0.5f, barY + BAR_HEIGHT_PX + 7f), barW * 0.4f);
+            _etaText.color = Style.TextDim;
 
             var textGo = new GameObject("StatusText", typeof(RectTransform));
             textGo.transform.SetParent(canvasGo.transform, false);
@@ -822,7 +960,7 @@ namespace Valkur.UI.Loading
             feedRt.anchorMin        = new Vector2(0.5f, 0f);
             feedRt.anchorMax        = new Vector2(0.5f, 0f);
             feedRt.pivot            = new Vector2(1f,   0f);
-            feedRt.anchoredPosition = new Vector2(barW * 0.5f, barY + BAR_HEIGHT_PX + TEXT_OFFSET_Y + 30f);
+            feedRt.anchoredPosition = new Vector2(barW * 0.5f, barY + BAR_HEIGHT_PX + TEXT_OFFSET_Y + 34f);
             feedRt.sizeDelta        = new Vector2(barW * 0.5f, 60f);
 
             var tipGo = new GameObject("LoadingTip", typeof(RectTransform));
@@ -839,9 +977,31 @@ namespace Valkur.UI.Loading
             tipRt.anchorMin        = new Vector2(0.5f, 0f);
             tipRt.anchorMax        = new Vector2(0.5f, 0f);
             tipRt.pivot            = new Vector2(0.5f, 1f);
-            tipRt.anchoredPosition = new Vector2(0f, barY - 22f);
+            tipRt.anchoredPosition = new Vector2(0f, barY - 26f);
             tipRt.sizeDelta        = new Vector2(barW, 56f);
             AdvanceTip();
+        }
+
+        private static TextMeshProUGUI MakeRowLabel(GameObject canvasGo, string name, TextAlignmentOptions align,
+                                                    Vector2 pivot, Vector2 pos, float width)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(canvasGo.transform, false);
+            var tmp = go.AddComponent<TextMeshProUGUI>();
+            tmp.fontSize = 12f;
+            tmp.characterSpacing = 3f;
+            tmp.alignment = align;
+            tmp.enableWordWrapping = false;
+            tmp.overflowMode = TextOverflowModes.Ellipsis;
+            tmp.raycastTarget = false;
+            tmp.text = string.Empty;
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.5f, 0f);
+            rt.anchorMax = new Vector2(0.5f, 0f);
+            rt.pivot = pivot;
+            rt.anchoredPosition = pos;
+            rt.sizeDelta = new Vector2(width, STAGE_ROW_H);
+            return tmp;
         }
 
         // ── The error surface ────────────────────────────────────────────────
@@ -862,10 +1022,15 @@ namespace Valkur.UI.Loading
             if (_statusText != null) _statusText.text = LoadingText.Failed;
             if (_tipText != null) _tipText.text = string.Empty;
 
-            _errorPanel = new GameObject("BootErrorPanel");
+            _errorPanel = new GameObject("BootErrorPanel", typeof(RectTransform));
             _errorPanel.transform.SetParent(_canvasRoot, false);
-            var panelImg = _errorPanel.AddComponent<Image>();
-            panelImg.color = new Color(0.05f, 0.05f, 0.06f, 0.93f);
+            // The menu's panel housing with the gems lit RED: the same object as the bar under
+            // it, in the same mood the bar just turned. It still swallows clicks behind it.
+            var panelFrame = Valkur.UI.MainMenu.Kit.MenuUIKit.Panel("Frame", _errorPanel.transform,
+                                                                    Valkur.UI.MainMenu.MenuArt.Get(), Style);
+            panelFrame.Tint = BarFailColor;
+            panelFrame.HeaderHeight = 0f;
+            panelFrame.raycastTarget = true;
             var panelRt = _errorPanel.GetComponent<RectTransform>();
             panelRt.anchorMin = new Vector2(0.5f, 0.5f);
             panelRt.anchorMax = new Vector2(0.5f, 0.5f);
@@ -904,6 +1069,9 @@ namespace Valkur.UI.Loading
                     StartCoroutine(FadeAndDestroy());
                 });
             }
+
+            // Built after the canvas was put on the UI layer, so it has to be put there itself.
+            UILayerHelper.SetUILayerRecursive(_errorPanel);
         }
 
         private string BuildFailureText(string reason)
@@ -929,33 +1097,17 @@ namespace Valkur.UI.Loading
 
         private void MakeButton(Transform parent, string label, Vector2 anchoredPos, UnityEngine.Events.UnityAction onClick)
         {
-            var go = new GameObject("Button_" + label);
-            go.transform.SetParent(parent, false);
-            var img = go.AddComponent<Image>();
-            img.color = new Color(0.18f, 0.19f, 0.21f, 1f);
-            var rt = go.GetComponent<RectTransform>();
+            // The menu's button: a bevelled frame with a tinted face. The label is a child, as
+            // always — Image + TMP on the same GameObject throws.
+            var btn = Valkur.UI.MainMenu.Kit.MenuUIKit.Button("Button_" + label, parent,
+                                                              Valkur.UI.MainMenu.MenuArt.Get(), Style,
+                                                              label, Style.PanelBevel, onClick);
+            var rt = (RectTransform)btn.transform;
             rt.anchorMin = new Vector2(0.5f, 0f);
             rt.anchorMax = new Vector2(0.5f, 0f);
             rt.pivot     = new Vector2(0.5f, 0f);
             rt.sizeDelta = new Vector2(260f, 38f);
             rt.anchoredPosition = anchoredPos;
-
-            var btn = go.AddComponent<Button>();
-            btn.targetGraphic = img;
-            btn.onClick.AddListener(onClick);
-
-            // Image + TMP on the SAME GameObject throws; the label is always a child.
-            var labelGo = new GameObject("Label");
-            labelGo.transform.SetParent(go.transform, false);
-            var tmp = labelGo.AddComponent<TextMeshProUGUI>();
-            tmp.text      = label;
-            tmp.fontSize  = 15f;
-            tmp.color     = Color.white;
-            tmp.alignment = TextAlignmentOptions.Center;
-            tmp.raycastTarget = false;
-            var lrt = labelGo.GetComponent<RectTransform>();
-            lrt.anchorMin = Vector2.zero; lrt.anchorMax = Vector2.one;
-            lrt.offsetMin = Vector2.zero; lrt.offsetMax = Vector2.zero;
         }
     }
 }
