@@ -76,6 +76,17 @@ namespace Valkur.Data.WorldGen
         public static WorldTerrainGrid Build(WorldClimate climate, IReadOnlyList<WorldRiver> rivers,
                                              int widthTiles, int heightTiles,
                                              Func<string, string, bool> compatible)
+            => Build(climate, rivers, null, widthTiles, heightTiles, compatible);
+
+        /// <summary>
+        /// As above, with towns: inside a town the ground is levelled to grass (a street across a
+        /// patch of rock reads as a mistake) and every street and plaza tile is dirt. Water is
+        /// never levelled: the planner keeps streets off it, and a pond inside a town is fine.
+        /// </summary>
+        public static WorldTerrainGrid Build(WorldClimate climate, IReadOnlyList<WorldRiver> rivers,
+                                             IReadOnlyList<WorldTown> towns,
+                                             int widthTiles, int heightTiles,
+                                             Func<string, string, bool> compatible)
         {
             if (climate == null) throw new ArgumentNullException(nameof(climate));
             if (compatible == null) throw new ArgumentNullException(nameof(compatible));
@@ -110,8 +121,42 @@ namespace Valkur.Data.WorldGen
                         if (grid._terrain[i] != WaterDeep) grid._terrain[i] = Water;
                     }
 
+            if (towns != null) grid.StampTowns(towns);
+
             grid.RepairTransitions();
             return grid;
+        }
+
+        public const string TownGround = "grass";
+        public const string StreetGround = "dirt";
+
+        private void StampTowns(IReadOnlyList<WorldTown> towns)
+        {
+            foreach (var town in towns)
+            {
+                int r = town.Radius + 2;
+                for (int vy = town.Center.y - r; vy <= town.Center.y + r + 1; vy++)
+                    for (int vx = town.Center.x - r; vx <= town.Center.x + r + 1; vx++)
+                    {
+                        if (vx < 0 || vy < 0 || vx >= Width || vy >= Height) continue;
+                        if (!town.Contains(new Vector2Int(vx, vy), 2)) continue;
+                        int i = vy * Width + vx;
+                        if (_terrain[i] == Water || _terrain[i] == WaterDeep) continue;
+                        _terrain[i] = TownGround;
+                    }
+
+                // A street TILE makes its four corners dirt, so a street is fully dirt with a soft edge.
+                foreach (var t in town.StreetTiles)
+                    for (int dy = 0; dy <= 1; dy++)
+                        for (int dx = 0; dx <= 1; dx++)
+                        {
+                            int vx = t.x + dx, vy = t.y + dy;
+                            if (vx >= Width || vy >= Height) continue;
+                            int i = vy * Width + vx;
+                            if (_terrain[i] == Water || _terrain[i] == WaterDeep) continue;
+                            _terrain[i] = StreetGround;
+                        }
+            }
         }
 
         private static string GroundFor(WorldBiome biome, in WorldClimateSample sample, WorldGenSettings s)

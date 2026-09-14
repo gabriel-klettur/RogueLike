@@ -63,6 +63,10 @@ namespace Valkur.Gameplay.World.Generation
         }
 
         public string SlotFilePath => Path.Combine(MapsDirectory, Slot + ".zones.json");
+
+        /// <summary>Where <c>MapEditorActiveSlot.BuildingsDir</c> resolves this slot's buildings.</summary>
+        public string BuildingsDirectory => Path.Combine(MapsDirectory, Slot, "Buildings");
+        public string BuildingsFilePath => Path.Combine(BuildingsDirectory, "buildings_instances.json");
         public string MarkerPath => Path.Combine(OverridesDirectory, MarkerFileName);
 
         private static string CleanSlot(string slotName)

@@ -13,6 +13,8 @@ namespace Valkur.Gameplay.World.Generation
         public int Tiles;
         public int BlockedTiles;
         public int Rivers;
+        public int Towns;
+        public int Buildings;
 
         /// <summary>Cells drawn as their majority terrain because no pack could draw their corners.</summary>
         public int HardCuts;

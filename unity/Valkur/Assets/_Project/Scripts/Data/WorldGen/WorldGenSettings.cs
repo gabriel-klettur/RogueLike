@@ -23,6 +23,9 @@ namespace Valkur.Data.WorldGen
         public const int MaxWidthTiles = 2048;
         public const int MaxRivers = 40;
         public const int MaxRiverWidth = 3;
+        public const int MaxTowns = 30;
+        public const int MinTownRadius = 10;
+        public const int MaxTownRadius = 40;
 
         /// <summary>
         /// The tallest world the Y-sort can hold without an origin shift. Sorting orders are a
@@ -76,6 +79,15 @@ namespace Valkur.Data.WorldGen
 
         [Tooltip("River width in tiles.")]
         public int riverWidth = 1;
+
+        [Tooltip("How many towns the generator tries to found, the starting town included.")]
+        public int townCount = 4;
+
+        [Tooltip("Town radius in tiles: how far its main streets reach from the plaza.")]
+        public int townRadius = 18;
+
+        [Tooltip("Found the first town where the run begins, so the player starts somewhere people live.")]
+        public bool startingTown = true;
 
         [Tooltip("Which biomes may appear and how much of the climate plane each claims.")]
         public List<WorldBiomeWeight> biomes = new List<WorldBiomeWeight>();
@@ -137,6 +149,8 @@ namespace Valkur.Data.WorldGen
             rarity = Mathf.Clamp01(rarity);
             riverCount = Mathf.Clamp(riverCount, 0, MaxRivers);
             riverWidth = Mathf.Clamp(riverWidth, 1, MaxRiverWidth);
+            townCount = Mathf.Clamp(townCount, 0, MaxTowns);
+            townRadius = Mathf.Clamp(townRadius, MinTownRadius, MaxTownRadius);
 
             EnsureAllBiomes();
             foreach (var row in biomes)

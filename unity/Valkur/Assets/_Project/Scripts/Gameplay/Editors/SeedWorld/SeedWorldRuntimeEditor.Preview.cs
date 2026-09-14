@@ -148,7 +148,12 @@ namespace Valkur.Gameplay.Editors.SeedWorld
                 case PreviewLayer.Rarity:
                     return WorldGenPalette.RarityColor(_map.Rarity[i], rareThreshold);
                 default:
-                    return WorldBiomeTable.GetAt(_map.Biomes[i]).PreviewColor;
+                    // Towns ride the biome layer: they are places on the ground, and a separate
+                    // layer would hide where they sit relative to rivers and coasts.
+                    var biome = WorldBiomeTable.GetAt(_map.Biomes[i]).PreviewColor;
+                    if (_map.TownMask[i] == 2) return WorldGenPalette.Street;
+                    if (_map.TownMask[i] == 1) return Color32.Lerp(biome, WorldGenPalette.TownArea, 0.35f);
+                    return biome;
             }
         }
 

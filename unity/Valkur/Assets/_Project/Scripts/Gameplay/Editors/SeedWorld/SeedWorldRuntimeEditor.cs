@@ -14,17 +14,17 @@ namespace Valkur.Gameplay.Editors.SeedWorld
     ///
     /// <para><b>WHAT IT IS FOR.</b> Configure a procedural world — seed, size, continents,
     /// climate, which biomes may appear and how much each claims — and see the result at once.
-    /// Phase 1 of <c>.github/SEED_WORLD_ROADMAP.md</c>: it previews; building the world into a
-    /// playable map is phase 2.</para>
+    /// It previews the world (phase 1 of <c>.github/SEED_WORLD_ROADMAP.md</c>) and builds it
+    /// into its own map slot with rivers and towns (phases 2 and 3, <c>.Build.cs</c>).</para>
     ///
     /// <para><b>The preview is the generator.</b> Every pixel is one call to
     /// <see cref="WorldClimate.Sample"/> + <see cref="WorldClimate.Classify"/> through
     /// <see cref="WorldGenMap"/>, the same functions the build will call. Nothing in this folder
     /// decides what a biome is.</para>
     ///
-    /// <para><b>It edits a VALUE, not an asset and not the world.</b> The settings live in this
-    /// editor (and its workspace document); nothing on disk is written and the loaded world is
-    /// untouched, so there is no save button and nothing to confirm.</para>
+    /// <para><b>It edits a VALUE, not an asset.</b> The settings live in this editor (and its
+    /// workspace document). Only "Construir" writes anything, and only into a map slot of its
+    /// own — never the base world.</para>
     ///
     /// <para><b>NO HOTKEY</b> and no input actions of its own, like the Quests and Death editors:
     /// every verb is a button, and undo/redo come from the shared <c>EditorShared</c> map.</para>
@@ -182,6 +182,7 @@ namespace Valkur.Gameplay.Editors.SeedWorld
             _undo.RemoveAt(_undo.Count - 1);
             SetStatus("Deshecho.");
             AfterSettingsChanged();
+            RebuildBody(); // an undone toggle must redraw its SI/NO; no field has focus on an undo
         }
 
         internal void Redo()
@@ -192,6 +193,7 @@ namespace Valkur.Gameplay.Editors.SeedWorld
             _redo.RemoveAt(_redo.Count - 1);
             SetStatus("Rehecho.");
             AfterSettingsChanged();
+            RebuildBody();
         }
 
         private void RestoreSnapshot(string json)

@@ -1,6 +1,6 @@
 # Seed World — generación procedural del mundo
 
-Fecha: 2026-09-13 / 2026-09-14. Estado: **Fases 1 y 2 hechas** (vista previa + construir un mundo jugable); fase 3 pendiente.
+Fecha: 2026-09-13 / 2026-09-14. Estado: **Fases 1, 2 y 3 hechas** (vista previa, mundo jugable, pueblos); fase 4 en curso.
 
 ## Qué es
 
@@ -64,7 +64,7 @@ juego hace otra cosa — el fallo que el overlay de áreas de hechizos existe pa
 |---|---|---|---|
 | 1 | `WorldGenSettings`, `WorldGenProfile`, `FractalNoise2D`, `WorldClimate` (4 ruidos + tabla de biomas), `WorldGenMap`, editor Seed World con vista previa por capas, estadísticas y punto de inicio | Mapas distintos por semilla, sin construir nada | Hecha |
 | 2 | Relieve (acantilados como capas), ríos, pintado de terreno autotile por bioma, **hornear a un mundo nuevo** (`Worlds/<slug>/`, nunca el base) | Caminar por un mundo generado | Hecha (sin acantilados, ver abajo) |
-| 3 | Rejilla de estructuras + ciudad jigsaw (plaza, calles, parcelas) con los ~50 edificios pixel-art; colisión automática; validación de solapes y conectividad | Ciudades generadas | Pendiente (bloqueo de arte: calles y muros) |
+| 3 | Rejilla de estructuras + ciudad jigsaw (plaza, calles, parcelas) con los ~50 edificios pixel-art; colisión automática; validación de solapes y conectividad | Ciudades generadas | Hecha (calles de tierra, sin murallas: no hay arte) |
 | 4 | Caminos entre estructuras, recursos por bioma, población, dificultad por distancia al inicio | Mundo jugable | Pendiente |
 | 5 | Modo en vivo: la partida guarda semilla + perfil y genera chunks bajo demanda con deltas | Mundo nuevo en cada partida | Pendiente |
 
@@ -199,3 +199,40 @@ slot 1.1 s. Consola limpia.
   Antes de mundos grandes: streaming por chunks (fase 5) o un formato binario.
 - **Construir congela el juego** (~1-2 s en 400x400) porque es sincrono.
 - Guardar/cargar presets (`WorldGenProfile`) desde el editor sigue pendiente.
+
+## Fase 3 — pueblos (hecha, 2026-09-14)
+
+```text
+Data/WorldGen/
+  WorldTowns / WorldTown            sitios (centrados en zona) + plaza + 4 calles principales + laterales
+  WorldTownLots                     llena calles y plaza: fuente, puestos, farolas, casas y tiendas
+  WorldTownBuildingOption / WorldTownPlacement / WorldTownPieceKind
+Gameplay/World/Generation/
+  SeedWorldTownPalette              56 edificios curados POR RUTA (misma ola pixel-art)
+```
+
+- **Las calles son del plan; los solares, de la construccion.** Calles y plaza dependen solo de la semilla
+  y el suelo, asi que la vista previa las dibuja (marron sobre la capa de biomas). Que edificio va en cada
+  solar depende del TAMANO de las plantillas del catalogo, que es dato de Gameplay, y se decide al construir
+  contra ese mismo plan. `WorldGenMap` y el baker comparten plan: nada depende de la resolucion de la vista
+  previa (el pueblo inicial se busca desde el centro del mundo, no desde un inicio calculado a 320 px).
+- **Paleta curada, no escaneo de carpeta.** El catalogo mezcla ~50 edificios pixel-art de 80-250 px con
+  renders de 1024-1536 px y una casa isometrica junto a su copia cenital. Nombrados por RUTA (un reimport
+  puede renumerar ids). Test: las 56 entradas resuelven.
+- **Solapes imposibles por construccion:** un unico conjunto de ocupacion; cada edificio de calle reserva
+  ademas un anillo de 1 tile, que es el pasillo entre vecinos que la rejilla de colision cerraria.
+- **Colision en cada edificio** via `collision_override` inline (el 45 % inferior del sprite en casas;
+  1 tile en farolas y puestos). Sin ella una plantilla no pintada no colisiona. En vivo: 97/97 con colision.
+- **Pueblos centrados en zona.** La primera construccion partio el pueblo inicial por una frontera de zona y
+  el banner anunciaba "Montana 4" junto a la fuente. Ahora un pueblo que cabe en una zona no cruza fronteras
+  (test) y la zona toma el nombre del pueblo ("Pueblo inicial", "Pueblo 2").
+- **El jugador empieza en la calle sur del pueblo inicial**, el unico sitio garantizado sin edificio.
+- Medido (400x400, semilla 1337): 4 pueblos, 97 edificios, generar 312 ms, escribir 578 ms, cargar 1.3 s.
+
+### Abierto tras la fase 3
+
+- Murallas, puertas de ciudad, puentes y calles empedradas: no hay arte modular.
+- Los edificios no tienen puerta ni interior (1 de 1474 plantillas declara puerta).
+- Reconstruir un slot sobrescribe su `buildings_instances.json`: lo que un autor coloco a mano alli se pierde.
+- Cambiar de slot reescribe `Data/Backups/map_editor_zones.json.bak` (fichero versionado): comportamiento
+  previo del Map editor, pero cada prueba de Seed World lo ensucia.

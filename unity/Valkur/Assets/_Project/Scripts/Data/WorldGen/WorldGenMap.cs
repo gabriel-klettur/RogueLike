@@ -41,6 +41,15 @@ namespace Valkur.Data.WorldGen
         /// <summary>The rivers of this world, traced in TILE space — the same list the build rasterises.</summary>
         public IReadOnlyList<WorldRiver> Rivers { get; private set; } = new List<WorldRiver>();
 
+        /// <summary>Every river tile at the profile's width. Shared with the town planner so a street never crosses water.</summary>
+        public HashSet<Vector2Int> RiverTiles { get; private set; } = new HashSet<Vector2Int>();
+
+        /// <summary>The towns of this world — the same plan the build fills with buildings.</summary>
+        public IReadOnlyList<WorldTown> Towns { get; private set; } = new List<WorldTown>();
+
+        /// <summary>Per cell: 0 nothing, 1 inside a town, 2 street or plaza. Drawn over the biome layer.</summary>
+        public readonly byte[] TownMask;
+
         /// <summary>Where a new run would start, in world tiles. Always on walkable land when any exists.</summary>
         public Vector2 SpawnTile { get; private set; }
 
@@ -61,6 +70,7 @@ namespace Valkur.Data.WorldGen
             Temperature = new float[n];
             Humidity = new float[n];
             Rarity = new float[n];
+            TownMask = new byte[n];
             BiomeCounts = new int[WorldBiomeTable.Count];
         }
 
@@ -83,6 +93,7 @@ namespace Valkur.Data.WorldGen
             map.Fill();
             map.PaintRivers();
             map.FindSpawn();
+            map.PlanTowns();
             return map;
         }
 
@@ -151,6 +162,7 @@ namespace Valkur.Data.WorldGen
             var s = Climate.Settings;
             Rivers = WorldRivers.Generate(Climate);
             var tiles = WorldRiverRaster.Tiles(Rivers, s.riverWidth, s.widthTiles, s.heightTiles);
+            RiverTiles = tiles;
 
             foreach (var t in tiles)
             {
@@ -164,6 +176,44 @@ namespace Valkur.Data.WorldGen
                 BiomeCounts[(int)WorldBiome.River]++;
                 Biomes[i] = (byte)WorldBiome.River;
             }
+        }
+
+        /// <summary>
+        /// Plans the towns and, when the first is the starting town, moves the spawn to its plaza:
+        /// a run should begin somewhere people live.
+        /// </summary>
+        private void PlanTowns()
+        {
+            Towns = WorldTowns.Plan(Climate, RiverTiles);
+
+            foreach (var town in Towns)
+            {
+                int r = town.Radius;
+                for (int y = town.Center.y - r; y <= town.Center.y + r; y++)
+                    for (int x = town.Center.x - r; x <= town.Center.x + r; x++)
+                    {
+                        var t = new Vector2Int(x, y);
+                        if (!town.Contains(t)) continue;
+                        MarkTown(t, town.StreetTiles.Contains(t) ? (byte)2 : (byte)1);
+                    }
+
+                if (town.IsStart)
+                {
+                    var spawn = WorldTowns.SpawnTileOf(town);
+                    SpawnTile = new Vector2(spawn.x + 0.5f, spawn.y + 0.5f);
+                    HasSpawn = true;
+                }
+            }
+        }
+
+        private void MarkTown(Vector2Int tile, byte value)
+        {
+            if (tile.x < 0 || tile.y < 0) return;
+            int col = Mathf.FloorToInt(tile.x / TilesPerCell);
+            int row = Mathf.FloorToInt(tile.y / TilesPerCell);
+            if (col >= Columns || row >= Rows) return;
+            int i = Index(col, row);
+            if (TownMask[i] < value) TownMask[i] = value;
         }
 
         private static bool IsWalkableKind(WorldBiomeKind kind)

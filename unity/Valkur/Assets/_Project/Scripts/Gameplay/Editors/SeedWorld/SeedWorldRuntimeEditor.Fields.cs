@@ -78,6 +78,25 @@ namespace Valkur.Gameplay.Editors.SeedWorld
                 () => _settings.riverWidth, v => _settings.riverWidth = v, 1, WorldGenSettings.MaxRiverWidth);
 
             EditorUIHelpers.BuildSeparator(body);
+            EditorUIHelpers.BuildSectionHeader(body, "Pueblos");
+
+            AddIntField(body, "Pueblos", "Cuantos intenta fundar, el inicial incluido. Solo en tierra llana y sin rios en el centro.",
+                () => _settings.townCount, v => _settings.townCount = v, 0, WorldGenSettings.MaxTowns);
+            AddIntField(body, "Radio (tiles)", "Hasta donde llegan sus calles principales desde la plaza.",
+                () => _settings.townRadius, v => _settings.townRadius = v,
+                WorldGenSettings.MinTownRadius, WorldGenSettings.MaxTownRadius);
+
+            var startRow = MakeRow(body, "StartTownRow", ROW_H + 4f);
+            AddCaption(startRow.transform, "Pueblo inicial");
+            bool start = _settings.startingTown;
+            var startToggle = EditorUIHelpers.MakeButton(startRow.transform, start ? "SI" : "NO",
+                () => { Commit($"Pueblo inicial: {(start ? "no" : "si")}", s => s.startingTown = !start); RebuildBody(); },
+                ROW_H, 11f);
+            startToggle.gameObject.name = "StartingTownToggle";
+            UIButton.SetTint(startToggle, start ? EditorUIHelpers.ACCENT_BG : EditorUIHelpers.BTN_NORMAL);
+            AddHint(body, "Con el pueblo inicial la partida empieza en su calle principal, no en mitad del campo.");
+
+            EditorUIHelpers.BuildSeparator(body);
             BuildBakeSection(body);
         }
 

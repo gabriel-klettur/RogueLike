@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using Valkur.Data;
@@ -169,6 +170,70 @@ namespace Valkur.Tests.EditMode.Game.WorldGen
             Assert.IsTrue(SeedWorldBaker.Bake(Small(), request, _palette).Succeeded);
             Assert.AreEqual(4, Directory.GetFiles(request.OverridesDirectory, "*.overlay.json").Length,
                 "a stale zone overlay would be an orphan in the slot's folder");
+        }
+
+        private static Valkur.Data.BuildingCatalog LoadBuildingCatalog()
+            => UnityEditor.AssetDatabase.LoadAssetAtPath<Valkur.Data.BuildingCatalog>(
+                "Assets/_Project/Data/Catalogs/Buildings/BuildingCatalog.asset");
+
+        /// <summary>Every curated town piece names art that exists: a renamed PNG would quietly thin every town.</summary>
+        [Test]
+        public void EveryTownPaletteEntry_ResolvesInTheShippedCatalog()
+        {
+            var missing = new List<string>();
+            var options = SeedWorldTownPalette.Options(LoadBuildingCatalog(), missing);
+            Assert.IsEmpty(missing, "unresolved town pieces: " + string.Join(", ", missing));
+            Assert.Greater(options.Count, 40);
+        }
+
+        [Test]
+        public void ABakeWithTowns_WritesTheSlotsBuildings_WithACollisionGridEach()
+        {
+            var request = SeedWorldBakeRequest.ForTest("seed_towns", _root);
+            var s = Small();
+            s.widthTiles = 200;
+            s.heightTiles = 200;
+            s.townCount = 2;
+            var result = SeedWorldBaker.Bake(s, request, _palette, LoadBuildingCatalog());
+
+            Assert.IsTrue(result.Succeeded, result.Error);
+            Assert.Greater(result.Towns, 0);
+            Assert.Greater(result.Buildings, 0);
+            Assert.IsTrue(File.Exists(request.BuildingsFilePath));
+
+            var list = MiniJsonRuntime.Deserialize(File.ReadAllText(request.BuildingsFilePath)) as List<object>;
+            Assert.AreEqual(result.Buildings, list.Count);
+
+            var slot = Parse(request.SlotFilePath);
+            var zoneNames = new HashSet<string>();
+            foreach (var z in slot["zones"] as List<object>) zoneNames.Add((string)((Dictionary<string, object>)z)["zoneName"]);
+
+            foreach (var item in list)
+            {
+                var b = (Dictionary<string, object>)item;
+                Assert.IsTrue(zoneNames.Contains((string)b["zone"]), $"building in unknown zone '{b["zone"]}'");
+                var overrides = (Dictionary<string, object>)b["overrides"];
+                var grid = (Dictionary<string, object>)overrides["collision_override"];
+                var rows = (List<object>)grid["collision"];
+                Assert.AreEqual(System.Convert.ToInt32(grid["height"]), rows.Count);
+                Assert.IsTrue(rows.Any(r => ((List<object>)r).Contains("#")), "a generated building that collides with nothing is a picture");
+            }
+        }
+
+        [Test]
+        public void ZoneNames_AreUnique_AndNameTheStartingTown()
+        {
+            var request = SeedWorldBakeRequest.ForTest("seed_names2", _root);
+            var s = Small();
+            s.widthTiles = 300;
+            s.heightTiles = 300;
+            s.townCount = 3;
+            Assert.IsTrue(SeedWorldBaker.Bake(s, request, _palette, null).Succeeded);
+
+            var names = ((List<object>)Parse(request.SlotFilePath)["zones"])
+                .Select(z => (string)((Dictionary<string, object>)z)["zoneName"]).ToList();
+            Assert.AreEqual(names.Count, names.Distinct().Count(), "zone names must be unique");
+            Assert.Contains("Pueblo inicial", names);
         }
 
         [Test]

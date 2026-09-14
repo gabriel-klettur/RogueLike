@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.TileEditor;
+using Valkur.Gameplay.World;
 using Valkur.Gameplay.World.Generation;
 using Valkur.UIKit;
 
@@ -118,7 +119,9 @@ namespace Valkur.Gameplay.Editors.SeedWorld
                 mgr.LoadMapSlot(MapEditorMapSlots.DEFAULT_SLOT);
 
             var palette = new SeedWorldTilePalette(TerrainCatalogLoader.Load());
-            var result = SeedWorldBaker.Bake(_settings, request, palette);
+            var loader = FindObjectOfType<BuildingLoader>();
+            var catalog = loader != null ? loader.Catalog : null;
+            var result = SeedWorldBaker.Bake(_settings, request, palette, catalog);
             if (!result.Succeeded)
             {
                 SetStatus("No se construyo: " + result.Error);
@@ -132,6 +135,7 @@ namespace Valkur.Gameplay.Editors.SeedWorld
 
             string summary =
                 $"'{result.Slot}': {result.ZonesX}x{result.ZonesY} zonas, {result.Rivers} rios, " +
+                $"{result.Towns} pueblos con {result.Buildings} edificios, " +
                 $"{result.BlockedTiles} tiles bloqueados, {result.HardCuts} cortes sin transicion. " +
                 $"Generado {result.GenerateMs} ms, escrito {result.WriteMs} ms " +
                 $"({result.Bytes / (1024 * 1024f):0.0} MB), cargado {loadWatch.ElapsedMilliseconds} ms.";

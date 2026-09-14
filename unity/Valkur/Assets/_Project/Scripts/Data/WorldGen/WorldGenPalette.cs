@@ -28,6 +28,12 @@ namespace Valkur.Data.WorldGen
         public static readonly Color32 Common = new Color32(40, 40, 48, 255);
         public static readonly Color32 Rare = new Color32(190, 120, 240, 255);
 
+        /// <summary>A street or plaza tile of a town.</summary>
+        public static readonly Color32 Street = new Color32(150, 104, 62, 255);
+
+        /// <summary>Blended over the biome inside a town's radius.</summary>
+        public static readonly Color32 TownArea = new Color32(214, 176, 120, 255);
+
         /// <summary>The marker drawn on the spawn point.</summary>
         public static readonly Color32 Spawn = new Color32(255, 216, 64, 255);
 

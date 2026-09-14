@@ -72,6 +72,7 @@ namespace Valkur.Tests.EditMode.Editors.SeedWorld
                 for (int col = 0; col < map.Columns; col += 11)
                 {
                     int i = map.Index(col, row);
+                    if (map.TownMask[i] != 0) continue; // towns are drawn over the biome
                     var expected = WorldBiomeTable.GetAt(map.Biomes[i]).PreviewColor;
                     var actual = pixels[i];
                     if (actual.Equals(WorldGenPalette.Spawn)) continue; // the spawn marker

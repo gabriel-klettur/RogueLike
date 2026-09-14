@@ -6413,16 +6413,17 @@ related symptom reappears.
 
 ## Open work
 
-- **Seed World (generacion procedural del mundo)** — fases 1 y 2 hechas (2026-09-13/14): el
-  editor **ESC -> Seed World** configura semilla, tamano, continentes, clima, biomas y rios,
-  previsualiza el mundo y lo **construye en un map slot aparte** (`Maps/<slot>.zones.json` +
-  `MapOverrides/<slot>/`, nunca el mundo base; un slot sin `_seedworld.json` no se sobrescribe) y
-  lo carga con `LoadMapSlot`. El generador es puro en `Data/WorldGen/` (`WorldClimate` es la UNICA
-  respuesta a "que hay en este punto"; los rios son DATOS trazados como curvas y la vista previa y
-  la construccion rasterizan la misma lista). El suelo es por VERTICE con los 7 packs Corner16 que
-  existen, y `WorldTerrainGrid` repara los pares sin pack (no hay arena/agua) con un terreno puente.
-  Alto clampado por el Y-sort (`WorldGenSettings.MaxHeightTiles`). Fases 3-5 (ciudades jigsaw,
-  poblacion, chunks en vivo) y el arte que falta: `.github/SEED_WORLD_ROADMAP.md`.
+- **Seed World (generacion procedural del mundo)** — fases 1-3 hechas (2026-09-13/14): el
+  editor **ESC -> Seed World** configura semilla, tamano, continentes, clima, biomas, rios y
+  pueblos, previsualiza el mundo y lo **construye en un map slot aparte** (`Maps/<slot>.zones.json`
+  + `MapOverrides/<slot>/` + `Maps/<slot>/Buildings/`, nunca el mundo base; un slot sin
+  `_seedworld.json` no se sobrescribe) y lo carga con `LoadMapSlot`. El generador es puro en
+  `Data/WorldGen/` (`WorldClimate` es la UNICA respuesta a "que hay en este punto"; rios y calles
+  son DATOS del plan que la vista previa y la construccion comparten, sin depender de la resolucion).
+  Suelo por VERTICE con los 7 packs Corner16 y reparacion de pares sin pack (no hay arena/agua).
+  Pueblos centrados en zona con edificios pixel-art curados POR RUTA (`SeedWorldTownPalette`) y
+  colision inline por instancia. Fases 4-5 (poblacion, chunks en vivo) y el arte que falta:
+  `.github/SEED_WORLD_ROADMAP.md`.
 - **Editor UI/UX unification & persistence** — audited 2026-09-02, layer shipped 2026-09-03.
   The seventeen editors are 319 files / ~77.6k LOC and drifted: three (Camera, DungeonNodeGraph,
   General) carry NO chrome at all, `PanelChrome` is missing from six, the tutorial overlay from

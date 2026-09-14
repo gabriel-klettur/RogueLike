@@ -5,6 +5,7 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Data;
 using Valkur.Data.WorldGen;
 using Valkur.Gameplay.MapEditor;
 using Debug = UnityEngine.Debug;
@@ -60,6 +61,14 @@ namespace Valkur.Gameplay.World.Generation
 
         public static SeedWorldBakeResult Bake(WorldGenSettings settings, SeedWorldBakeRequest request,
                                                SeedWorldTilePalette palette)
+            => Bake(settings, request, palette, null);
+
+        /// <summary>
+        /// As above, with towns built from <paramref name="buildings"/>. A null catalogue still
+        /// lays out the towns' streets on the ground; it just puts nothing beside them.
+        /// </summary>
+        public static SeedWorldBakeResult Bake(WorldGenSettings settings, SeedWorldBakeRequest request,
+                                               SeedWorldTilePalette palette, BuildingCatalog buildings)
         {
             if (settings == null) return SeedWorldBakeResult.Fail("Sin parametros.");
             if (request == null) return SeedWorldBakeResult.Fail("Nombre de mapa no valido (vacio o 'default').");
@@ -81,9 +90,16 @@ namespace Valkur.Gameplay.World.Generation
             int zonesY = Mathf.CeilToInt((float)s.heightTiles / z);
             var origin = new Vector2Int(-(zonesX / 2) * z, -(zonesY / 2) * z);
 
-            var rivers = WorldRivers.Generate(climate);
-            var grid = WorldTerrainGrid.Build(climate, rivers, zonesX * z, zonesY * z, palette.Compatible);
+            // Rivers, towns and the spawn come from the SAME plan the Seed World preview draws;
+            // none of them depends on the preview's resolution.
             var preview = WorldGenMap.Generate(climate, 64);
+            var rivers = preview.Rivers;
+            var grid = WorldTerrainGrid.Build(climate, rivers, preview.Towns, zonesX * z, zonesY * z, palette.Compatible);
+
+            var placements = new List<WorldTownPlacement>();
+            var options = SeedWorldTownPalette.Options(buildings);
+            foreach (var town in preview.Towns)
+                placements.AddRange(WorldTownLots.Place(town, climate, preview.RiverTiles, options));
 
             var result = new SeedWorldBakeResult
             {
@@ -92,6 +108,8 @@ namespace Valkur.Gameplay.World.Generation
                 ZonesY = zonesY,
                 Tiles = zonesX * z * zonesY * z,
                 Rivers = rivers.Count,
+                Towns = preview.Towns.Count,
+                Buildings = placements.Count,
                 RepairedVertices = grid.RepairedVertices,
                 Origin = origin,
             };
@@ -110,11 +128,15 @@ namespace Valkur.Gameplay.World.Generation
                 var zones = new List<ZonePersistenceEntry>(zonesX * zonesY);
                 var sb = new StringBuilder(1 << 20);
                 var labelCounts = new Dictionary<string, int>();
+                var zoneNames = new string[zonesX, zonesY];
+                for (int zy = 0; zy < zonesY; zy++)
+                    for (int zx = 0; zx < zonesX; zx++)
+                        zoneNames[zx, zy] = ZoneName(climate, preview.Towns, zx * z, zy * z, z, labelCounts);
 
                 for (int zy = 0; zy < zonesY; zy++)
                     for (int zx = 0; zx < zonesX; zx++)
                     {
-                        string name = ZoneName(climate, zx * z, zy * z, z, labelCounts);
+                        string name = zoneNames[zx, zy];
                         sb.Clear();
                         WriteZone(sb, grid, palette, s, zx * z, zy * z, z, origin, result);
                         string path = Path.Combine(request.OverridesDirectory, name + ".overlay.json");
@@ -141,6 +163,11 @@ namespace Valkur.Gameplay.World.Generation
                 };
                 File.WriteAllText(request.SlotFilePath, JsonUtility.ToJson(slot, true));
 
+                Directory.CreateDirectory(request.BuildingsDirectory);
+                string buildingsJson = BuildingsJson(placements, buildings, zoneNames, z);
+                File.WriteAllText(request.BuildingsFilePath, buildingsJson);
+                result.Bytes += buildingsJson.Length;
+
                 var marker = new SeedWorldMarker
                 {
                     seed = s.seed,
@@ -165,9 +192,17 @@ namespace Valkur.Gameplay.World.Generation
         /// grid coordinate there reads as debug text. Numbered per biome so names stay unique, and
         /// water zones get the name too, since a coast zone is still a place the player walks into.
         /// </summary>
-        public static string ZoneName(WorldClimate climate, int baseX, int baseY, int z,
-                                      Dictionary<string, int> counts)
+        public static string ZoneName(WorldClimate climate, IReadOnlyList<WorldTown> towns,
+                                      int baseX, int baseY, int z, Dictionary<string, int> counts)
         {
+            // A zone holding a town's plaza is named after the town: that is the place the player
+            // will remember, not the grass it stands on.
+            if (towns != null)
+                foreach (var town in towns)
+                    if (town.Center.x >= baseX && town.Center.x < baseX + z &&
+                        town.Center.y >= baseY && town.Center.y < baseY + z)
+                        return town.IsStart ? "Pueblo inicial" : $"Pueblo {town.Index + 1}";
+
             const int Samples = 5;
             var votes = new int[WorldBiomeTable.Count];
             float step = (float)z / Samples;
@@ -183,6 +218,82 @@ namespace Valkur.Gameplay.World.Generation
             counts.TryGetValue(label, out int n);
             counts[label] = ++n;
             return $"{label} {n}";
+        }
+
+        /// <summary>Bottom rows of a house's sprite that collide: the walls, not the roof drawn over the street behind.</summary>
+        public const float BuildingSolidFraction = 0.45f;
+
+        /// <summary>
+        /// The slot's <c>buildings_instances.json</c>, in the shape the Buildings editor writes, so
+        /// <c>BuildingLoader</c> spawns the towns and <c>BuildingCollisionLoader</c> gives each an
+        /// inline collision grid. Without that grid a template no author painted does not collide
+        /// at all, and a generated house would be a picture the player walks through.
+        /// </summary>
+        private static string BuildingsJson(List<WorldTownPlacement> placements, BuildingCatalog catalog,
+                                            string[,] zoneNames, int z)
+        {
+            var sb = new StringBuilder(placements.Count * 256 + 2);
+            sb.Append('[');
+            int id = 0;
+            foreach (var p in placements)
+            {
+                var template = catalog != null ? catalog.GetById(p.Option.TemplateId) : null;
+                if (template == null) continue;
+
+                int effW = template.originalScale.x, effH = template.originalScale.y;
+                int zx = Mathf.Clamp(p.Rect.x / z, 0, zoneNames.GetLength(0) - 1);
+                int zy = Mathf.Clamp(p.Rect.y / z, 0, zoneNames.GetLength(1) - 1);
+
+                // BuildingLoader: worldX = gridX + (rel_x + effW/2)/32, worldY = gridY + (z-1) - (rel_y + effH)/32.
+                // The sprite's left edge sits on the lot's left edge and its bottom on the lot's bottom.
+                int relX = (p.Rect.x - zx * z) * 32;
+                int relY = ((zy * z + z - 1) - p.Rect.y) * 32 - effH;
+
+                int cols = Mathf.Max(1, Mathf.CeilToInt(effW / 32f));
+                int rows = Mathf.Max(1, Mathf.CeilToInt(effH / 32f));
+                int solidRows = SolidRows(p.Option.Kind, rows);
+                int solidCols = p.Option.Kind == WorldTownPieceKind.Lamp ? 1 : cols;
+                int solidStart = (cols - solidCols) / 2;
+
+                if (id > 0) sb.Append(',');
+                sb.Append("{\"id\":").Append(++id)
+                  .Append(",\"template_id\":").Append(template.templateId)
+                  .Append(",\"zone\":\"").Append(zoneNames[zx, zy]).Append('"')
+                  .Append(",\"rel_x\":").Append(relX)
+                  .Append(",\"rel_y\":").Append(relY)
+                  .Append(",\"overrides\":{\"collider_scope\":\"CU\",\"collision_override\":{\"width\":").Append(cols)
+                  .Append(",\"height\":").Append(rows).Append(",\"collision\":[");
+                for (int r = 0; r < rows; r++)
+                {
+                    if (r > 0) sb.Append(',');
+                    sb.Append('[');
+                    bool solidRow = r >= rows - solidRows;
+                    for (int c = 0; c < cols; c++)
+                    {
+                        if (c > 0) sb.Append(',');
+                        bool solid = solidRow && c >= solidStart && c < solidStart + solidCols;
+                        sb.Append(solid ? "\"#\"" : "\".\"");
+                    }
+                    sb.Append(']');
+                }
+                sb.Append("]}}}");
+            }
+            sb.Append(']');
+            return sb.ToString();
+        }
+
+        private static int SolidRows(WorldTownPieceKind kind, int rows)
+        {
+            switch (kind)
+            {
+                case WorldTownPieceKind.Lamp:
+                case WorldTownPieceKind.Stall:
+                    return 1;
+                case WorldTownPieceKind.Centerpiece:
+                    return Mathf.Max(1, rows / 2);
+                default:
+                    return Mathf.Clamp(Mathf.RoundToInt(rows * BuildingSolidFraction), 1, rows);
+            }
         }
 
         private static void WriteZone(StringBuilder sb, WorldTerrainGrid grid, SeedWorldTilePalette palette,
