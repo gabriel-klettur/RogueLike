@@ -6438,8 +6438,11 @@ related symptom reappears.
   **`LoadingScreenController` ASIGNA `LoadingReporter.OnGameplayReady`**: un sistema que quiera
   enterarse del final del arranque desde el menu usa `OnGameplayReadyForSystems`, o su `+=` se borra.
   **`MapEditorMapSlots` pasa por `WorldDataWriteGuard`**: un fixture que usa el directorio `Maps` real
-  lo aparca y abre el scope. Pendiente (streaming de edificios/arboles/spawners, auto-brush en zonas no
-  guardadas, caminos, arte): `.github/SEED_WORLD_ROADMAP.md`.
+  lo aparca y abre el scope. El streamer vuelca el terreno por vertice de cada zona que pinta al `TerrainMap`
+  del auto-brush (y lo retira al soltarla), y los pueblos se unen con caminos de tierra (`WorldRoads`: arbol
+  desde el pueblo inicial, A* en rejilla gruesa; un marcador de formato 1 planifica sin caminos). Pendiente
+  (streaming de edificios/arboles/spawners, que exige que el guardado de Buildings escriba una tabla y no la
+  escena; puentes; arte): `.github/SEED_WORLD_ROADMAP.md`.
 - **Editor UI/UX unification & persistence** — audited 2026-09-02, layer shipped 2026-09-03.
   The seventeen editors are 319 files / ~77.6k LOC and drifted: three (Camera, DungeonNodeGraph,
   General) carry NO chrome at all, `PanelChrome` is missing from six, the tutorial overlay from
