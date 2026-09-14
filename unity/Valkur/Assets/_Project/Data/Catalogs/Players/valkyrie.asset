@@ -1176,6 +1176,8 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 3
+      repeatFrameCount: 3
       timeline:
         steps: []
         releaseStep: 0
@@ -1261,6 +1263,8 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 3
+      repeatFrameCount: 3
       timeline:
         steps: []
         releaseStep: 0
@@ -1346,6 +1350,8 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 3
+      repeatFrameCount: 3
       timeline:
         steps: []
         releaseStep: 0
@@ -1431,6 +1437,8 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 2
+      repeatFrameCount: 4
       timeline:
         steps: []
         releaseStep: 0
@@ -1516,6 +1524,8 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 3
+      repeatFrameCount: 3
       timeline:
         steps: []
         releaseStep: 0

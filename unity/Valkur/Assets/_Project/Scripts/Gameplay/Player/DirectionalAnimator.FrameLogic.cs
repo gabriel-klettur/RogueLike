@@ -108,6 +108,11 @@ namespace Valkur.Gameplay
                 return;
             }
 
+            // A variant with an authored repeat stretch: loops that stretch while a cast is
+            // being sustained, and plays out its tail once when it is not.
+            if (TryAdvanceRepeat(frames))
+                return;
+
             // A variant that ENDS in a pose plays once and stays there, exactly as Death
             // does above. The dash is why: its body teleports in one physics step and its
             // wake is gone in 0.14 s, so the charge frames are compressed to fit and the

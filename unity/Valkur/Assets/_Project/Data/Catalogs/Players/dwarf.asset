@@ -1271,6 +1271,8 @@ MonoBehaviour:
       - anim_spellcasting_1
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 3
+      repeatFrameCount: 3
       timeline:
         steps: []
         releaseStep: 0
@@ -1358,6 +1360,8 @@ MonoBehaviour:
       - anim_spellcasting_2
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 3
+      repeatFrameCount: 3
       timeline:
         steps: []
         releaseStep: 0
@@ -1445,6 +1449,8 @@ MonoBehaviour:
       - anim_spellcasting_3
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 3
+      repeatFrameCount: 3
       timeline:
         steps: []
         releaseStep: 0
@@ -1532,6 +1538,8 @@ MonoBehaviour:
       - anim_spellcasting_4
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 3
+      repeatFrameCount: 3
       timeline:
         steps: []
         releaseStep: 0
@@ -1619,6 +1627,8 @@ MonoBehaviour:
       - anim_spellcasting_5
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 2
+      repeatFrameCount: 4
       timeline:
         steps: []
         releaseStep: 0

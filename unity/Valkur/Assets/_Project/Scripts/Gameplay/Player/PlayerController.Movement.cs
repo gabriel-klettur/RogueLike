@@ -26,6 +26,14 @@ namespace Valkur.Gameplay
         // stays alive for as long as the player is channeling.
         private float _castAnimEndTime;
 
+        /// <summary>When the current cast's prepare + channel end. A repeat variant may close the
+        /// pose early (<see cref="TickCastAnimRevert"/>), but never inside the spell itself.</summary>
+        private float _castPhaseEndTime;
+
+        /// <summary>Slowest cadence (prepare + channel + cooldown, seconds) that still counts as
+        /// one sustained cast rather than separate ones. A held fireball is 0.43.</summary>
+        private const float REPEAT_MAX_CADENCE = 0.9f;
+
         // Which spell the window above belongs to. Only used to tell a HELD channel's
         // per-frame refresh apart from a fresh cast, so the former does not re-roll the
         // animation variant on every frame. Null is a legitimate value — the slash, dash and
@@ -645,6 +653,13 @@ namespace Valkur.Gameplay
             {
                 _animator.SetState(state, dir, variant, ShouldPlayCastReversed());
             }
+            // The same spell cast AGAIN while its pose is up — a held fireball, a beam refreshed
+            // every frame. A variant with an authored repeat stretch holds the gesture at its
+            // climax instead of cycling back through the rest pose between shots. Only a
+            // repetition arms it: a single cast still plays the whole animation.
+            if (sameCastStillPlaying)
+                _animator.SustainRepeat(ResolveRepeatHold(spellKey, state, variant));
+
             _castAnimSpellKey = spellKey;
             // Remembered so the revert below can hand back control from WHATEVER state this
             // cast entered, not just from the three it used to be able to reach.
@@ -670,6 +685,7 @@ namespace Valkur.Gameplay
             // down and then fires it from wherever they got to. The spell's own phases are the
             // floor now; the art is what may be LONGER than them.
             float castPhases = ResolveCastPhaseDuration(spellKey);
+            _castPhaseEndTime = Time.time + castPhases;
             _castAnimEndTime = Time.time + Mathf.Max(
                 Mathf.Max(floor, castPhases),
                 _animator.GetStateLength(state, variant));
@@ -840,6 +856,28 @@ namespace Valkur.Gameplay
         /// none (the slash, the dash and the beam refresh) and leaves the historical floor in
         /// charge exactly as before.</para>
         /// </summary>
+        /// <summary>
+        /// How long one repetition keeps a repeat stretch armed: the spell's own cadence plus one
+        /// frame of slack, so a steady stream of casts never lets the tail start between two of
+        /// them.
+        ///
+        /// <para>A beam's cadence is zero — it is refreshed every frame it is held — so its
+        /// stretch lapses one frame after the button is let go. A spell slower than
+        /// <see cref="REPEAT_MAX_CADENCE"/> is not armed at all: a repetition that far apart is
+        /// two casts, and the tail playing between them is correct. Its re-cast still jumps
+        /// back from the tail into the stretch.</para>
+        /// </summary>
+        private float ResolveRepeatHold(string spellKey, DirectionalAnimator.AnimState state, int variant)
+        {
+            SpellDefinition spell = _spellCaster != null ? _spellCaster.GetSpellByKey(spellKey) : null;
+            float cadence = spell == null || spell.type == SpellType.Beam
+                ? 0f
+                : Mathf.Max(0f, spell.prepareDuration) + Mathf.Max(0f, spell.channelDuration)
+                  + Mathf.Max(0f, spell.cooldownDuration);
+            if (cadence > REPEAT_MAX_CADENCE) return 0f;
+            return cadence + _animator.FrameIntervalFor(state, variant);
+        }
+
         private float ResolveCastPhaseDuration(string spellKey)
         {
             SpellDefinition spell = _spellCaster != null ? _spellCaster.GetSpellByKey(spellKey) : null;
@@ -963,7 +1001,12 @@ namespace Valkur.Gameplay
         private void TickCastAnimRevert()
         {
             if (_animator == null || _castAnimEndTime <= 0f) return;
-            if (Time.time < _castAnimEndTime) return;
+            // A repeat variant ends its own cast: once nothing sustains it and its tail has
+            // played out, waiting for a window sized for the whole animation would hold the
+            // last frame for however long the stretch was repeated. Never before the spell's
+            // own phases are over, which the window still guarantees.
+            bool repeatDone = _animator.RepeatTailFinished && Time.time >= _castPhaseEndTime;
+            if (Time.time < _castAnimEndTime && !repeatDone) return;
             // Recover is in this list for the reason AnimState.Recover's doc gives: a state
             // that locomotion refuses to override and nothing reverts is a soft lock, and
             // the coroutine that entered Recover can be killed by a scene change.

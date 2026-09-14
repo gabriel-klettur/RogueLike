@@ -715,11 +715,17 @@ namespace Valkur.Editor.Players
             // Pacing is captured separately from the reservation because a variant may carry
             // one without the other, and "unreserved" must not also mean "reset to 1x".
             var authoredPacing = new Dictionary<string, (float speed, bool hold)>(StringComparer.OrdinalIgnoreCase);
+            // The repeat stretch and the timeline are authored per animation on the asset and
+            // the manifest has no opinion on either, so the previous variant is the only source.
+            // Both used to be dropped here: a re-import rebuilt every CastVariant from scratch and
+            // silently deleted every timeline an author had drawn.
+            var previousByKey = new Dictionary<string, CastVariant>(StringComparer.OrdinalIgnoreCase);
             if (previous != null)
             {
                 foreach (CastVariant existing in previous)
                 {
                     if (existing == null || string.IsNullOrEmpty(existing.key)) continue;
+                    previousByKey[existing.key] = existing;
                     if (existing.IsReservedForSpell)
                         authoredSpellKeys[existing.key] = new List<string>(existing.spellKeys);
 
@@ -752,6 +758,13 @@ namespace Valkur.Editor.Players
                 {
                     variant.animationSpeedMultiplier = pace.speed;
                     variant.holdLastFrame = pace.hold;
+                }
+
+                if (previousByKey.TryGetValue(name, out CastVariant before))
+                {
+                    variant.repeatFrom = before.repeatFrom;
+                    variant.repeatFrameCount = before.repeatFrameCount;
+                    if (before.timeline != null) variant.timeline = before.timeline;
                 }
                 rebuilt.Add(variant);
             }

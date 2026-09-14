@@ -253,12 +253,26 @@ namespace Valkur.Data
                  "move that ENDS in a pose rather than returning to where it started.")]
         public bool holdLastFrame;
 
+        [Header("Repeat")]
+        [Tooltip("First frame (per direction, 0-based) of the stretch that REPEATS while the " +
+                 "same spell keeps being cast — a held fireball, a channelled beam. Point it at " +
+                 "the climax of the gesture, never at the tail: the last frames of a cast are " +
+                 "usually the return to rest, and repeating those reads as the caster giving up.")]
+        [Min(0)] public int repeatFrom;
+
+        [Tooltip("How many frames repeat, starting at Repeat From. 0 = no repeat: a re-cast " +
+                 "keeps cycling the whole animation, exactly as before.")]
+        [Min(0)] public int repeatFrameCount;
+
         [Header("Cast timeline")]
         [Tooltip("Optional authored plan: which frames play, in what order and for how long, " +
                  "and where the spell's phases cut them. Empty = the natural frames at the " +
                  "entity's own rate, exactly as before.")]
         public AnimationTimeline timeline = new AnimationTimeline();
 
+        /// <summary>True when a re-cast holds the gesture inside an authored stretch instead of
+        /// cycling the whole animation through its rest pose.</summary>
+        public bool HasRepeat => repeatFrameCount > 0;
 
         /// <summary>
         /// True when this variant is spoken for by at least one spell.

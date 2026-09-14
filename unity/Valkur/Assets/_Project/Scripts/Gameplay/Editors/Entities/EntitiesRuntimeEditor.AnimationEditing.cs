@@ -56,9 +56,23 @@ namespace Valkur.Gameplay.Entities
                 _ui.AnimHoldToggle.interactable = variantSelected;
             }
 
+            // A repeat stretch exists only on CAST variants — a sustained cast is the one thing
+            // that re-enters the same animation while it is still up.
+            bool castVariant = variantSelected &&
+                               _animPreview.CurrentState == DirectionalAnimator.AnimState.Cast;
+            SetIntField(_ui.AnimRepeatFromInput,  _animPreview.RepeatFrom,       castVariant);
+            SetIntField(_ui.AnimRepeatCountInput, _animPreview.RepeatFrameCount, castVariant);
+
             int layout = config != null ? (int)config.directionLayout : 0;
             SetDropdownOptions(_ui.AnimLayoutDd, AnimLayoutNames, layout);
             if (_ui.AnimLayoutDd != null) _ui.AnimLayoutDd.interactable = editable;
+        }
+
+        private static void SetIntField(TMPro.TMP_InputField field, int value, bool editable)
+        {
+            if (field == null) return;
+            field.SetTextWithoutNotify(value.ToString(CultureInfo.InvariantCulture));
+            field.interactable = editable;
         }
 
         private static void SetNumberField(TMPro.TMP_InputField field, float value, bool editable)
@@ -213,6 +227,50 @@ namespace Valkur.Gameplay.Entities
             ApplyToSelectedVariant(def.assetConfig, speed: null, hold: hold);
             CommitDefinitionEdit(def, "Hold last frame");
             StageSelectedEntityForAnimation();
+        }
+
+        private void OnAnimationRepeatFromCommitted(string raw)
+            => CommitRepeat(raw, "Repeat from", (variant, v) => variant.repeatFrom = v);
+
+        private void OnAnimationRepeatCountCommitted(string raw)
+            => CommitRepeat(raw, "Repeat frames", (variant, v) => variant.repeatFrameCount = v);
+
+        /// <summary>
+        /// Writes one half of a cast variant's repeat stretch, found by its authored key for the
+        /// reason <see cref="ApplyToSelectedVariant"/> gives.
+        /// </summary>
+        private void CommitRepeat(string raw, string label, System.Action<CastVariant, int> apply)
+        {
+            var def = CurrentEditableMonster();
+            if (def?.assetConfig == null || _animPreview.CurrentVariant < 0 ||
+                _animPreview.CurrentState != DirectionalAnimator.AnimState.Cast)
+            {
+                SetStatus("A repeat stretch is authored on a monster's cast variant.");
+                RefreshAnimationPacingEditors();
+                return;
+            }
+
+            if (!int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed))
+            {
+                SetStatus($"'{raw}' is not a whole number — {label} unchanged.");
+                RefreshAnimationPacingEditors();
+                return;
+            }
+
+            string key = _animPreview.Animator != null
+                ? _animPreview.Animator.VariantLabel(_animPreview.CurrentState, _animPreview.CurrentVariant)
+                : null;
+            foreach (var variant in def.assetConfig.castVariants ?? new List<CastVariant>())
+            {
+                if (variant == null || !KeyMatches(variant.key, key)) continue;
+                apply(variant, Mathf.Max(0, parsed));
+                CommitDefinitionEdit(def, label);
+                StageSelectedEntityForAnimation();
+                return;
+            }
+
+            SetStatus($"No cast variant called '{key}' in the asset — nothing written.");
+            RefreshAnimationPacingEditors();
         }
 
         /// <summary>

@@ -405,11 +405,15 @@ namespace Valkur.Gameplay
 
         /// <summary>One variant's pacing, with a zero or negative multiplier read as the
         /// neutral 1x — an unset float on an asset authored before the field existed.</summary>
-        private static DirectionalAnimator.VariantPacing PacingOf(float speed, bool hold)
+        private static DirectionalAnimator.VariantPacing PacingOf(float speed, bool hold,
+                                                                  int repeatFrom = 0,
+                                                                  int repeatFrameCount = 0)
             => new DirectionalAnimator.VariantPacing
             {
                 SpeedMultiplier = speed > 0f ? speed : 1f,
                 HoldLastFrame = hold,
+                RepeatFrom = Mathf.Max(0, repeatFrom),
+                RepeatFrameCount = Mathf.Max(0, repeatFrameCount),
             };
 
         /// <summary>
@@ -461,7 +465,8 @@ namespace Valkur.Gameplay
 
                 sets.Add(set);
                 keys.Add(variant.spellKeys);
-                paces.Add(PacingOf(variant.animationSpeedMultiplier, variant.holdLastFrame));
+                paces.Add(PacingOf(variant.animationSpeedMultiplier, variant.holdLastFrame,
+                                   variant.repeatFrom, variant.repeatFrameCount));
                 names.Add(variant.key);
                 plans.Add(variant.timeline);
                 anyReserved |= variant.IsReservedForSpell;

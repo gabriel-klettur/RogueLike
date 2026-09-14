@@ -403,6 +403,15 @@ namespace Valkur.Gameplay.Entities
         public bool HoldsLastFrame
             => Animator != null && Animator.PacingOf(_state, _variant).HoldLastFrame;
 
+        /// <summary>First frame of the variant's repeat stretch (see
+        /// <c>DirectionalAnimator.SustainRepeat</c>).</summary>
+        public int RepeatFrom
+            => Animator != null ? Animator.PacingOf(_state, _variant).RepeatFrom : 0;
+
+        /// <summary>Frames in the repeat stretch; 0 = none.</summary>
+        public int RepeatFrameCount
+            => Animator != null ? Animator.PacingOf(_state, _variant).RepeatFrameCount : 0;
+
         /// <summary>
         /// Which of <c>AdvanceFrame</c>'s rules governs the pose on screen. It is the half of
         /// the timing nobody can infer from the numbers: a walk of eight frames at 0.15 s does

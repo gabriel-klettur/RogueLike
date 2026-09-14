@@ -170,16 +170,21 @@ namespace Valkur.Tests.EditMode.Game.Data
         }
 
         [Test]
-        public void TheFiveBareHandedCasts_Rotate_AndTheTwoSpecialsAreReserved()
+        public void TheBareHandedCasts_Rotate_AndTheSpecialsAreReserved()
         {
             EntityAssetConfig c = Load().assetConfig;
             var byKey = c.castVariants.ToDictionary(v => v.key, v => v);
 
             foreach (string k in new[] { "spell_1", "spell_2", "spell_3", "spell_4", "spell_5" })
-            {
                 Assert.IsTrue(byKey.ContainsKey(k), $"missing cast variant '{k}'");
+
+            foreach (string k in new[] { "spell_1", "spell_3", "spell_4", "spell_5" })
                 Assert.IsFalse(byKey[k].IsReservedForSpell, $"'{k}' should stay in the rotation");
-            }
+
+            // The fireball is the spell a player HOLDS, so it gets one gesture rather than the
+            // rotation: spellcast_2 points at the target. Rotating it put the mague crouched
+            // touching the floor (spellcast_5) on one burst in five, which reads as an earth spell.
+            Assert.IsTrue(byKey["spell_2"].ClaimsSpell("fireball"));
 
             // The DRAW. Without this reservation weapon_toggle animates as an ordinary
             // spellcast and the staff appears out of nothing.
@@ -254,14 +259,49 @@ namespace Valkur.Tests.EditMode.Game.Data
             // Three staff casts rotate, and the staff slash is reserved for the same reason
             // the bare-handed staff_swing is.
             foreach (string k in new[] { "staff_cast_1", "staff_cast_2", "staff_cast_5" })
-            {
                 Assert.IsTrue(casts.ContainsKey(k), $"missing armed cast '{k}'");
-                Assert.IsFalse(casts[k].IsReservedForSpell);
-            }
+            Assert.IsFalse(casts["staff_cast_1"].IsReservedForSpell);
+            Assert.IsFalse(casts["staff_cast_5"].IsReservedForSpell);
+            // The staff's pointing thrust, for the reason spell_2 is the bare-handed fireball.
+            Assert.IsTrue(casts["staff_cast_2"].ClaimsSpell("fireball"));
             Assert.IsTrue(casts["staff_slash"].ClaimsSpell("slash"));
 
             var swings = armed.attackVariants.ToDictionary(v => v.key, v => v);
             CollectionAssert.AreEquivalent(new[] { "staff_swing", "staff_thrust" }, swings.Keys);
+        }
+
+        // ---- Sustained casts ------------------------------------------------
+
+        /// <summary>
+        /// Every spellcast repeats a stretch that sits at the CLIMAX of its gesture, never in its
+        /// tail. On this art the last two frames of every cast are the return to rest (they match
+        /// frame 0), so a stretch reaching frame 6 would hold the mague with his hands folded while
+        /// fireballs keep leaving them — the defect the stretch exists to remove.
+        /// </summary>
+        [TestCase("spell_1", 3, 3)]
+        [TestCase("spell_2", 3, 3)]
+        [TestCase("spell_3", 2, 3)]
+        [TestCase("spell_4", 3, 3)]
+        [TestCase("spell_5", 3, 3)]
+        public void EveryBareHandedCast_RepeatsItsClimax(string key, int from, int count)
+        {
+            CastVariant v = Load().assetConfig.castVariants.First(x => x.key == key);
+            Assert.AreEqual(from, v.repeatFrom, $"{key}.repeatFrom");
+            Assert.AreEqual(count, v.repeatFrameCount, $"{key}.repeatFrameCount");
+            Assert.LessOrEqual(v.repeatFrom + v.repeatFrameCount, 6,
+                "the stretch must end before the two rest frames at the tail");
+        }
+
+        [TestCase("staff_cast_1", 4, 3)]
+        [TestCase("staff_cast_2", 3, 3)]
+        [TestCase("staff_cast_5", 3, 4)]
+        public void EveryStaffCast_RepeatsItsClimax(string key, int from, int count)
+        {
+            CastVariant v = Load().assetConfig.FindLoadout("armed").castVariants.First(x => x.key == key);
+            Assert.AreEqual(from, v.repeatFrom, $"{key}.repeatFrom");
+            Assert.AreEqual(count, v.repeatFrameCount, $"{key}.repeatFrameCount");
+            Assert.LessOrEqual(v.repeatFrom + v.repeatFrameCount, 7,
+                "the stretch must end before the rest frame at the tail");
         }
 
         // ---- Nothing is half-imported ---------------------------------------

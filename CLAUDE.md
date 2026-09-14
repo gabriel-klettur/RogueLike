@@ -2936,6 +2936,33 @@ resliced without its `--config` and quietly reshipped.
   while held, and advancing the rotation there handed `SetState` a different variant sixty
   times a second — a changed variant counts as a state change, so the pose restarted at frame
   0 on every one of them. The variant is reused for as long as the same cast's window is open.
+- **A REPEATED cast holds a stretch at the climax, never the tail** (`CastVariant.repeatFrom` +
+  `repeatFrameCount`, `DirectionalAnimator.Repeat.cs`). Audited 2026-09-14 on the mague: a held
+  fireball fires every 0.43 s against an eight-frame 1.2 s cast, and the default loop cycled all
+  eight — three fireballs in six left with his hands folded, because on this art frames 6-7 are
+  the RETURN TO REST (they match frame 0). So "repeat the last three or four frames" taken
+  literally repeats the caster giving up; the stretch is the three frames BEFORE the tail,
+  measured per sheet off a contact sheet. Four rules: a FRESH cast plays from frame 0 untouched;
+  only a repetition (`sameCastStillPlaying`) arms the stretch, for the spell's own cadence plus one
+  frame (`ResolveRepeatHold`; a beam's cadence is 0, anything above 0.9 s is two casts and is not
+  armed); a re-cast that lands in the tail jumps back to the stretch's START, one inside it changes
+  nothing on screen; and once unarmed the tail plays out, the last frame holds a full tick, and
+  `RepeatTailFinished` lets `TickCastAnimRevert` close the pose instead of waiting a window sized
+  for the whole animation (never before prepare + channel end). The existing timeline could NOT
+  do this: its `Loop` fills one cast's `channelDuration` (0.015 s on the fireball) and it is only
+  installed on a fresh cast, so on a repetition it sits finished on its last step — the rest pose.
+  Fireball is now RESERVED on the mague (`spell_2`, and `staff_cast_2` inside `armed`): rotating it
+  put him crouched touching the floor (`spell_5`) one burst in five. All six classes author their
+  stretches (33 spellcasts, measured sheet by sheet — the elf's `spellcasting_4`/`_5` and the
+  vampire's `_2` do NOT open at rest, so their stretch sits on the strongest pose rather than on
+  frames 3-5); `PlayerCastRepeatDataTests` fails any `spell_*`/`staff_cast_*`/`bard_*` variant a new
+  wave ships without one, and any variant that both holds its last frame and repeats. The Dark
+  roster inherits them through `Build Dark Roster`; `NPCCastState` leaves a cast within 0.85 s, so
+  on a monster a stretch changes nothing. Verified live (Play, mague, 8 casts at 0.43 s through
+  `TriggerCastAnimation`): e0 e1 e2, then e3 e4 e5 for every shot, tail e6 e7 on release, idle at
+  4.09 s against the old window's 4.24. `PlayerFramesImporter` carries
+  `repeatFrom`/`repeatFrameCount` AND `timeline` across a re-import by key — it used to rebuild
+  every CastVariant from scratch and silently delete every authored timeline.
 - **Variants are per STATE, not per attack.** `DirectionalAnimator._variantsByState` is
   indexed by `AnimState` because elven ships three casting animations, and a second parallel
   cast-only array would have paid the positional tax `AttackVariant`'s own doc-comment exists

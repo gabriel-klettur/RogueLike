@@ -23,7 +23,7 @@ namespace Valkur.Gameplay.Entities
         // exception — it only needs the generic onDropdownToggle BuildMenuBar already has.
 
         private const float ANIM_W        = 336f;
-        private const float ANIM_H        = 700f + PANEL_HDR_H;
+        private const float ANIM_H        = 724f + PANEL_HDR_H;
         private const float ANIM_STAGE_H  = 212f;
         private const float ANIM_DIR_BTN  = 24f;
 
@@ -57,7 +57,8 @@ namespace Valkur.Gameplay.Entities
             Action<string> onVariantSpeed, Action<bool> onHoldLastFrame,
             Action<int> onLayoutChanged,
             Action onToggleMuzzle, Action<int> onMuzzleScope, Action<int> onMuzzleSpell,
-            Action onMuzzleClear)
+            Action onMuzzleClear,
+            Action<string> onRepeatFrom = null, Action<string> onRepeatCount = null)
         {
             // Docked to the right of the picker column rather than to a screen corner: both
             // corners are taken (Tools/Categories/Picker on the left, Properties and
@@ -125,7 +126,7 @@ namespace Valkur.Gameplay.Entities
             AddActionBtn(zoomRow.transform, "Zoom +", 20f, onZoomIn,  out _);
 
             BuildPacingEditors(t, ref refs, onEntitySpeed, onStateSpeed, onVariantSpeed,
-                               onHoldLastFrame, onLayoutChanged);
+                               onHoldLastFrame, onLayoutChanged, onRepeatFrom, onRepeatCount);
 
             BuildMuzzleEditor(t, ref refs, onToggleMuzzle, onMuzzleScope, onMuzzleSpell,
                               onMuzzleClear);
@@ -210,7 +211,8 @@ namespace Valkur.Gameplay.Entities
         private static void BuildPacingEditors(Transform parent, ref UIRefs refs,
             Action<string> onEntitySpeed, Action<string> onStateSpeed,
             Action<string> onVariantSpeed, Action<bool> onHoldLastFrame,
-            Action<int> onLayoutChanged)
+            Action<int> onLayoutChanged,
+            Action<string> onRepeatFrom, Action<string> onRepeatCount)
         {
             var speedRow = MakeFieldRow(parent, "AnimSpeedRow");
             refs.AnimEntitySpeedInput = AddNumberField(speedRow, "Entity x", onEntitySpeed);
@@ -245,6 +247,14 @@ namespace Valkur.Gameplay.Entities
             refs.AnimHoldToggle.graphic = checkImg;
             if (onHoldLastFrame != null)
                 refs.AnimHoldToggle.onValueChanged.AddListener(v => onHoldLastFrame(v));
+
+            // The stretch a sustained cast repeats (cast variants only): where the gesture holds
+            // while the same spell keeps being cast. Frames = 0 means no repeat.
+            var repeatRow = MakeFieldRow(parent, "AnimRepeatRow");
+            refs.AnimRepeatFromInput  = AddNumberField(repeatRow, "Repeat @", onRepeatFrom);
+            refs.AnimRepeatCountInput = AddNumberField(repeatRow, "Frames",   onRepeatCount);
+            refs.AnimRepeatFromInput.contentType  = TMP_InputField.ContentType.IntegerNumber;
+            refs.AnimRepeatCountInput.contentType = TMP_InputField.ContentType.IntegerNumber;
 
             refs.AnimLayoutDd = AddLabeledDropdown(parent, "Layout", onLayoutChanged);
         }

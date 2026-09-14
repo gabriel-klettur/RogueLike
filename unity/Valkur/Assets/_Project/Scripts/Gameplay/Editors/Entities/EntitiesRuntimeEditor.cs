@@ -381,7 +381,9 @@ namespace Valkur.Gameplay.Entities
                 onToggleMuzzle:   OnToggleMuzzlePlacement,
                 onMuzzleScope:    OnMuzzleScopeChanged,
                 onMuzzleSpell:    OnMuzzleSpellChanged,
-                onMuzzleClear:    OnMuzzleClear);
+                onMuzzleClear:    OnMuzzleClear,
+                onRepeatFrom:     OnAnimationRepeatFromCommitted,
+                onRepeatCount:    OnAnimationRepeatCountCommitted);
 
             if (_ui.PropsFilterInput != null)
                 _ui.PropsFilterInput.onValueChanged.AddListener(OnPropsFilterChanged);

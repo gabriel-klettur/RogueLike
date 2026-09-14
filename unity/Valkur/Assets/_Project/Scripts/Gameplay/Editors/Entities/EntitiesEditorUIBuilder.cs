@@ -120,6 +120,8 @@ namespace Valkur.Gameplay.Entities
             public TMP_InputField   AnimStateSpeedInput;
             public TMP_InputField   AnimVariantSpeedInput;
             public Toggle           AnimHoldToggle;
+            public TMP_InputField   AnimRepeatFromInput;
+            public TMP_InputField   AnimRepeatCountInput;
             public TMP_Dropdown     AnimLayoutDd;
 
             // Muzzle picker (where a spell is born on THIS creature's art).

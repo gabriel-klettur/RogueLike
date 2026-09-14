@@ -171,6 +171,15 @@ namespace Valkur.Gameplay
             public float SpeedMultiplier;
             public bool HoldLastFrame;
 
+            /// <summary>First frame of the stretch a sustained cast repeats. See
+            /// <see cref="SustainRepeat"/>.</summary>
+            public int RepeatFrom;
+
+            /// <summary>Frames in that stretch; 0 = the variant has no repeat.</summary>
+            public int RepeatFrameCount;
+
+            public bool HasRepeat => RepeatFrameCount > 0;
+
             public static VariantPacing Default => new VariantPacing { SpeedMultiplier = 1f };
         }
         private int _activeVariant = -1;
@@ -724,6 +733,7 @@ namespace Valkur.Gameplay
             _frameIndex = 0;
             _frameTimer = 0f;
             _stateStartTime = Time.time;
+            ResetRepeat();
             AdvanceFrame();
         }
 
@@ -903,7 +913,13 @@ namespace Valkur.Gameplay
             // would keep drawing the previous spell's frame indices out of the new set.
             // A DIRECTION change deliberately does not — the plan's indices are per direction,
             // so a character who turns mid-cast keeps their place and simply faces the other way.
-            if (stateChanged || variantChanged || reversedChanged) ClearTimeline();
+            if (stateChanged || variantChanged || reversedChanged)
+            {
+                ClearTimeline();
+                // A repeat belongs to one cast in the same way: armed for the previous
+                // animation, it would hold the NEW one inside a stretch nobody asked for.
+                ResetRepeat();
+            }
 
             if ((variantChanged || reversedChanged) && !stateChanged)
             {

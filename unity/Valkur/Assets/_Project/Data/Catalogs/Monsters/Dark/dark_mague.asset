@@ -935,6 +935,8 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 3
+      repeatFrameCount: 3
       timeline:
         steps: []
         releaseStep: 0
@@ -1017,9 +1019,12 @@ MonoBehaviour:
       - {fileID: 21300000, guid: 8f34e4085b2e57b4288113a3ea9a738f, type: 3}
       - {fileID: 21300000, guid: 51ffce150d2df0b4e98ac3b8bb9134f4, type: 3}
       - {fileID: 21300000, guid: ce44c78569fcfcd408efeec826f887c3, type: 3}
-      spellKeys: []
+      spellKeys:
+      - fireball
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 3
+      repeatFrameCount: 3
       timeline:
         steps: []
         releaseStep: 0
@@ -1105,6 +1110,8 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 2
+      repeatFrameCount: 3
       timeline:
         steps: []
         releaseStep: 0
@@ -1190,6 +1197,8 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 3
+      repeatFrameCount: 3
       timeline:
         steps: []
         releaseStep: 0
@@ -1275,6 +1284,8 @@ MonoBehaviour:
       spellKeys: []
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 3
+      repeatFrameCount: 3
       timeline:
         steps: []
         releaseStep: 0
@@ -1361,6 +1372,8 @@ MonoBehaviour:
       - weapon_toggle
       animationSpeedMultiplier: 1
       holdLastFrame: 0
+      repeatFrom: 0
+      repeatFrameCount: 0
       timeline:
         steps: []
         releaseStep: 0
@@ -1447,6 +1460,8 @@ MonoBehaviour:
       - dash
       animationSpeedMultiplier: 4
       holdLastFrame: 1
+      repeatFrom: 0
+      repeatFrameCount: 0
       timeline:
         steps: []
         releaseStep: 0
@@ -2927,6 +2942,8 @@ MonoBehaviour:
         spellKeys: []
         animationSpeedMultiplier: 1
         holdLastFrame: 0
+        repeatFrom: 4
+        repeatFrameCount: 3
         timeline:
           steps: []
           releaseStep: 0
@@ -3009,9 +3026,12 @@ MonoBehaviour:
         - {fileID: 21300000, guid: 46df06d58c8055346abbdbefbd510d97, type: 3}
         - {fileID: 21300000, guid: 69098590a82f47649a62d5b7796aa4a6, type: 3}
         - {fileID: 21300000, guid: 1937181298b9eb74db26b35aa5a72211, type: 3}
-        spellKeys: []
+        spellKeys:
+        - fireball
         animationSpeedMultiplier: 1
         holdLastFrame: 0
+        repeatFrom: 3
+        repeatFrameCount: 3
         timeline:
           steps: []
           releaseStep: 0
@@ -3097,6 +3117,8 @@ MonoBehaviour:
         spellKeys: []
         animationSpeedMultiplier: 1
         holdLastFrame: 0
+        repeatFrom: 3
+        repeatFrameCount: 4
         timeline:
           steps: []
           releaseStep: 0
@@ -3186,6 +3208,8 @@ MonoBehaviour:
         - slash_stab
         animationSpeedMultiplier: 1
         holdLastFrame: 0
+        repeatFrom: 0
+        repeatFrameCount: 0
         timeline:
           steps: []
           releaseStep: 0
@@ -3272,6 +3296,8 @@ MonoBehaviour:
         - weapon_toggle
         animationSpeedMultiplier: 1
         holdLastFrame: 0
+        repeatFrom: 0
+        repeatFrameCount: 0
         timeline:
           steps: []
           releaseStep: 0
@@ -3281,6 +3307,7 @@ MonoBehaviour:
           recoverMode: 2
     castMuzzle: {x: 0, y: 0}
     castMuzzleFrames: []
+    castMuzzlePoints: []
     scaleConfig:
       scaleIdle: 0
       tint: {r: 0, g: 0, b: 0, a: 1}
