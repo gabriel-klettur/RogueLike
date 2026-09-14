@@ -125,9 +125,9 @@ namespace Valkur.Gameplay
             if (go.GetComponent<World.Ambience.FootstepEmitter>() == null)
                 go.AddComponent<World.Ambience.FootstepEmitter>();
 
-            // The player's own light after dusk. Player-only: monsters are found BY it.
-            if (go.CompareTag("Player"))
-                World.Ambience.PlayerLantern.Attach(go);
+            // No lantern. One hung off the player after dusk shipped and was removed on review:
+            // at night it drew a grey disc over the body that turned the character into a blur,
+            // and it lifted the ground around them out of the darkness the night is for.
 
             // The ring at the mouse pointer, fired by the same acts as the aim marker.
             // Player-only: it decorates the POINTER, and no NPC has one.

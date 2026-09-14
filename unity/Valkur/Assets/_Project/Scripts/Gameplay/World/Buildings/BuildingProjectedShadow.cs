@@ -23,6 +23,8 @@ namespace Valkur.Gameplay.World
     public static class BuildingProjectedShadow
     {
         /// <summary>Folders whose art is drawn in plan: it is floor, not a standing object.</summary>
+        [Valkur.Core.SelfHealingStatic("Immutable table of literal folder prefixes, written once at type " +
+                                        "initialisation and never mutated; nothing a Play session does can stale it.")]
         private static readonly string[] FlatPrefixes =
         {
             "buildings/gardens/",
@@ -32,6 +34,8 @@ namespace Valkur.Gameplay.World
         };
 
         /// <summary>Individual sprites that are drawn in plan outside those folders.</summary>
+        [Valkur.Core.SelfHealingStatic("Immutable table of literal asset paths, written once at type " +
+                                        "initialisation and never mutated; nothing a Play session does can stale it.")]
         private static readonly string[] FlatAssets =
         {
             "buildings/others/fuente",

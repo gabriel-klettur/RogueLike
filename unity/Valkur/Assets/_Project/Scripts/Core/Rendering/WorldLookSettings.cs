@@ -24,7 +24,6 @@ namespace Valkur.Core.Rendering
             CloudShadows = true;
             SunShadows   = true;
             WindSway     = true;
-            Lantern      = true;
             Fireflies    = true;
             Footsteps    = true;
         }
@@ -37,9 +36,6 @@ namespace Valkur.Core.Rendering
 
         /// <summary>Tree canopies and bushes swaying with the weather wind.</summary>
         public static bool WindSway { get; set; } = true;
-
-        /// <summary>The player's own light after dusk.</summary>
-        public static bool Lantern { get; set; } = true;
 
         /// <summary>Fireflies over the night's grass and water.</summary>
         public static bool Fireflies { get; set; } = true;

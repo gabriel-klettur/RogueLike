@@ -23,7 +23,7 @@ namespace Valkur.Gameplay
             RegisterCommand(new ConsoleCommand
             {
                 Name     = "look",
-                Usage    = "look [bloom|clouds|sunshadows|sway|lantern|fireflies|footsteps] [on|off|<value>]",
+                Usage    = "look [bloom|clouds|sunshadows|sway|fireflies|footsteps] [on|off|<value>]",
                 Help     = "show or set the world's look layers; 'look bloom 0.5' sets the intensity",
                 Category = "look",
                 Handler  = args => CmdLook(args)
@@ -64,12 +64,11 @@ namespace Valkur.Gameplay
                 case "clouds":     Toggle(value, v => WorldLookSettings.CloudShadows = v, WorldLookSettings.CloudShadows, "clouds");     return;
                 case "sunshadows": Toggle(value, v => WorldLookSettings.SunShadows   = v, WorldLookSettings.SunShadows,   "sunshadows"); return;
                 case "sway":       Toggle(value, v => WorldLookSettings.WindSway     = v, WorldLookSettings.WindSway,     "sway");       return;
-                case "lantern":    Toggle(value, v => WorldLookSettings.Lantern      = v, WorldLookSettings.Lantern,      "lantern");    return;
                 case "fireflies":  Toggle(value, v => WorldLookSettings.Fireflies    = v, WorldLookSettings.Fireflies,    "fireflies");  return;
                 case "footsteps":  Toggle(value, v => WorldLookSettings.Footsteps    = v, WorldLookSettings.Footsteps,    "footsteps");  return;
 
                 default:
-                    Log($"[look] unknown layer '{args[1]}'. Layers: bloom, clouds, sunshadows, sway, lantern, fireflies, footsteps.");
+                    Log($"[look] unknown layer '{args[1]}'. Layers: bloom, clouds, sunshadows, sway, fireflies, footsteps.");
                     return;
             }
         }
@@ -89,7 +88,6 @@ namespace Valkur.Gameplay
             Log($"[look] clouds     {(WorldLookSettings.CloudShadows ? "on" : "off")}");
             Log($"[look] sunshadows {(WorldLookSettings.SunShadows ? "on" : "off")}");
             Log($"[look] sway       {(WorldLookSettings.WindSway ? "on" : "off")}");
-            Log($"[look] lantern    {(WorldLookSettings.Lantern ? "on" : "off")}");
             Log($"[look] fireflies  {(WorldLookSettings.Fireflies ? "on" : "off")}");
             Log($"[look] footsteps  {(WorldLookSettings.Footsteps ? "on" : "off")}");
         }

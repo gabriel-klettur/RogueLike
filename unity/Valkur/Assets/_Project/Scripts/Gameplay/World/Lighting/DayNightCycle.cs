@@ -767,34 +767,23 @@ namespace Valkur.Gameplay.World
         }
 
         /// <summary>
-        /// Where the bloom threshold sits for an ambient light: just above the brightest a lit
-        /// surface can be under it. By day that is 1.0 — no texel of pixel art crosses white —
-        /// and the only things that bloom are the additive layers the HDR buffer keeps above it.
-        /// At midnight the ambient is a fraction of that, and a torch flame drawn at 0.6 IS the
-        /// brightest thing in the world; a threshold still parked at 1.0 measured a delta of 20
-        /// on a 255 scale around a burning torch, i.e. a bloom nobody could see. Following the
-        /// ambient is what makes "brighter than the light" the definition of emissive at every
-        /// hour. Floored so a pitch-black cave does not bloom its own dither.
+        /// Where the bloom threshold sits: at WHITE, at every hour.
+        ///
+        /// <para><b>It used to follow the ambient down at night, and the night lost its
+        /// darkness for it.</b> Parked at white, nothing drawn by the world can bloom — only the
+        /// additive layers the HDR buffer keeps above it, i.e. spells and effects. Lowered with
+        /// the ambient (to a 0.45 floor), the ground lit by a torch counted as emissive and
+        /// glowed. Measured at midnight in the lobby: the bloom alone raised the frame's mean
+        /// luminance 8 %, and together with the lantern and the brighter torch preset the night
+        /// came out 20 % lighter with a fifth fewer deep-dark pixels — reported from play as
+        /// "antes estaba mas tetrico". The cost is real and accepted: a torch flame no longer
+        /// haloes at midnight.</para>
+        ///
+        /// <para>The ambient parameters stay so the call site does not change shape, and so a
+        /// future per-hour rule has its inputs; they are deliberately unread today.</para>
         /// </summary>
         public static float BloomThresholdFor(Color ambient, float ambientIntensity)
-        {
-            float luminance = ambientIntensity * (0.2126f * ambient.r + 0.7152f * ambient.g + 0.0722f * ambient.b);
-            return Mathf.Clamp(luminance * BloomThresholdOverAmbient + BloomThresholdLightRoom, BloomThresholdFloor, 1f);
-        }
-
-        /// <summary>How far above the ambient's luminance the bloom threshold sits. See <see cref="BloomThresholdFor"/>.</summary>
-        private const float BloomThresholdOverAmbient = 1.15f;
-
-        /// <summary>
-        /// Room above the ambient for a PLACED light's pool: a torch or the lantern adds up to
-        /// ~0.3 on top of the ambient-lit ground, and that ground is lit, not emissive. Measured
-        /// without it: the lantern's pool at 0.26 crossed a 0.30 floor and the character stood
-        /// in a white blob.
-        /// </summary>
-        private const float BloomThresholdLightRoom = 0.22f;
-
-        /// <summary>The lowest the threshold may go, whatever the ambient. See <see cref="BloomThresholdFor"/>.</summary>
-        private const float BloomThresholdFloor = 0.45f;
+            => Valkur.Core.Rendering.ScreenGradeSettings.DefaultBloomThreshold;
 
         /// <summary>How much of the ambient's saturation the bloom tint takes. See <see cref="BloomTintFor"/>.</summary>
         private const float BloomTintLean = 0.4f;

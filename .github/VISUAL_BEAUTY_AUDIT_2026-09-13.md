@@ -487,3 +487,31 @@ pasa la medición se queda fuera, no se "optimiza después".
   mapa y llega a todo el suelo sin pintar nada.
 - **Un cielo dibujado** (nubes de sprite por encima de la cámara): en vista cenital el cielo
   solo existe por sus CONSECUENCIAS (sombras, reflejos, color), y eso es lo que se propone.
+
+
+---
+
+## Revision 2026-09-13 (tarde): la noche volvia a estar demasiado clara
+
+Reportado desde el juego: "antes estaba mas tetrico" y "la luz sobre el personaje de noche no pinta
+nada". Medido A/B a medianoche en el lobby, mismo encuadre, capas encendidas contra apagadas:
+
+| | luminancia media | pixeles muy oscuros |
+|---|---:|---:|
+| sin las capas nuevas, antorcha 0.35/128 | 0.0218 | 32.8 % |
+| con bloom solo | 0.0235 (+8 %) | |
+| con todo lo nuevo | 0.0262 (+20 %) | 26.4 % |
+
+El bloom explicaba el 39 % del aclarado; farol, antorcha nueva y luciernagas el 61 %. De dia las
+sombras de nube y sol OSCURECEN (-30 %), asi que no eran parte de la queja.
+
+Revertido:
+- **`PlayerLantern` borrado** (clase, test, interruptor `look lantern`). Dibujaba un disco gris
+  sobre el cuerpo que convertia al personaje en un borron.
+- **`LightPreset_Torch` de vuelta a 0.35 / 128 px.**
+- **`DayNightCycle.BloomThresholdFor` fijo en blanco.** Bajarlo con la ambiente hacia que el suelo
+  iluminado por una antorcha contara como emisivo. Coste aceptado: una llama de antorcha ya no
+  hace halo a medianoche; los hechizos (aditivos por encima de blanco) siguen floreciendo.
+
+Sin tocar: sombras de sol y nubes, viento, pisadas, luciernagas, y las luces COLOCADAS del lobby
+(commit `8e481ab73`, dato de autor, no del sistema).

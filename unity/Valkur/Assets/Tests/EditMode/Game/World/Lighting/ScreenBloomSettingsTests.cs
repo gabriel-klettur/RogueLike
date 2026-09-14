@@ -77,22 +77,18 @@ namespace Valkur.Tests.EditMode.Game.World.Lighting
             Assert.IsTrue(ScreenGradeSettings.BloomWouldChangeTheFrame);
         }
 
+        /// <summary>
+        /// The threshold stays at white at every hour, so the world never blooms at night.
+        /// Following the ambient down made torch-lit ground count as emissive and lifted the
+        /// whole night out of its darkness (measured +8 % mean luminance from the bloom alone).
+        /// </summary>
         [Test]
-        public void BloomThreshold_IsWhiteByDay_AndFollowsTheAmbientDownAtNight()
+        public void BloomThreshold_StaysWhiteAtEveryHour_SoTheNightIsNotLifted()
         {
-            // Noon: a full white ambient at intensity 1 puts the threshold at white, so no lit
-            // texel of pixel art can bloom.
-            Assert.That(DayNightCycle.BloomThresholdFor(Color.white, 1f), Is.EqualTo(1f).Within(1e-4f));
-
-            // Midnight: a blue ambient at a third of the intensity. The brightest lit surface is
-            // now well under 0.4, and a torch flame drawn at 0.6 has to cross the line or the
-            // bloom is invisible for the whole night — measured at a delta of 20/255 before this.
-            float night = DayNightCycle.BloomThresholdFor(new Color(0.55f, 0.65f, 1f), 0.35f);
-            Assert.That(night, Is.LessThan(0.6f), "A torch flame at 0.7 must bloom at night.");
-            // And the ground under a lantern must NOT: ambient-lit ground plus a 0.26 light is a
-            // lit surface, not an emissive one. Measured at a 0.30 floor: a white blob.
-            Assert.That(night, Is.GreaterThan(0.4f), "A lantern's pool on the ground is not a light source.");
-            Assert.That(DayNightCycle.BloomThresholdFor(Color.black, 0f), Is.EqualTo(0.45f).Within(1e-4f));
+            Assert.That(DayNightCycle.BloomThresholdFor(Color.white, 1f), Is.EqualTo(1f).Within(1e-4f), "noon");
+            Assert.That(DayNightCycle.BloomThresholdFor(new Color(0.55f, 0.65f, 1f), 0.35f), Is.EqualTo(1f).Within(1e-4f),
+                "midnight: a lit surface under a torch must not bloom");
+            Assert.That(DayNightCycle.BloomThresholdFor(Color.black, 0f), Is.EqualTo(1f).Within(1e-4f), "a pitch-black cave");
         }
 
         [Test]
