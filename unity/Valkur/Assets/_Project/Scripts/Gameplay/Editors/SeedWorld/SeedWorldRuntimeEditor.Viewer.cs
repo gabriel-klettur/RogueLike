@@ -293,21 +293,31 @@ namespace Valkur.Gameplay.Editors.SeedWorld
             buttonLe.preferredWidth = 170f;
             buttonLe.flexibleWidth = 0f;
 
-            var hint = EditorUIHelpers.AddLabel(row.transform, "Recorre este mundo con camara libre. Esc vuelve al juego.", 10f);
-            hint.color = EditorUIHelpers.TEXT_MUTED;
-            hint.raycastTarget = false;
-            var hintLe = hint.gameObject.GetComponent<LayoutElement>() ?? hint.gameObject.AddComponent<LayoutElement>();
+            _viewHint = EditorUIHelpers.AddLabel(row.transform, string.Empty, 10f);
+            _viewHint.color = EditorUIHelpers.TEXT_MUTED;
+            _viewHint.raycastTarget = false;
+            var hintLe = _viewHint.gameObject.GetComponent<LayoutElement>() ?? _viewHint.gameObject.AddComponent<LayoutElement>();
             hintLe.flexibleWidth = 1f;
             RefreshViewButton();
         }
 
-        /// <summary>The button follows the lab switch, which lives in the other panel.</summary>
+        private TextMeshProUGUI _viewHint;
+
+        /// <summary>
+        /// The button follows the lab switch, which lives in the other panel — but it stays
+        /// CLICKABLE. A disabled uGUI button looked identical to an enabled one here and swallowed
+        /// the click in silence; clicking now answers with the reason (<see cref="BeginViewing"/>).
+        /// </summary>
         private void RefreshViewButton()
         {
             if (_viewButton == null) return;
             bool lab = SeedWorldLab.Enabled;
-            _viewButton.interactable = lab;
+            _viewButton.interactable = true;
             UIButton.SetTint(_viewButton, lab ? EditorUIHelpers.ACCENT_BG : EditorUIHelpers.BTN_NORMAL);
+            if (_viewHint != null)
+                _viewHint.text = lab
+                    ? "Recorre este mundo con camara libre. Esc vuelve al juego."
+                    : "Necesita el Laboratorio encendido (barra superior o Mundo > Construir).";
         }
 
         private void ShowViewOverlay(string title, string help)

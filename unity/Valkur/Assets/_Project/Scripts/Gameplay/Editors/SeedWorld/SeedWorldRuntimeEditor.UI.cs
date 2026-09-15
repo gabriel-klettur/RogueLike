@@ -38,11 +38,16 @@ namespace Valkur.Gameplay.Editors.SeedWorld
         private void BuildUI()
         {
             _canvas = EditorUIHelpers.CreateEditorCanvas("SeedWorldEditorCanvas", 118);
+            // The pre-game menus' look, kept live across every rebuild (Editors/_Shared/Frontend).
+            Valkur.Gameplay.Editors.Frontend.FrontendSkinRoot.Attach(_canvas.gameObject);
             _canvas.transform.SetParent(transform, false);
 
             _root = new GameObject("Root", typeof(RectTransform));
             _root.transform.SetParent(_canvas.transform, false);
             EditorUIHelpers.StretchFill(_root);
+
+            // Same top strip as every other editor; PANEL_TOP already leaves its height free.
+            DraggablePanel.TopReservedPx = TileEditorUIHelpers.MENUBAR_HEIGHT;
 
             EditorUIHelpers.MakeDropPanel(
                 "SeedWorldParamsPanel", _root.transform,
@@ -62,6 +67,8 @@ namespace Valkur.Gameplay.Editors.SeedWorld
 
             BuildParamsPanel();
             BuildPreviewPanel();
+            // Built last so it draws over a panel dragged up against it.
+            BuildMenuBar(_root.transform);
         }
 
         /// <summary>Heal a workspace document that persisted a panel as closed.</summary>
@@ -69,6 +76,7 @@ namespace Valkur.Gameplay.Editors.SeedWorld
         {
             Reopen(_paramsPanel);
             Reopen(_previewPanel);
+            RefreshMenuBar();
         }
 
         private static void Reopen(DraggablePanel panel)
@@ -136,6 +144,7 @@ namespace Valkur.Gameplay.Editors.SeedWorld
 
             RefreshTabs();
             RefreshViewButton();
+            RefreshMenuBar();
             _fieldResync.Clear();
             ClearChildren(_bodyScrollContent);
 
@@ -150,7 +159,10 @@ namespace Valkur.Gameplay.Editors.SeedWorld
         internal void SetStatus(string text)
         {
             if (_status != null) _status.text = text;
+            if (_menuStatus != null) _menuStatus.text = text;
         }
+
+        internal string StatusText => _status != null ? _status.text : string.Empty;
 
         private static GameObject MakeRow(Transform parent, string name, float height)
         {

@@ -57,12 +57,8 @@ namespace Valkur.Gameplay.Editors.SeedWorld
             var labRow = MakeRow(body, "LabRow", ROW_H + 4f);
             AddCaption(labRow.transform, "Laboratorio");
             bool lab = SeedWorldLab.Enabled;
-            var labButton = EditorUIHelpers.MakeButton(labRow.transform, lab ? "ENCENDIDO" : "APAGADO", () =>
-            {
-                SeedWorldLab.SetEnabled(!SeedWorldLab.Enabled);
-                _armedOverwriteSlot = null;
-                RebuildBody();
-            }, ROW_H, 11f);
+            var labButton = EditorUIHelpers.MakeButton(labRow.transform, lab ? "ENCENDIDO" : "APAGADO",
+                ToggleLab, ROW_H, 11f);
             labButton.gameObject.name = "LabButton";
             if (!lab) UIButton.SetTint(labButton, EditorUIHelpers.DANGER_IDLE);
             AddHint(body, lab
@@ -96,7 +92,9 @@ namespace Valkur.Gameplay.Editors.SeedWorld
                 BuildWorld, 30f, 12f);
             build.gameObject.name = "BakeButton";
             if (armed) UIButton.SetTint(build, EditorUIHelpers.DANGER);
-            build.interactable = lab;
+            // Clickable even with the lab off: BuildWorld answers with the reason. A disabled
+            // button here drew like an enabled one and swallowed the click in silence.
+            if (!lab) UIButton.SetTint(build, EditorUIHelpers.BTN_NORMAL);
 
             var back = EditorUIHelpers.MakeButton(row.transform, "Volver a Pepitoria", ReturnToBaseWorld, 30f, 11f);
             back.gameObject.name = "ReturnHomeButton";

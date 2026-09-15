@@ -105,13 +105,31 @@ namespace Valkur.Tests.EditMode.Editors.SeedWorld
         }
 
         [Test]
-        public void ThePreviewPanel_OffersTheView_AndTheButtonFollowsTheLab()
+        public void ThePreviewPanel_OffersTheView_AndStaysClickableToExplainARefusal()
         {
             SeedWorldLab.SetOverrideForTests(false);
             _editor.Activate();
             var button = _go.GetComponentsInChildren<Button>(true).FirstOrDefault(b => b.name == "ViewMapButton");
             Assert.IsNotNull(button);
-            Assert.IsFalse(button.interactable, "With the lab off the view cannot build.");
+            Assert.IsTrue(button.interactable,
+                "A disabled button drew like an enabled one and swallowed the click; it must answer with the reason.");
+
+            button.onClick.Invoke();
+            Assert.IsFalse(_editor.IsViewing);
+            Assert.IsNotEmpty(_editor.StatusText, "A refused view must say why.");
+        }
+
+        [Test]
+        public void TheEditor_HasTheTopMenuBar_WithTheViewAndTheLabSwitch()
+        {
+            SeedWorldLab.SetOverrideForTests(false);
+            _editor.Activate();
+            var names = _go.GetComponentsInChildren<Button>(true).Select(b => b.name).ToList();
+            Assert.IsNotNull(_go.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "SeedWorldMenuBar"));
+            CollectionAssert.Contains(names, "MenuBtn_ViewMap");
+            CollectionAssert.Contains(names, "MenuBtn_Build");
+            CollectionAssert.Contains(names, "MenuBtn_Lab");
+            CollectionAssert.Contains(names, "MenuBtn_Close");
         }
 
         [Test]
