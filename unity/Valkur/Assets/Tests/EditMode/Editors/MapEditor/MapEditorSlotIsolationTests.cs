@@ -26,7 +26,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
     ///
     /// (1) is regression-tested in
     /// <see cref="MapEditorBootSyncTests"/>; (2) in
-    /// <see cref="Valkur.Tests.EditMode.Game.World.BuildingLoaderClearSpawnedTests"/>.
+    /// <see cref="Valkur.Tests.EditMode.Gameplay.World.Buildings.BuildingLoaderClearSpawnedTests"/>.
     /// This fixture pins the higher-level "round-trip preservation" property
     /// so a future refactor that dilutes either guard surfaces here too.
     /// </summary>

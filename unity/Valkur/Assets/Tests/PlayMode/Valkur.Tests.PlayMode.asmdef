@@ -2,6 +2,7 @@
     "name": "Valkur.Tests.PlayMode",
     "rootNamespace": "Valkur.Tests.PlayMode",
     "references": [
+        "Valkur.Tests.Support",
         "Valkur.Core",
         "Valkur.Gameplay",
         "Valkur.Data",

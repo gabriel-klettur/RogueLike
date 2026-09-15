@@ -1,0 +1,236 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using NUnit.Framework;
+using UnityEngine.InputSystem;
+using Valkur.Core.Input;
+using Valkur.Gameplay.Editors.General;
+
+namespace Valkur.Tests.EditMode.Editors.GeneralEditor
+{
+    /// <summary>
+    /// There is ONE way into a runtime editor: the General Editor, on Escape.
+    ///
+    /// <para>This replaced <c>FKeyBindingParityTests</c>, 472 lines asserting that each editor
+    /// sat on the F-key its Python ancestor used. That contract is retired: the F-row was the
+    /// source of every same-map collision in the project — F2 held Combat Ranges AND Time &amp;
+    /// Weather, F3 held Spawner AND Lighting, F5 held Entities AND QuickSave, F9 held Debug HUD
+    /// AND QuickLoad, and while a perf-probe overlay was up F2-F7 fired the probe's bisection
+    /// as well. Thirteen keys carrying twenty meanings, three of them separated only by a
+    /// modifier that lived in C# rather than in the binding.</para>
+    ///
+    /// <para>The actions are NOT deleted, and that distinction is the point: they ship UNBOUND,
+    /// so the Controls editor lists them as "sin asignar" and a player who wants F8 back can
+    /// put it there. Deleting them would have made the menu the only possibility rather than
+    /// the default.</para>
+    /// </summary>
+    [TestFixture]
+    public class EditorEntryPointTests
+    {
+        /// <summary>
+        /// The thirteen EDITOR toggles that were on F1-F12 and now ship unbound. The fourteenth,
+        /// <c>ToggleDebugHUD</c>, is not an editor — it is an overlay that cycles levels — and
+        /// is bound to F1; <see cref="TheDebugHud_CyclesOnF1_AndF1MeansNothingElse"/> pins it.
+        /// </summary>
+        private static readonly string[] RetiredToggles =
+        {
+            "ToggleParticles", "ToggleCombatRanges", "ToggleTimeWeather", "ToggleSpawner",
+            "ToggleLighting", "ToggleSpells", "ToggleEntities", "ToggleInventory",
+            "ToggleItems", "ToggleTile", "ToggleBuildings",
+            "ToggleMap", "ToggleFSM",
+        };
+
+        private static InputActionMap EditorsMap()
+        {
+            var asset = InputService.Initialize()?.Asset;
+            Assert.IsNotNull(asset, "InputService must bootstrap from the canonical asset.");
+            var map = asset.FindActionMap(InputActionCatalog.MapEditors, throwIfNotFound: false);
+            Assert.IsNotNull(map, "The Editors action map is missing.");
+            return map;
+        }
+
+        // ── The F-row is free ────────────────────────────────────────────────
+
+        /// <summary>
+        /// Each retired toggle ships with exactly ONE binding whose path is empty — not with no
+        /// binding at all, which is what it used to be and which made it unassignable.
+        ///
+        /// <para>The distinction is the whole feature. <c>ApplyBindingOverride</c> writes into a
+        /// binding SLOT; it cannot create one. So an action with zero bindings could be listed
+        /// by the Controls editor, could be clicked, and answered "no tiene ningun binding que
+        /// reasignar" — the panel offered fourteen controls that could not do the one thing the
+        /// panel is for, while CLAUDE.md, this fixture and the <c>editors</c> console command
+        /// all told the player that a key they wanted back could be put there. An empty-path
+        /// binding is the InputSystem's own representation of "unbound": <c>effectivePath</c> is
+        /// empty, the action resolves no controls, and an override can move it onto a real key
+        /// and be persisted by binding id like any other.</para>
+        /// </summary>
+        [Test]
+        public void EveryEditorToggle_ShipsUnboundButAssignable()
+        {
+            var map = EditorsMap();
+
+            var wrong = new List<string>();
+            foreach (var name in RetiredToggles)
+            {
+                var action = map.FindAction(name, throwIfNotFound: false);
+                Assert.IsNotNull(action,
+                    $"'{name}' must still EXIST — it ships unbound so the Controls editor can " +
+                    "offer it, which deleting it would prevent.");
+
+                int slots = action.bindings.Count(b => !b.isComposite);
+                if (slots != 1)
+                {
+                    wrong.Add($"{name} has {slots} bindable slots; it needs exactly one, empty.");
+                    continue;
+                }
+
+                var path = action.bindings.First(b => !b.isComposite).effectivePath;
+                if (!string.IsNullOrEmpty(path))
+                    wrong.Add($"{name} -> {path} (the F-row is meant to be free)");
+            }
+
+            Assert.IsEmpty(wrong,
+                "Editors are reached from the General Editor (Escape), not from the F-row — and " +
+                "a toggle with no binding slot cannot be given a key at all:" +
+                string.Join(" | ", wrong));
+        }
+
+        [Test]
+        public void NoEditorToggle_HasALegacyKeyInSource()
+        {
+            // EditorHotkeyBindings used to carry a Hotkey -> KeyCode table feeding
+            // UnityEngine.Input directly, so the OR-gate's legacy leg answered for F1-F12
+            // whatever the asset said. Clearing a binding would have removed none of the key.
+            var fallback = typeof(EditorHotkeyBindings)
+                .GetMethod("FallbackPath", System.Reflection.BindingFlags.Public
+                                         | System.Reflection.BindingFlags.Static);
+            Assert.IsNotNull(fallback, "FallbackPath moved — update this test.");
+
+            var leaked = new List<string>();
+            foreach (EditorHotkeyBindings.Hotkey hk in
+                     System.Enum.GetValues(typeof(EditorHotkeyBindings.Hotkey)))
+            {
+                if (!RetiredToggles.Contains("Toggle" + hk.ToString().Replace("Toggle", ""))) continue;
+                var path = (string)fallback.Invoke(null, new object[] { hk });
+                if (path != null) leaked.Add($"{hk} -> {path}");
+            }
+
+            Assert.IsEmpty(leaked,
+                "The EditMode fallback must mirror the shipped asset. A fallback that quietly " +
+                "re-bound a retired toggle would make the suite disagree with the game about " +
+                "which keys exist:\n" + string.Join("\n", leaked));
+        }
+
+        [Test]
+        public void TheEditorsMap_HasNoCollisionsLeft()
+        {
+            var conflicts = InputConflictScanner.Scan(InputService.Initialize().Asset)
+                .Where(c => c.Severity == InputConflictSeverity.SameMap)
+                .Where(c => c.A.Map == InputActionCatalog.MapEditors)
+                .Select(c => c.Describe())
+                .ToList();
+
+            Assert.IsEmpty(conflicts,
+                "Retiring the F-row was supposed to dissolve every same-map collision in " +
+                "Editors:\n" + string.Join("\n", conflicts));
+        }
+
+        // ── The one way in ───────────────────────────────────────────────────
+
+        [Test]
+        public void TheGeneralEditor_IsStillBoundToEscape()
+        {
+            var action = EditorsMap().FindAction("OpenGeneralEditor", throwIfNotFound: false);
+            Assert.IsNotNull(action);
+            CollectionAssert.Contains(
+                action.bindings.Select(b => b.effectivePath).ToList(), "<Keyboard>/escape",
+                "Escape is now the ONLY way to reach any editor. Unbinding it strands all " +
+                "sixteen behind a menu nothing can open.");
+        }
+
+        [Test]
+        public void QuickSaveAndQuickLoad_KeepTheirKeys()
+        {
+            // Not editors, so not retired: Ctrl+F5 / Ctrl+F9 stay. Their former collision
+            // partners (Entities on F5, Debug HUD on F9) are gone, so they no longer clash.
+            var map = EditorsMap();
+            foreach (var (name, path) in new[]
+                     { ("QuickSave", "<Keyboard>/f5"), ("QuickLoad", "<Keyboard>/f9") })
+            {
+                var action = map.FindAction(name, throwIfNotFound: false);
+                Assert.IsNotNull(action, $"{name} is missing.");
+                CollectionAssert.Contains(
+                    action.bindings.Select(b => b.effectivePath).ToList(), path,
+                    $"{name} must keep {path}.");
+            }
+        }
+
+        /// <summary>
+        /// The half that makes retiring the keys safe. An editor with no hotkey AND no menu
+        /// entry is an editor nobody can open — and it would fail silently, because nothing
+        /// throws when a key simply never fires.
+        /// </summary>
+        [Test]
+        public void EveryRetiredToggle_HasAGeneralEditorEntry()
+        {
+            var entries = GeneralEditorRegistry.BuildEntries()
+                .Select(e => Normalize(e.Label))
+                .ToList();
+
+            var unreachable = new List<string>();
+            foreach (var toggle in RetiredToggles)
+            {
+                string wanted = Normalize(toggle.Substring("Toggle".Length));
+                // StartsWith, not equality: the menu says "Spawners" where the action says
+                // "ToggleSpawner", and "Time & Weather" where it says "ToggleTimeWeather".
+                if (!entries.Any(e => e.StartsWith(wanted, System.StringComparison.Ordinal)))
+                    unreachable.Add(toggle);
+            }
+
+            Assert.IsEmpty(unreachable,
+                "These editors lost their hotkey and have no menu entry, so nothing can open " +
+                "them:\n" + string.Join("\n", unreachable));
+        }
+
+        /// <summary>
+        /// The debug HUD is the one former F-key toggle that keeps a key, because it is not an
+        /// editor: it is an overlay a developer flips while PLAYING, and three trips through a
+        /// menu to see a frame time is the usability defect its audit measured. F1 and not F3:
+        /// F2-F8 belong to the Tile and Buildings perf probes. It still keeps its General
+        /// Editor entry, and the binding still ships in ONE slot so the Controls editor can
+        /// move it.
+        /// </summary>
+        [Test]
+        public void TheDebugHud_CyclesOnF1_AndF1MeansNothingElse()
+        {
+            var asset = InputService.Initialize().Asset;
+            var action = EditorsMap().FindAction("ToggleDebugHUD", throwIfNotFound: false);
+            Assert.IsNotNull(action);
+            var slots = action.bindings.Where(b => !b.isComposite).ToList();
+            Assert.AreEqual(1, slots.Count, "one rebindable slot");
+            Assert.AreEqual("<Keyboard>/f1", slots[0].effectivePath);
+            Assert.AreEqual("<Keyboard>/f1",
+                EditorHotkeyBindings.FallbackPath(EditorHotkeyBindings.Hotkey.ToggleDebugHUD),
+                "the EditMode fallback mirrors the asset");
+
+            var others = new List<string>();
+            foreach (var map in asset.actionMaps)
+                foreach (var a in map.actions)
+                {
+                    if (a == action) continue;
+                    foreach (var b in a.bindings)
+                        if (string.Equals(b.effectivePath, "<Keyboard>/f1", System.StringComparison.OrdinalIgnoreCase))
+                            others.Add(map.name + "/" + a.name);
+                }
+            Assert.IsEmpty(others, "F1 must answer to the debug HUD alone:\n" + string.Join("\n", others));
+
+            var entries = GeneralEditorRegistry.BuildEntries().Select(e => Normalize(e.Label)).ToList();
+            Assert.IsTrue(entries.Any(e => e.StartsWith("debughud", System.StringComparison.Ordinal)),
+                "the key is a shortcut, not the only way in");
+        }
+
+        private static string Normalize(string s) =>
+            Regex.Replace(s ?? "", "[^a-zA-Z0-9]", "").ToLowerInvariant();
+    }
+}

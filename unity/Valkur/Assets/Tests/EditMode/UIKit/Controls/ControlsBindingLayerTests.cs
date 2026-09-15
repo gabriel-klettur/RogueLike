@@ -1,0 +1,426 @@
+using System.Collections.Generic;
+using System.Linq;
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using Valkur.Core;
+using Valkur.Core.Input;
+using Valkur.UIKit;
+
+namespace Valkur.Tests.EditMode.UIKit.Controls
+{
+    /// <summary>
+    /// The binding layer that makes the Controls editor honest.
+    ///
+    /// <para>Every one of these pins a defect that was live in the shipped project, not a
+    /// hypothetical. The headline is <see cref="Rebinding_MovesTheLegacyHalfToo"/>: every
+    /// gameplay read here ORs the new InputSystem with the legacy backend to survive the
+    /// 2022.3 event-drop bug, and the legacy half used to be a hardcoded
+    /// <see cref="KeyCode"/> literal beside the action. So an override moved half of a
+    /// rebind, in silence, and the old key went on working — which made every rebinding UI a
+    /// lie about its own effect.</para>
+    /// </summary>
+    [TestFixture]
+    public class ControlsBindingLayerTests
+    {
+        private InputService _svc;
+
+        [SetUp]
+        public void SetUp()
+        {
+            InputContextPolicy.ResetForTests();
+            PlayerStance.ResetForTests();
+            InputBindingResolver.ResetForTests();
+            _svc = InputService.Initialize();
+            Assert.IsNotNull(_svc, "InputService must bootstrap from the canonical asset.");
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            // Binding overrides live on the CANONICAL asset, which survives Domain Reload off
+            // and every fixture in the session. A test that rebinds and does not clean up
+            // leaves the next fixture — and the next Play session — reading a moved key, and
+            // the failure surfaces somewhere with no connection to this file.
+            _svc?.Asset?.RemoveAllBindingOverrides();
+            InputBindingResolver.ResetForTests();
+            InputContextPolicy.ResetForTests();
+            PlayerStance.ResetForTests();
+        }
+
+        // ── The control table ────────────────────────────────────────────────
+
+        [Test]
+        public void EveryControlEntry_RoundTripsThroughItsPath()
+        {
+            var broken = new List<string>();
+            foreach (var e in InputControlPaths.Entries)
+            {
+                if (!InputControlPaths.TryResolvePath(e.Path, out var back))
+                { broken.Add($"{e.ControlName}: path did not resolve"); continue; }
+                if (back.Key != e.Key)
+                    broken.Add($"{e.ControlName}: Key {e.Key} came back as {back.Key}");
+                if (back.Legacy != e.Legacy)
+                    broken.Add($"{e.ControlName}: KeyCode {e.Legacy} came back as {back.Legacy}");
+            }
+            Assert.IsEmpty(broken, string.Join("\n", broken));
+        }
+
+        [Test]
+        public void EveryLegacyKeyCode_MapsBackToItsPath()
+        {
+            var broken = new List<string>();
+            foreach (var e in InputControlPaths.Entries)
+            {
+                if (e.Legacy == KeyCode.None) continue;   // the OEM keys, legitimately
+                var path = InputControlPaths.PathForKeyCode(e.Legacy);
+                if (path != e.Path) broken.Add($"{e.Legacy} → '{path}', expected '{e.Path}'");
+            }
+            Assert.IsEmpty(broken, string.Join("\n", broken));
+        }
+
+        [Test]
+        public void MousePaths_ResolveInBothDirections()
+        {
+            foreach (MouseControl c in System.Enum.GetValues(typeof(MouseControl)))
+            {
+                if (c == MouseControl.None) continue;
+                var path = InputControlPaths.PathForMouse(c);
+                Assert.IsNotNull(path, $"{c} has no path.");
+                Assert.AreEqual(c, InputControlPaths.ResolveMouse(path), $"{path} did not resolve back.");
+            }
+        }
+
+        // ── The headline ─────────────────────────────────────────────────────
+
+        [Test]
+        public void Rebinding_MovesTheLegacyHalfToo()
+        {
+            var darkball = _svc.Gameplay.Spell("SpellDarkball");
+            Assert.IsNotNull(darkball);
+
+            var before = InputBindingResolver.Primary(darkball);
+            Assert.AreEqual(KeyCode.Alpha1, before.Legacy,
+                "Shipped darkball is on '1'; this test is about what happens when it moves.");
+
+            darkball.ApplyBindingOverride(0, "<Keyboard>/5");
+            InputBindingResolver.Invalidate();
+
+            var after = InputBindingResolver.Primary(darkball);
+            Assert.AreEqual("<Keyboard>/5", after.Path);
+            Assert.AreEqual(Key.Digit5, after.Key);
+            Assert.AreEqual(KeyCode.Alpha5, after.Legacy,
+                "The legacy half must follow the rebind. When it did not, '1' went on casting " +
+                "darkball through the OR-gate after the player had moved it to '5' — silently, " +
+                "and only under the 2022.3 event-drop bug the OR-gate exists for.");
+        }
+
+        [Test]
+        public void MoveComposite_ResolvesEveryPartWithItsDirection()
+        {
+            var bindings = InputBindingResolver.Resolve(_svc.Gameplay.Move);
+
+            var parts = bindings.Where(b => b.IsCompositePart)
+                                .Select(b => b.Part)
+                                .Distinct()
+                                .OrderBy(p => p)
+                                .ToArray();
+
+            CollectionAssert.AreEqual(new[] { "down", "left", "right", "up" }, parts,
+                "A 2DVector's part names are what tell the legacy fallback which way each key " +
+                "points. Without them ReadInput has to list W/A/S/D as literals, which is why " +
+                "movement could not be rebound.");
+
+            Assert.GreaterOrEqual(bindings.Length, 8,
+                "Move carries WASD and the arrow keys; the arrows were only in the legacy " +
+                "literals before, so the asset did not describe the controls the game had.");
+        }
+
+        [Test]
+        public void Dash_CarriesEveryTriggerAsABinding()
+        {
+            var paths = InputBindingResolver.Resolve(_svc.Gameplay.Dash)
+                                            .Select(b => b.Path)
+                                            .OrderBy(p => p)
+                                            .ToArray();
+
+            CollectionAssert.AreEquivalent(
+                new[] { "<Keyboard>/space", "<Keyboard>/rightShift",
+                        "<Keyboard>/leftCtrl", "<Keyboard>/rightCtrl" },
+                paths,
+                "Three of the dash's four triggers were Key/KeyCode literals inside " +
+                "PollTraversal, so rebinding the action moved space and left the other three " +
+                "exactly where they were.");
+        }
+
+        // ── The whitelist ────────────────────────────────────────────────────
+
+        [Test]
+        public void Peace_RefusesEveryActionThatReachesDamage()
+        {
+            var accepted = new List<string>();
+            foreach (var d in InputActionCatalog.All)
+            {
+                if (!d.ReachesDamage) continue;
+                if (InputContextPolicy.Evaluate(d, InputContextMask.Peace) == InputAssignmentVerdict.Allowed)
+                    accepted.Add(d.Id);
+                if (InputContextPolicy.Evaluate(d, InputContextMask.Gameplay) == InputAssignmentVerdict.Allowed)
+                    accepted.Add(d.Id + " (via Both)");
+            }
+
+            Assert.IsEmpty(accepted,
+                "Peace is a SAFE POSTURE, not a second key layout. Nothing in the damage path " +
+                "reads a faction, every NPC carries a Health, and left click both locks a " +
+                "target and casts — which is how clicking a vendor to trade with her threw a " +
+                "fireball at her. A guarantee the player can configure their way out of is not " +
+                "a guarantee:\n" + string.Join("\n", accepted));
+        }
+
+        [Test]
+        public void IsLive_RefusesDamageInPeace_EvenWhenTheStoredMaskSaysOtherwise()
+        {
+            var primary = InputActionCatalog.Find("Gameplay/PrimaryAttack");
+            Assert.IsNotNull(primary);
+
+            // A profile written by an older build — or by hand — must not be able to re-open
+            // the hole. This is why the rule is enforced at READ time as well as at
+            // assignment: the two checks are not redundant, they cover different attackers.
+            InputContextPolicy.LoadOverrides(new[]
+            {
+                new KeyValuePair<string, InputContextMask>(primary.Id, InputContextMask.Gameplay),
+            });
+
+            Assert.IsFalse(InputContextPolicy.IsLive(primary, Stance.Peace),
+                "A stored mask claiming a damage action is live in Peace must be refused at " +
+                "the reader too.");
+            Assert.IsTrue(InputContextPolicy.IsLive(primary, Stance.War));
+        }
+
+        [Test]
+        public void EveryGameplayActionLiveInPeace_IsHarmless()
+        {
+            var dangerous = InputActionCatalog.All
+                .Where(d => d.Map == InputActionCatalog.MapGameplay)
+                .Where(d => InputContextPolicy.IsLive(d, Stance.Peace))
+                .Where(d => d.ReachesDamage)
+                .Select(d => d.Id)
+                .ToList();
+
+            Assert.IsEmpty(dangerous,
+                "The shipped stance masks put a damage action in Peace:\n" +
+                string.Join("\n", dangerous));
+        }
+
+        [Test]
+        public void StanceOverrides_RoundTripThroughSnapshotAndLoad()
+        {
+            var interact = InputActionCatalog.Find("Gameplay/Interact");
+            Assert.AreEqual(InputAssignmentVerdict.Allowed,
+                InputContextPolicy.SetContexts(interact, InputContextMask.Peace));
+
+            var snapshot = InputContextPolicy.SnapshotOverrides();
+            Assert.AreEqual(1, snapshot.Count);
+
+            InputContextPolicy.ResetForTests();
+            Assert.AreEqual(interact.DefaultContexts, InputContextPolicy.ContextsOf(interact));
+
+            InputContextPolicy.LoadOverrides(snapshot);
+            Assert.AreEqual(InputContextMask.Peace, InputContextPolicy.ContextsOf(interact));
+        }
+
+        [Test]
+        public void SettingTheShippedMask_ClearsTheOverrideRatherThanStoringIt()
+        {
+            var interact = InputActionCatalog.Find("Gameplay/Interact");
+            InputContextPolicy.SetContexts(interact, InputContextMask.Peace);
+            Assert.IsTrue(InputContextPolicy.HasOverrides);
+
+            InputContextPolicy.SetContexts(interact, interact.DefaultContexts);
+
+            // Not tidiness: ContextsOf short-circuits on an empty table, and that fast path is
+            // what makes a per-frame stance check free in the case that is virtually always
+            // true. A saved profile should also record only what the player really decided.
+            Assert.IsFalse(InputContextPolicy.HasOverrides,
+                "Writing the shipped default must REMOVE the override, not store it.");
+        }
+
+        /// <summary>
+        /// An ordinary action MAY be silenced, and a locked one may not.
+        ///
+        /// <para>This used to be one rule — an empty mask was refused outright — for a real
+        /// reason: an action live nowhere is a control the player cannot find and cannot switch
+        /// back on. What removed that reason is the LIST. The Controls editor shows every
+        /// action that BELONGS to the context being viewed, silenced ones marked as such, so
+        /// switching one back on is a click on the row it was always on. Keeping the blanket
+        /// rule instead cost the feature CLAUDE.md promises in as many words — "a player can
+        /// silence one spell without leaving War" — which was unreachable while every mask had
+        /// to keep at least one bit.</para>
+        ///
+        /// <para>What survives is the set that is genuinely unrecoverable, refused BY NAME:
+        /// see <see cref="InputActionDescriptor.ContextLocked"/>.</para>
+        /// </summary>
+        [Test]
+        public void SilencingIsAllowed_ExceptForTheActionsThatAreTheirOwnWayBack()
+        {
+            var darkball = InputActionCatalog.Find("Gameplay/SpellDarkball");
+            Assert.AreEqual(InputAssignmentVerdict.Allowed,
+                InputContextPolicy.SetContexts(darkball, InputContextMask.None),
+                "A spell slot must be silenceable, or 'silence one spell without leaving War' " +
+                "is a feature with no way to reach it.");
+            Assert.IsFalse(InputContextPolicy.IsLive(darkball, InputContexts.War));
+            Assert.IsTrue(InputContextPolicy.BelongsTo(darkball, InputContexts.War),
+                "A silenced action must stay in the War list, or it cannot be switched back on.");
+
+            foreach (var locked in InputActionCatalog.All)
+            {
+                if (!locked.ContextLocked) continue;
+                Assert.AreEqual(InputAssignmentVerdict.RefusedContextLocked,
+                    InputContextPolicy.Evaluate(locked, InputContextMask.None),
+                    $"{locked.Id} is context-locked and must refuse an empty mask.");
+            }
+        }
+
+        /// <summary>
+        /// Every non-rebindable action is also context-locked.
+        ///
+        /// <para>The two axes are independent by design — the dash may be moved to any key and
+        /// may not be taken away — but the converse is not: a path nobody may move is
+        /// structural, and a structural action that can be silenced is a mechanism with an off
+        /// switch. Silencing UI/Submit would leave the player unable to confirm the dialog
+        /// asking them to confirm it.</para>
+        /// </summary>
+        [Test]
+        public void EveryStructuralAction_IsAlsoContextLocked()
+        {
+            var loose = InputActionCatalog.All
+                .Where(d => !d.Rebindable && !d.ContextLocked)
+                .Select(d => d.Id)
+                .ToList();
+
+            Assert.IsEmpty(loose,
+                "A path nobody may move is not a preference in the other axis either: " +
+                string.Join(" | ", loose));
+        }
+
+        /// <summary>
+        /// The soft-lock set, named rather than derived — a test that read the flag off the
+        /// catalog would pass whatever the catalog said.
+        /// </summary>
+        [TestCase("Gameplay/Move")]
+        [TestCase("Gameplay/Look")]
+        [TestCase("Gameplay/Dash")]
+        [TestCase("Gameplay/ToggleStance")]
+        [TestCase("Editors/OpenGeneralEditor")]
+        public void TheSoftLockSet_IsContextLocked(string id)
+        {
+            var d = InputActionCatalog.Find(id);
+            Assert.IsNotNull(d, id + " is gone from the catalog.");
+            Assert.IsTrue(d.ContextLocked,
+                $"{id} must be context-locked: nothing auto-switches out of a posture, the " +
+                "stance toggle is the only way out of one, and since the F-row was retired the " +
+                "General Editor key is the only way into any editor including the one that " +
+                "would switch it back on.");
+        }
+
+        // ── Conflicts ────────────────────────────────────────────────────────
+
+        [Test]
+        public void GameplayMap_HasNoSameMapConflicts()
+        {
+            var offenders = InputConflictScanner.Scan(_svc.Asset)
+                .Where(c => c.Severity == InputConflictSeverity.SameMap)
+                .Where(c => c.A.Map == InputActionCatalog.MapGameplay)
+                .Select(c => c.Describe())
+                .ToList();
+
+            Assert.IsEmpty(offenders,
+                "Two gameplay actions on one key, both live in the same stance. This project " +
+                "has shipped that three times — `e` on Interact and SpellSlash, `p` on Pause " +
+                "and SpellMeteorShower (pausing threw meteors), and `tab` on the stance toggle " +
+                "and an inventory action built in C# where no audit could see it:\n" +
+                string.Join("\n", offenders));
+        }
+
+        /// <summary>
+        /// The Editors map has NO same-map collisions left, and the allowlist that used to
+        /// excuse four of them is gone.
+        ///
+        /// <para>F2 held Combat Ranges and Time &amp; Weather, F3 Spawner and Lighting, F5
+        /// Entities and QuickSave, F9 Debug HUD and QuickLoad. Retiring the F-row took all four
+        /// with it, so the ratchet was excusing collisions that no longer exist — and a stale
+        /// allowlist is worse than none, because it would go on excusing those four paths if a
+        /// future binding landed on one.</para>
+        /// </summary>
+        [Test]
+        public void EditorsMap_HasNoSameMapCollisions()
+        {
+            var offenders = InputConflictScanner.Scan(_svc.Asset)
+                .Where(c => c.Severity == InputConflictSeverity.SameMap)
+                .Where(c => c.A.Map == InputActionCatalog.MapEditors)
+                .Select(c => c.Describe())
+                .ToList();
+
+            Assert.IsEmpty(offenders,
+                "Two editor hotkeys on one key, both live at once: " + string.Join(" | ", offenders));
+        }
+
+        // ── The drawn board ──────────────────────────────────────────────────
+
+        [Test]
+        public void EveryDrawnKey_IsInTheControlTable()
+        {
+            var unknown = new List<string>();
+            foreach (KeyboardLayoutKind kind in System.Enum.GetValues(typeof(KeyboardLayoutKind)))
+                foreach (var name in KeyboardLayoutModel.ControlNames(kind))
+                    if (!InputControlPaths.TryResolveControlName(name, out _))
+                        unknown.Add($"{kind}: {name}");
+
+            Assert.IsEmpty(unknown,
+                "The drawn keyboard shows a key the translator cannot name, so clicking it " +
+                "would bind a path with no legacy half — which works until the event-drop bug " +
+                "fires:\n" + string.Join("\n", unknown));
+        }
+
+        [Test]
+        public void EveryBoundKeyboardControl_IsDrawnByTheIsoLayout()
+        {
+            var drawn = new HashSet<string>(KeyboardLayoutModel.ControlNames(KeyboardLayoutKind.Iso),
+                                            System.StringComparer.OrdinalIgnoreCase);
+
+            var unreachable = new List<string>();
+            foreach (var kv in InputConflictScanner.BindingsByPath(_svc.Asset))
+            {
+                // A Shift chord is keyed by its chord path; BOTH halves have to be on the board —
+                // the key, so the chord can be read off its cap, and the Shift the player holds.
+                var paths = InputChord.TrySplit(kv.Key, out var modifier, out var button)
+                    ? new[] { modifier, button }
+                    : new[] { kv.Key };
+
+                foreach (var path in paths)
+                {
+                    if (!InputControlPaths.IsKeyboardPath(path)) continue;
+                    var control = InputControlPaths.ControlNameOf(path);
+                    if (!drawn.Contains(control))
+                        unreachable.Add($"{control} ({string.Join(", ", kv.Value.Select(d => d.Id))})");
+                }
+            }
+
+            Assert.IsEmpty(unreachable,
+                "A shipped binding sits on a key the drawn board does not show, so the player " +
+                "can see the action but never the key it is on:\n" + string.Join("\n", unreachable));
+        }
+
+        [Test]
+        public void NoDrawnKeyAppearsTwice()
+        {
+            foreach (KeyboardLayoutKind kind in System.Enum.GetValues(typeof(KeyboardLayoutKind)))
+            {
+                var names = KeyboardLayoutModel.ControlNames(kind).ToList();
+                var dupes = names.GroupBy(n => n).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+                Assert.IsEmpty(dupes,
+                    $"{kind} draws the same key twice, so one of the two caps can never be " +
+                    "repainted:\n" + string.Join("\n", dupes));
+            }
+        }
+    }
+}
