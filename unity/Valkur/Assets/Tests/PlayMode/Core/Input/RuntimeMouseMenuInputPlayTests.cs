@@ -18,6 +18,7 @@ namespace Valkur.Tests.PlayMode.Core.Input
         private EventSystem _eventSystem;
         private Mouse _mouse;
         private readonly InputTestFixture _inputFixture = new InputTestFixture();
+        private InputActionAsset _canonicalAsset;
         private bool _previousRunInBackground;
         private InputSettings.BackgroundBehavior _previousBackgroundBehavior;
         private InputSettings.UpdateMode _previousUpdateMode;
@@ -44,6 +45,13 @@ namespace Valkur.Tests.PlayMode.Core.Input
             yield return null;
 
             _mouse = InputSystem.AddDevice<Mouse>("RuntimeMenuTestMouse");
+
+            // The canonical asset's bindings were resolved against the REAL manager's device
+            // list; enabling them inside the fixture indexes controls that do not exist there
+            // (IndexOutOfRange in AddStateChangeMonitor). Restricting the asset to the fixture's
+            // mouse forces a fresh resolve against the devices the fixture actually has.
+            _canonicalAsset = Resources.Load<InputActionAsset>(InputService.CanonicalAssetResourcePath);
+            if (_canonicalAsset != null) _canonicalAsset.devices = new InputDevice[] { _mouse };
 
             _eventSystem = RuntimeInputBootstrap.EnsureRuntimeInput();
 
@@ -72,6 +80,8 @@ namespace Valkur.Tests.PlayMode.Core.Input
             // The service built inside the fixture belongs to the fixture's manager; drop it so
             // the next consumer re-initialises against the restored one.
             InputService.ResetForTests();
+            // Lift the device restriction so the asset resolves against every device again.
+            if (_canonicalAsset != null) _canonicalAsset.devices = null;
             _inputFixture.TearDown();
             yield return null;
         }
