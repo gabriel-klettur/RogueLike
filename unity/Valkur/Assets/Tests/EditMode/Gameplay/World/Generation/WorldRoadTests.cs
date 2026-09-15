@@ -6,6 +6,7 @@ using UnityEngine;
 using Valkur.Data.WorldGen;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World.Generation;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.Generation
 {
@@ -92,6 +93,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Generation
                 "The build plans at 64 cells and the preview at up to 320: roads must not move with that.");
         }
 
+        [Category(TestCategories.Slow)]
         [Test]
         public void RoadGround_IsDirt()
         {

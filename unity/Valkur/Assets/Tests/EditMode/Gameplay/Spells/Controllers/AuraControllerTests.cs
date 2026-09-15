@@ -3,6 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Gameplay.Spells;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.Spells.Controllers
 {
@@ -124,9 +125,9 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Controllers
             var ac = CreateAura();
             // Read back the private state via reflection to guarantee no field renaming
             // silently breaks the heal cadence.
-            float remaining = (float)GetField(ac, "_remaining");
-            int   heal      = (int)  GetField(ac, "_healPerTick");
-            float period    = (float)GetField(ac, "_tickPeriod");
+            float remaining = (float)TestReflection.GetField(ac, "_remaining");
+            int   heal      = (int)  TestReflection.GetField(ac, "_healPerTick");
+            float period    = (float)TestReflection.GetField(ac, "_tickPeriod");
 
             Assert.AreEqual(2f,   remaining, 0.001f);
             Assert.AreEqual(10,   heal);
@@ -143,12 +144,5 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Controllers
                 "Aura should build at least one visual sprite child");
         }
 
-        private static object GetField(object instance, string name)
-        {
-            var f = instance.GetType().GetField(name,
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.IsNotNull(f, $"Field '{name}' not found on {instance.GetType().Name}");
-            return f.GetValue(instance);
-        }
     }
 }

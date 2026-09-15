@@ -8,7 +8,7 @@ using Valkur.Gameplay.Save;
 
 // EditMode does NOT fire Unity lifecycle methods (Awake/Start/OnEnable) on
 // AddComponent. We invoke the singleton init manually via reflection — exactly
-// the same pattern as SaveServiceDirtyFlagTests in EditMode/Game/Data/ — so
+// the same pattern as SaveServiceDirtyFlagTests in EditMode/Gameplay/Save/ — so
 // that OnSingletonAwake runs and GameEvents are bound before each test.
 
 namespace Valkur.Tests.EditMode.Gameplay.Save

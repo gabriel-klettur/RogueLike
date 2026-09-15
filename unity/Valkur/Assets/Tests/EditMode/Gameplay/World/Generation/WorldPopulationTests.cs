@@ -8,7 +8,7 @@ using Valkur.Data.WorldGen;
 using Valkur.Gameplay.Spawners;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World.Generation;
-
+using Valkur.Tests.Support;
 namespace Valkur.Tests.EditMode.Gameplay.World.Generation
 {
     /// <summary>
@@ -142,6 +142,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Generation
 
         // ── On disk ────────────────────────────────────────────────────────────
 
+        [Category(TestCategories.Slow)]
         [Test]
         public void ABake_WritesSpawnersTheLoaderCanRead_InsideTheirZones()
         {
@@ -191,21 +192,6 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Generation
                 var expected = (Vector2)(map.Encounters[i].Tile + result.Origin);
                 Assert.AreEqual(expected, world, r.InstanceId);
             }
-        }
-    }
-
-    internal static class MiniJsonRuntimeAccess
-    {
-        public static Dictionary<string, Vector2> Zones(string slotJson)
-        {
-            var root = (Dictionary<string, object>)Valkur.Gameplay.World.MiniJsonRuntime.Deserialize(slotJson);
-            var map = new Dictionary<string, Vector2>();
-            foreach (var z in (List<object>)root["zones"])
-            {
-                var d = (Dictionary<string, object>)z;
-                map[(string)d["zoneName"]] = new Vector2(System.Convert.ToInt32(d["gridOffsetX"]), System.Convert.ToInt32(d["gridOffsetY"]));
-            }
-            return map;
         }
     }
 }

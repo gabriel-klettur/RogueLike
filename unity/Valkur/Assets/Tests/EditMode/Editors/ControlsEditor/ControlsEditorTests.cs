@@ -11,6 +11,7 @@ using Valkur.Core.Input;
 using Valkur.Gameplay.Editors.Controls;
 using Valkur.Gameplay.TileEditor;
 using Valkur.UIKit;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ControlsEditor
 {
@@ -27,6 +28,7 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
     /// both halves correct, the composition wrong.</para>
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Slow)]
     public class ControlsEditorTests
     {
         private const BindingFlags Priv =
@@ -81,9 +83,6 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
 
         private static T Field<T>(object target, string name) =>
             (T)target.GetType().GetField(name, Priv).GetValue(target);
-
-        private static object Invoke(object target, string name, params object[] args) =>
-            target.GetType().GetMethod(name, Priv).Invoke(target, args);
 
         private ControlsEditorUIBuilder.UIRefs Refs => Field<ControlsEditorUIBuilder.UIRefs>(_editor, "_ui");
 
@@ -143,7 +142,7 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
             OpenEditor();
             var refs = Refs;
 
-            Invoke(_editor, "BeginCapture", InputActionCatalog.Find("Gameplay/Interact"), 0);
+            TestReflection.Invoke(_editor, "BeginCapture", InputActionCatalog.Find("Gameplay/Interact"), 0);
             Assert.IsTrue(_editor.IsCapturing);
 
             var root = refs.BoardPanel.transform.parent;
@@ -179,7 +178,7 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
             refs.BoardPanel.transform.SetAsLastSibling();
             refs.ListPanel.transform.SetAsLastSibling();
 
-            Invoke(_editor, "BeginCapture", InputActionCatalog.Find("Gameplay/Interact"), 0);
+            TestReflection.Invoke(_editor, "BeginCapture", InputActionCatalog.Find("Gameplay/Interact"), 0);
 
             Assert.Less(refs.CaptureScrim.transform.GetSiblingIndex(),
                         refs.BoardPanel.transform.GetSiblingIndex());
@@ -199,7 +198,7 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
             OpenEditor();
             Assert.IsFalse(EscapeOwnership.IsClaimed);
 
-            Invoke(_editor, "BeginCapture", InputActionCatalog.Find("Gameplay/Interact"), 0);
+            TestReflection.Invoke(_editor, "BeginCapture", InputActionCatalog.Find("Gameplay/Interact"), 0);
             Assert.IsTrue(EscapeOwnership.IsClaimed,
                 "GeneralEditorManager reads Escape in the same frame and would close this " +
                 "editor out from under the capture it is cancelling.");
@@ -220,8 +219,8 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
             OpenEditor();
             var interact = InputActionCatalog.Find("Gameplay/Interact");
 
-            Invoke(_editor, "BeginCapture", interact, 0);
-            Invoke(_editor, "CompleteCaptureWithMouse", MouseControl.Right);
+            TestReflection.Invoke(_editor, "BeginCapture", interact, 0);
+            TestReflection.Invoke(_editor, "CompleteCaptureWithMouse", MouseControl.Right);
 
             Assert.AreEqual("<Mouse>/rightButton", EffectivePath(Action("Gameplay", "Interact"), 0));
             Assert.IsFalse(_editor.IsCapturing, "A completed capture must close itself.");
@@ -245,8 +244,8 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
             Assert.AreEqual("", EffectivePath(Action("Editors", "ToggleTile"), 0),
                 "It must ship unbound — with a slot.");
 
-            Invoke(_editor, "BeginCapture", toggle, 0);
-            Invoke(_editor, "CompleteCaptureWithPath", "<Keyboard>/f8");
+            TestReflection.Invoke(_editor, "BeginCapture", toggle, 0);
+            TestReflection.Invoke(_editor, "CompleteCaptureWithPath", "<Keyboard>/f8");
 
             var action = Action("Editors", "ToggleTile");
             Assert.AreEqual("<Keyboard>/f8", EffectivePath(action, 0));
@@ -270,8 +269,8 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
             var before = Enumerable.Range(0, 8).Select(i => EffectivePath(action, i)).ToArray();
             Assert.AreEqual("<Keyboard>/a", before[2], "Shipped WASD order: up, down, left, right.");
 
-            Invoke(_editor, "BeginCapture", move, 2);
-            Invoke(_editor, "CompleteCaptureWithPath", "<Keyboard>/j");
+            TestReflection.Invoke(_editor, "BeginCapture", move, 2);
+            TestReflection.Invoke(_editor, "CompleteCaptureWithPath", "<Keyboard>/j");
 
             var after = Enumerable.Range(0, 8).Select(i => EffectivePath(action, i)).ToArray();
             Assert.AreEqual("<Keyboard>/j", after[2]);
@@ -293,7 +292,7 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
             OpenEditor();
             var iceball = InputActionCatalog.Find("Gameplay/SpellIceball");
 
-            Invoke(_editor, "ClearBinding", iceball, 0);
+            TestReflection.Invoke(_editor, "ClearBinding", iceball, 0);
 
             var action = Action("Gameplay", "SpellIceball");
             Assert.AreEqual("", EffectivePath(action, 0));
@@ -311,8 +310,8 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
             OpenEditor();
             Assert.IsFalse(InputBindingStore.IsDirty);
 
-            Invoke(_editor, "BeginCapture", InputActionCatalog.Find("Gameplay/Interact"), 0);
-            Invoke(_editor, "CompleteCaptureWithPath", "<Keyboard>/j");
+            TestReflection.Invoke(_editor, "BeginCapture", InputActionCatalog.Find("Gameplay/Interact"), 0);
+            TestReflection.Invoke(_editor, "CompleteCaptureWithPath", "<Keyboard>/j");
 
             Assert.IsTrue(InputBindingStore.IsDirty,
                 "RuntimeInputBootstrap re-applies the saved profile on every scene load, so an " +
@@ -335,7 +334,7 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
             int before = VisibleRows().Count;
             Assert.AreEqual(InputAssignmentVerdict.Allowed,
                 InputContextPolicy.SetContexts(darkball, InputContextMask.None));
-            Invoke(_editor, "RebuildActionList");
+            TestReflection.Invoke(_editor, "RebuildActionList");
 
             Assert.AreEqual(before, VisibleRows().Count,
                 "Silencing an action must not remove its row.");
@@ -365,7 +364,7 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
         public void Search_FindsAnActionByItsKey()
         {
             OpenEditor();
-            Invoke(_editor, "OnSearchChanged", "f5");
+            TestReflection.Invoke(_editor, "OnSearchChanged", "f5");
             var rows = VisibleRows();
 
             Assert.IsTrue(rows.Any(r => r.name.Contains("QuickSave")),
@@ -384,7 +383,7 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
             OpenEditor();
             var before = AllRowObjects();
 
-            Invoke(_editor, "OnSearchChanged", "esquiva");
+            TestReflection.Invoke(_editor, "OnSearchChanged", "esquiva");
 
             CollectionAssert.AreEqual(before, AllRowObjects(),
                 "The search box must not destroy and recreate the list; it must hide what does " +
@@ -392,7 +391,7 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
             Assert.AreEqual(1, VisibleRows().Count,
                 "Exactly one action is called Esquiva.");
 
-            Invoke(_editor, "OnSearchChanged", "");
+            TestReflection.Invoke(_editor, "OnSearchChanged", "");
             Assert.Greater(VisibleRows().Count, 1, "Clearing the box must bring the rows back.");
         }
 
@@ -421,7 +420,7 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
         public void TheContextStrip_CollapsesTheEditorsThatHaveNoToolsOfTheirOwn()
         {
             OpenEditor();
-            var contexts = (List<string>)Invoke(_editor, "BuildContextList");
+            var contexts = (List<string>)TestReflection.Invoke(_editor, "BuildContextList");
 
             CollectionAssert.Contains(contexts, InputContexts.War);
             CollectionAssert.Contains(contexts, InputContexts.Peace);
@@ -793,16 +792,16 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
             OpenEditor();
             var interact = InputActionCatalog.Find("Gameplay/Interact");
 
-            Invoke(_editor, "BeginCapture", interact, 0);
-            Invoke(_editor, "CompleteCaptureWithPath", "<Keyboard>/j");
-            Invoke(_editor, "BeginCapture", interact, 0);
-            Invoke(_editor, "CompleteCaptureWithPath", "<Keyboard>/k");
+            TestReflection.Invoke(_editor, "BeginCapture", interact, 0);
+            TestReflection.Invoke(_editor, "CompleteCaptureWithPath", "<Keyboard>/j");
+            TestReflection.Invoke(_editor, "BeginCapture", interact, 0);
+            TestReflection.Invoke(_editor, "CompleteCaptureWithPath", "<Keyboard>/k");
             Assert.AreEqual("<Keyboard>/k", EffectivePath(Action("Gameplay", "Interact"), 0));
 
-            Invoke(_editor, "Undo");
+            TestReflection.Invoke(_editor, "Undo");
             Assert.AreEqual("<Keyboard>/j", EffectivePath(Action("Gameplay", "Interact"), 0));
 
-            Invoke(_editor, "Redo");
+            TestReflection.Invoke(_editor, "Redo");
             Assert.AreEqual("<Keyboard>/k", EffectivePath(Action("Gameplay", "Interact"), 0));
         }
 
@@ -821,9 +820,9 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
             OpenEditor();
             var interact = InputActionCatalog.Find("Gameplay/Interact");
 
-            Invoke(_editor, "BeginCapture", interact, 0);
-            Invoke(_editor, "CompleteCaptureWithPath", "<Keyboard>/j");
-            Invoke(_editor, "Undo");
+            TestReflection.Invoke(_editor, "BeginCapture", interact, 0);
+            TestReflection.Invoke(_editor, "CompleteCaptureWithPath", "<Keyboard>/j");
+            TestReflection.Invoke(_editor, "Undo");
 
             var binding = Action("Gameplay", "Interact").bindings[0];
             Assert.IsNull(binding.overridePath,
@@ -837,10 +836,10 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
             OpenEditor();
             var darkball = InputActionCatalog.Find("Gameplay/SpellDarkball");
 
-            Invoke(_editor, "ToggleContextBit", darkball, InputContextMask.War);
+            TestReflection.Invoke(_editor, "ToggleContextBit", darkball, InputContextMask.War);
             Assert.AreEqual(InputContextMask.None, InputContextPolicy.ContextsOf(darkball));
 
-            Invoke(_editor, "Undo");
+            TestReflection.Invoke(_editor, "Undo");
             Assert.AreEqual(InputContextMask.War, InputContextPolicy.ContextsOf(darkball));
         }
 
@@ -853,11 +852,11 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
         public void Reset_ClearsTheUndoHistory()
         {
             OpenEditor();
-            Invoke(_editor, "BeginCapture", InputActionCatalog.Find("Gameplay/Interact"), 0);
-            Invoke(_editor, "CompleteCaptureWithPath", "<Keyboard>/j");
+            TestReflection.Invoke(_editor, "BeginCapture", InputActionCatalog.Find("Gameplay/Interact"), 0);
+            TestReflection.Invoke(_editor, "CompleteCaptureWithPath", "<Keyboard>/j");
             Assert.AreEqual(1, (int)_editor.GetType().GetProperty("UndoDepth", Priv).GetValue(_editor));
 
-            Invoke(_editor, "ResetToDefaults");
+            TestReflection.Invoke(_editor, "ResetToDefaults");
             Assert.AreEqual(0, (int)_editor.GetType().GetProperty("UndoDepth", Priv).GetValue(_editor));
             Assert.AreEqual(0, (int)_editor.GetType().GetProperty("RedoDepth", Priv).GetValue(_editor));
         }
@@ -873,18 +872,18 @@ namespace Valkur.Tests.EditMode.Editors.ControlsEditor
         public void Reset_AsksBeforeItDestroysAnything()
         {
             OpenEditor();
-            Invoke(_editor, "BeginCapture", InputActionCatalog.Find("Gameplay/Interact"), 0);
-            Invoke(_editor, "CompleteCaptureWithPath", "<Keyboard>/j");
+            TestReflection.Invoke(_editor, "BeginCapture", InputActionCatalog.Find("Gameplay/Interact"), 0);
+            TestReflection.Invoke(_editor, "CompleteCaptureWithPath", "<Keyboard>/j");
 
-            Invoke(_editor, "AskReset");
+            TestReflection.Invoke(_editor, "AskReset");
             Assert.IsTrue(_editor.IsConfirmOpen, "Reset must open a confirmation.");
             Assert.AreEqual("<Keyboard>/j", EffectivePath(Action("Gameplay", "Interact"), 0),
                 "Nothing may be destroyed before the author confirms.");
 
-            Invoke(_editor, "CloseConfirm");
+            TestReflection.Invoke(_editor, "CloseConfirm");
             Assert.AreEqual("<Keyboard>/j", EffectivePath(Action("Gameplay", "Interact"), 0));
 
-            Invoke(_editor, "ResetToDefaults");
+            TestReflection.Invoke(_editor, "ResetToDefaults");
             Assert.AreEqual("<Keyboard>/e", EffectivePath(Action("Gameplay", "Interact"), 0));
         }
     }

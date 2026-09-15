@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.History
 {
@@ -276,7 +277,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.History
                 Assert.IsTrue(undo.HasActiveStroke);
 
                 // Trigger OnUndoClicked while the stroke is still open.
-                InvokePrivate(manager, "OnUndoClicked");
+                TestReflection.Invoke(manager, "OnUndoClicked");
 
                 Assert.IsFalse(undo.HasActiveStroke,
                     "OnUndoClicked must close any active stroke before undoing.");
@@ -309,7 +310,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.History
 
                 // Ctrl+Y should commit the open stroke (which clears redo) — and
                 // therefore find nothing to redo.
-                InvokePrivate(manager, "OnRedoClicked");
+                TestReflection.Invoke(manager, "OnRedoClicked");
 
                 Assert.IsFalse(undo.HasActiveStroke,
                     "OnRedoClicked must close any active stroke first.");
@@ -332,7 +333,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.History
                 undo.RecordEdits(TileBrush.Paint(_tilemap, Vector3Int.zero, _tileA, brushSize: 1));
 
                 Assert.IsTrue(undo.HasActiveStroke);
-                InvokePrivate(manager, "OnLayerChanged",
+                TestReflection.Invoke(manager, "OnLayerChanged",
                     TilemapLayerSetup.TilemapLayer.WallsBottom);
 
                 Assert.IsFalse(undo.HasActiveStroke,
@@ -353,7 +354,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.History
             try
             {
                 Assert.DoesNotThrow(() =>
-                    InvokePrivate(manager, "RegenerateColliderIfNeeded", new object[] { null }));
+                    TestReflection.Invoke(manager, "RegenerateColliderIfNeeded", new object[] { null }));
             }
             finally { Object.DestroyImmediate(host); }
         }
@@ -369,7 +370,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.History
             {
                 var batch = new TileEditBatch { TargetTilemap = _tilemap };
                 Assert.DoesNotThrow(() =>
-                    InvokePrivate(manager, "RegenerateColliderIfNeeded", new object[] { batch }));
+                    TestReflection.Invoke(manager, "RegenerateColliderIfNeeded", new object[] { batch }));
             }
             finally { Object.DestroyImmediate(host); }
         }
@@ -395,7 +396,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.History
                 // OnUndoClicked must not throw and must visually undo. The collider
                 // regeneration is exercised internally — what we guard here is the
                 // fact that the routing helper runs at all.
-                Assert.DoesNotThrow(() => InvokePrivate(manager, "OnUndoClicked"));
+                Assert.DoesNotThrow(() => TestReflection.Invoke(manager, "OnUndoClicked"));
                 Assert.IsNull(collisionTilemap.GetTile(Vector3Int.zero),
                     "The collision-layer edit must be undone.");
             }
@@ -419,22 +420,22 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.History
                 ground.SetTile(new Vector3Int(0, 0, 0), _tileA);
                 manager.State.SelectedCells.Add(new Vector3Int(0, 0, 0));
 
-                InvokePrivate(manager, "OnCutClicked");
+                TestReflection.Invoke(manager, "OnCutClicked");
                 Assert.IsNull(ground.GetTile(new Vector3Int(0, 0, 0)),
                     "Cut must remove the source tile.");
 
                 manager.State.SelectedCellPos = new Vector3Int(50, 50, 0);
-                InvokePrivate(manager, "OnPasteClicked");
+                TestReflection.Invoke(manager, "OnPasteClicked");
                 Assert.AreEqual(_tileA, ground.GetTile(new Vector3Int(50, 50, 0)),
                     "Paste must reproduce the tile at the new anchor.");
 
-                InvokePrivate(manager, "OnUndoClicked");
+                TestReflection.Invoke(manager, "OnUndoClicked");
                 Assert.IsNull(ground.GetTile(new Vector3Int(50, 50, 0)),
                     "First undo rolls back ONLY the paste.");
                 Assert.IsNull(ground.GetTile(new Vector3Int(0, 0, 0)),
                     "Source remains cut — undoing paste must NOT resurrect it.");
 
-                InvokePrivate(manager, "OnUndoClicked");
+                TestReflection.Invoke(manager, "OnUndoClicked");
                 Assert.AreEqual(_tileA, ground.GetTile(new Vector3Int(0, 0, 0)),
                     "Second undo rolls back the cut — source tile is back.");
             }
@@ -453,10 +454,10 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.History
                 PaintStrokeViaUndo(undo, ground, Vector3Int.zero, _tileA);
                 Assert.AreEqual(_tileA, ground.GetTile(Vector3Int.zero));
 
-                InvokePrivate(manager, "OnUndoClicked");
+                TestReflection.Invoke(manager, "OnUndoClicked");
                 Assert.IsNull(ground.GetTile(Vector3Int.zero), "Undo restores empty.");
 
-                InvokePrivate(manager, "OnRedoClicked");
+                TestReflection.Invoke(manager, "OnRedoClicked");
                 Assert.AreEqual(_tileA, ground.GetTile(Vector3Int.zero), "Redo re-paints.");
             }
             finally { Object.DestroyImmediate(host); }
@@ -478,7 +479,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.History
                 undo.Undo();
                 PaintStrokeViaUndo(undo, ground, new Vector3Int(5, 5, 0), _tileB);
 
-                InvokePrivate(manager, "OnRedoClicked");
+                TestReflection.Invoke(manager, "OnRedoClicked");
                 Assert.IsNull(ground.GetTile(Vector3Int.zero),
                     "The original tileA paint must NOT come back — redo stack was " +
                     "invalidated by the new tileB stroke.");
@@ -511,7 +512,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.History
                     "SaveAllChanges must close any open stroke first — otherwise " +
                     "the in-flight edits would be persisted with no undo entry.");
                 // Re-undo confirms the stroke went onto the stack.
-                InvokePrivate(manager, "OnUndoClicked");
+                TestReflection.Invoke(manager, "OnUndoClicked");
                 Assert.IsNull(ground.GetTile(Vector3Int.zero),
                     "The committed-before-save stroke must still be undoable.");
             }
@@ -533,7 +534,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.History
                     PaintStrokeViaUndo(undo, ground, new Vector3Int(i, 0, 0), _tileA);
 
                 // The MOST RECENT edit (i = MAX_UNDO) must still be undoable.
-                InvokePrivate(manager, "OnUndoClicked");
+                TestReflection.Invoke(manager, "OnUndoClicked");
                 Assert.IsNull(ground.GetTile(new Vector3Int(TileEditorState.MAX_UNDO, 0, 0)),
                     "Cap must drop the OLDEST stroke; the newest must remain undoable.");
             }
@@ -621,20 +622,5 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.History
             manager.State.CurrentLayer = TilemapLayerSetup.TilemapLayer.Collision;
         }
 
-        private static void InvokePrivate(object target, string methodName, params object[] args)
-        {
-            var t = target.GetType();
-            MethodInfo mi = null;
-            foreach (var m in t.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
-            {
-                if (m.Name != methodName) continue;
-                var ps = m.GetParameters();
-                if (ps.Length != args.Length) continue;
-                mi = m;
-                break;
-            }
-            Assert.IsNotNull(mi, $"Reflection: {methodName}({args.Length} args) not found on {t.Name}.");
-            mi.Invoke(target, args);
-        }
     }
 }

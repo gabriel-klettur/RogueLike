@@ -7,6 +7,7 @@ using UnityEngine.Tilemaps;
 using UnityEngine.UI;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
 {
@@ -71,53 +72,6 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
 
         // ── Reflection helpers ─────────────────────────────────────────────────
 
-        private static T GetField<T>(object obj, string name)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var f = t.GetField(name,
-                    BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                if (f != null) return (T)f.GetValue(obj);
-                t = t.BaseType;
-            }
-            Assert.Fail($"Reflection: field '{name}' not found on {obj.GetType().Name}.");
-            return default;
-        }
-
-        private static void SetField(object obj, string name, object value)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var f = t.GetField(name,
-                    BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                if (f != null) { f.SetValue(obj, value); return; }
-                t = t.BaseType;
-            }
-            Assert.Fail($"Reflection: field '{name}' not found on {obj.GetType().Name}.");
-        }
-
-        private static void InvokePrivate(object obj, string method, params object[] args)
-        {
-            var t = obj.GetType();
-            MethodInfo mi = null;
-            while (t != null && mi == null)
-            {
-                foreach (var m in t.GetMethods(
-                    BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
-                {
-                    if (m.Name != method) continue;
-                    if (m.GetParameters().Length != args.Length) continue;
-                    mi = m; break;
-                }
-                t = t.BaseType;
-            }
-            Assert.IsNotNull(mi,
-                $"Reflection: method '{method}'({args.Length} args) not found on {obj.GetType().Name}.");
-            mi.Invoke(obj, args);
-        }
-
         // ── Map-side helpers ─────────────────────────────────────────────────
 
         private TileEditorManager NewManager()
@@ -139,7 +93,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             gridGo.transform.SetParent(manager.transform, false);
             gridGo.AddComponent<Grid>();
             var wgb = gridGo.AddComponent<WorldGridBuilder>();
-            SetField(wgb, "_grid", gridGo.GetComponent<Grid>());
+            TestReflection.SetField(wgb, "_grid", gridGo.GetComponent<Grid>());
 
             Tilemap ground = null;
             for (int i = 0; i < 9; i++)
@@ -152,7 +106,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
                 tmGo.AddComponent<TilemapRenderer>();
                 if (layer == TilemapLayerSetup.TilemapLayer.Ground) ground = tm;
             }
-            SetField(manager, "worldGridBuilder", wgb);
+            TestReflection.SetField(manager, "worldGridBuilder", wgb);
 
             // Wire undo system so OnCopyClicked/OnCutClicked don't NRE.
             var undoField = typeof(TileEditorManager).GetField(
@@ -174,7 +128,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
 
         /// <summary>Return the manager's internal <c>_copiedMapCells</c> set.</summary>
         private static HashSet<Vector3Int> CopiedMapCells(TileEditorManager manager)
-            => GetField<HashSet<Vector3Int>>(manager, "_copiedMapCells");
+            => TestReflection.GetField<HashSet<Vector3Int>>(manager, "_copiedMapCells");
 
         // ── Picker-side helpers ──────────────────────────────────────────────
 
@@ -186,7 +140,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             var state = new TileEditorState();
             state.CurrentSelectMode = mode;
             state.CurrentTool = TileEditorState.Tool.Select;
-            SetField(ui, "_state", state);
+            TestReflection.SetField(ui, "_state", state);
             return ui;
         }
 
@@ -238,8 +192,8 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
                     gridR = r, gridC = c, uniqueId = i, transparent = false,
                 };
 
-                InvokePrivate(ui, "RegisterPickerSlot", slotGo, r, c, entry, hlGo);
-                InvokePrivate(ui, "RegisterPickerSlotCopyHighlight", slotGo, cGo);
+                TestReflection.Invoke(ui, "RegisterPickerSlot", slotGo, r, c, entry, hlGo);
+                TestReflection.Invoke(ui, "RegisterPickerSlotCopyHighlight", slotGo, cGo);
 
                 handles.Add(new SlotHandle
                 {
@@ -251,13 +205,13 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
         }
 
         private void SlotDown(TileEditorUI ui, SlotHandle h)
-            => InvokePrivate(ui, "OnTilesetSlotDown", h.R, h.C, h.Index, h.Entry);
+            => TestReflection.Invoke(ui, "OnTilesetSlotDown", h.R, h.C, h.Index, h.Entry);
 
         private void SlotUp(TileEditorUI ui, SlotHandle h)
-            => InvokePrivate(ui, "OnTilesetSlotUp", h.Index, h.Entry);
+            => TestReflection.Invoke(ui, "OnTilesetSlotUp", h.Index, h.Entry);
 
         private HashSet<Vector2Int> CopiedSlots(TileEditorUI ui)
-            => GetField<HashSet<Vector2Int>>(ui, "_tilesetCopiedSlots");
+            => TestReflection.GetField<HashSet<Vector2Int>>(ui, "_tilesetCopiedSlots");
 
         // ═══════════════════════════════════════════════════════════════════════
         // MAP SIDE
@@ -273,7 +227,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
                 new Vector3Int(1, 2, 0),
                 new Vector3Int(3, 4, 0));
 
-            InvokePrivate(manager, "OnCopyClicked");
+            TestReflection.Invoke(manager, "OnCopyClicked");
 
             var copied = CopiedMapCells(manager);
             Assert.AreEqual(2, copied.Count, "Copy must snapshot exactly the selected cells.");
@@ -293,7 +247,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
 
             SetSelectedCells(manager, new Vector3Int(5, 5, 0));
 
-            InvokePrivate(manager, "OnCutClicked");
+            TestReflection.Invoke(manager, "OnCutClicked");
 
             var copied = CopiedMapCells(manager);
             Assert.AreEqual(1, copied.Count, "Cut must also snapshot the copied map cells.");
@@ -307,11 +261,11 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             AttachWorldGrid(manager);
 
             SetSelectedCells(manager, new Vector3Int(0, 0, 0));
-            InvokePrivate(manager, "OnCopyClicked");
+            TestReflection.Invoke(manager, "OnCopyClicked");
             Assert.AreEqual(1, CopiedMapCells(manager).Count);
 
             SetSelectedCells(manager, new Vector3Int(7, 8, 0), new Vector3Int(9, 10, 0));
-            InvokePrivate(manager, "OnCopyClicked");
+            TestReflection.Invoke(manager, "OnCopyClicked");
 
             var copied = CopiedMapCells(manager);
             Assert.AreEqual(2, copied.Count, "Second Copy must REPLACE the first snapshot.");
@@ -328,7 +282,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             AttachWorldGrid(manager);
 
             SetSelectedCells(manager, new Vector3Int(1, 1, 0));
-            InvokePrivate(manager, "OnCopyClicked");
+            TestReflection.Invoke(manager, "OnCopyClicked");
             Assert.AreEqual(1, CopiedMapCells(manager).Count, "Pre-condition: one cell copied.");
 
             manager.ClearSelection();
@@ -344,11 +298,11 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             // We test the field directly (without invoking HandleToggle, which
             // has full UI/overlay dependencies) by calling the private helper.
             var manager = NewManager();
-            SetField(manager, "_copiedMapCells",
+            TestReflection.SetField(manager, "_copiedMapCells",
                 new HashSet<Vector3Int> { new Vector3Int(3, 3, 0) });
             Assert.AreEqual(1, CopiedMapCells(manager).Count, "Pre-condition.");
 
-            InvokePrivate(manager, "ClearCopiedMapCells");
+            TestReflection.Invoke(manager, "ClearCopiedMapCells");
 
             Assert.AreEqual(0, CopiedMapCells(manager).Count,
                 "ClearCopiedMapCells must empty the set (called by deactivate branch).");
@@ -383,11 +337,11 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             AttachWorldGrid(manager);
 
             // Ensure the set is already populated from a prior copy.
-            SetField(manager, "_copiedMapCells",
+            TestReflection.SetField(manager, "_copiedMapCells",
                 new HashSet<Vector3Int> { new Vector3Int(9, 9, 0) });
 
             manager.State.SelectedCells.Clear(); // nothing selected
-            InvokePrivate(manager, "OnCopyClicked");
+            TestReflection.Invoke(manager, "OnCopyClicked");
 
             // Set must be UNCHANGED because the copy was aborted.
             Assert.AreEqual(1, CopiedMapCells(manager).Count,
@@ -455,7 +409,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             SlotDown(ui, slots[0]); SlotUp(ui, slots[0]);
             Assert.AreEqual(1, CopiedSlots(ui).Count, "Pre-condition.");
 
-            InvokePrivate(ui, "ResetPickerSelectionState");
+            TestReflection.Invoke(ui, "ResetPickerSelectionState");
 
             Assert.AreEqual(0, CopiedSlots(ui).Count,
                 "ResetPickerSelectionState (category change) must clear _tilesetCopiedSlots.");
@@ -519,13 +473,13 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             AttachWorldGrid(manager);
 
             SetSelectedCells(manager, new Vector3Int(5, 5, 0));
-            InvokePrivate(manager, "OnCopyClicked");
+            TestReflection.Invoke(manager, "OnCopyClicked");
             Assert.AreEqual(1, CopiedMapCells(manager).Count, "Pre-condition: map copy done.");
 
             // Simulate picker commit by directly manipulating the picker-side state.
             // (We don't have a UI wired to the manager here — just verify the manager
             // field is untouched.)
-            InvokePrivate(manager, "SnapshotCopiedMapCells",
+            TestReflection.Invoke(manager, "SnapshotCopiedMapCells",
                 (IEnumerable<Vector3Int>)new List<Vector3Int> { new Vector3Int(5, 5, 0) });
 
             Assert.AreEqual(1, CopiedMapCells(manager).Count,
@@ -546,8 +500,8 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             // Simulate a map Copy by directly calling SnapshotCopiedMapCells on
             // a manager that does NOT share state with the UI above.
             var manager = NewManager();
-            SetField(manager, "_copiedMapCells", new HashSet<Vector3Int>());
-            InvokePrivate(manager, "SnapshotCopiedMapCells",
+            TestReflection.SetField(manager, "_copiedMapCells", new HashSet<Vector3Int>());
+            TestReflection.Invoke(manager, "SnapshotCopiedMapCells",
                 (IEnumerable<Vector3Int>)new List<Vector3Int> { new Vector3Int(1, 1, 0) });
 
             // Picker's copied slots must be unaffected.
@@ -573,7 +527,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
                 new Vector3Int(4, 5, 0),
             });
 
-            var set = GetField<HashSet<Vector2Int>>(overlay, "_copiedCells");
+            var set = TestReflection.GetField<HashSet<Vector2Int>>(overlay, "_copiedCells");
             Assert.AreEqual(2, set.Count, "SetCopiedCells must populate _copiedCells.");
             Assert.IsTrue(set.Contains(new Vector2Int(2, 3)));
             Assert.IsTrue(set.Contains(new Vector2Int(4, 5)));
@@ -589,7 +543,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             overlay.SetCopiedCells(new List<Vector3Int> { new Vector3Int(1, 1, 0) });
             overlay.SetCopiedCells(null);
 
-            var set = GetField<HashSet<Vector2Int>>(overlay, "_copiedCells");
+            var set = TestReflection.GetField<HashSet<Vector2Int>>(overlay, "_copiedCells");
             Assert.AreEqual(0, set.Count, "SetCopiedCells(null) must clear the internal set.");
         }
 
@@ -607,7 +561,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
                 new Vector3Int(8, 8, 0),
             });
 
-            var set = GetField<HashSet<Vector2Int>>(overlay, "_copiedCells");
+            var set = TestReflection.GetField<HashSet<Vector2Int>>(overlay, "_copiedCells");
             Assert.AreEqual(2, set.Count, "Second SetCopiedCells call must REPLACE the first.");
             Assert.IsFalse(set.Contains(new Vector2Int(0, 0)), "First call's entry must be gone.");
         }
@@ -662,11 +616,11 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             uiGo.transform.SetParent(manager.transform);
             _sceneObjects.Add(uiGo);
             var ui = uiGo.AddComponent<TileEditorUI>();
-            SetField(ui, "_state", state);
+            TestReflection.SetField(ui, "_state", state);
 
             // Wire the UI into the manager so OnCopyClicked / OnCutClicked
             // can reach _ui.ClearPickerSelectionFromMapCopy().
-            SetField(manager, "_ui", ui);
+            TestReflection.SetField(manager, "_ui", ui);
 
             var slots = RegisterSlots(ui, coords);
             return (manager, ui, slots);
@@ -702,7 +656,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             manager.State.SelectedCellPos = new Vector3Int(10, 10, 0);
 
             SlotDown(ui, slots[0]);
-            InvokePrivate(ui, "OnTilesetSlotEnter", slots[1].R, slots[1].C);
+            TestReflection.Invoke(ui, "OnTilesetSlotEnter", slots[1].R, slots[1].C);
             SlotUp(ui, slots[1]);
 
             Assert.AreEqual(0, manager.State.SelectedCells.Count,
@@ -726,7 +680,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             copied.Add(new Vector3Int(5, 5, 0));
 
             SlotDown(ui, slots[0]);
-            InvokePrivate(ui, "OnTilesetSlotEnter", slots[1].R, slots[1].C);
+            TestReflection.Invoke(ui, "OnTilesetSlotEnter", slots[1].R, slots[1].C);
             SlotUp(ui, slots[1]);
 
             Assert.AreEqual(0, CopiedMapCells(manager).Count,
@@ -742,7 +696,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
                 (0, 0), (0, 1));
 
             SlotDown(ui, slots[0]);
-            InvokePrivate(ui, "OnTilesetSlotEnter", slots[1].R, slots[1].C);
+            TestReflection.Invoke(ui, "OnTilesetSlotEnter", slots[1].R, slots[1].C);
             SlotUp(ui, slots[1]);
 
             Assert.IsNotNull(manager.State.Clipboard,
@@ -791,12 +745,12 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             SlotUp(ui, slots[0]);
             SlotDown(ui, slots[1]);
             SlotUp(ui, slots[1]);
-            var pickerSel = GetField<HashSet<Vector2Int>>(ui, "_tilesetSelectedSlots");
+            var pickerSel = TestReflection.GetField<HashSet<Vector2Int>>(ui, "_tilesetSelectedSlots");
             Assert.AreEqual(2, pickerSel.Count, "Pre-condition: picker has 2 slots selected.");
 
             // Now stage a map selection and trigger Ctrl+C.
             SetSelectedCells(manager, new Vector3Int(20, 20, 0));
-            InvokePrivate(manager, "OnCopyClicked");
+            TestReflection.Invoke(manager, "OnCopyClicked");
 
             Assert.AreEqual(0, pickerSel.Count,
                 "After map OnCopyClicked, the picker's green selection must be cleared.");
@@ -823,7 +777,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             tilemap.SetTile(new Vector3Int(30, 30, 0), mapTile);
 
             SetSelectedCells(manager, new Vector3Int(30, 30, 0));
-            InvokePrivate(manager, "OnCopyClicked");
+            TestReflection.Invoke(manager, "OnCopyClicked");
 
             Assert.IsNotNull(manager.State.Clipboard,
                 "Map OnCopyClicked must populate the clipboard.");

@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.VFX;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 {
@@ -33,32 +34,6 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             }
         }
 
-        private static void Invoke(object obj, string method, params object[] args)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(method,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                t = t.BaseType;
-            }
-            m?.Invoke(obj, args);
-        }
-
-        private static void SetVal(object obj, string name, object value)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var f = t.GetField(name,
-                    BindingFlags.NonPublic | BindingFlags.Public |
-                    BindingFlags.Instance  | BindingFlags.Static);
-                if (f != null) { f.SetValue(obj, value); return; }
-                t = t.BaseType;
-            }
-        }
-
         private static T GetVal<T>(object obj, string name)
         {
             var t = obj.GetType();
@@ -84,12 +59,12 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var go = new GameObject("FiniteFilterEditor");
             _created.Add(go);
             _editor = go.AddComponent<ParticlesRuntimeEditor>();
-            Invoke(_editor, "OnSingletonAwake");
+            TestReflection.Invoke(_editor, "OnSingletonAwake");
 
             _catalog = ScriptableObject.CreateInstance<ParticlePresetCatalog>();
-            SetVal(_editor, "_catalog", _catalog);
+            TestReflection.SetField(_editor, "_catalog", _catalog);
             _editor.SetInstanceStore(new InMemoryParticleInstanceStore());
-            Invoke(_editor, "Start");
+            TestReflection.Invoke(_editor, "Start");
         }
 
         [TearDown]
@@ -142,7 +117,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             inst.Initialize("firework_finite", 1f);
 
             // Trigger save.
-            Invoke(_editor, "SaveInstancesToJson");
+            TestReflection.Invoke(_editor, "SaveInstancesToJson");
 
             string json = GetStore().CurrentJson;
             Assert.IsNotNull(json, "Save must produce non-null JSON.");
@@ -190,7 +165,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             loader.SetInstanceStore(store);
 
             // Manually invoke Start (EditMode doesn't call MonoBehaviour lifecycle).
-            Invoke(loader, "Start");
+            TestReflection.Invoke(loader, "Start");
 
             // No ParticleEmitter should have been spawned.
             var emitters = loaderGo.GetComponentsInChildren<ParticleEmitter>();

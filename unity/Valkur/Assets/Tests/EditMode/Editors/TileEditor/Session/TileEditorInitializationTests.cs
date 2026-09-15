@@ -5,6 +5,7 @@ using UnityEngine.TestTools;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
 using System.Collections;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
 {
@@ -113,6 +114,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
             Assert.IsFalse(isOverUI, "IsPointerOverUI should return safe value immediately");
         }
 
+        [Category(TestCategories.Slow)]
         [UnityTest]
         public IEnumerator InputHandler_StabilityOverFrames_AfterCreation()
         {
@@ -245,6 +247,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
             Assert.IsTrue(overUI == true || overUI == false, "UI check should be readable");
         }
 
+        [Category(TestCategories.Slow)]
         [UnityTest]
         public IEnumerator InputHandler_RealWorldSimulation_BeforeGameStart()
         {

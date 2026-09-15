@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Project.Assets
 {
@@ -23,6 +24,7 @@ namespace Valkur.Tests.EditMode.Project.Assets
     /// This guard is about placement, not about the assets being broken: raw third-party
     /// ScriptableObjects are fine to keep, just never under <c>Resources/</c>.
     /// </summary>
+    [Category(TestCategories.Guard)]
     public class ResourcesScriptIntegrityTests
     {
         // m_Script: {fileID: 11500000, guid: <32 hex>, type: 3}
@@ -41,6 +43,7 @@ namespace Valkur.Tests.EditMode.Project.Assets
         private static string ResourcesRoot =>
             Path.Combine(Application.dataPath, "_Project", "Resources");
 
+        [Category(TestCategories.Slow)]
         [Test]
         public void ResourcesAssets_ReferenceOnlyResolvableScripts()
         {

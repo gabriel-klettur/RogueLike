@@ -3,6 +3,7 @@ using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.Combat.Vitals
 {
@@ -12,6 +13,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Combat.Vitals
     /// inline-formula behaviour is preserved when no curve is assigned.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Integration)]
     public class ExperienceCurveIntegrationTests
     {
         private GameObject _go;

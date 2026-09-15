@@ -4,6 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 {
@@ -57,12 +58,12 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 
             // Disable auto-load — we don't want Start() to read the live
             // StreamingAssets file during the test.
-            SetPrivateField(loader, "_autoLoad", false);
+            TestReflection.SetField(loader, "_autoLoad", false);
 
             var rootGo = new GameObject("BuildingsRoot");
             _scene.Add(rootGo);
             root = rootGo.transform;
-            SetPrivateField(loader, "_buildingsRoot", root);
+            TestReflection.SetField(loader, "_buildingsRoot", root);
 
             return loader;
         }
@@ -159,13 +160,5 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 
         // ── Reflection helper ────────────────────────────────────────────────
 
-        private static void SetPrivateField(object target, string fieldName, object value)
-        {
-            var f = target.GetType().GetField(
-                fieldName,
-                BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            Assert.IsNotNull(f, $"Field '{fieldName}' not found on {target.GetType().Name}.");
-            f.SetValue(target, value);
-        }
     }
 }

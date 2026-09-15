@@ -6,6 +6,7 @@ using Valkur.Core.Coordinates;
 using Valkur.Data;
 using Valkur.Data.Chunks;
 using Valkur.Gameplay.World.Chunks;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.Chunks
 {
@@ -26,10 +27,10 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Chunks
         private static WorldConfig MakeConfig(string slug, int chunkSize, long seed)
         {
             var cfg = ScriptableObject.CreateInstance<WorldConfig>();
-            SetField(cfg, "dimensionSlug", slug);
-            SetField(cfg, "chunkSize",     chunkSize);
-            SetField(cfg, "tileSize",      1f);
-            SetField(cfg, "seed",          seed);
+            TestReflection.SetField(cfg, "dimensionSlug", slug);
+            TestReflection.SetField(cfg, "chunkSize",     chunkSize);
+            TestReflection.SetField(cfg, "tileSize",      1f);
+            TestReflection.SetField(cfg, "seed",          seed);
             cfg.name = $"WorldConfig:{slug}";
             return cfg;
         }
@@ -45,15 +46,15 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Chunks
             bool useStreaming = true)
         {
             var d = ScriptableObject.CreateInstance<WorldDescriptor>();
-            SetField(d, "slug",              slug);
-            SetField(d, "displayName",       slug);
-            SetField(d, "config",            MakeConfig(slug, chunkSize, seed));
-            SetField(d, "useChunkStreaming", useStreaming);
-            SetField(d, "activeRadius",      1);
-            SetField(d, "biomeKind",         biomeKind);
-            SetField(d, "primaryTile",       primaryTile);
-            SetField(d, "secondaryTile",     secondaryTile);
-            SetField(d, "noiseThreshold",    noiseThreshold);
+            TestReflection.SetField(d, "slug",              slug);
+            TestReflection.SetField(d, "displayName",       slug);
+            TestReflection.SetField(d, "config",            MakeConfig(slug, chunkSize, seed));
+            TestReflection.SetField(d, "useChunkStreaming", useStreaming);
+            TestReflection.SetField(d, "activeRadius",      1);
+            TestReflection.SetField(d, "biomeKind",         biomeKind);
+            TestReflection.SetField(d, "primaryTile",       primaryTile);
+            TestReflection.SetField(d, "secondaryTile",     secondaryTile);
+            TestReflection.SetField(d, "noiseThreshold",    noiseThreshold);
             d.name = $"Descriptor:{slug}";
             return d;
         }
@@ -63,14 +64,6 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Chunks
             if (d == null) return;
             if (d.Config != null) UnityEngine.Object.DestroyImmediate(d.Config);
             UnityEngine.Object.DestroyImmediate(d);
-        }
-
-        private static void SetField(object obj, string name, object value)
-        {
-            var f = obj.GetType().GetField(name,
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.IsNotNull(f, $"Field '{name}' not found on {obj.GetType().Name}.");
-            f.SetValue(obj, value);
         }
 
         // ── Behaviour ───────────────────────────────────────────────────────────

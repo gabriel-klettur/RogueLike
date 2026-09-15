@@ -9,6 +9,7 @@ using Valkur.Data;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Chat;
 using Valkur.Gameplay.NPC;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.Chat
 {
@@ -28,6 +29,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
     /// If this fixture goes red, the chat is mute in game, whatever the other fixtures say.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.ShippedData)]
     public class ShippedChatDataTests
     {
         private const string CATALOG_PATH = "Assets/_Project/Resources/Chat/ChatAssignmentCatalog.asset";

@@ -4,6 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.Zones
 {
@@ -70,7 +71,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Zones
         // ── Loadability ─────────────────────────────────────────────────────────
 
         [Test]
-        [Category("DataIntegrity")]
+        [Category(TestCategories.ShippedData)]
         public void ShippedInterior_ExistsAndIsLoadable()
         {
             Assert.IsTrue(File.Exists(Path_()), $"Missing: {Path_()}");
@@ -80,7 +81,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Zones
         }
 
         [Test]
-        [Category("DataIntegrity")]
+        [Category(TestCategories.ShippedData)]
         public void Interiors_LiveInTheirOwnFolder_NotBesideTheZoneOverlays()
         {
             // Everything DIRECTLY under StreamingAssets/Maps is a 50x50 tile of the base
@@ -118,7 +119,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Zones
         // ── Shape ───────────────────────────────────────────────────────────────
 
         [Test]
-        [Category("DataIntegrity")]
+        [Category(TestCategories.ShippedData)]
         public void ShippedInterior_IsARectangularGroundedRoom()
         {
             var ground = Layer("Ground");
@@ -136,7 +137,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Zones
         }
 
         [Test]
-        [Category("DataIntegrity")]
+        [Category(TestCategories.ShippedData)]
         public void ShippedInterior_IsSealedByWallsOnEverySide()
         {
             var collision = Layer("Collision");
@@ -156,7 +157,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Zones
         }
 
         [Test]
-        [Category("DataIntegrity")]
+        [Category(TestCategories.ShippedData)]
         public void ShippedInterior_HasAWalkableInside()
         {
             var collision = Layer("Collision");
@@ -176,7 +177,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Zones
         // ── The spawn point ─────────────────────────────────────────────────────
 
         [Test]
-        [Category("DataIntegrity")]
+        [Category(TestCategories.ShippedData)]
         public void SuggestedSpawn_LandsInsideTheWalls()
         {
             var collision = Layer("Collision");

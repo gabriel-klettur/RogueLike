@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.Spawners;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
 {
@@ -36,12 +37,6 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             }
             return null;
         }
-
-        private static T GetFieldValue<T>(object obj, string name)
-            => (T)GetField(obj, name)?.GetValue(obj);
-
-        private static void SetFieldValue(object obj, string name, object value)
-            => GetField(obj, name)?.SetValue(obj, value);
 
         private static void ClearSingletonInstance<T>() where T : MonoBehaviour
         {
@@ -85,7 +80,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             _mgr = go.AddComponent<SpawnerEditorManager>();
 
             // Force-active without going through BuildUI — we test logic, not chrome.
-            SetFieldValue(_mgr, "_active", true);
+            TestReflection.SetField(_mgr, "_active", true);
         }
 
         [TearDown]
@@ -110,7 +105,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             // invoke (e.g. via a hotkey wired to the same callback).
             Assert.DoesNotThrow(() => _mgr.DeleteSelectedInstance(),
                 "DeleteSelectedInstance must be a safe no-op when no spawner is selected.");
-            Assert.IsNull(GetFieldValue<SpawnerInstance>(_mgr, "_selectedInstance"),
+            Assert.IsNull(TestReflection.GetField<SpawnerInstance>(_mgr, "_selectedInstance"),
                 "Selection state must remain null.");
         }
 
@@ -123,7 +118,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             // inconsistently across EditMode/PlayMode for already-cached refs.
             var si = Object.FindObjectOfType<SpawnerInstance>();
             Assert.IsNotNull(si, "Test setup precondition: spawner must exist before deletion.");
-            SetFieldValue(_mgr, "_selectedInstance", si);
+            TestReflection.SetField(_mgr, "_selectedInstance", si);
 
             _mgr.DeleteSelectedInstance();
 
@@ -136,11 +131,11 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
         public void DeleteSelected_ClearsSelection()
         {
             var si = MakeSpawner("a", new Vector3(0f, 0f, 0f));
-            SetFieldValue(_mgr, "_selectedInstance", si);
+            TestReflection.SetField(_mgr, "_selectedInstance", si);
 
             _mgr.DeleteSelectedInstance();
 
-            Assert.IsNull(GetFieldValue<SpawnerInstance>(_mgr, "_selectedInstance"),
+            Assert.IsNull(TestReflection.GetField<SpawnerInstance>(_mgr, "_selectedInstance"),
                 "DeleteSelectedInstance must clear _selectedInstance so the panel returns to its empty state.");
         }
 
@@ -151,12 +146,12 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             // Pressing Delete in Properties mid-drag should cancel cleanly so
             // _dragging doesn't try to follow a destroyed transform next frame.
             var si = MakeSpawner("a", new Vector3(0f, 0f, 0f));
-            SetFieldValue(_mgr, "_selectedInstance", si);
-            SetFieldValue(_mgr, "_dragging", true);
+            TestReflection.SetField(_mgr, "_selectedInstance", si);
+            TestReflection.SetField(_mgr, "_dragging", true);
 
             _mgr.DeleteSelectedInstance();
 
-            Assert.IsFalse(GetFieldValue<bool>(_mgr, "_dragging"),
+            Assert.IsFalse(TestReflection.GetField<bool>(_mgr, "_dragging"),
                 "DeleteSelectedInstance must clear _dragging so the per-frame drag follow doesn't NRE.");
         }
 
@@ -171,7 +166,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             foreach (var si in Object.FindObjectsOfType<SpawnerInstance>())
                 if (si.InstanceId == "victim") victim = si;
             Assert.IsNotNull(victim, "Test setup precondition: victim must exist before deletion.");
-            SetFieldValue(_mgr, "_selectedInstance", victim);
+            TestReflection.SetField(_mgr, "_selectedInstance", victim);
 
             _mgr.DeleteSelectedInstance();
 

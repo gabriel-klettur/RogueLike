@@ -10,6 +10,7 @@ using Valkur.Gameplay.Editors;
 using Valkur.UIKit;
 using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.Items;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ItemsEditor
 {
@@ -18,6 +19,7 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
     /// instance-actions UI (qty +/- + Delete) in the Properties panel.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Slow)]
     public class ItemsRuntimeEditorPhase3Tests
     {
         private readonly System.Collections.Generic.List<GameObject>  _scene = new System.Collections.Generic.List<GameObject>();
@@ -61,18 +63,6 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
         private static object GetField(object obj, string name) => Field(obj, name)?.GetValue(obj);
         private static void   SetField(object obj, string name, object value) => Field(obj, name)?.SetValue(obj, value);
 
-        private static void Invoke(object obj, string method, params object[] args)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var m = t.GetMethod(method, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                if (m != null) { m.Invoke(obj, args); return; }
-                t = t.BaseType;
-            }
-            Assert.Fail($"Method '{method}' not found on {obj.GetType().Name}");
-        }
-
         private ItemsRuntimeEditor CreateActiveEditor()
         {
             LogAssert.ignoreFailingMessages = true;
@@ -80,8 +70,8 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             var go = new GameObject("TestItemsEditor");
             _scene.Add(go);
             var ed = go.AddComponent<ItemsRuntimeEditor>();
-            Invoke(ed, "OnSingletonAwake");
-            Invoke(ed, "Start");
+            TestReflection.Invoke(ed, "OnSingletonAwake");
+            TestReflection.Invoke(ed, "Start");
             ed.Activate();
             return ed;
         }
@@ -102,7 +92,7 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
         private void InjectCatalog(ItemsRuntimeEditor ed, params ItemDefinition[] items)
         {
             SetField(ed, "_allItems", items);
-            Invoke(ed, "RefreshPicker");
+            TestReflection.Invoke(ed, "RefreshPicker");
         }
 
         // ── Tests ──────────────────────────────────────────────────────────────
@@ -137,8 +127,8 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             InjectCatalog(ed, sword);
 
             // Spawn one in the world
-            Invoke(ed, "SelectItem", "sword");
-            Invoke(ed, "SpawnAt", new Vector3(2f, 3f, 0f));
+            TestReflection.Invoke(ed, "SelectItem", "sword");
+            TestReflection.Invoke(ed, "SpawnAt", new Vector3(2f, 3f, 0f));
             var pickup = Object.FindObjectOfType<WorldPickup>();
             Assert.IsNotNull(pickup);
             _scene.Add(pickup.gameObject);
@@ -170,18 +160,18 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             var ed = CreateActiveEditor();
             var apple = CreateItem("apple", "Apple");
             InjectCatalog(ed, apple);
-            Invoke(ed, "SelectItem", "apple");
-            Invoke(ed, "SpawnAt", new Vector3(0, 0, 0));
+            TestReflection.Invoke(ed, "SelectItem", "apple");
+            TestReflection.Invoke(ed, "SpawnAt", new Vector3(0, 0, 0));
             var pickup = Object.FindObjectOfType<WorldPickup>();
             Assert.IsNotNull(pickup);
             _scene.Add(pickup.gameObject);
             ed.SetActiveInstance(pickup);
 
             int before = pickup.Quantity;
-            Invoke(ed, "AdjustSelectedQuantity", 5);
+            TestReflection.Invoke(ed, "AdjustSelectedQuantity", 5);
             Assert.AreEqual(before + 5, pickup.Quantity, "Quantity must be bumped by +5.");
 
-            Invoke(ed, "DoUndo");
+            TestReflection.Invoke(ed, "DoUndo");
             Assert.AreEqual(before, pickup.Quantity, "Undo must restore the original quantity.");
         }
 
@@ -191,15 +181,15 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             var ed = CreateActiveEditor();
             var apple = CreateItem("apple", "Apple");
             InjectCatalog(ed, apple);
-            Invoke(ed, "SelectItem", "apple");
-            Invoke(ed, "SpawnAt", new Vector3(0, 0, 0));
+            TestReflection.Invoke(ed, "SelectItem", "apple");
+            TestReflection.Invoke(ed, "SpawnAt", new Vector3(0, 0, 0));
             var pickup = Object.FindObjectOfType<WorldPickup>();
             Assert.IsNotNull(pickup);
             _scene.Add(pickup.gameObject);
             ed.SetActiveInstance(pickup);
 
             int before = Object.FindObjectsOfType<WorldPickup>().Length;
-            Invoke(ed, "DeleteSelectedInstance");
+            TestReflection.Invoke(ed, "DeleteSelectedInstance");
 
             int after = Object.FindObjectsOfType<WorldPickup>().Length;
             Assert.LessOrEqual(after, before, "DeleteSelectedInstance must not increase pickup count.");

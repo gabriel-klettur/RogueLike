@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Data.Death
 {
@@ -27,6 +28,7 @@ namespace Valkur.Tests.EditMode.Data.Death
     /// <c>SPAWNER_COORDINATE_SPACE_DRIFT</c> and needs the same answer — assert the composition, and
     /// assert it against the SHIPPED BYTES rather than against a fixture.</para>
     /// </summary>
+    [Category(TestCategories.ShippedData)]
     public class ShippedDeathDataTests
     {
         private static string BuildingsInstancesPath =>

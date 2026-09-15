@@ -6,6 +6,7 @@ using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.VFX;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 {
@@ -58,19 +59,6 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 
         private static void SetVal(object obj, string name, object value)
             => FindField(obj, name)?.SetValue(obj, value);
-
-        private static void Invoke(object obj, string method, params object[] args)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(method,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                t = t.BaseType;
-            }
-            m?.Invoke(obj, args);
-        }
 
         private static void StubPreviewService(ParticlesRuntimeEditor editor)
         {
@@ -127,7 +115,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             FindField(zm, "currentZone")?.SetValue(zm, zoneName);
 
             // Rebuild internal dictionary.
-            Invoke(zm, "RebuildZoneMap");
+            TestReflection.Invoke(zm, "RebuildZoneMap");
             return zm;
         }
 
@@ -151,7 +139,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             FindField(zm, "zoneHeightTiles")?.SetValue(zm, h);
             FindField(zm, "tileSize")?.SetValue(zm, 1f);
             FindField(zm, "currentZone")?.SetValue(zm, zoneA);
-            Invoke(zm, "RebuildZoneMap");
+            TestReflection.Invoke(zm, "RebuildZoneMap");
             return zm;
         }
 
@@ -163,7 +151,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var go = new GameObject("DeleteTestEditor");
             _sceneObjects.Add(go);
             var editor = go.AddComponent<ParticlesRuntimeEditor>();
-            Invoke(editor, "OnSingletonAwake");
+            TestReflection.Invoke(editor, "OnSingletonAwake");
 
             _preset = ScriptableObject.CreateInstance<ParticlePresetDefinition>();
             _preset.id          = "aura_test";
@@ -182,7 +170,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             StubPreviewService(editor);
 
             if (withUI)
-                Invoke(editor, "Start");
+                TestReflection.Invoke(editor, "Start");
 
             return editor;
         }
@@ -233,7 +221,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             // No emitters → DeleteAllInZone must set a status message and return without crash.
             // Intercepting SetStatus by patching _ui.StatusText is complex; instead verify
             // that after calling DeleteAllInZone the scene has 0 ParticleEmitters.
-            Invoke(_editor, "DeleteAllInZone", "TestZone");
+            TestReflection.Invoke(_editor, "DeleteAllInZone", "TestZone");
 
             var remaining = Object.FindObjectsOfType<ParticleEmitter>();
             Assert.AreEqual(0, remaining.Length,
@@ -247,7 +235,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             // The confirm modal field is _confirmModal; assert it stays inactive.
             var modal = GetVal(_editor, "_confirmModal") as GameObject;
 
-            Invoke(_editor, "RequestDeleteAllInZoneWithConfirm");
+            TestReflection.Invoke(_editor, "RequestDeleteAllInZoneWithConfirm");
 
             // If modal is null (no withUI), count-0 guard fires before ShowConfirm anyway.
             if (modal != null)
@@ -265,7 +253,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 
             var modal = GetVal(_editor, "_confirmModal") as GameObject;
 
-            Invoke(_editor, "RequestDeleteAllInZoneWithConfirm");
+            TestReflection.Invoke(_editor, "RequestDeleteAllInZoneWithConfirm");
 
             if (modal != null)
                 Assert.IsTrue(modal.activeSelf,
@@ -301,7 +289,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var emB1 = SpawnEmitter(_editor, new Vector3(21f, 1f, 0f));
             var emB2 = SpawnEmitter(_editor, new Vector3(25f, 1f, 0f));
 
-            Invoke(_editor, "DeleteAllInZone", "ZoneA");
+            TestReflection.Invoke(_editor, "DeleteAllInZone", "ZoneA");
 
             // ZoneA emitters must be gone.
             Assert.IsTrue(emA1 == null || !emA1.activeSelf,
@@ -333,7 +321,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             previewGo.transform.position = new Vector3(5f, 5f, 0f); // same zone
             _sceneObjects.Add(previewGo);
 
-            Invoke(_editor, "DeleteAllInZone", "TestZone");
+            TestReflection.Invoke(_editor, "DeleteAllInZone", "TestZone");
 
             // The real emitter must be destroyed.
             Assert.IsTrue(realEmitter == null || !realEmitter.activeSelf,
@@ -354,7 +342,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             SetVal(_editor, "_activeInstance", em1);
             SetVal(_editor, "_hoveredInstance", em1);
 
-            Invoke(_editor, "DeleteAllInZone", "TestZone");
+            TestReflection.Invoke(_editor, "DeleteAllInZone", "TestZone");
 
             var active  = GetVal(_editor, "_activeInstance")  as GameObject;
             var hovered = GetVal(_editor, "_hoveredInstance") as GameObject;
@@ -378,7 +366,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
                     countBefore++;
             Assert.AreEqual(2, countBefore, "Setup: must have 2 real emitters before delete.");
 
-            Invoke(_editor, "DeleteAllInZone", "TestZone");
+            TestReflection.Invoke(_editor, "DeleteAllInZone", "TestZone");
 
             var afterDelete = Object.FindObjectsOfType<ParticleEmitter>();
             int countAfter = 0;
@@ -389,7 +377,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 
             // Undo.
             var undo = GetVal(_editor, "_undo");
-            Invoke(undo, "Undo");
+            TestReflection.Invoke(undo, "Undo");
 
             var afterUndo = Object.FindObjectsOfType<ParticleEmitter>();
             int countUndo = 0;

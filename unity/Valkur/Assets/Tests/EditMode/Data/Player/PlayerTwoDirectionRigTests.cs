@@ -3,6 +3,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Data.Player
 {
@@ -140,6 +141,7 @@ namespace Valkur.Tests.EditMode.Data.Player
                 "every individual frame still looks correct.\n  " + string.Join("\n  ", failures));
         }
 
+        [Category(TestCategories.Slow)]
         [Test]
         public void EveryFrame_HasAnEastCopyThatIsTheHorizontalMirrorOfItsWestCopy()
         {

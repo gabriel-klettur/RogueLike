@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Project.Code
 {
@@ -18,6 +19,7 @@ namespace Valkur.Tests.EditMode.Project.Code
     /// to say. Found while wiring <c>debughud</c>, which was written the same way first.</para>
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Guard)]
     public class DevConsoleHandlerContractTests
     {
         [Test]

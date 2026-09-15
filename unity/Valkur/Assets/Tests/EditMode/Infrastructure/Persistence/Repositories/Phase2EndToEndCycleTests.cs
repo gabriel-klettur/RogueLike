@@ -2,6 +2,7 @@ using NUnit.Framework;
 using Valkur.Core.Coordinates;
 using Valkur.Data.Chunks;
 using Valkur.Infrastructure.Persistence.Repositories;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Infrastructure.Persistence.Repositories
 {
@@ -21,6 +22,7 @@ namespace Valkur.Tests.EditMode.Infrastructure.Persistence.Repositories
     /// baseline, and both reach the same world.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Integration)]
     public class Phase2EndToEndCycleTests
     {
         private const long Seed = 42L;

@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.VFX;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 {
@@ -38,30 +39,6 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             }
         }
 
-        private static void Invoke(object obj, string method, params object[] args)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(method, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                t = t.BaseType;
-            }
-            m?.Invoke(obj, args);
-        }
-
-        private static void SetVal(object obj, string name, object value)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var f = t.GetField(name,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
-                if (f != null) { f.SetValue(obj, value); return; }
-                t = t.BaseType;
-            }
-        }
-
         // ── Setup / Teardown ──────────────────────────────────────────────────────
 
         [SetUp]
@@ -73,12 +50,12 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var go = new GameObject("RoundTripEditor");
             _created.Add(go);
             _editor = go.AddComponent<ParticlesRuntimeEditor>();
-            Invoke(_editor, "OnSingletonAwake");
+            TestReflection.Invoke(_editor, "OnSingletonAwake");
 
             var catalog = ScriptableObject.CreateInstance<ParticlePresetCatalog>();
-            SetVal(_editor, "_catalog", catalog);
+            TestReflection.SetField(_editor, "_catalog", catalog);
             _editor.SetInstanceStore(new InMemoryParticleInstanceStore());
-            Invoke(_editor, "Start");
+            TestReflection.Invoke(_editor, "Start");
         }
 
         [TearDown]
@@ -121,7 +98,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             for (int i = 0; i < presets.Length; i++)
                 CreateInst(presets[i], 1f + i * 0.5f, new Vector3(i, i, 0));
 
-            Invoke(_editor, "SaveInstancesToJson");
+            TestReflection.Invoke(_editor, "SaveInstancesToJson");
 
             string json = GetStore().CurrentJson;
             var records = ParticleInstanceSerializer.Deserialize(json, null, ZH, 1f);
@@ -149,7 +126,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             for (int i = 0; i < scales.Length; i++)
                 instances.Add(CreateInst($"preset_{i}", scales[i], new Vector3(i, 0, 0)));
 
-            Invoke(_editor, "SaveInstancesToJson");
+            TestReflection.Invoke(_editor, "SaveInstancesToJson");
 
             string json = GetStore().CurrentJson;
             var records = ParticleInstanceSerializer.Deserialize(json, null, ZH, 1f);
@@ -175,7 +152,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var inst = CreateInst("arcane_flame", 2f, new Vector3(5f, 5f, 0f));
             string originalGuid = inst.StableGuid;
 
-            Invoke(_editor, "SaveInstancesToJson");
+            TestReflection.Invoke(_editor, "SaveInstancesToJson");
 
             string json = GetStore().CurrentJson;
             var records = ParticleInstanceSerializer.Deserialize(json, null, ZH, 1f);
@@ -195,7 +172,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             // We just check that the coordinate round-trips within rounding error.
 
             var inst = CreateInst("firework", 1f, new Vector3(3.5f, 12.25f, 0f));
-            Invoke(_editor, "SaveInstancesToJson");
+            TestReflection.Invoke(_editor, "SaveInstancesToJson");
 
             string json = GetStore().CurrentJson;
             var records = ParticleInstanceSerializer.Deserialize(json, null, ZH, 1f);

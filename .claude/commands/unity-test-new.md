@@ -13,14 +13,14 @@ Invoke the `unity-tester` agent with:
   1. Read [.github/skills/unity-testing/SKILL.md](../../.github/skills/unity-testing/SKILL.md) for the canonical folder→namespace map.
   2. Locate the production class for `$ARGUMENTS` (`Grep` `Assets/_Project/Scripts/`).
   3. Decide:
-     - Editor-only (lives under `Scripts/Editor/`) → place test under `Tests/EditMode/Editors/<Subsystem>/`.
-     - Runtime under Gameplay → `Tests/EditMode/Game/<Domain>/` for headless logic, `Tests/PlayMode/<Domain>/` for scene-dependent tests.
+     - Root = the highest production layer the test uses: `Core`, `Data`, `Infrastructure`, `UIKit`, `Gameplay`, `UI` (each is its own assembly and cannot see the layers above it). A runtime editor (`Scripts/Gameplay/Editors/<Name>/`) → `Tests/EditMode/Editors/<Name>Editor/`; `Scripts/Editor/` → `Tests/EditMode/EditorTools/<Folder>/`.
+     - Feature folder = the production folder with its assembly prefix stripped (`Scripts/Gameplay/Combat/Death/` → `Tests/EditMode/Gameplay/Combat/Death/`); scene-dependent tests → `Tests/PlayMode/<Root>/<Feature>/`. Use the alias table for reserved names (`Combat/Vitals`, `World/CameraRig`, …).
   4. Use the canonical template from the skill:
      - `[Test]` for sync, `[UnityTest]` + `yield return null` for async.
      - `[TearDown]` to destroy any GameObjects created.
      - `LogAssert.ignoreFailingMessages = true` if the test creates UI in EditMode.
      - `Assert.IsTrue(go != null, "...")` (not `IsNotNull`) for Unity-fake-null safety.
-  5. Test names: `SystemUnderTest_Condition_ExpectedResult`.
+  5. Test names: `Subject_Scenario_Outcome` (two or three PascalCase parts). Reflection via `TestReflection`; categories via `TestCategories`.
   6. Namespace = `Valkur.Tests.` + path segments below `Tests/` joined with `.`
 - After scaffolding, run the new test once via MCP and report pass/fail.
 

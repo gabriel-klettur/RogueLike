@@ -5,6 +5,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Data.Combat
 {
@@ -29,6 +30,7 @@ namespace Valkur.Tests.EditMode.Data.Combat
     /// belongs to whoever is balancing the game, and a fixture that pinned the values would
     /// go red on every honest edit. What it pins is that a monster is playable at all.</para>
     /// </summary>
+    [Category(TestCategories.ShippedData)]
     public class ShippedMonsterDataSanityTests
     {
         /// <summary>

@@ -9,6 +9,7 @@ using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Buildings;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.BuildingsEditor
 {
@@ -32,6 +33,7 @@ namespace Valkur.Tests.EditMode.Editors.BuildingsEditor
     ///      them on the next reload.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Integration)]
     public class BuildingsEditorMapSlotIntegrationTests
     {
         private readonly List<GameObject>       _scene  = new List<GameObject>();

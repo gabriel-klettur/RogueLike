@@ -3,6 +3,7 @@ using System.Text;
 using NUnit.Framework;
 using UnityEditor;
 using Valkur.Data;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Data.Spells
 {
@@ -19,6 +20,7 @@ namespace Valkur.Tests.EditMode.Data.Spells
     /// it goes red the day somebody authors a wind-up long enough to feel like a freeze.</para>
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.ShippedData)]
     public class ShippedCastPhaseDataTests
     {
         /// <summary>The longest wind-up authored on purpose (summon_wolf). A spell that plants

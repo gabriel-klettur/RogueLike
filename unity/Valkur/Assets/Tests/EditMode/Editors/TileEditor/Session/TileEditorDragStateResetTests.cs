@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Core;
 using Valkur.Gameplay.TileEditor;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
 {
@@ -58,13 +59,6 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
             f?.SetValue(null, value);
         }
 
-        private static void SetField(object obj, string name, object value)
-        {
-            var f = typeof(TileEditorManager).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
-            Assert.IsNotNull(f, $"Reflection: field '{name}' not found on TileEditorManager.");
-            f.SetValue(obj, value);
-        }
-
         private (TileEditorManager manager, TileEditorUI ui) NewManagerWithUI()
         {
             SetSingletonInstance<TileEditorManager>(null);
@@ -82,8 +76,8 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
                 onTileSelected: null, onToolChanged: null,
                 onLayerChanged: null, onBrushSizeChanged: null);
 
-            SetField(manager, "_ui", ui);
-            SetField(manager, "_undo", new TileEditorUndoSystem());
+            TestReflection.SetField(manager, "_ui", ui);
+            TestReflection.SetField(manager, "_undo", new TileEditorUndoSystem());
 
             return (manager, ui);
         }

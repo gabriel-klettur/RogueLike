@@ -31,8 +31,10 @@ suspect group with `include_details=true`; a test that passes in 20 s is a bug r
    - "full" → `mode="EditMode"`, no filter, the whole suite
    - "play" → `mode="PlayMode"`
    - "all" → EditMode first, then PlayMode
-   - anything else → a filter for `test_names=[...]`; a NAMESPACE PREFIX works and is usually
-     what you want (e.g. `Valkur.Tests.EditMode.Game.Input`)
+   - anything else → a filter. For a namespace use `group_names=["^Valkur\\.Tests\\.EditMode\\.Core\\.Input\\."]`
+     (an anchored regex; a bare prefix in `test_names` times out initialising); for one test, its full
+     name in `test_names`; for a whole layer, `assembly_names=["Valkur.Tests.EditMode.Gameplay"]`; for a kind,
+     `category_names=["Guard"]` (Guard, ShippedData, Integration, Slow — see `TestCategories`)
 
 2. **Refresh and verify the compile actually landed.**
 
@@ -49,8 +51,9 @@ suspect group with `include_details=true`; a test that passes in 20 s is a bug r
    newest source file before trusting anything:
 
    ```csharp
+   // one assembly per root now: check the one that owns the files you touched
    var asm = AppDomain.CurrentDomain.GetAssemblies()
-       .First(a => a.GetName().Name == "Valkur.Tests.EditMode");
+       .First(a => a.GetName().Name == "Valkur.Tests.EditMode.Gameplay");
    var newest = Directory
        .GetFiles(Path.Combine(Application.dataPath, "Tests"), "*.cs", SearchOption.AllDirectories)
        .Select(File.GetLastWriteTimeUtc).Max();
@@ -93,7 +96,9 @@ suspect group with `include_details=true`; a test that passes in 20 s is a bug r
 6. **VERIFY `total` IS THE NUMBER YOU EXPECTED.** A filter that matches nothing returns
    `total: 0` and `status: succeeded` — a green result over zero tests. This has already
    happened once: `Valkur.Tests.EditMode.Editors.Tile.TileEditorColliderTests` matched 0 because
-   the real namespace is `...Editors.TileEditor.UI`. If `total` is 0 or far below what the filter
+   the real namespace is `...Editors.TileEditor.UI`. Per-test results of every run are on disk in
+   `Library/ValkurTestResults/last-EditMode.tsv` (`TestRunRecorder`) — compare a filtered run's rows against it. Per-test results of every run are on disk in
+   `Library/ValkurTestResults/last-EditMode.tsv` (`TestRunRecorder`) — compare a filtered run's rows against it. If `total` is 0 or far below what the filter
    should match, the filter is wrong and the run proved nothing.
 
 7. **Report** in this exact shape:

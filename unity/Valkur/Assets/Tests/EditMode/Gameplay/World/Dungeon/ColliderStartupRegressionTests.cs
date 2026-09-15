@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using Valkur.Data;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.Dungeon
 {
@@ -38,17 +39,6 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Dungeon
     {
         // ── helpers ──────────────────────────────────────────────────────────────
 
-        private static void SetPrivateField(object obj, string name, object value)
-        {
-            var type = obj.GetType();
-            while (type != null)
-            {
-                var f = type.GetField(name, BindingFlags.NonPublic | BindingFlags.Instance);
-                if (f != null) { f.SetValue(obj, value); return; }
-                type = type.BaseType;
-            }
-        }
-
         // Creates an empty instance of the private field's type (avoids referencing
         // internal types like CollisionGrid that aren't visible from test assemblies).
         private static object CreateEmptyFieldValue(object obj, string name)
@@ -82,11 +72,11 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Dungeon
 
             // Inject empty dictionaries — simulates empty buildings_collisions_by_image.json.
             // Use CreateEmptyFieldValue() because CollisionGrid is a private inner class.
-            SetPrivateField(loader, "_loaded",                    true);
-            SetPrivateField(loader, "_byImage",                   CreateEmptyFieldValue(loader, "_byImage"));
-            SetPrivateField(loader, "_byInstanceId",              CreateEmptyFieldValue(loader, "_byInstanceId"));
-            SetPrivateField(loader, "_bySpawnId",                 CreateEmptyFieldValue(loader, "_bySpawnId"));
-            SetPrivateField(loader, "_inlineInstanceOverrides",   CreateEmptyFieldValue(loader, "_inlineInstanceOverrides"));
+            TestReflection.SetField(loader, "_loaded",                    true);
+            TestReflection.SetField(loader, "_byImage",                   CreateEmptyFieldValue(loader, "_byImage"));
+            TestReflection.SetField(loader, "_byInstanceId",              CreateEmptyFieldValue(loader, "_byInstanceId"));
+            TestReflection.SetField(loader, "_bySpawnId",                 CreateEmptyFieldValue(loader, "_bySpawnId"));
+            TestReflection.SetField(loader, "_inlineInstanceOverrides",   CreateEmptyFieldValue(loader, "_inlineInstanceOverrides"));
 
             var tmpl = ScriptableObject.CreateInstance<BuildingTemplateData>();
             tmpl.solid = true;
@@ -98,7 +88,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Dungeon
                 var bObj     = go.AddComponent<BuildingObject>();
                 var mainColl = go.AddComponent<BoxCollider2D>();
                 mainColl.enabled = true; // start enabled — should be DISABLED after restore
-                SetPrivateField(bObj, "_template", tmpl);
+                TestReflection.SetField(bObj, "_template", tmpl);
                 buildingGos[i] = go;
             }
 
@@ -128,11 +118,11 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Dungeon
             var loaderGo = new GameObject("CollisionLoader");
             var loader   = loaderGo.AddComponent<BuildingCollisionLoader>();
 
-            SetPrivateField(loader, "_loaded",                    true);
-            SetPrivateField(loader, "_byImage",                   CreateEmptyFieldValue(loader, "_byImage"));
-            SetPrivateField(loader, "_byInstanceId",              CreateEmptyFieldValue(loader, "_byInstanceId"));
-            SetPrivateField(loader, "_bySpawnId",                 CreateEmptyFieldValue(loader, "_bySpawnId"));
-            SetPrivateField(loader, "_inlineInstanceOverrides",   CreateEmptyFieldValue(loader, "_inlineInstanceOverrides"));
+            TestReflection.SetField(loader, "_loaded",                    true);
+            TestReflection.SetField(loader, "_byImage",                   CreateEmptyFieldValue(loader, "_byImage"));
+            TestReflection.SetField(loader, "_byInstanceId",              CreateEmptyFieldValue(loader, "_byInstanceId"));
+            TestReflection.SetField(loader, "_bySpawnId",                 CreateEmptyFieldValue(loader, "_bySpawnId"));
+            TestReflection.SetField(loader, "_inlineInstanceOverrides",   CreateEmptyFieldValue(loader, "_inlineInstanceOverrides"));
 
             var tmpl = ScriptableObject.CreateInstance<BuildingTemplateData>();
             tmpl.solid = false; // decorative / walk-through building
@@ -141,7 +131,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Dungeon
             var bObj       = buildingGo.AddComponent<BuildingObject>();
             var mainColl   = buildingGo.AddComponent<BoxCollider2D>();
             mainColl.enabled = true; // start enabled — should be DISABLED after restore
-            SetPrivateField(bObj, "_template", tmpl);
+            TestReflection.SetField(bObj, "_template", tmpl);
 
             loader.ApplyCollisionGrids();
 
@@ -171,7 +161,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Dungeon
             var loader = go.AddComponent<BuildingLoader>();
 
             // Simulate what the scene serializes: _autoLoad=false
-            SetPrivateField(loader, "_autoLoad", false);
+            TestReflection.SetField(loader, "_autoLoad", false);
 
             Assert.AreEqual(0, loader.SpawnedBuildings.Count,
                 "A freshly created BuildingLoader with autoLoad=false must have " +

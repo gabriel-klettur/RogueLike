@@ -10,6 +10,7 @@ using Valkur.Core.Coordinates;
 using Valkur.Data;
 using Valkur.Gameplay.World;
 using Valkur.Gameplay.World.Worlds;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World
 {
@@ -33,6 +34,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World
     /// the WorldManager wiring.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Integration)]
     public class TestWorldEndToEndTests
     {
         private const string ConfigAssetPath = "Assets/_Project/Data/Worlds/TestWorldConfig.asset";
@@ -106,13 +108,13 @@ namespace Valkur.Tests.EditMode.Gameplay.World
             _zones   = _zonesGo.AddComponent<ZoneManager>();
 
             _dbLoader = _zonesGo.AddComponent<ZoneDatabaseLoader>();
-            SetField(_dbLoader, "_zoneManager", _zones);
-            SetField(_dbLoader, "_autoLoad",     false);
+            TestReflection.SetField(_dbLoader, "_zoneManager", _zones);
+            TestReflection.SetField(_dbLoader, "_autoLoad",     false);
 
             _worldLoader = _zonesGo.AddComponent<WorldLoader>();
-            SetField(_worldLoader, "_databaseLoader", _dbLoader);
-            SetField(_worldLoader, "_gridBuilder",    _grid);
-            SetField(_worldLoader, "_autoLoad",       false);
+            TestReflection.SetField(_worldLoader, "_databaseLoader", _dbLoader);
+            TestReflection.SetField(_worldLoader, "_gridBuilder",    _grid);
+            TestReflection.SetField(_worldLoader, "_autoLoad",       false);
 
             // Register the dungeon_floor tile in the runtime TileRegistry so
             // OverlayLoader can resolve it from the JSON cell strings.
@@ -191,17 +193,5 @@ namespace Valkur.Tests.EditMode.Gameplay.World
 
         // ── Reflection helpers ──────────────────────────────────────────────────
 
-        private static void SetField(object obj, string name, object value)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var f = t.GetField(name,
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-                if (f != null) { f.SetValue(obj, value); return; }
-                t = t.BaseType;
-            }
-            Assert.Fail($"Field '{name}' not found on {obj.GetType().Name}.");
-        }
     }
 }

@@ -224,7 +224,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
 
         // ════════════════════════════════════════════════════════════════════
         // 5. Dispatch order — structural guard for HandleMouseInput (source text,
-        //    same technique as Game/Meta/BraceBalanceRegressionTests). This is the
+        //    same technique as Project/Code/BraceBalanceRegressionTests). This is the
         //    only provable form of "with a mode active, the click doesn't run the
         //    selected tool": WasLeftMouseButtonPressedThisFrame() is always false in
         //    EditMode, so calling HandleMouseInput directly can't discriminate a

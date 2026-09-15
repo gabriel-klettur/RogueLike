@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using Valkur.Data;
 using Valkur.Editor.Buildings;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.EditorTools.Buildings
 {
@@ -16,6 +17,7 @@ namespace Valkur.Tests.EditMode.EditorTools.Buildings
     /// rather than trusted.</para>
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.ShippedData)]
     public class ShippedTreeTrunkDataTests
     {
         private static Dictionary<string, Rect> Boxes()

@@ -6,6 +6,7 @@ using UnityEngine.TestTools;
 using Valkur.Core.Coordinates;
 using Valkur.Data;
 using Valkur.Gameplay.World.Worlds;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.Worlds
 {
@@ -39,11 +40,6 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Worlds
             if (_portalGo != null) Object.DestroyImmediate(_portalGo);
             LogAssert.ignoreFailingMessages = false;
         }
-
-        private static void SetField(object obj, string name, object value)
-            => obj.GetType()
-                  .GetField(name, BindingFlags.NonPublic | BindingFlags.Instance)
-                  .SetValue(obj, value);
 
         private static WorldDescriptor MakeDescriptor(string slug, Vector2Int defaultSpawn)
         {
@@ -85,8 +81,8 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Worlds
             var d = MakeDescriptor("alt", new Vector2Int(10, 10));
             try
             {
-                SetField(_portal, "destinationWorld",   d);
-                SetField(_portal, "spawnTileOverride", new Vector2Int(50, 50));
+                TestReflection.SetField(_portal, "destinationWorld",   d);
+                TestReflection.SetField(_portal, "spawnTileOverride", new Vector2Int(50, 50));
                 Assert.AreEqual(new Vector2Int(50, 50), _portal.ResolveSpawnTile(),
                     "Inspector override must take priority over descriptor default.");
             }
@@ -99,8 +95,8 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Worlds
             var d = MakeDescriptor("alt", new Vector2Int(123, 456));
             try
             {
-                SetField(_portal, "destinationWorld",   d);
-                SetField(_portal, "spawnTileOverride", Vector2Int.zero);
+                TestReflection.SetField(_portal, "destinationWorld",   d);
+                TestReflection.SetField(_portal, "spawnTileOverride", Vector2Int.zero);
                 Assert.AreEqual(new Vector2Int(123, 456), _portal.ResolveSpawnTile());
             }
             finally { Cleanup(d); }
@@ -112,8 +108,8 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Worlds
             var d = MakeDescriptor("alt", new Vector2Int(50, 50));
             try
             {
-                SetField(_portal, "destinationWorld",  d);
-                SetField(_portal, "activationDelay",   0f);
+                TestReflection.SetField(_portal, "destinationWorld",  d);
+                TestReflection.SetField(_portal, "activationDelay",   0f);
                 var mgr = new WorldManager();
 
                 Drive(_portal.ActivateForTest(mgr));
@@ -135,7 +131,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Worlds
             LogAssert.Expect(LogType.Error,
                 new System.Text.RegularExpressions.Regex("destinationWorld is not set"));
 
-            SetField(_portal, "activationDelay", 0f);
+            TestReflection.SetField(_portal, "activationDelay", 0f);
             var mgr = new WorldManager();
             Assert.DoesNotThrow(() => Drive(_portal.ActivateForTest(mgr)));
             Assert.IsNull(mgr.Active,

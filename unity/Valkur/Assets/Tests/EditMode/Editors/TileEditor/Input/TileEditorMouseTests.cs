@@ -5,6 +5,7 @@ using UnityEngine.TestTools;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
 using System.Collections;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.Input
 {
@@ -288,6 +289,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Input
             }, "Input handler should work independently of camera");
         }
 
+        [Category(TestCategories.Slow)]
         [UnityTest]
         public IEnumerator InputHandler_MultipleFrames_StabilityTest()
         {

@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using Valkur.Data;
 using Valkur.UI.HUD;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.Player
 {
@@ -25,6 +26,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Player
     /// back to the folder when the type lookup comes up empty.</para>
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.ShippedData)]
     public class ShippedSkillTreeDataTests
     {
         private const string TreeFolder = "Assets/_Project/Data/Progression/SkillTrees";

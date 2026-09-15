@@ -10,6 +10,7 @@ using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.WorldDrops;
 using Valkur.Gameplay.Items;
 using Valkur.Infrastructure.Persistence.Repositories;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ItemsEditor
 {
@@ -25,6 +26,7 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
     /// consistent with their conventions.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Slow)]
     public class ItemsRuntimeEditorPersistenceTests
     {
         private readonly List<GameObject> _scene = new List<GameObject>();
@@ -94,19 +96,6 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
         private static void SetField(object obj, string name, object value)
             => Field(obj, name)?.SetValue(obj, value);
 
-        private static void Invoke(object obj, string method, params object[] args)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var m = t.GetMethod(method, BindingFlags.NonPublic | BindingFlags.Public |
-                                            BindingFlags.Instance);
-                if (m != null) { m.Invoke(obj, args); return; }
-                t = t.BaseType;
-            }
-            Assert.Fail($"Method '{method}' not found on {obj.GetType().Name}");
-        }
-
         private ItemDefinition AddItemToCatalog(string id, string displayName, float despawnTime = 0f)
         {
             var def = ScriptableObject.CreateInstance<ItemDefinition>();
@@ -126,8 +115,8 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             var go = new GameObject("TestItemsEditor");
             _scene.Add(go);
             var ed = go.AddComponent<ItemsRuntimeEditor>();
-            Invoke(ed, "OnSingletonAwake");
-            Invoke(ed, "Start");
+            TestReflection.Invoke(ed, "OnSingletonAwake");
+            TestReflection.Invoke(ed, "Start");
             ed.Activate();
             return ed;
         }
@@ -135,8 +124,8 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
         private void InjectCatalog(ItemsRuntimeEditor ed, params ItemDefinition[] items)
         {
             SetField(ed, "_allItems", items);
-            Invoke(ed, "ApplyFilter");
-            Invoke(ed, "RefreshPicker");
+            TestReflection.Invoke(ed, "ApplyFilter");
+            TestReflection.Invoke(ed, "RefreshPicker");
         }
 
         // ── Tests ─────────────────────────────────────────────────────────────
@@ -147,9 +136,9 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             var ed = CreateActiveEditor();
             var sword = AddItemToCatalog("sword", "Iron Sword", despawnTime: 0f);
             InjectCatalog(ed, sword);
-            Invoke(ed, "SelectItem", "sword");
+            TestReflection.Invoke(ed, "SelectItem", "sword");
 
-            Invoke(ed, "SpawnAt", new Vector3(5f, 7f, 0f));
+            TestReflection.Invoke(ed, "SpawnAt", new Vector3(5f, 7f, 0f));
 
             Assert.AreEqual(1, _service.Count, "Service must hold the drop after SpawnAt.");
             string raw = _repo.ReadRawJson(WorldId.Base);
@@ -165,9 +154,9 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             var ed = CreateActiveEditor();
             var potion = AddItemToCatalog("potion", "Healing Potion", despawnTime: 30f);
             InjectCatalog(ed, potion);
-            Invoke(ed, "SelectItem", "potion");
+            TestReflection.Invoke(ed, "SelectItem", "potion");
 
-            Invoke(ed, "SpawnAt", new Vector3(0f, 0f, 0f));
+            TestReflection.Invoke(ed, "SpawnAt", new Vector3(0f, 0f, 0f));
 
             ItemDropInstance only = null;
             foreach (var d in _service.All) { only = d; break; }
@@ -183,9 +172,9 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             var ed = CreateActiveEditor();
             var torch = AddItemToCatalog("torch", "Torch", despawnTime: 0f);
             InjectCatalog(ed, torch);
-            Invoke(ed, "SelectItem", "torch");
+            TestReflection.Invoke(ed, "SelectItem", "torch");
 
-            Invoke(ed, "SpawnAt", new Vector3(2f, 2f, 0f));
+            TestReflection.Invoke(ed, "SpawnAt", new Vector3(2f, 2f, 0f));
 
             ItemDropInstance only = null;
             foreach (var d in _service.All) { only = d; break; }
@@ -199,8 +188,8 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             var ed = CreateActiveEditor();
             var coin = AddItemToCatalog("gold", "Gold");
             InjectCatalog(ed, coin);
-            Invoke(ed, "SelectItem", "gold");
-            Invoke(ed, "SpawnAt", new Vector3(1f, 1f, 0f));
+            TestReflection.Invoke(ed, "SelectItem", "gold");
+            TestReflection.Invoke(ed, "SpawnAt", new Vector3(1f, 1f, 0f));
 
             // Pull the live pickup the service spawned.
             ItemDropInstance only = null;
@@ -209,7 +198,7 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             var live = _service.GetLivePickup(only.dropId);
             Assert.IsNotNull(live);
 
-            Invoke(ed, "DeletePickup", live);
+            TestReflection.Invoke(ed, "DeletePickup", live);
 
             Assert.AreEqual(0, _service.Count, "Service cache must be empty after DeletePickup.");
             // Re-loading from the repo must agree.
@@ -231,8 +220,8 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             var torch = AddItemToCatalog("torch", "Torch");
             var coin  = AddItemToCatalog("coin",  "Coin");
             InjectCatalog(ed, torch, coin);
-            Invoke(ed, "SelectItem", "torch");
-            Invoke(ed, "SpawnAt", new Vector3(1f, 1f, 0f));
+            TestReflection.Invoke(ed, "SelectItem", "torch");
+            TestReflection.Invoke(ed, "SpawnAt", new Vector3(1f, 1f, 0f));
 
             // Grab the spawned pickup and route through SetActiveInstance, the
             // same path a world click would take.
@@ -244,7 +233,7 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
                 "Sanity: clicking the world drop must select it.");
 
             // Now select a different catalog entry — the world instance must clear.
-            Invoke(ed, "SelectItem", "coin");
+            TestReflection.Invoke(ed, "SelectItem", "coin");
             Assert.IsNull(Field(ed, "_selectedInstance").GetValue(ed),
                 "Picking from the catalog grid must clear the previously selected world instance.");
         }

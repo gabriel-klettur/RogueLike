@@ -7,6 +7,7 @@ using UnityEngine.TestTools;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.VFX;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 {
@@ -55,19 +56,6 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
         private static void SetFieldValue(object obj, string name, object value)
             => FindField(obj, name)?.SetValue(obj, value);
 
-        private static void InvokeMethod(object obj, string methodName, params object[] args)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(methodName,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                t = t.BaseType;
-            }
-            m?.Invoke(obj, args);
-        }
-
         /// <summary>
         /// Creates a minimal catalog with two presets (no VFX params required for lifecycle tests).
         /// </summary>
@@ -96,7 +84,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var editor = go.AddComponent<ParticlesRuntimeEditor>();
 
             // Force OnSingletonAwake so the toggle action is initialized.
-            InvokeMethod(editor, "OnSingletonAwake");
+            TestReflection.Invoke(editor, "OnSingletonAwake");
 
             // Assign a minimal catalog via reflection so RefreshPicker doesn't complain.
             var catalog = MakeCatalog("preset_a", "preset_b");
@@ -109,7 +97,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             StubPreviewService(editor);
 
             if (withUI)
-                InvokeMethod(editor, "Start");
+                TestReflection.Invoke(editor, "Start");
 
             return editor;
         }
@@ -253,10 +241,10 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             LogAssert.ignoreFailingMessages = true;
             var editor = CreateEditor(withUI: true);
 
-            InvokeMethod(editor, "ToggleActive");
+            TestReflection.Invoke(editor, "ToggleActive");
             Assert.IsTrue(editor.IsActive, "First toggle must activate.");
 
-            InvokeMethod(editor, "ToggleActive");
+            TestReflection.Invoke(editor, "ToggleActive");
             Assert.IsFalse(editor.IsActive, "Second toggle must deactivate.");
         }
 
@@ -300,9 +288,9 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var tut = (GameObject) GetFieldValue(editor, "_tutorialRoot");
 
             Assert.IsFalse(tut.activeSelf, "Tutorial starts hidden.");
-            InvokeMethod(editor, "ToggleTutorial");
+            TestReflection.Invoke(editor, "ToggleTutorial");
             Assert.IsTrue(tut.activeSelf, "First toggle must show tutorial.");
-            InvokeMethod(editor, "ToggleTutorial");
+            TestReflection.Invoke(editor, "ToggleTutorial");
             Assert.IsFalse(tut.activeSelf, "Second toggle must hide tutorial.");
         }
     }

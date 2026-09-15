@@ -4,6 +4,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Data.Crafting
 {
@@ -22,6 +23,7 @@ namespace Valkur.Tests.EditMode.Data.Crafting
     /// the JOIN between them could be wrong.</para>
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.ShippedData)]
     public class ShippedCraftingDataTests
     {
         private const string CATALOG_PATH = "Assets/_Project/Resources/Crafting/RecipeCatalog.asset";

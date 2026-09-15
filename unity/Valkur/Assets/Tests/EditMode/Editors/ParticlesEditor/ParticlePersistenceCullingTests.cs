@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.VFX;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 {
@@ -37,32 +38,6 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             }
         }
 
-        private static void Invoke(object obj, string method, params object[] args)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(method,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                t = t.BaseType;
-            }
-            m?.Invoke(obj, args);
-        }
-
-        private static void SetVal(object obj, string name, object value)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var f = t.GetField(name,
-                    BindingFlags.NonPublic | BindingFlags.Public |
-                    BindingFlags.Instance | BindingFlags.Static);
-                if (f != null) { f.SetValue(obj, value); return; }
-                t = t.BaseType;
-            }
-        }
-
         // ── Setup / Teardown ──────────────────────────────────────────────────────
 
         [SetUp]
@@ -74,12 +49,12 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var go = new GameObject("CullingTestEditor");
             _created.Add(go);
             _editor = go.AddComponent<ParticlesRuntimeEditor>();
-            Invoke(_editor, "OnSingletonAwake");
+            TestReflection.Invoke(_editor, "OnSingletonAwake");
 
             var catalog = ScriptableObject.CreateInstance<ParticlePresetCatalog>();
-            SetVal(_editor, "_catalog", catalog);
+            TestReflection.SetField(_editor, "_catalog", catalog);
             _editor.SetInstanceStore(new InMemoryParticleInstanceStore());
-            Invoke(_editor, "Start");
+            TestReflection.Invoke(_editor, "Start");
         }
 
         [TearDown]
@@ -125,7 +100,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             CreatePersistedEmitter("smoke_ring",   new Vector3(2f, 2f), active: false);
             CreatePersistedEmitter("water_splash", new Vector3(3f, 3f), active: false);
 
-            Invoke(_editor, "SaveInstancesToJson");
+            TestReflection.Invoke(_editor, "SaveInstancesToJson");
 
             // Retrieve saved JSON from in-memory store.
             var store = (InMemoryParticleInstanceStore)
@@ -159,7 +134,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             previewGo.AddComponent<PersistedParticleInstance>().Initialize("fire_aura", 1f);
             _created.Add(previewGo);
 
-            Invoke(_editor, "SaveInstancesToJson");
+            TestReflection.Invoke(_editor, "SaveInstancesToJson");
 
             var store = (InMemoryParticleInstanceStore)
                 _editor.GetType()

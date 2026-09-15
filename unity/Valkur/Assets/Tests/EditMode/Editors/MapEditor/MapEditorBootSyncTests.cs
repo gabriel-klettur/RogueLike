@@ -7,6 +7,7 @@ using UnityEngine.TestTools;
 using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.World;
 using Valkur.Infrastructure.Persistence.Repositories;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.MapEditor
 {
@@ -143,9 +144,9 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
 
             _mgrGo = new GameObject("BootSyncMgr");
             _mgr = _mgrGo.AddComponent<MapEditorManager>();
-            SetField(_mgr, "zoneManager", _zones);
-            SetField(_mgr, "worldGridBuilder", _grid);
-            InvokePrivate(_mgr, "EnsureCoreInitialized");
+            TestReflection.SetField(_mgr, "zoneManager", _zones);
+            TestReflection.SetField(_mgr, "worldGridBuilder", _grid);
+            TestReflection.Invoke(_mgr, "EnsureCoreInitialized");
             // Use an in-memory zones repository so PersistZonesToDisk doesn't
             // touch the user's working copy on disk during the test.
             _mgr.SetZonesRepository(new InMemoryMapEditorZonesRepository());
@@ -218,7 +219,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
 
             // Force-set the boot flag and call the mirror directly with a
             // synthetic JSON. Verify the slot file did NOT appear.
-            SetField(_mgr, "_isBootSyncInProgress", true);
+            TestReflection.SetField(_mgr, "_isBootSyncInProgress", true);
             InvokePrivateWith(_mgr, "MirrorWorkingCopyToActiveSlot",
                 "{\"schemaVersion\":\"1.2\",\"zones\":[]}");
 
@@ -240,7 +241,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             Assert.AreEqual(CUSTOM_SLOT_NAME, activeSlot, "Sanity: active slot reads the marker.");
 
             // Flag is OFF — mirror should run.
-            SetField(_mgr, "_isBootSyncInProgress", false);
+            TestReflection.SetField(_mgr, "_isBootSyncInProgress", false);
             InvokePrivateWith(_mgr, "MirrorWorkingCopyToActiveSlot",
                 "{\"schemaVersion\":\"1.2\",\"zones\":[]}");
 
@@ -264,13 +265,13 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
 
             CreateManager();
             // Flag is OFF here — call must abort with a LogError.
-            SetField(_mgr, "_isBootSyncInProgress", false);
+            TestReflection.SetField(_mgr, "_isBootSyncInProgress", false);
 
             // Capture the expected error so the test doesn't fail on
             // "unhandled error log".
             LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex(
                 "BootSyncWithActiveSlotIfNeeded called outside the boot window"));
-            InvokePrivate(_mgr, "BootSyncWithActiveSlotIfNeeded");
+            TestReflection.Invoke(_mgr, "BootSyncWithActiveSlotIfNeeded");
 
             // Sanity: zones should NOT have been replaced because we aborted.
             // ZoneManager started empty (CreateManager doesn't seed) so it
@@ -298,9 +299,9 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             // wipe the seeded zone with a DB-backed snapshot).
             _zones.AddZone("seeded_zone", new Vector2Int(0, 0), editableInTileEditor: true);
 
-            SetField(_mgr, "_isBootSyncInProgress", true);
-            try { InvokePrivate(_mgr, "BootSyncWithActiveSlotIfNeeded"); }
-            finally { SetField(_mgr, "_isBootSyncInProgress", false); }
+            TestReflection.SetField(_mgr, "_isBootSyncInProgress", true);
+            try { TestReflection.Invoke(_mgr, "BootSyncWithActiveSlotIfNeeded"); }
+            finally { TestReflection.SetField(_mgr, "_isBootSyncInProgress", false); }
 
             Assert.IsTrue(_zones.TryGetZone("seeded_zone", out _),
                 "Default slot path must skip boot-sync — running it would wipe " +
@@ -322,9 +323,9 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             // Seed a "default-DB-style" zone so we can prove it gets replaced.
             _zones.AddZone("db_zone_should_be_replaced", new Vector2Int(0, 0), editableInTileEditor: true);
 
-            SetField(_mgr, "_isBootSyncInProgress", true);
-            try { InvokePrivate(_mgr, "BootSyncWithActiveSlotIfNeeded"); }
-            finally { SetField(_mgr, "_isBootSyncInProgress", false); }
+            TestReflection.SetField(_mgr, "_isBootSyncInProgress", true);
+            try { TestReflection.Invoke(_mgr, "BootSyncWithActiveSlotIfNeeded"); }
+            finally { TestReflection.SetField(_mgr, "_isBootSyncInProgress", false); }
 
             Assert.IsTrue(_zones.TryGetZone("custom_zone_a", out _),
                 "Boot sync must apply zones from the slot file.");
@@ -351,14 +352,14 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             CreateManager();
             _zones.AddZone("seeded", new Vector2Int(0, 0), editableInTileEditor: true);
 
-            SetField(_mgr, "_isBootSyncInProgress", true);
+            TestReflection.SetField(_mgr, "_isBootSyncInProgress", true);
             try
             {
-                Assert.DoesNotThrow(() => InvokePrivate(_mgr, "BootSyncWithActiveSlotIfNeeded"),
+                Assert.DoesNotThrow(() => TestReflection.Invoke(_mgr, "BootSyncWithActiveSlotIfNeeded"),
                     "Missing slot file must not crash boot-sync — the user can " +
                     "always re-pick a slot via F11 if their data is gone.");
             }
-            finally { SetField(_mgr, "_isBootSyncInProgress", false); }
+            finally { TestReflection.SetField(_mgr, "_isBootSyncInProgress", false); }
 
             Assert.IsFalse(File.Exists(_customSlotPath),
                 "Boot sync must not silently create the missing slot file — that " +
@@ -370,30 +371,6 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         }
 
         // ── Reflection helpers ────────────────────────────────────────────────
-
-        private static void SetField(object obj, string name, object value)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var f = t.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                if (f != null) { f.SetValue(obj, value); return; }
-                t = t.BaseType;
-            }
-            Assert.Fail($"Field '{name}' not found on {obj.GetType().Name}.");
-        }
-
-        private static void InvokePrivate(object obj, string name)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var m = t.GetMethod(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                if (m != null) { m.Invoke(obj, null); return; }
-                t = t.BaseType;
-            }
-            Assert.Fail($"Method '{name}' not found on {obj.GetType().Name}.");
-        }
 
         private static void InvokePrivateWith(object obj, string name, params object[] args)
         {

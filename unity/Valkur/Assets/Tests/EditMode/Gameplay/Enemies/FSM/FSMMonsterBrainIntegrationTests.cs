@@ -7,6 +7,7 @@ using Valkur.Data;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Enemies.FSM;
 using Valkur.Gameplay.FSM;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.Enemies.FSM
 {
@@ -21,6 +22,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Enemies.FSM
     /// actually calls the factory and reuses its <see cref="StateMachine"/>.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Integration)]
     public class FSMMonsterBrainIntegrationTests
     {
         private readonly List<GameObject> _scene = new List<GameObject>();

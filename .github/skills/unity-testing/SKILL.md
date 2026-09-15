@@ -1,134 +1,188 @@
 ---
 name: unity-testing
-description: "Manage Unity tests for the Valkur project. Use when: creating new test files, fixing failing tests, reorganizing test folders, enforcing namespace conventions, diagnosing EditMode NRE/TMP issues, running the test suite via MCP, auditing test coverage, or deciding which folder/namespace a new test belongs to. Covers EditMode and PlayMode, NUnit patterns, MCP test workflow, folder→namespace mapping, and all known EditMode gotchas."
+description: "Manage Unity tests for the Valkur project. Use when: creating new test files, fixing failing tests, reorganizing test folders, deciding which folder/namespace/assembly a new test belongs to, adding categories, running the test suite via MCP, auditing coverage, or diagnosing EditMode NRE/TMP issues. Covers the layered test layout (one assembly per root), TestLayoutConventionTests, TestCategories, TestReflection, the ratchets, TestRunRecorder, the MCP workflow and all known EditMode gotchas."
 argument-hint: "Describe the test task: new tests, fix failures, reorganize, audit coverage, etc."
 ---
 
 # Unity Testing — Valkur Project
 
-## Folder → Namespace Map (canonical)
+The layout is **enforced by a test**, not by this page: `TestLayoutConventionTests`
+(`Assets/Tests/EditMode/Project/Code/`) fails on every rule below with a message saying what to
+do. Read its failure before editing anything else. Reorganised 2026-09-15 from a 109-folder tree
+with a meaningless `Game/` level; the audit that motivated it is the artifact
+"El árbol de tests de Valkur".
 
-The Test Runner hierarchy is driven **entirely by C# namespace**, not by folder.
-**Rule**: namespace = `Valkur.Tests.` + path segments below `Tests/` joined with `.`
+## Where a test goes
 
-| Folder (relative to `Assets/Tests/`) | Namespace |
-|---------------------------------------|-----------|
-| `EditMode/Editors/Buildings/` | `Valkur.Tests.EditMode.Editors.Buildings` |
-| `EditMode/Editors/Entities/` | `Valkur.Tests.EditMode.Editors.Entities` |
-| `EditMode/Editors/Inventory/` | `Valkur.Tests.EditMode.Editors.Inventory` |
-| `EditMode/Editors/Items/` | `Valkur.Tests.EditMode.Editors.Items` |
-| `EditMode/Editors/MapEditor/` | `Valkur.Tests.EditMode.Editors.MapEditor` |
-| `EditMode/Editors/Modal/` | `Valkur.Tests.EditMode.Editors.Modal` |
-| `EditMode/Editors/TileEditor/Brush/` | `Valkur.Tests.EditMode.Editors.TileEditor.Brush` |
-| `EditMode/Editors/TileEditor/Catalog/` | `Valkur.Tests.EditMode.Editors.TileEditor.Catalog` |
-| `EditMode/Editors/TileEditor/Diagnostics/` | `Valkur.Tests.EditMode.Editors.TileEditor.Diagnostics` |
-| `EditMode/Editors/TileEditor/Input/` | `Valkur.Tests.EditMode.Editors.TileEditor.Input` |
-| `EditMode/Editors/TileEditor/Overlay/` | `Valkur.Tests.EditMode.Editors.TileEditor.Overlay` |
-| `EditMode/Editors/TileEditor/State/` | `Valkur.Tests.EditMode.Editors.TileEditor.State` |
-| `EditMode/Editors/TileEditor/UI/` | `Valkur.Tests.EditMode.Editors.TileEditor.UI` |
-| `EditMode/Editors/TileEditor/Undo/` | `Valkur.Tests.EditMode.Editors.TileEditor.Undo` |
-| `EditMode/Game/AI/` | `Valkur.Tests.EditMode.Game.AI` |
-| `EditMode/Game/Audio/` | `Valkur.Tests.EditMode.Game.Audio` |
-| `EditMode/Game/Bootstrap/` | `Valkur.Tests.EditMode.Game.Bootstrap` |
-| `EditMode/Game/Combat/` | `Valkur.Tests.EditMode.Game.Combat` |
-| `EditMode/Game/Data/` | `Valkur.Tests.EditMode.Game.Data` |
-| `EditMode/Game/Input/` | `Valkur.Tests.EditMode.Game.Input` |
-| `EditMode/Game/Meta/` | `Valkur.Tests.EditMode.Game.Meta` |
-| `EditMode/Game/Player/` | `Valkur.Tests.EditMode.Game.Player` |
-| `EditMode/Game/UI/` | `Valkur.Tests.EditMode.Game.UI` |
-| `EditMode/Game/VFX/` | `Valkur.Tests.EditMode.Game.VFX` |
-| `EditMode/Game/World/` | `Valkur.Tests.EditMode.Game.World` |
-| `PlayMode/Core/` | `Valkur.Tests.PlayMode.Core` |
-| `PlayMode/Data/` | `Valkur.Tests.PlayMode.Data` |
-| `PlayMode/Gameplay/` | `Valkur.Tests.PlayMode.Gameplay` |
-| `PlayMode/Input/` | `Valkur.Tests.PlayMode.Input` |
-| `PlayMode/UI/` | `Valkur.Tests.PlayMode.UI` |
-| `PlayMode/World/` | `Valkur.Tests.PlayMode.World` |
+```text
+Assets/Tests/<Mode>/<Root>/<Feature>/<Subject>Tests.cs      namespace = path
+                                                            Valkur.Tests.<Mode>.<Root>.<Feature...>
+```
 
-> **No-go folders.** Do **not** create `EditMode/Gameplay/` (only `PlayMode/Gameplay/` exists) or
-> `EditMode/Game/Core/` — TileEditor tests live under `Editors/TileEditor/<sub>/`, and
-> Input / EventSystem / hotkey tests under `Game/Input/`.
+### 1. Root = the highest production layer the test needs
 
-### Where to place a new test
+Each EditMode root is its own assembly (`Valkur.Tests.EditMode.<Root>`) and references ONLY the
+production layers listed, so a test in the wrong root does not compile. That is deliberate: the
+compiler is what keeps the placement honest.
 
-| System | Folder | Namespace |
-|--------|--------|-----------|
-| BuildingsEditor, ColliderBrush | `Editors/Buildings/` | `…Editors.Buildings` |
-| EntitiesRuntimeEditor | `Editors/Entities/` | `…Editors.Entities` |
-| InventoryRuntimeEditor | `Editors/Inventory/` | `…Editors.Inventory` |
-| ItemsRuntimeEditor | `Editors/Items/` | `…Editors.Items` |
-| MapEditor, EditorUIHelpers | `Editors/MapEditor/` | `…Editors.MapEditor` |
-| EditorModal | `Editors/Modal/` | `…Editors.Modal` |
-| TileEditor brush/paint | `Editors/TileEditor/Brush/` | `…TileEditor.Brush` |
-| TileEditor catalog/registry | `Editors/TileEditor/Catalog/` | `…TileEditor.Catalog` |
-| TileEditor diagnostics (TileEditorDiagnostics logger) | `Editors/TileEditor/Diagnostics/` | `…TileEditor.Diagnostics` |
-| TileEditor input handler (mouse, zoom, hotkeys, input diagnose) | `Editors/TileEditor/Input/` | `…TileEditor.Input` |
-| TileEditor overlay/persistence | `Editors/TileEditor/Overlay/` | `…TileEditor.Overlay` |
-| TileEditor state, init, camera, integration | `Editors/TileEditor/State/` | `…TileEditor.State` |
-| TileEditor UI (PanelChrome, Theme…) | `Editors/TileEditor/UI/` | `…TileEditor.UI` |
-| TileEditor undo/redo | `Editors/TileEditor/Undo/` | `…TileEditor.Undo` |
-| Monster/NPC AI, FSM | `Game/AI/` | `…Game.AI` |
-| MusicBeat, BossBeat, audio clocks | `Game/Audio/` | `…Game.Audio` |
-| Bootstrap, ServiceLocator, FKeys | `Game/Bootstrap/` | `…Game.Bootstrap` |
-| Combat, spells, hitboxes, VFX rings | `Game/Combat/` | `…Game.Combat` |
-| Save/load, settings, data migration | `Game/Data/` | `…Game.Data` |
-| InputService, MouseInputManager, EventSystem, hotkey bindings | `Game/Input/` | `…Game.Input` |
-| Source-tree regression / brace-balance / meta tests | `Game/Meta/` | `…Game.Meta` |
-| Player (health, energy, inventory) | `Game/Player/` | `…Game.Player` |
-| Menus, HUD, TabStrip | `Game/UI/` | `…Game.UI` |
-| VFX, timed despawn | `Game/VFX/` | `…Game.VFX` |
-| World, buildings, dungeon, zones | `Game/World/` | `…Game.World` |
-| Core systems (ServiceLocator, Pool) | `PlayMode/Core/` | `…PlayMode.Core` |
-| Data/catalog runtime | `PlayMode/Data/` | `…PlayMode.Data` |
-| Combat/minimap runtime | `PlayMode/Gameplay/` | `…PlayMode.Gameplay` |
-| Editor-hotkey dispatch (PlayMode) | `PlayMode/Input/` | `…PlayMode.Input` |
-| Runtime mouse / menu input UI | `PlayMode/UI/` | `…PlayMode.UI` |
-| Collision/physics/tiles runtime | `PlayMode/World/` | `…PlayMode.World` |
+| Root | Sees | Put here |
+|---|---|---|
+| `Core` | Core | Input helpers, services, boot plumbing, coordinates, market cycle |
+| `Data` | Core, Data | ScriptableObject definitions, catalogues, chunk/biome data, save DTOs |
+| `Infrastructure` | Core, Data, Infrastructure | Repositories, profile DB, migrations |
+| `UIKit` | Core, Data, UIKit | Reusable UI widgets (`Gameplay/UIKit`) |
+| `Gameplay` | the four above + Gameplay | Runtime systems: combat, spells, player, world, save, chat… |
+| `UI` | everything runtime | HUD, menus, loading screen (`Scripts/UI`) |
+| `Editors` | everything | The in-game runtime editors (`Gameplay/Editors/<Name>`) |
+| `EditorTools` | everything | `Valkur.Editor`: importers, bakers, menu tools |
+| `Project` | everything | Rules about the whole project — `Code/` (source guards), `Assets/` (asset conventions), `Baselines/` |
 
-## Enforce Namespaces Script
+A data test that has to spin up a `ProjectileExecutor` is a Gameplay test: put it in
+`Gameplay/Spells/`, not `Data/Spells/`. PlayMode uses the same roots in one assembly
+(`Valkur.Tests.PlayMode`); there are few PlayMode tests and each needs Play Mode anyway.
 
-Run [`scripts/enforce-namespaces.ps1`](./scripts/enforce-namespaces.ps1) from the workspace root
-to scan all test `.cs` files and auto-correct any mismatched namespace declarations.
+### 2. Feature = the production folder the test is about
+
+Strip the assembly prefix from the production folder and mirror it:
+`Scripts/Gameplay/Combat/Death/DeathSequenceController.cs` → `EditMode/Gameplay/Combat/Death/`.
+`Scripts/Data/Spells/SpellDefinition.cs` + Gameplay needed → `EditMode/Gameplay/Spells/`.
+Files at an assembly's root (`Core/ServiceLocator.cs`) → the test root itself (`EditMode/Core/`).
+
+- **One aspect folder is allowed below a real feature folder** when a folder would get too big to
+  scan: `Editors/TileEditor/{Brush,Catalog,History,Input,Overlay,Picker,Select,Session,ToolModes,UI}`,
+  `Gameplay/Player/{Animations,Locomotion}`.
+- **Editors are `Editors/<Name>Editor/`** for `Scripts/Gameplay/Editors/<Name>/` (`TileEditor`,
+  `MapEditor`, `CameraEditor`…); shared editor infrastructure is `Editors/_Shared/`.
+
+### 3. A folder may never share a name with a type
+
+A folder is a namespace segment, and a namespace segment **hides every type of the same name**
+for all the tests in the sibling namespaces: a folder `World/Camera` turns every `Camera` in
+`World/*` tests into `CS0118 'Camera' is a namespace but is used like a type`. The reorganisation
+hit this on its first compile. Use the alias:
+
+| Production feature | Test folder | Hides |
+|---|---|---|
+| `Combat/Resources` | `Combat/Vitals` | `UnityEngine.Resources` |
+| `Combat/Collision` | `Combat/Hitboxes` | `UnityEngine.Collision` |
+| `Inventory` | `InventorySystem` | Valkur's `Inventory` |
+| `World/Camera` | `World/CameraRig` | `UnityEngine.Camera` |
+| `HUD/Debug` | `HUD/DebugHud` | `UnityEngine.Debug` |
+| `Editors/DungeonNodeGraph` | `Editors/NodeGraphEditor` | class `DungeonNodeGraphEditor` |
+| `Editors/TimeWeather` | `Editors/TimeAndWeatherEditor` | class `TimeWeatherEditor` |
+| (tile editor aspects) | `Session`, `ToolModes`, `History` | `State`, `UnityEditor.Tools`, `UnityEditor.Undo` |
+
+A new collision is added to the `Aliases` / `ReservedSegments` tables in
+`TestLayoutConventionTests`, with the type it avoids.
+
+### 4. Files and fixtures
+
+- `<Subject>Tests.cs`, one top-level type per file named like the file. A long fixture is split
+  into partials `<Subject>Tests.<Aspect>.cs` (SetUp/TearDown/helpers stay in the main file) —
+  **no file over 1000 lines**. Non-test helpers get their own file (`WorldBarTestHelper.cs`).
+- No two fixtures share a simple name anywhere in the suite.
+- Test names: `Subject_Scenario_Outcome`, two or three PascalCase parts
+  (`TakeDamage_WhenInvincible_LeavesHpUnchanged`). Existing names that break this are a ratchet
+  (below): rename when you are changing the test anyway, never in bulk — a test's name is the key
+  of every filter, history entry and note that mentions it.
+- Shared cross-root helpers go in `Assets/Tests/Support/` (`Valkur.Tests.Support`, referenced by
+  every test assembly). Keep it free of Gameplay types so every root can use it.
+
+## Categories
+
+Use `[Category(TestCategories.X)]` — string literals are refused by the convention test.
+
+| Constant | Meaning | Applied |
+|---|---|---|
+| `Guard` | whole-project rule (source scan, asset convention) | every fixture under `Project/` |
+| `ShippedData` | reads data the game ships | every `Shipped*Tests` + the old `DataIntegrity` tests |
+| `Integration` | several systems composed | fixtures named `*Integration*` / `*EndToEnd*` |
+| `Slow` | measured: test ≥ 0.5 s or fixture ≥ 2 s on the reference run | from `TestRunRecorder` output |
+
+```text
+mcp_unity_run_tests(mode="EditMode", category_names=["Guard"])     # only the guards
+Unity -runTests -testPlatform EditMode -testCategory "!Slow"       # quick loop without the slow ones
+```
+
+## Reflection: `TestReflection`, never a private helper
+
+`Valkur.Tests.Support.TestReflection` — `GetField/GetField<T>/SetField`, `GetStaticField`,
+`GetProperty<T>/SetProperty`, `Invoke/Invoke<T>/InvokeStatic`, `InvokeUnwrapped`, `FindField`,
+`FindMethod`. Lookups walk base types, instance + static, public + non-public; a missing member
+throws `MissingMemberException` naming type and member (not an NRE later). Exceptions from
+`Invoke` are NOT unwrapped (same as `MethodInfo.Invoke`); use `InvokeUnwrapped` to assert on the
+method's own exception. Prefer `internal` + `InternalsVisibleTo` (granted to every test assembly
+that can see the production assembly) over reflection when you own the production code.
+
+## Ratchets and baselines (`EditMode/Project/Baselines/`)
+
+A ratchet is a per-file count that may fall and may never rise. When one fails, the live counts
+for every file are written to `Library/ValkurTestResults/<baseline>.proposed.txt`.
+
+| Baseline | Counts | Owner |
+|---|---|---|
+| `test-method-names.txt` | test names that are not `Subject_Scenario_Outcome` | `TestLayoutConventionTests` |
+| `reflection-helpers.txt` | private reflection helpers not yet moved to `TestReflection` | `TestLayoutConventionTests` |
+| `editor-raw-colors.txt` | raw `new Color(` in the runtime editors | `EditorRawColorRatchetTests` |
+| `unreset-statics.txt` | static mutable fields without a reset hook | `DomainReloadStaticResetTests` |
+
+## Measuring: `TestRunRecorder`
+
+`Valkur.Editor.Testing.TestRunRecorder` writes every run (Test Runner window, MCP or CLI) to
+`unity/Valkur/Library/ValkurTestResults/last-<Mode>.tsv` plus a timestamped copy:
+`result<TAB>seconds<TAB>fullName`, headed by the pass/fail/skip counts. It answers "which tests
+are slow" and "was this already red before my change" without bisecting through the MCP bridge,
+which cannot carry per-test detail for nine thousand tests. A filtered run writes a partial file.
+
+## Namespace script
 
 ```powershell
-# From workspace root (d:\Python\RogueLike):
-.\\.github\\skills\\unity-testing\\scripts\\enforce-namespaces.ps1
+# From the workspace root (d:\Python\RogueLike):
+.\.github\skills\unity-testing\scripts\enforce-namespaces.ps1        # report
+.\.github\skills\unity-testing\scripts\enforce-namespaces.ps1 -Fix   # rewrite mismatches
 ```
+
+It fixes the namespace only; placement is the convention test's job.
 
 ---
 
 ## Running Tests via MCP
 
-```
-# Full EditMode suite
+```text
+# Full EditMode suite (~9 400 tests, ~3.5 min)
 mcp_unity_run_tests(mode="EditMode", include_failed_tests=true)
 
-# Specific tests by name
-mcp_unity_run_tests(mode="EditMode", test_names=["Valkur.Tests.EditMode.Editors.MapEditor.MapEditorTests.ApplyMenuBtnStyle_OpenState_HighlightsButton"])
+# One root, feature or fixture: group_names takes a regex over full names
+mcp_unity_run_tests(mode="EditMode", group_names=["^Valkur\\.Tests\\.EditMode\\.Gameplay\\.Combat\\."])
+
+# One assembly
+mcp_unity_run_tests(mode="EditMode", assembly_names=["Valkur.Tests.EditMode.Editors"])
 
 # Poll until done
-job = mcp_unity_get_test_job(job_id=...)
-# Loop until job.status == "succeeded" or "failed"
+mcp_unity_get_test_job(job_id=..., wait_timeout=60)
 ```
 
-Always check `failures_so_far` on each poll to detect failures early.
-After running, verify `summary.failed == 0` before declaring success.
+A bare namespace prefix in `test_names` does not start a run (the job times out initialising);
+use `group_names` with an anchored regex. Always check `failures_so_far` on each poll and
+`summary.failed == 0` before declaring success.
 
 ---
 
 ## Writing New Tests — Template
 
 ```csharp
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
-// Add using for the system under test
+using Valkur.Tests.Support;
+// + the using for the system under test
 
-namespace Valkur.Tests.EditMode.Game.Combat   // ← match folder per map above
+namespace Valkur.Tests.EditMode.Gameplay.Combat.Death   // = the folder
 {
-    public class MySystemTests
+    [TestFixture]
+    public class DeathSequenceControllerTests
     {
-        // For tests that create GameObjects, track them for cleanup
-        private readonly List<GameObject> _sceneObjects = new();
+        private readonly List<GameObject> _sceneObjects = new List<GameObject>();
 
         [TearDown]
         public void TearDown()
@@ -139,7 +193,7 @@ namespace Valkur.Tests.EditMode.Game.Combat   // ← match folder per map above
         }
 
         [Test]
-        public void FeatureName_Condition_ExpectedResult()
+        public void Revive_AtAnAltar_RestoresFullHealth()
         {
             // Arrange
             // Act
@@ -169,7 +223,7 @@ tmp.fontStyle = FontStyles.Bold;   // NRE!
 ```csharp
 LogAssert.ignoreFailingMessages = true;
 var ui = CreateInitializedUI();  // full MonoBehaviour setup
-var refs = (UIRefs)GetFieldValue(ui, "_refs");
+var refs = TestReflection.GetField<UIRefs>(ui, "_refs");
 // refs.SomeTmp is already valid — Unity lifecycle ran on it
 refs.SomeTmp.fontStyle = FontStyles.Bold;  // safe
 ```
@@ -223,18 +277,14 @@ configuration (path, type) via property inspection rather than simulation.
 
 ---
 
-## Class Name Rules
-
-- One `public class` per file, name matches filename exactly.
-- If two test files in the same folder would produce the same class name, rename the
-  less-specific one (e.g. `TileBrushTests` → `TileBrushExhaustiveTests` if an
-  exhaustive variant exists in the same namespace).
-
----
-
-## Audit Checklist — Running After Reorganization
+## Audit Checklist — after moving or adding tests
 
 1. `enforce-namespaces.ps1` reports 0 mismatches
-2. `mcp_unity_refresh_unity(mode="force", scope="all")` → 0 compile errors
-3. `mcp_unity_run_tests(mode="EditMode")` → `summary.failed == 0`
-4. Test Runner tree shows expected hierarchy (namespace depth matches folder depth)
+2. `mcp_unity_refresh_unity(mode="force", scope="all", compile="request")` → 0 compile errors, and
+   every `Library/ScriptAssemblies/Valkur.Tests.*.dll` newer than the files you touched (one red
+   assembly freezes the domain and the console can look clean)
+3. `mcp_unity_run_tests(mode="EditMode", category_names=["Guard"])` → `TestLayoutConventionTests` green
+4. `mcp_unity_run_tests(mode="EditMode")` → `summary.failed == 0`; compare against
+   `Library/ValkurTestResults/last-EditMode.tsv` from before the change
+5. A fixture that goes red only in the full run and green alone is order-dependent: something that
+   now runs BEFORE it leaks scene objects or statics. Find the leak; do not reorder the tests

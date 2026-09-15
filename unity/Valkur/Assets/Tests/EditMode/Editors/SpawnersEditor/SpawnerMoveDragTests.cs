@@ -6,6 +6,7 @@ using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.Spawners;
 using Valkur.UIKit;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
 {
@@ -47,12 +48,6 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             }
             return null;
         }
-
-        private static T GetFieldValue<T>(object obj, string name)
-            => (T)GetField(obj, name)?.GetValue(obj);
-
-        private static void SetFieldValue(object obj, string name, object value)
-            => GetField(obj, name)?.SetValue(obj, value);
 
         private static void ClearSingletonInstance<T>() where T : MonoBehaviour
         {
@@ -96,7 +91,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             _mgr = go.AddComponent<SpawnerEditorManager>();
 
             // Force-active without going through BuildUI — we test logic, not chrome.
-            SetFieldValue(_mgr, "_active", true);
+            TestReflection.SetField(_mgr, "_active", true);
         }
 
         [TearDown]
@@ -121,7 +116,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             var hit = _mgr.BeginMoveDrag(Vector3.zero);
 
             Assert.IsNull(hit, "Empty world position must not arm a drag.");
-            Assert.IsFalse(GetFieldValue<bool>(_mgr, "_dragging"),
+            Assert.IsFalse(TestReflection.GetField<bool>(_mgr, "_dragging"),
                 "_dragging must remain false when no spawner is hit.");
         }
 
@@ -133,9 +128,9 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             var hit = _mgr.BeginMoveDrag(new Vector3(0.0f, 0f, 0f));
 
             Assert.AreEqual(si, hit, "BeginMoveDrag must return the spawner under the cursor.");
-            Assert.IsTrue(GetFieldValue<bool>(_mgr, "_dragging"),
+            Assert.IsTrue(TestReflection.GetField<bool>(_mgr, "_dragging"),
                 "_dragging must be set so HandleMapInteraction follows the cursor.");
-            Assert.AreEqual(si, GetFieldValue<SpawnerInstance>(_mgr, "_selectedInstance"),
+            Assert.AreEqual(si, TestReflection.GetField<SpawnerInstance>(_mgr, "_selectedInstance"),
                 "Dragging must auto-select the instance — Buildings / Entities parity.");
         }
 
@@ -148,7 +143,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
 
             _mgr.BeginMoveDrag(clickPos);
 
-            Vector3 offset = GetFieldValue<Vector3>(_mgr, "_dragOffset");
+            Vector3 offset = TestReflection.GetField<Vector3>(_mgr, "_dragOffset");
             Assert.AreEqual(0.5f, offset.x, 0.0001f, "Drag offset X must equal spawner.x - cursor.x.");
             Assert.AreEqual(0f,   offset.y, 0.0001f, "Drag offset Y must be zero on a horizontal click.");
         }
@@ -160,7 +155,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
 
             _mgr.BeginMoveDrag(new Vector3(7f, 9f, 0f));
 
-            Vector3 start = GetFieldValue<Vector3>(_mgr, "_dragStartWorldPos");
+            Vector3 start = TestReflection.GetField<Vector3>(_mgr, "_dragStartWorldPos");
             Assert.AreEqual(7f, start.x, 0.0001f, "_dragStartWorldPos must capture spawner.x at drag start.");
             Assert.AreEqual(9f, start.y, 0.0001f, "_dragStartWorldPos must capture spawner.y at drag start.");
         }
@@ -192,7 +187,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
 
             Assert.AreEqual(undoBefore, undoAfter,
                 "A drag with zero movement must NOT pollute the undo stack.");
-            Assert.IsFalse(GetFieldValue<bool>(_mgr, "_dragging"),
+            Assert.IsFalse(TestReflection.GetField<bool>(_mgr, "_dragging"),
                 "FinalizeMoveDrag must clear the _dragging flag even on no-op drops.");
         }
 
@@ -211,7 +206,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
 
             Assert.AreEqual(undoBefore + 1, undoAfter,
                 "FinalizeMoveDrag with movement must push exactly one entry onto the undo stack.");
-            Assert.IsFalse(GetFieldValue<bool>(_mgr, "_dragging"),
+            Assert.IsFalse(TestReflection.GetField<bool>(_mgr, "_dragging"),
                 "FinalizeMoveDrag must clear the _dragging flag on commit.");
         }
 
@@ -225,7 +220,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             _mgr.FinalizeMoveDrag();
 
             // Push the recorded command back out.
-            var undo = GetFieldValue<UndoStack>(_mgr, "_undo");
+            var undo = TestReflection.GetField<UndoStack>(_mgr, "_undo");
             Assert.IsNotNull(undo, "Test fixture must locate the editor's UndoStack.");
             Assert.IsTrue(undo.Undo(), "Undo must succeed when there is a recorded move.");
 
@@ -242,7 +237,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             si.transform.position = dropPos;
             _mgr.FinalizeMoveDrag();
 
-            var undo = GetFieldValue<UndoStack>(_mgr, "_undo");
+            var undo = TestReflection.GetField<UndoStack>(_mgr, "_undo");
             undo.Undo();
             Assert.IsTrue(undo.Redo(), "Redo must succeed after a successful undo.");
 
@@ -262,7 +257,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
 
         private static int GetUndoCount(SpawnerEditorManager mgr)
         {
-            var stack = GetFieldValue<UndoStack>(mgr, "_undo");
+            var stack = TestReflection.GetField<UndoStack>(mgr, "_undo");
             return stack != null ? stack.UndoCount : -1;
         }
     }

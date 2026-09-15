@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Data.Progression
 {
@@ -16,6 +17,7 @@ namespace Valkur.Tests.EditMode.Data.Progression
     /// the properties that make the content REACHABLE.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.ShippedData)]
     public class ShippedProgressionContentTests
     {
         private ProgressionCatalog _catalog;

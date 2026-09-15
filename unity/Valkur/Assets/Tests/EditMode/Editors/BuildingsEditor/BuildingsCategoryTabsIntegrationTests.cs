@@ -8,6 +8,7 @@ using Valkur.Data;
 using Valkur.Gameplay.Buildings;
 using Valkur.UIKit;
 using Cat = Valkur.Gameplay.Buildings.BuildingCategory.Category;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.BuildingsEditor
 {
@@ -20,6 +21,7 @@ namespace Valkur.Tests.EditMode.Editors.BuildingsEditor
     /// instead of replacing it.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Integration)]
     public class BuildingsCategoryTabsIntegrationTests
     {
         private GameObject _canvasGo;

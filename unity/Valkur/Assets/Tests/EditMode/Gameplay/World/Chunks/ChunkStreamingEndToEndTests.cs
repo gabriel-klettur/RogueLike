@@ -4,6 +4,7 @@ using UnityEngine.Tilemaps;
 using Valkur.Core.Coordinates;
 using Valkur.Data.Chunks;
 using Valkur.Gameplay.World.Chunks;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.Chunks
 {
@@ -20,6 +21,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Chunks
     /// render).
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Integration)]
     public class ChunkStreamingEndToEndTests
     {
         private const int ChunkSize  = 4;

@@ -7,6 +7,7 @@ using UnityEngine.TestTools;
 using Valkur.Core.Input;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Chat;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.Chat
 {
@@ -64,37 +65,16 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
             return null;
         }
 
-        private static void SetField(object obj, string name, object value)
-        {
-            var f = GetField(obj.GetType(), name);
-            Assert.IsTrue(f != null, "Field '" + name + "' must exist on " + obj.GetType().Name + ".");
-            f.SetValue(obj, value);
-        }
-
-        private static object GetFieldValue(object obj, string name)
-        {
-            var f = GetField(obj.GetType(), name);
-            Assert.IsTrue(f != null, "Field '" + name + "' must exist on " + obj.GetType().Name + ".");
-            return f.GetValue(obj);
-        }
-
-        private static void InvokeMethod(object obj, string name)
-        {
-            var m = obj.GetType().GetMethod(name, InstanceBinding);
-            Assert.IsTrue(m != null, "Method '" + name + "' must exist on " + obj.GetType().Name + ".");
-            m.Invoke(obj, null);
-        }
-
         /// <summary>Number of handlers currently attached to a field-like event.</summary>
         private static int SubscriberCount(object target, string eventFieldName)
         {
-            var d = GetFieldValue(target, eventFieldName) as Delegate;
+            var d = TestReflection.GetField(target, eventFieldName) as Delegate;
             return d == null ? 0 : d.GetInvocationList().Length;
         }
 
         private static void RaiseEvent(object target, string eventFieldName)
         {
-            var handler = GetFieldValue(target, eventFieldName) as Action;
+            var handler = TestReflection.GetField(target, eventFieldName) as Action;
             if (handler != null) handler.Invoke();
         }
 
@@ -142,25 +122,25 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
 
         private static void OpenChat(ChatSystem chat)
         {
-            SetField(chat, "_chatOpen", true);
+            TestReflection.SetField(chat, "_chatOpen", true);
             RaiseEvent(chat, "OnChatOpened");
         }
 
         private static void CloseChat(ChatSystem chat)
         {
-            SetField(chat, "_chatOpen", false);
+            TestReflection.SetField(chat, "_chatOpen", false);
             RaiseEvent(chat, "OnChatClosed");
         }
 
         private static void OpenConsole(DevConsole console)
         {
-            SetField(console, "_open", true);
+            TestReflection.SetField(console, "_open", true);
             RaiseEvent(console, "OnOpened");
         }
 
         private static void CloseConsole(DevConsole console)
         {
-            SetField(console, "_open", false);
+            TestReflection.SetField(console, "_open", false);
             RaiseEvent(console, "OnClosed");
         }
 
@@ -248,7 +228,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
             _scene.Add(gateGo);
             var gate = gateGo.AddComponent<ChatInputGate>();
 
-            if (bind) InvokeMethod(gate, "BindSingletons");
+            if (bind) TestReflection.Invoke(gate, "BindSingletons");
             return gate;
         }
 
@@ -276,12 +256,12 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
             // The gate AutoBoots AfterSceneLoad and only binds a frame later, so a
             // chat panel can legitimately already be open by the time it subscribes.
             var chat = CreateChat();
-            SetField(chat, "_chatOpen", true);
+            TestReflection.SetField(chat, "_chatOpen", true);
 
             var gateGo = new GameObject("[ChatInputGate_LateBoot]");
             _scene.Add(gateGo);
             var gate = gateGo.AddComponent<ChatInputGate>();
-            InvokeMethod(gate, "BindSingletons");
+            TestReflection.Invoke(gate, "BindSingletons");
 
             Assert.IsTrue(InputBlocker.IsGameplayBlocked,
                 "BindSingletons must adopt a chat panel that was already open — " +
@@ -296,12 +276,12 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
             // which is the same press that opens it. The gate can therefore only ever
             // learn about that first open through this bind-time sync.
             var console = CreateConsole();
-            SetField(console, "_open", true);
+            TestReflection.SetField(console, "_open", true);
 
             var gateGo = new GameObject("[ChatInputGate_LateBootConsole]");
             _scene.Add(gateGo);
             var gate = gateGo.AddComponent<ChatInputGate>();
-            InvokeMethod(gate, "BindSingletons");
+            TestReflection.Invoke(gate, "BindSingletons");
 
             Assert.IsTrue(InputBlocker.IsGameplayBlocked,
                 "BindSingletons must adopt a dev console that was already open, or " +
@@ -334,7 +314,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
             Assert.AreEqual(1, SubscriberCount(_chat, "OnChatOpened"),
                 "A single bind must attach exactly one OnChatOpened handler.");
 
-            for (int i = 0; i < 5; i++) InvokeMethod(gate, "Update");
+            for (int i = 0; i < 5; i++) TestReflection.Invoke(gate, "Update");
 
             Assert.AreEqual(1, SubscriberCount(_chat, "OnChatOpened"),
                 "Five Update ticks with a missing DevConsole must not re-subscribe " +
@@ -462,7 +442,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
             Assert.IsTrue(InputBlocker.IsGameplayBlocked,
                 "Pre-condition: an open chat blocks input.");
 
-            InvokeMethod(gate, "OnDisable");
+            TestReflection.Invoke(gate, "OnDisable");
 
             Assert.AreEqual(0, SubscriberCount(_chat, "OnChatOpened"),
                 "OnDisable must detach the chat handlers, otherwise a destroyed gate " +
@@ -486,11 +466,11 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
             // Mirrors the gate object being disabled and re-enabled (scene reload,
             // hot reload): the second bind has to work, and work only once.
             var gate = BuildGate();
-            InvokeMethod(gate, "OnDisable");
+            TestReflection.Invoke(gate, "OnDisable");
             Assert.AreEqual(0, SubscriberCount(_chat, "OnChatOpened"),
                 "Pre-condition: OnDisable left no chat subscribers.");
 
-            InvokeMethod(gate, "BindSingletons");
+            TestReflection.Invoke(gate, "BindSingletons");
 
             Assert.AreEqual(1, SubscriberCount(_chat, "OnChatOpened"),
                 "Re-binding after OnDisable must reattach exactly one handler — " +
@@ -507,8 +487,8 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
             var gate = BuildGate();
             OpenChat(_chat);
 
-            InvokeMethod(gate, "OnDisable");
-            Assert.DoesNotThrow(() => InvokeMethod(gate, "OnDisable"),
+            TestReflection.Invoke(gate, "OnDisable");
+            Assert.DoesNotThrow(() => TestReflection.Invoke(gate, "OnDisable"),
                 "A second OnDisable (disable immediately followed by destroy) must " +
                 "not throw on the already-nulled bound references.");
 
@@ -525,18 +505,18 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
         {
             // Gate booted with no DevConsole in the scene at all.
             var gate = BuildGate(withChat: true, withConsole: false, bind: true);
-            Assert.IsTrue(GetFieldValue(gate, "_boundConsole") as DevConsole == null,
+            Assert.IsTrue(TestReflection.GetField(gate, "_boundConsole") as DevConsole == null,
                 "Pre-condition: no console bound yet.");
 
             // The console materialises on the first '~' press — already open by the
             // time the gate's next Update runs, and its OnOpened already fired into
             // the void.
             var console = CreateConsole();
-            SetField(console, "_open", true);
+            TestReflection.SetField(console, "_open", true);
 
-            InvokeMethod(gate, "Update");
+            TestReflection.Invoke(gate, "Update");
 
-            Assert.IsFalse(GetFieldValue(gate, "_boundConsole") as DevConsole == null,
+            Assert.IsFalse(TestReflection.GetField(gate, "_boundConsole") as DevConsole == null,
                 "Update must late-bind a DevConsole that spawned after the gate.");
             Assert.IsTrue(InputBlocker.IsGameplayBlocked,
                 "Late binding must also adopt the console's already-open state — " +
@@ -554,7 +534,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
             var gate = gateGo.AddComponent<ChatInputGate>();
 
             InputBlocker.SetBlocked(true);
-            InvokeMethod(gate, "Update");
+            TestReflection.Invoke(gate, "Update");
 
             Assert.IsFalse(InputBlocker.IsGameplayBlocked,
                 "An orphaned gate with neither chat nor console must drive the " +
@@ -592,7 +572,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
             Assume.That(svc.Gameplay.Map.enabled, Is.False,
                 "Pre-condition: the gameplay map is disabled while chat is open.");
 
-            InvokeMethod(gate, "OnDisable");
+            TestReflection.Invoke(gate, "OnDisable");
 
             Assert.IsTrue(svc.Gameplay.Map.enabled,
                 "Disabling the gate while a panel is open must restore the Gameplay " +

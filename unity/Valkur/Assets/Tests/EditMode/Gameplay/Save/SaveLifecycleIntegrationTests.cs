@@ -6,6 +6,7 @@ using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Save;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.Save
 {
@@ -22,6 +23,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Save
     /// stomping on real player saves.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Integration)]
     public class SaveLifecycleIntegrationTests
     {
         private const string TestPrefix = "_test_lifecycle_";

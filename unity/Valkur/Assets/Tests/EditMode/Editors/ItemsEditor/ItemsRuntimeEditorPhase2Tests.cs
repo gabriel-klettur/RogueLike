@@ -10,6 +10,7 @@ using Valkur.Gameplay.Editors;
 using Valkur.UIKit;
 using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.Items;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ItemsEditor
 {
@@ -24,6 +25,7 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
     /// require the editor's API to be public.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Slow)]
     public class ItemsRuntimeEditorPhase2Tests
     {
         private readonly List<GameObject> _scene = new List<GameObject>();
@@ -68,19 +70,6 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
         private static object GetField(object obj, string name) => Field(obj, name)?.GetValue(obj);
         private static void   SetField(object obj, string name, object value) => Field(obj, name)?.SetValue(obj, value);
 
-        private static void Invoke(object obj, string method, params object[] args)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var m = t.GetMethod(method, BindingFlags.NonPublic | BindingFlags.Public |
-                                            BindingFlags.Instance);
-                if (m != null) { m.Invoke(obj, args); return; }
-                t = t.BaseType;
-            }
-            Assert.Fail($"Method '{method}' not found on {obj.GetType().Name}");
-        }
-
         private ItemsRuntimeEditor CreateActiveEditor()
         {
             LogAssert.ignoreFailingMessages = true;
@@ -88,8 +77,8 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             var go = new GameObject("TestItemsEditor");
             _scene.Add(go);
             var ed = go.AddComponent<ItemsRuntimeEditor>();
-            Invoke(ed, "OnSingletonAwake");
-            Invoke(ed, "Start");
+            TestReflection.Invoke(ed, "OnSingletonAwake");
+            TestReflection.Invoke(ed, "Start");
             ed.Activate();
             return ed;
         }
@@ -112,7 +101,7 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
         private void InjectCatalog(ItemsRuntimeEditor ed, params ItemDefinition[] items)
         {
             SetField(ed, "_allItems", items);
-            Invoke(ed, "RefreshPicker");
+            TestReflection.Invoke(ed, "RefreshPicker");
         }
 
         // ── Tests ──────────────────────────────────────────────────────────────────
@@ -143,17 +132,17 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             InjectCatalog(ed, sword, apple, key);
 
             // Filter by partial name
-            Invoke(ed, "OnSearchChanged", "iron");
+            TestReflection.Invoke(ed, "OnSearchChanged", "iron");
             var refs = GetField(ed, "_uiRefs");
             var picker = (RectTransform)Field(refs, "PickerContent").GetValue(refs);
             Assert.AreEqual(1, picker.childCount, "Filter 'iron' must match only the Iron Sword.");
 
             // Filter by id substring
-            Invoke(ed, "OnSearchChanged", "key");
+            TestReflection.Invoke(ed, "OnSearchChanged", "key");
             Assert.AreEqual(1, picker.childCount, "Filter 'key' must match key_a.");
 
             // Empty filter restores everything
-            Invoke(ed, "OnSearchChanged", "");
+            TestReflection.Invoke(ed, "OnSearchChanged", "");
             Assert.AreEqual(3, picker.childCount, "Empty filter must show all items.");
         }
 
@@ -166,7 +155,7 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             sword.damage = 12;
             InjectCatalog(ed, sword);
 
-            Invoke(ed, "SelectItem", "sword");
+            TestReflection.Invoke(ed, "SelectItem", "sword");
 
             var refs = GetField(ed, "_uiRefs");
             var propsTmp = (TextMeshProUGUI)Field(refs, "PropsText").GetValue(refs);
@@ -190,11 +179,11 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             var sword = CreateItem("sword", "Iron Sword");
             sword.icon = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 1, 1), Vector2.zero);
             InjectCatalog(ed, sword);
-            Invoke(ed, "SelectItem", "sword");
+            TestReflection.Invoke(ed, "SelectItem", "sword");
 
             int beforeCount = Object.FindObjectsOfType<WorldPickup>().Length;
 
-            Invoke(ed, "SpawnAt", new Vector3(3f, 4f, 0f));
+            TestReflection.Invoke(ed, "SpawnAt", new Vector3(3f, 4f, 0f));
 
             var pickups = Object.FindObjectsOfType<WorldPickup>();
             Assert.AreEqual(beforeCount + 1, pickups.Length, "One WorldPickup must be created.");
@@ -219,7 +208,7 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             InjectCatalog(ed); // empty catalog, no selection
             int beforeCount = Object.FindObjectsOfType<WorldPickup>().Length;
 
-            Invoke(ed, "SpawnAt", new Vector3(0f, 0f, 0f));
+            TestReflection.Invoke(ed, "SpawnAt", new Vector3(0f, 0f, 0f));
 
             int afterCount = Object.FindObjectsOfType<WorldPickup>().Length;
             Assert.AreEqual(beforeCount, afterCount,
@@ -233,13 +222,13 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             var sword = CreateItem("sword", "Iron Sword");
             sword.icon = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 1, 1), Vector2.zero);
             InjectCatalog(ed, sword);
-            Invoke(ed, "SelectItem", "sword");
+            TestReflection.Invoke(ed, "SelectItem", "sword");
 
             int before = Object.FindObjectsOfType<WorldPickup>().Length;
-            Invoke(ed, "SpawnAt", new Vector3(1f, 1f, 0f));
+            TestReflection.Invoke(ed, "SpawnAt", new Vector3(1f, 1f, 0f));
             Assert.AreEqual(before + 1, Object.FindObjectsOfType<WorldPickup>().Length);
 
-            Invoke(ed, "DoUndo");
+            TestReflection.Invoke(ed, "DoUndo");
 
             // The undo callback calls Destroy() which is deferred to end-of-frame in
             // EditMode → call DestroyImmediate on remaining test pickups by name.
@@ -266,11 +255,11 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             var modeSelect = System.Enum.Parse(enumType, "Select");
             var modeSpawn  = System.Enum.Parse(enumType, "Spawn");
 
-            Invoke(ed, "SetMode", modeSelect);
+            TestReflection.Invoke(ed, "SetMode", modeSelect);
             Assert.AreEqual(EditorUIHelpers.BTN_ACTIVE, selectImg.color,
                 "Select button must be highlighted in Select mode.");
 
-            Invoke(ed, "SetMode", modeSpawn);
+            TestReflection.Invoke(ed, "SetMode", modeSpawn);
             Assert.AreEqual(EditorUIHelpers.BTN_ACTIVE, spawnImg.color,
                 "Spawn button must be highlighted in Spawn mode.");
             Assert.AreNotEqual(EditorUIHelpers.BTN_ACTIVE, selectImg.color,

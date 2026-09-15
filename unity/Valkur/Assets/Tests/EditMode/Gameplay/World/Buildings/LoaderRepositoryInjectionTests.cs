@@ -4,6 +4,7 @@ using UnityEngine;
 using Valkur.Gameplay.Spawners;
 using Valkur.Gameplay.World;
 using Valkur.Infrastructure.Persistence.Repositories;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 {
@@ -25,14 +26,6 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
     {
         private static GameObject MakeGo(string name) => new GameObject(name);
 
-        private static T GetPrivateField<T>(object obj, string name)
-        {
-            var fi = obj.GetType().GetField(name,
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.IsNotNull(fi, $"Field '{name}' not found on {obj.GetType().Name}.");
-            return (T)fi.GetValue(obj);
-        }
-
         // ── BuildingLoader ───────────────────────────────────────────────────────
 
         [Test]
@@ -46,7 +39,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 
                 loader.SetRepository(repo);
 
-                Assert.AreSame(repo, GetPrivateField<IBuildingInstanceRepository>(loader, "_repository"),
+                Assert.AreSame(repo, TestReflection.GetField<IBuildingInstanceRepository>(loader, "_repository"),
                     "SetRepository must store the injected handle so subsequent " +
                     "LoadBuildings calls bypass the JSON-file backend.");
             }
@@ -66,7 +59,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 
                 loader.SetRepository(repo);
 
-                Assert.AreSame(repo, GetPrivateField<ILightInstanceRepository>(loader, "_repository"));
+                Assert.AreSame(repo, TestReflection.GetField<ILightInstanceRepository>(loader, "_repository"));
             }
             finally { Object.DestroyImmediate(go); }
         }
@@ -84,7 +77,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 
                 loader.SetRepository(repo);
 
-                Assert.AreSame(repo, GetPrivateField<ISpawnerInstanceRepository>(loader, "_repository"));
+                Assert.AreSame(repo, TestReflection.GetField<ISpawnerInstanceRepository>(loader, "_repository"));
             }
             finally { Object.DestroyImmediate(go); }
         }
@@ -102,7 +95,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 
                 loader.SetRepository(repo);
 
-                Assert.AreSame(repo, GetPrivateField<IZoneDatabaseRepository>(loader, "_repository"));
+                Assert.AreSame(repo, TestReflection.GetField<IZoneDatabaseRepository>(loader, "_repository"));
             }
             finally { Object.DestroyImmediate(go); }
         }

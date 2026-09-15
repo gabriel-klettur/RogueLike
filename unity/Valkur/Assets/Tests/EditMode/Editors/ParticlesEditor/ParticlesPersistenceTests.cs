@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.VFX;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 {
@@ -58,19 +59,6 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 
         private static void SetVal(object obj, string name, object value)
             => FindField(obj, name)?.SetValue(obj, value);
-
-        private static void Invoke(object obj, string method, params object[] args)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(method,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                t = t.BaseType;
-            }
-            m?.Invoke(obj, args);
-        }
 
         // ── Setup / Teardown ─────────────────────────────────────────────────────
 
@@ -241,7 +229,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var go = new GameObject("PersistenceTestEditor");
             _sceneObjects.Add(go);
             var editor = go.AddComponent<ParticlesRuntimeEditor>();
-            Invoke(editor, "OnSingletonAwake");
+            TestReflection.Invoke(editor, "OnSingletonAwake");
 
             var catalog = ScriptableObject.CreateInstance<ParticlePresetCatalog>();
             var preset  = ScriptableObject.CreateInstance<ParticlePresetDefinition>();
@@ -253,7 +241,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var store = new InMemoryParticleInstanceStore();
             editor.SetInstanceStore(store);
 
-            Invoke(editor, "Start");
+            TestReflection.Invoke(editor, "Start");
             return editor;
         }
 
@@ -267,10 +255,10 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var go = new GameObject("PersistenceFileSyntaxEditor");
             _sceneObjects.Add(go);
             var editor = go.AddComponent<ParticlesRuntimeEditor>();
-            Invoke(editor, "OnSingletonAwake");
+            TestReflection.Invoke(editor, "OnSingletonAwake");
             var catalog = ScriptableObject.CreateInstance<ParticlePresetCatalog>();
             SetVal(editor, "_catalog", catalog);
-            Invoke(editor, "Start");
+            TestReflection.Invoke(editor, "Start");
 
             // Start from an empty on-disk state. The anti-wipe guard refuses to write an
             // empty scene over a populated file, which is the whole point of it — and the
@@ -280,7 +268,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             File.WriteAllText(_jsonPath, "{\"version\":2,\"instances\":[]}");
 
             // No particle emitters in scene → save should write empty v2 object.
-            Invoke(editor, "SaveInstancesToJson");
+            TestReflection.Invoke(editor, "SaveInstancesToJson");
 
             Assert.IsTrue(File.Exists(_jsonPath),
                 $"SaveInstancesToJson must create {_jsonPath}.");
@@ -298,7 +286,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
         {
             var editor = CreateEditor();
 
-            Invoke(editor, "SaveInstancesToJson");
+            TestReflection.Invoke(editor, "SaveInstancesToJson");
 
             var store = (InMemoryParticleInstanceStore)FindField(editor, "_instanceStore")?.GetValue(editor);
             Assert.IsNotNull(store, "InMemoryStore must be injected.");
@@ -321,7 +309,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             {
                 // Directory already exists — just verify SaveInstancesToJson completes without error.
                 var editor = CreateEditor();
-                Assert.DoesNotThrow(() => Invoke(editor, "SaveInstancesToJson"),
+                Assert.DoesNotThrow(() => TestReflection.Invoke(editor, "SaveInstancesToJson"),
                     "SaveInstancesToJson must not throw when the directory already exists.");
                 return;
             }
@@ -331,12 +319,12 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var go = new GameObject("PersistNoDirEditor");
             _sceneObjects.Add(go);
             var editorNew = go.AddComponent<ParticlesRuntimeEditor>();
-            Invoke(editorNew, "OnSingletonAwake");
+            TestReflection.Invoke(editorNew, "OnSingletonAwake");
             var catalog = ScriptableObject.CreateInstance<ParticlePresetCatalog>();
             SetVal(editorNew, "_catalog", catalog);
-            Invoke(editorNew, "Start");
+            TestReflection.Invoke(editorNew, "Start");
 
-            Invoke(editorNew, "SaveInstancesToJson");
+            TestReflection.Invoke(editorNew, "SaveInstancesToJson");
 
             Assert.IsTrue(Directory.Exists(dir),
                 "SaveInstancesToJson must create the Particles directory if it is missing.");
@@ -351,12 +339,12 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var go = new GameObject("PersistNoCatalogEditor");
             _sceneObjects.Add(go);
             var editor = go.AddComponent<ParticlesRuntimeEditor>();
-            Invoke(editor, "OnSingletonAwake");
+            TestReflection.Invoke(editor, "OnSingletonAwake");
             SetVal(editor, "_catalog", null);
             editor.SetInstanceStore(new InMemoryParticleInstanceStore());
-            Invoke(editor, "Start");
+            TestReflection.Invoke(editor, "Start");
 
-            Assert.DoesNotThrow(() => Invoke(editor, "SaveInstancesToJson"),
+            Assert.DoesNotThrow(() => TestReflection.Invoke(editor, "SaveInstancesToJson"),
                 "SaveInstancesToJson must not throw when catalog is null — instance list is just empty.");
         }
 
@@ -387,7 +375,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             editor.SetInstanceStore(store);
 
             LogAssert.ignoreFailingMessages = true;
-            Invoke(editor, "SaveInstancesToJson");
+            TestReflection.Invoke(editor, "SaveInstancesToJson");
 
             Assert.AreEqual(existing, store.CurrentJson,
                 "An empty scene must NOT overwrite a populated file — that is the 221-record wipe.");
@@ -408,7 +396,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             editor.SetInstanceStore(store);
 
             LogAssert.ignoreFailingMessages = true;
-            Invoke(editor, "ExecuteDeletionEdit", "Delete last particle",
+            TestReflection.Invoke(editor, "ExecuteDeletionEdit", "Delete last particle",
                    (System.Action)(() => { }), (System.Action)(() => { }));
 
             Assert.IsTrue(store.CurrentJson.Contains("\"instances\":[]"),
@@ -441,7 +429,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 
             LogAssert.ignoreFailingMessages = true;
             // Scene holds nothing; 0 of 40 is far below the ratio.
-            Invoke(editor, "SaveInstancesToJson");
+            TestReflection.Invoke(editor, "SaveInstancesToJson");
 
             Assert.AreEqual(existing, store.CurrentJson,
                 "A save keeping far fewer instances than the file holds must be refused.");
@@ -465,7 +453,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             editor.SetInstanceStore(store);
 
             LogAssert.ignoreFailingMessages = true;
-            Invoke(editor, "ExecuteDeletionEdit", "Delete them",
+            TestReflection.Invoke(editor, "ExecuteDeletionEdit", "Delete them",
                    (System.Action)(() => { }), (System.Action)(() => { }));
 
             Assert.IsTrue(store.CurrentJson.Contains("\"instances\":[]"),
@@ -486,7 +474,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             LogAssert.ignoreFailingMessages = true;
 
             // Deletion consumes the exemption and writes empty.
-            Invoke(editor, "ExecuteDeletionEdit", "Delete last particle",
+            TestReflection.Invoke(editor, "ExecuteDeletionEdit", "Delete last particle",
                    (System.Action)(() => { }), (System.Action)(() => { }));
 
             // Refill the file behind the editor's back, then save from the same empty scene.
@@ -495,7 +483,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
                 "{\"id\":\"c\",\"preset_id\":\"flowers_pollen_soft\",\"zone\":\"Forest\",\"rel_x\":1,\"rel_y\":2}]}";
             store.Save(refilled);
 
-            Invoke(editor, "SaveInstancesToJson");
+            TestReflection.Invoke(editor, "SaveInstancesToJson");
 
             Assert.AreEqual(refilled, store.CurrentJson,
                 "The empty-write exemption must not survive past the save that consumed it.");

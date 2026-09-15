@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.CameraRig
 {
@@ -147,6 +148,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.CameraRig
                 "singleton base's hook is not enough for the static boss set.");
         }
 
+        [Category(TestCategories.Slow)]
         [Test]
         public void TheOldCameraShakeIsGone()
         {

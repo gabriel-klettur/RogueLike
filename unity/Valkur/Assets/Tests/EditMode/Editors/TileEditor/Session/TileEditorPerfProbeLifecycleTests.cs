@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.TestTools;
 using Valkur.Gameplay.TileEditor;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
 {
@@ -45,13 +46,6 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
         }
 
         // ── Reflection helpers ───────────────────────────────────────────
-
-        private static object InvokePrivate(object target, string methodName)
-        {
-            var mi = target.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
-            Assert.IsNotNull(mi, $"Reflection: '{methodName}' not found on {target.GetType().Name}.");
-            return mi.Invoke(target, null);
-        }
 
         private static object GetPrivateInstance(object target, string name)
         {
@@ -110,7 +104,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
             LogAssert.ignoreFailingMessages = true;
             var manager = NewManager();
 
-            InvokePrivate(manager, "CreatePerfProbe");
+            TestReflection.Invoke(manager, "CreatePerfProbe");
 
             var probeField = typeof(TileEditorManager).GetField("_perfProbe",
                 BindingFlags.NonPublic | BindingFlags.Instance);
@@ -192,7 +186,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
         {
             var probe = NewProbe();
 
-            InvokePrivate(probe, "OnEnable");
+            TestReflection.Invoke(probe, "OnEnable");
 
             foreach (var recorder in GetRecorders(probe))
                 Assert.IsTrue(recorder.enabled, "OnEnable() must enable every Profiler.Recorder.");
@@ -202,9 +196,9 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
         public void OnDisable_DisablesEveryRecorder()
         {
             var probe = NewProbe();
-            InvokePrivate(probe, "OnEnable"); // start from a known enabled state
+            TestReflection.Invoke(probe, "OnEnable"); // start from a known enabled state
 
-            InvokePrivate(probe, "OnDisable");
+            TestReflection.Invoke(probe, "OnDisable");
 
             foreach (var recorder in GetRecorders(probe))
                 Assert.IsFalse(recorder.enabled,
@@ -222,9 +216,9 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
             Assert.IsNotNull(field, "Reflection: _recorders field not found.");
             field.SetValue(probe, null);
 
-            Assert.DoesNotThrow(() => InvokePrivate(probe, "OnEnable"),
+            Assert.DoesNotThrow(() => TestReflection.Invoke(probe, "OnEnable"),
                 "OnEnable must not throw even if _recorders somehow never got initialized.");
-            Assert.DoesNotThrow(() => InvokePrivate(probe, "OnDisable"));
+            Assert.DoesNotThrow(() => TestReflection.Invoke(probe, "OnDisable"));
         }
     }
 }

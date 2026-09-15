@@ -6,6 +6,7 @@ using UnityEngine.TestTools;
 using TMPro;
 using Valkur.Gameplay.TileEditor;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
 {
@@ -154,7 +155,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
             var state   = manager.State;
             bool before = state.ShowGridLines;
 
-            InvokePrivate(manager, "OnShowGridLinesClicked");
+            TestReflection.Invoke(manager, "OnShowGridLinesClicked");
 
             Assert.AreNotEqual(before, state.ShowGridLines,
                 "OnShowGridLinesClicked must flip ShowGridLines once per call.");
@@ -167,8 +168,8 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
             var state   = manager.State;
             bool initial = state.ShowGridLines;
 
-            InvokePrivate(manager, "OnShowGridLinesClicked");
-            InvokePrivate(manager, "OnShowGridLinesClicked");
+            TestReflection.Invoke(manager, "OnShowGridLinesClicked");
+            TestReflection.Invoke(manager, "OnShowGridLinesClicked");
 
             Assert.AreEqual(initial, state.ShowGridLines,
                 "Two clicks must return to the original state (toggle is symmetric).");
@@ -181,7 +182,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
             var state   = manager.State;
             bool before = state.ShowZoneGrid;
 
-            InvokePrivate(manager, "OnShowZoneGridClicked");
+            TestReflection.Invoke(manager, "OnShowZoneGridClicked");
 
             Assert.AreNotEqual(before, state.ShowZoneGrid,
                 "OnShowZoneGridClicked must flip ShowZoneGrid once per call.");
@@ -201,7 +202,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
                 "Pre-check: overlay starts with grid lines visible.");
 
             // First click flips state to false; ApplyViewOverlayVisibility must mirror it.
-            InvokePrivate(manager, "OnShowGridLinesClicked");
+            TestReflection.Invoke(manager, "OnShowGridLinesClicked");
 
             Assert.IsFalse(manager.State.ShowGridLines, "State flipped to false.");
             Assert.IsFalse(GetPrivateBool(overlay, "_showGridLines"),
@@ -219,7 +220,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
             var overlay = AttachOverlay(manager);
 
             bool gridLinesBefore = GetPrivateBool(overlay, "_showGridLines");
-            InvokePrivate(manager, "OnShowZoneGridClicked");
+            TestReflection.Invoke(manager, "OnShowZoneGridClicked");
 
             Assert.AreEqual(gridLinesBefore, GetPrivateBool(overlay, "_showGridLines"),
                 "Zone Grid toggle must not affect the Tiles Grid flag.");
@@ -236,7 +237,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
             // when no Map Editor singleton exists in the test scene.
             var manager = NewManager();
             // _gridOverlay is intentionally NOT attached here.
-            Assert.DoesNotThrow(() => InvokePrivate(manager, "ApplyViewOverlayVisibility"),
+            Assert.DoesNotThrow(() => TestReflection.Invoke(manager, "ApplyViewOverlayVisibility"),
                 "ApplyViewOverlayVisibility must be null-safe on every collaborator.");
         }
 
@@ -261,11 +262,11 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
             AttachOverlay(manager);
 
             bool before = manager.State.ShowTileLayerOverlay;
-            InvokePrivate(manager, "OnShowTileLayerClicked");
+            TestReflection.Invoke(manager, "OnShowTileLayerClicked");
             Assert.AreNotEqual(before, manager.State.ShowTileLayerOverlay,
                 "OnShowTileLayerClicked must flip ShowTileLayerOverlay once per call.");
 
-            InvokePrivate(manager, "OnShowTileLayerClicked");
+            TestReflection.Invoke(manager, "OnShowTileLayerClicked");
             Assert.AreEqual(before, manager.State.ShowTileLayerOverlay,
                 "Second click must return to the original value.");
         }
@@ -282,7 +283,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
             Assert.IsFalse(GetPrivateBool(overlay, "_showTileLayer"),
                 "Pre-check: overlay starts with the tile-layer overlay hidden.");
 
-            InvokePrivate(manager, "OnShowTileLayerClicked");
+            TestReflection.Invoke(manager, "OnShowTileLayerClicked");
 
             Assert.IsTrue(manager.State.ShowTileLayerOverlay, "State flipped to true.");
             Assert.IsTrue(GetPrivateBool(overlay, "_showTileLayer"),
@@ -319,11 +320,11 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
                 var overlay = go.AddComponent<TileEditorGridOverlay>();
                 var arr = new UnityEngine.Tilemaps.Tilemap[9];
                 overlay.SetLayerTilemaps(arr);
-                Assert.AreSame(arr, GetPrivateField<UnityEngine.Tilemaps.Tilemap[]>(overlay, "_layerTilemaps"),
+                Assert.AreSame(arr, TestReflection.GetField<UnityEngine.Tilemaps.Tilemap[]>(overlay, "_layerTilemaps"),
                     "Overlay must store the exact array reference passed in (no copy).");
 
                 overlay.SetLayerTilemaps(null);
-                Assert.IsNull(GetPrivateField<UnityEngine.Tilemaps.Tilemap[]>(overlay, "_layerTilemaps"),
+                Assert.IsNull(TestReflection.GetField<UnityEngine.Tilemaps.Tilemap[]>(overlay, "_layerTilemaps"),
                     "Null reset must clear the reference, not throw.");
             }
             finally { Object.DestroyImmediate(go); }
@@ -498,23 +499,8 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
             return overlay;
         }
 
-        private static void InvokePrivate(object target, string methodName)
-        {
-            var mi = target.GetType().GetMethod(methodName,
-                BindingFlags.Instance | BindingFlags.NonPublic);
-            Assert.IsNotNull(mi, $"Reflection: {methodName} not found on {target.GetType().Name}.");
-            mi.Invoke(target, null);
-        }
-
         private static bool GetPrivateBool(object target, string fieldName)
-            => GetPrivateField<bool>(target, fieldName);
+            => TestReflection.GetField<bool>(target, fieldName);
 
-        private static T GetPrivateField<T>(object target, string fieldName)
-        {
-            var fi = target.GetType().GetField(fieldName,
-                BindingFlags.Instance | BindingFlags.NonPublic);
-            Assert.IsNotNull(fi, $"Reflection: field {fieldName} not found on {target.GetType().Name}.");
-            return (T)fi.GetValue(target);
-        }
     }
 }

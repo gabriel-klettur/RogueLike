@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.MapEditor
 {
@@ -37,7 +38,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
 
             _mgrGo = new GameObject("PortalsMgr");
             _mgr = _mgrGo.AddComponent<MapEditorManager>();
-            SetField(_mgr, "zoneManager", _zones);
+            TestReflection.SetField(_mgr, "zoneManager", _zones);
             // Manager's _state must exist or AddPortal -> PersistZonesToDisk
             // would NRE; the protected helper does that wiring.
             InvokeProtected(_mgr, "EnsureCoreInitialized");
@@ -208,14 +209,6 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         }
 
         // ── Reflection helpers ──────────────────────────────────────────────────
-
-        private static void SetField(object target, string fieldName, object value)
-        {
-            var fi = target.GetType().GetField(fieldName,
-                BindingFlags.Instance | BindingFlags.NonPublic);
-            Assert.IsNotNull(fi, $"Field '{fieldName}' not found on {target.GetType().Name}.");
-            fi.SetValue(target, value);
-        }
 
         private static void InvokeProtected(object target, string methodName)
         {

@@ -4,6 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Gameplay.Spells;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.Spells.Projectiles
 {
@@ -55,14 +56,6 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Projectiles
             return p;
         }
 
-        private static T GetField<T>(object instance, string name)
-        {
-            var f = instance.GetType().GetField(name,
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.IsNotNull(f, $"Field '{name}' not found on {instance.GetType().Name}");
-            return (T)f.GetValue(instance);
-        }
-
         // ── Initialize ─────────────────────────────────────────────────
 
         [Test]
@@ -71,10 +64,10 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Projectiles
             var p = CreateProjectile();
             p.Initialize(Vector2.right, spd: 16f, dmg: 20f, life: 1.5f, rng: 12f, targets: 1 << 9);
 
-            Assert.AreEqual(16f, GetField<float>(p, "speed"), 1e-4f);
-            Assert.AreEqual(20f, GetField<float>(p, "damage"), 1e-4f);
-            Assert.AreEqual(1.5f, GetField<float>(p, "lifetime"), 1e-4f);
-            Assert.AreEqual(12f, GetField<float>(p, "range"), 1e-4f);
+            Assert.AreEqual(16f, TestReflection.GetField<float>(p, "speed"), 1e-4f);
+            Assert.AreEqual(20f, TestReflection.GetField<float>(p, "damage"), 1e-4f);
+            Assert.AreEqual(1.5f, TestReflection.GetField<float>(p, "lifetime"), 1e-4f);
+            Assert.AreEqual(12f, TestReflection.GetField<float>(p, "range"), 1e-4f);
         }
 
         [Test]
@@ -85,7 +78,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Projectiles
             // velocity = dir * speed ends up at exactly `speed` magnitude.
             p.Initialize(new Vector2(3f, 4f), 10f, 1f, 1f, 1f, 0);
 
-            var stored = GetField<Vector2>(p, "_direction");
+            var stored = TestReflection.GetField<Vector2>(p, "_direction");
             Assert.AreEqual(1f, stored.magnitude, 1e-4f, "_direction must be normalized");
             Assert.AreEqual(0.6f, stored.x, 1e-4f);
             Assert.AreEqual(0.8f, stored.y, 1e-4f);
@@ -111,7 +104,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Projectiles
             p.transform.position = new Vector3(5f, -3f, 0f);
             p.Initialize(Vector2.right, 10f, 1f, 1f, 1f, 0);
 
-            var origin = GetField<Vector2>(p, "_origin");
+            var origin = TestReflection.GetField<Vector2>(p, "_origin");
             Assert.AreEqual(5f, origin.x, 1e-4f);
             Assert.AreEqual(-3f, origin.y, 1e-4f);
         }
@@ -124,8 +117,8 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Projectiles
             var p = CreateProjectile();
             p.SetExplosion(radius: 1.5f, dmg: 30f);
 
-            Assert.AreEqual(1.5f, GetField<float>(p, "_explosionRadius"), 1e-4f);
-            Assert.AreEqual(30f, GetField<float>(p, "_explosionDamage"), 1e-4f);
+            Assert.AreEqual(1.5f, TestReflection.GetField<float>(p, "_explosionRadius"), 1e-4f);
+            Assert.AreEqual(30f, TestReflection.GetField<float>(p, "_explosionDamage"), 1e-4f);
         }
 
         [Test]
@@ -133,7 +126,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Projectiles
         {
             var p = CreateProjectile();
             p.SetAcceleration(5f);
-            Assert.AreEqual(5f, GetField<float>(p, "_acceleration"), 1e-4f);
+            Assert.AreEqual(5f, TestReflection.GetField<float>(p, "_acceleration"), 1e-4f);
         }
 
         [Test]
@@ -141,7 +134,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Projectiles
         {
             var p = CreateProjectile();
             p.SetPoolKey("proj_fireball");
-            Assert.AreEqual("proj_fireball", GetField<string>(p, "_poolKey"));
+            Assert.AreEqual("proj_fireball", TestReflection.GetField<string>(p, "_poolKey"));
         }
 
         [Test]
@@ -150,7 +143,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Projectiles
             var p = CreateProjectile();
             var c = new Color(0.2f, 0.4f, 0.6f, 0.8f);
             p.SetVFXColor(c);
-            var stored = GetField<Color>(p, "_vfxColor");
+            var stored = TestReflection.GetField<Color>(p, "_vfxColor");
             Assert.AreEqual(c, stored);
         }
 
@@ -165,7 +158,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Projectiles
             // debris, smoke — and this setter is the one-layer case of that.
             CollectionAssert.AreEqual(
                 new[] { "explosion_small" },
-                GetField<System.Collections.Generic.List<string>>(p, "_impactPresets"));
+                TestReflection.GetField<System.Collections.Generic.List<string>>(p, "_impactPresets"));
         }
 
         [Test]
@@ -179,7 +172,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Projectiles
 
             CollectionAssert.AreEqual(
                 new[] { "fireball_impact_flash", "fireball_impact_shockwave", "fireball_impact_burst" },
-                GetField<System.Collections.Generic.List<string>>(p, "_impactPresets"),
+                TestReflection.GetField<System.Collections.Generic.List<string>>(p, "_impactPresets"),
                 "Order is draw order: the flash must land before the smoke that covers it.");
         }
 
@@ -192,7 +185,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Projectiles
 
             CollectionAssert.AreEqual(
                 new[] { "solo" },
-                GetField<System.Collections.Generic.List<string>>(p, "_impactPresets"),
+                TestReflection.GetField<System.Collections.Generic.List<string>>(p, "_impactPresets"),
                 "Projectiles are pooled and reconfigured per shot; an appending setter would " +
                 "accumulate every spell ever fired from that pool slot.");
         }
@@ -204,7 +197,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Projectiles
             p.SetImpactPresets(new System.Collections.Generic.List<string> { "leftover" });
             p.SetImpactPreset(null);
 
-            Assert.IsEmpty(GetField<System.Collections.Generic.List<string>>(p, "_impactPresets"),
+            Assert.IsEmpty(TestReflection.GetField<System.Collections.Generic.List<string>>(p, "_impactPresets"),
                 "A spell with no impact preset must clear the previous shot's, not inherit it.");
         }
 
@@ -222,17 +215,17 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Projectiles
             p.SetExplosion(1.5f, 30f);
             p.SetPoolKey("proj_fireball");
 
-            Assert.AreEqual(16f, GetField<float>(p, "speed"), 1e-4f);
-            Assert.AreEqual(20f, GetField<float>(p, "damage"), 1e-4f);
-            Assert.AreEqual(1f,  GetField<float>(p, "lifetime"), 1e-4f);
-            Assert.AreEqual(15f, GetField<float>(p, "range"), 1e-4f);
+            Assert.AreEqual(16f, TestReflection.GetField<float>(p, "speed"), 1e-4f);
+            Assert.AreEqual(20f, TestReflection.GetField<float>(p, "damage"), 1e-4f);
+            Assert.AreEqual(1f,  TestReflection.GetField<float>(p, "lifetime"), 1e-4f);
+            Assert.AreEqual(15f, TestReflection.GetField<float>(p, "range"), 1e-4f);
             CollectionAssert.AreEqual(
                 new[] { "explosion_small" },
-                GetField<System.Collections.Generic.List<string>>(p, "_impactPresets"));
-            Assert.AreEqual(2.5f, GetField<float>(p, "_acceleration"), 1e-4f);
-            Assert.AreEqual(1.5f, GetField<float>(p, "_explosionRadius"), 1e-4f);
-            Assert.AreEqual(30f,  GetField<float>(p, "_explosionDamage"), 1e-4f);
-            Assert.AreEqual("proj_fireball", GetField<string>(p, "_poolKey"));
+                TestReflection.GetField<System.Collections.Generic.List<string>>(p, "_impactPresets"));
+            Assert.AreEqual(2.5f, TestReflection.GetField<float>(p, "_acceleration"), 1e-4f);
+            Assert.AreEqual(1.5f, TestReflection.GetField<float>(p, "_explosionRadius"), 1e-4f);
+            Assert.AreEqual(30f,  TestReflection.GetField<float>(p, "_explosionDamage"), 1e-4f);
+            Assert.AreEqual("proj_fireball", TestReflection.GetField<string>(p, "_poolKey"));
         }
 
         // ── Defaults: fresh projectile has no AOE / acceleration ───────
@@ -243,9 +236,9 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Projectiles
             // Defensive: a vanilla projectile must not accidentally accelerate or
             // explode if SetAcceleration / SetExplosion are never called.
             var p = CreateProjectile();
-            Assert.AreEqual(0f, GetField<float>(p, "_acceleration"), 1e-4f);
-            Assert.AreEqual(0f, GetField<float>(p, "_explosionRadius"), 1e-4f);
-            Assert.AreEqual(0f, GetField<float>(p, "_explosionDamage"), 1e-4f);
+            Assert.AreEqual(0f, TestReflection.GetField<float>(p, "_acceleration"), 1e-4f);
+            Assert.AreEqual(0f, TestReflection.GetField<float>(p, "_explosionRadius"), 1e-4f);
+            Assert.AreEqual(0f, TestReflection.GetField<float>(p, "_explosionDamage"), 1e-4f);
         }
 
         // ── Rigidbody2D wiring (Awake) ─────────────────────────────────

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Project.Code
 {
@@ -27,6 +28,7 @@ namespace Valkur.Tests.EditMode.Project.Code
     /// these.</para>
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Guard)]
     public class BindingConstructionGuardTests
     {
         /// <summary>
@@ -54,6 +56,7 @@ namespace Valkur.Tests.EditMode.Project.Code
                    .TrimStart(Path.DirectorySeparatorChar, '/')
                    .Replace(Path.DirectorySeparatorChar, '/');
 
+        [Category(TestCategories.Slow)]
         [Test]
         public void NoProductionCode_ConstructsAnInputActionOutsideTheInputLayer()
         {
@@ -89,6 +92,7 @@ namespace Valkur.Tests.EditMode.Project.Code
         /// The other half of the same rule: a binding PATH literal outside the input layer is
         /// a key somebody wrote down instead of asking the asset for.
         /// </summary>
+        [Category(TestCategories.Slow)]
         [Test]
         public void NoProductionCode_WritesABindingPathLiteral()
         {

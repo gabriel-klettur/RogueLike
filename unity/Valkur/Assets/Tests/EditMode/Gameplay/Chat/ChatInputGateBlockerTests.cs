@@ -6,6 +6,7 @@ using UnityEngine.TestTools;
 using Valkur.Core.Input;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Chat;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.Chat
 {
@@ -44,20 +45,6 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
                 t = t.BaseType;
             }
             return null;
-        }
-
-        private static void SetField(object obj, string name, object value)
-        {
-            var f = GetField(obj.GetType(), name);
-            Assert.IsNotNull(f, $"Field '{name}' must exist on {obj.GetType().Name}.");
-            f.SetValue(obj, value);
-        }
-
-        private static void InvokeMethod(object obj, string name)
-        {
-            var m = obj.GetType().GetMethod(name, InstanceBinding);
-            Assert.IsNotNull(m, $"Method '{name}' must exist on {obj.GetType().Name}.");
-            m.Invoke(obj, null);
         }
 
         private static void ClearSingleton<T>() where T : MonoBehaviour
@@ -132,8 +119,8 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
 
             // Inject the bound references directly so Update() doesn't try to
             // re-bind from the live SingletonMonoBehaviour.Instance graph.
-            SetField(gate, "_boundChat",    chat);
-            SetField(gate, "_boundConsole", console);
+            TestReflection.SetField(gate, "_boundChat",    chat);
+            TestReflection.SetField(gate, "_boundConsole", console);
 
             return gate;
         }
@@ -163,7 +150,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
             // fire MonoBehaviour.OnDisable in EditMode tests for components whose
             // Start() coroutine has not yet ticked. Direct reflection invocation
             // exercises the contract we care about: the OnDisable body runs.
-            InvokeMethod(gate, "OnDisable");
+            TestReflection.Invoke(gate, "OnDisable");
 
             Assert.IsFalse(InputBlocker.IsGameplayBlocked,
                 "InputBlocker must be cleared when ChatInputGate.OnDisable runs.");
@@ -184,10 +171,10 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
             // Open the chat externally — write the backing field directly so no
             // OnChatOpened event fires. This simulates the "missed event" / "hot
             // reload teardown" scenario the polling self-heal exists to recover.
-            SetField(chat, "_chatOpen", true);
+            TestReflection.SetField(chat, "_chatOpen", true);
 
             // Act — drive a single Update tick.
-            InvokeMethod(gate, "Update");
+            TestReflection.Invoke(gate, "Update");
 
             // Assert — Update must have detected the divergence and re-Refreshed.
             Assert.IsTrue(InputBlocker.IsGameplayBlocked,
@@ -204,15 +191,15 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
             var chat = ChatOf(gate);
 
             // Step 1 — open externally and tick. State and blocker move to true.
-            SetField(chat, "_chatOpen", true);
-            InvokeMethod(gate, "Update");
+            TestReflection.SetField(chat, "_chatOpen", true);
+            TestReflection.Invoke(gate, "Update");
             Assert.IsTrue(InputBlocker.IsGameplayBlocked,
                 "Pre-condition: first Update must have caught the open transition.");
 
             // Step 2 — close externally (again, no event fired) and tick. Update
             // must catch the reverse transition and clear the blocker.
-            SetField(chat, "_chatOpen", false);
-            InvokeMethod(gate, "Update");
+            TestReflection.SetField(chat, "_chatOpen", false);
+            TestReflection.Invoke(gate, "Update");
 
             Assert.IsFalse(InputBlocker.IsGameplayBlocked,
                 "Update must clear InputBlocker when both panels are closed.");
@@ -230,8 +217,8 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
 
             // Mutate DevConsole's _open field directly to simulate an external
             // toggle that bypassed the OnOpened event.
-            SetField(console, "_open", true);
-            InvokeMethod(gate, "Update");
+            TestReflection.SetField(console, "_open", true);
+            TestReflection.Invoke(gate, "Update");
 
             Assert.IsTrue(InputBlocker.IsGameplayBlocked,
                 "Update must sync InputBlocker to true when the dev console " +
@@ -248,7 +235,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
             // Both panels closed and stay closed across the tick — Update must
             // NOT fire Refresh (no transition), so the blocker stays as we set it.
             InputBlocker.SetBlocked(false);
-            InvokeMethod(gate, "Update");
+            TestReflection.Invoke(gate, "Update");
             Assert.IsFalse(InputBlocker.IsGameplayBlocked,
                 "Steady-closed state must not flip the blocker.");
 
@@ -256,7 +243,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Chat
             // (a defensive scenario where another system had set it). Update
             // sees no panel transition → does not touch the blocker.
             InputBlocker.SetBlocked(true);
-            InvokeMethod(gate, "Update");
+            TestReflection.Invoke(gate, "Update");
             Assert.IsTrue(InputBlocker.IsGameplayBlocked,
                 "Update must not Refresh when neither panel transitioned, " +
                 "even if the blocker was set externally.");

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Project.Assets
 {
@@ -39,6 +40,7 @@ namespace Valkur.Tests.EditMode.Project.Assets
     ///   2. The `m_SortingLayers:` list must contain every Valkur sorting layer.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Guard)]
     public class TagManagerIntegrityTests
     {
         // Canonical Valkur physics layers (per CLAUDE.md). Their indices are

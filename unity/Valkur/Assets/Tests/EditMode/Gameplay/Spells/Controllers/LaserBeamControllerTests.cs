@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.Spells;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.Spells.Controllers
 {
@@ -60,14 +61,6 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Controllers
             var go = new GameObject("BeamCaster");
             _scene.Add(go);
             return go.AddComponent<LaserBeamController>();
-        }
-
-        private static T GetField<T>(object instance, string name) where T : class
-        {
-            var f = instance.GetType().GetField(name,
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.IsNotNull(f, $"Field '{name}' not found on {instance.GetType().Name}");
-            return f.GetValue(instance) as T;
         }
 
         private static object GetFieldRaw(object instance, string name)

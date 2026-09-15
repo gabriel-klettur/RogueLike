@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Editor.Monsters;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.EditorTools.Monsters
 {
@@ -24,6 +25,7 @@ namespace Valkur.Tests.EditMode.EditorTools.Monsters
     /// pixel content is <c>tools/atlas/build_monster_frames.py</c>'s concern, not this one's (see
     /// that tool's own smoke test, run separately against a real character sheet).
     /// </summary>
+    [Category(TestCategories.Slow)]
     public class MonsterFramesImporterTests
     {
         private const string ScratchParent = "Assets/Tests/EditMode/EditorTools/Monsters";

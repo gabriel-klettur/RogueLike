@@ -3,6 +3,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 using Valkur.Editor;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Project.Assets
 {
@@ -37,6 +38,7 @@ namespace Valkur.Tests.EditMode.Project.Assets
     ///   3. Representative samples conform individually (faster signal than
     ///      the full audit when the suite fails, and easier to debug).
     /// </summary>
+    [Category(TestCategories.Guard)]
     public class TileSeamPolicyTests
     {
         // Representative tile PNGs spanning the major tilesets. If a future
@@ -141,6 +143,7 @@ namespace Valkur.Tests.EditMode.Project.Assets
         // Invariant 2 — Full-corpus audit returns zero offenders
         // ────────────────────────────────────────────────────────────────────
 
+        [Category(TestCategories.Slow)]
         [Test]
         public void Audit_AllTilesUnderResources_HaveSeamSafeSettings()
         {

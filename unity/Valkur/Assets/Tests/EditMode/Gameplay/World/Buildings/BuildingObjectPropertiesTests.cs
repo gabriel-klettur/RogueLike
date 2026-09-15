@@ -5,6 +5,7 @@ using UnityEngine.TestTools;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 {
@@ -36,9 +37,6 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             }
             return null;
         }
-
-        private static void SetPrivateField(object obj, string name, object value)
-            => GetField(obj, name)?.SetValue(obj, value);
 
         /// <summary>Creates a 1×1-pixel white sprite with PPU=32 and a given size.</summary>
         private static Sprite MakeSprite(int texWidth, int texHeight, float ppu = 32f)
@@ -164,7 +162,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 
             var tmpl = ScriptableObject.CreateInstance<BuildingTemplateData>();
             tmpl.colliderScope = "CU";
-            SetPrivateField(bObj, "_template", tmpl);
+            TestReflection.SetField(bObj, "_template", tmpl);
 
             string scope = bObj.EffectiveColliderScope;
 
@@ -185,7 +183,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 
             var tmpl = ScriptableObject.CreateInstance<BuildingTemplateData>();
             tmpl.colliderScope = "CG";
-            SetPrivateField(bObj, "_template", tmpl);
+            TestReflection.SetField(bObj, "_template", tmpl);
             bObj.ColliderScopeOverride = "CU";
 
             string scope = bObj.EffectiveColliderScope;
@@ -229,7 +227,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             childGo.transform.SetParent(go.transform);
             var sr = childGo.AddComponent<SpriteRenderer>();
             sr.sprite = null;
-            SetPrivateField(bObj, "_bottomRenderer", sr);
+            TestReflection.SetField(bObj, "_bottomRenderer", sr);
 
             bool result = bObj.TryGetWorldRect(out _);
 
@@ -255,7 +253,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             childGo.transform.SetParent(go.transform);
             var sr = childGo.AddComponent<SpriteRenderer>();
             sr.sprite = MakeSprite(64, 64, 32f);
-            SetPrivateField(bObj, "_bottomRenderer", sr);
+            TestReflection.SetField(bObj, "_bottomRenderer", sr);
 
             bool result = bObj.TryGetWorldRect(out Rect rect);
 
@@ -282,13 +280,13 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             bottomGo.transform.SetParent(go.transform);
             var bottomSr = bottomGo.AddComponent<SpriteRenderer>();
             bottomSr.sprite = MakeSprite(64, 64, 32f);
-            SetPrivateField(bObj, "_bottomRenderer", bottomSr);
+            TestReflection.SetField(bObj, "_bottomRenderer", bottomSr);
 
             var topGo = new GameObject("Canopy");
             topGo.transform.SetParent(go.transform);
             var topSr = topGo.AddComponent<SpriteRenderer>();
             topSr.sprite = MakeSprite(64, 32, 32f);
-            SetPrivateField(bObj, "_topRenderer", topSr);
+            TestReflection.SetField(bObj, "_topRenderer", topSr);
 
             bool result = bObj.TryGetWorldRect(out Rect rect);
 
@@ -314,7 +312,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             childGo.transform.SetParent(go.transform);
             var sr = childGo.AddComponent<SpriteRenderer>();
             sr.sprite = MakeSprite(64, 64, 32f);
-            SetPrivateField(bObj, "_bottomRenderer", sr);
+            TestReflection.SetField(bObj, "_bottomRenderer", sr);
 
             bool result = bObj.TryGetWorldRect(out Rect rect);
 
@@ -340,7 +338,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             childGo.transform.SetParent(go.transform);
             var sr = childGo.AddComponent<SpriteRenderer>();
             sr.sprite = MakeSprite(64, 64, 32f);
-            SetPrivateField(bObj, "_bottomRenderer", sr);
+            TestReflection.SetField(bObj, "_bottomRenderer", sr);
 
             bObj.TryGetWorldRect(out Rect rect);
             bool inside  = rect.Contains(new Vector2(5f, 4f));
@@ -366,7 +364,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             var go = new GameObject("TestBuilding");
             var bObj = go.AddComponent<BuildingObject>();
             var sr = MakeChildRenderer(go, "Footprint", 64, 64);
-            SetPrivateField(bObj, "_bottomRenderer", sr);
+            TestReflection.SetField(bObj, "_bottomRenderer", sr);
 
             Assert.IsFalse(bObj.TryGetWorldCellRect(0, 0, 0, 1, out _),
                 "rows == 0 must return false.");
@@ -400,7 +398,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             go.transform.position = new Vector3(10f, 20f, 0f);
             var bObj = go.AddComponent<BuildingObject>();
             var sr = MakeChildRenderer(go, "Footprint", 64, 64); // 2×2 world units
-            SetPrivateField(bObj, "_bottomRenderer", sr);
+            TestReflection.SetField(bObj, "_bottomRenderer", sr);
 
             Assert.IsTrue(bObj.TryGetWorldRect(out var full));
             Assert.IsTrue(bObj.TryGetWorldCellRect(0, 0, 1, 1, out var cell));
@@ -425,7 +423,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             go.transform.position = Vector3.zero;
             var bObj = go.AddComponent<BuildingObject>();
             var sr = MakeChildRenderer(go, "Footprint", 64, 128); // 2 wide × 4 tall
-            SetPrivateField(bObj, "_bottomRenderer", sr);
+            TestReflection.SetField(bObj, "_bottomRenderer", sr);
 
             // 4 rows → cell height = 1
             Assert.IsTrue(bObj.TryGetWorldCellRect(0, 0, 4, 1, out var top));
@@ -450,7 +448,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             go.transform.position = new Vector3(7f, 13f, 0f);
             var bObj = go.AddComponent<BuildingObject>();
             var sr = MakeChildRenderer(go, "Footprint", 96, 64); // 3 wide × 2 tall
-            SetPrivateField(bObj, "_bottomRenderer", sr);
+            TestReflection.SetField(bObj, "_bottomRenderer", sr);
 
             int rows = 4, cols = 6;
             Assert.IsTrue(bObj.TryGetWorldRect(out var full));
@@ -495,8 +493,8 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             var bObj  = go.AddComponent<BuildingObject>();
             var bottom = MakeChildRenderer(go, "Footprint", 64, 64);
             var top    = MakeChildRenderer(go, "Canopy",    64, 32);
-            SetPrivateField(bObj, "_bottomRenderer", bottom);
-            SetPrivateField(bObj, "_topRenderer",    top);
+            TestReflection.SetField(bObj, "_bottomRenderer", bottom);
+            TestReflection.SetField(bObj, "_topRenderer",    top);
 
             // Initial position + first sort.
             go.transform.position = new Vector3(0f, 0f, 0f);
@@ -532,8 +530,8 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             var bObj   = go.AddComponent<BuildingObject>();
             var bottom = MakeChildRenderer(go, "Footprint", 64, 64);
             var top    = MakeChildRenderer(go, "Canopy",    64, 32);
-            SetPrivateField(bObj, "_bottomRenderer", bottom);
-            SetPrivateField(bObj, "_topRenderer",    top);
+            TestReflection.SetField(bObj, "_bottomRenderer", bottom);
+            TestReflection.SetField(bObj, "_topRenderer",    top);
 
             bObj.ZBottom = 3;
             bObj.ZTop    = 7;
@@ -558,8 +556,8 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             var bObj   = go.AddComponent<BuildingObject>();
             var bottom = MakeChildRenderer(go, "Footprint", 64, 64);
             var top    = MakeChildRenderer(go, "Canopy",    64, 32);
-            SetPrivateField(bObj, "_bottomRenderer", bottom);
-            SetPrivateField(bObj, "_topRenderer",    top);
+            TestReflection.SetField(bObj, "_bottomRenderer", bottom);
+            TestReflection.SetField(bObj, "_topRenderer",    top);
 
             bObj.RefreshSorting();
 
@@ -581,8 +579,8 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             var bObj   = go.AddComponent<BuildingObject>();
             var bottom = MakeChildRenderer(go, "Footprint", 64, 64);
             var top    = MakeChildRenderer(go, "Canopy",    64, 32);
-            SetPrivateField(bObj, "_bottomRenderer", bottom);
-            SetPrivateField(bObj, "_topRenderer",    top);
+            TestReflection.SetField(bObj, "_bottomRenderer", bottom);
+            TestReflection.SetField(bObj, "_topRenderer",    top);
 
             bObj.ZBottom = 5;
             bObj.ZTop    = 5;
@@ -608,12 +606,12 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             var hi   = new GameObject("HighZ");
             var hiB  = hi.AddComponent<BuildingObject>();
             var hiSr = MakeChildRenderer(hi, "Footprint", 64, 64);
-            SetPrivateField(hiB, "_bottomRenderer", hiSr);
+            TestReflection.SetField(hiB, "_bottomRenderer", hiSr);
 
             var lo   = new GameObject("LowZ");
             var loB  = lo.AddComponent<BuildingObject>();
             var loSr = MakeChildRenderer(lo, "Footprint", 64, 64);
-            SetPrivateField(loB, "_bottomRenderer", loSr);
+            TestReflection.SetField(loB, "_bottomRenderer", loSr);
 
             hi.transform.position = new Vector3(0f, 100f, 0f);
             lo.transform.position = new Vector3(0f, 0f,   0f);
@@ -638,12 +636,12 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             var front   = new GameObject("Front");
             var frontB  = front.AddComponent<BuildingObject>();
             var frontSr = MakeChildRenderer(front, "Footprint", 64, 64);
-            SetPrivateField(frontB, "_bottomRenderer", frontSr);
+            TestReflection.SetField(frontB, "_bottomRenderer", frontSr);
 
             var back   = new GameObject("Back");
             var backB  = back.AddComponent<BuildingObject>();
             var backSr = MakeChildRenderer(back, "Footprint", 64, 64);
-            SetPrivateField(backB, "_bottomRenderer", backSr);
+            TestReflection.SetField(backB, "_bottomRenderer", backSr);
 
             front.transform.position = new Vector3(0f, 0f,  0f);
             back.transform.position  = new Vector3(0f, 10f, 0f);
@@ -702,7 +700,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 
             var tmpl = ScriptableObject.CreateInstance<BuildingTemplateData>();
             tmpl.interactable = true;
-            SetPrivateField(bObj, "_template", tmpl);
+            TestReflection.SetField(bObj, "_template", tmpl);
 
             Assert.IsTrue(bObj.Interactable,
                 "Interactable must inherit template.interactable when the per-instance override is -1.");
@@ -721,7 +719,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 
             var tmpl = ScriptableObject.CreateInstance<BuildingTemplateData>();
             tmpl.interactable = false;
-            SetPrivateField(bObj, "_template", tmpl);
+            TestReflection.SetField(bObj, "_template", tmpl);
             bObj.InteractableOverride = 1;
 
             Assert.IsTrue(bObj.Interactable,
@@ -741,7 +739,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 
             var tmpl = ScriptableObject.CreateInstance<BuildingTemplateData>();
             tmpl.interactable = true;
-            SetPrivateField(bObj, "_template", tmpl);
+            TestReflection.SetField(bObj, "_template", tmpl);
             bObj.InteractableOverride = 0;
 
             Assert.IsFalse(bObj.Interactable,
@@ -750,7 +748,6 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(tmpl);
         }
-
 
         // ── Small helper to keep the new tests compact ─────────────────────
         private static SpriteRenderer MakeChildRenderer(GameObject parent, string name, int texW, int texH)

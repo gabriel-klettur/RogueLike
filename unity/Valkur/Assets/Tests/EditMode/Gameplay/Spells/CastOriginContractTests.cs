@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.Spells
 {
@@ -102,6 +103,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells
                 $"{ScriptsRoot} not found — this fixture would silently scan nothing.");
         }
 
+        [Category(TestCategories.Slow)]
         [Test]
         public void OnlyBodyCentricSystemsResolveTheBodyCentre()
         {

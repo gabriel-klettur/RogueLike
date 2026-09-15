@@ -9,6 +9,7 @@ using UnityEngine.TestTools;
 using UnityEngine.UI;
 using Valkur.Core;
 using Valkur.Gameplay.Entities;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
 {
@@ -39,6 +40,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
     ///   • Start() is invoked manually via reflection so BuildUI runs in EditMode.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Slow)]
     public class EntitiesRuntimeEditorTests
     {
         private readonly List<GameObject> _sceneObjects = new List<GameObject>();
@@ -69,24 +71,6 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             return null;
         }
 
-        private static object GetFieldValue(object obj, string name) => GetField(obj, name)?.GetValue(obj);
-
-        private static void SetPrivateField(object obj, string name, object value)
-            => GetField(obj, name)?.SetValue(obj, value);
-
-        private static void InvokeMethod(object obj, string methodName, params object[] args)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(methodName,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                t = t.BaseType;
-            }
-            m?.Invoke(obj, args);
-        }
-
         /// <summary>Creates EntitiesRuntimeEditor singleton; OnSingletonAwake is forced.</summary>
         private EntitiesRuntimeEditor CreateEditor(string name = "TestEntitiesEditor")
         {
@@ -95,8 +79,8 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             var ed = go.AddComponent<EntitiesRuntimeEditor>();
             // Force OnSingletonAwake so _toggleAction is created in EditMode
             // (Awake may not run reliably under all EditMode situations).
-            if (GetFieldValue(ed, "_toggleAction") == null)
-                InvokeMethod(ed, "OnSingletonAwake");
+            if (TestReflection.GetField(ed, "_toggleAction") == null)
+                TestReflection.Invoke(ed, "OnSingletonAwake");
             _sceneObjects.Add(go);
             return ed;
         }
@@ -105,7 +89,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
         private EntitiesRuntimeEditor CreateEditorWithUI(string name = "TestEntitiesEditorUI")
         {
             var ed = CreateEditor(name);
-            InvokeMethod(ed, "Start");
+            TestReflection.Invoke(ed, "Start");
             return ed;
         }
 
@@ -137,7 +121,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             // ApplyBindingOverride writes into a SLOT and cannot create one, so a toggle with
             // zero bindings was listed by that panel and then refused. Reachability is pinned
             // centrally by EditorEntryPointTests.EveryRetiredToggle_HasAGeneralEditorEntry.
-            var action = (InputAction) GetFieldValue(ed, "_toggleAction");
+            var action = (InputAction) TestReflection.GetField(ed, "_toggleAction");
             if (action != null)
             {
                 Assert.AreEqual(1, action.bindings.Count,
@@ -153,7 +137,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
         {
             LogAssert.ignoreFailingMessages = true;
             var ed = CreateEditor();
-            var action = (InputAction) GetFieldValue(ed, "_toggleAction");
+            var action = (InputAction) TestReflection.GetField(ed, "_toggleAction");
             if (action == null) Assert.Pass("Ships unbound and resolves to no action here.");
 
             Assert.AreEqual(InputActionType.Button, action.type, "_toggleAction must be Button type.");
@@ -227,8 +211,8 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             LogAssert.ignoreFailingMessages = true;
             var ed = CreateEditorWithUI();
 
-            var canvas = (Canvas) GetFieldValue(ed, "_canvas");
-            var root   = (GameObject) GetFieldValue(ed, "_root");
+            var canvas = (Canvas) TestReflection.GetField(ed, "_canvas");
+            var root   = (GameObject) TestReflection.GetField(ed, "_root");
 
             Assert.IsNotNull(canvas, "Canvas must be created by BuildUI.");
             Assert.IsNotNull(root,   "Root GameObject must be created by BuildUI.");
@@ -242,7 +226,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
         {
             LogAssert.ignoreFailingMessages = true;
             var ed = CreateEditorWithUI();
-            var ui = GetFieldValue(ed, "_ui");
+            var ui = TestReflection.GetField(ed, "_ui");
 
             // 5 menu-bar buttons × (Image + TMP)
             string[] btnFields = {
@@ -267,7 +251,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
         {
             LogAssert.ignoreFailingMessages = true;
             var ed = CreateEditorWithUI();
-            var ui = GetFieldValue(ed, "_ui");
+            var ui = TestReflection.GetField(ed, "_ui");
 
             string[] panels = {
                 "ToolsDropdown", "CategoriesDropdown", "PickerDropdown",
@@ -298,7 +282,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
         {
             LogAssert.ignoreFailingMessages = true;
             var ed = CreateEditorWithUI();
-            var ui = GetFieldValue(ed, "_ui");
+            var ui = TestReflection.GetField(ed, "_ui");
 
             var panel = (GameObject) ui.GetType().GetField("AnimDropdown").GetValue(ui);
             Assert.IsNotNull(panel, "The Animation panel must be built.");
@@ -340,7 +324,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
         {
             LogAssert.ignoreFailingMessages = true;
             var ed = CreateEditorWithUI();
-            var ui = GetFieldValue(ed, "_ui");
+            var ui = TestReflection.GetField(ed, "_ui");
 
             var search = ui.GetType().GetField("SearchBox").GetValue(ui) as TMP_InputField;
             var pickerContent = ui.GetType().GetField("PickerContent").GetValue(ui) as RectTransform;
@@ -356,7 +340,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
         {
             LogAssert.ignoreFailingMessages = true;
             var ed = CreateEditorWithUI();
-            var ui = GetFieldValue(ed, "_ui");
+            var ui = TestReflection.GetField(ed, "_ui");
 
             string[] required = {
                 "HostilesTabImg","HostilesTabTmp","NeutralsTabImg","NeutralsTabTmp",
@@ -376,7 +360,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
         {
             LogAssert.ignoreFailingMessages = true;
             var ed = CreateEditorWithUI();
-            var ui = GetFieldValue(ed, "_ui");
+            var ui = TestReflection.GetField(ed, "_ui");
 
             string[] sections = {
                 "PropsHintText", "PropsFormRoot",
@@ -395,7 +379,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
         {
             LogAssert.ignoreFailingMessages = true;
             var ed = CreateEditorWithUI();
-            var tut = (GameObject) GetFieldValue(ed, "_tutorial");
+            var tut = (GameObject) TestReflection.GetField(ed, "_tutorial");
 
             Assert.IsNotNull(tut, "Tutorial overlay must be built.");
             Assert.IsFalse(tut.activeSelf, "Tutorial must start hidden.");
@@ -414,7 +398,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             ed.Activate();
 
             Assert.IsTrue(ed.IsActive, "IsActive must become true after Activate().");
-            var root = (GameObject) GetFieldValue(ed, "_root");
+            var root = (GameObject) TestReflection.GetField(ed, "_root");
             Assert.IsTrue(root.activeSelf, "Root must be enabled after Activate().");
         }
 
@@ -426,7 +410,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
 
             ed.Activate();
 
-            var open = (HashSet<string>) GetFieldValue(ed, "_openDropdowns");
+            var open = (HashSet<string>) TestReflection.GetField(ed, "_openDropdowns");
             Assert.AreEqual(5, open.Count, "Activate must open all 5 default dropdowns.");
             CollectionAssert.AreEquivalent(
                 new[] { "tools", "categories", "picker", "addremove", "props" },
@@ -434,7 +418,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
                 "Default-open set must match Python entities_editor working layout.");
 
             // And the panels themselves must be active in the hierarchy.
-            var ui = GetFieldValue(ed, "_ui");
+            var ui = TestReflection.GetField(ed, "_ui");
             foreach (var name in new[] { "ToolsDropdown", "CategoriesDropdown",
                                           "PickerDropdown", "AddRemoveDropdown", "PropsDropdown" })
             {
@@ -453,7 +437,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             ed.Deactivate();
 
             Assert.IsFalse(ed.IsActive, "IsActive must be false after Deactivate().");
-            var root = (GameObject) GetFieldValue(ed, "_root");
+            var root = (GameObject) TestReflection.GetField(ed, "_root");
             Assert.IsFalse(root.activeSelf, "Root must be hidden after Deactivate().");
         }
 
@@ -463,11 +447,11 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             LogAssert.ignoreFailingMessages = true;
             var ed = CreateEditorWithUI();
             ed.Activate();
-            SetPrivateField(ed, "_selectedKey", "skeleton");
+            TestReflection.SetField(ed, "_selectedKey", "skeleton");
 
             ed.Deactivate();
 
-            Assert.IsNull(GetFieldValue(ed, "_selectedKey"),
+            Assert.IsNull(TestReflection.GetField(ed, "_selectedKey"),
                 "Deactivate must reset _selectedKey so the next Activate starts clean.");
         }
 
@@ -477,10 +461,10 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             LogAssert.ignoreFailingMessages = true;
             var ed = CreateEditorWithUI();
 
-            InvokeMethod(ed, "ToggleActive");
+            TestReflection.Invoke(ed, "ToggleActive");
             Assert.IsTrue(ed.IsActive, "First toggle must activate.");
 
-            InvokeMethod(ed, "ToggleActive");
+            TestReflection.Invoke(ed, "ToggleActive");
             Assert.IsFalse(ed.IsActive, "Second toggle must deactivate.");
         }
 
@@ -494,13 +478,13 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             LogAssert.ignoreFailingMessages = true;
             var ed = CreateEditorWithUI();
             // Don't Activate — start with all closed for a clean toggle test.
-            var open = (HashSet<string>) GetFieldValue(ed, "_openDropdowns");
+            var open = (HashSet<string>) TestReflection.GetField(ed, "_openDropdowns");
             Assert.AreEqual(0, open.Count, "Start with no open dropdowns.");
 
-            InvokeMethod(ed, "ToggleDropdown", "tools");
+            TestReflection.Invoke(ed, "ToggleDropdown", "tools");
             Assert.IsTrue(open.Contains("tools"), "ToggleDropdown('tools') must open it.");
 
-            InvokeMethod(ed, "ToggleDropdown", "tools");
+            TestReflection.Invoke(ed, "ToggleDropdown", "tools");
             Assert.IsFalse(open.Contains("tools"), "Second ToggleDropdown('tools') must close it.");
         }
 
@@ -510,7 +494,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             LogAssert.ignoreFailingMessages = true;
             var ed = CreateEditorWithUI();
 
-            Assert.DoesNotThrow(() => InvokeMethod(ed, "ToggleDropdown", "no-such-panel"),
+            Assert.DoesNotThrow(() => TestReflection.Invoke(ed, "ToggleDropdown", "no-such-panel"),
                 "Unknown dropdown names must be ignored, not throw.");
         }
 
@@ -534,7 +518,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
                 BindingFlags.NonPublic | BindingFlags.Instance);
             method.Invoke(ed, new[] { players });
 
-            var current = GetFieldValue(ed, "_category");
+            var current = TestReflection.GetField(ed, "_category");
             Assert.AreEqual("Players", current.ToString(),
                 "_category must update to Players after SelectCategory(Players).");
         }
@@ -554,7 +538,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
                 BindingFlags.NonPublic | BindingFlags.Instance);
             method.Invoke(ed, new[] { spawn });
 
-            var current = GetFieldValue(ed, "_mode");
+            var current = TestReflection.GetField(ed, "_mode");
             Assert.AreEqual("Spawn", current.ToString(),
                 "_mode must update after SetMode(Spawn).");
         }
@@ -565,7 +549,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             LogAssert.ignoreFailingMessages = true;
             var ed = CreateEditor();
 
-            var mode = GetFieldValue(ed, "_mode");
+            var mode = TestReflection.GetField(ed, "_mode");
             Assert.AreEqual("Select", mode.ToString(),
                 "Default mode must be Select (Python parity).");
         }
@@ -591,7 +575,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             LogAssert.ignoreFailingMessages = true;
             var ed = CreateEditor();
 
-            var cat = GetFieldValue(ed, "_category");
+            var cat = TestReflection.GetField(ed, "_category");
             Assert.AreEqual("All", cat.ToString(),
                 "The picker must open on every entity, not on one tab.");
         }
@@ -607,7 +591,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             var ed = CreateEditorWithUI();
             // _monsterCatalog is null by default in EditMode tests.
 
-            Assert.DoesNotThrow(() => InvokeMethod(ed, "RefreshPicker"),
+            Assert.DoesNotThrow(() => TestReflection.Invoke(ed, "RefreshPicker"),
                 "RefreshPicker must handle a null MonsterCatalog without NRE — it should just show an empty list.");
         }
 
@@ -618,7 +602,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             var ed = CreateEditorWithUI();
 
             Assert.DoesNotThrow(
-                () => InvokeMethod(ed, "ShowMonsterProperties", "skeleton"),
+                () => TestReflection.Invoke(ed, "ShowMonsterProperties", "skeleton"),
                 "ShowMonsterProperties must handle null catalog gracefully (hint, no NRE).");
         }
 
@@ -627,12 +611,12 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
         {
             LogAssert.ignoreFailingMessages = true;
             var ed = CreateEditorWithUI();
-            var tut = (GameObject) GetFieldValue(ed, "_tutorial");
+            var tut = (GameObject) TestReflection.GetField(ed, "_tutorial");
 
             Assert.IsFalse(tut.activeSelf, "Tutorial starts hidden.");
-            InvokeMethod(ed, "ToggleTutorial");
+            TestReflection.Invoke(ed, "ToggleTutorial");
             Assert.IsTrue(tut.activeSelf, "First toggle must show tutorial.");
-            InvokeMethod(ed, "ToggleTutorial");
+            TestReflection.Invoke(ed, "ToggleTutorial");
             Assert.IsFalse(tut.activeSelf, "Second toggle must hide tutorial.");
         }
 

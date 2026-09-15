@@ -4,6 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 {
@@ -27,22 +28,6 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
         public void TearDown()
         {
             Valkur.Core.MapEditorActiveSlot.SetOverrideForTests(null);
-        }
-
-        private static void SetPrivateField(object obj, string name, object value)
-        {
-            var type = obj.GetType();
-            while (type != null)
-            {
-                var field = type.GetField(name, BindingFlags.NonPublic | BindingFlags.Instance);
-                if (field != null)
-                {
-                    field.SetValue(obj, value);
-                    return;
-                }
-
-                type = type.BaseType;
-            }
         }
 
         private static object CreateEmptyFieldValue(object obj, string name)
@@ -83,11 +68,11 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             var loaderGo = new GameObject("CollisionLoader");
             var loader = loaderGo.AddComponent<BuildingCollisionLoader>();
 
-            SetPrivateField(loader, "_loaded", true);
-            SetPrivateField(loader, "_byImage", CreateEmptyFieldValue(loader, "_byImage"));
-            SetPrivateField(loader, "_byInstanceId", CreateEmptyFieldValue(loader, "_byInstanceId"));
-            SetPrivateField(loader, "_bySpawnId", CreateEmptyFieldValue(loader, "_bySpawnId"));
-            SetPrivateField(loader, "_inlineInstanceOverrides", CreateEmptyFieldValue(loader, "_inlineInstanceOverrides"));
+            TestReflection.SetField(loader, "_loaded", true);
+            TestReflection.SetField(loader, "_byImage", CreateEmptyFieldValue(loader, "_byImage"));
+            TestReflection.SetField(loader, "_byInstanceId", CreateEmptyFieldValue(loader, "_byInstanceId"));
+            TestReflection.SetField(loader, "_bySpawnId", CreateEmptyFieldValue(loader, "_bySpawnId"));
+            TestReflection.SetField(loader, "_inlineInstanceOverrides", CreateEmptyFieldValue(loader, "_inlineInstanceOverrides"));
 
             var tmpl = ScriptableObject.CreateInstance<BuildingTemplateData>();
             tmpl.solid = true;
@@ -98,7 +83,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             mainCollider.enabled = true; // start enabled — must end disabled
             building.ColliderScopeOverride = "CG";
 
-            SetPrivateField(building, "_template", tmpl);
+            TestReflection.SetField(building, "_template", tmpl);
 
             bool applied = loader.TryApplyGrid(building);
 
@@ -138,7 +123,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             mainCollider.enabled = true;
             building.ColliderScopeOverride = "CG";
             building.ScaleOverride = new Vector2Int(64, 64);
-            SetPrivateField(building, "_template", tmpl);
+            TestReflection.SetField(building, "_template", tmpl);
 
             try
             {
@@ -191,7 +176,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             mainCollider.enabled = true;
             building.ColliderScopeOverride = "CG";
             building.ScaleOverride = new Vector2Int(64, 64);
-            SetPrivateField(building, "_template", tmpl);
+            TestReflection.SetField(building, "_template", tmpl);
 
             try
             {
@@ -201,7 +186,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 
                 File.WriteAllText(byImagePath,
                     "{\"test/building.png\":{\"width\":2,\"height\":2,\"collision\":[[\".\",\"#\"],[\".\",\".\"]],\"grid_ref_size\":[64,64]}}");
-                SetPrivateField(loader, "_loaded", false);
+                TestReflection.SetField(loader, "_loaded", false);
 
                 Assert.IsTrue(loader.TryApplyGrid(building));
                 Assert.AreEqual(1, CountActiveTileColliders(buildingGo.transform),
@@ -272,8 +257,8 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             mainCollider.enabled = true;
             building.ColliderScopeOverride = "CU";   // per-instance scope
             building.ScaleOverride         = new Vector2Int(64, 64);
-            SetPrivateField(building, "_template",   tmpl);
-            SetPrivateField(building, "_instanceId", 42);
+            TestReflection.SetField(building, "_template",   tmpl);
+            TestReflection.SetField(building, "_instanceId", 42);
 
             try
             {
@@ -334,7 +319,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             mainCollider.enabled = false;
             building.ColliderScopeOverride = "CG";
             building.ScaleOverride         = new Vector2Int(64, 64);
-            SetPrivateField(building, "_template", tmpl);
+            TestReflection.SetField(building, "_template", tmpl);
 
             try
             {
@@ -393,8 +378,8 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             collCU.enabled = true;
             bCU.ColliderScopeOverride = "CU";
             bCU.ScaleOverride         = new Vector2Int(64, 64);
-            SetPrivateField(bCU, "_template",   tmplCU);
-            SetPrivateField(bCU, "_instanceId", 77);
+            TestReflection.SetField(bCU, "_template",   tmplCU);
+            TestReflection.SetField(bCU, "_instanceId", 77);
 
             loaderCU.TryApplyGrid(bCU);
 
@@ -420,7 +405,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             collCG.enabled = false;
             bCG.ColliderScopeOverride = "CG";
             bCG.ScaleOverride         = new Vector2Int(64, 64);
-            SetPrivateField(bCG, "_template", tmplCG);
+            TestReflection.SetField(bCG, "_template", tmplCG);
 
             loaderCG.TryApplyGrid(bCG);
 

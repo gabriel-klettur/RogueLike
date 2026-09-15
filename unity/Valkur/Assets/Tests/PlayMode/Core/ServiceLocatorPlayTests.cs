@@ -9,7 +9,7 @@ namespace Valkur.Tests.PlayMode.Core
     /// <summary>
     /// PlayMode tests for <see cref="GameDirector"/> integration with
     /// <see cref="ServiceLocator"/>. The pure sync register/get/unregister/clear
-    /// path lives in <c>EditMode/Game/Core/Services/ServiceLocatorTests.cs</c>;
+    /// path lives in <c>EditMode/Core/ServiceLocatorTests.cs</c>;
     /// the three tests below stay in PlayMode because they require:
     ///   - <see cref="MonoBehaviour"/> Awake/OnDestroy to fire (registration hook).
     ///   - <see cref="Time.timeScale"/> mutation (Pause path).

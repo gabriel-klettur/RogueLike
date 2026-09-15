@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 using UnityEngine;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Project.Code
 {
@@ -17,6 +18,7 @@ namespace Valkur.Tests.EditMode.Project.Code
     /// theme looks fine until an author retunes it, AssetDatabase works in the Editor, and a wrong
     /// key label is only wrong in the player's hands.</para>
     /// </summary>
+    [Category(TestCategories.Guard)]
     public class HudDialectGuardTests
     {
         /// <summary>Folders whose code draws what the PLAYER sees in a build.</summary>

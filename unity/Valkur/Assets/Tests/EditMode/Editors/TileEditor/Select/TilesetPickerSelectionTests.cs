@@ -6,6 +6,7 @@ using UnityEngine.Tilemaps;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
 using Valkur.Gameplay.TileEditor;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
 {
@@ -78,21 +79,6 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
         {
             var f = GetField(obj, name);
             if (f != null) f.SetValue(obj, value);
-        }
-
-        private static void InvokePrivate(object obj, string method, params object[] args)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(method,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                t = t.BaseType;
-            }
-            Assert.IsNotNull(m,
-                $"Reflection failed: method '{method}' not found on {obj.GetType().Name}.");
-            m.Invoke(obj, args);
         }
 
         // ── Setup helpers ───────────────────────────────────────────────────
@@ -179,7 +165,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
                 };
 
                 // RegisterPickerSlot is internal; reflection bypasses that.
-                InvokePrivate(ui, "RegisterPickerSlot", slotGo, r, c, entry, hlGo);
+                TestReflection.Invoke(ui, "RegisterPickerSlot", slotGo, r, c, entry, hlGo);
 
                 handles.Add(new SlotHandle
                 {
@@ -191,13 +177,13 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
         }
 
         private void Down(TileEditorUI ui, SlotHandle h)
-            => InvokePrivate(ui, "OnTilesetSlotDown", h.R, h.C, h.Index, h.Entry);
+            => TestReflection.Invoke(ui, "OnTilesetSlotDown", h.R, h.C, h.Index, h.Entry);
 
         private void Enter(TileEditorUI ui, int r, int c)
-            => InvokePrivate(ui, "OnTilesetSlotEnter", r, c);
+            => TestReflection.Invoke(ui, "OnTilesetSlotEnter", r, c);
 
         private void Up(TileEditorUI ui, SlotHandle h)
-            => InvokePrivate(ui, "OnTilesetSlotUp", h.Index, h.Entry);
+            => TestReflection.Invoke(ui, "OnTilesetSlotUp", h.Index, h.Entry);
 
         private HashSet<Vector2Int> Selected(TileEditorUI ui)
             => GetPrivate<HashSet<Vector2Int>>(ui, "_tilesetSelectedSlots");
@@ -620,7 +606,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             var slots = RegisterSlots(ui, (0, 0), (0, 1));
             Down(ui, slots[0]); Up(ui, slots[0]);
 
-            InvokePrivate(ui, "ResetPickerSelectionState");
+            TestReflection.Invoke(ui, "ResetPickerSelectionState");
 
             Assert.AreEqual(0, Selected(ui).Count);
 
@@ -663,13 +649,13 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             var entry0 = new TileCatalog.TileEntry { tile = tile0, gridR = 0, gridC = 0, transparent = false };
             var entry1 = new TileCatalog.TileEntry { tile = tile1, gridR = 0, gridC = 1, transparent = true };
 
-            InvokePrivate(ui, "RegisterPickerSlot", go0, 0, 0, entry0, hl0);
-            InvokePrivate(ui, "RegisterPickerSlot", go1, 0, 1, entry1, hl1);
+            TestReflection.Invoke(ui, "RegisterPickerSlot", go0, 0, 0, entry0, hl0);
+            TestReflection.Invoke(ui, "RegisterPickerSlot", go1, 0, 1, entry1, hl1);
 
             // Drag covering both cells.
-            InvokePrivate(ui, "OnTilesetSlotDown", 0, 0, 0, entry0);
-            InvokePrivate(ui, "OnTilesetSlotEnter", 0, 1);
-            InvokePrivate(ui, "OnTilesetSlotUp", 1, entry1);
+            TestReflection.Invoke(ui, "OnTilesetSlotDown", 0, 0, 0, entry0);
+            TestReflection.Invoke(ui, "OnTilesetSlotEnter", 0, 1);
+            TestReflection.Invoke(ui, "OnTilesetSlotUp", 1, entry1);
 
             var clip = State(ui).Clipboard;
             Assert.IsNotNull(clip);

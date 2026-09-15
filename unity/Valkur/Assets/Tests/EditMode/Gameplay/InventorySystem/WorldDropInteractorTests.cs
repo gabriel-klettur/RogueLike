@@ -9,6 +9,7 @@ using Valkur.Data;
 using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.WorldDrops;
 using Valkur.Infrastructure.Persistence.Repositories;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.InventorySystem
 {
@@ -185,8 +186,8 @@ namespace Valkur.Tests.EditMode.Gameplay.InventorySystem
                 // Simulate the drag flow without real input by setting the private
                 // state directly + invoking the same persistence call the handler
                 // makes on RMB release.
-                SetField(_interactor, "_dragging", pickup);
-                SetField(_interactor, "_draggingDropId", inst.dropId);
+                TestReflection.SetField(_interactor, "_dragging", pickup);
+                TestReflection.SetField(_interactor, "_draggingDropId", inst.dropId);
                 pickup.SetWorldPosition(new Vector3(3f, 4f, 0f));
                 bool ok = service.UpdatePosition(inst.dropId, new Vector2(3f, 4f));
                 Assert.IsTrue(ok);
@@ -236,17 +237,5 @@ namespace Valkur.Tests.EditMode.Gameplay.InventorySystem
             Assert.Fail($"Method '{method}' not found on {obj.GetType().Name}");
         }
 
-        private static void SetField(object obj, string name, object value)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var f = t.GetField(name, BindingFlags.NonPublic | BindingFlags.Public |
-                                         BindingFlags.Instance);
-                if (f != null) { f.SetValue(obj, value); return; }
-                t = t.BaseType;
-            }
-            Assert.Fail($"Field '{name}' not found on {obj.GetType().Name}");
-        }
     }
 }

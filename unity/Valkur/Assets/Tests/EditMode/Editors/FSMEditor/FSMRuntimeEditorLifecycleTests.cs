@@ -6,6 +6,7 @@ using UnityEngine.TestTools;
 using Valkur.Core;
 using Valkur.Core.Input;
 using Valkur.Gameplay.Enemies.FSM;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.FSMEditor
 {
@@ -65,19 +66,6 @@ namespace Valkur.Tests.EditMode.Editors.FSMEditor
         private static void SetField(object obj, string name, object value)
             => Field(obj, name)?.SetValue(obj, value);
 
-        private static void Invoke(object obj, string method)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var m = t.GetMethod(method,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                if (m != null) { m.Invoke(obj, null); return; }
-                t = t.BaseType;
-            }
-            Assert.Fail($"Method '{method}' not found on {obj.GetType().Name}");
-        }
-
         /// <summary>
         /// Creates a <see cref="FSMRuntimeEditor"/> in EditMode without invoking Start
         /// (BuildUI is heavy — only call when a test needs the UI tree).
@@ -88,8 +76,8 @@ namespace Valkur.Tests.EditMode.Editors.FSMEditor
             var go = new GameObject("TestFSMEditor");
             _scene.Add(go);
             var ed = go.AddComponent<FSMRuntimeEditor>();
-            Invoke(ed, "OnSingletonAwake");
-            if (buildUI) Invoke(ed, "Start");
+            TestReflection.Invoke(ed, "OnSingletonAwake");
+            if (buildUI) TestReflection.Invoke(ed, "Start");
             return ed;
         }
 
@@ -207,10 +195,10 @@ namespace Valkur.Tests.EditMode.Editors.FSMEditor
             LogAssert.ignoreFailingMessages = true;
             var ed = CreateEditor(buildUI: true);
 
-            Invoke(ed, "ToggleActive");
+            TestReflection.Invoke(ed, "ToggleActive");
             Assert.IsTrue(ed.IsActive, "First toggle must activate.");
 
-            Invoke(ed, "ToggleActive");
+            TestReflection.Invoke(ed, "ToggleActive");
             Assert.IsFalse(ed.IsActive, "Second toggle must deactivate.");
         }
 
@@ -252,9 +240,9 @@ namespace Valkur.Tests.EditMode.Editors.FSMEditor
             var tut = GetField(ed, "_tutorial") as GameObject;
 
             Assert.IsFalse(tut.activeSelf, "Tutorial starts hidden.");
-            Invoke(ed, "ToggleTutorial");
+            TestReflection.Invoke(ed, "ToggleTutorial");
             Assert.IsTrue(tut.activeSelf, "First toggle must show tutorial.");
-            Invoke(ed, "ToggleTutorial");
+            TestReflection.Invoke(ed, "ToggleTutorial");
             Assert.IsFalse(tut.activeSelf, "Second toggle must hide tutorial.");
         }
 

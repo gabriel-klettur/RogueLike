@@ -3,6 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Gameplay.Spawners;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
 {
@@ -54,9 +55,6 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             return null;
         }
 
-        private static T GetFieldValue<T>(object obj, string name)
-            => (T)GetField(obj, name)?.GetValue(obj);
-
         // ── Configure builds the children once ───────────────────────────────
 
         [Test]
@@ -64,8 +62,8 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
         {
             _outline.Configure(Color.cyan, 0.06f, 1f);
 
-            var ring = GetFieldValue<LineRenderer>(_outline, "_ring");
-            var dot  = GetFieldValue<LineRenderer>(_outline, "_centerDot");
+            var ring = TestReflection.GetField<LineRenderer>(_outline, "_ring");
+            var dot  = TestReflection.GetField<LineRenderer>(_outline, "_centerDot");
 
             Assert.IsNotNull(ring, "Configure must create the outer trigger-radius LineRenderer.");
             Assert.IsNotNull(dot,  "Configure must create the inner centre-dot LineRenderer.");
@@ -88,7 +86,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
         public void Configure_RingUsesVfxSortingLayer()
         {
             _outline.Configure(Color.cyan, 0.06f, 1f);
-            var ring = GetFieldValue<LineRenderer>(_outline, "_ring");
+            var ring = TestReflection.GetField<LineRenderer>(_outline, "_ring");
 
             Assert.AreEqual("VFX", ring.sortingLayerName,
                 "Outline must render on the VFX sorting layer to sit above world tiles.");
@@ -98,8 +96,8 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
         public void Configure_CenterDotSortsAboveRing()
         {
             _outline.Configure(Color.cyan, 0.06f, 1f);
-            var ring = GetFieldValue<LineRenderer>(_outline, "_ring");
-            var dot  = GetFieldValue<LineRenderer>(_outline, "_centerDot");
+            var ring = TestReflection.GetField<LineRenderer>(_outline, "_ring");
+            var dot  = TestReflection.GetField<LineRenderer>(_outline, "_centerDot");
 
             Assert.Greater(dot.sortingOrder, ring.sortingOrder,
                 "Centre dot must render above the trigger ring so the click marker is always readable.");
@@ -113,8 +111,8 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             _outline.Configure(Color.cyan, 0.06f, 1f);
             _outline.SetVisible(false);
 
-            var ring = GetFieldValue<LineRenderer>(_outline, "_ring");
-            var dot  = GetFieldValue<LineRenderer>(_outline, "_centerDot");
+            var ring = TestReflection.GetField<LineRenderer>(_outline, "_ring");
+            var dot  = TestReflection.GetField<LineRenderer>(_outline, "_centerDot");
 
             Assert.IsFalse(ring.enabled, "Outer ring must be disabled when the outline is hidden.");
             Assert.IsFalse(dot.enabled,  "Centre dot must be disabled when the outline is hidden.");
@@ -127,8 +125,8 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             _outline.SetVisible(false);
             _outline.SetVisible(true);
 
-            var ring = GetFieldValue<LineRenderer>(_outline, "_ring");
-            var dot  = GetFieldValue<LineRenderer>(_outline, "_centerDot");
+            var ring = TestReflection.GetField<LineRenderer>(_outline, "_ring");
+            var dot  = TestReflection.GetField<LineRenderer>(_outline, "_centerDot");
 
             Assert.IsTrue(ring.enabled, "Outer ring must re-enable when the outline is shown again.");
             Assert.IsTrue(dot.enabled,  "Centre dot must re-enable when the outline is shown again.");
@@ -147,7 +145,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
         public void SetHovered_True_ChangesCenterDotColor()
         {
             _outline.Configure(Color.cyan, 0.06f, 1f);
-            var dot = GetFieldValue<LineRenderer>(_outline, "_centerDot");
+            var dot = TestReflection.GetField<LineRenderer>(_outline, "_centerDot");
             Color baseline = dot.startColor;
 
             _outline.SetHovered(true);
@@ -161,7 +159,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
         public void SetHovered_True_IncreasesCenterDotThickness()
         {
             _outline.Configure(Color.cyan, 0.06f, 1f);
-            var dot = GetFieldValue<LineRenderer>(_outline, "_centerDot");
+            var dot = TestReflection.GetField<LineRenderer>(_outline, "_centerDot");
             float baselineThickness = dot.startWidth;
 
             _outline.SetHovered(true);
@@ -176,7 +174,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
         public void SetHovered_False_RestoresIdleVisuals()
         {
             _outline.Configure(Color.cyan, 0.06f, 1f);
-            var dot = GetFieldValue<LineRenderer>(_outline, "_centerDot");
+            var dot = TestReflection.GetField<LineRenderer>(_outline, "_centerDot");
             Color   idleColor     = dot.startColor;
             float   idleThickness = dot.startWidth;
 
@@ -209,7 +207,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             _outline.Configure(Color.cyan, 0.06f, 1f);
             _outline.SetRadius(2.5f);
 
-            float stored = GetFieldValue<float>(_outline, "_radius");
+            float stored = TestReflection.GetField<float>(_outline, "_radius");
             Assert.AreEqual(2.5f, stored, 0.0001f,
                 "SetRadius must persist a regular trigger radius.");
         }
@@ -220,7 +218,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             _outline.Configure(Color.cyan, 0.06f, 1f);
             _outline.SetRadius(0f);
 
-            float stored = GetFieldValue<float>(_outline, "_radius");
+            float stored = TestReflection.GetField<float>(_outline, "_radius");
             Assert.Greater(stored, 0f,
                 "SetRadius(0) must clamp upward to a sensible default so a ring is still drawn.");
         }
@@ -238,7 +236,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
         {
             _outline.Configure(Color.cyan, 0.06f, 1f);
 
-            Assert.IsNotNull(GetFieldValue<LineRenderer>(_outline, "_spawnRing"),
+            Assert.IsNotNull(TestReflection.GetField<LineRenderer>(_outline, "_spawnRing"),
                 "Configure must create the spawn-radius LineRenderer alongside the trigger ring.");
         }
 
@@ -248,8 +246,8 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             _outline.Configure(Color.cyan, 0.06f, 1f);
             _outline.SetRadius(10f, 4f);
 
-            Assert.AreEqual(10f, GetFieldValue<float>(_outline, "_radius"), 0.0001f);
-            Assert.AreEqual(4f,  GetFieldValue<float>(_outline, "_spawnRadius"), 0.0001f,
+            Assert.AreEqual(10f, TestReflection.GetField<float>(_outline, "_radius"), 0.0001f);
+            Assert.AreEqual(4f,  TestReflection.GetField<float>(_outline, "_spawnRadius"), 0.0001f,
                 "The two radii are independent — a camp may trigger far and spawn tight.");
         }
 
@@ -264,10 +262,10 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             _outline.Configure(Color.cyan, 0.06f, 1f);
             _outline.SetRadius(10f, 0f);
 
-            Assert.AreEqual(0f, GetFieldValue<float>(_outline, "_spawnRadius"), 0.0001f);
+            Assert.AreEqual(0f, TestReflection.GetField<float>(_outline, "_spawnRadius"), 0.0001f);
 
             _outline.SetVisible(true);
-            var spawnRing = GetFieldValue<LineRenderer>(_outline, "_spawnRing");
+            var spawnRing = TestReflection.GetField<LineRenderer>(_outline, "_spawnRing");
             Assert.IsFalse(spawnRing.enabled,
                 "An unbounded spawn area must draw no ring even while the outline is shown.");
         }
@@ -279,7 +277,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             _outline.SetRadius(10f, 4f);
             _outline.SetVisible(true);
 
-            Assert.IsTrue(GetFieldValue<LineRenderer>(_outline, "_spawnRing").enabled);
+            Assert.IsTrue(TestReflection.GetField<LineRenderer>(_outline, "_spawnRing").enabled);
         }
 
         [Test]
@@ -288,8 +286,8 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             // When the two radii coincide the trigger ring is the one that must stay readable.
             _outline.Configure(Color.cyan, 0.06f, 1f);
 
-            var ring      = GetFieldValue<LineRenderer>(_outline, "_ring");
-            var spawnRing = GetFieldValue<LineRenderer>(_outline, "_spawnRing");
+            var ring      = TestReflection.GetField<LineRenderer>(_outline, "_ring");
+            var spawnRing = TestReflection.GetField<LineRenderer>(_outline, "_spawnRing");
 
             Assert.Less(spawnRing.sortingOrder, ring.sortingOrder);
         }
@@ -301,8 +299,8 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             // forfeits the whole reason there are two.
             _outline.Configure(Color.cyan, 0.06f, 1f);
 
-            var ring      = GetFieldValue<LineRenderer>(_outline, "_ring");
-            var spawnRing = GetFieldValue<LineRenderer>(_outline, "_spawnRing");
+            var ring      = TestReflection.GetField<LineRenderer>(_outline, "_ring");
+            var spawnRing = TestReflection.GetField<LineRenderer>(_outline, "_spawnRing");
 
             Assert.AreNotEqual(ring.startColor, spawnRing.startColor);
         }
@@ -316,7 +314,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             _outline.SetRadius(10f, 4f);
             _outline.SetRadius(10f);
 
-            Assert.AreEqual(0f, GetFieldValue<float>(_outline, "_spawnRadius"), 0.0001f);
+            Assert.AreEqual(0f, TestReflection.GetField<float>(_outline, "_spawnRadius"), 0.0001f);
         }
     }
 }

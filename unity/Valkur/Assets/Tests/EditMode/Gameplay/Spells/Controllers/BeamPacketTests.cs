@@ -3,6 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Valkur.Gameplay.Spells;
 using Valkur.Gameplay.VFX;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.Spells.Controllers
 {
@@ -344,6 +345,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Controllers
                 "teardown survives as a stuck line on the player.");
         }
 
+        [Category(TestCategories.Slow)]
         [Test]
         public void NothingTriesToScrollATextureAnyMore()
         {

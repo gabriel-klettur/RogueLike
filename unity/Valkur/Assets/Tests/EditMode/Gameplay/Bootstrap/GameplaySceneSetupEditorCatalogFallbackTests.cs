@@ -4,6 +4,7 @@ using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.Bootstrap
 {
@@ -52,20 +53,6 @@ namespace Valkur.Tests.EditMode.Gameplay.Bootstrap
             return _go.AddComponent<GameplaySceneSetup>();
         }
 
-        private static void SetField(object target, string fieldName, object value)
-        {
-            var field = typeof(GameplaySceneSetup).GetField(fieldName, Instance);
-            Assert.IsNotNull(field, $"GameplaySceneSetup.{fieldName} not found — has it been renamed?");
-            field.SetValue(target, value);
-        }
-
-        private static void InvokePrivate(object target, string methodName)
-        {
-            var method = typeof(GameplaySceneSetup).GetMethod(methodName, Instance);
-            Assert.IsNotNull(method, $"GameplaySceneSetup.{methodName} not found — has it been renamed?");
-            method.Invoke(target, null);
-        }
-
         // ---- MonsterCatalog (F5) ----------------------------------------------
 
         [Test]
@@ -73,9 +60,9 @@ namespace Valkur.Tests.EditMode.Gameplay.Bootstrap
         {
             var setup = CreateSetup();
             var catalog = ScriptableObject.CreateInstance<MonsterCatalog>();
-            SetField(setup, "_monsterCatalog", catalog);
+            TestReflection.SetField(setup, "_monsterCatalog", catalog);
 
-            InvokePrivate(setup, "RegisterMonsterCatalogFallback");
+            TestReflection.Invoke(setup, "RegisterMonsterCatalogFallback");
 
             Assert.IsTrue(ServiceLocator.TryGet<MonsterCatalog>(out var resolved),
                 "the inspector-assigned MonsterCatalog must reach ServiceLocator " +
@@ -90,9 +77,9 @@ namespace Valkur.Tests.EditMode.Gameplay.Bootstrap
         public void RegisterMonsterCatalogFallback_NullCatalog_RegistersNothing()
         {
             var setup = CreateSetup();
-            SetField(setup, "_monsterCatalog", null);
+            TestReflection.SetField(setup, "_monsterCatalog", null);
 
-            InvokePrivate(setup, "RegisterMonsterCatalogFallback");
+            TestReflection.Invoke(setup, "RegisterMonsterCatalogFallback");
 
             Assert.IsFalse(ServiceLocator.TryGet<MonsterCatalog>(out _),
                 "an unassigned inspector field must not register a null service.");
@@ -105,9 +92,9 @@ namespace Valkur.Tests.EditMode.Gameplay.Bootstrap
         {
             var setup = CreateSetup();
             var catalog = ScriptableObject.CreateInstance<SpawnerTemplateCatalog>();
-            SetField(setup, "_spawnerTemplateCatalog", catalog);
+            TestReflection.SetField(setup, "_spawnerTemplateCatalog", catalog);
 
-            InvokePrivate(setup, "RegisterSpawnerTemplateCatalogFallback");
+            TestReflection.Invoke(setup, "RegisterSpawnerTemplateCatalogFallback");
 
             Assert.IsTrue(ServiceLocator.TryGet<SpawnerTemplateCatalog>(out var resolved));
             Assert.AreSame(catalog, resolved);
@@ -119,9 +106,9 @@ namespace Valkur.Tests.EditMode.Gameplay.Bootstrap
         public void RegisterSpawnerTemplateCatalogFallback_NullCatalog_RegistersNothing()
         {
             var setup = CreateSetup();
-            SetField(setup, "_spawnerTemplateCatalog", null);
+            TestReflection.SetField(setup, "_spawnerTemplateCatalog", null);
 
-            InvokePrivate(setup, "RegisterSpawnerTemplateCatalogFallback");
+            TestReflection.Invoke(setup, "RegisterSpawnerTemplateCatalogFallback");
 
             Assert.IsFalse(ServiceLocator.TryGet<SpawnerTemplateCatalog>(out _));
         }

@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.VFX;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 {
@@ -54,19 +55,6 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
         private static void SetVal(object obj, string name, object value)
             => FindField(obj, name)?.SetValue(obj, value);
 
-        private static void Invoke(object obj, string method, params object[] args)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(method,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                t = t.BaseType;
-            }
-            m?.Invoke(obj, args);
-        }
-
         private static void StubPreviewService(ParticlesRuntimeEditor editor)
         {
             var serviceField = FindField(editor, "_previewService");
@@ -99,7 +87,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var go = new GameObject("DeleteInstanceTestEditor");
             _sceneObjects.Add(go);
             var editor = go.AddComponent<ParticlesRuntimeEditor>();
-            Invoke(editor, "OnSingletonAwake");
+            TestReflection.Invoke(editor, "OnSingletonAwake");
 
             _preset = ScriptableObject.CreateInstance<ParticlePresetDefinition>();
             _preset.id          = "aura_smoke";
@@ -112,7 +100,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             StubPreviewService(editor);
 
             if (withUI)
-                Invoke(editor, "Start");
+                TestReflection.Invoke(editor, "Start");
 
             return editor;
         }
@@ -161,7 +149,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             SetVal(_editor, "_activeInstance", null);
             var modal = GetVal(_editor, "_confirmModal") as GameObject;
 
-            Invoke(_editor, "RequestDeleteSelectedInstanceWithConfirm");
+            TestReflection.Invoke(_editor, "RequestDeleteSelectedInstanceWithConfirm");
 
             if (modal != null)
                 Assert.IsFalse(modal.activeSelf,
@@ -177,7 +165,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 
             var modal = GetVal(_editor, "_confirmModal") as GameObject;
 
-            Invoke(_editor, "RequestDeleteSelectedInstanceWithConfirm");
+            TestReflection.Invoke(_editor, "RequestDeleteSelectedInstanceWithConfirm");
 
             if (modal != null)
                 Assert.IsTrue(modal.activeSelf,
@@ -192,7 +180,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var emitterGo = SpawnEmitter(_editor, new Vector3(2f, 2f, 0f));
             SetVal(_editor, "_activeInstance", emitterGo);
 
-            Invoke(_editor, "RequestDeleteSelectedInstanceWithConfirm");
+            TestReflection.Invoke(_editor, "RequestDeleteSelectedInstanceWithConfirm");
 
             // Simulate confirm click: invoke _pendingConfirmYes directly.
             var pendingYes = GetVal(_editor, "_pendingConfirmYes") as System.Action;
@@ -228,7 +216,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             // Call ShowInstanceProperties with a valid GO → button must become visible.
             var emitterGo = SpawnEmitter(_editor, new Vector3(3f, 3f, 0f));
 
-            Invoke(_editor, "ShowInstanceProperties", emitterGo);
+            TestReflection.Invoke(_editor, "ShowInstanceProperties", emitterGo);
 
             var ui = (ParticlesEditorUIBuilder.UIRefs)GetVal(_editor, "_ui");
             if (ui.DeleteInstanceBtnGo == null)
@@ -245,8 +233,8 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
         {
             // Show then clear: passing null hides the button again.
             var emitterGo = SpawnEmitter(_editor, new Vector3(4f, 4f, 0f));
-            Invoke(_editor, "ShowInstanceProperties", emitterGo);
-            Invoke(_editor, "ShowInstanceProperties", (GameObject)null);
+            TestReflection.Invoke(_editor, "ShowInstanceProperties", emitterGo);
+            TestReflection.Invoke(_editor, "ShowInstanceProperties", (GameObject)null);
 
             var ui = (ParticlesEditorUIBuilder.UIRefs)GetVal(_editor, "_ui");
             if (ui.DeleteInstanceBtnGo == null)

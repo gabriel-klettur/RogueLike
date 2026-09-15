@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using Valkur.Gameplay.TileEditor;
 using Valkur.UIKit;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
 {
@@ -49,6 +50,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
     /// loudly the moment someone removes a critical <c>flexibleHeight = 0</c>.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Slow)]
     public class TileEditorTilesPanelLayoutTests
     {
         private GameObject _canvasGo;

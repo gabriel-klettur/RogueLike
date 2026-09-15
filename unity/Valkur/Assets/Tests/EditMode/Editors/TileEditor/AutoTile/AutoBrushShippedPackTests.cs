@@ -21,6 +21,7 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using Valkur.Data;
 using Valkur.Gameplay.TileEditor;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.AutoTile
 {
@@ -269,6 +270,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.AutoTile
 
         // ── One stroke, one sheet ────────────────────────────────────────────────
 
+        [Category(TestCategories.Slow)]
         [Test]
         public void AStroke_UsesOnlyTheSheetTheAuthorPickedFrom()
         {

@@ -2,6 +2,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.Spells.Executors
 {
@@ -40,22 +41,6 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Executors
             var t   = asm.GetType($"Valkur.Gameplay.Spells.{typeName}");
             Assert.IsNotNull(t, $"Type 'Valkur.Gameplay.Spells.{typeName}' not found");
             return t;
-        }
-
-        private static void SetField(object target, string name, object value)
-        {
-            var f = target.GetType().GetField(name,
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.IsNotNull(f, $"Field '{name}' not found on {target.GetType().Name}");
-            f.SetValue(target, value);
-        }
-
-        private static T GetField<T>(object target, string name)
-        {
-            var f = target.GetType().GetField(name,
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.IsNotNull(f, $"Field '{name}' not found on {target.GetType().Name}");
-            return (T)f.GetValue(target);
         }
 
         private static void CallUpdate(Component c)
@@ -99,7 +84,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Executors
             type.GetMethod("Init", BindingFlags.Public | BindingFlags.Instance)
                 .Invoke(mover, new object[] { Vector3.zero, Vector3.one, 0f });
 
-            float duration = GetField<float>(mover, "_duration");
+            float duration = TestReflection.GetField<float>(mover, "_duration");
             Assert.GreaterOrEqual(duration, 0.01f,
                 "Duration must be clamped to at least 0.01f to prevent div-by-zero");
         }
@@ -119,7 +104,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Executors
                 .Invoke(mover, new object[] { from, to, dur });
 
             // Inject _age = half of duration (Time.deltaTime = 0 in EditMode)
-            SetField(mover, "_age", dur * 0.5f);
+            TestReflection.SetField(mover, "_age", dur * 0.5f);
             CallUpdate(mover);
 
             var mid = Vector3.Lerp(from, to, 0.5f);
@@ -142,7 +127,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Executors
                 .Invoke(mover, new object[] { from, to, dur });
 
             // Inject _age >= duration so t >= 1
-            SetField(mover, "_age", dur);
+            TestReflection.SetField(mover, "_age", dur);
             CallUpdate(mover);
 
             Assert.AreEqual(to.x, _go.transform.position.x, 0.001f,
@@ -165,7 +150,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Executors
             type.GetMethod("Init", BindingFlags.Public | BindingFlags.Instance)
                 .Invoke(mover, new object[] { from, to, dur });
 
-            SetField(mover, "_age", 0.3f); // t = 0.3, well below 1
+            TestReflection.SetField(mover, "_age", 0.3f); // t = 0.3, well below 1
             CallUpdate(mover);
 
             float x = _go.transform.position.x;
@@ -203,7 +188,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Executors
             type.GetMethod("Init", BindingFlags.Public | BindingFlags.Instance)
                 .Invoke(mover, new object[] { Vector3.zero, Vector3.one, -5f });
 
-            float duration = GetField<float>(mover, "_duration");
+            float duration = TestReflection.GetField<float>(mover, "_duration");
             Assert.GreaterOrEqual(duration, 0.01f,
                 "Negative duration must be clamped to at least 0.01f");
         }
@@ -222,7 +207,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Executors
             type.GetMethod("Init", BindingFlags.Public | BindingFlags.Instance)
                 .Invoke(mover, new object[] { from, to, dur });
 
-            SetField(mover, "_age", dur * 0.5f);
+            TestReflection.SetField(mover, "_age", dur * 0.5f);
             CallUpdate(mover);
 
             Assert.AreEqual(3f, _go.transform.position.x, 0.001f,
@@ -243,7 +228,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Executors
             type.GetMethod("Init", BindingFlags.Public | BindingFlags.Instance)
                 .Invoke(mover, new object[] { from, to, dur });
 
-            SetField(mover, "_age", dur);
+            TestReflection.SetField(mover, "_age", dur);
             CallUpdate(mover);
 
             Assert.AreEqual(to.x, _go.transform.position.x, 0.001f,
@@ -262,10 +247,10 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Executors
             type.GetMethod("Init", BindingFlags.Public | BindingFlags.Instance)
                 .Invoke(mover, new object[] { Vector3.zero, Vector3.right, 0.18f });
 
-            SetField(mover, "_age", 0.18f); // t = 1
+            TestReflection.SetField(mover, "_age", 0.18f); // t = 1
             CallUpdate(mover);
 
-            bool stopped = GetField<bool>(mover, "_stopped");
+            bool stopped = TestReflection.GetField<bool>(mover, "_stopped");
             Assert.IsTrue(stopped, "After t >= 1 _stopped must be set to true");
         }
 
@@ -280,14 +265,14 @@ namespace Valkur.Tests.EditMode.Gameplay.Spells.Executors
             type.GetMethod("Init", BindingFlags.Public | BindingFlags.Instance)
                 .Invoke(mover, new object[] { Vector3.zero, Vector3.right * 3f, 0.2f });
 
-            SetField(mover, "_age", 0.2f);
+            TestReflection.SetField(mover, "_age", 0.2f);
             CallUpdate(mover); // first Update past t=1
 
-            SetField(mover, "_age", 0.4f);
+            TestReflection.SetField(mover, "_age", 0.4f);
             CallUpdate(mover); // second Update past t=1
 
             // _stopped must remain true (no toggling)
-            Assert.IsTrue(GetField<bool>(mover, "_stopped"),
+            Assert.IsTrue(TestReflection.GetField<bool>(mover, "_stopped"),
                 "_stopped must remain true on subsequent updates past t=1");
         }
     }

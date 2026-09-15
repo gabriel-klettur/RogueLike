@@ -5,6 +5,7 @@ using UnityEngine.TestTools;
 using UnityEngine.Tilemaps;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
 {
@@ -73,8 +74,8 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
                     ground = tm;
             }
 
-            SetField(manager, "worldGridBuilder", wgb);
-            SetField(wgb, "_grid", grid);
+            TestReflection.SetField(manager, "worldGridBuilder", wgb);
+            TestReflection.SetField(wgb, "_grid", grid);
             EnsureUndoSystem(manager);
 
             manager.State.CurrentLayer = TilemapLayerSetup.TilemapLayer.Ground;
@@ -110,48 +111,6 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             return tile;
         }
 
-        private static void InvokePrivate(object target, string method, params object[] args)
-        {
-            var t  = target.GetType();
-            MethodInfo mi = null;
-            foreach (var m in t.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
-            {
-                if (m.Name != method) continue;
-                if (m.GetParameters().Length != args.Length) continue;
-                mi = m;
-                break;
-            }
-            Assert.IsNotNull(mi, $"Reflection: {method}({args.Length} args) not found on {t.Name}.");
-            mi.Invoke(target, args);
-        }
-
-        private static void SetField(object obj, string name, object value)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var f = t.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic
-                                        | BindingFlags.Public);
-                if (f != null) { f.SetValue(obj, value); return; }
-                t = t.BaseType;
-            }
-            Assert.Fail($"Reflection: field '{name}' not found.");
-        }
-
-        private static T GetField<T>(object obj, string name)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var f = t.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic
-                                        | BindingFlags.Public);
-                if (f != null) return (T)f.GetValue(obj);
-                t = t.BaseType;
-            }
-            Assert.Fail($"Reflection: field '{name}' not found.");
-            return default;
-        }
-
         private static void EnsureUndoSystem(TileEditorManager manager)
         {
             var f = typeof(TileEditorManager)
@@ -169,7 +128,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             var manager = NewManager();
             // _input is null in EditMode tests (OnSingletonAwake not called by
             // AddComponent in this path) so we just verify the field is present.
-            var v = GetField<Vector3Int?>(manager, "_lastMapCursorCell");
+            var v = TestReflection.GetField<Vector3Int?>(manager, "_lastMapCursorCell");
             Assert.IsFalse(v.HasValue, "_lastMapCursorCell must start null (no map interaction yet).");
         }
 
@@ -191,11 +150,11 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             // Simulate the cursor having been at (10, 20) on the map before moving
             // to the picker panel. This is what UpdateGridCursor writes every frame
             // when the mouse is over the canvas.
-            SetField(manager, "_lastMapCursorCell", (Vector3Int?)new Vector3Int(10, 20, 0));
+            TestReflection.SetField(manager, "_lastMapCursorCell", (Vector3Int?)new Vector3Int(10, 20, 0));
 
             // _input is null (not wired in EditMode test), so priority 1 is skipped.
             // Priority 2 (_lastMapCursorCell) should be used.
-            InvokePrivate(manager, "OnPasteClicked");
+            TestReflection.Invoke(manager, "OnPasteClicked");
 
             // A 1×1 clipboard pastes at anchor.y (dy=0 → pos.y = anchor.y - (h-1-0) = 10 - 0 = 20).
             Assert.AreEqual(tile, tilemap.GetTile(new Vector3Int(10, 20, 0)),
@@ -219,7 +178,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             manager.State.SelectedCellPos = new Vector3Int(5, 7, 0);
             // _lastMapCursorCell is null (default).
 
-            InvokePrivate(manager, "OnPasteClicked");
+            TestReflection.Invoke(manager, "OnPasteClicked");
 
             Assert.AreEqual(tile, tilemap.GetTile(new Vector3Int(5, 7, 0)),
                 "Without _lastMapCursorCell, paste must fall back to SelectedCellPos.");
@@ -240,7 +199,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             manager.State.SelectedCellPos = null;
             // _lastMapCursorCell stays null (never set).
 
-            InvokePrivate(manager, "OnPasteClicked");
+            TestReflection.Invoke(manager, "OnPasteClicked");
 
             Assert.AreEqual(tile, tilemap.GetTile(new Vector3Int(0, 0, 0)),
                 "Last-resort anchor must be origin (0,0,0).");
@@ -258,9 +217,9 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             SetPickerClipboard(manager, tile);
 
             manager.State.SelectedCellPos = new Vector3Int(3, 3, 0);
-            SetField(manager, "_lastMapCursorCell", (Vector3Int?)new Vector3Int(7, 7, 0));
+            TestReflection.SetField(manager, "_lastMapCursorCell", (Vector3Int?)new Vector3Int(7, 7, 0));
 
-            InvokePrivate(manager, "OnPasteClicked");
+            TestReflection.Invoke(manager, "OnPasteClicked");
 
             Assert.AreEqual(tile, tilemap.GetTile(new Vector3Int(7, 7, 0)),
                 "_lastMapCursorCell (7,7) must win over SelectedCellPos (3,3).");
@@ -284,7 +243,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             var tileB = MakeTile("B");
 
             // Step 1: Paint tile A at (5,5) via the undo system (simulates a brush stroke).
-            var undo = GetField<TileEditorUndoSystem>(manager, "_undo");
+            var undo = TestReflection.GetField<TileEditorUndoSystem>(manager, "_undo");
             undo.StartStroke(tilemap);
             tilemap.SetTile(new Vector3Int(5, 5, 0), tileA);
             undo.RecordEdits(new System.Collections.Generic.List<TileEdit>
@@ -302,14 +261,14 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
                 "Undo must have removed tile A from (5,5).");
 
             // Step 3: user moves cursor to (12,15) on the map (UpdateGridCursor fires this).
-            SetField(manager, "_lastMapCursorCell", (Vector3Int?)new Vector3Int(12, 15, 0));
+            TestReflection.SetField(manager, "_lastMapCursorCell", (Vector3Int?)new Vector3Int(12, 15, 0));
 
             // Step 4: picker-rect selects tile B — CommitTilesetSelection writes the clipboard.
             //         SelectedCellPos is NOT updated by the picker (it's still (5,5) from before undo).
             SetPickerClipboard(manager, tileB);
 
             // Step 5: user presses Ctrl+V with mouse over the picker panel (_input = null here).
-            InvokePrivate(manager, "OnPasteClicked");
+            TestReflection.Invoke(manager, "OnPasteClicked");
 
             Assert.AreEqual(tileB, tilemap.GetTile(new Vector3Int(12, 15, 0)),
                 "After undo + picker-rect, paste must land at the last map cursor position (12,15).");
@@ -329,7 +288,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             var tilemap = AttachWorldGrid(manager);
             var tile    = MakeTile("T");
 
-            var undo = GetField<TileEditorUndoSystem>(manager, "_undo");
+            var undo = TestReflection.GetField<TileEditorUndoSystem>(manager, "_undo");
             undo.StartStroke(tilemap);
             tilemap.SetTile(new Vector3Int(0, 0, 0), tile);
             undo.RecordEdits(new System.Collections.Generic.List<TileEdit>
@@ -338,11 +297,11 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             });
             undo.EndStroke();
 
-            SetField(manager, "_lastMapCursorCell", (Vector3Int?)new Vector3Int(3, 4, 0));
+            TestReflection.SetField(manager, "_lastMapCursorCell", (Vector3Int?)new Vector3Int(3, 4, 0));
 
             undo.Undo();
 
-            var cell = GetField<Vector3Int?>(manager, "_lastMapCursorCell");
+            var cell = TestReflection.GetField<Vector3Int?>(manager, "_lastMapCursorCell");
             Assert.IsTrue(cell.HasValue, "_lastMapCursorCell must not be cleared by Undo.");
             Assert.AreEqual(new Vector3Int(3, 4, 0), cell.Value,
                 "Undo must not touch _lastMapCursorCell — it is updated only by cursor movement, not by tile operations.");
@@ -357,16 +316,16 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             LogAssert.ignoreFailingMessages = true;
 
             var manager = NewManager();
-            SetField(manager, "_lastMapCursorCell", (Vector3Int?)new Vector3Int(5, 5, 0));
+            TestReflection.SetField(manager, "_lastMapCursorCell", (Vector3Int?)new Vector3Int(5, 5, 0));
 
             // Simulate what HandleToggle does on the deactivate branch —
             // directly set the field to null as the production code does.
             // We can't call HandleToggle (it needs the editor to be Active and
             // has UI/overlay dependencies), so we verify the field assignment
             // via reflection instead of invoking the full toggle.
-            SetField(manager, "_lastMapCursorCell", (Vector3Int?)null);
+            TestReflection.SetField(manager, "_lastMapCursorCell", (Vector3Int?)null);
 
-            var cell = GetField<Vector3Int?>(manager, "_lastMapCursorCell");
+            var cell = TestReflection.GetField<Vector3Int?>(manager, "_lastMapCursorCell");
             Assert.IsFalse(cell.HasValue, "After deactivation _lastMapCursorCell must be null.");
         }
 
@@ -395,9 +354,9 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
 
             // Stale SelectedCellPos — must NOT be used.
             manager.State.SelectedCellPos = new Vector3Int(0, 0, 0);
-            SetField(manager, "_lastMapCursorCell", (Vector3Int?)new Vector3Int(8, 10, 0));
+            TestReflection.SetField(manager, "_lastMapCursorCell", (Vector3Int?)new Vector3Int(8, 10, 0));
 
-            InvokePrivate(manager, "OnPasteClicked");
+            TestReflection.Invoke(manager, "OnPasteClicked");
 
             // Anchor = (8, 10). Width=2, Height=1.
             // dy loop: dy=0 → pos.y = 10 - ((1-1) - 0) = 10 - 0 = 10.

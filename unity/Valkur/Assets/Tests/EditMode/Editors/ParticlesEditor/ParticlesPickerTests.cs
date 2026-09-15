@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.VFX;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 {
@@ -52,19 +53,6 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
         private static object GetVal(object obj, string name) => FindField(obj, name)?.GetValue(obj);
         private static void SetVal(object obj, string name, object value) => FindField(obj, name)?.SetValue(obj, value);
 
-        private static void Invoke(object obj, string method, params object[] args)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(method,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                t = t.BaseType;
-            }
-            m?.Invoke(obj, args);
-        }
-
         // ── Catalog builder ───────────────────────────────────────────────────────
 
         private static ParticlePresetCatalog MakeCatalog5()
@@ -103,9 +91,9 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             _sceneObjects.Add(go);
             _editor = go.AddComponent<ParticlesRuntimeEditor>();
 
-            Invoke(_editor, "OnSingletonAwake");
+            TestReflection.Invoke(_editor, "OnSingletonAwake");
             SetVal(_editor, "_catalog", MakeCatalog5());
-            Invoke(_editor, "Start");
+            TestReflection.Invoke(_editor, "Start");
         }
 
         [TearDown]
@@ -125,7 +113,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
         public void RefreshPicker_NullFilter_ShowsAllFivePresets()
         {
             SetVal(_editor, "_searchFilter", "");
-            Invoke(_editor, "RefreshPicker");
+            TestReflection.Invoke(_editor, "RefreshPicker");
 
             var pickerContent = GetVal(_editor, "_ui");
             var uiType  = pickerContent.GetType();
@@ -140,7 +128,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
         public void RefreshPicker_Filter_Aura_ShowsThreePresets()
         {
             SetVal(_editor, "_searchFilter", "aura");
-            Invoke(_editor, "RefreshPicker");
+            TestReflection.Invoke(_editor, "RefreshPicker");
 
             var ui = GetVal(_editor, "_ui");
             var content = ui.GetType().GetField("PickerContent").GetValue(ui) as RectTransform;
@@ -153,7 +141,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
         public void RefreshPicker_Filter_Explosion_ShowsTwoPresets()
         {
             SetVal(_editor, "_searchFilter", "explosion");
-            Invoke(_editor, "RefreshPicker");
+            TestReflection.Invoke(_editor, "RefreshPicker");
 
             var ui = GetVal(_editor, "_ui");
             var content = ui.GetType().GetField("PickerContent").GetValue(ui) as RectTransform;
@@ -166,7 +154,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
         public void RefreshPicker_NoMatch_ShowsZero()
         {
             SetVal(_editor, "_searchFilter", "zzz_nonexistent");
-            Invoke(_editor, "RefreshPicker");
+            TestReflection.Invoke(_editor, "RefreshPicker");
 
             var ui = GetVal(_editor, "_ui");
             var content = ui.GetType().GetField("PickerContent").GetValue(ui) as RectTransform;

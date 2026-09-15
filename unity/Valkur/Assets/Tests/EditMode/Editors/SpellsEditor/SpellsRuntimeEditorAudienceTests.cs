@@ -7,6 +7,7 @@ using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.Spells;
 using Valkur.UIKit;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.SpellsEditor
 {
@@ -69,14 +70,14 @@ namespace Valkur.Tests.EditMode.Editors.SpellsEditor
             Assert.IsTrue(tabs.SetActive("boss"));
             CollectionAssert.AreEquivalent(new[] { "shared_fire" }, FilteredKeys(editor));
 
-            Invoke(editor, "OnSearchChanged", "frost");
+            TestReflection.Invoke(editor, "OnSearchChanged", "frost");
             Assert.IsEmpty(FilteredKeys(editor),
                 "Search must operate inside the active Boss tab, not across the full catalog.");
 
-            Invoke(editor, "OnSearchChanged", "shared");
+            TestReflection.Invoke(editor, "OnSearchChanged", "shared");
             CollectionAssert.AreEquivalent(new[] { "shared_fire" }, FilteredKeys(editor));
 
-            Invoke(editor, "OnSearchChanged", "");
+            TestReflection.Invoke(editor, "OnSearchChanged", "");
             Assert.IsTrue(tabs.SetActive("unassigned"));
             CollectionAssert.AreEquivalent(new[] { "draft_spell" }, FilteredKeys(editor));
 
@@ -128,8 +129,8 @@ namespace Valkur.Tests.EditMode.Editors.SpellsEditor
             _scene.Add(go);
             var editor = go.AddComponent<SpellsRuntimeEditor>();
             SetField(editor, "_catalog", catalog);
-            Invoke(editor, "OnSingletonAwake");
-            Invoke(editor, "Start");
+            TestReflection.Invoke(editor, "OnSingletonAwake");
+            TestReflection.Invoke(editor, "Start");
             return editor;
         }
 
@@ -183,21 +184,5 @@ namespace Valkur.Tests.EditMode.Editors.SpellsEditor
             field.SetValue(obj, value);
         }
 
-        private static void Invoke(object obj, string method, params object[] args)
-        {
-            var type = obj.GetType();
-            while (type != null)
-            {
-                var candidate = type.GetMethod(method, BindingFlags.NonPublic | BindingFlags.Public |
-                                                       BindingFlags.Instance);
-                if (candidate != null)
-                {
-                    candidate.Invoke(obj, args);
-                    return;
-                }
-                type = type.BaseType;
-            }
-            Assert.Fail($"Method '{method}' not found on {obj.GetType().Name}.");
-        }
     }
 }

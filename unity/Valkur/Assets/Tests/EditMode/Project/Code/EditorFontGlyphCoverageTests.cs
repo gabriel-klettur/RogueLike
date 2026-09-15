@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using NUnit.Framework;
 using TMPro;
 using UnityEngine;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Project.Code
 {
@@ -27,6 +28,7 @@ namespace Valkur.Tests.EditMode.Project.Code
     /// checked without a frame is whether the character was ever typed — which is the failure
     /// that happened.</para>
     /// </summary>
+    [Category(TestCategories.Guard)]
     public class EditorFontGlyphCoverageTests
     {
         /// <summary>Folders whose string literals reach a TMP label.</summary>

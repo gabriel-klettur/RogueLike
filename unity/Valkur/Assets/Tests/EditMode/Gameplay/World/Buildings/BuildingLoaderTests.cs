@@ -6,6 +6,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 {
@@ -51,17 +52,6 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             return method.Invoke(null, new object[] { json }) as IList;
         }
 
-        /// <summary>Gets a named field value from an object via reflection.</summary>
-        private static T GetField<T>(object obj, string fieldName)
-        {
-            var fi = obj.GetType().GetField(
-                fieldName,
-                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.IsNotNull(fi, $"Reflection: field '{fieldName}' not found on {obj.GetType().Name}. " +
-                "Field may have been renamed — update this test.");
-            return (T)fi.GetValue(obj);
-        }
-
         // ── TearDown ──────────────────────────────────────────────────────────────
 
         [TearDown]
@@ -72,7 +62,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
         // ─────────────────────────────────────────────────────────────────────────
 
         [Test]
-        [Category("DataIntegrity")]
+        [Category(TestCategories.ShippedData)]
         public void InstancesJson_Exists_AtStreamingAssetsPath()
         {
             string path = Path.Combine(
@@ -84,7 +74,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
         }
 
         [Test]
-        [Category("DataIntegrity")]
+        [Category(TestCategories.ShippedData)]
         public void InstancesJson_ContainsAtLeastOneBuilding()
         {
             string path = Path.Combine(
@@ -112,7 +102,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
         }
 
         [Test]
-        [Category("DataIntegrity")]
+        [Category(TestCategories.ShippedData)]
         public void InstancesJson_ContainsLobbyZoneEntries()
         {
             string path = Path.Combine(
@@ -126,7 +116,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             int lobbyCount = 0;
             foreach (object dto in instances)
             {
-                string zone = GetField<string>(dto, "Zone");
+                string zone = TestReflection.GetField<string>(dto, "Zone");
                 if (string.Equals(zone, "lobby", System.StringComparison.OrdinalIgnoreCase))
                     lobbyCount++;
             }
@@ -152,11 +142,11 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             Assert.AreEqual(1, items.Count, "One JSON entry should produce one DTO.");
 
             object dto = items[0];
-            Assert.AreEqual(42,      GetField<int>(dto, "Id"),          "Id mismatch.");
-            Assert.AreEqual(7,       GetField<int>(dto, "TemplateId"),  "TemplateId mismatch.");
-            Assert.AreEqual("lobby", GetField<string>(dto, "Zone"),     "Zone mismatch.");
-            Assert.AreEqual(100,     GetField<int>(dto, "RelX"),        "RelX mismatch.");
-            Assert.AreEqual(200,     GetField<int>(dto, "RelY"),        "RelY mismatch.");
+            Assert.AreEqual(42,      TestReflection.GetField<int>(dto, "Id"),          "Id mismatch.");
+            Assert.AreEqual(7,       TestReflection.GetField<int>(dto, "TemplateId"),  "TemplateId mismatch.");
+            Assert.AreEqual("lobby", TestReflection.GetField<string>(dto, "Zone"),     "Zone mismatch.");
+            Assert.AreEqual(100,     TestReflection.GetField<int>(dto, "RelX"),        "RelX mismatch.");
+            Assert.AreEqual(200,     TestReflection.GetField<int>(dto, "RelY"),        "RelY mismatch.");
         }
 
         [Test]
@@ -206,7 +196,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             Assert.AreEqual(1, items.Count);
 
             object dto   = items[0];
-            var    scale = GetField<Vector2Int>(dto, "ScaleOverride");
+            var    scale = TestReflection.GetField<Vector2Int>(dto, "ScaleOverride");
 
             Assert.AreEqual(new Vector2Int(256, 320), scale,
                 "ScaleOverride must match the [w, h] array in the 'overrides' block.");
@@ -223,7 +213,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             IList items = InvokeParse(json);
             Assert.AreEqual(1, items.Count);
 
-            var scale = GetField<Vector2Int>(items[0], "ScaleOverride");
+            var scale = TestReflection.GetField<Vector2Int>(items[0], "ScaleOverride");
             Assert.AreEqual(Vector2Int.zero, scale,
                 "ScaleOverride should default to (0,0) when no overrides block is present.");
         }
@@ -238,7 +228,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             IList items = InvokeParse(json);
             Assert.AreEqual(1, items.Count);
 
-            float sr = GetField<float>(items[0], "SplitRatioOverride");
+            float sr = TestReflection.GetField<float>(items[0], "SplitRatioOverride");
             Assert.AreEqual(0.6f, sr, 0.001f,
                 "SplitRatioOverride must equal the value from the 'overrides' block.");
         }
@@ -251,7 +241,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
                 @"[{""id"":1,""template_id"":1,""zone"":""lobby"",""rel_x"":0,""rel_y"":0}]";
 
             IList items = InvokeParse(json);
-            float sr = GetField<float>(items[0], "SplitRatioOverride");
+            float sr = TestReflection.GetField<float>(items[0], "SplitRatioOverride");
 
             Assert.Less(sr, 0f,
                 "SplitRatioOverride must default to a negative value when absent " +
@@ -268,7 +258,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 
             IList items = InvokeParse(json);
 
-            Assert.AreEqual(expected, GetField<int>(items[0], "InteractableOverride"));
+            Assert.AreEqual(expected, TestReflection.GetField<int>(items[0], "InteractableOverride"));
         }
 
         [Test]
@@ -279,7 +269,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 
             IList items = InvokeParse(json);
 
-            Assert.AreEqual(-1, GetField<int>(items[0], "InteractableOverride"),
+            Assert.AreEqual(-1, TestReflection.GetField<int>(items[0], "InteractableOverride"),
                 "An absent interactable override must inherit the template value.");
         }
 
@@ -298,7 +288,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             IList items = InvokeParse(json);
             Assert.AreEqual(1, items.Count);
 
-            string scope = GetField<string>(items[0], "ColliderScopeOverride");
+            string scope = TestReflection.GetField<string>(items[0], "ColliderScopeOverride");
             Assert.AreEqual("CU", scope,
                 "ColliderScopeOverride must be parsed from overrides.collider_scope.");
         }
@@ -385,7 +375,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
         /// the Buildings Runtime Editor (F10) and press Save once.
         /// </summary>
         [Test]
-        [Category("DataIntegrity")]
+        [Category(TestCategories.ShippedData)]
         public void BackupFile_Exists_AtExpectedPath()
         {
             string backupPath = Path.Combine(
@@ -404,7 +394,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
         /// (or vice-versa) and the backup is stale.
         /// </summary>
         [Test]
-        [Category("DataIntegrity")]
+        [Category(TestCategories.ShippedData)]
         public void BackupFile_EntryCountMatchesLiveFile()
         {
             string livePath = Path.Combine(
@@ -432,7 +422,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
         /// so BuildingLoader can spawn every building without silent failures.
         /// </summary>
         [Test]
-        [Category("DataIntegrity")]
+        [Category(TestCategories.ShippedData)]
         public void InstancesJson_AllEntries_HavePositiveIdAndRequiredFields()
         {
             string path = Path.Combine(
@@ -448,9 +438,9 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 
             foreach (object dto in items)
             {
-                int    id         = GetField<int>(dto, "Id");
-                int    templateId = GetField<int>(dto, "TemplateId");
-                string zone       = GetField<string>(dto, "Zone");
+                int    id         = TestReflection.GetField<int>(dto, "Id");
+                int    templateId = TestReflection.GetField<int>(dto, "TemplateId");
+                string zone       = TestReflection.GetField<string>(dto, "Zone");
 
                 if (id <= 0)                                 invalidIds.Add(id);
                 if (string.IsNullOrWhiteSpace(zone))         emptyZones.Add(id);

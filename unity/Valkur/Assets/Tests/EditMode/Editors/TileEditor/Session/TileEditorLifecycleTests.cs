@@ -6,6 +6,7 @@ using UnityEngine.TestTools;
 using Valkur.Core;
 using Valkur.Gameplay.TileEditor;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
 {
@@ -86,20 +87,6 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
             var f = FindField(obj, name);
             Assert.IsNotNull(f, $"Reflection: field '{name}' not found on {obj.GetType().Name}.");
             f.SetValue(obj, value);
-        }
-
-        private static void InvokeMethod(object obj, string methodName)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(methodName,
-                    BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                t = t.BaseType;
-            }
-            Assert.IsNotNull(m, $"Reflection: method '{methodName}' not found.");
-            m.Invoke(obj, null);
         }
 
         /// <summary>
@@ -258,7 +245,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
             // EditMode doesn't reliably fire OnDestroy via DestroyImmediate — invoke
             // the lifecycle method directly, mirroring
             // PanelChromeTests.OnDestroy_RemovesFromRegistry.
-            InvokeMethod(editor, "OnDestroy");
+            TestReflection.Invoke(editor, "OnDestroy");
 
             Assert.IsFalse(registered.Contains(editor),
                 "TileEditorManager.OnDestroy must call GameEditorManager.Instance.Unregister(this) " +
@@ -281,7 +268,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
             _scene.Add(edGo);
             var editor = edGo.AddComponent<TileEditorManager>();
 
-            Assert.DoesNotThrow(() => InvokeMethod(editor, "OnDestroy"),
+            Assert.DoesNotThrow(() => TestReflection.Invoke(editor, "OnDestroy"),
                 "OnDestroy must tolerate a scene with no GameEditorManager instance.");
         }
     }

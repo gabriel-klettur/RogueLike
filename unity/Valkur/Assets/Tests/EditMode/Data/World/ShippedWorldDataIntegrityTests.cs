@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Data.World
 {
@@ -27,6 +28,7 @@ namespace Valkur.Tests.EditMode.Data.World
     /// <para>The floors are deliberately well below the authored counts. A designer deleting a
     /// dozen emitters must not go red; a run reducing the file to a handful must.</para>
     /// </summary>
+    [Category(TestCategories.ShippedData)]
     public class ShippedWorldDataIntegrityTests
     {
         private static string StreamingRoot =>

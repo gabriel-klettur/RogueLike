@@ -5,6 +5,7 @@ using Valkur.Core.Coordinates;
 using Valkur.Data;
 using Valkur.Data.Chunks;
 using Valkur.Gameplay.World.Chunks;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.Chunks
 {
@@ -20,6 +21,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Chunks
     /// the procedural world.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Integration)]
     public class ProceduralWorldAssetEndToEndTests
     {
         private const string DescPath = "Assets/_Project/Data/Worlds/ProceduralWorld.asset";

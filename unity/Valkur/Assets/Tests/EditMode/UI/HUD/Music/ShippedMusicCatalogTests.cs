@@ -3,6 +3,7 @@ using UnityEngine;
 using Valkur.Data;
 using Valkur.Infrastructure;
 using Valkur.UI.HUD;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.UI.HUD.Music
 {
@@ -11,6 +12,7 @@ namespace Valkur.Tests.EditMode.UI.HUD.Music
     /// life of the project all 24 tracks shipped with <c>bpm: 0</c>, so the metronome, the bar
     /// counter and the beat grid of the old panel never showed a real value — and nothing failed.
     /// </summary>
+    [Category(TestCategories.ShippedData)]
     public class ShippedMusicCatalogTests
     {
         private static MusicTrackEntry[] Tracks()

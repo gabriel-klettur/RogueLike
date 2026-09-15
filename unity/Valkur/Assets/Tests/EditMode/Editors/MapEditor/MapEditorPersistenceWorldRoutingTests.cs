@@ -5,6 +5,7 @@ using Valkur.Core.Coordinates;
 using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.World;
 using Valkur.Infrastructure.Persistence.Repositories;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.MapEditor
 {
@@ -33,7 +34,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
 
             _mgrGo = new GameObject("WorldRoutingMgr");
             _mgr = _mgrGo.AddComponent<MapEditorManager>();
-            SetField(_mgr, "zoneManager", _zones);
+            TestReflection.SetField(_mgr, "zoneManager", _zones);
             // Initialize the private state field the persistence read/write code paths touch.
             InvokeProtected(_mgr, "EnsureCoreInitialized");
         }
@@ -78,7 +79,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             // to be observable in the repo store.
             _zones.AddZone("alpha", Vector2Int.zero, editableInTileEditor: true);
 
-            InvokePrivate(_mgr, "PersistZonesToDisk");
+            TestReflection.Invoke(_mgr, "PersistZonesToDisk");
 
             Assert.IsTrue(repo.Exists(alt),
                 "Persist must land in the active world's slot in the repo.");
@@ -95,7 +96,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
 
             _zones.AddZone("alpha", Vector2Int.zero, editableInTileEditor: true);
 
-            InvokePrivate(_mgr, "PersistZonesToDisk");
+            TestReflection.Invoke(_mgr, "PersistZonesToDisk");
 
             Assert.IsTrue(repo.Exists(WorldId.Base),
                 "Without SetPersistenceWorld, the manager must persist to " +
@@ -104,32 +105,8 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
 
         // ── Reflection helpers ──────────────────────────────────────────────────
 
-        private static void SetField(object obj, string name, object value)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var f = t.GetField(name,
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-                if (f != null) { f.SetValue(obj, value); return; }
-                t = t.BaseType;
-            }
-        }
-
-        private static void InvokePrivate(object obj, string methodName)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var m = t.GetMethod(methodName,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                if (m != null) { m.Invoke(obj, null); return; }
-                t = t.BaseType;
-            }
-        }
-
         private static void InvokeProtected(object obj, string methodName)
-            => InvokePrivate(obj, methodName);
+            => TestReflection.Invoke(obj, methodName);
 
         private static void ClearMapEditorSingleton()
         {

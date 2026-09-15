@@ -63,8 +63,8 @@ pixel-art world. Treat "it compiles and emits" as the floor, not the goal.
 **Assets** — 78 presets at `Assets/_Project/Data/Catalogs/Particles/PP_*.asset`,
 registered in `ParticlePresetCatalog.asset`.
 
-**Tests** — `Assets/Tests/EditMode/Editors/Particles/` (11 files) and
-`Assets/Tests/EditMode/Game/VFX/` (17 files).
+**Tests** — `Assets/Tests/EditMode/Editors/ParticlesEditor/` (the editor) and
+`Assets/Tests/EditMode/Gameplay/VFX/` (the emitter, persistence and caches).
 
 ## Subsystem rules
 

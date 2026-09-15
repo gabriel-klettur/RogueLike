@@ -7,6 +7,7 @@ using UnityEngine.TestTools;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.VFX;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 {
@@ -66,19 +67,6 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 
         private static void SetFieldValue(object obj, string name, object value)
             => FindField(obj, name)?.SetValue(obj, value);
-
-        private static object InvokeMethod(object obj, string methodName, params object[] args)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(methodName,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                t = t.BaseType;
-            }
-            return m?.Invoke(obj, args);
-        }
 
         /// <summary>Reads the debounce set with its concrete type — the field is declared
         /// <c>HashSet&lt;ParticlePresetDefinition&gt;</c> in the design, so no boxing dance
@@ -148,7 +136,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var editor = go.AddComponent<ParticlesRuntimeEditor>();
 
             // Force OnSingletonAwake so the toggle action is initialized.
-            InvokeMethod(editor, "OnSingletonAwake");
+            TestReflection.Invoke(editor, "OnSingletonAwake");
 
             // Assign a minimal catalog via reflection so RefreshPicker doesn't complain.
             var catalog = MakeCatalog("preset_a", "preset_b");
@@ -159,7 +147,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             StubPreviewService(editor);
 
             if (withUI)
-                InvokeMethod(editor, "Start");
+                TestReflection.Invoke(editor, "Start");
 
             return editor;
         }
@@ -232,7 +220,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var editor = CreateEditor();
             var def = GetPreset(editor, "preset_a");
 
-            InvokeMethod(editor, "MarkParticlePresetDirty", def);
+            TestReflection.Invoke(editor, "MarkParticlePresetDirty", def);
 
             Assert.IsTrue(GetDirtySet(editor).Contains(def),
                 "MarkParticlePresetDirty must add the preset to the dirty set.");
@@ -253,10 +241,10 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var calls = new List<ParticlePresetDefinition>();
             InstallFakeWriter(editor, calls);
 
-            InvokeMethod(editor, "MarkParticlePresetDirty", def);
+            TestReflection.Invoke(editor, "MarkParticlePresetDirty", def);
             SetFieldValue(editor, "_presetFlushDueAt", Time.unscaledTime + 100f);
 
-            InvokeMethod(editor, "TickPresetAutosave");
+            TestReflection.Invoke(editor, "TickPresetAutosave");
 
             Assert.AreEqual(0, calls.Count, "No write should happen before the deadline.");
             Assert.IsTrue(GetDirtySet(editor).Contains(def), "The preset must remain dirty.");
@@ -272,10 +260,10 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var calls = new List<ParticlePresetDefinition>();
             InstallFakeWriter(editor, calls);
 
-            InvokeMethod(editor, "MarkParticlePresetDirty", def);
+            TestReflection.Invoke(editor, "MarkParticlePresetDirty", def);
             SetFieldValue(editor, "_presetFlushDueAt", Time.unscaledTime - 1f);
 
-            InvokeMethod(editor, "TickPresetAutosave");
+            TestReflection.Invoke(editor, "TickPresetAutosave");
 
             Assert.AreEqual(1, calls.Count, "Exactly one write must happen once the deadline has passed.");
             Assert.AreSame(def, calls[0]);
@@ -295,7 +283,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var calls = new List<ParticlePresetDefinition>();
             InstallFakeWriter(editor, calls);
 
-            var result = InvokeMethod(editor, "FlushDirtyPresets", "probe");
+            var result = TestReflection.Invoke(editor, "FlushDirtyPresets", "probe");
 
             Assert.AreEqual(0, (int) result, "Flushing an empty dirty set must report zero writes.");
             Assert.AreEqual(0, calls.Count, "The writer must not be invoked when nothing is dirty.");
@@ -312,7 +300,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var def = GetPreset(editor, "preset_a");
             var calls = new List<ParticlePresetDefinition>();
             InstallFakeWriter(editor, calls);
-            InvokeMethod(editor, "MarkParticlePresetDirty", def);
+            TestReflection.Invoke(editor, "MarkParticlePresetDirty", def);
 
             editor.Deactivate();
 
@@ -328,9 +316,9 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var def = GetPreset(editor, "preset_a");
             var calls = new List<ParticlePresetDefinition>();
             InstallFakeWriter(editor, calls);
-            InvokeMethod(editor, "MarkParticlePresetDirty", def);
+            TestReflection.Invoke(editor, "MarkParticlePresetDirty", def);
 
-            InvokeMethod(editor, "OnApplicationQuit");
+            TestReflection.Invoke(editor, "OnApplicationQuit");
 
             CollectionAssert.Contains(calls, def, "OnApplicationQuit must flush pending preset edits.");
         }
@@ -353,9 +341,9 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var def = GetPreset(editor, "preset_a");
             var calls = new List<ParticlePresetDefinition>();
             InstallFakeWriter(editor, calls);
-            InvokeMethod(editor, "MarkParticlePresetDirty", def);
+            TestReflection.Invoke(editor, "MarkParticlePresetDirty", def);
 
-            InvokeMethod(editor, "OnDestroy");
+            TestReflection.Invoke(editor, "OnDestroy");
 
             CollectionAssert.Contains(calls, def, "OnDestroy must flush pending preset edits.");
             Assert.IsTrue(_sceneObjects.Contains(go),
@@ -374,8 +362,8 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var editor = CreateEditor();
             var probe = MakeProbe("__autosave_probe");
 
-            InvokeMethod(editor, "MarkParticlePresetDirty", probe);
-            var result = InvokeMethod(editor, "FlushDirtyPresets", "probe");
+            TestReflection.Invoke(editor, "MarkParticlePresetDirty", probe);
+            var result = TestReflection.Invoke(editor, "FlushDirtyPresets", "probe");
 
             Assert.AreEqual(0, (int) result,
                 "The default writer must refuse to write outside Play Mode.");
@@ -392,9 +380,9 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var def = GetPreset(editor, "preset_a");
             var calls = new List<ParticlePresetDefinition>();
             InstallFakeWriter(editor, calls, result: false);
-            InvokeMethod(editor, "MarkParticlePresetDirty", def);
+            TestReflection.Invoke(editor, "MarkParticlePresetDirty", def);
 
-            var result = InvokeMethod(editor, "FlushDirtyPresets", "probe");
+            var result = TestReflection.Invoke(editor, "FlushDirtyPresets", "probe");
 
             Assert.AreEqual(0, (int) result, "A failed write must not count as flushed.");
             Assert.IsTrue(GetDirtySet(editor).Contains(def),
@@ -411,10 +399,10 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var probe = MakeProbe("__destroyed_probe");
             var calls = new List<ParticlePresetDefinition>();
             InstallFakeWriter(editor, calls);
-            InvokeMethod(editor, "MarkParticlePresetDirty", probe);
+            TestReflection.Invoke(editor, "MarkParticlePresetDirty", probe);
 
             UnityEngine.Object.DestroyImmediate(probe);
-            InvokeMethod(editor, "FlushDirtyPresets", "probe");
+            TestReflection.Invoke(editor, "FlushDirtyPresets", "probe");
 
             Assert.AreEqual(0, calls.Count, "A destroyed preset must never reach the writer.");
             Assert.AreEqual(0, GetDirtySet(editor).Count, "A destroyed preset must be dropped from the dirty set.");
@@ -429,11 +417,11 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var editor = CreateEditor();
             var def = GetPreset(editor, "preset_a");
 
-            InvokeMethod(editor, "MarkParticlePresetDirty", def);
+            TestReflection.Invoke(editor, "MarkParticlePresetDirty", def);
             // Simulate the deadline having nearly arrived.
             SetFieldValue(editor, "_presetFlushDueAt", Time.unscaledTime + 0.05f);
 
-            InvokeMethod(editor, "MarkParticlePresetDirty", def);
+            TestReflection.Invoke(editor, "MarkParticlePresetDirty", def);
 
             float dueAt = (float) GetFieldValue(editor, "_presetFlushDueAt");
             Assert.GreaterOrEqual(dueAt, Time.unscaledTime + 0.5f,
@@ -453,7 +441,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var def = GetPreset(editor, "preset_a");
             SetFieldValue(editor, "_selectedPresetId", "preset_a");
 
-            InvokeMethod(editor, "OnLoopsToggled", true);
+            TestReflection.Invoke(editor, "OnLoopsToggled", true);
 
             Assert.IsTrue(GetDirtySet(editor).Contains(def),
                 "Toggling Loops must mark the selected preset dirty via MarkParticlePresetDirty.");

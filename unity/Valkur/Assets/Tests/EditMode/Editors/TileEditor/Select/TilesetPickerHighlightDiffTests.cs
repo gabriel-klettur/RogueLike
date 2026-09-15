@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
 using Valkur.Gameplay.TileEditor;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
 {
@@ -70,19 +71,6 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             var f = GetField(obj, name);
             Assert.IsNotNull(f, $"Reflection: field '{name}' not found on {obj.GetType().Name}.");
             return (T)f.GetValue(obj);
-        }
-
-        private static void InvokePrivate(object obj, string method, params object[] args)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(method, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                t = t.BaseType;
-            }
-            Assert.IsNotNull(m, $"Reflection failed: method '{method}' not found on {obj.GetType().Name}.");
-            m.Invoke(obj, args);
         }
 
         private static int CountOf(object dict)
@@ -153,7 +141,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
                     transparent = false,
                 };
 
-                InvokePrivate(ui, "RegisterPickerSlot", slotGo, r, c, entry, hlGo);
+                TestReflection.Invoke(ui, "RegisterPickerSlot", slotGo, r, c, entry, hlGo);
 
                 handles.Add(new SlotHandle { Slot = slotGo, Highlight = hlGo, Entry = entry, Index = i, R = r, C = c });
             }
@@ -161,13 +149,13 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
         }
 
         private void Down(TileEditorUI ui, SlotHandle h)
-            => InvokePrivate(ui, "OnTilesetSlotDown", h.R, h.C, h.Index, h.Entry);
+            => TestReflection.Invoke(ui, "OnTilesetSlotDown", h.R, h.C, h.Index, h.Entry);
 
         private void Enter(TileEditorUI ui, int r, int c)
-            => InvokePrivate(ui, "OnTilesetSlotEnter", r, c);
+            => TestReflection.Invoke(ui, "OnTilesetSlotEnter", r, c);
 
         private void Up(TileEditorUI ui, SlotHandle h)
-            => InvokePrivate(ui, "OnTilesetSlotUp", h.Index, h.Entry);
+            => TestReflection.Invoke(ui, "OnTilesetSlotUp", h.Index, h.Entry);
 
         // ════════════════════════════════════════════════════════════════
         // 1. _tilesetSlotByPos — reverse lookup populated by RegisterPickerSlot
@@ -202,7 +190,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             Assert.Greater(CountOf(GetPrivate<object>(ui, "_tilesetSlotByPos")), 0, "Precondition.");
             Assert.Greater(CountOf(GetPrivate<object>(ui, "_tilesetPrevHighlighted")), 0, "Precondition.");
 
-            InvokePrivate(ui, "ResetPickerSelectionState");
+            TestReflection.Invoke(ui, "ResetPickerSelectionState");
 
             Assert.AreEqual(0, CountOf(GetPrivate<object>(ui, "_tilesetSlotByPos")),
                 "_tilesetSlotByPos must be cleared on category change — a stale (col,row) -> " +
@@ -234,7 +222,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
 
             // Category change, exactly as PopulateTileGrid does it in production:
             // reset the picker state FIRST, then destroy the old GameObjects.
-            InvokePrivate(ui, "ResetPickerSelectionState");
+            TestReflection.Invoke(ui, "ResetPickerSelectionState");
             Object.DestroyImmediate(oldSlots[0].Slot);
             Object.DestroyImmediate(oldSlots[1].Slot);
 

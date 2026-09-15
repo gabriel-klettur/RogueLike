@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.VFX;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 {
@@ -40,6 +41,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
     /// preset's drift lives, so the honest measurement is displacement.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Slow)]
     public class ParticleResizeMotionTests
     {
         private const string CATALOG_PATH =

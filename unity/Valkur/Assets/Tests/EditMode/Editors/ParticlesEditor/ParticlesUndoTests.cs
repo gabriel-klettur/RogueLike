@@ -6,6 +6,7 @@ using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.VFX;
 using Valkur.UIKit;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 {
@@ -56,26 +57,13 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
         private static object GetVal(object obj, string name) => FindField(obj, name)?.GetValue(obj);
         private static void SetVal(object obj, string name, object value) => FindField(obj, name)?.SetValue(obj, value);
 
-        private static void Invoke(object obj, string method, params object[] args)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(method,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                t = t.BaseType;
-            }
-            m?.Invoke(obj, args);
-        }
-
         private ParticlesRuntimeEditor CreateEditor()
         {
             ClearSingleton<ParticlesRuntimeEditor>();
             var go = new GameObject("UndoTestEditor");
             _sceneObjects.Add(go);
             var editor = go.AddComponent<ParticlesRuntimeEditor>();
-            Invoke(editor, "OnSingletonAwake");
+            TestReflection.Invoke(editor, "OnSingletonAwake");
 
             // Minimal catalog so Start() / RefreshPicker() don't complain.
             var catalog = ScriptableObject.CreateInstance<ParticlePresetCatalog>();
@@ -84,7 +72,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             catalog.SetPresets(new[] { preset });
             SetVal(editor, "_catalog", catalog);
 
-            Invoke(editor, "Start");
+            TestReflection.Invoke(editor, "Start");
             return editor;
         }
 
@@ -108,7 +96,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var editor = CreateEditor();
             int counter = 0;
 
-            Invoke(editor, "ExecutePersistedEdit",
+            TestReflection.Invoke(editor, "ExecutePersistedEdit",
                 "test-do",
                 (System.Action) (() => counter++),
                 (System.Action) (() => counter--));
@@ -124,7 +112,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var editor = CreateEditor();
             int counter = 0;
 
-            Invoke(editor, "ExecutePersistedEdit",
+            TestReflection.Invoke(editor, "ExecutePersistedEdit",
                 "test-undo",
                 (System.Action) (() => counter++),
                 (System.Action) (() => counter--));
@@ -146,7 +134,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var editor = CreateEditor();
             int counter = 0;
 
-            Invoke(editor, "ExecutePersistedEdit",
+            TestReflection.Invoke(editor, "ExecutePersistedEdit",
                 "test-redo",
                 (System.Action) (() => counter++),
                 (System.Action) (() => counter--));
@@ -179,7 +167,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var editor = CreateEditor();
             int counter = 0;
 
-            Invoke(editor, "ExecutePersistedEdit",
+            TestReflection.Invoke(editor, "ExecutePersistedEdit",
                 "my-label",
                 (System.Action) (() => counter++),
                 (System.Action) (() => counter--));

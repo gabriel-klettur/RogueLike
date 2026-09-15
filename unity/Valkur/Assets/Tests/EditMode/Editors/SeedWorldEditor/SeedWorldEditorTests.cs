@@ -6,6 +6,7 @@ using Valkur.Core.Editors;
 using Valkur.Data.WorldGen;
 using Valkur.Gameplay.Editors.General;
 using Valkur.Gameplay.Editors.SeedWorld;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.SeedWorldEditor
 {
@@ -13,6 +14,7 @@ namespace Valkur.Tests.EditMode.Editors.SeedWorldEditor
     /// The Seed World editor's contract. uGUI performs no layout in Edit Mode, so these assert
     /// STRUCTURE and model state — never a size.
     /// </summary>
+    [Category(TestCategories.Slow)]
     public class SeedWorldEditorTests
     {
         private GameObject _go;

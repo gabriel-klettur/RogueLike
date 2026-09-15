@@ -1,66 +1,65 @@
 # enforce-namespaces.ps1
-# Scans all Unity test .cs files and reports (or fixes) namespace mismatches.
+# Reports (or fixes) test files whose namespace is not their path.
 # Run from the workspace root: d:\Python\RogueLike
 #
+# Rule: namespace = "Valkur.Tests." + the folders below Assets/Tests joined with '.'
+#   Assets/Tests/EditMode/Gameplay/Combat/Death/X.cs -> Valkur.Tests.EditMode.Gameplay.Combat.Death
+#   Assets/Tests/Support/X.cs                         -> Valkur.Tests.Support
+#
+# WHERE a file belongs (root, feature folder, aliases) is not this script's job: it is enforced
+# by TestLayoutConventionTests (EditMode/Project/Code), which also runs this same namespace rule.
+#
 # Usage:
-#   .\\.github\\skills\\unity-testing\\scripts\\enforce-namespaces.ps1            # dry-run (report only)
-#   .\\.github\\skills\\unity-testing\\scripts\\enforce-namespaces.ps1 -Fix       # auto-correct mismatches
+#   .\.github\skills\unity-testing\scripts\enforce-namespaces.ps1        # report only
+#   .\.github\skills\unity-testing\scripts\enforce-namespaces.ps1 -Fix   # rewrite mismatches
 
 param(
     [switch]$Fix
 )
 
-$TestsRoot = "unity\Valkur\Assets\Tests"
+$TestsRoot = (Resolve-Path "unity\Valkur\Assets\Tests").Path
 $mismatches = 0
 $fixed = 0
 
-# Build folder → namespace map.
-# Formula: replace path separator with '.' and prepend 'Valkur.Tests.'
-function Get-ExpectedNamespace {
-    param([string]$filePath)
-    # Get the relative path from Tests root
-    $rel = $filePath -replace [regex]::Escape((Resolve-Path $TestsRoot).Path + '\'), ''
-    # Drop filename
+function Get-ExpectedNamespace([string]$fullPath) {
+    $rel = $fullPath.Substring($TestsRoot.Length + 1)
     $dir = Split-Path $rel -Parent
-    # Normalise separators
-    $ns = $dir -replace '\\', '.'
-    return "Valkur.Tests.$ns"
+    return "Valkur.Tests." + ($dir -replace '\\', '.')
 }
 
-$files = Get-ChildItem -Path $TestsRoot -Recurse -Filter "*.cs" |
-         Where-Object { $_.FullName -notmatch '\\meta$' }
+$files = Get-ChildItem -Path $TestsRoot -Recurse -Filter "*.cs" | Where-Object { $_.Name -ne 'AssemblyInfo.cs' }
 
 foreach ($file in $files) {
-    $expected = Get-ExpectedNamespace -filePath $file.FullName
-    $content  = Get-Content $file.FullName -Raw
+    $expected = Get-ExpectedNamespace $file.FullName
+    $bytes = [System.IO.File]::ReadAllBytes($file.FullName)
+    $hasBom = $bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
+    $content = [System.Text.Encoding]::UTF8.GetString($bytes)
+    if ($hasBom) { $content = $content.Substring(1) }
 
-    # Find declared namespace(s) — match "namespace Valkur.Tests.Something"
-    $matches = [regex]::Matches($content, 'namespace\s+(Valkur\.Tests[^\s{;]+)')
-    if ($matches.Count -eq 0) {
-        Write-Warning "No namespace found: $($file.FullName)"
+    $m = [regex]::Match($content, '(?m)^\s*namespace\s+([\w\.]+)')
+    if (-not $m.Success) {
+        Write-Warning "No namespace: $($file.FullName)"
         continue
     }
+    $declared = $m.Groups[1].Value
+    if ($declared -eq $expected) { continue }
 
-    foreach ($m in $matches) {
-        $declared = $m.Groups[1].Value.Trim()
-        if ($declared -ne $expected) {
-            $mismatches++
-            Write-Host "MISMATCH  $($file.Name)" -ForegroundColor Yellow
-            Write-Host "  Expected : $expected"
-            Write-Host "  Declared : $declared"
-            if ($Fix) {
-                $newContent = $content -replace [regex]::Escape("namespace $declared"), "namespace $expected"
-                Set-Content -Path $file.FullName -Value $newContent -Encoding UTF8NoBOM
-                $fixed++
-                Write-Host "  FIXED" -ForegroundColor Green
-            }
-        }
+    $mismatches++
+    Write-Host "MISMATCH  $($file.FullName.Substring($TestsRoot.Length + 1))" -ForegroundColor Yellow
+    Write-Host "  expected: $expected"
+    Write-Host "  declared: $declared"
+    if ($Fix) {
+        $newContent = $content.Substring(0, $m.Groups[1].Index) + $expected + $content.Substring($m.Groups[1].Index + $m.Groups[1].Length)
+        $encoding = New-Object System.Text.UTF8Encoding($hasBom)
+        [System.IO.File]::WriteAllText($file.FullName, $newContent, $encoding)
+        $fixed++
+        Write-Host "  fixed" -ForegroundColor Green
     }
 }
 
 Write-Host ""
 if ($Fix) {
-    Write-Host "Done. Mismatches found: $mismatches | Fixed: $fixed" -ForegroundColor Cyan
+    Write-Host "Done. Mismatches: $mismatches | Fixed: $fixed" -ForegroundColor Cyan
 } else {
-    Write-Host "Dry-run complete. Mismatches: $mismatches  (run with -Fix to auto-correct)" -ForegroundColor Cyan
+    Write-Host "Report only. Mismatches: $mismatches  (run with -Fix to rewrite)" -ForegroundColor Cyan
 }

@@ -3,6 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using Valkur.Gameplay.Buildings;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.BuildingsEditor
 {
@@ -19,6 +20,7 @@ namespace Valkur.Tests.EditMode.Editors.BuildingsEditor
     /// perform inside the editor, on a synthetic tilemap.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Integration)]
     public class BuildingsFillPipelineIntegrationTests
     {
         // ── Test rig ──────────────────────────────────────────────────────────────

@@ -6,6 +6,7 @@ using UnityEngine.TestTools;
 using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.World;
 using Valkur.Infrastructure.Persistence.Repositories;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.MapEditor
 {
@@ -122,8 +123,8 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
 
             _mgrGo = new GameObject("IsolationMgr");
             _mgr = _mgrGo.AddComponent<MapEditorManager>();
-            SetField(_mgr, "zoneManager", _zones);
-            InvokePrivate(_mgr, "EnsureCoreInitialized");
+            TestReflection.SetField(_mgr, "zoneManager", _zones);
+            TestReflection.Invoke(_mgr, "EnsureCoreInitialized");
             _mgr.SetZonesRepository(new InMemoryMapEditorZonesRepository());
         }
 
@@ -149,7 +150,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             // Pre-condition: B's file does not exist yet (TearDown / SetUp).
             Assert.IsFalse(File.Exists(_slotBPath), "Sanity: slot B file must not exist before test.");
 
-            InvokePrivate(_mgr, "PersistZonesToDisk");
+            TestReflection.Invoke(_mgr, "PersistZonesToDisk");
 
             Assert.IsTrue(File.Exists(_slotAPath),
                 "Persist must mirror to the ACTIVE slot's file (A) — that's how " +
@@ -169,7 +170,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             CreateManager();
             _zones.AddZone("zone_default", Vector2Int.zero, editableInTileEditor: true);
 
-            InvokePrivate(_mgr, "PersistZonesToDisk");
+            TestReflection.Invoke(_mgr, "PersistZonesToDisk");
 
             Assert.IsFalse(File.Exists(_slotAPath),
                 "Default-active persist must not touch unrelated custom slot files.");
@@ -190,7 +191,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             _zones.AddZone("rt_beta",  new Vector2Int(50, 0), editableInTileEditor: false);
             _zones.AddZone("rt_gamma", new Vector2Int(100, 0), editableInTileEditor: true);
 
-            InvokePrivate(_mgr, "PersistZonesToDisk");
+            TestReflection.Invoke(_mgr, "PersistZonesToDisk");
 
             string json = File.ReadAllText(_slotAPath);
             Assert.That(json, Does.Contain("rt_alpha"),
@@ -234,30 +235,6 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         }
 
         // ── Reflection helpers ────────────────────────────────────────────────
-
-        private static void SetField(object obj, string name, object value)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var f = t.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                if (f != null) { f.SetValue(obj, value); return; }
-                t = t.BaseType;
-            }
-            Assert.Fail($"Field '{name}' not found.");
-        }
-
-        private static void InvokePrivate(object obj, string name)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var m = t.GetMethod(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                if (m != null) { m.Invoke(obj, null); return; }
-                t = t.BaseType;
-            }
-            Assert.Fail($"Method '{name}' not found.");
-        }
 
         private static void ClearMapEditorSingleton()
         {

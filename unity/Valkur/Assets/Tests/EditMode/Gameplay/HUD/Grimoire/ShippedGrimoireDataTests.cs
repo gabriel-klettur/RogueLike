@@ -7,6 +7,7 @@ using Valkur.Data;
 using Valkur.Gameplay.HUD;
 using Valkur.Gameplay.Spells;
 using Valkur.UI.HUD;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.HUD.Grimoire
 {
@@ -16,6 +17,7 @@ namespace Valkur.Tests.EditMode.Gameplay.HUD.Grimoire
     /// player has not worked on yet.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.ShippedData)]
     public class ShippedGrimoireDataTests
     {
         private static List<SpellTree> Schools()

@@ -39,29 +39,33 @@ namespace Valkur.Editor.Testing
         public static string Write(ITestResultAdaptor result, TestMode mode)
         {
             var sb = new StringBuilder(1 << 20);
+            var failures = new StringBuilder();
             var counts = new int[3];
             sb.Append("# mode=").Append(mode)
               .Append(" finished=").Append(DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture))
               .Append('\n');
             sb.Append("result\tseconds\tfullName\n");
-            AppendLeaves(result, sb, counts);
+            AppendLeaves(result, sb, failures, counts);
             sb.Insert(0, $"# passed={counts[0]} failed={counts[1]} skipped={counts[2]}\n");
 
             Directory.CreateDirectory(Folder);
             var stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
             var text = sb.ToString();
             File.WriteAllText(Path.Combine(Folder, $"last-{mode}.tsv"), text);
+            // The MCP bridge carries a failure's message but not its stack, and a SetUp failure's
+            // message alone ("IndexOutOfRangeException") says nothing about where.
+            File.WriteAllText(Path.Combine(Folder, $"last-{mode}-failures.txt"), failures.ToString());
             var stamped = Path.Combine(Folder, $"{mode}-{stamp}.tsv");
             File.WriteAllText(stamped, text);
             return stamped;
         }
 
-        private static void AppendLeaves(ITestResultAdaptor node, StringBuilder sb, int[] counts)
+        private static void AppendLeaves(ITestResultAdaptor node, StringBuilder sb, StringBuilder failures, int[] counts)
         {
             if (node == null) return;
             if (node.HasChildren)
             {
-                foreach (var child in node.Children) AppendLeaves(child, sb, counts);
+                foreach (var child in node.Children) AppendLeaves(child, sb, failures, counts);
                 return;
             }
             if (node.Test == null || node.Test.IsSuite) return;
@@ -70,7 +74,12 @@ namespace Valkur.Editor.Testing
             switch (node.TestStatus)
             {
                 case TestStatus.Passed: status = "Passed"; counts[0]++; break;
-                case TestStatus.Failed: status = "Failed"; counts[1]++; break;
+                case TestStatus.Failed:
+                    status = "Failed"; counts[1]++;
+                    failures.Append("## ").Append(node.FullName).Append('\n')
+                            .Append(node.Message).Append('\n')
+                            .Append(node.StackTrace).Append("\n\n");
+                    break;
                 default: status = node.TestStatus.ToString(); counts[2]++; break;
             }
             sb.Append(status).Append('\t')

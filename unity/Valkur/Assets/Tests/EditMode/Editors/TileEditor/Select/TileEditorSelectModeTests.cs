@@ -5,6 +5,7 @@ using UnityEngine.Tilemaps;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
 {
@@ -92,7 +93,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             var manager = NewManager();
             manager.State.BrushSize = 3;
 
-            InvokePrivate(manager, "ApplyBrushFootprintToSelection", new Vector3Int(10, 20, 0));
+            TestReflection.Invoke(manager, "ApplyBrushFootprintToSelection", new Vector3Int(10, 20, 0));
 
             Assert.AreEqual(9, manager.State.SelectedCells.Count,
                 "BrushSize=3 must add a 3×3 = 9-cell footprint to the selection set.");
@@ -134,7 +135,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             manager.State.RectDragCurrent = new Vector3Int(3, 4, 0);
             manager.State.IsDragging = true;
 
-            InvokePrivate(manager, "OnSelectModeChanged", TileEditorState.SelectMode.Multi);
+            TestReflection.Invoke(manager, "OnSelectModeChanged", TileEditorState.SelectMode.Multi);
 
             Assert.AreEqual(TileEditorState.SelectMode.Multi, manager.State.CurrentSelectMode);
             Assert.IsFalse(manager.State.IsDragging,
@@ -161,7 +162,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
                 SourceBounds = new BoundsInt(0, 0, 0, 1, 1, 1),
             };
 
-            InvokePrivate(manager, "OnToolChanged", TileEditorState.Tool.Brush);
+            TestReflection.Invoke(manager, "OnToolChanged", TileEditorState.Tool.Brush);
 
             Assert.AreEqual(0, manager.State.SelectedCells.Count,
                 "User decision: leaving Select clears the selection set.");
@@ -176,9 +177,9 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             manager.State.CurrentTool = TileEditorState.Tool.Select;
             manager.State.CurrentSelectMode = TileEditorState.SelectMode.Multi;
 
-            InvokePrivate(manager, "OnToolChanged", TileEditorState.Tool.Brush);
+            TestReflection.Invoke(manager, "OnToolChanged", TileEditorState.Tool.Brush);
             // Re-enter Select to observe the mode reset.
-            InvokePrivate(manager, "OnToolChanged", TileEditorState.Tool.Select);
+            TestReflection.Invoke(manager, "OnToolChanged", TileEditorState.Tool.Select);
 
             Assert.AreEqual(TileEditorState.SelectMode.Single, manager.State.CurrentSelectMode,
                 "Re-entering Select must default to Single — Multi is sticky enough to " +
@@ -193,7 +194,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             manager.State.SelectedCells.Add(new Vector3Int(7, 7, 0));
 
             // Calling OnToolChanged with the same tool is a no-op for selection.
-            InvokePrivate(manager, "OnToolChanged", TileEditorState.Tool.Select);
+            TestReflection.Invoke(manager, "OnToolChanged", TileEditorState.Tool.Select);
 
             Assert.AreEqual(1, manager.State.SelectedCells.Count,
                 "Identity tool change must not clear — only an actual leave does.");
@@ -208,7 +209,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             manager.State.CurrentTool = TileEditorState.Tool.Select;
             manager.State.CurrentSelectMode = TileEditorState.SelectMode.Multi;
 
-            InvokePrivate(manager, "OnToolChanged", TileEditorState.Tool.Select);
+            TestReflection.Invoke(manager, "OnToolChanged", TileEditorState.Tool.Select);
 
             Assert.AreEqual(TileEditorState.SelectMode.Multi, manager.State.CurrentSelectMode,
                 "Re-clicking SELECT toggles the panel; it must NOT reset the sub-mode.");
@@ -228,7 +229,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             };
             manager.State.Clipboard = clip;
 
-            InvokePrivate(manager, "OnToolChanged", TileEditorState.Tool.Select);
+            TestReflection.Invoke(manager, "OnToolChanged", TileEditorState.Tool.Select);
 
             Assert.AreSame(clip, manager.State.Clipboard,
                 "Re-clicking SELECT must never wipe the clipboard.");
@@ -252,7 +253,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             manager.State.SelectedCells.Add(new Vector3Int(2, 5, 0));
             manager.State.SelectedCells.Add(new Vector3Int(3, 5, 0));
 
-            InvokePrivate(manager, "OnCopyClicked");
+            TestReflection.Invoke(manager, "OnCopyClicked");
 
             Assert.IsNotNull(manager.State.Clipboard);
             Assert.AreEqual(2, manager.State.Clipboard.Width);
@@ -270,7 +271,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             manager.State.CurrentTool = TileEditorState.Tool.Select;
             // SelectedCells empty.
 
-            InvokePrivate(manager, "OnCopyClicked");
+            TestReflection.Invoke(manager, "OnCopyClicked");
 
             Assert.IsNull(manager.State.Clipboard);
         }
@@ -286,7 +287,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             manager.State.CurrentTool = TileEditorState.Tool.Select;
             manager.State.SelectedCells.Add(new Vector3Int(0, 0, 0));
 
-            InvokePrivate(manager, "OnCutClicked");
+            TestReflection.Invoke(manager, "OnCutClicked");
 
             Assert.IsNotNull(manager.State.Clipboard);
             Assert.IsTrue(manager.State.Clipboard.IsCut, "Cut must mark the clipboard as IsCut=true.");
@@ -316,7 +317,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             manager.State.Clipboard = clip;
             manager.State.SelectedCellPos = new Vector3Int(50, 60, 0); // anchor (top-left)
 
-            InvokePrivate(manager, "OnPasteClicked");
+            TestReflection.Invoke(manager, "OnPasteClicked");
 
             // top-left of the paste = (50, 60). Bottom row (dy=0 in source) appears at
             // y = 60 - (h-1 - 0) = 60 - 1 = 59. Top row (dy=1) appears at y = 60.
@@ -335,7 +336,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             tilemap.SetTile(new Vector3Int(0, 0, 0), existing);
             manager.State.Clipboard = null;
 
-            Assert.DoesNotThrow(() => InvokePrivate(manager, "OnPasteClicked"));
+            Assert.DoesNotThrow(() => TestReflection.Invoke(manager, "OnPasteClicked"));
             Assert.AreEqual(existing, tilemap.GetTile(new Vector3Int(0, 0, 0)),
                 "Empty clipboard must not touch the tilemap.");
         }
@@ -350,11 +351,11 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
 
             manager.State.CurrentTool = TileEditorState.Tool.Select;
             manager.State.SelectedCells.Add(new Vector3Int(0, 0, 0));
-            InvokePrivate(manager, "OnCopyClicked");
+            TestReflection.Invoke(manager, "OnCopyClicked");
 
             // Move anchor and paste.
             manager.State.SelectedCellPos = new Vector3Int(20, 30, 0);
-            InvokePrivate(manager, "OnPasteClicked");
+            TestReflection.Invoke(manager, "OnPasteClicked");
 
             Assert.AreEqual(tA, tilemap.GetTile(new Vector3Int(20, 30, 0)),
                 "Round-trip: a 1×1 selection copied and pasted at (20, 30) lands at exactly (20, 30).");
@@ -522,20 +523,5 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
             return tile;
         }
 
-        private static void InvokePrivate(object target, string methodName, params object[] args)
-        {
-            var t = target.GetType();
-            MethodInfo mi = null;
-            foreach (var m in t.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
-            {
-                if (m.Name != methodName) continue;
-                var ps = m.GetParameters();
-                if (ps.Length != args.Length) continue;
-                mi = m;
-                break;
-            }
-            Assert.IsNotNull(mi, $"Reflection: {methodName}({args.Length} args) not found on {t.Name}.");
-            mi.Invoke(target, args);
-        }
     }
 }

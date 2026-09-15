@@ -12,6 +12,7 @@
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Project.Assets
 {
@@ -20,6 +21,7 @@ namespace Valkur.Tests.EditMode.Project.Assets
     /// pairs critical to player movement and combat.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Guard)]
     public class CollisionLayerMatrixTests
     {
         private const int Player    = 8;

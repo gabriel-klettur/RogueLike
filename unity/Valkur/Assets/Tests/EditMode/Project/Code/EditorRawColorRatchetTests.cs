@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Project.Code
 {
@@ -25,6 +26,7 @@ namespace Valkur.Tests.EditMode.Project.Code
     /// FSM transition registry — the two conventions in this repo that have actually held.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Guard)]
     public sealed class EditorRawColorRatchetTests
     {
         private const string EDITORS_REL  = "_Project/Scripts/Gameplay/Editors";

@@ -8,6 +8,7 @@ using Valkur.Data.WorldGen;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
 using Valkur.Gameplay.World.Generation;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.Generation
 {
@@ -16,6 +17,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Generation
     /// painted, far ones are cleared, and an edited zone comes back from its file. Driven through
     /// <c>Sync</c> directly — Edit Mode runs no Update.
     /// </summary>
+    [Category(TestCategories.Slow)]
     public class SeedWorldLiveStreamerTests
     {
         private string _root;

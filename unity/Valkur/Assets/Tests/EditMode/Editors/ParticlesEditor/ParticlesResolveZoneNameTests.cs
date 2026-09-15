@@ -4,6 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 {
@@ -41,19 +42,6 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 
         private static void SetVal(object obj, string name, object value)
             => FindField(obj, name)?.SetValue(obj, value);
-
-        private static void Invoke(object obj, string method, params object[] args)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(method,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                t = t.BaseType;
-            }
-            m?.Invoke(obj, args);
-        }
 
         /// <summary>
         /// Invokes the private static ResolveZoneName(ZoneManager, Vector3) via reflection.
@@ -98,7 +86,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             FindField(zm, "zoneHeightTiles")?.SetValue(zm, h);
             FindField(zm, "tileSize")?.SetValue(zm, 1f);
             FindField(zm, "currentZone")?.SetValue(zm, zoneA);
-            Invoke(zm, "RebuildZoneMap");
+            TestReflection.Invoke(zm, "RebuildZoneMap");
             return zm;
         }
 

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using UnityEngine;
 using Valkur.Gameplay.Save;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.Save
 {
@@ -120,6 +121,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Save
             Assert.IsEmpty(TempFiles(), "Every writer must clean up after itself.");
         }
 
+        [Category(TestCategories.Slow)]
         [Test]
         public void AReaderNeverSeesAHalfWrittenSave()
         {

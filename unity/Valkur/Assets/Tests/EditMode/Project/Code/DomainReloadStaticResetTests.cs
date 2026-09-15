@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using NUnit.Framework;
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Project.Code
 {
@@ -57,6 +58,7 @@ namespace Valkur.Tests.EditMode.Project.Code
     /// </para>
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Guard)]
     public class DomainReloadStaticResetTests
     {
         /// <summary>Assemblies whose statics survive into the next Play session.</summary>

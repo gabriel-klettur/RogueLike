@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEditor.U2D;
 using UnityEngine;
 using UnityEngine.U2D;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Project.Assets
 {
@@ -24,6 +25,7 @@ namespace Valkur.Tests.EditMode.Project.Assets
     /// folder packable is invisible at the declaration and obvious only here.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Guard)]
     public class SpriteAtlasPackablesTests
     {
         private const string ATLAS_FOLDER = "Assets/_Project/SpriteAtlases";

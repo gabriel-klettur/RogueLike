@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay.Spawners;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.Spawners
 {
@@ -22,6 +23,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Spawners
     /// (zone membership, round trip, tile collisions). This one checks WHAT it holds.</para>
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.ShippedData)]
     public class ShippedSpawnerRosterTests
     {
         private const string CatalogPath =

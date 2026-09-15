@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.CameraRig
 {
@@ -112,6 +113,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.CameraRig
         // Hard invariant — orthographicSize writes are gated by the whitelist
         // ────────────────────────────────────────────────────────────────────
 
+        [Category(TestCategories.Slow)]
         [Test]
         public void OrthographicSize_IsOnlyWrittenByAuthorisedCallsites()
         {

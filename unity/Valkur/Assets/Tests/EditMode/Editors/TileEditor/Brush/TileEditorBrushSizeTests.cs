@@ -4,6 +4,7 @@ using UnityEngine.TestTools;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
 using System.Collections;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.Brush
 {
@@ -189,6 +190,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Brush
             Assert.AreEqual(50, TileEditorState.MAX_UNDO, "MAX_UNDO should be 50");
         }
 
+        [Category(TestCategories.Slow)]
         [UnityTest]
         public IEnumerator TileEditorState_BrushStrokeCells_ThreadSafety()
         {

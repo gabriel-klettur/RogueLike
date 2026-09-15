@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.Input
 {
@@ -51,26 +52,6 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Input
                 f.SetValue(manager, new TileEditorUndoSystem());
         }
 
-        private static void InvokePrivate(object target, string method, params object[] args)
-        {
-            var t = target.GetType();
-            MethodInfo mi = null;
-            while (t != null && mi == null)
-            {
-                foreach (var m in t.GetMethods(
-                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
-                {
-                    if (m.Name != method) continue;
-                    if (m.GetParameters().Length != args.Length) continue;
-                    mi = m; break;
-                }
-                t = t.BaseType;
-            }
-            Assert.IsNotNull(mi,
-                $"Reflection: {method}({args.Length} args) not found on {target.GetType().Name}.");
-            mi.Invoke(target, args);
-        }
-
         // Simulates the exact state the fix cleans up: the manager is mid-drag on
         // the map when the user releases LMB over the TILES PICKER.
         private static void SetupMidDragState(TileEditorManager manager,
@@ -95,7 +76,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Input
 
             // Act: run the same cleanup sequence the fix inserted.
             // CommitRectSelection fills SelectedCells from the drag anchors.
-            InvokePrivate(manager, "CommitRectSelection");
+            TestReflection.Invoke(manager, "CommitRectSelection");
             manager.State.IsDragging      = false;
             manager.State.RectDragStart   = null;
             manager.State.RectDragCurrent = null;
@@ -121,7 +102,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Input
             SetupMidDragState(manager, TileEditorState.SelectMode.Rect);
             // Anchors: start=(2,5), current=(4,3) → cells x=[2..4], y=[3..5] = 9 cells.
 
-            InvokePrivate(manager, "CommitRectSelection");
+            TestReflection.Invoke(manager, "CommitRectSelection");
             manager.State.IsDragging      = false;
             manager.State.RectDragStart   = null;
             manager.State.RectDragCurrent = null;
@@ -150,7 +131,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Input
             bool cleanupShouldFire = manager.State.IsDragging;  // == false
             if (cleanupShouldFire)
             {
-                InvokePrivate(manager, "CommitRectSelection");
+                TestReflection.Invoke(manager, "CommitRectSelection");
                 manager.State.IsDragging      = false;
                 manager.State.RectDragStart   = null;
                 manager.State.RectDragCurrent = null;

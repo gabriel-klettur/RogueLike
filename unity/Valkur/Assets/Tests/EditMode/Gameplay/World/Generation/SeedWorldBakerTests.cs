@@ -9,6 +9,7 @@ using Valkur.Data.WorldGen;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
 using Valkur.Gameplay.World.Generation;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.Generation
 {
@@ -16,6 +17,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Generation
     /// The bake: a generated world written as a map slot. Every test writes under a temporary
     /// folder through <see cref="SeedWorldBakeRequest.ForTest"/>, never under persistentDataPath.
     /// </summary>
+    [Category(TestCategories.Slow)]
     public class SeedWorldBakerTests
     {
         private string _root;

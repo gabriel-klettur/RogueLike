@@ -378,8 +378,7 @@ Profile with:
 ## 13. Testing
 
 ### Edit Mode Tests
-- Live in `Assets/_Project/Tests/EditMode/`.
-- Reference `Valkur.Tests.EditMode.asmdef`.
+- Live in `Assets/Tests/EditMode/<Root>/<Feature>/`, where Root is the highest production layer the test needs; each root is its own assembly (`Valkur.Tests.EditMode.<Root>`). See the `unity-testing` skill.
 - For tests that touch `renderer.material`: leaks warnings — wrap with `LogAssert.ignoreFailingMessages = true;`.
 
 ### Play Mode Tests

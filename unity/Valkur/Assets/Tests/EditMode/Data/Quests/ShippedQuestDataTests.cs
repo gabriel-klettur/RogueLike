@@ -6,6 +6,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Data.Quests
 {
@@ -29,6 +30,7 @@ namespace Valkur.Tests.EditMode.Data.Quests
     /// between them is wrong.</para>
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.ShippedData)]
     public class ShippedQuestDataTests
     {
         private const string CatalogPath = "Assets/_Project/Resources/Quests/QuestCatalog.asset";

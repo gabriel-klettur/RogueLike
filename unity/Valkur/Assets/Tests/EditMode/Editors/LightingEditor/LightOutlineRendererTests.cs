@@ -3,6 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.LightingEditor
 {
@@ -53,9 +54,6 @@ namespace Valkur.Tests.EditMode.Editors.LightingEditor
             return null;
         }
 
-        private static T GetFieldValue<T>(object obj, string name)
-            => (T)GetField(obj, name)?.GetValue(obj);
-
         private static void InvokeLateUpdate(LightOutlineRenderer outline)
         {
             var m = outline.GetType().GetMethod("LateUpdate",
@@ -71,9 +69,9 @@ namespace Valkur.Tests.EditMode.Editors.LightingEditor
         {
             _outline.Configure(Color.yellow, 0.06f, 1f);
 
-            Assert.IsNotNull(GetFieldValue<LineRenderer>(_outline, "_ring"),
+            Assert.IsNotNull(TestReflection.GetField<LineRenderer>(_outline, "_ring"),
                 "Configure must create the outer reach LineRenderer.");
-            Assert.IsNotNull(GetFieldValue<LineRenderer>(_outline, "_centerDot"),
+            Assert.IsNotNull(TestReflection.GetField<LineRenderer>(_outline, "_centerDot"),
                 "Configure must create the inner centre-dot LineRenderer.");
         }
 
@@ -93,7 +91,7 @@ namespace Valkur.Tests.EditMode.Editors.LightingEditor
         public void Configure_RingUsesVfxSortingLayer()
         {
             _outline.Configure(Color.yellow, 0.06f, 1f);
-            var ring = GetFieldValue<LineRenderer>(_outline, "_ring");
+            var ring = TestReflection.GetField<LineRenderer>(_outline, "_ring");
 
             Assert.AreEqual("VFX", ring.sortingLayerName,
                 "Outline must render on the VFX sorting layer to sit above world tiles.");
@@ -103,8 +101,8 @@ namespace Valkur.Tests.EditMode.Editors.LightingEditor
         public void Configure_CenterDotSortsAboveRing()
         {
             _outline.Configure(Color.yellow, 0.06f, 1f);
-            var ring = GetFieldValue<LineRenderer>(_outline, "_ring");
-            var dot  = GetFieldValue<LineRenderer>(_outline, "_centerDot");
+            var ring = TestReflection.GetField<LineRenderer>(_outline, "_ring");
+            var dot  = TestReflection.GetField<LineRenderer>(_outline, "_centerDot");
 
             Assert.Greater(dot.sortingOrder, ring.sortingOrder,
                 "Centre dot must render above the ring so the click marker stays readable.");
@@ -116,8 +114,8 @@ namespace Valkur.Tests.EditMode.Editors.LightingEditor
         public void SetVisible_TogglesBothLineRenderers()
         {
             _outline.Configure(Color.yellow, 0.06f, 1f);
-            var ring = GetFieldValue<LineRenderer>(_outline, "_ring");
-            var dot  = GetFieldValue<LineRenderer>(_outline, "_centerDot");
+            var ring = TestReflection.GetField<LineRenderer>(_outline, "_ring");
+            var dot  = TestReflection.GetField<LineRenderer>(_outline, "_centerDot");
 
             _outline.SetVisible(false);
             Assert.IsFalse(ring.enabled, "Outer ring must be disabled when hidden.");
@@ -147,7 +145,7 @@ namespace Valkur.Tests.EditMode.Editors.LightingEditor
 
                 InvokeLateUpdate(_outline);
 
-                var ring = GetFieldValue<LineRenderer>(_outline, "_ring");
+                var ring = TestReflection.GetField<LineRenderer>(_outline, "_ring");
                 Assert.IsTrue(ring.enabled,
                     "A light hidden by the day/night gate or the viewport cull must still be marked.");
                 // Vertex 0 sits at angle 0, i.e. centre + (radius, 0).
@@ -168,7 +166,7 @@ namespace Valkur.Tests.EditMode.Editors.LightingEditor
 
             InvokeLateUpdate(_outline);
 
-            Assert.IsFalse(GetFieldValue<LineRenderer>(_outline, "_ring").enabled,
+            Assert.IsFalse(TestReflection.GetField<LineRenderer>(_outline, "_ring").enabled,
                 "A pooled renderer with no light assigned must draw nothing.");
         }
 
@@ -178,8 +176,8 @@ namespace Valkur.Tests.EditMode.Editors.LightingEditor
         public void SetColor_RepaintsTheRingOnly()
         {
             _outline.Configure(Color.yellow, 0.06f, 1f);
-            var ring = GetFieldValue<LineRenderer>(_outline, "_ring");
-            var dot  = GetFieldValue<LineRenderer>(_outline, "_centerDot");
+            var ring = TestReflection.GetField<LineRenderer>(_outline, "_ring");
+            var dot  = TestReflection.GetField<LineRenderer>(_outline, "_centerDot");
             Color dotBefore = dot.startColor;
 
             _outline.SetColor(Color.blue);
@@ -194,7 +192,7 @@ namespace Valkur.Tests.EditMode.Editors.LightingEditor
         public void SetColor_PreservesThickness()
         {
             _outline.Configure(Color.yellow, 0.09f, 1f);
-            var ring = GetFieldValue<LineRenderer>(_outline, "_ring");
+            var ring = TestReflection.GetField<LineRenderer>(_outline, "_ring");
 
             _outline.SetColor(Color.blue);
 
@@ -215,7 +213,7 @@ namespace Valkur.Tests.EditMode.Editors.LightingEditor
         public void SetHovered_True_ChangesCenterDotColorAndThickness()
         {
             _outline.Configure(Color.yellow, 0.06f, 1f);
-            var dot = GetFieldValue<LineRenderer>(_outline, "_centerDot");
+            var dot = TestReflection.GetField<LineRenderer>(_outline, "_centerDot");
             Color idleColor     = dot.startColor;
             float idleThickness = dot.startWidth;
 
@@ -234,7 +232,7 @@ namespace Valkur.Tests.EditMode.Editors.LightingEditor
         public void SetHovered_False_RestoresIdleVisuals()
         {
             _outline.Configure(Color.yellow, 0.06f, 1f);
-            var dot = GetFieldValue<LineRenderer>(_outline, "_centerDot");
+            var dot = TestReflection.GetField<LineRenderer>(_outline, "_centerDot");
             Color idleColor     = dot.startColor;
             float idleThickness = dot.startWidth;
 
@@ -255,7 +253,7 @@ namespace Valkur.Tests.EditMode.Editors.LightingEditor
             _outline.Configure(Color.yellow, 0.06f, 1f);
             _outline.SetRadius(4.25f);
 
-            Assert.AreEqual(4.25f, GetFieldValue<float>(_outline, "_radius"), 0.0001f,
+            Assert.AreEqual(4.25f, TestReflection.GetField<float>(_outline, "_radius"), 0.0001f,
                 "SetRadius must persist a light's real outer radius.");
         }
 
@@ -265,7 +263,7 @@ namespace Valkur.Tests.EditMode.Editors.LightingEditor
             _outline.Configure(Color.yellow, 0.06f, 1f);
             _outline.SetRadius(0f);
 
-            Assert.Greater(GetFieldValue<float>(_outline, "_radius"), 0f,
+            Assert.Greater(TestReflection.GetField<float>(_outline, "_radius"), 0f,
                 "SetRadius(0) must clamp upward so a ring is still drawn.");
         }
     }

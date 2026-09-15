@@ -12,6 +12,7 @@ using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.Save;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Infrastructure.Persistence.Repositories;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Project.Code
 {
@@ -29,6 +30,7 @@ namespace Valkur.Tests.EditMode.Project.Code
     /// a decision from the previous session leaking into the next one.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Guard)]
     public class StaticResetHooksTests
     {
         private readonly List<GameObject> _created = new List<GameObject>();

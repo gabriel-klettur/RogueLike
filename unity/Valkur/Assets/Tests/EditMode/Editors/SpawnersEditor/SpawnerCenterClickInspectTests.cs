@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.Spawners;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
 {
@@ -39,12 +40,6 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             }
             return null;
         }
-
-        private static T GetFieldValue<T>(object obj, string name)
-            => (T)GetField(obj, name)?.GetValue(obj);
-
-        private static void SetFieldValue(object obj, string name, object value)
-            => GetField(obj, name)?.SetValue(obj, value);
 
         private static MethodInfo GetMethod(object obj, string name)
         {
@@ -106,7 +101,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
 
             // Force-activate without going through BuildUI — we don't need the UI
             // to assert selection logic and avoiding it keeps the test EditMode-safe.
-            SetFieldValue(_mgr, "_active", true);
+            TestReflection.SetField(_mgr, "_active", true);
         }
 
         [TearDown]
@@ -127,7 +122,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
         [Test]
         public void CanCenterClickInspect_OutlinesOff_ReturnsFalse()
         {
-            SetFieldValue(_mgr, "_showAllOutlines", false);
+            TestReflection.SetField(_mgr, "_showAllOutlines", false);
 
             Assert.IsFalse(_mgr.CanCenterClickInspect(),
                 "Without outlines visible, the click-on-centre shortcut must be inert.");
@@ -136,7 +131,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
         [Test]
         public void CanCenterClickInspect_OutlinesOn_SelectMode_ReturnsTrue()
         {
-            SetFieldValue(_mgr, "_showAllOutlines", true);
+            TestReflection.SetField(_mgr, "_showAllOutlines", true);
             SetMode(_mgr, "Select");
 
             Assert.IsTrue(_mgr.CanCenterClickInspect(),
@@ -146,7 +141,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
         [Test]
         public void CanCenterClickInspect_OutlinesOn_PlaceMode_ReturnsTrue()
         {
-            SetFieldValue(_mgr, "_showAllOutlines", true);
+            TestReflection.SetField(_mgr, "_showAllOutlines", true);
             SetMode(_mgr, "Place");
 
             Assert.IsTrue(_mgr.CanCenterClickInspect(),
@@ -163,7 +158,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             bool result = _mgr.PerformCenterClickInspect(Vector3.zero);
 
             Assert.IsFalse(result, "No spawner inside the radius → must return false.");
-            Assert.IsNull(GetFieldValue<SpawnerInstance>(_mgr, "_selectedInstance"),
+            Assert.IsNull(TestReflection.GetField<SpawnerInstance>(_mgr, "_selectedInstance"),
                 "Selection must remain unchanged when no spawner is hit.");
         }
 
@@ -175,7 +170,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
             bool result = _mgr.PerformCenterClickInspect(Vector3.zero);
 
             Assert.IsTrue(result, "Spawner inside radius → must return true.");
-            Assert.AreEqual(si, GetFieldValue<SpawnerInstance>(_mgr, "_selectedInstance"),
+            Assert.AreEqual(si, TestReflection.GetField<SpawnerInstance>(_mgr, "_selectedInstance"),
                 "PerformCenterClickInspect must store the hit spawner as the selected instance.");
         }
 
@@ -189,7 +184,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
 
             _mgr.PerformCenterClickInspect(Vector3.zero);
 
-            Assert.AreEqual(near, GetFieldValue<SpawnerInstance>(_mgr, "_selectedInstance"),
+            Assert.AreEqual(near, TestReflection.GetField<SpawnerInstance>(_mgr, "_selectedInstance"),
                 "When multiple spawners share the hit radius the closest one must be selected.");
         }
 
@@ -200,7 +195,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
 
             _mgr.PerformCenterClickInspect(Vector3.zero);
 
-            var openDropdowns = GetFieldValue<HashSet<string>>(_mgr, "_openDropdowns");
+            var openDropdowns = TestReflection.GetField<HashSet<string>>(_mgr, "_openDropdowns");
             Assert.IsNotNull(openDropdowns, "_openDropdowns set must be initialised.");
             Assert.IsTrue(openDropdowns.Contains("props"),
                 "PerformCenterClickInspect must open the Properties dropdown so the inspection actually lands on screen.");
@@ -232,7 +227,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
 
             Assert.IsTrue(result,
                 "Destroying one spawner must not prevent another live one from being selected.");
-            Assert.AreEqual(alive, GetFieldValue<SpawnerInstance>(_mgr, "_selectedInstance"),
+            Assert.AreEqual(alive, TestReflection.GetField<SpawnerInstance>(_mgr, "_selectedInstance"),
                 "Destroyed spawners must not appear in the hit-test result set.");
         }
 
@@ -245,7 +240,7 @@ namespace Valkur.Tests.EditMode.Editors.SpawnersEditor
                 "EditorMode", BindingFlags.NonPublic);
             Assert.IsNotNull(enumType, "Expected nested enum 'EditorMode' on SpawnerEditorManager.");
             var value = System.Enum.Parse(enumType, modeName);
-            SetFieldValue(mgr, "_mode", value);
+            TestReflection.SetField(mgr, "_mode", value);
         }
     }
 }

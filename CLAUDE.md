@@ -479,6 +479,41 @@ The Unity ↔ Claude Code bridge runs in HTTP transport. Config lives in `.mcp.j
   -testResults TestResults.xml -logFile -
 ```
 
+### Where a test goes (enforced by `TestLayoutConventionTests`)
+
+Reorganised 2026-09-15 (audit at 4.9/10: 109 folders, a meaningless `Game/` level, spell tests in
+seven folders, one 876-file assembly). Full rules, alias table and template in the
+`unity-testing` skill; the convention test's failure messages say what to do.
+
+```text
+Assets/Tests/<EditMode|PlayMode>/<Root>/<Feature>/<Subject>Tests.cs     namespace = path
+Root     Core · Data · Infrastructure · UIKit · Gameplay · UI   (highest production layer the test needs;
+         each EditMode root is its own asmdef that CANNOT see the layers above it)
+         Editors/<Name>Editor · EditorTools · Project/{Code,Assets,Baselines}
+Feature  the production folder, assembly prefix stripped (+ at most one aspect folder)
+Support  Assets/Tests/Support = Valkur.Tests.Support: TestCategories, TestReflection, SelectableResetTestAction
+```
+
+- **A folder never shares a name with a type** — a namespace segment hides the type for every
+  sibling test (CS0118). Aliases: `Combat/Vitals`, `Combat/Hitboxes`, `InventorySystem`,
+  `World/CameraRig`, `HUD/DebugHud`, `NodeGraphEditor`, `TimeAndWeatherEditor`, and the tile
+  editor's `Session`/`ToolModes`/`History`.
+- **Each test assembly registers `[assembly: SelectableResetTestAction]` in its own
+  `AssemblyInfo.cs`** — an assembly-level NUnit action reaches only its own assembly.
+- `[Category(TestCategories.Guard|ShippedData|Integration|Slow)]`; run a kind with
+  `run_tests(category_names=[...])`, a namespace with `group_names=["^Valkur\\.Tests\\...\\."]`
+  (a bare prefix in `test_names` times out initialising), a layer with `assembly_names`.
+- Reflection through `TestReflection`, never a private helper; test names
+  `Subject_Scenario_Outcome`. Both are ratchets in `EditMode/Project/Baselines/`; a failing ratchet
+  writes the live counts to `Library/ValkurTestResults/<baseline>.proposed.txt`.
+- **`TestRunRecorder` writes every run to `unity/Valkur/Library/ValkurTestResults/last-<Mode>.tsv`**
+  (result, seconds, full name) — the answer to "which tests are slow" and "was it already red".
+- One file ≤ 1000 lines (split into `<Fixture>.<Aspect>.cs` partials); one top-level type per file.
+- **A reorder exposes leaks.** Moving fixtures changed execution order and five particle
+  persistence tests went red on a `PE_*` emitter `ParticleCopyOnPlaceTests` had always leaked
+  (the loader parents spawns in `Start`, which never runs in Edit Mode). Green alone, red in the
+  full run = something now running before it leaks scene state; fix the leak.
+
 ## Specialized agents (`.claude/agents/`)
 
 Use the right agent for the right job. Each agent has a constrained scope and project-specific rules.
@@ -6905,7 +6940,7 @@ related symptom reappears.
   `new Color(` literals became tokens — including three NEW ones for things copied verbatim
   across editors (`SCROLL_TRACK` + `SCROLL_HANDLE`, the same scrollbar in five editors, and
   `DANGER_IDLE`, a destructive button at rest, in nineteen sites). The remaining 387 are
-  held by `EditorRawColorRatchetTests` against `Tests/EditMode/Baselines/editor-raw-colors.txt`:
+  held by `EditorRawColorRatchetTests` against `Tests/EditMode/Project/Baselines/editor-raw-colors.txt`:
   a per-file count that may fall freely and may never rise. A blanket rewrite was rejected on
   measurement — only 37 of 421 literals matched a token exactly, so the rest would have been
   guessing at a designer's intent. **Chrome: the audit was wrong.** It counted whether an

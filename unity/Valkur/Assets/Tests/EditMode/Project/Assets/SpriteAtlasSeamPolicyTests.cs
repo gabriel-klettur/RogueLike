@@ -4,6 +4,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.U2D;
 using UnityEngine.U2D;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Project.Assets
 {
@@ -23,6 +24,7 @@ namespace Valkur.Tests.EditMode.Project.Assets
     /// whole suite still green.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Guard)]
     public class SpriteAtlasSeamPolicyTests
     {
         private const string ATLAS_DIR = "Assets/_Project/SpriteAtlases";

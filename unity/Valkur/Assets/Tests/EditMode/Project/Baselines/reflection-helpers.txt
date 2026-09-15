@@ -1,0 +1,63 @@
+# Private reflection helpers (a static Get*/Set*/Invoke* taking a member name and using
+# reflection), per file. A RATCHET: a count may fall freely and may never rise.
+#
+# Measured 2026-09-15: 127 copies under seven names before Valkur.Tests.Support.TestReflection
+# existed; 98 were migrated mechanically. What remains returns a FieldInfo, targets one concrete
+# type, unwraps TargetInvocationException on purpose, or shares its name with another overload.
+# Move a file's helpers to TestReflection when you touch it and lower its count here.
+#
+# Format: <count><TAB><path below Assets/Tests>. Checked by TestLayoutConventionTests.
+1	EditMode/Editors/BuildingsEditor/BuildingOutlineRendererTests.cs
+3	EditMode/Editors/BuildingsEditor/BuildingsEditorLifecycleTests.cs
+2	EditMode/Editors/BuildingsEditor/BuildingsPerfProbeTests.cs
+2	EditMode/Editors/BuildingsEditor/BuildingsPickerDragTests.cs
+1	EditMode/Editors/BuildingsEditor/BuildingsSaveFormatTests.cs
+1	EditMode/Editors/BuildingsEditor/ColliderBrushTests.cs
+1	EditMode/Editors/BuildingsEditor/ColliderGridResolutionTests.cs
+1	EditMode/Editors/EntitiesEditor/EntitiesCatalogAuthoringTests.cs
+1	EditMode/Editors/EntitiesEditor/EntitiesEditorAuthoringTests.cs
+1	EditMode/Editors/EntitiesEditor/EntitiesRuntimeEditorTests.cs
+1	EditMode/Editors/FSMEditor/FSMEditorTransitionAuthoringSafetyTests.cs
+1	EditMode/Editors/GeneralEditor/GeneralEditorManagerTests.cs
+1	EditMode/Editors/InventoryEditor/InventoryRuntimeEditorLifecycleTests.cs
+1	EditMode/Editors/InventoryEditor/InventoryRuntimeEditorStateTests.cs
+1	EditMode/Editors/InventoryEditor/InventoryRuntimeEditorUITests.cs
+1	EditMode/Editors/LightingEditor/LightOutlineRendererTests.cs
+1	EditMode/Editors/LightingEditor/LightingEditorUndoTests.cs
+1	EditMode/Editors/MapEditor/MapEditorBaseWorldIsolationTests.cs
+1	EditMode/Editors/MapEditor/MapEditorBootSyncTests.cs
+2	EditMode/Editors/MapEditor/MapEditorPersistenceIntegrationTests.cs
+1	EditMode/Editors/MapEditor/MapEditorPersistenceWorldRoutingTests.cs
+2	EditMode/Editors/MapEditor/MapEditorPortalsTests.cs
+1	EditMode/Editors/ParticlesEditor/ParticlePersistenceFiniteFilterTests.cs
+1	EditMode/Editors/ParticlesEditor/ParticlesDeleteInZoneTests.cs
+1	EditMode/Editors/ParticlesEditor/ParticlesDeleteInstanceTests.cs
+1	EditMode/Editors/ParticlesEditor/ParticlesResolveZoneNameTests.cs
+3	EditMode/Editors/SpawnersEditor/SpawnerCenterClickInspectTests.cs
+1	EditMode/Editors/SpawnersEditor/SpawnerDeleteFromPropertiesTests.cs
+1	EditMode/Editors/SpawnersEditor/SpawnerMoveDragTests.cs
+1	EditMode/Editors/SpawnersEditor/SpawnerOutlineRendererTests.cs
+1	EditMode/Editors/SpellsEditor/SpellsRuntimeEditorAudienceTests.cs
+1	EditMode/Editors/SpellsEditor/SpellsRuntimeEditorViewPanelTests.cs
+1	EditMode/Editors/TileEditor/History/LayerJumpsUndoTests.cs
+1	EditMode/Editors/TileEditor/Overlay/TileOverlayPersistenceAutosaveTests.cs
+1	EditMode/Editors/TileEditor/Picker/TilesPanelResponsiveTests.cs
+1	EditMode/Editors/TileEditor/Select/TilesetPickerHighlightDiffTests.cs
+2	EditMode/Editors/TileEditor/Select/TilesetPickerSelectionTests.cs
+1	EditMode/Editors/TileEditor/Session/TileEditorColliderLayerJumpsMutexTests.cs
+1	EditMode/Editors/TileEditor/Session/TileEditorColliderStrokeRebakeTests.cs
+1	EditMode/Editors/TileEditor/Session/TileEditorPerfProbeLifecycleTests.cs
+1	EditMode/Editors/TileEditor/UI/TileEditorViewPanelTests.cs
+1	EditMode/Editors/_Shared/MenuBarChromeTests.cs
+1	EditMode/Editors/_Shared/PanelChromeTests.cs
+1	EditMode/Gameplay/Chat/ChatInputGateBlockerTests.cs
+1	EditMode/Gameplay/Chat/ChatInputGateTests.cs
+1	EditMode/Gameplay/InventorySystem/WorldDropInteractorTests.cs
+1	EditMode/Gameplay/Save/SaveServiceAsyncIOTests.cs
+2	EditMode/Gameplay/Save/SaveServiceDirtyAndImmediateTests.cs
+1	EditMode/Gameplay/Save/SaveServiceZombieResubscribeTests.cs
+1	EditMode/Gameplay/Spells/Controllers/LaserBeamControllerTests.cs
+1	EditMode/Gameplay/Spells/Executors/DashMoverTests.cs
+1	EditMode/Gameplay/World/Buildings/BuildingObjectAspectRatioRegressionTests.cs
+1	EditMode/Gameplay/World/Buildings/BuildingObjectPropertiesTests.cs
+1	EditMode/UIKit/Core/DraggablePanelTests.cs

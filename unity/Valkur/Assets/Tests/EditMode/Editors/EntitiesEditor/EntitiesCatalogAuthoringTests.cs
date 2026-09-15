@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay.Entities;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
 {
@@ -18,6 +19,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
     /// test passed or not, mirroring <c>MonsterFramesImporterTests</c>' scratch-folder pattern.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Slow)]
     public class EntitiesCatalogAuthoringTests
     {
         private const BindingFlags NP        = BindingFlags.NonPublic | BindingFlags.Instance;
@@ -76,12 +78,12 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             // EntitiesRuntimeEditorTests.CreateEditor) — force it so Start() below has a
             // _toggleAction to skip past without throwing.
             if (GetPrivateFieldOrNull(_ed, "_toggleAction") == null)
-                Invoke(_ed, "OnSingletonAwake");
+                TestReflection.Invoke(_ed, "OnSingletonAwake");
 
             // In-memory only — never CreateAsset'd, so nothing here can touch the real
             // MonsterCatalog.asset.
             _catalog = ScriptableObject.CreateInstance<MonsterCatalog>();
-            SetPrivateField(_ed, "_monsterCatalog", _catalog);
+            TestReflection.SetField(_ed, "_monsterCatalog", _catalog);
 
             // Builds _ui/_root/_canvas, all parented under _editorGo — Rename/Duplicate refresh
             // the Picker and the Properties panel as part of their normal behaviour, and without
@@ -89,7 +91,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             // null RectTransform parent still succeeds — it just parents nothing) that TearDown
             // could never reach. Start() is safe to call directly here: it early-outs of
             // LoadPlacedEntities() when !Application.isPlaying, which is always true in EditMode.
-            Invoke(_ed, "Start");
+            TestReflection.Invoke(_ed, "Start");
         }
 
         [TearDown]
@@ -112,22 +114,8 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
 
         // ── Reflection helpers ───────────────────────────────────────────────────
 
-        private static void SetPrivateField(object target, string name, object value)
-        {
-            var f = target.GetType().GetField(name, NP);
-            Assert.IsNotNull(f, $"field '{name}' must exist on {target.GetType().Name}");
-            f.SetValue(target, value);
-        }
-
         private static object GetPrivateFieldOrNull(object target, string name)
             => target.GetType().GetField(name, NP)?.GetValue(target);
-
-        private static object Invoke(object target, string method, params object[] args)
-        {
-            var m = target.GetType().GetMethod(method, NP);
-            Assert.IsNotNull(m, $"method '{method}' must exist on {target.GetType().Name}");
-            return m.Invoke(target, args);
-        }
 
         private static string InvokeStaticString(string method, params object[] args)
         {
@@ -137,12 +125,12 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
         }
 
         private MonsterDefinition Create(string key)
-            => (MonsterDefinition)Invoke(_ed, "CreateAndRegisterDefinition", key, ScratchTemplateDir);
+            => (MonsterDefinition)TestReflection.Invoke(_ed, "CreateAndRegisterDefinition", key, ScratchTemplateDir);
 
         private void Select(string key)
         {
-            SetPrivateField(_ed, "_selectedKey", key);
-            SetPrivateField(_ed, "_selectedIsPlayer", false);
+            TestReflection.SetField(_ed, "_selectedKey", key);
+            TestReflection.SetField(_ed, "_selectedIsPlayer", false);
         }
 
         // ── Slugify / unique-key resolution (pure logic, no disk I/O) ───────────
@@ -166,18 +154,18 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
         {
             Create("barbol");
 
-            string resolved = (string)Invoke(_ed, "ResolveUniqueKey", "barbol");
+            string resolved = (string)TestReflection.Invoke(_ed, "ResolveUniqueKey", "barbol");
             Assert.AreEqual("barbol_2", resolved);
 
             Create("barbol_2");
-            resolved = (string)Invoke(_ed, "ResolveUniqueKey", "barbol");
+            resolved = (string)TestReflection.Invoke(_ed, "ResolveUniqueKey", "barbol");
             Assert.AreEqual("barbol_3", resolved);
         }
 
         [Test]
         public void ResolveUniqueKey_EmptyBase_FallsBackToNewMonster()
         {
-            Assert.AreEqual("new_monster", (string)Invoke(_ed, "ResolveUniqueKey", ""));
+            Assert.AreEqual("new_monster", (string)TestReflection.Invoke(_ed, "ResolveUniqueKey", ""));
         }
 
         // ── Create ────────────────────────────────────────────────────────────
@@ -238,7 +226,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             source.displayName = "Dup Source";
             Select("dup_source");
 
-            var clone = (MonsterDefinition)Invoke(_ed, "DuplicateSelectedDefinition", ScratchTemplateDir);
+            var clone = (MonsterDefinition)TestReflection.Invoke(_ed, "DuplicateSelectedDefinition", ScratchTemplateDir);
 
             Assert.IsNotNull(clone);
             Assert.AreNotEqual(source.monsterKey, clone.monsterKey, "the clone must get its own key");
@@ -253,9 +241,9 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
         [Test]
         public void DuplicateSelectedDefinition_WithNoSelection_IsRefused()
         {
-            SetPrivateField(_ed, "_selectedKey", null);
+            TestReflection.SetField(_ed, "_selectedKey", null);
 
-            var clone = (MonsterDefinition)Invoke(_ed, "DuplicateSelectedDefinition", ScratchTemplateDir);
+            var clone = (MonsterDefinition)TestReflection.Invoke(_ed, "DuplicateSelectedDefinition", ScratchTemplateDir);
 
             Assert.IsNull(clone);
             Assert.AreEqual(0, _catalog.Definitions.Count);
@@ -266,9 +254,9 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
         {
             Create("dup_source_2");
             Select("dup_source_2");
-            SetPrivateField(_ed, "_pendingKeyInput", "Custom Clone Name");
+            TestReflection.SetField(_ed, "_pendingKeyInput", "Custom Clone Name");
 
-            var clone = (MonsterDefinition)Invoke(_ed, "DuplicateSelectedDefinition", ScratchTemplateDir);
+            var clone = (MonsterDefinition)TestReflection.Invoke(_ed, "DuplicateSelectedDefinition", ScratchTemplateDir);
 
             Assert.IsNotNull(clone);
             Assert.AreEqual("custom_clone_name", clone.monsterKey);
@@ -283,7 +271,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             Create("old_key");
             Select("old_key");
 
-            bool ok = (bool)Invoke(_ed, "RenameSelectedDefinition", "Brand New Name");
+            bool ok = (bool)TestReflection.Invoke(_ed, "RenameSelectedDefinition", "Brand New Name");
 
             Assert.IsTrue(ok);
             Assert.AreEqual(1, _catalog.Definitions.Count, "rename must not add or remove entries");
@@ -302,7 +290,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             Create("keep_b");
             Select("keep_a");
 
-            bool ok = (bool)Invoke(_ed, "RenameSelectedDefinition", "keep_b");
+            bool ok = (bool)TestReflection.Invoke(_ed, "RenameSelectedDefinition", "keep_b");
 
             Assert.IsFalse(ok, "renaming onto an existing different definition's key must be refused");
             Assert.IsNotNull(_catalog.GetByKey("keep_a"), "the definition being renamed must be untouched");
@@ -316,7 +304,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             Create("stays_put");
             Select("stays_put");
 
-            bool ok = (bool)Invoke(_ed, "RenameSelectedDefinition", "   ");
+            bool ok = (bool)TestReflection.Invoke(_ed, "RenameSelectedDefinition", "   ");
 
             Assert.IsFalse(ok);
             Assert.IsNotNull(_catalog.GetByKey("stays_put"));
@@ -325,9 +313,9 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
         [Test]
         public void RenameSelectedDefinition_WithNoSelection_IsRefused()
         {
-            SetPrivateField(_ed, "_selectedKey", null);
+            TestReflection.SetField(_ed, "_selectedKey", null);
 
-            bool ok = (bool)Invoke(_ed, "RenameSelectedDefinition", "anything");
+            bool ok = (bool)TestReflection.Invoke(_ed, "RenameSelectedDefinition", "anything");
 
             Assert.IsFalse(ok);
         }

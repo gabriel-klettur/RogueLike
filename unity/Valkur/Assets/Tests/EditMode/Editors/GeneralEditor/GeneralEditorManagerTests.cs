@@ -7,6 +7,7 @@ using UnityEngine.TestTools;
 using Valkur.Core;
 using Valkur.Core.Input;
 using Valkur.Gameplay.Editors.General;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.GeneralEditor
 {
@@ -32,19 +33,6 @@ namespace Valkur.Tests.EditMode.Editors.GeneralEditor
                 if (field != null) { field.SetValue(null, null); return; }
                 type = type.BaseType;
             }
-        }
-
-        private static void InvokeMethod(object obj, string methodName)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(methodName,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                t = t.BaseType;
-            }
-            m?.Invoke(obj, null);
         }
 
         private static FieldInfo GetField(object obj, string name)
@@ -79,7 +67,7 @@ namespace Valkur.Tests.EditMode.Editors.GeneralEditor
             // skips and the static _instance field stays null. Force-set the
             // launcher singleton, then invoke OnSingletonAwake manually.
             EnsureSingletonInstance(comp);
-            InvokeMethod(comp, "OnSingletonAwake");
+            TestReflection.Invoke(comp, "OnSingletonAwake");
 
             // OnSingletonAwake spawned the GameEditorManager via EnsureInstance;
             // its Awake also probably skipped, so backfill its singleton field

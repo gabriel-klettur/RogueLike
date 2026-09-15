@@ -4,10 +4,12 @@ using UnityEngine.TestTools;
 using Valkur.Gameplay;
 using Valkur.Gameplay.World;
 using System.Collections;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
 {
     [TestFixture]
+    [Category(TestCategories.Integration)]
     public class TileEditorCameraIntegrationTests
     {
         private GameObject _cameraGo;

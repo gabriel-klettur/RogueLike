@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
 using Valkur.Gameplay.Items;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ItemsEditor
 {
@@ -25,6 +26,7 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
     /// These tests lock both regressions in place.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Slow)]
     public class ItemsRuntimeEditorLifecycleTests
     {
         private readonly List<GameObject> _scene = new List<GameObject>();
@@ -65,19 +67,6 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
 
         private static object GetField(object obj, string name) => Field(obj, name)?.GetValue(obj);
 
-        private static void Invoke(object obj, string method)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var m = t.GetMethod(method, BindingFlags.NonPublic | BindingFlags.Public |
-                                            BindingFlags.Instance);
-                if (m != null) { m.Invoke(obj, null); return; }
-                t = t.BaseType;
-            }
-            Assert.Fail($"Method '{method}' not found on {obj.GetType().Name}");
-        }
-
         private ItemsRuntimeEditor CreateEditor()
         {
             ClearSingletonInstance<ItemsRuntimeEditor>();
@@ -85,8 +74,8 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             _scene.Add(go);
             var ed = go.AddComponent<ItemsRuntimeEditor>();
             // EditMode does not run Awake/Start automatically — invoke them.
-            Invoke(ed, "OnSingletonAwake");
-            Invoke(ed, "Start");
+            TestReflection.Invoke(ed, "OnSingletonAwake");
+            TestReflection.Invoke(ed, "Start");
             return ed;
         }
 

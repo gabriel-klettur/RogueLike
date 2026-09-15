@@ -6,6 +6,7 @@ using UnityEngine.TestTools;
 using UnityEngine.UI;
 using Valkur.Data;
 using Valkur.Gameplay.Entities;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
 {
@@ -73,27 +74,6 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
 
         // ── Reflection helpers ───────────────────────────────────────────────────
 
-        private static object Invoke(object target, string method, params object[] args)
-        {
-            var m = target.GetType().GetMethod(method, NP);
-            Assert.IsNotNull(m, $"method '{method}' must exist on {target.GetType().Name}");
-            return m.Invoke(target, args);
-        }
-
-        private static void SetPrivateField(object target, string name, object value)
-        {
-            var f = target.GetType().GetField(name, NP);
-            Assert.IsNotNull(f, $"field '{name}' must exist on {target.GetType().Name}");
-            f.SetValue(target, value);
-        }
-
-        private static object GetPrivateField(object target, string name)
-        {
-            var f = target.GetType().GetField(name, NP);
-            Assert.IsNotNull(f, $"field '{name}' must exist on {target.GetType().Name}");
-            return f.GetValue(target);
-        }
-
         private static MonsterDefinition MakeDef(string key)
         {
             var def = ScriptableObject.CreateInstance<MonsterDefinition>();
@@ -151,7 +131,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
                     .GetComponent<RectTransform>();
                 section.SetParent(canvasGo.transform, false);
 
-                Invoke(_ed, "AddBoolStat", section, "Enabled", def.autoCast,
+                TestReflection.Invoke(_ed, "AddBoolStat", section, "Enabled", def.autoCast,
                        (System.Action<bool>)(v => def.autoCast = v), def);
 
                 var toggle = section.GetComponentInChildren<Toggle>(true);
@@ -179,7 +159,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             {
                 def.autoCastList = System.Array.Empty<string>();
 
-                var result = (bool)Invoke(_ed, "TryAddAutoCastSpell", def, "not_a_real_spell");
+                var result = (bool)TestReflection.Invoke(_ed, "TryAddAutoCastSpell", def, "not_a_real_spell");
 
                 Assert.IsFalse(result, "an unresolvable key must be refused");
                 Assert.AreEqual(0, def.autoCastList.Length,
@@ -202,7 +182,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             {
                 def.autoCastList = System.Array.Empty<string>();
 
-                var result = (bool)Invoke(_ed, "TryAddAutoCastSpell", def, "iceball");
+                var result = (bool)TestReflection.Invoke(_ed, "TryAddAutoCastSpell", def, "iceball");
 
                 Assert.IsTrue(result, "a key present in the injected SpellCatalog must be accepted");
                 Assert.AreEqual(1, def.autoCastList.Length);
@@ -223,7 +203,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             {
                 def.autoCastList = new[] { "iceball" };
 
-                var result = (bool)Invoke(_ed, "TryAddAutoCastSpell", def, "iceball");
+                var result = (bool)TestReflection.Invoke(_ed, "TryAddAutoCastSpell", def, "iceball");
 
                 Assert.IsFalse(result, "the same spell twice would waste a spell-caster slot on a repeat");
                 Assert.AreEqual(1, def.autoCastList.Length);
@@ -246,7 +226,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             {
                 def.autoCastList = System.Array.Empty<string>();
 
-                var result = (bool)Invoke(_ed, "TryAddAutoCastSpell", def, "iceball");
+                var result = (bool)TestReflection.Invoke(_ed, "TryAddAutoCastSpell", def, "iceball");
 
                 Assert.IsFalse(result, "with no SpellCatalog resolved, nothing can be validated as real");
                 Assert.AreEqual(0, def.autoCastList.Length);
@@ -268,7 +248,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             {
                 def.autoCastList = new[] { "fireball" };
 
-                var result = (bool)Invoke(_ed, "TrySetAutoCastSpellAt", def, 0, "iceball");
+                var result = (bool)TestReflection.Invoke(_ed, "TrySetAutoCastSpellAt", def, 0, "iceball");
 
                 Assert.IsTrue(result);
                 Assert.AreEqual("iceball", def.autoCastList[0]);
@@ -288,7 +268,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             {
                 def.autoCastList = new[] { "fireball" };
 
-                var result = (bool)Invoke(_ed, "TrySetAutoCastSpellAt", def, 0, "not_a_real_spell");
+                var result = (bool)TestReflection.Invoke(_ed, "TrySetAutoCastSpellAt", def, 0, "not_a_real_spell");
 
                 Assert.IsFalse(result);
                 Assert.AreEqual("fireball", def.autoCastList[0], "a refused swap must leave the slot alone");
@@ -308,7 +288,7 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
             {
                 def.autoCastList = new[] { "fireball", "iceball" };
 
-                Invoke(_ed, "RemoveAutoCastSpellAt", def, 0);
+                TestReflection.Invoke(_ed, "RemoveAutoCastSpellAt", def, 0);
 
                 Assert.AreEqual(1, def.autoCastList.Length);
                 Assert.AreEqual("iceball", def.autoCastList[0]);
@@ -334,12 +314,12 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
                 def.autoCastList = new[] { "iceball" };
                 monsterCatalog.UpsertDefinition(def);
 
-                SetPrivateField(_ed, "_monsterCatalog", monsterCatalog);
+                TestReflection.SetField(_ed, "_monsterCatalog", monsterCatalog);
 
-                Invoke(_ed, "Start");
-                Invoke(_ed, "ShowMonsterProperties", "probe_caster");
+                TestReflection.Invoke(_ed, "Start");
+                TestReflection.Invoke(_ed, "ShowMonsterProperties", "probe_caster");
 
-                var ui = (EntitiesEditorUIBuilder.UIRefs)GetPrivateField(_ed, "_ui");
+                var ui = (EntitiesEditorUIBuilder.UIRefs)TestReflection.GetField(_ed, "_ui");
 
                 var dropdowns = ui.PropsAutoCastSection.GetComponentsInChildren<TMP_Dropdown>(true);
                 // One dropdown per existing entry (1) + one "add new spell" dropdown = 2.
@@ -373,15 +353,15 @@ namespace Valkur.Tests.EditMode.Editors.EntitiesEditor
                 def.autoCastList = System.Array.Empty<string>();
                 monsterCatalog.UpsertDefinition(def);
 
-                SetPrivateField(_ed, "_monsterCatalog", monsterCatalog);
+                TestReflection.SetField(_ed, "_monsterCatalog", monsterCatalog);
 
                 Assert.DoesNotThrow(() =>
                 {
-                    Invoke(_ed, "Start");
-                    Invoke(_ed, "ShowMonsterProperties", "probe_no_spells");
+                    TestReflection.Invoke(_ed, "Start");
+                    TestReflection.Invoke(_ed, "ShowMonsterProperties", "probe_no_spells");
                 });
 
-                var ui = (EntitiesEditorUIBuilder.UIRefs)GetPrivateField(_ed, "_ui");
+                var ui = (EntitiesEditorUIBuilder.UIRefs)TestReflection.GetField(_ed, "_ui");
 
                 var dropdowns = ui.PropsAutoCastSection.GetComponentsInChildren<TMP_Dropdown>(true);
                 Assert.AreEqual(0, dropdowns.Length,

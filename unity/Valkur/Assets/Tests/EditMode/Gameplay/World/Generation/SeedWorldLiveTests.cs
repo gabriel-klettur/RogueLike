@@ -9,6 +9,7 @@ using Valkur.Data.WorldGen;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
 using Valkur.Gameplay.World.Generation;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.Generation
 {
@@ -49,6 +50,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Generation
         /// a region disagree with the world. Every vertex of every zone, across seeds with rivers,
         /// coasts and towns.
         /// </summary>
+        [Category(TestCategories.Slow)]
         [Test]
         public void ARegion_AgreesWithTheWholeWorld_OnEveryVertexItWasAskedFor()
         {

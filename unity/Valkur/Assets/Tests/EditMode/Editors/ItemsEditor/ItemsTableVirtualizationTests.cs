@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Valkur.Data;
 using Valkur.Gameplay.Items;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ItemsEditor
 {
@@ -24,6 +25,7 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
     /// <c>LayoutElement</c> values instead of measuring.</para>
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Slow)]
     public class ItemsTableVirtualizationTests
     {
         private const float ROW_H = 26f;           // mirrors ItemsRuntimeEditor.TABLE_ROW_H
@@ -71,19 +73,6 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             return null;
         }
 
-        private static void Invoke(object obj, string method, params object[] args)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var m = t.GetMethod(method, BindingFlags.NonPublic | BindingFlags.Public |
-                                            BindingFlags.Instance);
-                if (m != null) { m.Invoke(obj, args); return; }
-                t = t.BaseType;
-            }
-            Assert.Fail($"Method '{method}' not found on {obj.GetType().Name}");
-        }
-
         // ── Fixture ──────────────────────────────────────────────────────────
 
         /// <summary>
@@ -97,7 +86,7 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             var go = new GameObject("TestItemsEditor_Virtual");
             _scene.Add(go);
             var ed = go.AddComponent<ItemsRuntimeEditor>();
-            Invoke(ed, "BuildUI");
+            TestReflection.Invoke(ed, "BuildUI");
 
             var defs = new ItemDefinition[items];
             for (int i = 0; i < items; i++)
@@ -119,8 +108,8 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             vp.pivot     = new Vector2(0f, 1f);
             vp.sizeDelta = new Vector2(600f, viewportHeight);
 
-            Invoke(ed, "RefreshPicker");
-            Invoke(ed, "RefreshTable");
+            TestReflection.Invoke(ed, "RefreshPicker");
+            TestReflection.Invoke(ed, "RefreshTable");
             return ed;
         }
 
@@ -203,7 +192,7 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
             // Scroll the content up by 150 rows and fire the ScrollRect callback the
             // editor subscribed in SetTableScrollRects.
             body.anchoredPosition = new Vector2(0f, 150 * ROW_H);
-            Invoke(ed, "OnTableScrolled", Vector2.zero);
+            TestReflection.Invoke(ed, "OnTableScrolled", Vector2.zero);
 
             Assert.IsTrue(HasRow(body, 150), "Row 150 must be realised once it is in view.");
             Assert.IsTrue(HasRow(body, 155), "Rows across the viewport must be realised.");
@@ -224,7 +213,7 @@ namespace Valkur.Tests.EditMode.Editors.ItemsEditor
 
             // Half a row: no boundary crossed.
             body.anchoredPosition = new Vector2(0f, ROW_H * 0.5f);
-            Invoke(ed, "OnTableScrolled", Vector2.zero);
+            TestReflection.Invoke(ed, "OnTableScrolled", Vector2.zero);
 
             Assert.AreEqual(before.Count, body.childCount, "No rows may be added or removed.");
             for (int i = 0; i < before.Count; i++)

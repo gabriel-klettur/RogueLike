@@ -4,6 +4,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Data.Items
 {
@@ -20,6 +21,7 @@ namespace Valkur.Tests.EditMode.Data.Items
     /// the composition and on the shipped bytes, because both halves can be internally
     /// consistent while the product is wrong.</para>
     /// </summary>
+    [Category(TestCategories.ShippedData)]
     public class ShippedEconomyDataTests
     {
         private static List<ItemDefinition> LoadItems() => Load<ItemDefinition>("t:ItemDefinition");

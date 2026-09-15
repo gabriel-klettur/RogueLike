@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
 using Valkur.Gameplay.Spells;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.SpellsEditor
 {
@@ -78,19 +79,6 @@ namespace Valkur.Tests.EditMode.Editors.SpellsEditor
             return fa == null ? null : Field(fa, b)?.GetValue(fa);
         }
 
-        private static void Invoke(object obj, string method, params object[] args)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var m = t.GetMethod(method, BindingFlags.NonPublic | BindingFlags.Public |
-                                            BindingFlags.Instance);
-                if (m != null) { m.Invoke(obj, args); return; }
-                t = t.BaseType;
-            }
-            Assert.Fail($"Method '{method}' not found on {obj.GetType().Name}");
-        }
-
         private SpellsRuntimeEditor CreateEditor()
         {
             ClearSingletonInstance<SpellsRuntimeEditor>();
@@ -98,13 +86,13 @@ namespace Valkur.Tests.EditMode.Editors.SpellsEditor
             _scene.Add(go);
             var ed = go.AddComponent<SpellsRuntimeEditor>();
             // EditMode does not run Awake/Start automatically — invoke them.
-            Invoke(ed, "OnSingletonAwake");
-            Invoke(ed, "Start");
+            TestReflection.Invoke(ed, "OnSingletonAwake");
+            TestReflection.Invoke(ed, "Start");
             return ed;
         }
 
         private static void ToggleDropdown(SpellsRuntimeEditor ed, string name)
-            => Invoke(ed, "ToggleDropdown", name);
+            => TestReflection.Invoke(ed, "ToggleDropdown", name);
 
         // ── Tests ─────────────────────────────────────────────────────────────────
 

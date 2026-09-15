@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using NUnit.Framework;
 using UnityEngine;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Project.Code
 {
@@ -20,6 +21,7 @@ namespace Valkur.Tests.EditMode.Project.Code
     /// targeting the specific corruption pattern that has bitten us in the past.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Guard)]
     public class BraceBalanceRegressionTests
     {
         // Roots to scan (relative to project root).

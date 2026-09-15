@@ -36,7 +36,7 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.ToolModes
     /// and (c) gate the <c>SetStatus</c> call behind the click check so it doesn't
     /// spam every frame. This mirrors the project's own precedent for "can't be
     /// exercised behaviourally, so pin structurally" cases —
-    /// <c>Game/Meta/BraceBalanceRegressionTests</c> reads production source text for
+    /// <c>Project/Code/BraceBalanceRegressionTests</c> reads production source text for
     /// the same reason.
     /// </summary>
     [TestFixture]

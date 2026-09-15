@@ -147,7 +147,7 @@ Notes that cost time to rediscover:
 - **Stage 4 is idempotent**, keyed on `assetPath`: re-running updates templates in place and
   keeps their `templateId`, so placed world instances never break. Neither of its menu items
   opens a dialog, because both are driven from the MCP bridge as often as from the menu bar.
-- `Tests/EditMode/Game/World/BuildingPropCatalogTests.cs` asserts the catalog still matches
+- `Tests/EditMode/Gameplay/World/Buildings/BuildingPropCatalogTests.cs` asserts the catalog still matches
   the manifest. The source sheets are gitignored (`downloads/`), so the manifest is the only
   versioned record of what was imported.
 
@@ -225,7 +225,7 @@ into a manifest-driven tool, the way `build_building_props.py` generalised prop 
   broken manifest is caught before anyone applies it for real.
 - Every generated `monster_frames_manifest*.json` under `tools/atlas/generated/` is read together
   (one per wave, never clobbering an earlier one), exactly like `building_props_manifest*.json`.
-- `Tests/EditMode/Game/Data/MonsterFramesImporterTests.cs` exercises the importer end to end
+- `Tests/EditMode/EditorTools/Monsters/MonsterFramesImporterTests.cs` exercises the importer end to end
   against a fully sandboxed manifest directory, an in-memory `MonsterCatalog` and a scratch asset
   folder — nothing shipped is ever at risk from running the suite. It pins: a manifest creates a
   definition and registers it; a re-run refreshes the same asset instead of duplicating it;

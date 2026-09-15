@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Project.Assets
 {
@@ -24,6 +25,7 @@ namespace Valkur.Tests.EditMode.Project.Assets
     /// soft rules will be promoted to hard ones (move them into the
     /// <see cref="HardRules"/> section).
     /// </summary>
+    [Category(TestCategories.Guard)]
     public class AssetConventionsTests
     {
         // ── Top-level whitelist (mirrors audit_asset_conventions.py) ────────

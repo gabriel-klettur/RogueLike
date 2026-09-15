@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Project.Code
 {
@@ -49,6 +50,7 @@ namespace Valkur.Tests.EditMode.Project.Code
     /// </para>
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Guard)]
     public class InputCentralizationGuardTests
     {
         // Files allowed to read Mouse.current / Keyboard.current directly —
@@ -142,6 +144,7 @@ namespace Valkur.Tests.EditMode.Project.Code
              "raw `Input.mousePosition` - use MouseInputManager.GetScreenMousePosition() which ORs both backends"),
         };
 
+        [Category(TestCategories.Slow)]
         [Test]
         public void NoProductionCodeReadsRawMouseOrKeyboardStateOutsideHelpers()
         {

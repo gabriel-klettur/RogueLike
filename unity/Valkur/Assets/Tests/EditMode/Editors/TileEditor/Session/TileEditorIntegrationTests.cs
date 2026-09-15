@@ -6,12 +6,15 @@ using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
 using Valkur.Gameplay;
 using System.Collections;
+using Valkur.Tests.Support;
 
 // Integration tests for Tile Editor functionality
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.Session
 {
     [TestFixture]
+    [Category(TestCategories.Integration)]
+    [Category(TestCategories.Slow)]
     public class TileEditorIntegrationTests
     {
         private GameObject _cameraGo;

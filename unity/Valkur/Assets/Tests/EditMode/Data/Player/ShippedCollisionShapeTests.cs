@@ -5,6 +5,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Data.Player
 {
@@ -16,6 +17,7 @@ namespace Valkur.Tests.EditMode.Data.Player
     /// dragon's head has stopped being hittable again. So coverage is asserted here, per entity,
     /// against the frames its own definition references — the thing a new wave changes.</para>
     /// </summary>
+    [Category(TestCategories.ShippedData)]
     public class ShippedCollisionShapeTests
     {
         /// <summary>Share of an entity's halved frames that must carry a baked row.</summary>

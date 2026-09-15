@@ -8,6 +8,7 @@ using UnityEngine.Tilemaps;
 using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.MapEditor
 {
@@ -31,6 +32,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
     /// fresh world load.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Integration)]
     public class MapEditorPersistenceIntegrationTests
     {
         // Use a unique, distinctive offset so we can't collide with any
@@ -232,7 +234,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             CreateAndWireMapEditorManager();
 
             // Act — simulate MapEditorManager.Start's LoadZonesFromDisk.
-            InvokePrivate(_mgr, "LoadZonesFromDisk");
+            TestReflection.Invoke(_mgr, "LoadZonesFromDisk");
 
             // Assert.
             Assert.IsTrue(_zones.TryGetZone(USER_ZONE_NAME, out var zone),
@@ -266,7 +268,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             // Act — MapEditor.Start would call LoadZonesFromDisk; that registers
             // user zones AND must re-run ApplyAllOverrides so the previously
             // skipped override gets applied.
-            InvokePrivate(_mgr, "LoadZonesFromDisk");
+            TestReflection.Invoke(_mgr, "LoadZonesFromDisk");
 
             // Assert — the painted cell at (zoneOffset + (0,0)) is back on the Ground tilemap.
             var ground = _grid.GetTilemap(TilemapLayerSetup.TilemapLayer.Ground);
@@ -309,7 +311,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
                 BindingFlags.Public | BindingFlags.Instance);
             if (nextIdxField != null) nextIdxField.SetValue(state, 7);
 
-            InvokePrivate(_mgr, "PersistZonesToDisk");
+            TestReflection.Invoke(_mgr, "PersistZonesToDisk");
 
             Assert.IsTrue(File.Exists(_mapZonesJsonPath),
                 "PersistZonesToDisk must write a JSON file to persistentDataPath/map_editor_zones.json.");
@@ -339,7 +341,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             ClearMapEditorSingleton();
             CreateAndWireMapEditorManager();
 
-            InvokePrivate(_mgr, "LoadZonesFromDisk");
+            TestReflection.Invoke(_mgr, "LoadZonesFromDisk");
 
             // The user zone MUST be back in the ZoneManager.
             Assert.IsTrue(_zones.TryGetZone(USER_ZONE, out var restored),
@@ -403,11 +405,11 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             WritePersistenceFile(_mapZonesJsonPath, USER_ZONE_NAME, USER_ZONE_OFFSET, editable: true);
             CreateAndWireMapEditorManager();
 
-            InvokePrivate(_mgr, "LoadZonesFromDisk");
+            TestReflection.Invoke(_mgr, "LoadZonesFromDisk");
             int firstCount = _zones.GetZonesSnapshot().Length;
 
             // Second call should not duplicate the zone (collision check).
-            InvokePrivate(_mgr, "LoadZonesFromDisk");
+            TestReflection.Invoke(_mgr, "LoadZonesFromDisk");
             int secondCount = _zones.GetZonesSnapshot().Length;
 
             Assert.AreEqual(firstCount, secondCount,
@@ -488,7 +490,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             CreateAndWireMapEditorManager();
             SetStateField(_mgr, "RestrictTileEditingToEditableZones", false);
 
-            InvokePrivate(_mgr, "PersistZonesToDisk");
+            TestReflection.Invoke(_mgr, "PersistZonesToDisk");
 
             // Fresh manager — _state defaults RestrictTileEditing back to true.
             Object.DestroyImmediate(_mgrGo);
@@ -497,7 +499,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             Assert.IsTrue((bool) GetStateField(_mgr, "RestrictTileEditingToEditableZones"),
                 "Sanity: a fresh _state must default to RestrictTileEditing=true.");
 
-            InvokePrivate(_mgr, "LoadZonesFromDisk");
+            TestReflection.Invoke(_mgr, "LoadZonesFromDisk");
 
             Assert.IsFalse((bool) GetStateField(_mgr, "RestrictTileEditingToEditableZones"),
                 "Persisted RestrictTileEditing=false must override the fresh-state default of true.");
@@ -510,13 +512,13 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             CreateAndWireMapEditorManager();
             SetStateField(_mgr, "NextZoneIndex", 13);
 
-            InvokePrivate(_mgr, "PersistZonesToDisk");
+            TestReflection.Invoke(_mgr, "PersistZonesToDisk");
 
             Object.DestroyImmediate(_mgrGo);
             ClearMapEditorSingleton();
             CreateAndWireMapEditorManager();
 
-            InvokePrivate(_mgr, "LoadZonesFromDisk");
+            TestReflection.Invoke(_mgr, "LoadZonesFromDisk");
 
             Assert.AreEqual(13, (int) GetStateField(_mgr, "NextZoneIndex"),
                 "NextZoneIndex must round-trip so the auto-naming counter doesn't reset on reload.");
@@ -533,7 +535,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             _zones.AddZone("zone_999_999",new Vector2Int(999,  999),  editableInTileEditor: true);
 
             CreateAndWireMapEditorManager();
-            InvokePrivate(_mgr, "PersistZonesToDisk");
+            TestReflection.Invoke(_mgr, "PersistZonesToDisk");
 
             // Simulate database-only reload.
             _zones.ReplaceZones(new System.Collections.Generic.List<ZoneManager.ZoneDefinition>
@@ -549,7 +551,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             Object.DestroyImmediate(_mgrGo);
             ClearMapEditorSingleton();
             CreateAndWireMapEditorManager();
-            InvokePrivate(_mgr, "LoadZonesFromDisk");
+            TestReflection.Invoke(_mgr, "LoadZonesFromDisk");
 
             Assert.IsTrue(_zones.TryGetZone("zone_100_0",   out var z1));
             Assert.IsTrue(_zones.TryGetZone("zone_-50_75",  out var z2));
@@ -581,7 +583,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             Assert.IsTrue(File.Exists(path), "Sanity: override file must exist before delete.");
 
             CreateAndWireMapEditorManager();
-            InvokePrivate(_mgr, "DeleteZoneByName", Z);
+            TestReflection.Invoke(_mgr, "DeleteZoneByName", Z);
 
             Assert.IsFalse(_zones.TryGetZone(Z, out _),
                 "Zone must be gone from ZoneManager after delete.");
@@ -602,7 +604,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             CreateAndWireMapEditorManager();
             int countBefore = _zones.GetZonesSnapshot().Length;
 
-            Assert.DoesNotThrow(() => InvokePrivate(_mgr, "LoadZonesFromDisk"),
+            Assert.DoesNotThrow(() => TestReflection.Invoke(_mgr, "LoadZonesFromDisk"),
                 "LoadZonesFromDisk must safely no-op when the persistence file does not exist.");
             Assert.AreEqual(countBefore, _zones.GetZonesSnapshot().Length,
                 "Zone count must not change when there is no persistence file to load.");
@@ -618,7 +620,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             _zones.AddZone("preexisting", Vector2Int.zero, editableInTileEditor: true);
             CreateAndWireMapEditorManager();
 
-            Assert.DoesNotThrow(() => InvokePrivate(_mgr, "LoadZonesFromDisk"),
+            Assert.DoesNotThrow(() => TestReflection.Invoke(_mgr, "LoadZonesFromDisk"),
                 "LoadZonesFromDisk must safely no-op on an empty zones list.");
             Assert.AreEqual(1, _zones.GetZonesSnapshot().Length,
                 "Pre-existing zones must not be wiped by an empty-list load.");
@@ -637,7 +639,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             // calls to test failures otherwise.
             LogAssert.ignoreFailingMessages = true;
 
-            Assert.DoesNotThrow(() => InvokePrivate(_mgr, "LoadZonesFromDisk"),
+            Assert.DoesNotThrow(() => TestReflection.Invoke(_mgr, "LoadZonesFromDisk"),
                 "LoadZonesFromDisk must not throw when the persistence file is malformed.");
             Assert.AreEqual(1, _zones.GetZonesSnapshot().Length,
                 "Pre-existing zones must survive a malformed-JSON load.");
@@ -656,7 +658,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             _zones.SetZoneEditable("dbZone", false);
 
             CreateAndWireMapEditorManager();
-            InvokePrivate(_mgr, "PersistZonesToDisk");
+            TestReflection.Invoke(_mgr, "PersistZonesToDisk");
 
             // Simulate ZoneDatabaseLoader reload — defaults editable back to true.
             _zones.ReplaceZones(new System.Collections.Generic.List<ZoneManager.ZoneDefinition>
@@ -672,7 +674,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             Object.DestroyImmediate(_mgrGo);
             ClearMapEditorSingleton();
             CreateAndWireMapEditorManager();
-            InvokePrivate(_mgr, "LoadZonesFromDisk");
+            TestReflection.Invoke(_mgr, "LoadZonesFromDisk");
 
             Assert.IsTrue(_zones.TryGetZone("dbZone", out var restored));
             Assert.IsFalse(restored.editableInTileEditor,
@@ -689,8 +691,8 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             // Manager.OnSingletonAwake runs automatically via Unity lifecycle when
             // AddComponent is called from EditMode test code. Wire dependencies that
             // would normally come from Start() / FindObjectOfType.
-            SetField(_mgr, "zoneManager", _zones);
-            SetField(_mgr, "worldGridBuilder", _grid);
+            TestReflection.SetField(_mgr, "zoneManager", _zones);
+            TestReflection.SetField(_mgr, "worldGridBuilder", _grid);
             // Ensure private state object exists (LoadZonesFromDisk reads _state.NextZoneIndex etc).
             InvokeProtected(_mgr, "EnsureCoreInitialized");
         }
@@ -770,20 +772,6 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             }
         }
 
-        private static void InvokePrivate(object target, string methodName, params object[] args)
-        {
-            var t = target.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(methodName,
-                    BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
-                t = t.BaseType;
-            }
-            Assert.IsNotNull(m, $"Method '{methodName}' must exist on {target.GetType().Name}.");
-            m.Invoke(target, args);
-        }
-
         private static object GetStateField(MapEditorManager mgr, string fieldName)
         {
             var stateField = typeof(MapEditorManager).GetField("_state",
@@ -828,17 +816,5 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             m?.Invoke(target, null);
         }
 
-        private static void SetField(object target, string name, object value)
-        {
-            var t = target.GetType();
-            while (t != null)
-            {
-                var f = t.GetField(name,
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-                if (f != null) { f.SetValue(target, value); return; }
-                t = t.BaseType;
-            }
-            Assert.Fail($"Field '{name}' not found on {target.GetType().Name}.");
-        }
     }
 }

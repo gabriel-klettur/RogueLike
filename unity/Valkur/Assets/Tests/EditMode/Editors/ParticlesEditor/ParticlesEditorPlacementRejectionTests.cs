@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.VFX;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 {
@@ -32,32 +33,6 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             }
         }
 
-        private static void Invoke(object obj, string method, params object[] args)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(method,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                t = t.BaseType;
-            }
-            m?.Invoke(obj, args);
-        }
-
-        private static void SetVal(object obj, string name, object value)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var f = t.GetField(name,
-                    BindingFlags.NonPublic | BindingFlags.Public |
-                    BindingFlags.Instance  | BindingFlags.Static);
-                if (f != null) { f.SetValue(obj, value); return; }
-                t = t.BaseType;
-            }
-        }
-
         // ── Setup / Teardown ──────────────────────────────────────────────────────
 
         [SetUp]
@@ -69,12 +44,12 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             var go = new GameObject("PlacementTestEditor");
             _created.Add(go);
             _editor = go.AddComponent<ParticlesRuntimeEditor>();
-            Invoke(_editor, "OnSingletonAwake");
+            TestReflection.Invoke(_editor, "OnSingletonAwake");
 
             _catalog = ScriptableObject.CreateInstance<ParticlePresetCatalog>();
-            SetVal(_editor, "_catalog", _catalog);
+            TestReflection.SetField(_editor, "_catalog", _catalog);
             _editor.SetInstanceStore(new InMemoryParticleInstanceStore());
-            Invoke(_editor, "Start");
+            TestReflection.Invoke(_editor, "Start");
         }
 
         [TearDown]
@@ -110,7 +85,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 
         private void SetSelectedPreset(string id)
         {
-            SetVal(_editor, "_selectedPresetId", id);
+            TestReflection.SetField(_editor, "_selectedPresetId", id);
             // Also set mode to Place so HandleMapInteraction routes to SpawnFromMapClick.
             // We invoke SpawnFromMapClick directly, so only _selectedPresetId matters.
         }
@@ -135,7 +110,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
             int before = CountEmittersInScene();
 
             // Invoke SpawnFromMapClick(presetId, worldPos) directly.
-            Invoke(_editor, "SpawnFromMapClick",
+            TestReflection.Invoke(_editor, "SpawnFromMapClick",
                 "firework_big", new Vector3(1f, 2f, 0f));
 
             int after = CountEmittersInScene();
@@ -155,7 +130,7 @@ namespace Valkur.Tests.EditMode.Editors.ParticlesEditor
 
             int before = CountEmittersInScene();
 
-            Invoke(_editor, "SpawnFromMapClick",
+            TestReflection.Invoke(_editor, "SpawnFromMapClick",
                 "aura_loop", new Vector3(3f, 4f, 0f));
 
             // The spawned GO is not added to _created because we find it via scene search.

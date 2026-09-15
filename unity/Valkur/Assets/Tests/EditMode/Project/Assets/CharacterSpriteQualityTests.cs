@@ -8,6 +8,7 @@ using UnityEngine.U2D;
 // The PPU invariants below assert against the same source of truth the postprocessor reads,
 // so a stale .meta is a red test rather than a silently resized character.
 using Valkur.Editor;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Project.Assets
 {
@@ -27,6 +28,7 @@ namespace Valkur.Tests.EditMode.Project.Assets
     ///  - These tests assert that policy is still healthy so we never ship
     ///    a build with the downsampling regression again.
     /// </summary>
+    [Category(TestCategories.Guard)]
     public class CharacterSpriteQualityTests
     {
         // ── Constants that must match ValkurAssetPostprocessor ──────────────
@@ -307,6 +309,7 @@ namespace Valkur.Tests.EditMode.Project.Assets
         // Invariant 4b — All packed sprites are 128×128 px (no atlas downsampling)
         // ────────────────────────────────────────────────────────────────────
 
+        [Category(TestCategories.Slow)]
         [Test]
         public void CharacterTextures_ImportAtTheirFullSourceResolution()
         {

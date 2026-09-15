@@ -35,6 +35,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
 {
@@ -59,9 +60,6 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             }
             return null;
         }
-
-        private static void SetPrivateField(object obj, string name, object value)
-            => GetField(obj, name)?.SetValue(obj, value);
 
         // ── Sprite factory ────────────────────────────────────────────────────────
 
@@ -178,8 +176,8 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             var srFixed  = MakeChildRenderer(goFixed,  "Footprint", sprite);
             var srBroken = MakeChildRenderer(goBroken, "Footprint", sprite);
 
-            SetPrivateField(bFixed,  "_bottomRenderer", srFixed);
-            SetPrivateField(bBroken, "_bottomRenderer", srBroken);
+            TestReflection.SetField(bFixed,  "_bottomRenderer", srFixed);
+            TestReflection.SetField(bBroken, "_bottomRenderer", srBroken);
 
             // ACT
             bool fixedOk  = bFixed.TryGetWorldRect(out Rect fixedRect);
@@ -232,7 +230,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             go.transform.localScale = new Vector3(expectedScaleX, expectedScaleY, 1f);
 
             var sr = MakeChildRenderer(go, "Footprint", sprite);
-            SetPrivateField(bObj, "_bottomRenderer", sr);
+            TestReflection.SetField(bObj, "_bottomRenderer", sr);
 
             // ACT
             bool ok = bObj.TryGetWorldRect(out Rect rect);
@@ -278,7 +276,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             go.transform.localScale = new Vector3(expectedScale, expectedScale, 1f);
 
             var sr = MakeChildRenderer(go, "Footprint", sprite);
-            SetPrivateField(bObj, "_bottomRenderer", sr);
+            TestReflection.SetField(bObj, "_bottomRenderer", sr);
 
             // ACT
             bool ok = bObj.TryGetWorldRect(out Rect rect);
@@ -332,14 +330,14 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             var bFixed   = goFixed.AddComponent<BuildingObject>();
             goFixed.transform.localScale = fixedScale;
             var srFixed = MakeChildRenderer(goFixed, "Footprint", sprite);
-            SetPrivateField(bFixed, "_bottomRenderer", srFixed);
+            TestReflection.SetField(bFixed, "_bottomRenderer", srFixed);
 
             // Broken building: world rect is 3:2 (aspect ≈ 1.5)
             var goBroken = new GameObject("Castle2Broken");
             var bBroken  = goBroken.AddComponent<BuildingObject>();
             goBroken.transform.localScale = brokenScale;
             var srBroken = MakeChildRenderer(goBroken, "Footprint", sprite);
-            SetPrivateField(bBroken, "_bottomRenderer", srBroken);
+            TestReflection.SetField(bBroken, "_bottomRenderer", srBroken);
 
             // ACT
             bFixed.TryGetWorldRect(out Rect fixedRect);
@@ -396,7 +394,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             go.transform.localScale = new Vector3(scaleX, scaleY, 1f);
 
             var sr = MakeChildRenderer(go, "Footprint", sprite);
-            SetPrivateField(bObj, "_bottomRenderer", sr);
+            TestReflection.SetField(bObj, "_bottomRenderer", sr);
 
             // ACT
             bObj.TryGetWorldRect(out Rect rect);
@@ -462,7 +460,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             go.transform.localScale = new Vector3(scaleX, scaleY, 1f);
 
             var sr = MakeChildRenderer(go, "Footprint", sprite);
-            SetPrivateField(bObj, "_bottomRenderer", sr);
+            TestReflection.SetField(bObj, "_bottomRenderer", sr);
 
             // ACT
             bool ok = bObj.TryGetWorldRect(out Rect rect);
@@ -507,7 +505,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             go.transform.localScale = new Vector3(scaleX, scaleY, 1f);
 
             var sr = MakeChildRenderer(go, "Footprint", sprite);
-            SetPrivateField(bObj, "_bottomRenderer", sr);
+            TestReflection.SetField(bObj, "_bottomRenderer", sr);
 
             // ACT
             bObj.TryGetWorldRect(out Rect rect);
@@ -581,7 +579,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             go.transform.localScale = Vector3.one; // scale=1 → world aspect equals textureRect aspect
 
             var sr = MakeChildRenderer(go, "Footprint", sprite);
-            SetPrivateField(bObj, "_bottomRenderer", sr);
+            TestReflection.SetField(bObj, "_bottomRenderer", sr);
 
             // ACT
             bObj.TryGetWorldRect(out Rect rect);
@@ -624,7 +622,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             go.transform.localScale = Vector3.one;
 
             var sr = MakeChildRenderer(go, "Footprint", sprite);
-            SetPrivateField(bObj, "_bottomRenderer", sr);
+            TestReflection.SetField(bObj, "_bottomRenderer", sr);
 
             // ACT
             bObj.TryGetWorldRect(out Rect rect);
@@ -666,7 +664,7 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Buildings
             go.transform.localScale = Vector3.one;
 
             var sr = MakeChildRenderer(go, "Footprint", sprite);
-            SetPrivateField(bObj, "_bottomRenderer", sr);
+            TestReflection.SetField(bObj, "_bottomRenderer", sr);
 
             // ACT
             bObj.TryGetWorldRect(out Rect rect);

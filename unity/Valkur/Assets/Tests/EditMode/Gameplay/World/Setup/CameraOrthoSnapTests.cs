@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using UnityEngine;
 using Valkur.Gameplay;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.World.Setup
 {
@@ -473,9 +474,9 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Setup
             // Force snapPPU=16, assetsPPU=32, and inject the render camera so
             // GetRenderPixelHeight bypasses the isPlaying gate via the cached
             // field.
-            SetPrivateField(setup, "snapPPU", snapPPU);
-            SetPrivateField(setup, "assetsPPU", 32);
-            SetPrivateField(setup, "_renderCam", renderCam);
+            TestReflection.SetField(setup, "snapPPU", snapPPU);
+            TestReflection.SetField(setup, "assetsPPU", 32);
+            TestReflection.SetField(setup, "_renderCam", renderCam);
 
             // Invoke Awake explicitly — EditMode AddComponent does not.
             var awake = typeof(CameraSetup).GetMethod("Awake",
@@ -484,15 +485,6 @@ namespace Valkur.Tests.EditMode.Gameplay.World.Setup
             awake?.Invoke(setup, null);
 
             return (camGo, renderCam, setup);
-        }
-
-        private static void SetPrivateField(object target, string fieldName, object value)
-        {
-            var f = target.GetType().GetField(fieldName,
-                System.Reflection.BindingFlags.NonPublic |
-                System.Reflection.BindingFlags.Instance);
-            Assert.IsNotNull(f, $"Field '{fieldName}' not found on {target.GetType().Name}");
-            f.SetValue(target, value);
         }
 
         /// <summary>

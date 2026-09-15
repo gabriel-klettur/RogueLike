@@ -9,6 +9,7 @@ using Valkur.Data;
 using Valkur.Gameplay.Enemies.FSM;
 using Valkur.Gameplay.FSM;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Gameplay.Enemies.FSM
 {
@@ -31,6 +32,7 @@ namespace Valkur.Tests.EditMode.Gameplay.Enemies.FSM
     /// sets are added and monsters are re-assigned.
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.ShippedData)]
     public class ShippedFSMCoverageTests
     {
         // ── Shipped data, re-read for every test ────────────────────────────────

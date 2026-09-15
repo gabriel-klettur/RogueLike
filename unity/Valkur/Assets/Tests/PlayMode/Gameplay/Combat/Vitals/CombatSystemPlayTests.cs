@@ -12,8 +12,8 @@ namespace Valkur.Tests.PlayMode.Gameplay.Combat.Vitals
     ///
     /// The synchronous Health/Mana tests (damage, kill, overkill, invincible,
     /// heal, consume, restore, event firing) now live in:
-    ///   - <c>EditMode/Game/Combat/HealthTests.cs</c>
-    ///   - <c>EditMode/Game/Combat/ManaTests.cs</c>
+    ///   - <c>EditMode/Gameplay/Combat/Vitals/HealthTests.cs</c>
+    ///   - <c>EditMode/Gameplay/Combat/Vitals/ManaTests.cs</c>
     /// </summary>
     public class CombatSystemPlayTests
     {

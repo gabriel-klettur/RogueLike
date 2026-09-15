@@ -7,6 +7,7 @@ using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.Buildings;
 using Valkur.Gameplay.World;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Editors.BuildingsEditor
 {
@@ -53,7 +54,7 @@ namespace Valkur.Tests.EditMode.Editors.BuildingsEditor
             var comp = go.AddComponent<T>();
             var toggle = GetField(comp, "_toggleAction");
             if (toggle?.GetValue(comp) == null)
-                InvokeMethod(comp, "OnSingletonAwake");
+                TestReflection.Invoke(comp, "OnSingletonAwake");
             _sceneObjects.Add(go);
             return comp;
         }
@@ -80,18 +81,6 @@ namespace Valkur.Tests.EditMode.Editors.BuildingsEditor
                 t = t.BaseType;
             }
             return null;
-        }
-
-        private static void InvokeMethod(object obj, string methodName, params object[] args)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                t = t.BaseType;
-            }
-            m?.Invoke(obj, args);
         }
 
         private static object InvokeMethodReturn(object obj, string methodName, params object[] args)
@@ -122,9 +111,6 @@ namespace Valkur.Tests.EditMode.Editors.BuildingsEditor
             return m?.Invoke(obj, args);
         }
 
-        private static void SetPrivateField(object obj, string name, object value)
-            => GetField(obj, name)?.SetValue(obj, value);
-
         [TearDown]
         public void TearDown()
         {
@@ -153,7 +139,7 @@ namespace Valkur.Tests.EditMode.Editors.BuildingsEditor
         {
             var go = new GameObject(name);
             var bObj = go.AddComponent<BuildingObject>();
-            SetPrivateField(bObj, "_template", tmpl);
+            TestReflection.SetField(bObj, "_template", tmpl);
             bObj.InstanceId = instanceId;
             _sceneObjects.Add(go);
             return bObj;

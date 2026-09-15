@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
+using Valkur.Tests.Support;
 
 namespace Valkur.Tests.EditMode.Project.Assets
 {
@@ -40,6 +41,8 @@ namespace Valkur.Tests.EditMode.Project.Assets
     /// the scan is one 5.8 MB read and 51 lookups.</para>
     /// </summary>
     [TestFixture]
+    [Category(TestCategories.Guard)]
+    [Category(TestCategories.ShippedData)]
     public class ShippedScriptBindingTests
     {
         // m_Script: {fileID: 11500000, guid: <32 hex>, type: 3}
@@ -70,6 +73,7 @@ namespace Valkur.Tests.EditMode.Project.Assets
         private static bool IsDeliberatelyUnimported(string assetPath)
             => assetPath.Replace(Path.DirectorySeparatorChar, '/').Replace('\\', '/').Contains("/Data/Dungeon/CatacombsSource/");
 
+        [Category(TestCategories.Slow)]
         [Test]
         public void EveryScriptAShippedAssetReferences_ResolvesToAClass()
         {

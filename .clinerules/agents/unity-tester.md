@@ -27,12 +27,14 @@ It contains the **canonical folder→namespace map**, EditMode gotchas (TMP NRE,
 - **DO NOT** add gameplay features or fix logic bugs in production systems. Refer those to `unity-architect`.
 - **DO NOT** create new asmdef files unless explicitly asked.
 - Tests live under `unity/Valkur/Assets/Tests/` only.
-- Namespace MUST equal `Valkur.Tests.` + path segments below `Tests/` joined with `.` (see canonical map in skill).
+- Namespace MUST equal `Valkur.Tests.` + path segments below `Tests/` joined with `.`.
+- Placement follows "Where a test goes" in the skill and is enforced by `TestLayoutConventionTests`: root = highest production
+  layer the test needs (each root is its own asmdef), feature = production folder, reserved names use the alias table.
 
 ## Standard workflow
 
 1. **Understand** — if creating: identify the production class/assembly. If fixing: read the failing file + the run output.
-2. **Folder + namespace** — apply the canonical map. Editor-only test → `EditMode/Editors/…`. Runtime game test → `EditMode/Game/…` or `PlayMode/…`.
+2. **Folder + namespace** — root = the highest production layer the test uses (`Core`, `Data`, `Infrastructure`, `UIKit`, `Gameplay`, `UI`); a runtime editor → `Editors/<Name>Editor/`; `Valkur.Editor` → `EditorTools/`; a project-wide rule → `Project/`. Feature folder = the production folder under that layer. Scene-dependent → `PlayMode/<Root>/…`. Reflection through `Valkur.Tests.Support.TestReflection`, categories through `TestCategories`.
 3. **Write or fix** — `[Test]` for sync; `[UnityTest]` + `yield return null` for async. Add `[TearDown]` to destroy GameObjects. Apply gotcha fixes (TMP needs initialized UI; use `sharedMaterial`; use `Assert.IsTrue(go != null)` not `IsNotNull`).
 4. **Verify** — refresh Unity, run tests:
    ```
